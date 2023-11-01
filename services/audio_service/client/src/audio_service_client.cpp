@@ -49,6 +49,8 @@ const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
 const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
+const uint32_t OFFLOAD_SMALL_BUFFER = 20;
+const uint32_t OFFLOAD_BIG_BUFFER = 100;
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
@@ -409,7 +411,7 @@ void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 
 void AudioServiceClient::PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata)
 {
-    Trace trace("PAStreamUnderFlow");
+    Trace trace("PAStreamEvent");
     if (!userdata) {
         AUDIO_ERR_LOG("AudioServiceClient::PAEventCb: userdata is null");
         return;
@@ -953,7 +955,7 @@ int32_t AudioServiceClient::InitializeAudioCache()
     }
 
     acache_.buffer = make_unique<uint8_t[]>(max((uint32_t)bufferAttr->minreq,
-        (uint32_t)pa_usec_to_bytes(200 * PA_USEC_PER_MSEC, &sampleSpec))); // 200 is init size
+        static_cast<uint32_t>(pa_usec_to_bytes(200 * PA_USEC_PER_MSEC, &sampleSpec)))); // 200 is init size
     if (acache_.buffer == nullptr) {
         AUDIO_ERR_LOG("Allocate memory for buffer failed");
         return AUDIO_CLIENT_INIT_ERR;
@@ -976,18 +978,15 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
             pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_CREATE_STREAM_ERR;
         }
-    
         // for remote audio device router filter.
         pa_proplist_sets(propList, "stream.client.uid", std::to_string(clientUid_).c_str());
         pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
-    
         pa_proplist_sets(propList, "stream.type", streamName.c_str());
         pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
         pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
         sessionID_ = pa_context_get_index(context);
         pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
         pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
-    
         if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
             pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream_).c_str());
             pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(isWakeupCapturerStream_).c_str());
@@ -996,7 +995,6 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
             pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
             pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
         }
-    
         AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
         if (audioParams.channelLayout == 0) {
             audioParams.channelLayout = defaultChCountToLayoutMap[audioParams.channels];
@@ -1453,7 +1451,7 @@ int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
         }
         if (breakingWritePa_ || state_ != RUNNING) {
             AUDIO_WARNING_LOG("AudioServiceClient::PaWriteStream: WaitWriteable breakingWritePa(%d) or state_(%d) "
-                              "not running, Writable size: %{public}zu, bytes to write: %{public}zu",
+                "not running, Writable size: %{public}zu, bytes to write: %{public}zu",
                 breakingWritePa_, state_, writableSize, length);
             return AUDIO_CLIENT_WRITE_STREAM_ERR;
         }
@@ -1650,7 +1648,6 @@ int32_t AudioServiceClient::AdjustAcache(const StreamBuffer& stream, size_t& cac
             AUDIO_ERR_LOG("Update cache failed, offset %u, size %u", offset, size);
             return AUDIO_CLIENT_WRITE_STREAM_ERR;
         }
-        AUDIO_INFO_LOG("rearranging the audio cache");
         acache_.readIndex = 0;
         acache_.writeIndex = size;
     } else {
@@ -2417,11 +2414,12 @@ int32_t AudioServiceClient::UpdatePAProbListOffload(AudioOffloadType statePolicy
         pa_threaded_mainloop_unlock(mainLoop);
         offloadNextStateTargetPolicy_ = statePolicy; // Fix here if sometimes can't cut into state 3
         return ret;
-    } else {    // Otherwise, hdi_sink.c's times detects the stateTarget change and switches later
-                // this time is checked the PaWriteStream to check if the switch has been made
-        AUDIO_DEBUG_LOG("Update statePolicy in 5 seconds: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
+    } else {    
+        // Otherwise, hdi_sink.c's times detects the stateTarget change and switches later
+        // this time is checked the PaWriteStream to check if the switch has been made
+        AUDIO_DEBUG_LOG("Update statePolicy in 3 seconds: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
         lastOffloadUpdateFinishTime_ = chrono::system_clock::to_time_t(
-            chrono::system_clock::now() + std::chrono::seconds(5)); // add 5s latencu to change offload state
+            chrono::system_clock::now() + std::chrono::seconds(3)); // add 3s latency to change offload state
         offloadNextStateTargetPolicy_ = statePolicy;
     }
 
@@ -2515,19 +2513,19 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
 
     // perbuf tlength maxlength minreq should same to hdi_sink.c
     bufferAttrOffloadActiveForeground.fragsize = static_cast<uint32_t>(-1);
-    bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(20, sampleSpec); // 20 for config
-    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(20 * 4, sampleSpec); // 20 * 4 for config
+    bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
+    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * 4, sampleSpec); // 4 for reservation factor
     bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
-    bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(20, sampleSpec); // 20 for config
+    bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
 
     bufferAttrOffloadActiveBackground = bufferAttrOffloadActiveForeground;
 
     bufferAttrOffloadInactiveBackground.fragsize = static_cast<uint32_t>(-1);
-    bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(20, sampleSpec); // 20 for config
+    bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
     // +20 for requested_latency, otherwise requested_latency will set to 500us, that may cause problem
-    bufferAttrOffloadInactiveBackground.tlength = MsToAlignedSize(100 * 3 + 20, sampleSpec); // 100 * 3 + 20 for config
+    bufferAttrOffloadInactiveBackground.tlength = MsToAlignedSize(OFFLOAD_BIG_BUFFER * 3 + OFFLOAD_SMALL_BUFFER, sampleSpec); // 3 for reservation factor
     bufferAttrOffloadInactiveBackground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
-    bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(100, sampleSpec); // 100 for config
+    bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(OFFLOAD_BIG_BUFFER, sampleSpec);
 
     bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_FOREGROUND, bufferAttrOffloadActiveForeground);
     bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_BACKGROUND, bufferAttrOffloadActiveBackground);
