@@ -123,7 +123,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     }
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
-        if (offloadEnable) {
+        if (offloadEnable_) {
             if (paTimeStamp < offloadTsLast_) {
                 offloadTsOffset_ += offloadTsLast_;
             }
@@ -465,7 +465,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     stream.buffer = buffer;
     stream.bufferLen = bufferSize;
 
-    if (isFirstWrite_ && !offloadEnable) {
+    if (isFirstWrite_ && !offloadEnable_) {
         if (RenderPrebuf(stream.bufferLen)) {
             AUDIO_ERR_LOG("ERR_WRITE_FAILED");
             return ERR_WRITE_FAILED;
@@ -523,7 +523,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
     // flush stream after stream paused
-    if (!offloadEnable) {
+    if (!offloadEnable_) {
         FlushAudioStream();
     }
 

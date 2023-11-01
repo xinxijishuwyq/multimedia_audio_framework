@@ -631,7 +631,7 @@ private:
     bool isArmUsbDevice_ = false;
 
     std::optional<uint32_t> offloadSessionID_;
-    PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerMgrClient::GetInstance().GetState();
+    PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
     bool currentOffloadSessionIsBackground_ = false;
     std::mutex offloadMutex_;
     AudioModuleInfo primaryMicModuleInfo_ = {};
