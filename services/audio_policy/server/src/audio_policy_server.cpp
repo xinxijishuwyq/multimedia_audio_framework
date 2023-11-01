@@ -404,10 +404,9 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
         return;
     }
     
-    int retryCount = 0;
     bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_);
     if (!RegisterSuccess) {
-        AUDIO_ERROR_LOG("register power state callback failed");
+        AUDIO_ERR_LOG("register power state callback failed");
     } else {
         AUDIO_INFO_LOG("register power state callback success");
         powerStateCallbackRegister_ = true;
@@ -421,7 +420,7 @@ void AudioPolicyServer::CheckSubscribePowerStateChange()
     }
 
     if (!powerStateCallbackRegister_) {
-        AUDIO_ERROR_LOG("PowerState CallBack Register Failed");
+        AUDIO_ERR_LOG("PowerState CallBack Register Failed");
     } else {
         AUDIO_DEBUG_LOG("PowerState CallBack Register Success");
     }
