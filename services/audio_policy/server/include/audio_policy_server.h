@@ -335,8 +335,6 @@ private:
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
-    static constexpr int RETRY_COUNT_MAX = 5;
-    static constexpr int RETRY_INTERVAL_TIME = 3;
 
     static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;

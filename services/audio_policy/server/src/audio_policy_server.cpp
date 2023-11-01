@@ -405,18 +405,12 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
     }
     
     int retryCount = 0;
-    while (retryCount < RETRY_COUNT_MAX) {
-        bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_);
-        if (!RegisterSuccess) {
-            AUDIO_DEBUG_LOG("register power state callback failed %{public}d", retryCount);
-            retryCount++;
-            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_INTERVAL_TIME));
-            continue;
-        } else {
-            powerStateCallbackRegister_ = true;
-            AUDIO_INFO_LOG("register power state callback success");
-            break;
-        }
+    bool RegisterSuccess = PowerMgr::PowerMgrClient::GetInstance().RegisterPowerStateCallback(powerStateCallback_);
+    if (!RegisterSuccess) {
+        AUDIO_ERROR_LOG("register power state callback failed");
+    } else {
+        AUDIO_INFO_LOG("register power state callback success");
+        powerStateCallbackRegister_ = true;
     }
 }
 
@@ -427,7 +421,7 @@ void AudioPolicyServer::CheckSubscribePowerStateChange()
     }
 
     if (!powerStateCallbackRegister_) {
-        AUDIO_DEBUG_LOG("PowerState CallBack Register Failed");
+        AUDIO_ERROR_LOG("PowerState CallBack Register Failed");
     } else {
         AUDIO_DEBUG_LOG("PowerState CallBack Register Success");
     }
