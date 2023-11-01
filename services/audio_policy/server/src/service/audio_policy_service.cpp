@@ -381,11 +381,6 @@ int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, boo
         return SUCCESS;
     }
 
-    if (GetActiveOutputDevice() != DEVICE_TYPE_SPEAKER) {
-        AUDIO_DEBUG_LOG("Offload Not Avaliable on current Output Device!Blocked!");
-        return SUCCESS;
-    }
-
     AUDIO_INFO_LOG("sessionId: %{public}d, PowerState: %{public}d, isAppBack: %{public}d",
         sessionID, state, isAppBack);
     
@@ -529,6 +524,9 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
 
 void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
 {
+    if (GetActiveOutputDevice() != DEVICE_TYPE_SPEAKER) {
+        return;
+    }
     if (currentPowerState_ == state) {
         return;
     }
