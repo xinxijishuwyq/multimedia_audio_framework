@@ -57,9 +57,9 @@ const uint32_t BIT_IN_BYTE = 8;
 
 struct AudioCallbackService {
     struct IAudioCallback interface;
-    void* cookie;
+    void *cookie;
     OnRenderCallback* renderCallback;
-    void* userdata;
+    void *userdata;
     bool registered = false;
 };
 
@@ -113,7 +113,7 @@ private:
     bool isFlushing_;
     bool startDuringFlush_;
     std::mutex ctrlMutex_;
-    uint64_t renderPos;
+    uint64_t renderPos_;
     float leftVolume_;
     float rightVolume_;
     int32_t routeHandle_ = -1;
@@ -147,7 +147,7 @@ private:
 };
     
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
-    : rendererInited_(false), started_(false), isFlushing_(false), startDuringFlush_(false), renderPos(0),
+    : rendererInited_(false), started_(false), isFlushing_(false), startDuringFlush_(false), renderPos_(0),
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), runninglocked(false)
 {
@@ -630,7 +630,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         return ERR_WRITE_FAILED;
     }
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    renderPos += writeLen;
+    renderPos_ += writeLen;
     return SUCCESS;
 }
 
@@ -650,7 +650,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
     }
 
     started_ = true;
-    renderPos = 0;
+    renderPos_ = 0;
     return SUCCESS;
 }
 
@@ -994,17 +994,14 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 {
     int32_t ret;
 
-    // bytewidth is 4
-    uint32_t size = (int64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND; // 4
+    uint32_t size = (int64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND; // bytewidth is 4
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG(" failed audio render null");
         return ERR_INVALID_HANDLE;
     }
 
     ret = audioRender_->SetBufferSize(audioRender_, size);
-    if (!ret) {
-        return SUCCESS;
-    } else {
+    if (ret) {
         AUDIO_ERR_LOG("SetBufferSize failed!");
         return ERR_OPERATION_FAILED;
     }
@@ -1014,14 +1011,12 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
 {
-    if (OffloadKeepRunningLock == nullptr) {
-        OffloadKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
-            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
-    } else {
+    if (OffloadKeepRunningLock != nullptr) {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is not null, init failed!");
         return ERR_OPERATION_FAILED;
     }
-
+    OffloadKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
+        PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
     return SUCCESS;
 }
 
@@ -1030,32 +1025,30 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
     if (OffloadKeepRunningLock == nullptr) {
         OffloadRunningLockInit();
     }
-    if (OffloadKeepRunningLock != nullptr) {
-        if (runninglocked) {
-            return SUCCESS;
-        }
-        runninglocked = true;
-        OffloadKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
-    } else {
+    if (OffloadKeepRunningLock == nullptr) {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is null, playback can not work well!");
         return ERR_OPERATION_FAILED;
     }
+    if (runninglocked) {
+        return SUCCESS;
+    }
+    runninglocked = true;
+    OffloadKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
 
     return SUCCESS;
 }
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
 {
-    if (OffloadKeepRunningLock != nullptr) {
-        if (!runninglocked) {
-            return SUCCESS;
-        }
-        runninglocked = false;
-        OffloadKeepRunningLock->UnLock();
-    } else {
+    if (OffloadKeepRunningLock == nullptr) {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is null, playback can not work well!");
         return ERR_OPERATION_FAILED;
     }
+    if (!runninglocked) {
+        return SUCCESS;
+    }
+    runninglocked = false;
+    OffloadKeepRunningLock->UnLock();
 
     return SUCCESS;
 }
