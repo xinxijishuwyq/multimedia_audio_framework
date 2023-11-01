@@ -1022,9 +1022,7 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 {
-    if (OffloadKeepRunningLock == nullptr) {
-        OffloadRunningLockInit();
-    }
+    OffloadRunningLockInit();
     if (OffloadKeepRunningLock == nullptr) {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is null, playback can not work well!");
         return ERR_OPERATION_FAILED;

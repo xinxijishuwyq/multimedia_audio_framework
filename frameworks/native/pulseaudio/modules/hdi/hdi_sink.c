@@ -45,6 +45,7 @@
 #include "securec.h"
 
 #include "audio_log.h"
+#include "audio_info.h"
 #include "audio_schedule.h"
 #include "audio_hdiadapter_info.h"
 #include "renderer_sink_adapter.h"
@@ -120,26 +121,26 @@ struct Userdata {
     int32_t processLen;
     size_t processSize;
     struct {
-            bool used;
-            int32_t sessionID;
-            bool firstWrite;
-            bool firstWriteHdi; // for set volume onstart, avoid mute
-            pa_usec_t pos;
-            pa_usec_t hdiPos;
-            pa_usec_t hdiPosTs;
-            pa_usec_t prewrite;
-            pa_usec_t minWait;
-            pa_thread *thread;
-            pa_fdsem *fdsem;
-            pa_rtpoll_item *rtpollItem;
-            pa_rtpoll *rtpoll;
-            bool isHDISinkStarted;
-            struct RendererSinkAdapter *sinkAdapter;
-            pa_atomic_t hdistate; // 0:need_data 1:wait_consume 2:flushing
-            pa_usec_t fullTs;
-            bool runninglocked;
-            pa_memchunk chunk;
-            pa_usec_t writeTime;
+        bool used;
+        int32_t sessionID;
+        bool firstWrite;
+        bool firstWriteHdi; // for set volume onstart, avoid mute
+        pa_usec_t pos;
+        pa_usec_t hdiPos;
+        pa_usec_t hdiPosTs;
+        pa_usec_t prewrite;
+        pa_usec_t minWait;
+        pa_thread *thread;
+        pa_fdsem *fdsem;
+        pa_rtpoll_item *rtpollItem;
+        pa_rtpoll *rtpoll;
+        bool isHDISinkStarted;
+        struct RendererSinkAdapter *sinkAdapter;
+        pa_atomic_t hdistate; // 0:need_data 1:wait_consume 2:flushing
+        pa_usec_t fullTs;
+        bool runninglocked;
+        pa_memchunk chunk;
+        pa_usec_t writeTime;
     } offload;
     struct {
         pa_usec_t timestamp;
@@ -222,7 +223,7 @@ static void OffloadUnlock(struct Userdata *u);
 static int32_t UpdatePresentationPosition(struct Userdata* u);
 static bool InputIsPrimary(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
-static const char *safe_proplist_gets(const pa_proplist *p, const char *key, const char *defstr);
+static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -436,8 +437,8 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memch
         float left, right;
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
         u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
-        const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy", "0"));
-        const uint32_t bufSize = (statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
+        const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
+        const uint32_t bufSize = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
         u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
     }
     if (ret == 0 && writeLen == 0) { // is full
@@ -563,7 +564,7 @@ bool IsInnerCapturer(pa_sink_input *sinkIn)
     return privacySupport && usageSupport;
 }
 
-static const char *safe_proplist_gets(const pa_proplist *p, const char *key, const char *defstr)
+static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr)
 {
     const char *res = pa_proplist_gets(p, key);
     if (res == NULL) {
@@ -1122,7 +1123,6 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     u->primary.timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
 }
 
-
 static bool InputIsOffload(pa_sink_input *i)
 {
     pa_sink* s = i->sink;
@@ -1242,15 +1242,15 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     const bool b = (bool)ps->sink_input->thread_info.resampler;
     const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
     const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
-    const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy", "0"));
-    u->offload.prewrite = (statePolicy > 1 ? OFFLOAD_HDI_CACHE2_ : OFFLOAD_HDI_CACHE1_) * PA_USEC_PER_MSEC;
+    const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
+    u->offload.prewrite = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2_ : OFFLOAD_HDI_CACHE1_) * PA_USEC_PER_MSEC;
     const size_t blockSizeMax = pa_frame_align(pa_mempool_block_size_max(u->sink->core->mempool), &sampleSpecOut);
     // 100ms 50ms 20ms for frame size
     size_t size100 = pa_frame_align(pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 100
     size_t size50 = pa_frame_align(pa_usec_to_bytes(50 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 50
     const size_t sizeFirst = size50;
     size_t sizeMin = pa_frame_align(pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut);  // 20
-    size_t sizeTgt = PA_MIN(blockSizeMax, u->offload.firstWrite ? sizeFirst : (statePolicy > 1 ? size100 : sizeMin));
+    size_t sizeTgt = PA_MIN(blockSizeMax, u->offload.firstWrite ? sizeFirst : (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? size100 : sizeMin));
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
     const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
     const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
@@ -1470,8 +1470,8 @@ void RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoIn
         if (hdistate == 0) {
             pa_atomic_store(&u->offload.hdistate, 1);
         }
-        const int statePolicy = atoi(safe_proplist_gets(i->proplist, "stream.offload.statePolicy", "0"));
-        if (statePolicy > 1) {
+        const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
+        if (statePolicy == OFFLOAD_INACTIVE_BACKGROUND) {
             u->offload.fullTs = pa_rtclock_now();
         }
         pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
@@ -1566,7 +1566,7 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
             } else {
                 AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
                     rewindSize, (uint32_t)(afterRender ? i->thread_info.render_memblockq->maxrewind :
-                                           ps->memblockq->maxrewind), afterRender);
+                    ps->memblockq->maxrewind), afterRender);
             }
         }
     }
@@ -1576,10 +1576,10 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
 
 static void GetSinkInputName(pa_sink_input* i, char* str, int len)
 {
-    const char* streamUid = safe_proplist_gets(i->proplist, "stream.client.uid", "NULL");
-    const char* streamPid = safe_proplist_gets(i->proplist, "stream.client.pid", "NULL");
-    const char* streamType = safe_proplist_gets(i->proplist, "stream.type", "NULL");
-    const char* sessionID = safe_proplist_gets(i->proplist, "stream.sessionID", "NULL");
+    const char* streamUid = safeProplistGets(i->proplist, "stream.client.uid", "NULL");
+    const char* streamPid = safeProplistGets(i->proplist, "stream.client.pid", "NULL");
+    const char* streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
+    const char* sessionID = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
     int ret = sprintf_s(str, len, "%s_%s_%s_%s_of%d", streamType, streamUid, streamPid, sessionID, InputIsOffload(i));
     if (ret < 0) {
         AUDIO_ERR_LOG("sprintf_s fail! ret %d", ret);
