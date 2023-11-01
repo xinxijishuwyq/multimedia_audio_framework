@@ -524,6 +524,7 @@ bool AudioStreamCollector::GetAndCompareStreamType(AudioStreamType requiredType,
 AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
 {
     AudioStreamType defaultStreamType = STREAM_MUSIC;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->sessionId == sessionId) {
             auto pos = streamTypeMap_.find(
@@ -539,6 +540,7 @@ AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
 int32_t AudioStreamCollector::GetUid(int32_t sessionId)
 {
     int32_t defaultUid = -1;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->sessionId == sessionId) {
             defaultUid = changeInfo->clientUID;
