@@ -170,7 +170,7 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
 
-    int32_t handleSpecialDeviceType(DeviceType &devType, bool &isConnected);
+    int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected);
 
     void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected);
 

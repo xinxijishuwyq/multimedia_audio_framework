@@ -16,10 +16,11 @@
 #ifndef AUDIO_VOLUME_KEY_EVENT_NAPI_CALLBACK_H_
 #define AUDIO_VOLUME_KEY_EVENT_NAPI_CALLBACK_H_
 
-#include "audio_manager_napi.h"
-#include "audio_system_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+
+#include "audio_common_napi.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -609,11 +609,12 @@ private:
     std::string appCookiePath = "";
     std::string cachePath_ = "";
 
-    float mVolumeFactor;
-    float mPowerVolumeFactor;
-    AudioStreamType mStreamType;
-    AudioSystemManager *mAudioSystemMgr;
-    uint64_t mChannelLayout;
+    float volumeFactor_;
+    float powerVolumeFactor_;
+    float duckVolumeFactor_;
+    AudioStreamType streamType_;
+    AudioSystemManager *audioSystemManager_;
+    uint64_t channelLayout_;
 
     pa_cvolume cvolume;
     uint32_t streamIndex;

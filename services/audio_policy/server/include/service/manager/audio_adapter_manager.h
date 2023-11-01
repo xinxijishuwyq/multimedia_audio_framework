@@ -74,8 +74,6 @@ public:
 
     bool GetStreamMute(AudioStreamType streamType);
 
-    bool IsStreamActive(AudioStreamType streamType);
-
     std::vector<SinkInfo> GetAllSinks();
 
     std::vector<SinkInput> GetAllSinkInputs();
@@ -193,7 +191,6 @@ private:
     void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
-    bool IsStreamActiveForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

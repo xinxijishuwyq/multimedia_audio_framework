@@ -19,6 +19,7 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "audio_info.h"
+#include "audio_effect.h"
 #include "audio_errors.h"
 
 #define THROW_ERROR_ASSERT(env, assertion, code)    \
@@ -46,8 +47,8 @@ const std::string STATE_CHANGE_CALLBACK_NAME = "stateChange";
 
 class AudioCommonNapi {
 public:
-    enum AudioVolumeType {
-        VOLUMETYPE_DEFAULT = -1,
+    enum NapiAudioVolumeType {
+        // Must be equal to the AudioVolumeType value in audio.d.ts.
         VOICE_CALL = 0,
         RINGTONE = 2,
         MEDIA = 3,
@@ -55,7 +56,6 @@ public:
         ACCESSIBILITY = 5,
         VOICE_ASSISTANT = 9,
         ULTRASONIC = 10,
-        VOLUMETYPE_MAX,
         ALL = 100
     };
     AudioCommonNapi() = delete;

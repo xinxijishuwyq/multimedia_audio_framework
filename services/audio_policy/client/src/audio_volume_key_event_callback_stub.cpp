@@ -37,7 +37,7 @@ int AudioVolumeKeyEventCallbackStub::OnRemoteRequest(
     switch (code) {
         case ON_VOLUME_KEY_EVENT: {
             VolumeEvent volumeEvent;
-            volumeEvent.volumeType = static_cast<AudioStreamType>(data.ReadInt32());
+            volumeEvent.volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
             volumeEvent.volume = data.ReadInt32();
             volumeEvent.updateUi = data.ReadBool();
             volumeEvent.volumeGroupId = data.ReadInt32();

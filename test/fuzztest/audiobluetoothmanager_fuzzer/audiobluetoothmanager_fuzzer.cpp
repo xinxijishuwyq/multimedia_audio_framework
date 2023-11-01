@@ -50,10 +50,10 @@ void AudioBluetoothManagerFuzzTest(const uint8_t *rawData, size_t size)
     audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(rawData);
     audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(rawData);
 
-    AudioPolicyServerPtr->mPolicyService
+    AudioPolicyServerPtr->audioPolicyService_
         .OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, audioStreamInfo);
 
-    AudioPolicyServerPtr->mPolicyService
+    AudioPolicyServerPtr->audioPolicyService_
         .OnDeviceConfigurationChanged(devType, macAddress, deviceName, audioStreamInfo);
 }
 } // namespace AudioStandard
