@@ -45,7 +45,6 @@
 #include "securec.h"
 
 #include "audio_log.h"
-#include "audio_info.h"
 #include "audio_schedule.h"
 #include "audio_hdiadapter_info.h"
 #include "renderer_sink_adapter.h"
@@ -90,6 +89,25 @@ enum {
     HDI_STOP,
     HDI_RENDER,
     QUIT
+};
+
+enum AudioOffloadType {
+    /**
+     * Indicates audio offload state default.
+     */
+    OFFLOAD_DEFAULT = -1,
+    /**
+     * Indicates audio offload state : screen is active & app is foreground.
+     */
+    OFFLOAD_ACTIVE_FOREGROUND = 0,
+    /**
+     * Indicates audio offload state : screen is active & app is background.
+     */
+    OFFLOAD_ACTIVE_BACKGROUND = 1,
+    /**
+     * Indicates audio offload state : screen is inactive & app is background.
+     */
+    OFFLOAD_INACTIVE_BACKGROUND = 3,
 };
 
 struct Userdata {
@@ -438,7 +456,7 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memch
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
         u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
         const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
-        const uint32_t bufSize = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
+        const uint32_t bufSize = (statePolicy == AudioOffloadType::OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
         u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
     }
     if (ret == 0 && writeLen == 0) { // is full
@@ -1243,14 +1261,14 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
     const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
     const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
-    u->offload.prewrite = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2_ : OFFLOAD_HDI_CACHE1_) * PA_USEC_PER_MSEC;
+    u->offload.prewrite = (statePolicy == AudioOffloadType::OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2_ : OFFLOAD_HDI_CACHE1_) * PA_USEC_PER_MSEC;
     const size_t blockSizeMax = pa_frame_align(pa_mempool_block_size_max(u->sink->core->mempool), &sampleSpecOut);
     // 100ms 50ms 20ms for frame size
     size_t size100 = pa_frame_align(pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 100
     size_t size50 = pa_frame_align(pa_usec_to_bytes(50 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 50
     const size_t sizeFirst = size50;
     size_t sizeMin = pa_frame_align(pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut);  // 20
-    size_t sizeTgt = PA_MIN(blockSizeMax, u->offload.firstWrite ? sizeFirst : (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? size100 : sizeMin));
+    size_t sizeTgt = PA_MIN(blockSizeMax, u->offload.firstWrite ? sizeFirst : (statePolicy == AudioOffloadType::OFFLOAD_INACTIVE_BACKGROUND ? size100 : sizeMin));
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
     const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
     const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
@@ -1471,7 +1489,7 @@ void RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoIn
             pa_atomic_store(&u->offload.hdistate, 1);
         }
         const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
-        if (statePolicy == OFFLOAD_INACTIVE_BACKGROUND) {
+        if (statePolicy == AudioOffloadType::OFFLOAD_INACTIVE_BACKGROUND) {
             u->offload.fullTs = pa_rtclock_now();
         }
         pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
