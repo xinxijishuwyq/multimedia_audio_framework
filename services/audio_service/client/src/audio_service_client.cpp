@@ -226,7 +226,7 @@ void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t s
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
     unique_lock<mutex> lockstopping(asClient->stoppingMutex_);
 
-    if (asClient->offloadEnable) {
+    if (asClient->offloadEnable_) {
         asClient->mAudioSystemMgr->Drain();
     }
     asClient->state_ = STOPPED;
@@ -1199,7 +1199,7 @@ int32_t AudioServiceClient::StopStream()
             return AUDIO_CLIENT_PA_ERR;
         }
 
-        if (!offloadEnable) {
+        if (!offloadEnable_) {
             pa_threaded_mainloop_lock(mainLoop);
 
             streamDrainStatus_ = 0;
@@ -1447,7 +1447,7 @@ int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
             pa_threaded_mainloop_wait(mainLoop);
         }
         StopTimer();
-        if (IsTimeOut() && !offloadEnable) {
+        if (IsTimeOut() && !offloadEnable_) {
             AUDIO_ERR_LOG("Write timeout");
             return AUDIO_CLIENT_WRITE_STREAM_ERR;
         }
@@ -2042,7 +2042,7 @@ int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
 
 int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && offloadEnable) {
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && offloadEnable_) {
         uint64_t frames;
         int64_t timeSec, timeNanoSec;
         mAudioSystemMgr->GetPresentationPosition(frames, timeSec, timeNanoSec);
@@ -2107,7 +2107,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
     int negative {0};
 
     // Get PA latency
-    if (offloadEnable) {
+    if (offloadEnable_) {
         int64_t frames, timeSec, timeNanoSec;
         mAudioSystemMgr->GetPresentationPosition((uint64_t&)frames, timeSec, timeNanoSec);
         uint64_t writePos = pa_bytes_to_usec(mTotalBytesWritten, &sampleSpec);
@@ -2460,7 +2460,7 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
         AUDIO_ERR_LOG("UpdatePolicyOffload, pa_proplist_new failed");
         return AUDIO_CLIENT_ERR;
     }
-    if (offloadEnable) {
+    if (offloadEnable_) {
         pa_proplist_sets(propList, "stream.offload.enable", "1");
     } else {
         pa_proplist_sets(propList, "stream.offload.enable", "0");
@@ -2600,7 +2600,7 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
     
     lock_guard<mutex> lock(ctrlMutex_);
 
-    offloadEnable = true;
+    offloadEnable_ = true;
     if (UpdatePAProbListOffload(statePolicy) != AUDIO_CLIENT_SUCCESS) {
         return AUDIO_CLIENT_ERR;
     }
@@ -2611,7 +2611,7 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
 int32_t AudioServiceClient::UnsetStreamOffloadMode()
 {
     lastOffloadUpdateFinishTime_ = 0;
-    offloadEnable = false;
+    offloadEnable_ = false;
     pa_threaded_mainloop_lock(mainLoop);
     int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
     pa_threaded_mainloop_unlock(mainLoop);

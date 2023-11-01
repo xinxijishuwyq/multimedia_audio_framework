@@ -567,7 +567,7 @@ protected:
     void HandleReadRequestEvent();
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
-    bool offloadEnable = false;
+    bool offloadEnable_ = false;
 
 private:
     pa_threaded_mainloop *mainLoop;
