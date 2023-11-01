@@ -414,7 +414,7 @@ int32_t AudioServer::SetVolume(float volume)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERROR_LOG("Renderer is null.");
+        AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
     return audioRendererSinkInstance->SetVolume(volume, 0);
@@ -823,7 +823,7 @@ int32_t AudioServer::Resume()
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERROR_LOG("Renderer is null.");
+        AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
     return audioRendererSinkInstance->Resume();
@@ -834,10 +834,10 @@ int32_t AudioServer::Pause()
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERROR_LOG("Renderer is null.");
+        AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
-    return audioRendererSinkInstance->Pause()
+    return audioRendererSinkInstance->Pause();
 }
 
 int32_t AudioServer::Drain()
@@ -846,7 +846,7 @@ int32_t AudioServer::Drain()
         "offload", ""));
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERROR_LOG("Renderer is null.");
+        AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
     return audioRendererSinkInstance->Drain(AUDIO_DRAIN_EARLY_NOTIFY);
@@ -858,7 +858,7 @@ int32_t AudioServer::GetPresentationPosition(uint64_t& frames, int64_t& timeSec,
         "offload", ""));
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERROR_LOG("Renderer is null.");
+        AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
     return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
@@ -870,7 +870,7 @@ int32_t AudioServer::SetBufferSize(uint32_t sizeMs)
         "offload", ""));
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERROR_LOG("Renderer is null.");
+        AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
     return audioRendererSinkInstance->SetBufferSize(sizeMs);
