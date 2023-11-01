@@ -414,11 +414,10 @@ int32_t AudioServer::SetVolume(float volume)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_WARNING_LOG("Renderer is null.");
-    } else {
-        return audioRendererSinkInstance->SetVolume(volume, 0);
+        AUDIO_ERROR_LOG("Renderer is null.");
+        return ERROR;
     }
-    return ERROR;
+    return audioRendererSinkInstance->SetVolume(volume, 0);
 }
 
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
@@ -824,11 +823,10 @@ int32_t AudioServer::Resume()
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_WARNING_LOG("Renderer is null.");
-    } else {
-        return audioRendererSinkInstance->Resume();
+        AUDIO_ERROR_LOG("Renderer is null.");
+        return ERROR;
     }
-    return ERROR;
+    return audioRendererSinkInstance->Resume();
 }
 
 int32_t AudioServer::Pause()
@@ -836,11 +834,10 @@ int32_t AudioServer::Pause()
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_WARNING_LOG("Renderer is null.");
-    } else {
-        return audioRendererSinkInstance->Pause();
+        AUDIO_ERROR_LOG("Renderer is null.");
+        return ERROR;
     }
-    return ERROR;
+    return audioRendererSinkInstance->Pause()
 }
 
 int32_t AudioServer::Drain()
@@ -849,11 +846,10 @@ int32_t AudioServer::Drain()
         "offload", ""));
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_WARNING_LOG("Renderer is null.");
-    } else {
-        return audioRendererSinkInstance->Drain(AUDIO_DRAIN_EARLY_NOTIFY);
+        AUDIO_ERROR_LOG("Renderer is null.");
+        return ERROR;
     }
-    return ERROR;
+    return audioRendererSinkInstance->Drain(AUDIO_DRAIN_EARLY_NOTIFY);
 }
 
 int32_t AudioServer::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
@@ -862,11 +858,10 @@ int32_t AudioServer::GetPresentationPosition(uint64_t& frames, int64_t& timeSec,
         "offload", ""));
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_WARNING_LOG("Renderer is null.");
-    } else {
-        return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
+        AUDIO_ERROR_LOG("Renderer is null.");
+        return ERROR;
     }
-    return ERROR;
+    return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
 }
 
 int32_t AudioServer::SetBufferSize(uint32_t sizeMs)
@@ -875,11 +870,10 @@ int32_t AudioServer::SetBufferSize(uint32_t sizeMs)
         "offload", ""));
 
     if (audioRendererSinkInstance == nullptr) {
-        AUDIO_WARNING_LOG("Renderer is null.");
-    } else {
-        return audioRendererSinkInstance->SetBufferSize(sizeMs);
+        AUDIO_ERROR_LOG("Renderer is null.");
+        return ERROR;
     }
-    return ERROR;
+    return audioRendererSinkInstance->SetBufferSize(sizeMs);
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)
