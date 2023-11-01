@@ -377,7 +377,7 @@ int32_t AudioPolicyService::SetStreamOffloadMode(int32_t sessionID, int32_t stat
 int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack)
 {
     if (!GetAudioOffloadAvailableFromXml()) {
-        AUDIO_DEBUG_LOG("Offload Not Avaliable!Blocked!");
+        AUDIO_INFO_LOG("Offload Not Avaliable!Blocked!");
         return SUCCESS;
     }
 
@@ -390,7 +390,8 @@ int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, boo
 
 int32_t AudioPolicyService::SetOffloadMode()
 {
-    return SetOffloadMode(*offloadSessionID_, (int32_t)currentPowerState_, currentOffloadSessionIsBackground_);
+    return SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_), 
+        currentOffloadSessionIsBackground_);
 }
 
 int32_t AudioPolicyService::UnsetOffloadMode()
@@ -442,7 +443,7 @@ int32_t AudioPolicyService::PresetOffloadMode(DeviceType deviceType)
 int32_t AudioPolicyService::SetOffloadStream(uint32_t sessionId, DeviceType deviceType /* = DEVICE_TYPE_NONE */)
 {
     if (!GetAudioOffloadAvailableFromXml()) {
-        AUDIO_DEBUG_LOG("Offload Not Avaliable!Blocked!");
+        AUDIO_INFO_LOG("Offload Not Avaliable!Blocked for get!");
         return SUCCESS;
     }
 
@@ -451,7 +452,7 @@ int32_t AudioPolicyService::SetOffloadStream(uint32_t sessionId, DeviceType devi
     }
 
     if (deviceType != DEVICE_TYPE_SPEAKER) {
-        AUDIO_DEBUG_LOG("Offload Not Avaliable on current Output Device!Blocked!");
+        AUDIO_INFO_LOG("Offload Not Avaliable on current Output Device!Blocked!");
         return SUCCESS;
     }
 
@@ -500,7 +501,7 @@ int32_t AudioPolicyService::SetOffloadStream(uint32_t sessionId, DeviceType devi
 int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
 {
     if (!GetAudioOffloadAvailableFromXml()) {
-        AUDIO_DEBUG_LOG("Offload Not Avaliable!Blocked!");
+        AUDIO_INFO_LOG("Offload Not Avaliable!Blocked for release!");
         return SUCCESS;
     }
 
