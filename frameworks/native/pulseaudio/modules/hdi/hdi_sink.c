@@ -2272,8 +2272,8 @@ static size_t MsToAlignedSize(size_t ms, const pa_sample_spec* ss)
 static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
 {
     pa_sink_input_assert_ref(i);
-    const bool maybeOffload = i->thread_info && pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) ==
-                                                pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
+    const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) ==
+                              pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
     if (maybeOffload || InputIsOffload(i)) {
         OffloadRewindAndFlush(i, false);
         OffloadUnlock(u);
