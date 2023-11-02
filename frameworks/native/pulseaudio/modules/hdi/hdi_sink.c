@@ -242,6 +242,7 @@ static int32_t UpdatePresentationPosition(struct Userdata* u);
 static bool InputIsPrimary(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
+static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -440,6 +441,10 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memch
 
     uint64_t writeLen = 0;
     uint64_t now = pa_rtclock_now();
+    if (!u->offload.isHDISinkStarted) {
+        AUDIO_DEBUG_LOG("StartOffloadHdi before write, because maybe sink switch");
+        StartOffloadHdi(u, i);
+    }
     int32_t ret = u->offload.sinkAdapter->RendererRenderFrame(u->offload.sinkAdapter, ((char*)p + index),
         (uint64_t)length, &writeLen);
     pa_memblock_release(pchunk->memblock);
@@ -1456,7 +1461,7 @@ void OffloadReset(struct Userdata* u)
     u->offload.fullTs = 0;
 }
 
-void RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoInputs, unsigned nInputs, int32_t* writen)
+int32_t RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoInputs, unsigned nInputs, int32_t* writen)
 {
     struct Userdata* u = i->sink->userdata;
 
@@ -1497,9 +1502,10 @@ void RenderWriteOffloadFunc(pa_sink_input* i, size_t length, pa_mix_info* infoIn
 
     u->offload.pos += pa_bytes_to_usec(*writen, &u->sink->sample_spec);
     InputsDropFromInputs2(infoInputs, nInputs);
+    return ret;
 }
 
-void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInput, int32_t* writen)
+int32_t ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInput, int32_t* writen)
 {
     *wait = true;
     pa_sink* s = u->sink;
@@ -1510,7 +1516,7 @@ void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInp
     pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
 
     if (s->thread_info.state == PA_SINK_SUSPENDED) {
-        return;
+        return 0;
     }
 
     pa_sink_ref(s);
@@ -1520,7 +1526,7 @@ void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInp
 
     if (nInputs == 0) {
         pa_sink_unref(s);
-        return;
+        return 0;
     } else if (nInputs > 1) {
         AUDIO_ERR_LOG("GetInputsInfo offload input != 1");
     }
@@ -1530,13 +1536,14 @@ void ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInp
     if (*wait && length == 0) {
         InputsDropFromInputs2(infoInputs, nInputs);
         pa_sink_unref(s);
-        return;
+        return 0;
     }
     if (u->offload.firstWrite == true) { // first length > 0
         u->offload.firstWrite = false;
     }
-    RenderWriteOffloadFunc(i, length, infoInputs, nInputs, writen);
+    int ret = RenderWriteOffloadFunc(i, length, infoInputs, nInputs, writen);
     pa_sink_unref(s);
+    return ret;
 }
 
 static int32_t UpdatePresentationPosition(struct Userdata* u)
@@ -1590,6 +1597,7 @@ static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
     }
     ret = u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
     u->offload.isHDISinkStarted = false;
+    OffloadReset(u);
 }
 
 static void GetSinkInputName(pa_sink_input* i, char* str, int len)
@@ -1634,6 +1642,7 @@ static void OffloadUnlock(struct Userdata *u)
 
 static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
 {
+    pa_sink_input_update_max_rewind(i, pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec));
     int32_t sessionID = getSinkInputSessionID(i);
     if (u->offload.isHDISinkStarted) {
         if (sessionID != u->offload.sessionID) {
@@ -1663,7 +1672,6 @@ static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa
 
     if (starting) {
         OffloadReset(u);
-        pa_sink_input_update_max_rewind(i, pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec));
         StartOffloadHdi(u, i);
     } else if (corking) {
         // will remove this log
@@ -1675,6 +1683,7 @@ static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa
             u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
             AUDIO_INFO_LOG("PaInputStateChangeCb, Stopped offload HDI renderer, due to stop");
             u->offload.isHDISinkStarted = false;
+            OffloadReset(u);
         }
         OffloadUnlock(u);
     }
@@ -1757,7 +1766,7 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
     }
 }
 
-static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, int64_t* sleepForUsec)
+static void ThreadFuncRendererTimerOffloadProcess(struct Userdata* u, pa_usec_t now, int64_t* sleepForUsec)
 {
     const uint64_t pos = u->offload.pos;
     const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
@@ -1770,8 +1779,10 @@ static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, i
     if (pos <= hdiPos + pw && hdistate == 0) {
         bool wait;
         int32_t writen = -1;
-        ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
-        if (wait) {
+        int ret = ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
+        if (ret < 0) {
+            u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
+        } else if (wait) {
             if (u->offload.firstWrite == true) {
                 blockTime = -1;
             } else {
@@ -1804,7 +1815,7 @@ static void ThreadFuncRendererTimerOffload2(struct Userdata* u, pa_usec_t now, i
     }
 }
 
-static void ThreadFuncRendererTimerOffload3(struct Userdata* u, pa_usec_t now, bool* flagOut, int64_t* sleepForUsec)
+static void ThreadFuncRendererTimerOffloadFlag(struct Userdata* u, pa_usec_t now, bool* flagOut, int64_t* sleepForUsec)
 {
     bool flag = PA_SINK_IS_RUNNING(u->sink->thread_info.state);
     if (flag) {
@@ -1847,10 +1858,10 @@ static void ThreadFuncRendererTimerOffload(void* userdata)
         int64_t sleepForUsec = -1;
 
         bool flag;
-        ThreadFuncRendererTimerOffload3(u, now, &flag, &sleepForUsec);
+        ThreadFuncRendererTimerOffloadFlag(u, now, &flag, &sleepForUsec);
 
         if (flag) {
-            ThreadFuncRendererTimerOffload2(u, now, &sleepForUsec);
+            ThreadFuncRendererTimerOffloadProcess(u, now, &sleepForUsec);
         }
         if (u->offload.fullTs != 0) {
             if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
@@ -2261,9 +2272,10 @@ static size_t MsToAlignedSize(size_t ms, const pa_sample_spec* ss)
 static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
 {
     pa_sink_input_assert_ref(i);
-    if (InputIsOffload(i)) {
+    const bool maybeOffload = i->thread_info && pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) ==
+                                                pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
+    if (maybeOffload || InputIsOffload(i)) {
         OffloadRewindAndFlush(i, false);
-        OffloadReset(u);
         OffloadUnlock(u);
 
         playback_stream* ps = i->userdata;
@@ -2279,31 +2291,6 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, st
         pa_sink_input_update_max_rewind(i, 0);
 
         u->primary.timestamp = pa_rtclock_now();
-    }
-    return PA_HOOK_OK;
-}
-
-static pa_hook_result_t SinkInputMoveFinishCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
-{
-    pa_sink_input_assert_ref(i);
-    if (InputIsOffload(i)) {
-        OffloadReset(u);
-        playback_stream* ps = i->userdata;
-        pa_assert(ps);
-        pa_assert(ps->memblockq);
-
-        const pa_sample_spec sampleSpecIn = i->thread_info.resampler ? i->thread_info.resampler->i_ss
-                                                                        : i->sample_spec;
-
-        // prebuf thlength maxlength minreq should same to audio_service_client.cpp
-        pa_memblockq_set_maxlength(ps->memblockq, MsToAlignedSize(5000, &sampleSpecIn)); // 5000 for config
-        pa_memblockq_set_tlength(ps->memblockq, MsToAlignedSize(20 * 4, &sampleSpecIn)); // 20 * 4 for config
-        pa_memblockq_set_minreq(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
-        pa_memblockq_set_prebuf(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
-        pa_sink_input_update_max_rewind(i, pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec));
-        if (i->thread_info.state == PA_SINK_INPUT_RUNNING) {
-            StartOffloadHdi(u, i);
-        }
     }
     return PA_HOOK_OK;
 }
@@ -2522,8 +2509,6 @@ int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
         u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_START], PA_HOOK_LATE,
             (pa_hook_cb_t)SinkInputMoveStartCb, u);
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_FINISH], PA_HOOK_LATE,
-            (pa_hook_cb_t)SinkInputMoveFinishCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
             (pa_hook_cb_t)SinkInputStateChangedCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
