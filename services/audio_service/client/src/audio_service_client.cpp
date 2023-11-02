@@ -2420,7 +2420,7 @@ int32_t AudioServiceClient::UpdatePAProbListOffload(AudioOffloadType statePolicy
         pa_threaded_mainloop_unlock(mainLoop);
         offloadNextStateTargetPolicy_ = statePolicy; // Fix here if sometimes can't cut into state 3
         return ret;
-    } else {    
+    } else {
         // Otherwise, hdi_sink.c's times detects the stateTarget change and switches later
         // this time is checked the PaWriteStream to check if the switch has been made
         AUDIO_DEBUG_LOG("Update statePolicy in 3 seconds: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
@@ -2520,7 +2520,8 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
     // perbuf tlength maxlength minreq should same to hdi_sink.c
     bufferAttrOffloadActiveForeground.fragsize = static_cast<uint32_t>(-1);
     bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
-    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * 4, sampleSpec); // 4 for reservation factor
+    // 4 for reservation factor
+    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * 4, sampleSpec);
     bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
     bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
 
@@ -2529,7 +2530,8 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
     bufferAttrOffloadInactiveBackground.fragsize = static_cast<uint32_t>(-1);
     bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
     // +20 for requested_latency, otherwise requested_latency will set to 500us, that may cause problem
-    bufferAttrOffloadInactiveBackground.tlength = MsToAlignedSize(OFFLOAD_BIG_BUFFER * 3 + OFFLOAD_SMALL_BUFFER, sampleSpec); // 3 for reservation factor
+    bufferAttrOffloadInactiveBackground.tlength = MsToAlignedSize(
+        OFFLOAD_BIG_BUFFER * 3 + OFFLOAD_SMALL_BUFFER, sampleSpec); // 3 for reservation factor
     bufferAttrOffloadInactiveBackground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
     bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(OFFLOAD_BIG_BUFFER, sampleSpec);
 

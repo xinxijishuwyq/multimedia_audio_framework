@@ -390,7 +390,7 @@ int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, boo
 
 int32_t AudioPolicyService::SetOffloadMode()
 {
-    return SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_), 
+    return SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_),
         currentOffloadSessionIsBackground_);
 }
 
@@ -490,7 +490,7 @@ int32_t AudioPolicyService::SetOffloadStream(uint32_t sessionId, DeviceType devi
         if (sessionId == *(offloadSessionID_)) {
             AUDIO_DEBUG_LOG("sessionId[%{public}d] is already get offload stream", sessionId);
         } else {
-            AUDIO_DEBUG_LOG("sessionId[%{public}d] no get offload, current offload sessionId[%{public}d]", 
+            AUDIO_DEBUG_LOG("sessionId[%{public}d] no get offload, current offload sessionId[%{public}d]",
                 sessionId, *(offloadSessionID_));
         }
     }
@@ -512,10 +512,10 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
         if (offloadSessionID_.has_value()) {
-            AUDIO_DEBUG_LOG("sessionId[%{public}d] stopping stream not get offload, current offload [%{public}d]", 
+            AUDIO_DEBUG_LOG("sessionId[%{public}d] stopping stream not get offload, current offload [%{public}d]",
                 sessionId, *offloadSessionID_);
         } else {
-            AUDIO_DEBUG_LOG("sessionId[%{public}d] stopping stream not get offload, current offload stream is None", 
+            AUDIO_DEBUG_LOG("sessionId[%{public}d] stopping stream not get offload, current offload stream is None",
                 sessionId);
         }
     }
