@@ -482,29 +482,11 @@ void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 AudioServiceClient::AudioServiceClient()
     : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("AudioServiceClientRunner"))
 {
-    isMainLoopStarted_ = false;
-    isContextConnected_ = false;
-    isStreamConnected_ = false;
-    isInnerCapturerStream_ = false;
-
     sinkDevices.clear();
     sourceDevices.clear();
     sinkInputs.clear();
     sourceOutputs.clear();
     clientInfo.clear();
-
-    volumeFactor_ = 1.0f;
-    powerVolumeFactor_ = 1.0f;
-    duckVolumeFactor_ = 1.0f; // to do
-    
-    streamType_ = STREAM_MUSIC;
-    audioSystemManager_ = nullptr;
-
-    streamIndex = 0;
-    sessionID_ = 0;
-    volumeChannels = STEREO;
-    streamInfoUpdated = false;
-    firstFrame_ = true;
 
     renderRate = RENDER_RATE_NORMAL;
     renderMode_ = RENDER_MODE_NORMAL;
@@ -1042,7 +1024,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_threaded_mainloop_unlock(mainLoop);
 
     error = ConnectStreamToPA();
-    streamInfoUpdated = false;
+    streamInfoUpdated_ = false;
     if (error < 0) {
         AUDIO_ERR_LOG("Create Stream Failed");
         ResetPAAudioClient();
@@ -2233,7 +2215,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
         return AUDIO_CLIENT_ERR;
     }
 
-    if (!streamInfoUpdated) {
+    if (!streamInfoUpdated_) {
         uint32_t idx = pa_stream_get_index(paStream);
         pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
             reinterpret_cast<void *>(this));
@@ -2290,10 +2272,10 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
     }
 
     thiz->cvolume = info->volume;
-    thiz->streamIndex = info->index;
+    thiz->streamIndex_ = info->index;
     thiz->sessionID_ = sessionID;
-    thiz->volumeChannels = info->channel_map.channels;
-    thiz->streamInfoUpdated = true;
+    thiz->volumeChannels_ = info->channel_map.channels;
+    thiz->streamInfoUpdated_ = true;
 
     SetPaVolume(*thiz);
 
@@ -2311,8 +2293,8 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     float vol = systemVolumeDb * client.volumeFactor_ * client.powerVolumeFactor_ * client.duckVolumeFactor_;
 
     uint32_t volume = pa_sw_volume_from_linear(vol);
-    pa_cvolume_set(&cv, client.volumeChannels, volume);
-    pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex, &cv, nullptr, nullptr));
+    pa_cvolume_set(&cv, client.volumeChannels_, volume);
+    pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex_, &cv, nullptr, nullptr));
 
     AUDIO_INFO_LOG("Applied volume %{public}f, systemVolume %{public}f, volumeFactor %{public}f", vol, systemVolumeDb,
         client.volumeFactor_);
@@ -2511,7 +2493,7 @@ int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
         return AUDIO_CLIENT_ERR;
     }
 
-    if (!streamInfoUpdated) {
+    if (!streamInfoUpdated_) {
         uint32_t idx = pa_stream_get_index(paStream);
         pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
             reinterpret_cast<void *>(this));

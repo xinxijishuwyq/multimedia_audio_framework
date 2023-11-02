@@ -1374,33 +1374,29 @@ napi_value AudioManagerNapi::IsStreamMute(napi_env env, napi_callback_info info)
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "IsStreamMute", NAPI_AUTO_LENGTH, &resource);
 
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioManagerAsyncContext*>(data);
-                if (context->status == SUCCESS) {
-                    context->isMute =
-                        context->objectInfo->audioMngr_->
-                            IsStreamMute(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
-                    context->isTrue = context->isMute;
-                    context->status = 0;
-                }
-            },
+        status = napi_create_async_work(env, nullptr, resource, AsyncIsStreamMute,
             IsTrueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
-                result = nullptr;
-            }
-        }
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr,
+            "IsStreamMute: napi_create_async_work failed. status: %{public}u", status);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr,
+            "IsStreamMute: napi_queue_async_work_with_qos failed. status: %{public}u", status);
+        asyncContext.release();
     }
 
     return result;
+}
+
+void AudioManagerNapi::AsyncIsStreamMute(napi_env env, void *data)
+{
+    auto context = static_cast<AudioManagerAsyncContext*>(data);
+    if (context->status == SUCCESS) {
+        context->isMute =
+            context->objectInfo->audioMngr_->
+                IsStreamMute(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
+        context->isTrue = context->isMute;
+        context->status = 0;
+    }
 }
 
 napi_value AudioManagerNapi::IsStreamActive(napi_env env, napi_callback_info info)
@@ -1447,33 +1443,29 @@ napi_value AudioManagerNapi::IsStreamActive(napi_env env, napi_callback_info inf
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "IsStreamActive", NAPI_AUTO_LENGTH, &resource);
 
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env edeviceTypenv, void *data) {
-                auto context = static_cast<AudioManagerAsyncContext*>(data);
-                if (context->status == SUCCESS) {
-                    context->isActive =
-                        context->objectInfo->audioMngr_->
-                            IsStreamActive(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
-                    context->isTrue = context->isActive;
-                    context->status = SUCCESS;
-                }
-            },
+        status = napi_create_async_work(env, nullptr, resource, AsyncIsStreamActive,
             IsTrueAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
-                result = nullptr;
-            }
-        }
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr,
+            "IsStreamActive: napi_create_async_work failed. status: %{public}u", status);
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_default);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr,
+            "IsStreamActive: napi_queue_async_work_with_qos failed. status: %{public}u", status);
+        asyncContext.release();
     }
 
     return result;
+}
+
+void AudioManagerNapi::AsyncIsStreamActive(napi_env env, void *data)
+{
+    auto context = static_cast<AudioManagerAsyncContext*>(data);
+    if (context->status == SUCCESS) {
+        context->isActive =
+            context->objectInfo->audioMngr_->
+                IsStreamActive(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
+        context->isTrue = context->isActive;
+        context->status = SUCCESS;
+    }
 }
 
 napi_value AudioManagerNapi::SetDeviceActive(napi_env env, napi_callback_info info)

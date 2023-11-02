@@ -591,10 +591,10 @@ private:
     int32_t streamCmdStatus_;
     int32_t streamDrainStatus_;
     int32_t streamFlushStatus_;
-    bool isMainLoopStarted_;
-    bool isContextConnected_;
-    bool isStreamConnected_;
-    bool isInnerCapturerStream_;
+    bool isMainLoopStarted_ = false;
+    bool isContextConnected_ = false;
+    bool isStreamConnected_ = false;
+    bool isInnerCapturerStream_ = false;
     bool isWakeupCapturerStream_ = false;
     int capturerSource_ = -1;
     AudioPrivacyType mPrivacyType;
@@ -609,19 +609,19 @@ private:
     std::string appCookiePath = "";
     std::string cachePath_ = "";
 
-    float volumeFactor_;
-    float powerVolumeFactor_;
-    float duckVolumeFactor_;
-    AudioStreamType streamType_;
-    AudioSystemManager *audioSystemManager_;
+    float volumeFactor_ = 1.0f;
+    float powerVolumeFactor_ = 1.0f;
+    float duckVolumeFactor_ = 1.0f;
+    AudioStreamType streamType_ = STREAM_MUSIC;
+    AudioSystemManager *audioSystemManager_ = nullptr;
     uint64_t channelLayout_;
 
     pa_cvolume cvolume;
-    uint32_t streamIndex;
-    uint32_t sessionID_;
-    uint32_t volumeChannels;
-    bool streamInfoUpdated;
-    bool firstFrame_;
+    uint32_t streamIndex_ = 0;
+    uint32_t sessionID_ = 0;
+    uint32_t volumeChannels_ = STEREO;
+    bool streamInfoUpdated_ = false;
+    bool firstFrame_ = true;
 
     AudioRendererRate renderRate;
     uint32_t rendererSampleRate;
