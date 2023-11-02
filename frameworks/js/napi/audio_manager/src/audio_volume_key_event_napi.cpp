@@ -96,44 +96,43 @@ static void SetValueBoolean(const napi_env& env, const std::string& fieldStr, co
     napi_set_named_property(env, result, fieldStr.c_str(), value);
 }
 
-static int32_t GetJsAudioVolumeType(AudioStreamType streamType)
+static int32_t GetJsAudioVolumeType(AudioVolumeType volumeType)
 {
-    int32_t nativeStreamType = static_cast<int32_t>(streamType);
-    int32_t result = AudioManagerNapi::VOLUMETYPE_DEFAULT;
-    switch (nativeStreamType) {
-        case AudioStreamType::STREAM_VOICE_CALL:
-        case AudioStreamType::STREAM_VOICE_MESSAGE:
-            result = AudioManagerNapi::VOICE_CALL;
+    int32_t result = AudioCommonNapi::MEDIA;
+    switch (volumeType) {
+        case AudioVolumeType::STREAM_VOICE_CALL:
+        case AudioVolumeType::STREAM_VOICE_MESSAGE:
+            result = AudioCommonNapi::VOICE_CALL;
             break;
-        case AudioStreamType::STREAM_RING:
-        case AudioStreamType::STREAM_SYSTEM:
-        case AudioStreamType::STREAM_NOTIFICATION:
-        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
-        case AudioStreamType::STREAM_DTMF:
-            result = AudioManagerNapi::RINGTONE;
+        case AudioVolumeType::STREAM_RING:
+        case AudioVolumeType::STREAM_SYSTEM:
+        case AudioVolumeType::STREAM_NOTIFICATION:
+        case AudioVolumeType::STREAM_SYSTEM_ENFORCED:
+        case AudioVolumeType::STREAM_DTMF:
+            result = AudioCommonNapi::RINGTONE;
             break;
-        case AudioStreamType::STREAM_MUSIC:
-        case AudioStreamType::STREAM_MEDIA:
-        case AudioStreamType::STREAM_MOVIE:
-        case AudioStreamType::STREAM_GAME:
-        case AudioStreamType::STREAM_SPEECH:
-        case AudioStreamType::STREAM_NAVIGATION:
-            result = AudioManagerNapi::MEDIA;
+        case AudioVolumeType::STREAM_MUSIC:
+        case AudioVolumeType::STREAM_MEDIA:
+        case AudioVolumeType::STREAM_MOVIE:
+        case AudioVolumeType::STREAM_GAME:
+        case AudioVolumeType::STREAM_SPEECH:
+        case AudioVolumeType::STREAM_NAVIGATION:
+            result = AudioCommonNapi::MEDIA;
             break;
-        case AudioStreamType::STREAM_ALARM:
-            result = AudioManagerNapi::ALARM;
+        case AudioVolumeType::STREAM_ALARM:
+            result = AudioCommonNapi::ALARM;
             break;
-        case AudioStreamType::STREAM_ACCESSIBILITY:
-            result = AudioManagerNapi::ACCESSIBILITY;
+        case AudioVolumeType::STREAM_ACCESSIBILITY:
+            result = AudioCommonNapi::ACCESSIBILITY;
             break;
-        case AudioStreamType::STREAM_VOICE_ASSISTANT:
-            result = AudioManagerNapi::VOICE_ASSISTANT;
+        case AudioVolumeType::STREAM_VOICE_ASSISTANT:
+            result = AudioCommonNapi::VOICE_ASSISTANT;
             break;
-        case AudioStreamType::STREAM_ULTRASONIC:
-            result =  AudioManagerNapi::ULTRASONIC;
+        case AudioVolumeType::STREAM_ULTRASONIC:
+            result =  AudioCommonNapi::ULTRASONIC;
             break;
         default:
-            result = AudioManagerNapi::VOLUMETYPE_DEFAULT;
+            result = AudioCommonNapi::MEDIA;
             break;
     }
     return result;

@@ -417,9 +417,9 @@ private:
     void RegisterBluetoothListener();
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
-
+    
     bool powerStateCallbackRegister_;
-    AudioPolicyService& mPolicyService;
+    AudioPolicyService& audioPolicyService_;
     int32_t clientOnFocus_;
     int32_t volumeStep_;
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;

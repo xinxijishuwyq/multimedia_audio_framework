@@ -156,8 +156,7 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
             return false;
     }
 
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().IsStreamActive(StreamVolType);
+    return AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
 }
 
 int32_t AudioStreamManager::GetHardwareOutputSamplingRate(sptr<AudioDeviceDescriptor> &desc)

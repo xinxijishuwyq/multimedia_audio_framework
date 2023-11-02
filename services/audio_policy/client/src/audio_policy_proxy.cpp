@@ -77,7 +77,7 @@ int32_t AudioPolicyProxy::GetMinVolumeLevel(AudioVolumeType volumeType)
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v)
+int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -87,7 +87,7 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioStreamType streamType, int32
         return -1;
     }
 
-    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteInt32(static_cast<int32_t>(volumeType));
     data.WriteInt32(volumeLevel);
     data.WriteInt32(static_cast<int32_t>(api_v));
     int32_t error = Remote()->SendRequest(
@@ -293,7 +293,7 @@ AudioScene AudioPolicyProxy::GetAudioScene()
     return static_cast<AudioScene>(reply.ReadInt32());
 }
 
-int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioStreamType streamType)
+int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -303,7 +303,7 @@ int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioStreamType streamType)
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteInt32(static_cast<int32_t>(volumeType));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_VOLUMELEVEL), data, reply, option);
     if (error != ERR_NONE) {
@@ -374,7 +374,7 @@ float AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
     return reply.ReadFloat();
 }
 
-int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v)
+int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -384,7 +384,7 @@ int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute, A
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
-    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteInt32(static_cast<int32_t>(volumeType));
     data.WriteBool(mute);
     data.WriteInt32(static_cast<int32_t>(api_v));
     int32_t error = Remote()->SendRequest(
@@ -396,7 +396,7 @@ int32_t AudioPolicyProxy::SetStreamMute(AudioStreamType streamType, bool mute, A
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::GetStreamMute(AudioStreamType streamType)
+bool AudioPolicyProxy::GetStreamMute(AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -406,7 +406,7 @@ bool AudioPolicyProxy::GetStreamMute(AudioStreamType streamType)
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return false;
     }
-    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteInt32(static_cast<int32_t>(volumeType));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_MUTE), data, reply, option);
     if (error != ERR_NONE) {
@@ -416,7 +416,7 @@ bool AudioPolicyProxy::GetStreamMute(AudioStreamType streamType)
     return reply.ReadBool();
 }
 
-bool AudioPolicyProxy::IsStreamActive(AudioStreamType streamType)
+bool AudioPolicyProxy::IsStreamActive(AudioVolumeType volumeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -426,7 +426,7 @@ bool AudioPolicyProxy::IsStreamActive(AudioStreamType streamType)
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return false;
     }
-    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteInt32(static_cast<int32_t>(volumeType));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE), data, reply, option);
     if (error != ERR_NONE) {

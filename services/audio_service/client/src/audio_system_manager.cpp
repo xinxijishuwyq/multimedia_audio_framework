@@ -275,8 +275,7 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
             return false;
     }
 
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().IsStreamActive(StreamVolType);
+    return AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
 }
 
 const std::string AudioSystemManager::GetAudioParameter(const std::string key)
@@ -345,8 +344,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volumeLevel, API_7);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, API_7);
 }
 
 int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
@@ -372,8 +370,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
             return ERR_NOT_SUPPORTED;
     }
 
-    AudioStreamType streamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(streamVolType);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType);
 }
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -460,8 +457,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
     }
 
     /* Call Audio Policy SetStreamMute */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, API_7);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, API_7);
 }
 
 bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
@@ -489,8 +485,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
             return false;
     }
 
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
+    return AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
 }
 
 int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,

@@ -19,11 +19,12 @@
 #include <iostream>
 #include <map>
 #include <vector>
-#include "audio_system_manager.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-#include "audio_stream_mgr_napi.h"
+#include "audio_common_napi.h"
 #include "audio_routing_manager_napi.h"
+#include "audio_stream_mgr_napi.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,19 +34,6 @@ class AudioManagerNapi {
 public:
     AudioManagerNapi();
     ~AudioManagerNapi();
-
-    enum AudioVolumeType {
-        VOLUMETYPE_DEFAULT = -1,
-        VOICE_CALL = 0,
-        RINGTONE = 2,
-        MEDIA = 3,
-        ALARM = 4,
-        ACCESSIBILITY = 5,
-        VOICE_ASSISTANT = 9,
-        ULTRASONIC = 10,
-        VOLUMETYPE_MAX,
-        ALL = 100
-    };
 
     enum AudioRingMode {
         RINGER_MODE_SILENT = 0,
@@ -167,14 +155,15 @@ static const std::map<std::string, InterruptActionType> INTERRUPT_ACTION_TYPE_MA
     {"TYPE_INTERRUPT", TYPE_INTERRUPT}
 };
 
-static const std::map<std::string, AudioManagerNapi::AudioVolumeType> VOLUME_TYPE_MAP = {
-    {"VOICE_CALL", AudioManagerNapi::VOICE_CALL},
-    {"RINGTONE", AudioManagerNapi::RINGTONE},
-    {"MEDIA", AudioManagerNapi::MEDIA},
-    {"VOICE_ASSISTANT", AudioManagerNapi::VOICE_ASSISTANT},
-    {"ALARM", AudioManagerNapi::ALARM},
-    {"ACCESSIBILITY", AudioManagerNapi::ACCESSIBILITY},
-    {"ULTRASONIC", AudioManagerNapi::ULTRASONIC}
+static const std::map<std::string, AudioCommonNapi::NapiAudioVolumeType> NAPI_VOLUME_TYPE_MAP = {
+    {"VOICE_CALL", AudioCommonNapi::VOICE_CALL},
+    {"RINGTONE", AudioCommonNapi::RINGTONE},
+    {"MEDIA", AudioCommonNapi::MEDIA},
+    {"VOICE_ASSISTANT", AudioCommonNapi::VOICE_ASSISTANT},
+    {"ALARM", AudioCommonNapi::ALARM},
+    {"ACCESSIBILITY", AudioCommonNapi::ACCESSIBILITY},
+    {"ULTRASONIC", AudioCommonNapi::ULTRASONIC},
+    {"ALL", AudioCommonNapi::ALL}
 };
 
 static const std::map<std::string, AudioStandard::ActiveDeviceType> ACTIVE_DEVICE_TYPE = {
