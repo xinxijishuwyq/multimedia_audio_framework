@@ -229,7 +229,7 @@ void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t s
     unique_lock<mutex> lockstopping(asClient->stoppingMutex_);
 
     if (asClient->offloadEnable_) {
-        asClient->mAudioSystemMgr->Drain();
+        asClient->audioSystemManager_->Drain();
     }
     asClient->state_ = STOPPED;
     asClient->WriteStateChangedSysEvents();
@@ -1038,7 +1038,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     sampleSpec = ConvertToPAAudioParams(audioParams);
     mFrameSize = pa_frame_size(&sampleSpec);
     channelLayout_ = audioParams.channelLayout;
-    
+
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;
     int32_t res = SetPaProplist(propList, map, audioParams, streamName, streamStartTime);
@@ -2048,7 +2048,7 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && offloadEnable_) {
         uint64_t frames;
         int64_t timeSec, timeNanoSec;
-        mAudioSystemMgr->GetPresentationPosition(frames, timeSec, timeNanoSec);
+        audioSystemManager_->GetPresentationPosition(frames, timeSec, timeNanoSec);
         timeStamp = frames;
         return AUDIO_CLIENT_SUCCESS;
     }
@@ -2112,7 +2112,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
     // Get PA latency
     if (offloadEnable_) {
         int64_t frames, timeSec, timeNanoSec;
-        mAudioSystemMgr->GetPresentationPosition((uint64_t&)frames, timeSec, timeNanoSec);
+        audioSystemManager_->GetPresentationPosition((uint64_t&)frames, timeSec, timeNanoSec);
         uint64_t writePos = pa_bytes_to_usec(mTotalBytesWritten, &sampleSpec);
         paLatency = writePos >= frames ? writePos - frames : 0;
     } else {
@@ -2482,15 +2482,15 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
     pa_operation_unref(updatePropOperation);
 
     const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
-    mAudioSystemMgr->SetBufferSize(bufLenMs);
+    audioSystemManager_->SetBufferSize(bufLenMs);
 
     offloadStatePolicy_ = statePolicy;
     UpdatebufferAttrOffload(offloadStatePolicy_);
 
     uint32_t sessionID = 0;
     GetSessionID(sessionID);
-    DeviceType deviceType = mAudioSystemMgr->GetActiveInputDevice();
-    uint64_t transactionId = mAudioSystemMgr->GetTransactionId(deviceType, OUTPUT_DEVICE);
+    DeviceType deviceType = audioSystemManager_->GetActiveInputDevice();
+    uint64_t transactionId = audioSystemManager_->GetTransactionId(deviceType, OUTPUT_DEVICE);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CHANGE",
         HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1,
@@ -2498,7 +2498,7 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
         "UID", clientUid_,
         "PID", clientPid_,
         "TRANSACTIONID", transactionId,
-        "STREAMTYPE", mStreamType,
+        "STREAMTYPE", streamType_,
         "STATE", state_,
         "OFFLOADSTATE", statePolicy,
         "DEVICETYPE", deviceType);
@@ -2552,7 +2552,7 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
     if (bufferAttrStateMap_.find(statePolicy)!=bufferAttrStateMap_.end()) {
         bufferAttr = &(bufferAttrStateMap_[statePolicy]);
     } else {
-        AUDIO_ERR_LOG("impossible bufferAttr branch error in SetStreamOffloadMode");
+        AUDIO_ERR_LOG("No match AttrState for offload state policy %{public}d", statePolicy);
         return AUDIO_CLIENT_ERR;
     }
 
