@@ -577,7 +577,6 @@ AudioServiceClient::AudioServiceClient()
     mPrivacyType = PRIVACY_TYPE_PUBLIC;
     mStreamUsage = STREAM_USAGE_UNKNOWN;
     streamClass_ = IAudioStream::StreamClass::PA_STREAM;
-    InitializebufferAttrOffload();
 }
 
 void AudioServiceClient::ResetPAAudioClient()
@@ -1013,6 +1012,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
         AUDIO_ERR_LOG("Invalid channel Layout");
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
+    InitializebufferAttrOffload();
     return AUDIO_CLIENT_SUCCESS;
 }
 
