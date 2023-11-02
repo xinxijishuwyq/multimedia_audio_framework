@@ -577,6 +577,7 @@ AudioServiceClient::AudioServiceClient()
     mPrivacyType = PRIVACY_TYPE_PUBLIC;
     mStreamUsage = STREAM_USAGE_UNKNOWN;
     streamClass_ = IAudioStream::StreamClass::PA_STREAM;
+    InitializebufferAttrOffload();
 }
 
 void AudioServiceClient::ResetPAAudioClient()
@@ -990,7 +991,6 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     sessionID_ = pa_context_get_index(context);
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
-    pa_proplist_sets(propList, "stream.offload.statePolicy", "0");
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream_).c_str());
@@ -1039,9 +1039,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     mFrameSize = pa_frame_size(&sampleSpec);
     channelLayout_ = audioParams.channelLayout;
     
-    InitializebufferAttrOffload();
-    offloadEnable = false;
-
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;
     int32_t res = SetPaProplist(propList, map, audioParams, streamName, streamStartTime);
