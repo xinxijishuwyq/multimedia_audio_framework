@@ -226,7 +226,7 @@ enum AudioRendererRate {
 };
 
 struct VolumeEvent {
-    AudioStreamType volumeType;
+    AudioVolumeType volumeType;
     int32_t volume;
     bool updateUi;
     int32_t volumeGroupId;

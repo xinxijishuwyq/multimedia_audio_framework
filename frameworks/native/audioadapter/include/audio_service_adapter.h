@@ -165,14 +165,6 @@ public:
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute) = 0;
 
     /**
-     * @brief returns if given streamType is active(currently the streamType audio is played)
-     *
-     * @param streamType the streamType for which status will be fetched streamType defined in{@link audio_info.h}
-     * @return Returns true: If streamType is active; else returns false
-     */
-    virtual bool IsStreamActive(AudioStreamType streamType);
-
-    /**
      * @brief returns the list of all sink inputs
      *
      * @return Returns : List of all sink inputs

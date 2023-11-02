@@ -14,9 +14,9 @@
  */
 
 #include "audio_common_napi.h"
-#include "audio_log.h"
+
 #include "audio_info.h"
-#include "audio_manager_napi.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -95,14 +95,14 @@ bool AudioCommonNapi::IsLegalInputArgumentVolType(int32_t inputType)
 {
     bool result = false;
     switch (inputType) {
-        case AudioManagerNapi::RINGTONE:
-        case AudioManagerNapi::MEDIA:
-        case AudioManagerNapi::VOICE_CALL:
-        case AudioManagerNapi::VOICE_ASSISTANT:
-        case AudioManagerNapi::ALARM:
-        case AudioManagerNapi::ACCESSIBILITY:
-        case AudioManagerNapi::ULTRASONIC:
-        case AudioManagerNapi::ALL:
+        case NapiAudioVolumeType::VOICE_CALL:
+        case NapiAudioVolumeType::RINGTONE:
+        case NapiAudioVolumeType::MEDIA:
+        case NapiAudioVolumeType::ALARM:
+        case NapiAudioVolumeType::ACCESSIBILITY:
+        case NapiAudioVolumeType::VOICE_ASSISTANT:
+        case NapiAudioVolumeType::ULTRASONIC:
+        case NapiAudioVolumeType::ALL:
             result = true;
             break;
         default:
@@ -111,6 +111,45 @@ bool AudioCommonNapi::IsLegalInputArgumentVolType(int32_t inputType)
     }
     return result;
 }
+
+AudioVolumeType AudioCommonNapi::GetNativeAudioVolumeType(int32_t volumeType)
+{
+    AudioVolumeType result = STREAM_MUSIC;
+
+    switch (volumeType) {
+        case NapiAudioVolumeType::VOICE_CALL:
+            result = STREAM_VOICE_CALL;
+            break;
+        case NapiAudioVolumeType::RINGTONE:
+            result = STREAM_RING;
+            break;
+        case NapiAudioVolumeType::MEDIA:
+            result = STREAM_MUSIC;
+            break;
+        case NapiAudioVolumeType::ALARM:
+            result = STREAM_ALARM;
+            break;
+        case NapiAudioVolumeType::ACCESSIBILITY:
+            result = STREAM_ACCESSIBILITY;
+            break;
+        case NapiAudioVolumeType::VOICE_ASSISTANT:
+            result = STREAM_VOICE_ASSISTANT;
+            break;
+        case NapiAudioVolumeType::ULTRASONIC:
+            result = STREAM_ULTRASONIC;
+            break;
+        case NapiAudioVolumeType::ALL:
+            result = STREAM_ALL;
+            break;
+        default:
+            result = STREAM_MUSIC;
+            AUDIO_ERR_LOG("GetNativeAudioVolumeType: Unknown volume type, Set it to default MEDIA!");
+            break;
+    }
+
+    return result;
+}
+
 
 bool AudioCommonNapi::IsLegalInputArgumentDeviceFlag(int32_t deviceFlag)
 {

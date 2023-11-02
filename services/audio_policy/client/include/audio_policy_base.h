@@ -36,14 +36,14 @@ using InternalAudioCapturerOptions = AudioCapturerOptions;
 class IAudioPolicy : public IRemoteBroker {
 public:
 
-    virtual int32_t GetMaxVolumeLevel(AudioVolumeType streamType) = 0;
+    virtual int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) = 0;
 
-    virtual int32_t GetMinVolumeLevel(AudioVolumeType streamType) = 0;
+    virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+    virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
         API_VERSION api_v = API_9) = 0;
 
-    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
+    virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
 
@@ -51,11 +51,11 @@ public:
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;
 
-    virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v = API_9) = 0;
+    virtual int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v = API_9) = 0;
 
-    virtual bool GetStreamMute(AudioStreamType streamType) = 0;
+    virtual bool GetStreamMute(AudioVolumeType volumeType) = 0;
 
-    virtual bool IsStreamActive(AudioStreamType streamType) = 0;
+    virtual bool IsStreamActive(AudioVolumeType volumeType) = 0;
 
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
 

@@ -493,10 +493,12 @@ AudioServiceClient::AudioServiceClient()
     sourceOutputs.clear();
     clientInfo.clear();
 
-    mVolumeFactor = 1.0f;
-    mPowerVolumeFactor = 1.0f;
-    mStreamType = STREAM_MUSIC;
-    mAudioSystemMgr = nullptr;
+    volumeFactor_ = 1.0f;
+    powerVolumeFactor_ = 1.0f;
+    duckVolumeFactor_ = 1.0f; // to do
+    
+    streamType_ = STREAM_MUSIC;
+    audioSystemManager_ = nullptr;
 
     streamIndex = 0;
     sessionID_ = 0;
@@ -698,7 +700,7 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
 
     SetEnv();
 
-    mAudioSystemMgr = AudioSystemManager::GetInstance();
+    audioSystemManager_ = AudioSystemManager::GetInstance();
     lock_guard<mutex> lockdata(dataMutex_);
     mainLoop = pa_threaded_mainloop_new();
     if (mainLoop == nullptr)
@@ -794,8 +796,7 @@ std::pair<const int32_t, const std::string> AudioServiceClient::GetDeviceNameFor
     string deviceName;
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         const std::string selectDevice =  AudioSystemManager::GetInstance()->GetSelectedDeviceInfo(clientUid_,
-            clientPid_,
-            mStreamType);
+            clientPid_, streamType_);
         deviceName = (selectDevice.empty() ? "" : selectDevice);
         return {AUDIO_CLIENT_SUCCESS, deviceName};
     }
@@ -959,8 +960,8 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(clientPid_).c_str());
 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
-    pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
-    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
+    pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(volumeFactor_).c_str());
+    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(powerVolumeFactor_).c_str());
     sessionID_ = pa_context_get_index(context);
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
@@ -1002,7 +1003,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         return AUDIO_CLIENT_INVALID_PARAMS_ERR;
     }
     pa_threaded_mainloop_lock(mainLoop);
-    mStreamType = audioType;
+    streamType_ = audioType;
     const std::string streamName = GetStreamName(audioType);
 
     auto timenow = chrono::system_clock::to_time_t(chrono::system_clock::now());
@@ -1010,7 +1011,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
     sampleSpec = ConvertToPAAudioParams(audioParams);
     mFrameSize = pa_frame_size(&sampleSpec);
-    mChannelLayout = audioParams.channelLayout;
+    channelLayout_ = audioParams.channelLayout;
 
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;
@@ -1685,7 +1686,7 @@ void AudioServiceClient::GetStreamSwitchInfo(SwitchInfo& info)
     info.renderRate = renderRate;
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
-    info.volume = mVolumeFactor;
+    info.volume = volumeFactor_;
 
     info.frameMarkPosition = mFrameMarkPosition;
     info.renderPositionCb = mRenderPositionCb;
@@ -1943,7 +1944,7 @@ int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
     }
 
     audioParams = ConvertFromPAAudioParams(*paSampleSpec);
-    audioParams.channelLayout = mChannelLayout;
+    audioParams.channelLayout = channelLayout_;
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -2163,7 +2164,7 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     pa_threaded_mainloop_lock(mainLoop);
 
-    mStreamType = audioStreamType;
+    streamType_ = audioStreamType;
     const std::string streamName = GetStreamName(audioStreamType);
     effectSceneName = IAudioStream::GetEffectSceneName(audioStreamType);
 
@@ -2205,7 +2206,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
 
     pa_threaded_mainloop_lock(mainLoop);
 
-    mVolumeFactor = volume;
+    volumeFactor_ = volume;
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
@@ -2213,7 +2214,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
         return AUDIO_CLIENT_ERR;
     }
 
-    pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
+    pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(volumeFactor_).c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     if (updatePropOperation == nullptr) {
@@ -2226,7 +2227,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
 
-    if (mAudioSystemMgr == nullptr) {
+    if (audioSystemManager_ == nullptr) {
         AUDIO_ERR_LOG("System manager instance is null");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
@@ -2256,7 +2257,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
 
 float AudioServiceClient::GetStreamVolume()
 {
-    return mVolumeFactor;
+    return volumeFactor_;
 }
 
 void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_input_info *info, int eol,
@@ -2302,30 +2303,30 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
 void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 {
     pa_cvolume cv = client.cvolume;
-    AudioVolumeType volumeType = GetVolumeTypeFromStreamType(client.mStreamType);
+    AudioVolumeType volumeType = GetVolumeTypeFromStreamType(client.streamType_);
     int32_t systemVolumeLevel = AudioSystemManager::GetInstance()->GetVolume(volumeType);
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
     float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType,
         systemVolumeLevel, deviceType);
-    float vol = systemVolumeDb * client.mVolumeFactor * client.mPowerVolumeFactor;
+    float vol = systemVolumeDb * client.volumeFactor_ * client.powerVolumeFactor_ * client.duckVolumeFactor_;
 
     uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, client.volumeChannels, volume);
     pa_operation_unref(pa_context_set_sink_input_volume(client.context, client.streamIndex, &cv, nullptr, nullptr));
 
     AUDIO_INFO_LOG("Applied volume %{public}f, systemVolume %{public}f, volumeFactor %{public}f", vol, systemVolumeDb,
-        client.mVolumeFactor);
+        client.volumeFactor_);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1,
         "STREAMID", client.sessionID_,
         "APP_UID", client.clientUid_,
         "APP_PID", client.clientPid_,
-        "STREAMTYPE", client.mStreamType,
+        "STREAMTYPE", client.streamType_,
         "VOLUME", vol,
         "SYSVOLUME", systemVolumeDb,
-        "VOLUMEFACTOR", client.mVolumeFactor,
-        "POWERVOLUMEFACTOR", client.mPowerVolumeFactor);
+        "VOLUMEFACTOR", client.volumeFactor_,
+        "POWERVOLUMEFACTOR", client.powerVolumeFactor_);
 }
 
 AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType streamType)
@@ -2450,11 +2451,11 @@ void AudioServiceClient::WriteStateChangedSysEvents()
 
     bool isOutput = true;
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        deviceType = mAudioSystemMgr->GetActiveOutputDevice();
-        transactionId = mAudioSystemMgr->GetTransactionId(deviceType, OUTPUT_DEVICE);
+        deviceType = audioSystemManager_->GetActiveOutputDevice();
+        transactionId = audioSystemManager_->GetTransactionId(deviceType, OUTPUT_DEVICE);
     } else {
-        deviceType = mAudioSystemMgr->GetActiveInputDevice();
-        transactionId = mAudioSystemMgr->GetTransactionId(deviceType, INPUT_DEVICE);
+        deviceType = audioSystemManager_->GetActiveInputDevice();
+        transactionId = audioSystemManager_->GetTransactionId(deviceType, INPUT_DEVICE);
         isOutput = false;
     }
 
@@ -2467,7 +2468,7 @@ void AudioServiceClient::WriteStateChangedSysEvents()
         "UID", clientUid_,
         "PID", clientPid_,
         "TRANSACTIONID", transactionId,
-        "STREAMTYPE", mStreamType,
+        "STREAMTYPE", streamType_,
         "STATE", state_,
         "DEVICETYPE", deviceType);
 }
@@ -2490,7 +2491,7 @@ int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
 
     pa_threaded_mainloop_lock(mainLoop);
 
-    mPowerVolumeFactor = powerVolumeFactor;
+    powerVolumeFactor_ = powerVolumeFactor;
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
@@ -2498,13 +2499,13 @@ int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
         return AUDIO_CLIENT_ERR;
     }
 
-    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
+    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(powerVolumeFactor_).c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
 
-    if (mAudioSystemMgr == nullptr) {
+    if (audioSystemManager_ == nullptr) {
         AUDIO_ERR_LOG("System manager instance is null");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
@@ -2534,16 +2535,16 @@ int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
 
 float AudioServiceClient::GetStreamLowPowerVolume()
 {
-    return mPowerVolumeFactor;
+    return powerVolumeFactor_;
 }
 
 float AudioServiceClient::GetSingleStreamVol()
 {
-    int32_t systemVolumeLevel = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
-    DeviceType deviceType = mAudioSystemMgr->GetActiveOutputDevice();
-    float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(mStreamType,
+    int32_t systemVolumeLevel = audioSystemManager_->GetVolume(static_cast<AudioVolumeType>(streamType_));
+    DeviceType deviceType = audioSystemManager_->GetActiveOutputDevice();
+    float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(streamType_,
         systemVolumeLevel, deviceType);
-    return systemVolumeDb * mVolumeFactor * mPowerVolumeFactor;
+    return systemVolumeDb * volumeFactor_ * powerVolumeFactor_;
 }
 
 // OnRenderMarkReach by eventHandler

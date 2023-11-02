@@ -129,44 +129,6 @@ void AudioManagerNapi::Destructor(napi_env env, void *nativeObject, void *finali
     }
 }
 
-static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
-{
-    AudioVolumeType result = STREAM_MUSIC;
-
-    switch (volumeType) {
-        case AudioManagerNapi::RINGTONE:
-            result = STREAM_RING;
-            break;
-        case AudioManagerNapi::MEDIA:
-            result = STREAM_MUSIC;
-            break;
-        case AudioManagerNapi::VOICE_CALL:
-            result = STREAM_VOICE_CALL;
-            break;
-        case AudioManagerNapi::VOICE_ASSISTANT:
-            result = STREAM_VOICE_ASSISTANT;
-            break;
-        case AudioManagerNapi::ALARM:
-            result = STREAM_ALARM;
-            break;
-        case AudioManagerNapi::ACCESSIBILITY:
-            result = STREAM_ACCESSIBILITY;
-            break;
-        case AudioManagerNapi::ULTRASONIC:
-            result = STREAM_ULTRASONIC;
-            break;
-        case AudioManagerNapi::ALL:
-            result = STREAM_ALL;
-            break;
-        default:
-            result = STREAM_MUSIC;
-            HiLog::Error(LABEL, "Unknown volume type, Set it to default MEDIA!");
-            break;
-    }
-
-    return result;
-}
-
 static AudioStandard::FocusType GetNativeFocusType(int32_t focusType)
 {
     AudioStandard::FocusType result = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
@@ -332,21 +294,18 @@ napi_value AudioManagerNapi::CreateAudioVolumeTypeObject(napi_env env)
 
     status = napi_create_object(env, &result);
     if (status == napi_ok) {
-        for (auto &iter: VOLUME_TYPE_MAP) {
+        for (auto &iter: NAPI_VOLUME_TYPE_MAP) {
             status = AddNamedProperty(env, result, iter.first, iter.second);
             if (status != napi_ok) {
-                HiLog::Error(LABEL, "Failed to add named prop in CreateAudioVolumeTypeObject!");
+                HiLog::Error(LABEL, "Failed to AddNamedProperty for NapiAudioVolumeType %{public}d!", iter.second);
                 break;
             }
         }
-        status = AddNamedProperty(env, result, "ALL", AudioManagerNapi::ALL);
         if (status == napi_ok) {
             status = napi_create_reference(env, result, refCount, &audioVolumeTypeRef_);
             if (status == napi_ok) {
                 return result;
             }
-        } else {
-            HiLog::Error(LABEL, "Failed to add named prop for AudioManagerNapi.ALL!");
         }
     }
     HiLog::Error(LABEL, "CreateAudioVolumeTypeObject is Failed!");
@@ -1351,7 +1310,7 @@ napi_value AudioManagerNapi::SetStreamMute(napi_env env, napi_callback_info info
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     context->status = context->objectInfo->audioMngr_->
-                        SetMute(GetNativeAudioVolumeType(context->volType), context->isMute);
+                        SetMute(AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->isMute);
                 }
             },
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -1421,7 +1380,8 @@ napi_value AudioManagerNapi::IsStreamMute(napi_env env, napi_callback_info info)
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     context->isMute =
-                        context->objectInfo->audioMngr_->IsStreamMute(GetNativeAudioVolumeType(context->volType));
+                        context->objectInfo->audioMngr_->
+                            IsStreamMute(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
                     context->isTrue = context->isMute;
                     context->status = 0;
                 }
@@ -1493,7 +1453,8 @@ napi_value AudioManagerNapi::IsStreamActive(napi_env env, napi_callback_info inf
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     context->isActive =
-                        context->objectInfo->audioMngr_->IsStreamActive(GetNativeAudioVolumeType(context->volType));
+                        context->objectInfo->audioMngr_->
+                            IsStreamActive(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
                     context->isTrue = context->isActive;
                     context->status = SUCCESS;
                 }
@@ -1845,7 +1806,7 @@ napi_value AudioManagerNapi::SetVolume(napi_env env, napi_callback_info info)
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
                     context->status = context->objectInfo->audioMngr_->
-                        SetVolume(GetNativeAudioVolumeType(context->volType), context->volLevel);
+                        SetVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->volLevel);
                 }
             },
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -1914,8 +1875,8 @@ napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                     if (context->status == SUCCESS) {
-                        context->volLevel = context->objectInfo->audioMngr_->GetVolume(
-                            GetNativeAudioVolumeType(context->volType));
+                        context->volLevel = context->objectInfo->audioMngr_->
+                            GetVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
                         context->intValue = context->volLevel;
                         context->status = 0;
                     }
@@ -1986,8 +1947,8 @@ napi_value AudioManagerNapi::GetMaxVolume(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->volLevel = context->objectInfo->audioMngr_->GetMaxVolume(
-                        GetNativeAudioVolumeType(context->volType));
+                    context->volLevel = context->objectInfo->audioMngr_->
+                        GetMaxVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
                     context->status = 0;
                 }
@@ -2058,8 +2019,8 @@ napi_value AudioManagerNapi::GetMinVolume(napi_env env, napi_callback_info info)
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->volLevel = context->objectInfo->audioMngr_->GetMinVolume(
-                        GetNativeAudioVolumeType(context->volType));
+                    context->volLevel = context->objectInfo->audioMngr_->
+                        GetMinVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
                     context->status = 0;
                 }

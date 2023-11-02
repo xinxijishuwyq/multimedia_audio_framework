@@ -2314,7 +2314,7 @@ DeviceType AudioPolicyService::FindConnectedHeadset()
     return retType;
 }
 
-int32_t AudioPolicyService::handleSpecialDeviceType(DeviceType &devType, bool &isConnected)
+int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &isConnected)
 {
     // usb device needs to be distinguished form arm or hifi
     if (devType == DEVICE_TYPE_USB_HEADSET && isConnected) {
@@ -2354,7 +2354,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
 
     int32_t result = ERROR;
-    result = handleSpecialDeviceType(devType, isConnected);
+    result = HandleSpecialDeviceType(devType, isConnected);
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, deviceDesc);
