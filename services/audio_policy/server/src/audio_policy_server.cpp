@@ -428,18 +428,18 @@ void AudioPolicyServer::CheckSubscribePowerStateChange()
 
 void AudioPolicyServer::HandlePowerStateChanged(PowerMgr::PowerState state)
 {
-    mPolicyService.HandlePowerStateChanged(state);
+    audioPolicyService_.HandlePowerStateChanged(state);
 }
 
 int32_t AudioPolicyServer::SetOffloadStream(uint32_t sessionId)
 {
     CheckSubscribePowerStateChange();
-    return mPolicyService.SetOffloadStream(sessionId);
+    return audioPolicyService_.SetOffloadStream(sessionId);
 }
 
 int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
 {
-    return mPolicyService.ReleaseOffloadStream(sessionId);
+    return audioPolicyService_.ReleaseOffloadStream(sessionId);
 }
 
 void AudioPolicyServer::InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType,
