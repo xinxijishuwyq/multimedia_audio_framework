@@ -145,8 +145,7 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
             Bluetooth::AudioA2dpManager::ConnectBluetoothA2dpSink();
         } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
             AUDIO_INFO_LOG("Bluetooth hdi service stopped");
-            if (Bluetooth::AudioA2dpManager::GetConnectionState() ==
-                static_cast<int>(Bluetooth::BTConnectState::CONNECTED)) {
+            if (Bluetooth::AudioA2dpManager::HasA2dpDeviceConnected()) {
                 AUDIO_ERR_LOG("Auto exit audio policy service for bluetooth hdi service crashed!");
                 _Exit(0);
             }
