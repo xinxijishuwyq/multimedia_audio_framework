@@ -18,6 +18,7 @@
 
 #include <condition_variable>
 #include <sstream>
+#include <set>
 #include <map>
 #include <mutex>
 #include <vector>
@@ -48,11 +49,11 @@ private:
 
 private:
     std::mutex processListMutex_;
+    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
 
-    std::string reusingEndpoint_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;
-    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
+    std::set<std::string> releasingEndpointSet_;
     std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
 };
 } // namespace AudioStandard
