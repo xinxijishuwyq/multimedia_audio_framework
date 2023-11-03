@@ -55,6 +55,7 @@ public:
     static void UpdateDeviceListWhenDisconnecting(const BluetoothRemoteDevice& device);
     static void UpdateDeviceListForConfiguration(const BluetoothRemoteDevice& device);
     static int32_t SetDeviceAbsVolume(const std::string& macAddress, int32_t volume);
+    static bool HasA2dpDeviceConnected();
 
     static void SetConnectionState(int state)
     {
