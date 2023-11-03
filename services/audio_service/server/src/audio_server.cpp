@@ -404,11 +404,11 @@ int32_t AudioServer::SetVoiceVolume(float volume)
     return ERROR;
 }
 
-int32_t AudioServer::SetVolume(float volume)
+int32_t AudioServer::OffloadSetVolume(float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (callingUid != audioUid_ && callingUid != ROOT_UID) {
-        AUDIO_ERR_LOG("SetOffloadVolume refused for %{public}d", callingUid);
+        AUDIO_ERR_LOG("OffloadSetVolume refused for %{public}d", callingUid);
         return ERR_NOT_SUPPORTED;
     }
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
@@ -818,29 +818,7 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     return true;
 }
 
-int32_t AudioServer::Resume()
-{
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
-
-    if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERR_LOG("Renderer is null.");
-        return ERROR;
-    }
-    return audioRendererSinkInstance->Resume();
-}
-
-int32_t AudioServer::Pause()
-{
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
-
-    if (audioRendererSinkInstance == nullptr) {
-        AUDIO_ERR_LOG("Renderer is null.");
-        return ERROR;
-    }
-    return audioRendererSinkInstance->Pause();
-}
-
-int32_t AudioServer::Drain()
+int32_t AudioServer::OffloadDrain()
 {
     auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
         "offload", ""));
@@ -852,7 +830,7 @@ int32_t AudioServer::Drain()
     return audioRendererSinkInstance->Drain(AUDIO_DRAIN_EARLY_NOTIFY);
 }
 
-int32_t AudioServer::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+int32_t AudioServer::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
     auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
         "offload", ""));
@@ -864,7 +842,7 @@ int32_t AudioServer::GetPresentationPosition(uint64_t& frames, int64_t& timeSec,
     return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
 }
 
-int32_t AudioServer::SetBufferSize(uint32_t sizeMs)
+int32_t AudioServer::OffloadSetBufferSize(uint32_t sizeMs)
 {
     auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
         "offload", ""));

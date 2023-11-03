@@ -294,7 +294,7 @@ void AudioPolicyService::SetOffloadVolume()
     int32_t volumeLevel = GetSystemVolumeLevel(STREAM_MUSIC);
     float volumeDb = GetSystemVolumeInDb(STREAM_MUSIC, volumeLevel, currentActiveDevice_.deviceType_);
 
-    gsp->SetVolume(volumeDb);
+    gsp->OffloadSetVolume(volumeDb);
 }
 
 void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)

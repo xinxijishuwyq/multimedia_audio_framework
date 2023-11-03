@@ -229,7 +229,7 @@ void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t s
     unique_lock<mutex> lockstopping(asClient->stoppingMutex_);
 
     if (asClient->offloadEnable_) {
-        asClient->audioSystemManager_->Drain();
+        asClient->audioSystemManager_->OffloadDrain();
     }
     asClient->state_ = STOPPED;
     asClient->WriteStateChangedSysEvents();
@@ -2048,7 +2048,7 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && offloadEnable_) {
         uint64_t frames;
         int64_t timeSec, timeNanoSec;
-        audioSystemManager_->GetPresentationPosition(frames, timeSec, timeNanoSec);
+        audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
         timeStamp = frames;
         return AUDIO_CLIENT_SUCCESS;
     }
@@ -2112,7 +2112,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
     // Get PA latency
     if (offloadEnable_) {
         int64_t frames, timeSec, timeNanoSec;
-        audioSystemManager_->GetPresentationPosition((uint64_t&)frames, timeSec, timeNanoSec);
+        audioSystemManager_->OffloadGetPresentationPosition((uint64_t&)frames, timeSec, timeNanoSec);
         uint64_t writePos = pa_bytes_to_usec(mTotalBytesWritten, &sampleSpec);
         paLatency = writePos >= frames ? writePos - frames : 0;
     } else {
@@ -2482,7 +2482,7 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
     pa_operation_unref(updatePropOperation);
 
     const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
-    audioSystemManager_->SetBufferSize(bufLenMs);
+    audioSystemManager_->OffloadSetBufferSize(bufLenMs);
 
     offloadStatePolicy_ = statePolicy;
     UpdatebufferAttrOffload(offloadStatePolicy_);

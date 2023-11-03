@@ -112,7 +112,6 @@ private:
     bool started_;
     bool isFlushing_;
     bool startDuringFlush_;
-    std::mutex ctrlMutex_;
     uint64_t renderPos_;
     float leftVolume_;
     float rightVolume_;
@@ -139,11 +138,6 @@ private:
 
     std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
     bool runninglocked;
-#ifdef DUMPFILE
-    FILE *pfd;
-    // Note: accessing to this directory requires selinux permission
-    const char *g_audioOutTestFilePath = "/data/local/tmp/audioout_test.pcm";
-#endif // DUMPFILE
 };
     
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
@@ -152,9 +146,6 @@ OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), runninglocked(false)
 {
     attr_ = {};
-#ifdef DUMPFILE
-    pfd = nullptr;
-#endif // DUMPFILE
 }
 
 OffloadAudioRendererSinkInner::~OffloadAudioRendererSinkInner()
@@ -398,12 +389,6 @@ void OffloadAudioRendererSinkInner::DeInit()
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     callbackServ = {};
-#ifdef DUMPFILE
-    if (pfd) {
-        fclose(pfd);
-        pfd = nullptr;
-    }
-#endif // DUMPFILE
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
@@ -496,7 +481,7 @@ AudioFormat OffloadAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat fo
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         case SAMPLE_F32:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_FLOAT;
             break;
         default:
             hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
@@ -580,12 +565,6 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     }
     rendererInited_ = true;
 
-#ifdef DUMPFILE
-    pfd = fopen(g_audioOutTestFilePath, "wb+");
-    if (pfd == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-    }
-#endif // DUMPFILE
     return SUCCESS;
 }
 
@@ -614,14 +593,6 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AdjustAudioBalance(&data, len);
     }
 
-#ifdef DUMPFILE
-    if (pfd) {
-        size_t writeResult = fwrite((void*)&data, 1, len, pfd);
-        if (writeResult != len) {
-            AUDIO_ERR_LOG("Failed to write the file");
-        }
-    }
-#endif // DUMPFILE
     Trace trace("RenderFrameOffload");
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
@@ -636,7 +607,6 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
-    lock_guard<mutex> lock(ctrlMutex_);
     Trace trace("Sink::Start");
     if (started_) {
         if (isFlushing_) {
@@ -954,7 +924,6 @@ int32_t OffloadAudioRendererSinkInner::Reset(void)
 
 int32_t OffloadAudioRendererSinkInner::Flush(void)
 {
-    lock_guard<mutex> lock(ctrlMutex_);
     if (isFlushing_) {
         AUDIO_ERR_LOG("Failed! call flush during flushing");
         return ERR_OPERATION_FAILED;
