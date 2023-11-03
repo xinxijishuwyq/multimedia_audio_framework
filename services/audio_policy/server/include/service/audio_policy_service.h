@@ -528,7 +528,7 @@ private:
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
-    DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
+    std::vector<std::pair<DeviceType, bool>> pnpDeviceList_;
     std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure

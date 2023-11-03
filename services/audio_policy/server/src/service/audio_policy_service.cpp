@@ -2171,8 +2171,7 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
     CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
     if (!hasModulesLoaded) {
         AUDIO_WARNING_LOG("modules has not loaded");
-        pnpDevice_ = devType;
-        isPnpDeviceConnected = isConnected;
+        pnpDeviceList_.push_back({devType, isConnected});
         return;
     }
     if (g_adProxy == nullptr) {
@@ -2733,7 +2732,9 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         activeInputDevice_ = DEVICE_TYPE_MIC;
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
         OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
-        OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
+        for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
+            OnPnpDeviceStatusUpdated((*it).first, (*it).second);
+        }
         audioEffectManager_.SetMasterSinkAvailable();
     }
     RegisterBluetoothListener();
