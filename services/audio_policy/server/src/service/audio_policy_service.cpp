@@ -237,12 +237,12 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     // its absolute volume value.
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
-        if (result != SUCCESS) {
+        if (result == SUCCESS) {
+            // set to avrcp device
+            return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
+        } else {
             AUDIO_ERR_LOG("AudioPolicyService::SetSystemVolumeLevel set abs volume failed");
-            return result;
         }
-        // set to avrcp device
-        return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
     }
 
     result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
@@ -3631,8 +3631,7 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
         auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
         if (configInfoPos != connectedA2dpDeviceMap_.end()) {
             configInfoPos->second.absVolumeSupport = support;
-            
-            audioPolicyManager_.SetAbsVolumeScene(true);
+            audioPolicyManager_.SetAbsVolumeScene(support);
             break;
         }
         if (retryCount == maxRetries) {
