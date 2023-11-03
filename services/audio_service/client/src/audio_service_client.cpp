@@ -2389,7 +2389,7 @@ int32_t AudioServiceClient::InitializePAProbListOffload()
 int32_t AudioServiceClient::UpdatePAProbListOffload(AudioOffloadType statePolicy)
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
-        AUDIO_ERR_LOG("set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
+        AUDIO_ERR_LOG("Set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
         return AUDIO_CLIENT_PA_ERR;
     }
 
