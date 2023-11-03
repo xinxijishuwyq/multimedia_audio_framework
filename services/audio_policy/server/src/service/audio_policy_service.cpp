@@ -1244,8 +1244,7 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
     for (const auto &device : priorityList) {
         auto isPresent = [&device, this] (const sptr<AudioDeviceDescriptor> &desc) {
             CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-            if ((audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT) &&
-                (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) {
+            if ((audioScene_ != AUDIO_SCENE_DEFAULT) && (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) {
                 return false;
             } else {
                 return desc->deviceType_ == device;
@@ -2373,7 +2372,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             connectedDevices_.end());
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
 
-        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() != AUDIO_SCENE_DEFAULT) {
             // If the A2DP device is connecting when calling, add it to connectedDevices_ and donot activate it now
             AUDIO_INFO_LOG("A2DP device should be used in non-call mode [%{public}d]", GetAudioScene());
             A2dpDeviceConfigInfo configInfo = {streamInfo, false};
