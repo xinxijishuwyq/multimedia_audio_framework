@@ -155,9 +155,9 @@ OffloadAudioRendererSinkInner::~OffloadAudioRendererSinkInner()
 
 OffloadRendererSink *OffloadRendererSink::GetInstance()
 {
-    static OffloadAudioRendererSinkInner audioRenderer_;
+    static OffloadAudioRendererSinkInner audioRenderer;
 
-    return &audioRenderer_;
+    return &audioRenderer;
 }
 
 void OffloadAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string& condition,
