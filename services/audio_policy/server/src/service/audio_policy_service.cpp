@@ -238,12 +238,12 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     // its absolute volume value.
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
-        if (result != SUCCESS) {
-            AUDIO_ERR_LOG("SetSystemVolumeLevel set abs volume failed");
-            return result;
+        if (result == SUCCESS) {
+            // set to avrcp device
+            return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
+        } else {
+            AUDIO_ERR_LOG("AudioPolicyService::SetSystemVolumeLevel set abs volume failed");
         }
-        // set to avrcp device
-        return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
     }
 
     result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
@@ -2370,8 +2370,7 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
     CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
     if (!hasModulesLoaded) {
         AUDIO_WARNING_LOG("modules has not loaded");
-        pnpDevice_ = devType;
-        isPnpDeviceConnected = isConnected;
+        pnpDeviceList_.push_back({devType, isConnected});
         return;
     }
     if (g_adProxy == nullptr) {
@@ -2942,7 +2941,9 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         activeInputDevice_ = DEVICE_TYPE_MIC;
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
         OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
-        OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
+        for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
+            OnPnpDeviceStatusUpdated((*it).first, (*it).second);
+        }
         audioEffectManager_.SetMasterSinkAvailable();
     }
     RegisterBluetoothListener();
@@ -3839,8 +3840,7 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
         auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
         if (configInfoPos != connectedA2dpDeviceMap_.end()) {
             configInfoPos->second.absVolumeSupport = support;
-            
-            audioPolicyManager_.SetAbsVolumeScene(true);
+            audioPolicyManager_.SetAbsVolumeScene(support);
             break;
         }
         if (retryCount == maxRetries) {
