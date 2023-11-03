@@ -211,6 +211,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         return ERR_INVALID_INDEX;
     }
     audioInterrupt_.sessionID = sessionID_;
+    audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VOICE_MODEM_COMMUNICATION) {
         isVoiceCallCapturer_ = true;
@@ -218,10 +219,8 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     }
     if (audioInterruptCallback_ == nullptr) {
         audioInterruptCallback_ = std::make_shared<AudioCapturerInterruptCallbackImpl>(audioStream_);
-        if (audioInterruptCallback_ == nullptr) {
-            AUDIO_ERR_LOG("AudioCapturerPrivate::Failed to allocate memory for audioInterruptCallback_");
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
+            "AudioCapturerPrivate::Failed to allocate memory for audioInterruptCallback_");
     }
     return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
 }
@@ -354,6 +353,8 @@ bool AudioCapturerPrivate::Start() const
         return false;
     }
 
+    AUDIO_INFO_LOG("AudioCapturer::Start::sourceType: %{public}d, sessionID: %{public}d",
+        audioInterrupt_.audioFocusType.sourceType, audioInterrupt_.sessionID);
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
         AUDIO_ERR_LOG("AudioCapturerPrivate::ActivateAudioInterrupt Failed");

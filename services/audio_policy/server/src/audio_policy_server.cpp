@@ -1345,8 +1345,8 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
                 break;
         }
         if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
-            AUDIO_INFO_LOG("OnInterrupt for processing sessionID: %{public}d, hintType: %{public}d",
-                activeSessionID, interruptEvent.hintType);
+            AUDIO_INFO_LOG("OnInterrupt for active sessionID:%{public}d, hintType:%{public}d. By sessionID:%{public}d",
+                activeSessionID, interruptEvent.hintType, incomingInterrupt.sessionID);
             policyListenerCb->OnInterrupt(interruptEvent);
             if (!iterActiveErased) {
                 OnAudioFocusInfoChange();
@@ -1363,7 +1363,6 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
 {
     auto focusMap = audioPolicyService_.GetAudioFocusMap();
     AudioFocuState incomingState = ACTIVE;
-    AudioFocusType incomingFocusType = incomingInterrupt.audioFocusType;
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[incomingInterrupt.sessionID];
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     for (auto iterActive = audioFocusInfoList_.begin(); iterActive != audioFocusInfoList_.end(); ++iterActive) {
@@ -1371,7 +1370,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
             continue;
         }
         std::pair<AudioFocusType, AudioFocusType> audioFocusTypePair =
-            std::make_pair((iterActive->first).audioFocusType, incomingFocusType);
+            std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
 
         CHECK_AND_RETURN_RET_LOG(focusMap.find(audioFocusTypePair) != focusMap.end(), ERR_INVALID_PARAM,
             "ProcessFocusEntry: audio focus type pair is invalid");
@@ -1380,15 +1379,15 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
             continue;
         }
         if (focusEntry.isReject) {
+            AUDIO_INFO_LOG("ProcessFocusEntry: the incoming stream is rejected by sessionId:%{public}d, pid:%{public}d",
+                (iterActive->first).sessionID, (iterActive->first).pid);
             incomingState = STOP;
             break;
         }
         AudioFocuState newState = ACTIVE;
         auto pos = HINTSTATEMAP.find(focusEntry.hintType);
-        if (pos != HINTSTATEMAP.end()) {
-            newState = pos->second;
-        }
-        incomingState = newState > incomingState ? newState : incomingState;
+        newState = (pos == HINTSTATEMAP.end()) ? ACTIVE : pos->second;
+        incomingState = (newState > incomingState) ? newState : incomingState;
     }
     if (incomingState == STOP) {
         interruptEvent.hintType = INTERRUPT_HINT_STOP;
@@ -1396,7 +1395,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
     } else if (incomingState == DUCK) {
         interruptEvent.hintType = INTERRUPT_HINT_DUCK;
-        interruptEvent.duckVolume = DUCK_FACTOR * GetSystemVolumeDb(incomingFocusType.streamType);
+        interruptEvent.duckVolume = DUCK_FACTOR * GetSystemVolumeDb(incomingInterrupt.audioFocusType.streamType);
     } else {
         ProcessCurrentInterrupt(incomingInterrupt);
     }
