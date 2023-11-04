@@ -614,8 +614,8 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
             startDuringFlush_ = true;
             return ERR_OPERATION_FAILED;
         } else {
-            AUDIO_ERR_LOG("start failed! duplicate");
-            return ERR_OPERATION_FAILED;
+            AUDIO_WARNING_LOG("start duplicate!"); // when start while flushing, this will use
+            return SUCCESS;
         }
     }
 
@@ -910,7 +910,7 @@ int32_t OffloadAudioRendererSinkInner::Reset(void)
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->Flush(audioRender_);
+        ret = Flush();
         if (!ret) {
             return SUCCESS;
         } else {

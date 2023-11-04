@@ -676,6 +676,31 @@ int32_t AudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback
     return SUCCESS;
 }
 
+inline size_t GetFormatSize(const AudioStreamParams& info)
+{
+    size_t result = 0;
+    size_t bitWidthSize = 0;
+    switch (info.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            bitWidthSize = 2; // size is 2
+            break;
+    }
+    result = bitWidthSize * info.channels;
+    return result;
+}
+
 int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
 {
     int32_t ret = SetAudioRenderMode(renderMode);
@@ -692,7 +717,8 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
         GetMinimumBufferSize(length);
         AUDIO_INFO_LOG("AudioServiceClient:: GetMinimumBufferSize: %{public}zu", length);
 
-        writeBufferPool_[i] = std::make_unique<uint8_t[]>(length);
+        writeBufferPool_[i] = std::make_unique<uint8_t[]>(max(length,
+            (size_t)(0.2 * GetFormatSize(streamParams_) * streamParams_.samplingRate))); // 0.2: 200ms is init size
         if (writeBufferPool_[i] == nullptr) {
             AUDIO_ERR_LOG(
                 "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
