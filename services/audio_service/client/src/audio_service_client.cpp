@@ -183,7 +183,7 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(asClient->state_, asClient->stateChangeCmdType_);
+        streamCb->OnStateChange(RUNNING, asClient->stateChangeCmdType_);
     }
     asClient->stateChangeCmdType_ = CMD_FROM_CLIENT;
     asClient->streamCmdStatus_ = success;
@@ -205,7 +205,7 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(asClient->state_);
+        streamCb->OnStateChange(STOPPED);
     }
     asClient->streamCmdStatus_ = success;
     AUDIO_DEBUG_LOG("PAStreamStopSuccessCb: start signal");
@@ -229,7 +229,7 @@ void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t s
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(asClient->state_);
+        streamCb->OnStateChange(STOPPED);
     }
     asClient->streamCmdStatus_ = success;
     AUDIO_DEBUG_LOG("PAStreamAsyncStopSuccessCb: start signal");
@@ -253,7 +253,7 @@ void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t succe
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(asClient->state_, asClient->stateChangeCmdType_);
+        streamCb->OnStateChange(PAUSED, asClient->stateChangeCmdType_);
     }
     asClient->stateChangeCmdType_ = CMD_FROM_CLIENT;
     asClient->streamCmdStatus_ = success;
@@ -1053,7 +1053,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(state_);
+        streamCb->OnStateChange(PREPARED);
     }
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -1787,7 +1787,7 @@ int32_t AudioServiceClient::ReleaseStream(bool releaseRunner)
 
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(state_);
+        streamCb->OnStateChange(RELEASED);
     }
 
     {
@@ -2421,7 +2421,7 @@ void AudioServiceClient::SaveStreamCallback(const std::weak_ptr<AudioStreamCallb
 
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
-        streamCb->OnStateChange(state_);
+        streamCb->OnStateChange(PREPARED);
     }
 }
 
