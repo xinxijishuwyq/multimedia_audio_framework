@@ -716,6 +716,7 @@ struct Vector3D {
 struct SessionInfo {
     SourceType sourceType;
     uint32_t rate;
+    uint32_t channels;
 };
 } // namespace AudioStandard
 } // namespace OHOS
