@@ -4365,25 +4365,36 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
     }
 }
 
-std::pair<SourceType, uint32_t> AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo)
+std::tuple<SourceType, uint32_t, uint32_t> AudioPolicyService::FetchTargetInfoForSessionAdd(
+    const SessionInfo sessionInfo)
 {
     uint32_t highestSupportedRate = *(primaryMicModuleInfo_.supportedRate_.rbegin());
+    uint32_t highestSupportedChannels = *(primaryMicModuleInfo_.supportedChannels_.rbegin());
     SourceType targetSourceType;
     uint32_t targetRate;
+    uint32_t targetChannels;
     if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         targetSourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
         targetRate = sessionInfo.rate;
+        targetChannels = sessionInfo.channels;
         if (primaryMicModuleInfo_.supportedRate_.count(targetRate) == 0) {
             AUDIO_INFO_LOG("targetRate: %{public}u is not supported rate, using highestSupportedRate: %{public}u",
                 targetRate, highestSupportedRate);
             targetRate = highestSupportedRate;
         }
+        if (primaryMicModuleInfo_.supportedChannels_.count(targetChannels) == 0) {
+            AUDIO_INFO_LOG(
+                "targetChannels: %{public}u is not supported rate, using highestSupportedChannels: %{public}u",
+                targetChannels, highestSupportedChannels);
+            targetChannels = highestSupportedChannels;
+        }
     } else {
         // For normal sourcetype, continue to use the default value
         targetSourceType = SOURCE_TYPE_MIC;
         targetRate = highestSupportedRate;
+        targetChannels = highestSupportedChannels;
     }
-    return {targetSourceType, targetRate};
+    return {targetSourceType, targetRate, targetChannels};
 }
 
 void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
@@ -4424,7 +4435,7 @@ void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo 
         return;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
-        auto [targetSourceType, targetRate] = FetchTargetInfoForSessionAdd(sessionInfo);
+        auto [targetSourceType, targetRate, targetChannels] = FetchTargetInfoForSessionAdd(sessionInfo);
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
         bool needReloadSource = (isSourceLoaded &&
             ((targetSourceType != currentSourceType) || (currentRate != targetRate)));
@@ -4444,6 +4455,7 @@ void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo 
         if (needReloadSource || !(isSourceLoaded)) {
             auto moduleInfo = primaryMicModuleInfo_;
             moduleInfo.rate = std::to_string(targetRate);
+            moduleInfo.channels = std::to_string(targetChannels);
             moduleInfo.sourceType = std::to_string(targetSourceType);
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
