@@ -18,6 +18,7 @@
 
 #include <list>
 #include <unordered_map>
+#include <cinttypes>
 
 #include "audio_service_adapter.h"
 #include "distributed_kv_data_manager.h"
@@ -72,8 +73,6 @@ public:
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
     bool GetStreamMute(AudioStreamType streamType);
-
-    bool IsStreamActive(AudioStreamType streamType);
 
     std::vector<SinkInfo> GetAllSinks();
 
@@ -192,7 +191,6 @@ private:
     void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
-    bool IsStreamActiveForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -267,9 +265,9 @@ public:
         return volumeDb;
     }
 
-    void OnSessionRemoved(const uint32_t sessionID)
+    void OnSessionRemoved(const uint64_t sessionID)
     {
-        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnSessionRemoved: Session ID %{public}d", sessionID);
+        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnSessionRemoved: Session ID %{public}" PRIu64"", sessionID);
         if (audioAdapterManager_->sessionCallback_ == nullptr) {
             AUDIO_DEBUG_LOG("PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
                 "not firing OnSessionRemoved");
@@ -278,9 +276,9 @@ public:
         }
     }
 
-    void OnCapturerSessionAdded(const uint32_t sessionID, SessionInfo sessionInfo)
+    void OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo)
     {
-        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnCapturerSessionAdded: Session ID %{public}d", sessionID);
+        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnCapturerSessionAdded: Session ID %{public}" PRIu64"", sessionID);
         if (audioAdapterManager_->sessionCallback_ == nullptr) {
             AUDIO_ERR_LOG("PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
                 "not firing OnCapturerSessionAdded");
@@ -306,6 +304,16 @@ public:
             AUDIO_DEBUG_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
         } else {
             audioAdapterManager_->sessionCallback_->OnWakeupCapturerStop();
+        }
+    }
+
+    void OnDstatusUpdated(bool isConnected)
+    {
+        AUDIO_INFO_LOG("PolicyCallbackImpl OnDstatusUpdated");
+        if (audioAdapterManager_->sessionCallback_ == nullptr) {
+            AUDIO_ERR_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
+        } else {
+            audioAdapterManager_->sessionCallback_->OnDstatusUpdated(isConnected);
         }
     }
 private:

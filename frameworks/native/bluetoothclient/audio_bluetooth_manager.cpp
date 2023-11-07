@@ -257,6 +257,19 @@ int32_t AudioA2dpManager::SetDeviceAbsVolume(const std::string& macAddress, int3
     return AvrcpTarget::GetProfile()->SetDeviceAbsoluteVolume(*iter, volume);
 }
 
+bool AudioA2dpManager::HasA2dpDeviceConnected()
+{
+    a2dpInstance_ = A2dpSource::GetProfile();
+    if (!a2dpInstance_) {
+        return false;
+    }
+    std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
+    std::vector<BluetoothRemoteDevice> devices;
+    a2dpInstance_->GetDevicesByStates(states, devices);
+
+    return !devices.empty();
+}
+
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
 {
     AUDIO_INFO_LOG("OnConnectionStateChanged: state: %{public}d", state);

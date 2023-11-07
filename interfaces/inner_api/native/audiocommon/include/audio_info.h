@@ -226,7 +226,7 @@ enum AudioRendererRate {
 };
 
 struct VolumeEvent {
-    AudioStreamType volumeType;
+    AudioVolumeType volumeType;
     int32_t volume;
     bool updateUi;
     int32_t volumeGroupId;
@@ -652,6 +652,7 @@ enum AudioParamKey {
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
+    MMI = 9,
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PARAM_KEY_LOWPOWER = 1000,
 };
@@ -716,6 +717,7 @@ struct Vector3D {
 struct SessionInfo {
     SourceType sourceType;
     uint32_t rate;
+    uint32_t channels;
 };
 } // namespace AudioStandard
 } // namespace OHOS

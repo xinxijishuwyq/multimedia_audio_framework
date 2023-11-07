@@ -39,7 +39,6 @@ public:
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
     bool SetSinkMute(const std::string &sinkName, bool isMute) override;
-    bool IsStreamActive(AudioStreamType streamType) override;
     std::vector<SinkInput> GetAllSinkInputs() override;
     std::vector<SourceOutput> GetAllSourceOutputs() override;
     void Disconnect() override;
@@ -60,7 +59,6 @@ public:
     static void PaModuleLoadCb(pa_context *c, uint32_t idx, void *userdata);
     static void PaGetSinkInputInfoVolumeCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaSubscribeCb(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata);
-    static void PaGetSinkInputInfoCorkStatusCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);
     static void PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol, void *userdata);

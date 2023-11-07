@@ -172,7 +172,7 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
 
-    int32_t handleSpecialDeviceType(DeviceType &devType, bool &isConnected);
+    int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected);
 
     void OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected);
 
@@ -313,9 +313,9 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
-    void OnCapturerSessionAdded(uint32_t sessionID, SessionInfo sessionInfo);
+    void OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
 
-    void OnCapturerSessionRemoved(uint32_t sessionID);
+    void OnCapturerSessionRemoved(uint64_t sessionID);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -510,7 +510,7 @@ private:
 
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
-    std::pair<SourceType, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
+    std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -531,7 +531,7 @@ private:
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
-    DeviceType pnpDevice_ = DEVICE_TYPE_NONE;
+    std::vector<std::pair<DeviceType, bool>> pnpDeviceList_;
     std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure

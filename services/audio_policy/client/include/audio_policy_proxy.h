@@ -33,9 +33,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v) override;
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v) override;
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -43,11 +43,11 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId) override;
 
-    int32_t SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v) override;
+    int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v) override;
 
-    bool GetStreamMute(AudioStreamType streamType) override;
+    bool GetStreamMute(AudioVolumeType volumeType) override;
 
-    bool IsStreamActive(AudioStreamType streamType) override;
+    bool IsStreamActive(AudioVolumeType volumeType) override;
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
 

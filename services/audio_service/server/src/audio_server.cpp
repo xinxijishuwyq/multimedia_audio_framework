@@ -167,6 +167,8 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         parmKey = AudioParamKey::BT_HEADSET_NREC;
     } else if (key == "bt_wbs") {
         parmKey = AudioParamKey::BT_WBS;
+    } else if (key == "mmi") {
+        parmKey = AudioParamKey::MMI;
     } else {
         AUDIO_ERR_LOG("SetAudioParameter: key %{publbic}s is invalid for hdi interface", key.c_str());
         return;
@@ -218,6 +220,15 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         if (key == "need_change_usb_device") {
             parmKey = AudioParamKey::USB_DEVICE;
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "need_change_usb_device");
+        }
+
+        const std::string mmiPre = "mmi_";
+        if (key.size() > mmiPre.size()) {
+            if (key.substr(0, mmiPre.size()) == mmiPre) {
+                parmKey = AudioParamKey::MMI;
+                return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey),
+                    key.substr(mmiPre.size(), key.size() - mmiPre.size()));
+            }
         }
     }
 

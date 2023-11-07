@@ -25,6 +25,7 @@
 #include "audio_process_in_client.h"
 #include "audio_stream_tracker.h"
 #include "i_audio_stream.h"
+#include "audio_policy_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

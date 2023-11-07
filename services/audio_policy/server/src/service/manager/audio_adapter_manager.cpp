@@ -349,37 +349,6 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
     return muteStatusMap_[streamForVolumeMap];
 }
 
-bool AudioAdapterManager::IsStreamActive(AudioStreamType streamType)
-{
-    if (!audioServiceAdapter_) {
-        AUDIO_ERR_LOG("IsStreamActive audio adapter null");
-        return false;
-    }
-
-    if (streamType == STREAM_VOICE_CALL) {
-        return IsStreamActiveForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST);
-    } else if (streamType == STREAM_MUSIC) {
-        return IsStreamActiveForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST);
-    } else if (streamType == STREAM_RING) {
-        return IsStreamActiveForVolumeTypeGroup(RINGTONE_VOLUME_TYPE_LIST);
-    }
-
-    return audioServiceAdapter_->IsStreamActive(streamType);
-}
-
-
-bool AudioAdapterManager::IsStreamActiveForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup)
-{
-    for (auto &streamType: volumeTypeGroup) {
-        bool result = audioServiceAdapter_->IsStreamActive(streamType);
-        if (result) {
-            // An active stream has been found, return true directly.
-            return true;
-        }
-    }
-    return false;
-}
-
 vector<SinkInfo> AudioAdapterManager::GetAllSinks()
 {
     if (!audioServiceAdapter_) {

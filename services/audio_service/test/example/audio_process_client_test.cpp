@@ -41,6 +41,7 @@ namespace AudioStandard {
 namespace {
     static constexpr long WAV_HEADER_SIZE = 42;
     static constexpr int64_t SECOND_TO_NANOSECOND = 1000000000;
+    static constexpr int64_t MIC_SLEEP_TIME_US = 2000000000;
     constexpr int32_t SAMPLE_FORMAT_U8 = 8;
     constexpr int32_t SAMPLE_FORMAT_S16LE = 16;
     constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
@@ -70,6 +71,9 @@ namespace {
         STOP_MIC_PROCESS = 25,
         CHANGE_MIC_PROCESS_VOL = 26,
         RELEASE_MIC_PROCESS = 27,
+
+        LOCAL_LATENCY_TEST = 30,
+        REMOTE_LATENCY_TEST = 31,
 
         EXIT_INTERACTIVE_TEST = 40,
     };
@@ -101,6 +105,11 @@ std::string g_spkfilePath = "";
 const std::string MIC_FILE_PATH = "/data/data/mic.pcm";
 FILE *g_spkWavFile = nullptr;
 FILE *g_micPcmFile = nullptr;
+std::vector<int64_t> g_playBeepTime_;
+std::vector<int64_t> g_captureBeepTime_;
+bool g_isLatencyTesting = false;
+int32_t g_setVol = 60000;
+int32_t g_usPerMs = 1000;
 mutex g_autoRunMutex;
 condition_variable g_autoRunCV;
 
@@ -125,6 +134,11 @@ string CallResumeMic();
 string CallStopMic();
 string SetMicVolume();
 string CallReleaseMic();
+
+void CountLatencyTime();
+string LoopLatencyTest(bool isRemote);
+string LocalLoopLatencyTest();
+string RemoteLoopLatencyTest();
 using CallTestOperationFunc = string (*)();
 
 std::map<int32_t, std::string> g_audioProcessTestType = {
@@ -162,6 +176,9 @@ std::map<int32_t, std::string> g_interactiveOptStrMap = {
     {CHANGE_MIC_PROCESS_VOL, "change mic process volume"},
     {RELEASE_MIC_PROCESS, "release mic process"},
 
+    {LOCAL_LATENCY_TEST, "call local loop latency test"},
+    {REMOTE_LATENCY_TEST, "call remote loop latency test"},
+
     {EXIT_INTERACTIVE_TEST, "exit interactive run test"},
 };
 
@@ -181,7 +198,10 @@ std::map<int32_t, CallTestOperationFunc> g_interactiveOptFuncMap = {
     {RESUME_MIC_PROCESS, CallResumeMic},
     {STOP_MIC_PROCESS, CallStopMic},
     {CHANGE_MIC_PROCESS_VOL, SetMicVolume},
-    {RELEASE_MIC_PROCESS, CallReleaseMic}
+    {RELEASE_MIC_PROCESS, CallReleaseMic},
+
+    {LOCAL_LATENCY_TEST, LocalLoopLatencyTest},
+    {REMOTE_LATENCY_TEST, RemoteLoopLatencyTest},
 };
 
 class AudioProcessTestCallback : public AudioDataCallback {
@@ -214,6 +234,9 @@ public:
 private:
     int32_t CaptureToFile(const BufferDesc &bufDesc);
     int32_t RenderFromFile(const BufferDesc &bufDesc);
+    bool IsFrameHigh(const int16_t *audioData, const int32_t size, int32_t threshold);
+    int64_t RecordBeepTime(const uint8_t *base, const int32_t &sizePerFrame, bool &status);
+    int64_t GetNowTimeUs();
 
     void HandleWriteLoopData(const BufferDesc &bufDesc)
     {
@@ -268,6 +291,11 @@ private:
     int32_t loopCount_ = -1; // for loop
     AudioMode clientMode_ = AUDIO_MODE_PLAYBACK;
     bool renderFinish_ = false;
+    int32_t playIndex_ = 0;
+    int32_t recordIndex_ = 0;
+    bool isFirstRender = true;
+    bool isFirstCapture = true;
+    int32_t biHighFrameTimeMs = 900000;
 };
 
 class AudioProcessTest {
@@ -302,6 +330,40 @@ private:
     bool isInited_ = false;
 };
 
+int64_t AudioProcessTestCallback::GetNowTimeUs()
+{
+    std::chrono::microseconds nowUs =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    return nowUs.count();
+}
+
+bool AudioProcessTestCallback::IsFrameHigh(const int16_t *audioData, const int32_t size, int32_t threshold)
+{
+    int32_t max = 0;
+    for (int32_t i = 0; i < size; i++) {
+        int16_t f = abs(audioData[i]);
+        if (f > max) {
+            max = f;
+        }
+    }
+    return (max >= threshold) ? true : false;
+}
+
+int64_t AudioProcessTestCallback::RecordBeepTime(const uint8_t *base, const int32_t &sizePerFrame, bool &status)
+{
+    int32_t threadhold = 8000;
+    if (IsFrameHigh(reinterpret_cast<const int16_t *>(base),
+        sizePerFrame / sizeof(int16_t), threadhold) == true &&
+        status == true) {
+        status = false;
+        return GetNowTimeUs();
+    } else if (IsFrameHigh(reinterpret_cast<const int16_t *>(base),
+        sizePerFrame / sizeof(int16_t), threadhold) == false) {
+        status = true;
+    }
+    return 0;
+}
+
 int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
 {
     CHECK_AND_RETURN_RET_LOG(g_micPcmFile != nullptr, ERR_INVALID_HANDLE,
@@ -318,6 +380,25 @@ int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
         }
         g_stampTime = ClockTime::GetCurNano();
     }
+    int64_t lastTime = 0;
+    if (g_isLatencyTesting) {
+        if (recordIndex_ == 0) {
+            cout << "First record time : " << GetNowTimeUs() << endl;
+        }
+
+        int64_t bt = RecordBeepTime(bufDesc.buffer, bufDesc.bufLength, isFirstCapture);
+        if (bt != 0 && g_captureBeepTime_.size() < g_playBeepTime_.size()) {
+            if (GetNowTimeUs() - lastTime <= biHighFrameTimeMs) {
+                cout << "catch high frame, but not in 900ms" << endl;
+                recordIndex_++;
+                return SUCCESS;
+            }
+            g_captureBeepTime_.push_back(bt);
+            lastTime = GetNowTimeUs();
+            cout << "Capture beep frame: " << recordIndex_ << " record time : " << GetNowTimeUs() << endl;
+        }
+    }
+    recordIndex_++;
     return SUCCESS;
 }
 
@@ -327,13 +408,13 @@ int32_t AudioProcessTestCallback::RenderFromFile(const BufferDesc &bufDesc)
         "%{public}s g_spkWavFile is null.", __func__);
 
     if (feof(g_spkWavFile)) {
+        loopCount_--;
         if (loopCount_ < 0) {
             fseek(g_spkWavFile, WAV_HEADER_SIZE, SEEK_SET); // infinite loop
         } else if (loopCount_ == 0) {
             renderFinish_ = true;
             g_autoRunCV.notify_all();
         } else {
-            loopCount_--;
             fseek(g_spkWavFile, WAV_HEADER_SIZE, SEEK_SET);
         }
     }
@@ -342,6 +423,24 @@ int32_t AudioProcessTestCallback::RenderFromFile(const BufferDesc &bufDesc)
         return SUCCESS;
     }
     fread(bufDesc.buffer, 1, bufDesc.bufLength, g_spkWavFile);
+    int64_t lastTime = 0;
+    if (g_isLatencyTesting) {
+        if (playIndex_ == 0) {
+            cout << "First play time: " << GetNowTimeUs() << endl;
+        }
+        int64_t bt = RecordBeepTime(bufDesc.buffer, bufDesc.bufLength, isFirstRender);
+        if (bt != 0) {
+            if (GetNowTimeUs() - lastTime <= biHighFrameTimeMs) {
+                cout << "Catch high frame, but not in 900ms" << endl;
+                playIndex_++;
+                return SUCCESS;
+            }
+            g_playBeepTime_.push_back(bt);
+            lastTime = GetNowTimeUs();
+            cout << "Play beep frame: " << playIndex_ << "play time: " << GetNowTimeUs() << endl;
+        }
+    }
+    playIndex_++;
     return SUCCESS;
 }
 
@@ -859,6 +958,89 @@ string ConfigSpkTest(bool isRemote)
     return "Spk init SUCCESS";
 }
 
+string LocalLoopLatencyTest()
+{
+    return LoopLatencyTest(false);
+}
+
+string RemoteLoopLatencyTest()
+{
+    return LoopLatencyTest(true);
+}
+
+void CountLatencyTime()
+{
+    int32_t playSize = g_playBeepTime_.size();
+    if (g_playBeepTime_.size() != g_captureBeepTime_.size()) {
+        cout << "Record num is not equal (" << playSize << "  " << g_captureBeepTime_.size() << ")" << endl;
+        return;
+    }
+    cout << "record " << playSize << "times frame high." << endl;
+    int32_t sum = 0;
+    for (int32_t i = 0; i < playSize; i++) {
+        cout << "Send: " << g_playBeepTime_[i] << " Received: " <<
+            g_captureBeepTime_[i] << endl;
+        cout << "Time is: " << ((g_captureBeepTime_[i] - g_playBeepTime_[i]) / g_usPerMs) << endl;
+        sum += g_captureBeepTime_[i] - g_playBeepTime_[i];
+    }
+    cout << "Remote audio latency in average is: " << sum / playSize << " (us)." << endl;
+
+    g_playBeepTime_.clear();
+    g_captureBeepTime_.clear();
+    g_isLatencyTesting = false;
+}
+
+string LoopLatencyTest(bool isRemote)
+{
+    cout << "=== LoopLatencyTest ===";
+    if (isRemote) {
+        cout << "**Remote**" << endl;
+    } else {
+        cout << "**Local**" << endl;
+    }
+    g_isLatencyTesting = true;
+
+    if (!OpenMicFile()) {
+        return "Open mic file path failed!" + MIC_FILE_PATH;
+    }
+    g_audioProcessTest->InitMic(isRemote);
+    g_audioProcessTest->StartMic();
+    cout << "MIC start success, begin to record." << endl;
+
+    g_spkfilePath = "/data/bi.wav";
+    if (!OpenSpkFile()) {
+        return "Open spk file path failed!" + g_spkfilePath;
+    }
+
+    int32_t ret = g_audioProcessTest->InitSpk(1, isRemote);
+    if (ret != SUCCESS) {
+        return "init spk failed";
+    }
+    g_audioProcessTest->StartSpk();
+    g_audioProcessTest->SetSpkVolume(g_setVol);
+    cout << "SPK start success. begin to play." << endl;
+
+    cout << "running..." << endl;
+
+    unique_lock<mutex> lock(g_autoRunMutex);
+    g_autoRunCV.wait(lock);
+    ClockTime::RelativeSleep(MIC_SLEEP_TIME_US);
+    //release
+    g_audioProcessTest->StopMic();
+    g_audioProcessTest->ReleaseMic();
+    CloseMicFile();
+    cout << "MIC stop success." << endl;
+
+    g_audioProcessTest->StopSpk();
+    g_audioProcessTest->ReleaseSpk();
+    CloseSpkFile();
+    cout << "SPK stop success." << endl;
+
+    // cout latency time
+    CountLatencyTime();
+    return "Loop latency test success";
+}
+
 string CallStartSpk()
 {
     if (!g_audioProcessTest->StartSpk()) {
@@ -1035,6 +1217,15 @@ void InitCachebuffer()
     g_cacheBuffer.dataLength = CACHE_BUFFER_SIZE;
 }
 
+OperationCode GetOptCode()
+{
+    int32_t res = GetUserInput();
+    if (g_interactiveOptStrMap.count(res)) {
+        return static_cast<OperationCode>(res);
+    }
+    return INVALID_OPERATION;
+}
+
 void InteractiveRun()
 {
     if (g_testMode == TestMode::RENDER_MIC_LOOP_DATA) {
@@ -1044,11 +1235,7 @@ void InteractiveRun()
     bool isInteractiveRun = true;
     while (isInteractiveRun) {
         PrintInteractiveUsage();
-        OperationCode optCode = INVALID_OPERATION;
-        int32_t res = GetUserInput();
-        if (g_interactiveOptStrMap.count(res)) {
-            optCode = static_cast<OperationCode>(res);
-        }
+        OperationCode optCode = GetOptCode();
         switch (optCode) {
             case EXIT_INTERACTIVE_TEST:
                 isInteractiveRun = false;
@@ -1070,6 +1257,12 @@ void InteractiveRun()
                 break;
             case INIT_REMOTE_MIC_PROCESS:
                 cout << ConfigMicTest(true) << endl;
+                break;
+            case LOCAL_LATENCY_TEST:
+                cout << LocalLoopLatencyTest() << endl;
+                break;
+            case REMOTE_LATENCY_TEST:
+                cout << RemoteLoopLatencyTest() << endl;
                 break;
             default:
                 auto it = g_interactiveOptFuncMap.find(optCode);

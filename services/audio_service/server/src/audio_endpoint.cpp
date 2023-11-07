@@ -740,7 +740,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
 
     CHECK_AND_RETURN_RET_LOG(processList_.size() < MAX_LINKED_PROCESS, ERR_OPERATION_FAILED, "reach link limit.");
 
-    AUDIO_INFO_LOG("LinkProcessStream endpoint status:%{public}s.", GetStatusStr(endpointStatus_).c_str());
+    AUDIO_INFO_LOG("LinkProcessStream start status is:%{public}s.", GetStatusStr(endpointStatus_).c_str());
 
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
@@ -757,7 +757,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         std::lock_guard<std::mutex> lock(listLock_);
         processList_.push_back(processStream);
         processBufferList_.push_back(processBuffer);
-        AUDIO_DEBUG_LOG("LinkProcessStream success.");
+        AUDIO_INFO_LOG("LinkProcessStream success in RUNNING.");
         return SUCCESS;
     }
 
@@ -775,7 +775,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
             processBufferList_.push_back(processBuffer);
         }
         if (!needEndpointRunning) {
-            AUDIO_DEBUG_LOG("LinkProcessStream success, process stream status is not running.");
+            AUDIO_INFO_LOG("LinkProcessStream success, process stream status is not running.");
             return SUCCESS;
         }
         // needEndpointRunning = true
@@ -786,10 +786,11 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
             // KeepWorkloopRunning will wait on IDEL
             StartDevice();
         }
-        AUDIO_DEBUG_LOG("LinkProcessStream success.");
+        AUDIO_INFO_LOG("LinkProcessStream success with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
         return SUCCESS;
     }
 
+    AUDIO_INFO_LOG("LinkProcessStream success with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     return SUCCESS;
 }
 
