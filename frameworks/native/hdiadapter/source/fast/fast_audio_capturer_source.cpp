@@ -15,8 +15,10 @@
 
 #include <string>
 #include <cinttypes>
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#endif
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -98,8 +100,9 @@ private:
 
     int bufferFd_ = INVALID_FD;
     uint32_t eachReadFrameSize_ = 0;
-
+#ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+#endif
 private:
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
     int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size,
@@ -111,9 +114,9 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int32_t CheckPositionTime();
 };
-
+#ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
-
+#endif
 FastAudioCapturerSourceInner::FastAudioCapturerSourceInner() : attr_({}), capturerInited_(false), started_(false),
     paused_(false), openMic_(0), audioManager_(nullptr), audioAdapter_(nullptr), audioCapture_(nullptr)
 {}
@@ -459,6 +462,7 @@ int32_t FastAudioCapturerSourceInner::CheckPositionTime()
 int32_t FastAudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
+#ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastCapturer",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
@@ -469,6 +473,7 @@ int32_t FastAudioCapturerSourceInner::Start(void)
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
     }
+#endif
 
     if (!started_) {
         int32_t ret = audioCapture_->Start(audioCapture_);
@@ -546,13 +551,14 @@ void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallbac
 int32_t FastAudioCapturerSourceInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
-
+#ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("FastAudioCapturerSourceInner call KeepRunningLock UnLock");
         keepRunningLock_->UnLock();
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, stop can not work well!");
     }
+#endif
 
     if (started_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Stop(audioCapture_);
