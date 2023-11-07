@@ -152,6 +152,7 @@ ohos_shared_library("audio_client") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "power_manager:powermgr_client",
     "samgr:samgr_proxy",
   ]
 
@@ -194,6 +195,7 @@ config("audio_service_config") {
     "../../frameworks/native/hdiadapter/sink/remote",
     "../../frameworks/native/hdiadapter/sink/remote_fast",
     "../../frameworks/native/hdiadapter/sink/primary",
+    "../../frameworks/native/hdiadapter/sink/offload",
     "../../frameworks/native/hdiadapter/source/common",
     "../../frameworks/native/hdiadapter/source/fast",
     "../../frameworks/native/hdiadapter/source/primary",
@@ -282,6 +284,7 @@ ohos_shared_library("audio_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",

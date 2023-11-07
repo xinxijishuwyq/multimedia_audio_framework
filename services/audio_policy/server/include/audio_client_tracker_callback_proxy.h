@@ -33,6 +33,8 @@ public:
 
     virtual void SetLowPowerVolumeImpl(float volume) override;
     virtual void GetLowPowerVolumeImpl(float &volume) override;
+    virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) override;
+    virtual void UnsetOffloadModeImpl() override;
     virtual void GetSingleStreamVolumeImpl(float &volume) override;
 
 private:
@@ -48,6 +50,8 @@ public:
 
     virtual void SetLowPowerVolumeImpl(float volume) override;
     virtual void GetLowPowerVolumeImpl(float &volume) override;
+    virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) override;
+    virtual void UnsetOffloadModeImpl() override;
     virtual void GetSingleStreamVolumeImpl(float &volume) override;
 
 private:

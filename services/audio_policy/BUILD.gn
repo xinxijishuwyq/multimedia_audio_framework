@@ -221,6 +221,7 @@ ohos_shared_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

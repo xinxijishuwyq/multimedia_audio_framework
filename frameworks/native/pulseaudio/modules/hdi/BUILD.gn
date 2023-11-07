@@ -34,6 +34,7 @@ config("hdi_config") {
     "../../../hdiadapter/sink/file",
     "../../../hdiadapter/sink/primary",
     "../../../hdiadapter/sink/remote",
+    "../../../hdiadapter/sink/offload",
     "../../../hdiadapter/source/common",
     "../../../hdiadapter/source/file",
     "../../../hdiadapter/source/primary",

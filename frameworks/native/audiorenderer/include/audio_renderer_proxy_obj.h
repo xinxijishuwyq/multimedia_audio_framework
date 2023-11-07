@@ -31,6 +31,8 @@ public:
     void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal);
     void SetLowPowerVolumeImpl(float volume);
     void GetLowPowerVolumeImpl(float &volume);
+    void SetOffloadModeImpl(int32_t state, bool isAppBack);
+    void UnsetOffloadModeImpl();
     void GetSingleStreamVolumeImpl(float &volume);
 private:
     const AudioRenderer *renderer;

@@ -2462,7 +2462,7 @@ template<typename T> void AudioManagerNapi::UnregisterInterruptCallback(napi_env
             managerNapi->interruptCallbackNapi_.reset();
             managerNapi->interruptCallbackNapi_ = nullptr;
         }
-        AUDIO_INFO_LOG("Off Abandon Focus and UnSetAudioInterruptCallback success");
+        AUDIO_INFO_LOG("Off Abandon Focus and UnsetAudioInterruptCallback success");
     }
 }
 

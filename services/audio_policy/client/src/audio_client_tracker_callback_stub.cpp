@@ -34,7 +34,6 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ReadInterfaceToken failed");
         return -1;
     }
-
     switch (code) {
         case PAUSEDSTREAM: {
             StreamSetStateEventInternal sreamSetStateEventInternal = {};
@@ -67,12 +66,34 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
             reply.WriteFloat(volume);
             return AUDIO_OK;
         }
+        case SETOFFLOADMODE:
+        case UNSETOFFLOADMODE: {
+            return OffloadRemoteRequest(code, data, reply, option);
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
+    
+    return 0;
+}
 
+int AudioClientTrackerCallbackStub::OffloadRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    if (code == SETOFFLOADMODE) {
+        int32_t state = data.ReadInt32();
+        bool isAppBack = data.ReadBool();
+        SetOffloadModeImpl(state, isAppBack);
+        return AUDIO_OK;
+    }
+
+    if (code == UNSETOFFLOADMODE) {
+        UnsetOffloadModeImpl();
+        return AUDIO_OK;
+    }
+    
     return 0;
 }
 
@@ -115,6 +136,28 @@ void AudioClientTrackerCallbackStub::ResumeStreamImpl(
         cb->ResumeStreamImpl(streamSetStateEventInternal);
     } else {
         AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: ResumeStreamImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::SetOffloadModeImpl(int32_t state, bool isAppBack)
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub SetOffloadModeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->SetOffloadModeImpl(state, isAppBack);
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: SetOffloadModeImpl callback_ is nullptr");
+    }
+}
+
+void AudioClientTrackerCallbackStub::UnsetOffloadModeImpl()
+{
+    AUDIO_DEBUG_LOG("AudioClientTrackerCallbackStub UnsetOffloadModeImpl start");
+    std::shared_ptr<AudioClientTracker> cb = callback_.lock();
+    if (cb != nullptr) {
+        cb->UnsetOffloadModeImpl();
+    } else {
+        AUDIO_ERR_LOG("AudioClientTrackerCallbackStub: UnsetOffloadModeImpl callback_ is nullptr");
     }
 }
 

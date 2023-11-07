@@ -899,6 +899,16 @@ float AudioRendererPrivate::GetLowPowerVolume() const
     return audioStream_->GetLowPowerVolume();
 }
 
+int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) const
+{
+    return audioStream_->SetOffloadMode(state, isAppBack);
+}
+
+int32_t AudioRendererPrivate::UnsetOffloadMode() const
+{
+    return audioStream_->UnsetOffloadMode();
+}
+
 float AudioRendererPrivate::GetSingleStreamVolume() const
 {
     return audioStream_->GetSingleStreamVolume();

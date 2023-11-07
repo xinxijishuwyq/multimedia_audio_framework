@@ -586,6 +586,11 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" open_mic_speaker=");
         args.append(audioModuleInfo.OpenMicSpeaker);
     }
+
+    if (!audioModuleInfo.offloadEnable.empty()) {
+        args.append(" offload_enable=");
+        args.append(audioModuleInfo.offloadEnable);
+    }
 }
 
 std::string AudioAdapterManager::GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const

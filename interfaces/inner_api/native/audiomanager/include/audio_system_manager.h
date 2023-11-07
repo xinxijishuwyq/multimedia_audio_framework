@@ -963,6 +963,12 @@ public:
 
     int32_t SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback);
 
+    int32_t OffloadDrain();
+
+    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
+
+    int32_t OffloadSetBufferSize(uint32_t sizeMs);
+
     /**
      * @brief Set whether or not absolute volume is supported for the specified Bluetooth device
      *
