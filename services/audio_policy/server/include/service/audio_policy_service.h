@@ -533,7 +533,7 @@ private:
     bool GetAudioOffloadAvailableFromXml() const;
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
-    std::pair<SourceType, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
+    std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;

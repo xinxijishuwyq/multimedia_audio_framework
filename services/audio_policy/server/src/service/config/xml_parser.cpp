@@ -140,7 +140,14 @@ void XMLParser::ParseModules(xmlNode &node, std::string &className)
             moduleInfo.rate = *(moduleInfo.supportedRate_.rbegin());
 
             moduleInfo.format = ExtractPropertyValue("format", *moduleNode);
-            moduleInfo.channels = ExtractPropertyValue("channels", *moduleNode);
+
+            std::string channels = ExtractPropertyValue("channels", *moduleNode);
+            for (std::sregex_token_iterator it(channels.begin(), channels.end(), regexDelimiter, -1);
+                it != itEnd; ++it) {
+                moduleInfo.supportedChannels_.insert(atoi(it->str().c_str()));
+            }
+            moduleInfo.channels = *(moduleInfo.supportedChannels_.rbegin());
+
             moduleInfo.bufferSize = ExtractPropertyValue("buffer_size", *moduleNode);
             moduleInfo.fileName = ExtractPropertyValue("file", *moduleNode);
             moduleInfo.ports = {};

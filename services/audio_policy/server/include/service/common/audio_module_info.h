@@ -86,6 +86,7 @@ public:
     std::string rate;
 
     std::set<uint32_t> supportedRate_;
+    std::set<uint32_t> supportedChannels_;
 
     std::string format;
     std::string channels;
