@@ -271,8 +271,7 @@ int32_t IAudioRendererSinkGetPresentationPosition(struct RendererSinkAdapter* ad
         return ERR_NOT_STARTED;
     }
 
-    audioRendererSink->GetPresentationPosition(*frames, *timeSec, *timeNanoSec);
-    return SUCCESS;
+    return audioRendererSink->GetPresentationPosition(*frames, *timeSec, *timeNanoSec);
 }
 
 int32_t IAudioRendererSinkFlush(struct RendererSinkAdapter* adapter)
