@@ -21,8 +21,10 @@
 #include <cinttypes>
 
 #include "securec.h"
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#endif
 #include "v1_0/iaudio_manager.h"
 
 #include "audio_log.h"
@@ -102,9 +104,9 @@ private:
     std::string halName_;
     struct AudioAdapterDescriptor adapterDesc_;
     struct AudioPort audioPort_;
-
+#ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
-
+#endif
     IAudioSourceCallback* wakeupCloseCallback_ = nullptr;
     std::mutex wakeupClosecallbackMutex_;
 
@@ -267,8 +269,9 @@ private:
 
     static inline AudioCapturerSourceInner audioCapturerSource_;
 };
-
+#ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
+#endif
 
 AudioCapturerSourceInner::AudioCapturerSourceInner(const std::string &halName)
     : sourceInited_(false), captureInited_(false), started_(false), paused_(false),
@@ -543,6 +546,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
 int32_t AudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
+#ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         switch (attr_.sourceType) {
             case SOURCE_TYPE_WAKEUP:
@@ -561,6 +565,7 @@ int32_t AudioCapturerSourceInner::Start(void)
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
     }
+#endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_CAPTURER_SOURCE_FILENAME, &dumpFile_);
 
     int32_t ret;
@@ -820,14 +825,14 @@ uint64_t AudioCapturerSourceInner::GetTransactionId()
 int32_t AudioCapturerSourceInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
-
+#ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("AudioCapturerSourceInner call KeepRunningLock UnLock");
         keepRunningLock_->UnLock();
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, stop can not work well!");
     }
-
+#endif
     int32_t ret;
     if (started_ && audioCapture_ != nullptr) {
         ret = audioCapture_->Stop(audioCapture_);

@@ -236,14 +236,14 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     int32_t result = SUCCESS;
     // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, set
     // its absolute volume value.
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (streamType == STREAM_MUSIC && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
-        if (result != SUCCESS) {
+        if (result == SUCCESS) {
+            // set to avrcp device
+            return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
+        } else {
             AUDIO_ERR_LOG("AudioPolicyService::SetSystemVolumeLevel set abs volume failed");
-            return result;
         }
-        // set to avrcp device
-        return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
     }
 
     result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
@@ -319,7 +319,7 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, boo
         // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, get
         // its absolute volume value.
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
-        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (streamType == STREAM_MUSIC && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
             if (configInfoPos != connectedA2dpDeviceMap_.end()
                 && configInfoPos->second.absVolumeSupport) {
@@ -1245,8 +1245,7 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
     for (const auto &device : priorityList) {
         auto isPresent = [&device, this] (const sptr<AudioDeviceDescriptor> &desc) {
             CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-            if ((audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT) &&
-                (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) {
+            if ((audioScene_ != AUDIO_SCENE_DEFAULT) && (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) {
                 return false;
             } else {
                 return desc->deviceType_ == device;
@@ -2172,8 +2171,7 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
     CHECK_AND_RETURN_LOG(devType != DEVICE_TYPE_NONE, "devType is none type");
     if (!hasModulesLoaded) {
         AUDIO_WARNING_LOG("modules has not loaded");
-        pnpDevice_ = devType;
-        isPnpDeviceConnected = isConnected;
+        pnpDeviceList_.push_back({devType, isConnected});
         return;
     }
     if (g_adProxy == nullptr) {
@@ -2315,7 +2313,7 @@ DeviceType AudioPolicyService::FindConnectedHeadset()
     return retType;
 }
 
-int32_t AudioPolicyService::handleSpecialDeviceType(DeviceType &devType, bool &isConnected)
+int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &isConnected)
 {
     // usb device needs to be distinguished form arm or hifi
     if (devType == DEVICE_TYPE_USB_HEADSET && isConnected) {
@@ -2355,7 +2353,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
 
     int32_t result = ERROR;
-    result = handleSpecialDeviceType(devType, isConnected);
+    result = HandleSpecialDeviceType(devType, isConnected);
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, deviceDesc);
@@ -2375,7 +2373,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             connectedDevices_.end());
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
         audioDeviceManager_.AddNewDevice(deviceDesc);
-        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() != AUDIO_SCENE_DEFAULT) {
             // If the A2DP device is connecting when calling, add it to connectedDevices_ and donot activate it now
             AUDIO_INFO_LOG("A2DP device should be used in non-call mode [%{public}d]", GetAudioScene());
             A2dpDeviceConfigInfo configInfo = {streamInfo, false};
@@ -2735,7 +2733,9 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         activeInputDevice_ = DEVICE_TYPE_MIC;
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
         OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
-        OnPnpDeviceStatusUpdated(pnpDevice_, isPnpDeviceConnected);
+        for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
+            OnPnpDeviceStatusUpdated((*it).first, (*it).second);
+        }
         audioEffectManager_.SetMasterSinkAvailable();
     }
     RegisterBluetoothListener();
@@ -3632,8 +3632,7 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
         auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
         if (configInfoPos != connectedA2dpDeviceMap_.end()) {
             configInfoPos->second.absVolumeSupport = support;
-            
-            audioPolicyManager_.SetAbsVolumeScene(true);
+            audioPolicyManager_.SetAbsVolumeScene(support);
             break;
         }
         if (retryCount == maxRetries) {
@@ -4368,28 +4367,39 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
     }
 }
 
-std::pair<SourceType, uint32_t> AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo)
+std::tuple<SourceType, uint32_t, uint32_t> AudioPolicyService::FetchTargetInfoForSessionAdd(
+    const SessionInfo sessionInfo)
 {
     uint32_t highestSupportedRate = *(primaryMicModuleInfo_.supportedRate_.rbegin());
+    uint32_t highestSupportedChannels = *(primaryMicModuleInfo_.supportedChannels_.rbegin());
     SourceType targetSourceType;
     uint32_t targetRate;
+    uint32_t targetChannels;
     if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         targetSourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
         targetRate = sessionInfo.rate;
+        targetChannels = sessionInfo.channels;
         if (primaryMicModuleInfo_.supportedRate_.count(targetRate) == 0) {
             AUDIO_INFO_LOG("targetRate: %{public}u is not supported rate, using highestSupportedRate: %{public}u",
                 targetRate, highestSupportedRate);
             targetRate = highestSupportedRate;
         }
+        if (primaryMicModuleInfo_.supportedChannels_.count(targetChannels) == 0) {
+            AUDIO_INFO_LOG(
+                "targetChannels: %{public}u is not supported rate, using highestSupportedChannels: %{public}u",
+                targetChannels, highestSupportedChannels);
+            targetChannels = highestSupportedChannels;
+        }
     } else {
         // For normal sourcetype, continue to use the default value
         targetSourceType = SOURCE_TYPE_MIC;
         targetRate = highestSupportedRate;
+        targetChannels = highestSupportedChannels;
     }
-    return {targetSourceType, targetRate};
+    return {targetSourceType, targetRate, targetChannels};
 }
 
-void AudioPolicyService::OnCapturerSessionRemoved(uint32_t sessionID)
+void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
 {
     if (sessionWithSpecialSourceType_.count(sessionID) > 0) {
         sessionWithSpecialSourceType_.erase(sessionID);
@@ -4415,19 +4425,19 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint32_t sessionID)
         return;
     }
 
-    AUDIO_INFO_LOG("Sessionid:%{public}u not added, directly placed into sessionIdisRemovedSet_", sessionID);
+    AUDIO_INFO_LOG("Sessionid:%{public}" PRIu64 " not added, directly placed into sessionIdisRemovedSet_", sessionID);
     sessionIdisRemovedSet_.insert(sessionID);
 }
 
-void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo sessionInfo)
+void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo)
 {
     if (sessionIdisRemovedSet_.count(sessionID) > 0) {
         sessionIdisRemovedSet_.erase(sessionID);
-        AUDIO_INFO_LOG("sessionID: %{public}u had already been removed earlier", sessionID);
+        AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
         return;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
-        auto [targetSourceType, targetRate] = FetchTargetInfoForSessionAdd(sessionInfo);
+        auto [targetSourceType, targetRate, targetChannels] = FetchTargetInfoForSessionAdd(sessionInfo);
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
         bool needReloadSource = (isSourceLoaded &&
             ((targetSourceType != currentSourceType) || (currentRate != targetRate)));
@@ -4447,12 +4457,16 @@ void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo 
         if (needReloadSource || !(isSourceLoaded)) {
             auto moduleInfo = primaryMicModuleInfo_;
             moduleInfo.rate = std::to_string(targetRate);
+            moduleInfo.channels = std::to_string(targetChannels);
             moduleInfo.sourceType = std::to_string(targetSourceType);
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
                 "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
 
             IOHandles_[PRIMARY_MIC] = ioHandle;
+            if (FetchHighPriorityDevice(false) == DEVICE_TYPE_MIC && activeInputDevice_ == DEVICE_TYPE_MIC) {
+                audioPolicyManager_.SetDeviceActive(ioHandle, DEVICE_TYPE_MIC, moduleInfo.name, true);
+            }
 
             currentRate = targetRate;
             currentSourceType = targetSourceType;
@@ -4461,7 +4475,7 @@ void AudioPolicyService::OnCapturerSessionAdded(uint32_t sessionID, SessionInfo 
     } else {
         sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     }
-    AUDIO_INFO_LOG("sessionID: %{public}u OnCapturerSessionAdded end", sessionID);
+    AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " OnCapturerSessionAdded end", sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

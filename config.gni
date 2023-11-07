@@ -41,6 +41,14 @@ declare_args() {
   } else {
     audio_framework_feature_input = false
   }
+
+  if (!defined(global_parts_info) ||
+      defined(global_parts_info.powermgr_power_manager)) {
+    audio_framework_feature_power_manager = true
+  } else {
+    audio_framework_feature_power_manager = false
+  }
+
   audio_framework_feature_new_napi = true
   multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
 

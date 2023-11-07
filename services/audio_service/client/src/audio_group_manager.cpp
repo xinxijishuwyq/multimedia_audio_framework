@@ -71,8 +71,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(StreamVolType, volume, API_9);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, API_9);
 }
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
@@ -108,8 +107,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
             return ERR_NOT_SUPPORTED;
     }
 
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(StreamVolType);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType);
 }
 
 int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
@@ -204,8 +202,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
     }
 
     /* Call Audio Policy SetStreamMute */
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    return AudioPolicyManager::GetInstance().SetStreamMute(StreamVolType, mute, API_9);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, API_9);
 }
 
 int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute)
@@ -240,8 +237,7 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
             return false;
     }
 
-    AudioStreamType StreamVolType = (AudioStreamType)volumeType;
-    isMute = AudioPolicyManager::GetInstance().GetStreamMute(StreamVolType);
+    isMute = AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
     return SUCCESS;
 }
 

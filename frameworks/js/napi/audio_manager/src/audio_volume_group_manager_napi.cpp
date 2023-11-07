@@ -76,43 +76,6 @@ namespace {
     const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
 }
 
-static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
-{
-    AudioVolumeType result = STREAM_MUSIC;
-
-    switch (volumeType) {
-        case AudioCommonNapi::RINGTONE:
-            result = STREAM_RING;
-            break;
-        case AudioCommonNapi::MEDIA:
-            result = STREAM_MUSIC;
-            break;
-        case AudioCommonNapi::VOICE_CALL:
-            result = STREAM_VOICE_CALL;
-            break;
-        case AudioCommonNapi::VOICE_ASSISTANT:
-            result = STREAM_VOICE_ASSISTANT;
-            break;
-        case AudioCommonNapi::ALARM:
-            result = STREAM_ALARM;
-            break;
-        case AudioCommonNapi::ACCESSIBILITY:
-            result = STREAM_ACCESSIBILITY;
-            break;
-        case AudioCommonNapi::ULTRASONIC:
-            result = STREAM_ULTRASONIC;
-            break;
-        case AudioManagerNapi::ALL:
-            result = STREAM_ALL;
-            break;
-        default:
-            result = STREAM_MUSIC;
-            HiLog::Error(LABEL, "Unknown volume type, Set it to default MEDIA!");
-            break;
-    }
-    return result;
-}
-
 static AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode)
 {
     AudioRingerMode result = RINGER_MODE_NORMAL;
@@ -397,8 +360,8 @@ napi_value AudioVolumeGroupManagerNapi::GetVolume(napi_env env, napi_callback_in
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->volLevel = context->objectInfo->audioGroupMngr_->GetVolume(
-                        GetNativeAudioVolumeType(context->volType));
+                    context->volLevel = context->objectInfo->audioGroupMngr_->
+                        GetVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
                     if (context->volLevel < 0) {
                         context->status = context->volLevel;
@@ -454,7 +417,8 @@ napi_value AudioVolumeGroupManagerNapi::GetVolumeSync(napi_env env, napi_callbac
         return result;
     }
 
-    int32_t volLevel = audioVolumeGroupManagerNapi->audioGroupMngr_->GetVolume(GetNativeAudioVolumeType(volType));
+    int32_t volLevel = audioVolumeGroupManagerNapi->audioGroupMngr_->
+        GetVolume(AudioCommonNapi::GetNativeAudioVolumeType(volType));
     napi_create_int32(env, volLevel, &result);
 
     return result;
@@ -524,8 +488,8 @@ void AudioVolumeGroupManagerNapi::AsyncSetVolume(napi_env env, void *data)
     auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
     if (context->status == SUCCESS) {
         auto &audioGroupManager = context->objectInfo->audioGroupMngr_;
-        context->status = (audioGroupManager == nullptr) ? NAPI_ERR_SYSTEM :
-            audioGroupManager->SetVolume(GetNativeAudioVolumeType(context->volType), context->volLevel);
+        context->status = (audioGroupManager == nullptr) ? NAPI_ERR_SYSTEM : audioGroupManager->
+            SetVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->volLevel);
     }
 }
 
@@ -577,8 +541,8 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolume(napi_env env, napi_callback
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->volLevel = context->objectInfo->audioGroupMngr_->GetMaxVolume(
-                        GetNativeAudioVolumeType(context->volType));
+                    context->volLevel = context->objectInfo->audioGroupMngr_->
+                        GetMaxVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
                     if (context->volLevel < 0) {
                         context->status = context->volLevel;
@@ -635,7 +599,8 @@ napi_value AudioVolumeGroupManagerNapi::GetMaxVolumeSync(napi_env env, napi_call
         return result;
     }
 
-    int32_t volLevel = audioVolumeGroupManagerNapi->audioGroupMngr_->GetMaxVolume(GetNativeAudioVolumeType(volType));
+    int32_t volLevel = audioVolumeGroupManagerNapi->audioGroupMngr_->
+        GetMaxVolume(AudioCommonNapi::GetNativeAudioVolumeType(volType));
     napi_create_int32(env, volLevel, &result);
 
     return result;
@@ -689,8 +654,8 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolume(napi_env env, napi_callback
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->volLevel = context->objectInfo->audioGroupMngr_->GetMinVolume(
-                        GetNativeAudioVolumeType(context->volType));
+                    context->volLevel = context->objectInfo->audioGroupMngr_->
+                        GetMinVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType));
                     context->intValue = context->volLevel;
                     if (context->volLevel < 0) {
                         context->status = context->volLevel;
@@ -747,7 +712,8 @@ napi_value AudioVolumeGroupManagerNapi::GetMinVolumeSync(napi_env env, napi_call
         return result;
     }
 
-    int32_t volLevel = audioVolumeGroupManagerNapi->audioGroupMngr_->GetMinVolume(GetNativeAudioVolumeType(volType));
+    int32_t volLevel = audioVolumeGroupManagerNapi->audioGroupMngr_->
+        GetMinVolume(AudioCommonNapi::GetNativeAudioVolumeType(volType));
     napi_create_int32(env, volLevel, &result);
 
     return result;
@@ -803,8 +769,8 @@ napi_value AudioVolumeGroupManagerNapi::SetMute(napi_env env, napi_callback_info
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioGroupMngr_->SetMute(GetNativeAudioVolumeType(
-                        context->volType), context->isMute);
+                    context->status = context->objectInfo->audioGroupMngr_->
+                        SetMute(AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->isMute);
                 }
             },
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
@@ -872,8 +838,8 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMute(napi_env env, napi_callback
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
                 if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioGroupMngr_->IsStreamMute(
-                        GetNativeAudioVolumeType(context->volType), context->isMute);
+                    context->status = context->objectInfo->audioGroupMngr_->
+                        IsStreamMute(AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->isMute);
                     context->isTrue = context->isMute;
                 }
             },
@@ -928,8 +894,8 @@ napi_value AudioVolumeGroupManagerNapi::IsStreamMuteSync(napi_env env, napi_call
     }
 
     bool isMute;
-    int32_t ret = audioVolumeGroupManagerNapi->audioGroupMngr_->IsStreamMute(
-        GetNativeAudioVolumeType(volType), isMute);
+    int32_t ret = audioVolumeGroupManagerNapi->audioGroupMngr_->
+        IsStreamMute(AudioCommonNapi::GetNativeAudioVolumeType(volType), isMute);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("IsStreamMute failure!");
         return result;
@@ -1450,7 +1416,7 @@ bool GetArgvForAdjustSystemVolumeByStep(napi_env env, size_t argc, napi_value* a
         if (i == PARAM0 && valueType == napi_number) {
             napi_get_value_int32(env, argv[i], &asyncContext->volType);
             if (!AudioCommonNapi::IsLegalInputArgumentVolType(asyncContext->volType)
-                || asyncContext->volType == AudioManagerNapi::ALL) {
+                || asyncContext->volType == AudioCommonNapi::ALL) {
                 asyncContext->status = NAPI_ERR_INVALID_PARAM;
             }
         } else if (i == PARAM1 && valueType == napi_number) {
@@ -1505,7 +1471,7 @@ napi_value AudioVolumeGroupManagerNapi::AdjustSystemVolumeByStep(napi_env env, n
             auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
             if (context->status == SUCCESS) {
                 context->volumeAdjustStatus = context->objectInfo->audioGroupMngr_->AdjustSystemVolumeByStep(
-                    GetNativeAudioVolumeType(context->volType),
+                    AudioCommonNapi::GetNativeAudioVolumeType(context->volType),
                     static_cast<VolumeAdjustType>(context->adjustType));
                 if (context->volumeAdjustStatus == SUCCESS) {
                     context->status = SUCCESS;
@@ -1601,7 +1567,7 @@ napi_value AudioVolumeGroupManagerNapi::GetSystemVolumeInDb(napi_env env, napi_c
             auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
             if (context->status == SUCCESS) {
                 context->volumeInDb = context->objectInfo->audioGroupMngr_->GetSystemVolumeInDb(
-                    GetNativeAudioVolumeType(context->volType), context->volLevel,
+                    AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->volLevel,
                     static_cast<DeviceType>(context->deviceType));
                 if (FLOAT_COMPARE_EQ(context->volumeInDb, static_cast<float>(ERR_INVALID_PARAM))) {
                     // The return value is ERR_INVALID_PARAM
@@ -1674,7 +1640,7 @@ napi_value AudioVolumeGroupManagerNapi::GetSystemVolumeInDbSync(napi_env env, na
     }
 
     double volumeInDb = audioVolumeGroupManagerNapi->audioGroupMngr_->GetSystemVolumeInDb(
-        GetNativeAudioVolumeType(volType), volLevel, static_cast<DeviceType>(deviceType));
+        AudioCommonNapi::GetNativeAudioVolumeType(volType), volLevel, static_cast<DeviceType>(deviceType));
     if (FLOAT_COMPARE_EQ(static_cast<float>(volumeInDb), static_cast<float>(ERR_INVALID_PARAM))) {
         AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
         return result;

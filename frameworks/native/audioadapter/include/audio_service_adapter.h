@@ -36,9 +36,9 @@ public:
      */
     virtual float OnGetVolumeDbCb(AudioStreamType streamType) = 0;
 
-    virtual void OnSessionRemoved(const uint32_t sessionID) = 0;
+    virtual void OnSessionRemoved(const uint64_t sessionID) = 0;
 
-    virtual void OnCapturerSessionAdded(const uint32_t sessionID, SessionInfo sessionInfo) = 0;
+    virtual void OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo) = 0;
 
     virtual void OnPlaybackCapturerStop() = 0;
 
@@ -163,14 +163,6 @@ public:
      * @return Returns {@link true} if mute is success; returns false otherwise.
      */
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute) = 0;
-
-    /**
-     * @brief returns if given streamType is active(currently the streamType audio is played)
-     *
-     * @param streamType the streamType for which status will be fetched streamType defined in{@link audio_info.h}
-     * @return Returns true: If streamType is active; else returns false
-     */
-    virtual bool IsStreamActive(AudioStreamType streamType);
 
     /**
      * @brief returns the list of all sink inputs

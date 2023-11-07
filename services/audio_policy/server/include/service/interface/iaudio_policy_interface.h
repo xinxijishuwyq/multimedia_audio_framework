@@ -54,8 +54,6 @@ public:
 
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;
 
-    virtual bool IsStreamActive(AudioStreamType streamType) = 0;
-
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
     virtual std::vector<SinkInput> GetAllSinkInputs() = 0;

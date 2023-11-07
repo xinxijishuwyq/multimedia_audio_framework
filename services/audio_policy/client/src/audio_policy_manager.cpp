@@ -147,7 +147,7 @@ int32_t AudioPolicyManager::GetMinVolumeLevel(AudioVolumeType volumeType)
     return gsp->GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v)
+int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -155,7 +155,7 @@ int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioStreamType streamType, int
         return -1;
     }
 
-    return gsp->SetSystemVolumeLevel(streamType, volumeLevel, api_v);
+    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, api_v);
 }
 
 int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
@@ -228,34 +228,34 @@ AudioScene AudioPolicyManager::GetAudioScene()
     return gsp->GetAudioScene();
 }
 
-int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioStreamType streamType)
+int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetSystemVolumeLevel: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->GetSystemVolumeLevel(streamType);
+    return gsp->GetSystemVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyManager::SetStreamMute(AudioStreamType streamType, bool mute, API_VERSION api_v)
+int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetStreamMute: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->SetStreamMute(streamType, mute, api_v);
+    return gsp->SetStreamMute(volumeType, mute, api_v);
 }
 
-bool AudioPolicyManager::GetStreamMute(AudioStreamType streamType)
+bool AudioPolicyManager::GetStreamMute(AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetStreamMute: audio policy manager proxy is NULL.");
         return false;
     }
-    return gsp->GetStreamMute(streamType);
+    return gsp->GetStreamMute(volumeType);
 }
 
 int32_t AudioPolicyManager::SetLowPowerVolume(int32_t streamId, float volume)
@@ -288,14 +288,14 @@ float AudioPolicyManager::GetSingleStreamVolume(int32_t streamId)
     return gsp->GetSingleStreamVolume(streamId);
 }
 
-bool AudioPolicyManager::IsStreamActive(AudioStreamType streamType)
+bool AudioPolicyManager::IsStreamActive(AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("IsStreamActive: audio policy manager proxy is NULL.");
         return false;
     }
-    return gsp->IsStreamActive(streamType);
+    return gsp->IsStreamActive(volumeType);
 }
 
 int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

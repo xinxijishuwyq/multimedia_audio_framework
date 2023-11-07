@@ -425,7 +425,7 @@ int32_t RemoteFastAudioCapturerSourceInner::CheckPositionTime()
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
     int64_t maxHandleCost = 10000000; // ns
-    int64_t waitTime = 2000000; // 2ms
+    int64_t waitTime = 10000000; // 10ms
     while (tryCount-- > 0) {
         ClockTime::RelativeSleep(waitTime); // us
         int32_t ret = GetMmapHandlePosition(frames, timeSec, timeNanoSec);
