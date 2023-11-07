@@ -1400,7 +1400,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
     isAbsVolumeScene_ = isAbsVolumeScene;
 }
 
-bool AudioAdapterManager::GetAbsVolumeScene() const
+bool AudioAdapterManager::IsAbsVolumeScene() const
 {
     return isAbsVolumeScene_;
 }

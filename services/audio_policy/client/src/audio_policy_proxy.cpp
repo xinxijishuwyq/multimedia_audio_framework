@@ -2200,6 +2200,26 @@ int32_t AudioPolicyProxy::SetDeviceAbsVolumeSupported(const std::string &macAddr
     return reply.ReadInt32();
 }
 
+bool AudioPolicyProxy::IsAbsVolumeScene()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" IsAbsVolumeScene WriteInterfaceToken failed");
+        return ERROR;
+    }
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ABS_VOLUME_SCENE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("IsAbsVolumeScene failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadBool();
+}
+
 int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {

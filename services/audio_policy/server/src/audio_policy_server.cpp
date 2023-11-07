@@ -2556,6 +2556,11 @@ int32_t AudioPolicyServer::SetDeviceAbsVolumeSupported(const std::string &macAdd
     return audioPolicyService_.SetDeviceAbsVolumeSupported(macAddress, support);
 }
 
+bool AudioPolicyServer::IsAbsVolumeScene()
+{
+    return audioPolicyService_.IsAbsVolumeScene();
+}
+
 int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {

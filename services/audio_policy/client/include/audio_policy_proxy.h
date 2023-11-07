@@ -218,6 +218,8 @@ public:
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
+    bool IsAbsVolumeScene() override;
+
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
