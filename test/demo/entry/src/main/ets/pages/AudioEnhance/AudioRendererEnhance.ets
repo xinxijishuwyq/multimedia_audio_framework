@@ -79,6 +79,15 @@ struct Index {
         })
 
         Button() {
+          Text("设置渐变音量模式").fontSize(30).fontColor(Color.White)
+        }.width('100%')
+        .margin({ bottom: 40 })
+        .height(55)
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/AudioEnhance/audiorender/SetVolumeWithRamp' })
+        })
+
+        Button() {
           Text("多实例").fontSize(30).fontColor(Color.White)
         }.width('100%')
         .margin({ bottom: 40 })

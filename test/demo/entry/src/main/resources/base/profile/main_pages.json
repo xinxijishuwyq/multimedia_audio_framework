@@ -48,6 +48,7 @@
     "pages/AudioEnhance/audiorender/GetCurrentOutputDevices",
     "pages/AudioEnhance/audiorender/DeviceChangeCallback",
     "pages/AudioEnhance/audiorender/SetChannelBlendMode",
+    "pages/AudioEnhance/audiorender/SetVolumeWithRamp",
     "pages/AudioEnhance/audiorender/AudioRenderMultiInstance",
     "pages/AudioEnhance/AudioManagerEnhance",
     "pages/AudioEnhance/audiomanager/Configuration",

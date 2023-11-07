@@ -54,8 +54,12 @@ struct DeviceChangeCallback {
 
   getDeviceChangeInfo(DeviceChangeInfo) {
     let str = ``;
-    let descriptor = DeviceChangeInfo;
-    str += `Id:${descriptor.id},\nType:${descriptor.deviceType},\nRole:${descriptor.deviceRole},\nName:${descriptor.name},\nAddress:${descriptor.address},\nSampleRates:${descriptor.sampleRates[0]},\nChannelCounts:${descriptor.channelCounts[0]},\nChannelMask:${descriptor.channelMasks[0]}\n`;
+    for (let i = 0; i < DeviceChangeInfo.length; i++) {
+      let descriptor = DeviceChangeInfo[i];
+      str += `第${i}条\nId:${descriptor.id}, Type:${descriptor.deviceType}, Role:${descriptor.deviceRole}, Name:${descriptor.name},
+      Address:${descriptor.address}, SampleRates:${descriptor.sampleRates[0]}, ChannelCounts:${descriptor.channelCounts[0]},
+      ChannelMask:${descriptor.channelMasks[0]}, EncodingType:${descriptor.encodingTypes[0]}\n`;
+    }
     return str;
   }
 

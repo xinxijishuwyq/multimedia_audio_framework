@@ -134,8 +134,12 @@ struct GetCurrentOutputDevices {
 
   getInfoArray(deviceInfo) {
     let str = ``;
-    let descriptor = deviceInfo;
-    str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks[0]}\n`;
+    for (let i = 0; i < deviceInfo.length; i++) {
+      let descriptor = deviceInfo[i];
+      str += `第${i}条\nId:${descriptor.id}, Type:${descriptor.deviceType}, Role:${descriptor.deviceRole}, Name:${descriptor.name},
+      Address:${descriptor.address}, SampleRates:${descriptor.sampleRates[0]}, ChannelCounts:${descriptor.channelCounts[0]},
+      ChannelMask:${descriptor.channelMasks[0]}, EncodingType:${descriptor.encodingTypes[0]}\n`;
+    }
     return str;
   }
 
