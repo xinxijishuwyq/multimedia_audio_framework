@@ -40,7 +40,7 @@ public:
     void AddNewDevice(AudioDeviceDescriptor &devDesc);
     void RemoveNewDevice(const AudioDeviceDescriptor &devDesc);
     void OnXmlParsingCompleted(const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData);
-    int32_t GetDeviceUsageFromType(const DeviceType devType)const;
+    int32_t GetDeviceUsageFromType(const DeviceType devType) const;
     void ParseDeviceXml();
 
     vector<unique_ptr<AudioDeviceDescriptor>> GetRemoteRenderDevices();

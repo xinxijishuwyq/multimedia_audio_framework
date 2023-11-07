@@ -81,7 +81,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     networkId_ = deviceDescriptor.networkId_;
     displayName_ = deviceDescriptor.displayName_;
     deviceCategory_ = deviceDescriptor.deviceCategory_;
-    connectTimeStamp_ = deviceDescriptor.deviceCategory_;
+    connectTimeStamp_ = deviceDescriptor.connectTimeStamp_;
     connectState_ = deviceDescriptor.connectState_;
     pairDeviceDescriptor_ = deviceDescriptor.pairDeviceDescriptor_;
 }
@@ -108,7 +108,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &
     networkId_ = deviceDescriptor->networkId_;
     displayName_ = deviceDescriptor->displayName_;
     deviceCategory_ = deviceDescriptor->deviceCategory_;
-    connectTimeStamp_ = deviceDescriptor->deviceCategory_;
+    connectTimeStamp_ = deviceDescriptor->connectTimeStamp_;
     connectState_ = deviceDescriptor->connectState_;
     pairDeviceDescriptor_ = deviceDescriptor->pairDeviceDescriptor_;
 }

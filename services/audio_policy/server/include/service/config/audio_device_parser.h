@@ -36,10 +36,10 @@ static const std::string PUBLIC_TYPE = "public";
 static const std::string NEGATIVE_TYPE = "negative";
 
 enum DeviceNodeName {
+    UNKNOWN_NODE = -1,
     ADAPTER,
     DEVICES,
     DEVICE,
-    UNKNOWN_NODE = -1,
 };
 
 class AudioDeviceParser : public Parser {

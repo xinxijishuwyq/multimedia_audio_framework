@@ -136,8 +136,8 @@ void AudioDeviceParser::ParseAudioDevicePrivacyType(xmlNode *node, AudioDevicePr
 
     while (currNode != nullptr) {
         //read deviceType
-        if (currNode->type == XML_ELEMENT_NODE
-            && (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("adapter")))) {
+        if (currNode->type == XML_ELEMENT_NODE &&
+            (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("adapter")))) {
             if (adapterName.empty()) {
                 AUDIO_ERR_LOG("AudioDeviceParser: No name provided for the adapter %{public}s", node->name);
                 return;

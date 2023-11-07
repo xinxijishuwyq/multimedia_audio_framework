@@ -92,11 +92,11 @@ bool AudioDeviceManager::DeviceAttrMatch(const AudioDeviceDescriptor &devDesc, A
     }
 
     for (auto &devInfo : deviceList) {
-        if ((devInfo.deviceType == devDesc.deviceType_)
-            && ((devInfo.deviceRole & devRole) != 0)
-            && ((devInfo.deviceUsage & devUsage) != 0)
-            && ((devInfo.deviceCategory == devDesc.deviceCategory_)
-            || ((devInfo.deviceCategory & devDesc.deviceCategory_) != 0))) {
+        if ((devInfo.deviceType == devDesc.deviceType_) &&
+            ((devInfo.deviceRole & devRole) != 0) &&
+            ((devInfo.deviceUsage & devUsage) != 0) &&
+            ((devInfo.deviceCategory == devDesc.deviceCategory_) ||
+            ((devInfo.deviceCategory & devDesc.deviceCategory_) != 0))) {
             return true;
         }
     }
@@ -122,7 +122,6 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(vector<unique_ptr<AudioDev
 
 void AudioDeviceManager::AddNewDevice(AudioDeviceDescriptor &devDesc)
 {
-    devDesc.connectState_ = CONNECTED;
     if (devDesc.connectTimeStamp_ == 0) {
         devDesc.connectTimeStamp_ = GetCurrentTimeMS();
     }
