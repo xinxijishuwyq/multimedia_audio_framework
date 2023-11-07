@@ -615,8 +615,6 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
     size_t mixlength = *length;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         if (IsInnerCapturer(sinkIn) && InputIsPrimary(sinkIn)) {
-            char str[SPRINTF_STR_LEN] = {0};
-            GetSinkInputName(sinkIn, str, SPRINTF_STR_LEN);
             pa_sink_input_assert_ref(sinkIn);
 
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
@@ -2292,8 +2290,6 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, st
         pa_memblockq_set_minreq(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
         pa_memblockq_set_prebuf(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
         pa_sink_input_update_max_rewind(i, 0);
-
-        u->primary.timestamp = pa_rtclock_now();
     }
     return PA_HOOK_OK;
 }
@@ -2443,6 +2439,11 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
         u->ss.rate, u->ss.channels);
     if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
         goto fail;
+
+    u->primary.prewrite = 0;
+    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_PRIMARY)) {
+        u->primary.prewrite = u->block_usec * 7; // 7 frame, set cache len in hdi, avoid pop
+    }
 
     u->primary.isHDISinkStarted = true;
     AUDIO_DEBUG_LOG("Initialization of HDI rendering device[%{public}s] completed", u->adapterName);
@@ -2626,8 +2627,6 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     }
 
     pa_sink_set_max_request(u->sink, u->buffer_size);
-
-    u->primary.prewrite = u->block_usec * 7; // 7 frame, set cache len in hdi, avoid pop
 
     ret = PaHdiSinkNewInitThread(m, ma, u);
     if (ret) {
