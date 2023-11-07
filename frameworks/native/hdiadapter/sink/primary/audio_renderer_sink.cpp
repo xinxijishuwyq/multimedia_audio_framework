@@ -25,9 +25,10 @@
 #include <mutex>
 
 #include "securec.h"
-
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#endif
 #include "v1_0/iaudio_manager.h"
 
 #include "audio_errors.h"
@@ -52,7 +53,9 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
+#ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
+#endif
 const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 120;
 }
 class AudioRendererSinkInner : public AudioRendererSink {
@@ -113,9 +116,9 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
-
+#ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
-
+#endif
     // for device switch
     std::atomic<bool> inSwitch_ = false;
     std::atomic<int32_t> renderEmptyFrameCount_ = 0;
@@ -517,6 +520,7 @@ int32_t AudioRendererSinkInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
     Trace trace("Sink::Start");
+#ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
@@ -528,7 +532,7 @@ int32_t AudioRendererSinkInner::Start(void)
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
-
+#endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
 
     int32_t ret;
@@ -793,14 +797,14 @@ int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 int32_t AudioRendererSinkInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
-
+#ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock UnLock");
         keepRunningLock_->UnLock();
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
-
+#endif
     int32_t ret;
 
     if (audioRender_ == nullptr) {

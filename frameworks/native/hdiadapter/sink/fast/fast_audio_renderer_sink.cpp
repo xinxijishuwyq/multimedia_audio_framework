@@ -25,10 +25,11 @@
 #include <unistd.h>
 
 #include <sys/mman.h>
-
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
-#include "securec.h"
 #include "running_lock.h"
+#endif
+#include "securec.h"
 #include "v1_0/iaudio_manager.h"
 
 #include "audio_errors.h"
@@ -93,9 +94,10 @@ public:
     ~FastAudioRendererSinkInner();
 
 private:
+#ifdef FEATURE_POWER_MANAGER
     void KeepRunningLock();
     void KeepRunningUnlock();
-
+#endif
     int32_t PrepareMmapBuffer();
     void ReleaseMmapBuffer();
 
@@ -128,8 +130,9 @@ private:
     int bufferFd_ = INVALID_FD;
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
-
+#ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+#endif
 
 #ifdef DEBUG_DIRECT_USE_HDI
     char *bufferAddresss_ = nullptr;
@@ -170,9 +173,11 @@ bool FastAudioRendererSinkInner::IsInited()
 
 void FastAudioRendererSinkInner::DeInit()
 {
+#ifdef FEATURE_POWER_MANAGER
     KeepRunningUnlock();
 
     keepRunningLock_ = nullptr;
+#endif
 
     started_ = false;
     rendererInited_ = false;
@@ -625,12 +630,14 @@ int32_t FastAudioRendererSinkInner::Start(void)
             return ERR_NOT_STARTED;
         }
     }
+#ifdef FEATURE_POWER_MANAGER
     KeepRunningLock();
+#endif
     started_ = true;
     AUDIO_DEBUG_LOG("Start cost[%{public}" PRId64 "]ms", (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
     return SUCCESS;
 }
-
+#ifdef FEATURE_POWER_MANAGER
 void FastAudioRendererSinkInner::KeepRunningLock()
 {
     if (keepRunningLock_ == nullptr) {
@@ -646,7 +653,9 @@ void FastAudioRendererSinkInner::KeepRunningLock()
         AUDIO_ERR_LOG("Fast: keepRunningLock_ is null, playback can not work well!");
     }
 }
+#endif
 
+#ifdef FEATURE_POWER_MANAGER
 void FastAudioRendererSinkInner::KeepRunningUnlock()
 {
     if (keepRunningLock_ != nullptr) {
@@ -656,6 +665,7 @@ void FastAudioRendererSinkInner::KeepRunningUnlock()
         AUDIO_ERR_LOG("Fast: keepRunningLock_ is null, playback can not work well!");
     }
 }
+#endif
 
 
 int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
@@ -777,7 +787,9 @@ int32_t FastAudioRendererSinkInner::Stop(void)
         AUDIO_ERR_LOG("FastAudioRendererSink::Stop failed audioRender_ null");
         return ERR_INVALID_HANDLE;
     }
+#ifdef FEATURE_POWER_MANAGER
     KeepRunningUnlock();
+#endif
 
     if (started_) {
         int32_t ret = audioRender_->Stop(audioRender_);

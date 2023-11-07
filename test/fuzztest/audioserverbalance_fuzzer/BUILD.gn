@@ -39,7 +39,6 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "ipc:ipc_single",
-    "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
   ]
 }

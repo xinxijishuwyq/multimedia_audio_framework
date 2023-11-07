@@ -24,8 +24,10 @@
 #include <unistd.h>
 
 #include "audio_proxy_manager.h"
+#ifdef FEATURE_POWER_MANAGER
 #include "running_lock.h"
 #include "power_mgr_client.h"
+#endif
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -51,7 +53,9 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t STEREO_CHANNEL_COUNT = 2;
+#ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
+#endif
 }
 
 typedef struct {
@@ -108,8 +112,9 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
-
+#ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+#endif
 
     int32_t CreateRender(struct HDI::Audio_Bluetooth::AudioPort &renderPort);
     int32_t InitAudioManager();
@@ -455,7 +460,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
 {
     Trace trace("BluetoothRendererSinkInner::Start");
     AUDIO_INFO_LOG("Start.");
-
+#ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioBluetoothBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
@@ -467,7 +472,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
-
+#endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_BLUETOOTH_RENDER_SINK_FILENAME, &dumpFile_);
 
     int32_t ret;
@@ -564,12 +569,14 @@ int32_t BluetoothRendererSinkInner::Stop(void)
 {
     Trace trace("BluetoothRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop in");
+#ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("BluetoothRendererSink call KeepRunningLock UnLock");
         keepRunningLock_->UnLock();
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
+#endif
     int32_t ret;
 
     if (audioRender_ == nullptr) {
