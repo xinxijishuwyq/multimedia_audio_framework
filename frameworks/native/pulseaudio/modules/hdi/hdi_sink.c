@@ -1913,9 +1913,6 @@ static void ThreadFuncRendererTimer(void *userdata)
             (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
             (u->sink->state == PA_SINK_IDLE && u->sink->monitor_source &&
             PA_SOURCE_IS_RUNNING(u->sink->monitor_source->thread_info.state));
-        unsigned nPrimary, nOffload, nHd;
-        GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        flag &= nPrimary > 0;
         if (flag) {
             now = pa_rtclock_now();
         }
@@ -2231,12 +2228,6 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
             return 0;
         }
 
-        unsigned nPrimary, nOffload, nHd;
-        GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        if (nPrimary == 0) {
-            return 0;
-        }
-
         if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
             AUDIO_ERR_LOG("audiorenderer control start failed!");
             u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
@@ -2441,7 +2432,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
 
     u->primary.prewrite = 0;
     if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_PRIMARY)) {
-        u->primary.prewrite = u->block_usec * 7; // 7 frame, set cache len in hdi, avoid pop
+        u->primary.prewrite = u->block_usec * 0; // 7 frame, set cache len in hdi, avoid pop
     }
 
     u->primary.isHDISinkStarted = true;
