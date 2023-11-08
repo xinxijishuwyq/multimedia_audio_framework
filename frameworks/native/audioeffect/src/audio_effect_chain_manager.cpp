@@ -156,6 +156,21 @@ bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t s
     }
     return false;
 }
+
+int32_t EffectChainManagerInitCb(const char *sceneType)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    std::string sceneTypeString = "";
+    if (sceneType) {
+        sceneTypeString = sceneType;
+    }
+    if (audioEffectChainManager->InitAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -407,6 +422,25 @@ int32_t FindEffectLib(const std::string &effect,
         }
     }
     return ERROR;
+}
+
+void AudioEffectChain::InitEffectChain()
+{
+    if (IsEmptyEffectHandles()) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(reloadMutex);
+    for (AudioEffectHandle handle: standByEffectHandles) {
+        int32_t replyData = 0;
+        AudioEffectTransInfo cmdInfo = {sizeof(int32_t), &replyData};
+        AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+        int32_t ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
+                sceneType.c_str(), effectMode.c_str());
+            return;
+        }
+    }
 }
 
 int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string &effect, const std::string &libName)
@@ -798,6 +832,26 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
         return ERROR;
     }
     audioEffectChain->UpdateMultichannelIoBufferConfig(channels, channelLayout, deviceName);
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneType)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
+
+    AudioEffectChain *audioEffectChain = nullptr;
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+        return SUCCESS;
+    } else {
+        audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    }
+    if (audioEffectChain != nullptr) {
+        audioEffectChain->InitEffectChain();
+    }
+
     return SUCCESS;
 }
 }

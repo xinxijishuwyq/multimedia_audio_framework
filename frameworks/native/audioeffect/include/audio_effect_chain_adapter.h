@@ -44,6 +44,7 @@ int32_t EffectChainManagerMultichannelUpdate(const char *sceneType, const uint32
 bool IsChannelLayoutHVSSupported(const uint64_t channelLayout);
 bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
     const char *sinkChannelLayout);
+int32_t EffectChainManagerInitCb(const char *sceneType);
 
 #ifdef __cplusplus
 }
