@@ -17,11 +17,11 @@
 #define AUDIO_DEVICE_PARSER_H
 
 #include <list>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 #include "audio_log.h"
 #include "audio_info.h"
@@ -42,6 +42,15 @@ enum DeviceNodeName {
     DEVICE,
 };
 
+static std::map<std::string, DeviceType> deviceTypeMap_ = {
+    {"DEVICE_TYPE_WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
+    {"DEVICE_TYPE_WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
+    {"DEVICE_TYPE_BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
+    {"DEVICE_TYPE_BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
+    {"DEVICE_TYPE_USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
+    {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
+};
+
 class AudioDeviceParser : public Parser {
 public:
     static constexpr char DEVICE_CONFIG_FILE[] = "system/etc/audio/audio_device_privacy.xml";
@@ -52,15 +61,6 @@ public:
 
     AudioDeviceParser(AudioDeviceManager *audioDeviceManager)
     {
-        AUDIO_INFO_LOG("AudioDeviceParser ctor");
-        deviceTypeMap_ = {
-            {"DEVICE_TYPE_WIRED_HEADSET", DEVICE_TYPE_WIRED_HEADSET},
-            {"DEVICE_TYPE_WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
-            {"DEVICE_TYPE_BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
-            {"DEVICE_TYPE_BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
-            {"DEVICE_TYPE_USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
-            {"DEVICE_TYPE_USB_ARM_HEADSET", DEVICE_TYPE_USB_ARM_HEADSET},
-        };
         audioDeviceManager_ = audioDeviceManager;
     }
 
@@ -76,14 +76,13 @@ private:
     void ParseDevicePrivacyInfo(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
     void ParserDevicePrivacyInfoList(xmlNode *node, std::list<DevicePrivacyInfo> &deviceLists);
     void ParseAudioDevicePrivacyType(xmlNode *node, AudioDevicePrivacyType &deviceType);
-    void ParseDeviceRole(const std::string deviceRole, int32_t &deviceRoleFlag);
-    void ParseDeviceCategory(const std::string deviceCategory, int32_t &deviceCategoryFlag);
-    void ParseDeviceUsage(const std::string deviceUsage, int32_t &deviceUsageFlag);
+    void ParseDeviceRole(const std::string &deviceRole, int32_t &deviceRoleFlag);
+    void ParseDeviceCategory(const std::string &deviceCategory, int32_t &deviceCategoryFlag);
+    void ParseDeviceUsage(const std::string &deviceUsage, int32_t &deviceUsageFlag);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode *node);
     AudioDevicePrivacyType GetDevicePrivacyType(const std::string &devicePrivacyType);
 
-    xmlDoc *mDoc;
-    std::map<std::string, DeviceType> deviceTypeMap_;
+    xmlDoc *mDoc_;
     AudioDevicePrivacyType devicePrivacyType_ = {};
     AudioDeviceManager *audioDeviceManager_;
     std::unordered_map<AudioDevicePrivacyType, std::list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};

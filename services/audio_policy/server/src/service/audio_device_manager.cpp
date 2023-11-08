@@ -44,12 +44,12 @@ void AudioDeviceManager::OnXmlParsingCompleted(
 
     auto privacyDevices = devicePrivacyMaps_.find(AudioDevicePrivacyType::TYPE_PRIVACY);
     if (privacyDevices != devicePrivacyMaps_.end()) {
-        privacyDeviceList = privacyDevices->second;
+        privacyDeviceList_ = privacyDevices->second;
     }
 
     auto publicDevices = devicePrivacyMaps_.find(AudioDevicePrivacyType::TYPE_PUBLIC);
     if (publicDevices != devicePrivacyMaps_.end()) {
-        publicDeviceList = publicDevices->second;
+        publicDeviceList_ = publicDevices->second;
     }
 }
 
@@ -84,9 +84,9 @@ bool AudioDeviceManager::DeviceAttrMatch(const AudioDeviceDescriptor &devDesc, A
 {
     list<DevicePrivacyInfo> deviceList;
     if (privacyType == TYPE_PRIVACY) {
-        deviceList = privacyDeviceList;
+        deviceList = privacyDeviceList_;
     } else if (privacyType == TYPE_PUBLIC) {
-        deviceList = publicDeviceList;
+        deviceList = publicDeviceList_;
     } else {
         return false;
     }
@@ -104,9 +104,9 @@ bool AudioDeviceManager::DeviceAttrMatch(const AudioDeviceDescriptor &devDesc, A
     return false;
 }
 
-void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(vector<unique_ptr<AudioDeviceDescriptor>> &descArray,
-    const AudioDeviceDescriptor &devDesc, AudioDevicePrivacyType privacyType, DeviceRole devRole,
-    DeviceUsage devUsage, string logName)
+void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const AudioDeviceDescriptor &devDesc,
+    AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage, string logName,
+    vector<unique_ptr<AudioDeviceDescriptor>> &descArray)
 {
     bool result = DeviceAttrMatch(devDesc, privacyType, devRole, devUsage);
     if (result) {
@@ -129,32 +129,33 @@ void AudioDeviceManager::AddNewDevice(AudioDeviceDescriptor &devDesc)
     AddRemoteRenderDev(devDesc);
     AddRemoteCaptureDev(devDesc);
 
-    FillArrayWhenDeviceAttrMatch(commRenderPrivacyDevices_, devDesc, TYPE_PRIVACY, OUTPUT_DEVICE, VOICE,
-        "communication render privacy device");
-    FillArrayWhenDeviceAttrMatch(commRenderPublicDevices_, devDesc, TYPE_PUBLIC, OUTPUT_DEVICE, VOICE,
-        "communication render public device");
-    FillArrayWhenDeviceAttrMatch(commCapturePrivacyDevices_, devDesc, TYPE_PRIVACY, INPUT_DEVICE, VOICE,
-        "communication capture privacy device");
-    FillArrayWhenDeviceAttrMatch(commCapturePublicDevices_, devDesc, TYPE_PUBLIC, INPUT_DEVICE, VOICE,
-        "communication capture public device");
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, OUTPUT_DEVICE, VOICE, "communication render privacy device",
+        commRenderPrivacyDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, OUTPUT_DEVICE, VOICE, "communication render public device",
+        commRenderPublicDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, VOICE, "communication capture privacy device",
+        commCapturePrivacyDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, VOICE, "communication capture public device",
+        commCapturePublicDevices_);
 
-    FillArrayWhenDeviceAttrMatch(mediaRenderPrivacyDevices_, devDesc, TYPE_PRIVACY, OUTPUT_DEVICE, MEDIA,
-        "media render privacy device");
-    FillArrayWhenDeviceAttrMatch(mediaRenderPublicDevices_, devDesc, TYPE_PUBLIC, OUTPUT_DEVICE, MEDIA,
-        "media render public device");
-    FillArrayWhenDeviceAttrMatch(mediaCapturePrivacyDevices_, devDesc, TYPE_PRIVACY, INPUT_DEVICE, MEDIA,
-        "media capture privacy device");
-    FillArrayWhenDeviceAttrMatch(mediaCapturePublicDevices_, devDesc, TYPE_PUBLIC, INPUT_DEVICE, MEDIA,
-        "media capture public device");
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, OUTPUT_DEVICE, MEDIA, "media render privacy device",
+        mediaRenderPrivacyDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, OUTPUT_DEVICE, MEDIA, "media render public device",
+        mediaRenderPublicDevices_);
 
-    FillArrayWhenDeviceAttrMatch(capturePrivacyDevices_, devDesc, TYPE_PRIVACY, INPUT_DEVICE, ALL_USAGE,
-        "capture privacy device");
-    FillArrayWhenDeviceAttrMatch(capturePublicDevices_, devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE,
-        "capture public device");
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, MEDIA, "media capture privacy device",
+        mediaCapturePrivacyDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, MEDIA, "media capture public device",
+        mediaCapturePublicDevices_);
+
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, ALL_USAGE, "capture privacy device",
+        capturePrivacyDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
+        capturePublicDevices_);
 }
 
-void AudioDeviceManager::RemoveMatchDeviceInArray(vector<unique_ptr<AudioDeviceDescriptor>> &descArray,
-    const AudioDeviceDescriptor &devDesc, string logName)
+void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
+    vector<unique_ptr<AudioDeviceDescriptor>> &descArray)
 {
     auto isPresent = [&devDesc] (const unique_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
@@ -170,28 +171,28 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(vector<unique_ptr<AudioDeviceD
 
 void AudioDeviceManager::RemoveNewDevice(const AudioDeviceDescriptor &devDesc)
 {
-    RemoveMatchDeviceInArray(remoteRenderDevices_, devDesc, "remote render device");
-    RemoveMatchDeviceInArray(remoteCaptureDevices_, devDesc, "remote capture device");
+    RemoveMatchDeviceInArray(devDesc, "remote render device", remoteRenderDevices_);
+    RemoveMatchDeviceInArray(devDesc, "remote capture device", remoteCaptureDevices_);
 
-    RemoveMatchDeviceInArray(commRenderPrivacyDevices_, devDesc, "communication render privacy device");
-    RemoveMatchDeviceInArray(commRenderPublicDevices_, devDesc, "communication render public device");
-    RemoveMatchDeviceInArray(commCapturePrivacyDevices_, devDesc, "communication capture privacy device");
-    RemoveMatchDeviceInArray(commCapturePublicDevices_, devDesc, "communication capture public device");
+    RemoveMatchDeviceInArray(devDesc, "communication render privacy device", commRenderPrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "communication render public device", commRenderPublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "communication capture privacy device", commCapturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "communication capture public device", commCapturePublicDevices_);
 
-    RemoveMatchDeviceInArray(mediaRenderPrivacyDevices_, devDesc, "media render privacy device");
-    RemoveMatchDeviceInArray(mediaRenderPublicDevices_, devDesc, "media render public device");
-    RemoveMatchDeviceInArray(mediaCapturePrivacyDevices_, devDesc, "media capture privacy device");
-    RemoveMatchDeviceInArray(mediaCapturePublicDevices_, devDesc, "media capture public device");
+    RemoveMatchDeviceInArray(devDesc, "media render privacy device", mediaRenderPrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "media render public device", mediaRenderPublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "media capture privacy device", mediaCapturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "media capture public device", mediaCapturePublicDevices_);
 
-    RemoveMatchDeviceInArray(capturePrivacyDevices_, devDesc, "capture privacy device");
-    RemoveMatchDeviceInArray(capturePublicDevices_, devDesc, "capture public device");
+    RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
 }
 
 void AudioDeviceManager::ParseDeviceXml()
 {
     unique_ptr<AudioDeviceParser> audioDeviceParser = make_unique<AudioDeviceParser>(this);
     if (audioDeviceParser->LoadConfiguration()) {
-        AUDIO_INFO_LOG("WZX AudioAdapterManager: Audio device Config Load Configuration successfully");
+        AUDIO_INFO_LOG("Audio device manager load configuration successfully.");
         audioDeviceParser->Parse();
     }
 }

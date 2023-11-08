@@ -22,8 +22,8 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioDeviceParser::LoadConfiguration()
 {
-    mDoc = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
-    if (mDoc == nullptr) {
+    mDoc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
+    if (mDoc_ == nullptr) {
         AUDIO_ERR_LOG("xmlReadFile Failed");
         return false;
     }
@@ -33,7 +33,7 @@ bool AudioDeviceParser::LoadConfiguration()
 
 bool AudioDeviceParser::Parse()
 {
-    xmlNode *root = xmlDocGetRootElement(mDoc);
+    xmlNode *root = xmlDocGetRootElement(mDoc_);
     if (root == nullptr) {
         AUDIO_ERR_LOG("xmlDocGetRootElement Failed");
         return false;
@@ -48,8 +48,8 @@ bool AudioDeviceParser::Parse()
 
 void AudioDeviceParser::Destroy()
 {
-    if (mDoc != nullptr) {
-        xmlFreeDoc(mDoc);
+    if (mDoc_ != nullptr) {
+        xmlFreeDoc(mDoc_);
     }
 }
 
@@ -192,7 +192,7 @@ DeviceNodeName AudioDeviceParser::GetDeviceNodeNameAsInt(xmlNode *node)
     }
 }
 
-std::vector<std::string> split(const std::string line, const std::string sep)
+std::vector<std::string> split(const std::string &line, const std::string &sep)
 {
     std::vector<std::string> buf;
     int temp = 0;
@@ -209,7 +209,7 @@ std::vector<std::string> split(const std::string line, const std::string sep)
     return buf;
 }
 
-void AudioDeviceParser::ParseDeviceRole(const std::string deviceRole, int32_t &deviceRoleFlag)
+void AudioDeviceParser::ParseDeviceRole(const std::string &deviceRole, int32_t &deviceRoleFlag)
 {
     std::vector<std::string> buf = split(deviceRole, ",");
     typedef std::vector<std::string>::iterator itr;
@@ -222,7 +222,7 @@ void AudioDeviceParser::ParseDeviceRole(const std::string deviceRole, int32_t &d
     }
 }
 
-void AudioDeviceParser::ParseDeviceCategory(const std::string deviceCategory, int32_t &deviceCategoryFlag)
+void AudioDeviceParser::ParseDeviceCategory(const std::string &deviceCategory, int32_t &deviceCategoryFlag)
 {
     std::vector<std::string> buf = split(deviceCategory, ",");
     typedef std::vector<std::string>::iterator itr;
@@ -243,7 +243,7 @@ void AudioDeviceParser::ParseDeviceCategory(const std::string deviceCategory, in
     }
 }
 
-void AudioDeviceParser::ParseDeviceUsage(const std::string deviceUsage, int32_t &deviceUsageFlag)
+void AudioDeviceParser::ParseDeviceUsage(const std::string &deviceUsage, int32_t &deviceUsageFlag)
 {
     std::vector<std::string> buf = split(deviceUsage, ",");
     typedef std::vector<std::string>::iterator itr;

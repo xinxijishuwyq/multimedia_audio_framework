@@ -61,40 +61,31 @@ private:
     ~AudioDeviceManager() {};
     bool DeviceAttrMatch(const AudioDeviceDescriptor &devDesc, AudioDevicePrivacyType &privacyType,
         DeviceRole &devRole, DeviceUsage &devUsage);
-    void FillArrayWhenDeviceAttrMatch(vector<unique_ptr<AudioDeviceDescriptor>> &descArray,
-        const AudioDeviceDescriptor &devDesc, AudioDevicePrivacyType privacyType, DeviceRole devRole,
-        DeviceUsage devUsage, string logName = "device");
-    void RemoveMatchDeviceInArray(vector<unique_ptr<AudioDeviceDescriptor>> &descArray,
-        const AudioDeviceDescriptor &devDesc, string logName);
+
+    void FillArrayWhenDeviceAttrMatch(const AudioDeviceDescriptor &devDesc, AudioDevicePrivacyType privacyType,
+        DeviceRole devRole, DeviceUsage devUsage, string logName,
+        vector<unique_ptr<AudioDeviceDescriptor>> &descArray);
+
+    void RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
+        vector<unique_ptr<AudioDeviceDescriptor>> &descArray);
 
     void AddRemoteRenderDev(const AudioDeviceDescriptor &devDesc);
     void AddRemoteCaptureDev(const AudioDeviceDescriptor &devDesc);
 
-    list<DevicePrivacyInfo> privacyDeviceList;
-    list<DevicePrivacyInfo> publicDeviceList;
-    // 远程播放设备
+    list<DevicePrivacyInfo> privacyDeviceList_;
+    list<DevicePrivacyInfo> publicDeviceList_;
+
     vector<unique_ptr<AudioDeviceDescriptor>> remoteRenderDevices_;
-    // 远程录制设备
     vector<unique_ptr<AudioDeviceDescriptor>> remoteCaptureDevices_;
-    // 隐私通话设备
     vector<unique_ptr<AudioDeviceDescriptor>> commRenderPrivacyDevices_;
-    // 公共通话设备
     vector<unique_ptr<AudioDeviceDescriptor>> commRenderPublicDevices_;
-    // 隐私通话录制设备
     vector<unique_ptr<AudioDeviceDescriptor>> commCapturePrivacyDevices_;
-    // 公共通话录制设备
     vector<unique_ptr<AudioDeviceDescriptor>> commCapturePublicDevices_;
-    // 私有媒体播放设备
     vector<unique_ptr<AudioDeviceDescriptor>> mediaRenderPrivacyDevices_;
-    // 公共媒体播放设备
     vector<unique_ptr<AudioDeviceDescriptor>> mediaRenderPublicDevices_;
-    // 私有媒体录制设备
     vector<unique_ptr<AudioDeviceDescriptor>> mediaCapturePrivacyDevices_;
-    // 公共媒体录制设备
     vector<unique_ptr<AudioDeviceDescriptor>> mediaCapturePublicDevices_;
-    // 私有录制设备
     vector<unique_ptr<AudioDeviceDescriptor>> capturePrivacyDevices_;
-    // 公共录制设备
     vector<unique_ptr<AudioDeviceDescriptor>> capturePublicDevices_;
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
 };
