@@ -81,6 +81,8 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
 {
     pa_assert(c);
 
+    const char *flush = pa_proplist_gets(si->proplist, "stream.flush");
+    const char *sceneMode = pa_proplist_gets(si->proplist, "scene.mode");
     const char *sceneType = pa_proplist_gets(si->proplist, "scene.type");
     const char *deviceString = pa_proplist_gets(si->sink->proplist, PA_PROP_DEVICE_STRING);
     const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
@@ -99,6 +101,9 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
     const char *bootUpMusic = "1003";
     if (!pa_safe_streq(clientUid, bootUpMusic)) {
+        if (!pa_safe_streq(sceneMode, "EFFECT_NONE") && pa_safe_streq(flush, "true")) {
+            EffectChainManagerInitCb(sceneType);
+        }
         EffectChainManagerCreateCb(sceneType, sessionID);
         EffectChainManagerMultichannelUpdate(sceneType, channels, channelLayout);
     }

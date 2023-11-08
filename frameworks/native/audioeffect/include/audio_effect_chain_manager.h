@@ -74,6 +74,7 @@ public:
         const std::string &deviceName);
     void StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig);
     AudioEffectConfig GetIoBufferConfig();
+    void InitEffectChain();
 private:
     std::mutex reloadMutex;
     std::string sceneType;
@@ -107,6 +108,7 @@ public:
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
         const uint64_t &channelLayout);
+    int32_t InitAudioEffectChainDynamic(std::string sceneType);
 private:
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
