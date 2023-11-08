@@ -185,6 +185,37 @@ enum AudioDeviceManagerType {
     BLUETOOTH_DEV_MGR,
 };
 
+enum AudioDevicePrivacyType {
+    TYPE_PRIVACY,
+    TYPE_PUBLIC,
+    TYPE_NEGATIVE,
+};
+
+enum DeviceCategory {
+    CATEGORY_DEFAULT = 0,
+    BT_HEADPHONE = 0x1,
+    BT_SOUNDBOX = 0x10,
+    BT_CAR = 0x100,
+    BT_GLASSES = 0x1000,
+    BT_WATCH = 0x10000,
+    BT_HEARAID = 0x100000,
+    BT_UNWEAR_HEADPHONE = 0x1000000,
+};
+
+enum DeviceUsage {
+    MEDIA = 1,
+    VOICE = 2,
+    ALL_USAGE,
+};
+
+struct DevicePrivacyInfo {
+    std::string deviceName;
+    DeviceType deviceType;
+    DeviceRole deviceRole;
+    DeviceCategory deviceCategory;
+    DeviceUsage deviceUsage;
+};
+
 class DeviceInfo {
 public:
     DeviceType deviceType;

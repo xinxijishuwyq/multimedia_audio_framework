@@ -34,6 +34,10 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     deviceName_ = "";
     macAddress_ = "";
     displayName_ = "";
+    deviceCategory_ = CATEGORY_DEFAULT;
+    connectTimeStamp_ = 0;
+    connectState_ = CONNECTED;
+    pairDeviceDescriptor_ = nullptr;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) : deviceType_(type), deviceRole_(role)
@@ -49,6 +53,10 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role) :
     interruptGroupId_ = 0;
     networkId_ = LOCAL_NETWORK_ID;
     displayName_ = "";
+    deviceCategory_ = CATEGORY_DEFAULT;
+    connectTimeStamp_ = 0;
+    connectState_ = CONNECTED;
+    pairDeviceDescriptor_ = nullptr;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor()
@@ -72,6 +80,10 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     interruptGroupId_ = deviceDescriptor.interruptGroupId_;
     networkId_ = deviceDescriptor.networkId_;
     displayName_ = deviceDescriptor.displayName_;
+    deviceCategory_ = deviceDescriptor.deviceCategory_;
+    connectTimeStamp_ = deviceDescriptor.connectTimeStamp_;
+    connectState_ = deviceDescriptor.connectState_;
+    pairDeviceDescriptor_ = deviceDescriptor.pairDeviceDescriptor_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -95,10 +107,16 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &
     interruptGroupId_ = deviceDescriptor->interruptGroupId_;
     networkId_ = deviceDescriptor->networkId_;
     displayName_ = deviceDescriptor->displayName_;
+    deviceCategory_ = deviceDescriptor->deviceCategory_;
+    connectTimeStamp_ = deviceDescriptor->connectTimeStamp_;
+    connectState_ = deviceDescriptor->connectState_;
+    pairDeviceDescriptor_ = deviceDescriptor->pairDeviceDescriptor_;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
-{}
+{
+    pairDeviceDescriptor_ = nullptr;
+}
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {

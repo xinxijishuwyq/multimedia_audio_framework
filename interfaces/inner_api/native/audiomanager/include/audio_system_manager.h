@@ -31,6 +31,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum ConnectState {
+    CONNECTED,
+    VIRTUAL_CONNECTED,
+};
+
 class AudioDeviceDescriptor;
 class AudioDeviceDescriptor : public Parcelable {
     friend class AudioSystemManager;
@@ -49,6 +54,10 @@ public:
     std::string networkId_;
     std::string displayName_;
     AudioStreamInfo audioStreamInfo_ = {};
+    DeviceCategory deviceCategory_;
+    int64_t connectTimeStamp_;
+    AudioDeviceDescriptor *pairDeviceDescriptor_;
+    ConnectState connectState_;
 
     AudioDeviceDescriptor();
     AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId, int32_t volumeGroupId,

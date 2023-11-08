@@ -46,6 +46,8 @@
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
+#include "audio_device_manager.h"
+#include "audio_device_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -330,7 +332,8 @@ private:
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         configParser_(ParserFactory::GetInstance().CreateParser(*this)),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
-        audioEffectManager_(AudioEffectManager::GetAudioEffectManager())
+        audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
+        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
     {
 #ifdef ACCESSIBILITY_ENABLE
         accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
@@ -629,6 +632,7 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
+    AudioDeviceManager &audioDeviceManager_;
 
     std::optional<uint32_t> offloadSessionID_;
     PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;

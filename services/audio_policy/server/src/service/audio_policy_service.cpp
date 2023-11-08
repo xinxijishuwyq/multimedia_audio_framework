@@ -89,6 +89,7 @@ bool AudioPolicyService::Init(void)
     serviceFlag_.reset();
     audioPolicyManager_.Init();
     audioEffectManager_.EffectManagerInit();
+    audioDeviceManager_.ParseDeviceXml();
 
     if (!configParser_.LoadConfiguration()) {
         AUDIO_ERR_LOG("Audio Config Load Configuration failed");
@@ -2572,7 +2573,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
             connectedDevices_.end());
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
-
+        audioDeviceManager_.AddNewDevice(deviceDesc);
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() != AUDIO_SCENE_DEFAULT) {
             // If the A2DP device is connecting when calling, add it to connectedDevices_ and donot activate it now
             AUDIO_INFO_LOG("A2DP device should be used in non-call mode [%{public}d]", GetAudioScene());
@@ -2587,6 +2588,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
+        audioDeviceManager_.RemoveNewDevice(deviceDesc);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;

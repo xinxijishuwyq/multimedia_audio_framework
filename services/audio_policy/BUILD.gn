@@ -20,6 +20,7 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 group("audio_policy_packages") {
   deps = [
+    ":audio_device_config",
     ":audio_dump",
     ":audio_effect_config",
     ":audio_interrupt_policy_config",
@@ -150,7 +151,9 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_stream_collector.cpp",
     "server/src/audio_stream_event_dispatcher.cpp",
     "server/src/audio_volume_key_event_callback_proxy.cpp",
+    "server/src/service/audio_device_manager.cpp",
     "server/src/service/audio_policy_service.cpp",
+    "server/src/service/config/audio_device_parser.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
     "server/src/service/config/audio_volume_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
@@ -254,6 +257,14 @@ ohos_shared_library("audio_policy_service") {
 
 ohos_prebuilt_etc("audio_interrupt_policy_config") {
   source = "server/config/audio_interrupt_policy_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_device_config") {
+  source = "server/config/audio_device_privacy.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
