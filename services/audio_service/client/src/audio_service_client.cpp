@@ -1987,8 +1987,9 @@ int32_t AudioServiceClient::GetBufferSizeForCapturer(size_t &bufferSize)
 int32_t AudioServiceClient::GetFrameCountForCapturer(uint32_t &frameCount)
 {
     size_t bufferSize;
-    GetBufferSize(bufferSize);
-    frameCount = bufferSize / (sampleSpec.rate * sampleSpec.channels);
+    GetBufferSizeForCapturer(bufferSize);
+    size_t sampleSize = pa_sample_size_of_format(sampleSpec.format);
+    frameCount = bufferSize / (sampleSize * sampleSpec.channels);
     return AUDIO_CLIENT_SUCCESS;
 }
 
