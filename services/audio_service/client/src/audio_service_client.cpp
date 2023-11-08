@@ -1290,10 +1290,10 @@ int32_t AudioServiceClient::FlushStream()
     }
     pa_proplist *propList = pa_proplist_new();
     pa_proplist_sets(propList, "stream.flush", "true");
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList, 
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_sets(propList, "stream.flush", "false");
-    updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList, 
+    updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);

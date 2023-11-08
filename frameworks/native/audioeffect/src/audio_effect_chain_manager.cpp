@@ -846,12 +846,13 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneTy
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         return SUCCESS;
     } else {
-        audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeiceKey];
+        audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     }
     if (audioEffectChain != nullptr) {
         audioEffectChain->InitEffectChain();
     }
 
     return SUCCESS;
+}
 }
 }
