@@ -193,13 +193,13 @@ enum AudioDevicePrivacyType {
 
 enum DeviceCategory {
     CATEGORY_DEFAULT = 0,
-    BT_HEADPHONE = 0x1,
-    BT_SOUNDBOX = 0x10,
-    BT_CAR = 0x100,
-    BT_GLASSES = 0x1000,
-    BT_WATCH = 0x10000,
-    BT_HEARAID = 0x100000,
-    BT_UNWEAR_HEADPHONE = 0x1000000,
+    BT_HEADPHONE = 1 << 0,
+    BT_SOUNDBOX = 1 << 1,
+    BT_CAR = 1 << 2,
+    BT_GLASSES = 1 << 3,
+    BT_WATCH = 1 << 4,
+    BT_HEARAID = 1 << 5,
+    BT_UNWEAR_HEADPHONE = 1 << 6,
 };
 
 enum DeviceUsage {

@@ -142,7 +142,6 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
 #ifdef BLUETOOTH_ENABLE
         if (serviceStatus->status == SERVIE_STATUS_START) {
             AUDIO_INFO_LOG("Bluetooth hdi service started");
-            Bluetooth::AudioA2dpManager::ConnectBluetoothA2dpSink();
         } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
             AUDIO_INFO_LOG("Bluetooth hdi service stopped");
             if (Bluetooth::AudioA2dpManager::HasA2dpDeviceConnected()) {
