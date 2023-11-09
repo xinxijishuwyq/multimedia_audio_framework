@@ -1915,7 +1915,9 @@ static void ThreadFuncRendererTimer(void *userdata)
             PA_SOURCE_IS_RUNNING(u->sink->monitor_source->thread_info.state));
         unsigned nPrimary, nOffload, nHd;
         GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        flag &= nPrimary > 0;
+        if (u->offload_enable) {
+            flag &= nPrimary > 0;
+        }
         if (flag) {
             now = pa_rtclock_now();
         }
@@ -2233,7 +2235,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState,
 
         unsigned nPrimary, nOffload, nHd;
         GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        if (nPrimary == 0) {
+        if (u->offload_enable && nPrimary == 0) {
             return 0;
         }
 
@@ -2440,7 +2442,7 @@ static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
         goto fail;
 
     u->primary.prewrite = 0;
-    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_PRIMARY)) {
+    if (u->offload_enable && !strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_PRIMARY)) {
         u->primary.prewrite = u->block_usec * 7; // 7 frame, set cache len in hdi, avoid pop
     }
 
