@@ -2309,6 +2309,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
         audioDescriptor->deviceId_ = startDeviceId++;
         UpdateDisplayName(audioDescriptor);
         connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+        audioDeviceManager_.AddNewDevice(audioDescriptor);
     }
     if (IsInputDevice(deviceDescriptor.deviceType_)) {
         AUDIO_INFO_LOG("Filling input device for %{public}d", deviceDescriptor.deviceType_);
@@ -2331,6 +2332,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
         UpdateDisplayName(audioDescriptor);
         connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
         AddMicrophoneDescriptor(audioDescriptor);
+        audioDeviceManager_.AddNewDevice(audioDescriptor);
     }
 }
 
@@ -2362,6 +2364,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
 
     sptr<AudioDeviceDescriptor> devDesc
         = new (std::nothrow) AudioDeviceDescriptor(deviceDescriptor.deviceType_, deviceDescriptor.deviceRole_);
+    audioDeviceManager_.RemoveNewDevice(devDesc);
     RemoveMicrophoneDescriptor(devDesc);
 }
 
@@ -2573,7 +2576,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
             connectedDevices_.end());
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
-        audioDeviceManager_.AddNewDevice(deviceDesc);
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && GetAudioScene() != AUDIO_SCENE_DEFAULT) {
             // If the A2DP device is connecting when calling, add it to connectedDevices_ and donot activate it now
             AUDIO_INFO_LOG("A2DP device should be used in non-call mode [%{public}d]", GetAudioScene());
@@ -2581,6 +2583,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             connectedA2dpDeviceMap_.insert(make_pair(macAddress, configInfo));
             activeBTDevice_ = macAddress;
             TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+            TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, isConnected);
             UpdateTrackerDeviceChange(deviceChangeDescriptor);
             return;
         }
@@ -2588,7 +2591,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
-        audioDeviceManager_.RemoveNewDevice(deviceDesc);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;
@@ -2598,6 +2600,8 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
 
     OnPreferredDeviceUpdated(currentActiveDevice_, activeInputDevice_);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+    TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+
     UpdateTrackerDeviceChange(deviceChangeDescriptor);
 }
 
@@ -2865,6 +2869,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
     }
 
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
+    TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
     if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
         remoteCapturerSwitch_ = true;
     }
@@ -3322,6 +3327,42 @@ int32_t AudioPolicyService::RegisterAudioCapturerEventListener(int32_t clientPid
 int32_t AudioPolicyService::UnregisterAudioCapturerEventListener(int32_t clientPid)
 {
     return streamCollector_.UnregisterAudioCapturerEventListener(clientPid);
+}
+
+int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
+    const sptr<IRemoteObject> &object, bool hasBTPermission)
+{
+    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
+
+    if (callback != nullptr) {
+        callback->hasBTPermission_ = hasBTPermission;
+        availableDeviceChangeCbsMap_[{clientId, usage}] = callback;
+    }
+    AUDIO_DEBUG_LOG("SetAvailableDeviceChangeCallback:: deviceChangeCbsMap_ size: %{public}zu",
+        availableDeviceChangeCbsMap_.size());
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    if (availableDeviceChangeCbsMap_.erase({clientId, usage}) == 0) {
+        AUDIO_INFO_LOG("client not present in %{public}s", __func__);
+    }
+        // for routing manager napi remove all device change callback
+    if (usage == AudioDeviceUsage::D_ALL_DEVICES) {
+        for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end();) {
+            if ((*it).first.first == clientId) {
+                it = availableDeviceChangeCbsMap_.erase(it);
+            } else {
+                it++;
+            }
+        }
+    }
+
+    AUDIO_DEBUG_LOG("UnsetAvailableDeviceChangeCallback:: map size: %{public}zu", availableDeviceChangeCbsMap_.size());
+    return SUCCESS;
 }
 
 static void UpdateRendererInfoWhenNoPermission(const unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos,
@@ -4700,6 +4741,58 @@ void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo 
         sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     }
     AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " OnCapturerSessionAdded end", sessionID);
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsage(AudioDeviceUsage usage,
+    const std::vector<sptr<AudioDeviceDescriptor>>& descs)
+{
+    std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps =
+        audioDeviceManager_.GetDevicePrivacyMaps();
+    for (auto &dev : descs) {
+        for (auto &devicePrivacy : devicePrivacyMaps) {
+            list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
+            audioDeviceManager_.GetAvailableDevicesWithUsage(usage, deviceInfos, dev, audioDeviceDescriptors);
+        }
+    }
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    for (auto &dec : audioDeviceDescriptors) {
+        sptr<AudioDeviceDescriptor> tempDec = new(std::nothrow) AudioDeviceDescriptor(*dec);
+        deviceDescriptors.push_back(move(tempDec));
+    }
+    return deviceDescriptors;
+}
+
+void AudioPolicyService::TriggerAvailableDeviceChangedCallback(
+    const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
+{
+    Trace trace("AudioPolicyService::TriggerAvailableDeviceChangedCallback");
+    DeviceChangeAction deviceChangeAction;
+    deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;
+
+    WriteDeviceChangedSysEvents(desc, isConnected);
+
+    for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
+        AudioDeviceUsage usage = it->first.second;
+        deviceChangeAction.deviceDescriptors = DeviceFilterByUsage(it->first.second, desc);
+        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
+            if (!(it->second->hasBTPermission_)) {
+                UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
+            }
+            it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
+        }
+    }
+}
+
+std::vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetAvailableDevices(AudioDeviceUsage usage)
+{
+    std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    audioDeviceDescriptors = audioDeviceManager_.GetAvailableDevicesByUsage(usage);
+
+    AUDIO_INFO_LOG("audioDeviceDescriptors size:%{public}d", audioDeviceDescriptors.size());
+    return audioDeviceDescriptors;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -119,6 +119,9 @@ private:
     void ReadStreamChangeInfo(MessageParcel &data, const AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteAudioFocusInfo(MessageParcel &data,
         const std::pair<AudioInterrupt, AudioFocuState> &focusInfo);
+    void GetAvailableDevicesInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -212,6 +215,9 @@ private:
         &AudioPolicyManagerStub::GetAvailableMicrophonesInternal,
         &AudioPolicyManagerStub::SetDeviceAbsVolumeSupportedInternal,
         &AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal,
+        &AudioPolicyManagerStub::GetAvailableDevicesInternal,
+        &AudioPolicyManagerStub::SetAvailableDeviceChangeCallbackInternal,
+        &AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal,
     };
 };
 } // namespace AudioStandard

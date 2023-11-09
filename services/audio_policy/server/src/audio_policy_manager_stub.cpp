@@ -1009,6 +1009,38 @@ void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, Me
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::GetAvailableDevicesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioDeviceUsage usage  = static_cast<AudioDeviceUsage>(data.ReadInt32());
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs = GetAvailableDevices(usage);
+    int32_t size = static_cast<int32_t>(descs.size());
+    reply.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        descs[i]->Marshalling(reply);
+    }
+}
+
+void AudioPolicyManagerStub::SetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
+        return;
+    }
+    int32_t result = SetAvailableDeviceChangeCallback(clientId, usage, object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t clientId = data.ReadInt32();
+    AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+    int32_t result = UnsetAvailableDeviceChangeCallback(clientId, usage);
+    reply.WriteInt32(result);
+}
+
 int AudioPolicyManagerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {

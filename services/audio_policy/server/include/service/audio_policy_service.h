@@ -226,6 +226,11 @@ public:
 
     int32_t UnregisterAudioCapturerEventListener(int32_t clientPid);
 
+    int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
+        const sptr<IRemoteObject> &object, bool hasBTPermission);
+
+    int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage);
+
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
 
@@ -327,6 +332,11 @@ public:
     void OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
 
     void OnCapturerSessionRemoved(uint64_t sessionID);
+
+    std::vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
+
+    void TriggerAvailableDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -538,6 +548,9 @@ private:
 
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
+    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
+        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -585,6 +598,8 @@ private:
     std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredInputDeviceCbsMap_;
+    std::map<std::pair<int32_t, AudioDeviceUsage>,
+        sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};

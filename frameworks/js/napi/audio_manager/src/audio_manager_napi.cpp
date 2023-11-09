@@ -67,6 +67,7 @@ napi_ref AudioManagerNapi::audioErrors_ = nullptr;
 napi_ref AudioManagerNapi::communicationDeviceType_ = nullptr;
 napi_ref AudioManagerNapi::interruptRequestType_ = nullptr;
 napi_ref AudioManagerNapi::interruptRequestResultType_ = nullptr;
+napi_ref AudioManagerNapi::audioDviceUsage_ = nullptr;
 
 
 #define GET_PARAMS(env, info, num) \
@@ -544,6 +545,8 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
             CreatePropertyBase(env, INTERRUPT_REQUEST_TYPE_MAP, interruptRequestType_)),
         DECLARE_NAPI_PROPERTY("InterruptRequestResultType",
             CreatePropertyBase(env, INTERRUPT_REQUEST_RESULT_TYPE_MAP, interruptRequestResultType_)),
+        DECLARE_NAPI_PROPERTY("DeviceUsage",
+            CreatePropertyBase(env, AUDIO_DEVICE_USAGE_MAP, audioDviceUsage_)),
     };
 
     status = napi_define_class(env, AUDIO_MNGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,

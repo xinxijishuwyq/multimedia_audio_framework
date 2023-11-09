@@ -2223,5 +2223,76 @@ int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, con
     }
     return reply.ReadInt32();
 }
+
+std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailableDevices(AudioDeviceUsage usage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()),
+        audioDeviceDescriptors, "WriteInterfaceToken failed");
+
+    bool token = data.WriteInt32(static_cast<int32_t>(usage));
+    CHECK_AND_RETURN_RET_LOG(token, audioDeviceDescriptors, "WriteInt32 usage failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AVAILABLE_DESCRIPTORS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioDeviceDescriptors,
+        "GetAvailableDevices failed, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        std::unique_ptr<AudioDeviceDescriptor> desc =
+            std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply));
+        audioDeviceDescriptors.push_back(move(desc));
+    }
+    return audioDeviceDescriptors;
+}
+
+int32_t AudioPolicyProxy::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
+    const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "SetAvailableDeviceChangeCallback object is null");
+
+    bool token = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data WriteInterfaceToken failed");
+    token = data.WriteInt32(clientId) && data.WriteInt32(usage);
+    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data write failed");
+
+    token = data.WriteRemoteObject(object);
+    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data WriteRemoteObject failed");
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AVAILABLE_DEVICE_CHANGE_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "AudioPolicyProxy: SetAvailableDeviceChangeCallback failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool token = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data WriteInterfaceToken failed");
+    token = data.WriteInt32(clientId) && data.WriteInt32(usage);
+    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data write failed");
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "AudioPolicyProxy: UnsetAvailableDeviceChangeCallback failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

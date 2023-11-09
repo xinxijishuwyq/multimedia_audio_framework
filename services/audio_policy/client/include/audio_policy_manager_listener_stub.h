@@ -35,10 +35,12 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
     // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetDeviceChangeCallback(const std::weak_ptr<AudioManagerDeviceChangeCallback> &callback);
     void SetFocusInfoChangeCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
+    void SetAvailableDeviceChangeCallback(const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb);
 private:
     void ReadInterruptEventParams(MessageParcel &data, InterruptEventInternal &interruptEvent);
     void ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange);
@@ -48,6 +50,7 @@ private:
     std::weak_ptr<AudioInterruptCallback> callback_;
     std::weak_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_;
     std::weak_ptr<AudioFocusInfoChangeCallback> focusInfoChangeCallback_;
+    std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> audioAvailableDeviceChangeCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2677,5 +2677,62 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
     return ret;
 }
+
+std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvailableDevices(AudioDeviceUsage usage)
+{
+    std::vector<unique_ptr<AudioDeviceDescriptor>> deviceDescs = {};
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    switch (usage) {
+        case MEDIA_OUTPUT_DEVICES:
+        case MEDIA_INPUT_DEVICES:
+        case ALL_MEDIA_DEVICES:
+        case CALL_OUTPUT_DEVICES:
+        case CALL_INPUT_DEVICES:
+        case ALL_CALL_DEVICES:
+            if (!hasSystemPermission) {
+                AUDIO_ERR_LOG("GetAvailableDevices: No system permission");
+                return deviceDescs;
+            }
+            break;
+        default:
+            break;
+    }
+
+    deviceDescs = audioPolicyService_.GetAvailableDevices(usage);
+    return deviceDescs;
+}
+
+int32_t AudioPolicyServer::SetAvailableDeviceChangeCallback(const int32_t /*clientId*/, const AudioDeviceUsage usage,
+    const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "SetAvailableDeviceChangeCallback set listener object is nullptr");
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    switch (usage) {
+        case MEDIA_OUTPUT_DEVICES:
+        case MEDIA_INPUT_DEVICES:
+        case ALL_MEDIA_DEVICES:
+        case CALL_OUTPUT_DEVICES:
+        case CALL_INPUT_DEVICES:
+        case ALL_CALL_DEVICES:
+            if (!hasSystemPermission) {
+                AUDIO_ERR_LOG("SetAvailableDeviceChangeCallback: No system permission");
+                return ERR_PERMISSION_DENIED;
+            }
+            break;
+        default:
+            break;
+    }
+
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
+    return audioPolicyService_.SetAvailableDeviceChangeCallback(clientPid, usage, object, hasBTPermission);
+}
+
+int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(const int32_t /*clientId*/, AudioDeviceUsage usage)
+{
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    return audioPolicyService_.UnsetAvailableDeviceChangeCallback(clientPid, usage);
+}
 } // namespace AudioStandard
 } // namespace OHOS

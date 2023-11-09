@@ -68,6 +68,7 @@ public:
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
     int32_t UnsetPreferredInputDeviceChangeCallback();
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 private:
     uint32_t GetCallingPid();
 };

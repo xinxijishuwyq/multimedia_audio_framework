@@ -37,8 +37,8 @@ public:
         return audioDeviceManager;
     }
 
-    void AddNewDevice(AudioDeviceDescriptor &devDesc);
-    void RemoveNewDevice(const AudioDeviceDescriptor &devDesc);
+    void AddNewDevice(const sptr<AudioDeviceDescriptor> &devDesc);
+    void RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devDesc);
     void OnXmlParsingCompleted(const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData);
     int32_t GetDeviceUsageFromType(const DeviceType devType) const;
     void ParseDeviceXml();
@@ -55,39 +55,68 @@ public:
     vector<unique_ptr<AudioDeviceDescriptor>> GetMediaCapturePublicDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
+    unique_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevices();
+    unique_ptr<AudioDeviceDescriptor> GetRenderDefaultDevices();
+    unique_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevices();
+    unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();
+    vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableDevicesByUsage(AudioDeviceUsage usage);
+    void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
+        const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
+        std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
 private:
     AudioDeviceManager() {};
     ~AudioDeviceManager() {};
-    bool DeviceAttrMatch(const AudioDeviceDescriptor &devDesc, AudioDevicePrivacyType &privacyType,
+    bool DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc, AudioDevicePrivacyType &privacyType,
         DeviceRole &devRole, DeviceUsage &devUsage);
 
-    void FillArrayWhenDeviceAttrMatch(const AudioDeviceDescriptor &devDesc, AudioDevicePrivacyType privacyType,
-        DeviceRole devRole, DeviceUsage devUsage, string logName,
-        vector<unique_ptr<AudioDeviceDescriptor>> &descArray);
+    void FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+        AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage, string logName,
+        vector<shared_ptr<AudioDeviceDescriptor>> &descArray);
 
     void RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
-        vector<unique_ptr<AudioDeviceDescriptor>> &descArray);
+        vector<shared_ptr<AudioDeviceDescriptor>> &descArray);
 
-    void AddRemoteRenderDev(const AudioDeviceDescriptor &devDesc);
-    void AddRemoteCaptureDev(const AudioDeviceDescriptor &devDesc);
+    void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
+    void UpdateConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
+    void AddConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void RemoveConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void AddRemoteRenderDev(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void AddRemoteCaptureDev(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void AddDefaultDevices(const sptr<AudioDeviceDescriptor> &devDesc);
+
+    void UpdateDeviceInfo(shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    void AddCommunicationDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void AddMediaDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void AddCaptureDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
+        const DevicePrivacyInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &dev,
+        std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
+        vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;
 
-    vector<unique_ptr<AudioDeviceDescriptor>> remoteRenderDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> remoteCaptureDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> commRenderPrivacyDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> commRenderPublicDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> commCapturePrivacyDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> commCapturePublicDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> mediaRenderPrivacyDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> mediaRenderPublicDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> mediaCapturePrivacyDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> mediaCapturePublicDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> capturePrivacyDevices_;
-    vector<unique_ptr<AudioDeviceDescriptor>> capturePublicDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> remoteRenderDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> remoteCaptureDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> commRenderPrivacyDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> commRenderPublicDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> commCapturePrivacyDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> commCapturePublicDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> mediaRenderPrivacyDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> mediaRenderPublicDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> mediaCapturePrivacyDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> mediaCapturePublicDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> capturePrivacyDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> capturePublicDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
+    sptr<AudioDeviceDescriptor> earpiece_;
+    sptr<AudioDeviceDescriptor> speaker_;
+    sptr<AudioDeviceDescriptor> defalutMic_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
