@@ -237,7 +237,12 @@ bool OHAudioCapturer::Flush()
 bool OHAudioCapturer::Release()
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
-    return audioCapturer_->Release();
+    if (!audioCapturer_->Release()) {
+        return false;
+    }
+    audioCapturer_ = nullptr;
+    audioCapturerCallback_= nullptr;
+    return true;
 }
 
 CapturerState OHAudioCapturer::GetCurrentState()
@@ -303,9 +308,9 @@ void OHAudioCapturer::SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, 
     }
 
     if (callbacks.OH_AudioCapturer_OnInterruptEvent != nullptr) {
-        std::shared_ptr<AudioCapturerCallback> callback = std::make_shared<OHAudioCapturerCallback>(callbacks,
+        audioCapturerCallback_ = std::make_shared<OHAudioCapturerCallback>(callbacks,
             (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetCapturerCallback(callback);
+        audioCapturer_->SetCapturerCallback(audioCapturerCallback_);
     } else {
         AUDIO_ERR_LOG("capturer interrupt event callback is nullptr");
     }
