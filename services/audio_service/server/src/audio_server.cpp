@@ -221,6 +221,9 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             parmKey = AudioParamKey::USB_DEVICE;
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), "need_change_usb_device");
         }
+        if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
+        }
 
         const std::string mmiPre = "mmi_";
         if (key.size() > mmiPre.size()) {
