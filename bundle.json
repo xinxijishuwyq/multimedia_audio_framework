@@ -103,8 +103,7 @@
                   "audio_info.h"
                 ],
                 "header_base": [
-                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include",
-                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include"
+                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
                 ]
               }
             },
@@ -117,8 +116,7 @@
                   "audio_info.h"
                 ],
                 "header_base": [
-                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include",
-                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include"
+                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include"
                  ]
               }
             },
