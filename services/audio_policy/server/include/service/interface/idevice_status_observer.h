@@ -17,6 +17,7 @@
 #define ST_DEVICE_STATUS_OBSERVER_H
 
 #include "audio_info.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +33,8 @@ public:
     virtual void OnDeviceStatusUpdated(DStatusInfo statusInfo) = 0;
     virtual void OnServiceConnected(AudioServiceIndex serviceIndex) = 0;
     virtual void OnServiceDisconnected(AudioServiceIndex serviceIndex) = 0;
+    virtual void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) = 0;
+    virtual void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

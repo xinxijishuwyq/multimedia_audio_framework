@@ -22,12 +22,18 @@ ohos_shared_library("audio_bluetooth_client") {
     blocklist = "../../../cfi_blocklist.txt"
   }
   install_enable = true
-  sources = [ "audio_bluetooth_manager.cpp" ]
+  sources = [
+    "audio_bluetooth_manager.cpp",
+    "bluetooth_device_manager.cpp",
+  ]
 
   include_dirs = [
     "../../../services/audio_policy/server/include/service/interface",
     "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
   ]
+
+  deps = [ "../../../services/audio_service:audio_client" ]
 
   external_deps = [
     "bluetooth:btframework",

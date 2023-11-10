@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,13 +20,10 @@
 #include "bluetooth_a2dp_codec.h"
 #include "bluetooth_avrcp_tg.h"
 #include "bluetooth_hfp_ag.h"
-#include "idevice_status_observer.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace Bluetooth {
-
-int32_t RegisterDeviceObserver(AudioStandard::IDeviceStatusObserver &observer);
-void UnregisterDeviceObserver();
 
 // Audio bluetooth a2dp feature support
 class AudioA2dpListener : public A2dpSourceObserver {
@@ -37,6 +34,7 @@ public:
     virtual void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state);
     virtual void OnConfigurationChanged(const BluetoothRemoteDevice &device, const A2dpCodecInfo &info, int error);
     virtual void OnPlayingStatusChanged(const BluetoothRemoteDevice &device, int playingState, int error);
+    virtual void OnMediaStackChanged(const BluetoothRemoteDevice &device, int action);
 
 private:
     BLUETOOTH_DISALLOW_COPY_AND_ASSIGN(AudioA2dpListener);
@@ -48,13 +46,11 @@ public:
     virtual ~AudioA2dpManager() = default;
     static void RegisterBluetoothA2dpListener();
     static void UnregisterBluetoothA2dpListener();
-    static void ConnectBluetoothA2dpSink();
     static void DisconnectBluetoothA2dpSink();
     static int32_t SetActiveA2dpDevice(const std::string& macAddress);
-    static void UpdateDeviceListWhenConnecting(const BluetoothRemoteDevice& device);
-    static void UpdateDeviceListWhenDisconnecting(const BluetoothRemoteDevice& device);
-    static void UpdateDeviceListForConfiguration(const BluetoothRemoteDevice& device);
     static int32_t SetDeviceAbsVolume(const std::string& macAddress, int32_t volume);
+    static int32_t GetA2dpDeviceStreamInfo(const std::string& macAddress,
+        AudioStandard::AudioStreamInfo &streamInfo);
     static bool HasA2dpDeviceConnected();
 
     static void SetConnectionState(int state)
@@ -65,30 +61,16 @@ public:
     {
         return connectionState_;
     }
-    static void SetBluetoothSinkLoaded(bool isLoaded)
+    static BluetoothRemoteDevice GetCurrentActiveA2dpDevice()
     {
-        bluetoothSinkLoaded_ = isLoaded;
-    }
-    static bool GetBluetoothSinkLoaded()
-    {
-        return bluetoothSinkLoaded_;
-    }
-    static void SetBluetoothRemoteDevice(BluetoothRemoteDevice device)
-    {
-        bluetoothRemoteDevice_ = device;
-    }
-    static BluetoothRemoteDevice GetBluetoothRemoteDevice()
-    {
-        return bluetoothRemoteDevice_;
+        return activeA2dpDevice_;
     }
 
 private:
     static A2dpSource *a2dpInstance_;
     static AudioA2dpListener a2dpListener_;
     static int connectionState_;
-    static bool bluetoothSinkLoaded_;
-    static BluetoothRemoteDevice bluetoothRemoteDevice_;
-    static std::vector<BluetoothRemoteDevice> connectedA2dpDevices_;
+    static BluetoothRemoteDevice activeA2dpDevice_;
 };
 
 // Audio bluetooth sco feature support

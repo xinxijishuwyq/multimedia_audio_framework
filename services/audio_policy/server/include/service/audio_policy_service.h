@@ -193,6 +193,16 @@ public:
 
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
+    {
+        AUDIO_INFO_LOG("enter the OnForcedDeviceSelected");
+    }
+
+    void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected)
+    {
+        AUDIO_INFO_LOG("enter the OnDeviceStatusUpdated");
+    }
+
     void OnMonoAudioConfigChanged(bool audioMono);
 
     void OnAudioBalanceChanged(float audioBalance);

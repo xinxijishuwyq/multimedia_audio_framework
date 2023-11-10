@@ -38,6 +38,7 @@
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
 #include "audio_bluetooth_manager.h"
+#include "bluetooth_device_manager.h"
 #endif
 
 namespace OHOS {
