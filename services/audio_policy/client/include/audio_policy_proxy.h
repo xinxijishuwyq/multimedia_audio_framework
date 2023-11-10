@@ -16,6 +16,7 @@
 #ifndef ST_AUDIO_POLICY_PROXY_H
 #define ST_AUDIO_POLICY_PROXY_H
 
+#include <memory>
 #include "iremote_proxy.h"
 #include "audio_policy_base.h"
 #include "audio_info.h"
@@ -219,6 +220,13 @@ public:
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
+
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage) override;
+
+    int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

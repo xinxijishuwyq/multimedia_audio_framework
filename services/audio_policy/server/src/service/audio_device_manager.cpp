@@ -32,6 +32,15 @@ static int64_t GetCurrentTimeMS()
     return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
 }
 
+void AudioDeviceManager::ParseDeviceXml()
+{
+    unique_ptr<AudioDeviceParser> audioDeviceParser = make_unique<AudioDeviceParser>(this);
+    if (audioDeviceParser->LoadConfiguration()) {
+        AUDIO_INFO_LOG("Audio device manager load configuration successfully.");
+        audioDeviceParser->Parse();
+    }
+}
+
 void AudioDeviceManager::OnXmlParsingCompleted(
     const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData)
 {
@@ -53,34 +62,8 @@ void AudioDeviceManager::OnXmlParsingCompleted(
     }
 }
 
-void AudioDeviceManager::AddRemoteRenderDev(const AudioDeviceDescriptor &devDesc)
-{
-    unique_ptr<AudioDeviceDescriptor> newDevice = make_unique<AudioDeviceDescriptor>(devDesc);
-    if (!newDevice) {
-        AUDIO_ERR_LOG("Memory allocation failed");
-        return;
-    }
-
-    if (devDesc.networkId_ != LOCAL_NETWORK_ID && devDesc.deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
-        remoteRenderDevices_.push_back(move(newDevice));
-    }
-}
-
-void AudioDeviceManager::AddRemoteCaptureDev(const AudioDeviceDescriptor &devDesc)
-{
-    unique_ptr<AudioDeviceDescriptor> newDevice = make_unique<AudioDeviceDescriptor>(devDesc);
-    if (!newDevice) {
-        AUDIO_ERR_LOG("Memory allocation failed");
-        return;
-    }
-
-    if (devDesc.networkId_ != LOCAL_NETWORK_ID && devDesc.deviceRole_ == DeviceRole::INPUT_DEVICE) {
-        remoteCaptureDevices_.push_back(move(newDevice));
-    }
-}
-
-bool AudioDeviceManager::DeviceAttrMatch(const AudioDeviceDescriptor &devDesc, AudioDevicePrivacyType &privacyType,
-    DeviceRole &devRole, DeviceUsage &devUsage)
+bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    AudioDevicePrivacyType &privacyType, DeviceRole &devRole, DeviceUsage &devUsage)
 {
     list<DevicePrivacyInfo> deviceList;
     if (privacyType == TYPE_PRIVACY) {
@@ -91,12 +74,16 @@ bool AudioDeviceManager::DeviceAttrMatch(const AudioDeviceDescriptor &devDesc, A
         return false;
     }
 
+    if (devDesc->connectState_ == VIRTUAL_CONNECTED) {
+        return false;
+    }
+
     for (auto &devInfo : deviceList) {
-        if ((devInfo.deviceType == devDesc.deviceType_) &&
-            ((devInfo.deviceRole & devRole) != 0) &&
+        if ((devInfo.deviceType == devDesc->deviceType_) &&
+            ((devRole == devDesc->deviceRole_) && ((devInfo.deviceRole & devRole) != 0)) &&
             ((devInfo.deviceUsage & devUsage) != 0) &&
-            ((devInfo.deviceCategory == devDesc.deviceCategory_) ||
-            ((devInfo.deviceCategory & devDesc.deviceCategory_) != 0))) {
+            ((devInfo.deviceCategory == devDesc->deviceCategory_) ||
+            ((devInfo.deviceCategory & devDesc->deviceCategory_) != 0))) {
             return true;
         }
     }
@@ -104,31 +91,114 @@ bool AudioDeviceManager::DeviceAttrMatch(const AudioDeviceDescriptor &devDesc, A
     return false;
 }
 
-void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const AudioDeviceDescriptor &devDesc,
+void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
     AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage, string logName,
-    vector<unique_ptr<AudioDeviceDescriptor>> &descArray)
+    vector<shared_ptr<AudioDeviceDescriptor>> &descArray)
 {
     bool result = DeviceAttrMatch(devDesc, privacyType, devRole, devUsage);
     if (result) {
-        unique_ptr<AudioDeviceDescriptor> newDevice = make_unique<AudioDeviceDescriptor>(devDesc);
-        if (!newDevice) {
-            AUDIO_ERR_LOG("Memory allocation failed");
-            return;
-        }
         AUDIO_INFO_LOG("Add to %{public}s list.", logName.c_str());
-        descArray.push_back(move(newDevice));
+        descArray.push_back(devDesc);
     }
 }
 
-void AudioDeviceManager::AddNewDevice(AudioDeviceDescriptor &devDesc)
+void AudioDeviceManager::AddRemoteRenderDev(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (devDesc.connectTimeStamp_ == 0) {
-        devDesc.connectTimeStamp_ = GetCurrentTimeMS();
+    if (devDesc->networkId_ != LOCAL_NETWORK_ID && devDesc->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
+        remoteRenderDevices_.push_back(devDesc);
     }
+}
 
-    AddRemoteRenderDev(devDesc);
-    AddRemoteCaptureDev(devDesc);
+void AudioDeviceManager::AddRemoteCaptureDev(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    if (devDesc->networkId_ != LOCAL_NETWORK_ID && devDesc->deviceRole_ == DeviceRole::INPUT_DEVICE) {
+        remoteCaptureDevices_.push_back(devDesc);
+    }
+}
 
+void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    DeviceRole devRole)
+{
+    auto isPresent = [&devDesc, &devRole] (const shared_ptr<AudioDeviceDescriptor> &desc) {
+        if (desc->deviceRole_ != devRole) {
+            return false;
+        }
+        if (devDesc->macAddress_ != "" && devDesc->macAddress_ == desc->macAddress_) {
+            return true;
+        } else {
+            return (desc->deviceType_ == devDesc->deviceType_);
+        }
+    };
+
+    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (it != connectedDevices_.end()) {
+        devDesc->pairDeviceDescriptor_ = *it;
+        (*it)->pairDeviceDescriptor_ = devDesc;
+    }
+}
+
+void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    if (devDesc->deviceRole_ == INPUT_DEVICE) {
+        MakePairedDeviceDescriptor(devDesc, OUTPUT_DEVICE);
+    } else if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
+        MakePairedDeviceDescriptor(devDesc, INPUT_DEVICE);
+    }
+}
+
+void AudioDeviceManager::AddConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    connectedDevices_.insert(connectedDevices_.begin(), devDesc);
+}
+
+void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
+        if (descriptor->deviceType_ == devDesc->deviceType_ &&
+            descriptor->networkId_ == devDesc->networkId_) {
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+                return true;
+            } else {
+                // if the disconnecting device is A2DP, need to compare mac address in addition.
+                return descriptor->macAddress_ == devDesc->macAddress_;
+            }
+        }
+        return false;
+    };
+
+    for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
+        it = find_if(it, connectedDevices_.end(), isPresent);
+        if (it != connectedDevices_.end()) {
+            if ((*it)->pairDeviceDescriptor_ != nullptr) {
+                (*it)->pairDeviceDescriptor_->pairDeviceDescriptor_ = nullptr;
+            }
+            it = connectedDevices_.erase(it);
+        }
+    }
+}
+
+void AudioDeviceManager::AddDefaultDevices(const sptr<AudioDeviceDescriptor> &devDesc)
+{
+    DeviceType devType = devDesc->deviceType_;
+    if (devType == DEVICE_TYPE_EARPIECE) {
+        earpiece_ = devDesc;
+    } else if (devType == DEVICE_TYPE_SPEAKER) {
+        speaker_ = devDesc;
+    } else if (devType == DEVICE_TYPE_MIC) {
+        defalutMic_ = devDesc;
+    }
+}
+
+void AudioDeviceManager::UpdateDeviceInfo(shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    if (deviceDesc->connectTimeStamp_ == 0) {
+        deviceDesc->connectTimeStamp_ = GetCurrentTimeMS();
+    }
+    MakePairedDeviceDescriptor(deviceDesc);
+}
+
+void AudioDeviceManager::AddCommunicationDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, OUTPUT_DEVICE, VOICE, "communication render privacy device",
         commRenderPrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, OUTPUT_DEVICE, VOICE, "communication render public device",
@@ -137,31 +207,68 @@ void AudioDeviceManager::AddNewDevice(AudioDeviceDescriptor &devDesc)
         commCapturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, VOICE, "communication capture public device",
         commCapturePublicDevices_);
+}
 
+void AudioDeviceManager::AddMediaDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, OUTPUT_DEVICE, MEDIA, "media render privacy device",
         mediaRenderPrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, OUTPUT_DEVICE, MEDIA, "media render public device",
         mediaRenderPublicDevices_);
-
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, MEDIA, "media capture privacy device",
         mediaCapturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, MEDIA, "media capture public device",
         mediaCapturePublicDevices_);
+}
 
+void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, ALL_USAGE, "capture privacy device",
         capturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
 }
 
-void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
-    vector<unique_ptr<AudioDeviceDescriptor>> &descArray)
+void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    auto isPresent = [&devDesc] (const unique_ptr<AudioDeviceDescriptor> &desc) {
+    if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && devDesc->deviceCategory_ == CATEGORY_DEFAULT) {
+        if (devDesc->deviceRole_ == INPUT_DEVICE) {
+            commCapturePrivacyDevices_.push_back(devDesc);
+        } else if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
+            commRenderPrivacyDevices_.push_back(devDesc);
+        }
+    }
+}
+
+void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+    if (!devDesc) {
+        AUDIO_ERR_LOG("Memory allocation failed");
+        return;
+    }
+
+    UpdateDeviceInfo(devDesc);
+    AddConnectedDevices(devDesc);
+
+    HandleScoWithDefaultCategory(devDesc);
+    AddDefaultDevices(deviceDescriptor);
+    AddRemoteRenderDev(devDesc);
+    AddRemoteCaptureDev(devDesc);
+
+    AddCommunicationDevices(devDesc);
+    AddMediaDevices(devDesc);
+    AddCaptureDevices(devDesc);
+}
+
+void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
+    vector<shared_ptr<AudioDeviceDescriptor>> &descArray)
+{
+    auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_;
     };
-    
+
     auto itr = find_if(descArray.begin(), descArray.end(), isPresent);
     if (itr != descArray.end()) {
         AUDIO_ERR_LOG("Remove from %{public}s list.", logName.c_str());
@@ -169,8 +276,9 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
     }
 }
 
-void AudioDeviceManager::RemoveNewDevice(const AudioDeviceDescriptor &devDesc)
+void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devDesc)
 {
+    RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(devDesc));
     RemoveMatchDeviceInArray(devDesc, "remote render device", remoteRenderDevices_);
     RemoveMatchDeviceInArray(devDesc, "remote capture device", remoteCaptureDevices_);
 
@@ -188,15 +296,6 @@ void AudioDeviceManager::RemoveNewDevice(const AudioDeviceDescriptor &devDesc)
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
 }
 
-void AudioDeviceManager::ParseDeviceXml()
-{
-    unique_ptr<AudioDeviceParser> audioDeviceParser = make_unique<AudioDeviceParser>(this);
-    if (audioDeviceParser->LoadConfiguration()) {
-        AUDIO_INFO_LOG("Audio device manager load configuration successfully.");
-        audioDeviceParser->Parse();
-    }
-}
-
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
@@ -205,7 +304,6 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDev
     }
     return descs;
 }
-
 
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDevices()
 {
@@ -304,6 +402,129 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
+}
+
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevices()
+{
+    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
+    return devDesc;
+}
+
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetRenderDefaultDevices()
+{
+    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(speaker_);
+    return devDesc;
+}
+
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevices()
+{
+    unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(defalutMic_);
+    return devDesc;
+}
+
+void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
+    const DevicePrivacyInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &dev,
+    std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    switch (usage) {
+        case MEDIA_OUTPUT_DEVICES:
+            if ((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+            }
+            break;
+        case MEDIA_INPUT_DEVICES:
+            if ((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+            }
+            break;
+        case ALL_MEDIA_DEVICES:
+            if (deviceInfo.deviceUsage & MEDIA) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+            }
+            break;
+        case CALL_OUTPUT_DEVICES:
+            if ((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+            }
+            break;
+        case CALL_INPUT_DEVICES:
+            if ((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+            }
+            break;
+        case ALL_CALL_DEVICES:
+            if (deviceInfo.deviceUsage & VOICE) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
+    const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
+    vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    for (auto &deviceInfo : deviceInfos) {
+        if (dev->deviceType_ != deviceInfo.deviceType) {
+            continue;
+        }
+        AddAvailableDevicesByUsage(usage, deviceInfo, dev, audioDeviceDescriptors);
+    }
+}
+
+void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
+    vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    switch (usage) {
+        case MEDIA_OUTPUT_DEVICES:
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
+            break;
+        case MEDIA_INPUT_DEVICES:
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
+            break;
+        case ALL_MEDIA_DEVICES:
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
+            break;
+        case CALL_OUTPUT_DEVICES:
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(earpiece_));
+            break;
+        case CALL_INPUT_DEVICES:
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
+            break;
+        case ALL_CALL_DEVICES:
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(earpiece_));
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
+            break;
+        default:
+            break;
+    }
+}
+
+std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableDevicesByUsage(AudioDeviceUsage usage)
+{
+    std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
+
+    for (auto &dev : connectedDevices_) {
+        for (auto &devicePrivacy : devicePrivacyMaps_) {
+            list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
+            sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor(*dev);
+            GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
+            delete desc;
+        }
+    }
+    return audioDeviceDescriptors;
+}
+
+unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()
+{
+    return devicePrivacyMaps_;
 }
 }
 }

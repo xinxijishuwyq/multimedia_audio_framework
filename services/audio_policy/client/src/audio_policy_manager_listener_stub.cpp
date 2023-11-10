@@ -95,6 +95,13 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             OnAudioFocusInfoChange(focusInfoList);
             return AUDIO_OK;
         }
+        case ON_AVAILABLE_DEVICE_CAHNGE: {
+            AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(data.ReadInt32());
+            DeviceChangeAction deviceChangeAction = {};
+            ReadAudioDeviceChangeData(data, deviceChangeAction);
+            OnAvailableDeviceChange(usage, deviceChangeAction);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -139,6 +146,19 @@ void AudioPolicyManagerListenerStub::OnAudioFocusInfoChange(
     focunIfoChangedCallback->OnAudioFocusInfoChange(focusInfoList);
 }
 
+void AudioPolicyManagerListenerStub::OnAvailableDeviceChange(const AudioDeviceUsage usage,
+    const DeviceChangeAction &deviceChangeAction)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnAvailableDeviceChange start");
+    std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> availabledeviceChangedCallback =
+        audioAvailableDeviceChangeCallback_.lock();
+
+    CHECK_AND_RETURN_LOG(availabledeviceChangedCallback != nullptr,
+        "OnAvailableDeviceChange: deviceChangeCallback_ or deviceChangeAction is nullptr");
+
+    availabledeviceChangedCallback->OnAvailableDeviceChange(usage, deviceChangeAction);
+}
+
 void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
 {
     callback_ = callback;
@@ -152,6 +172,12 @@ void AudioPolicyManagerListenerStub::SetDeviceChangeCallback(const std::weak_ptr
 void AudioPolicyManagerListenerStub::SetFocusInfoChangeCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &cb)
 {
     focusInfoChangeCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetAvailableDeviceChangeCallback(
+    const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb)
+{
+    audioAvailableDeviceChangeCallback_ = cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS

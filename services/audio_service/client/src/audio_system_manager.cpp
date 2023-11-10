@@ -1285,5 +1285,23 @@ int32_t AudioSystemManager::SetWakeUpSourceCloseCallback(const std::shared_ptr<W
     audioWakeUpSourceCloseCallback_ = callback;
     return RegisterWakeupSourceCallback();
 }
+
+int32_t AudioSystemManager::SetAvailableDeviceChangeCallback(const AudioDeviceUsage usage,
+    const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetAvailableDeviceChangeCallback: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    return AudioPolicyManager::GetInstance().SetAvailableDeviceChangeCallback(clientId, usage, callback);
+}
+
+int32_t AudioSystemManager::UnsetAvailableDeviceChangeCallback(AudioDeviceUsage usage)
+{
+    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    return AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, usage);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -130,6 +130,7 @@ private:
     static napi_ref communicationDeviceType_;
     static napi_ref interruptRequestType_;
     static napi_ref interruptRequestResultType_;
+    static napi_ref audioDviceUsage_;
 
     AudioSystemManager *audioMngr_;
     int32_t cachedClientId_ = -1;
@@ -202,6 +203,15 @@ static const std::map<std::string, AudioStandard::InterruptRequestType> INTERRUP
 static const std::map<std::string, AudioStandard::InterruptRequestResultType> INTERRUPT_REQUEST_RESULT_TYPE_MAP = {
     {"INTERRUPT_REQUEST_GRANT", INTERRUPT_REQUEST_GRANT},
     {"INTERRUPT_REQUEST_REJECT", INTERRUPT_REQUEST_REJECT},
+};
+
+static const std::map<std::string, AudioStandard::AudioDeviceUsage> AUDIO_DEVICE_USAGE_MAP = {
+    {"MEDIA_OUTPUT_DEVICES", MEDIA_OUTPUT_DEVICES },
+    {"MEDIA_INPUT_DEVICES", MEDIA_INPUT_DEVICES},
+    {"ALL_MEDIA_DEVICES", ALL_MEDIA_DEVICES},
+    {"CALL_OUTPUT_DEVICES", CALL_OUTPUT_DEVICES},
+    {"CALL_INPUT_DEVICES", CALL_INPUT_DEVICES},
+    {"ALL_CALL_DEVICES", ALL_CALL_DEVICES},
 };
 } // namespace AudioStandard
 } // namespace OHOS

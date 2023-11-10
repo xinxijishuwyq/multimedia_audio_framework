@@ -111,5 +111,10 @@ vector<sptr<MicrophoneDescriptor>> AudioRoutingManager::GetAvailableMicrophones(
 {
     return AudioPolicyManager::GetInstance().GetAvailableMicrophones();
 }
+
+std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioRoutingManager::GetAvailableDevices(AudioDeviceUsage usage)
+{
+    return AudioPolicyManager::GetInstance().GetAvailableDevices(usage);
+}
 } // namespace AudioStandard
 } // namespace OHOS

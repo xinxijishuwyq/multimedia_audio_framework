@@ -1321,5 +1321,57 @@ int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     return gsp->SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
+
+std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetAvailableDevices(AudioDeviceUsage usage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("GetAvailableMicrophones: audio policy manager proxy is NULL.");
+        std::vector<unique_ptr<AudioDeviceDescriptor>> descs;
+        return descs;
+    }
+    return gsp->GetAvailableDevices(usage);
+}
+
+int32_t AudioPolicyManager::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
+    const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetAvailableDeviceChangeCallback: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetAvailableDeviceChangeCallback: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    if (deviceChangeCbStub == nullptr) {
+        AUDIO_ERR_LOG("SetAvailableDeviceChangeCallback: object null");
+        return ERROR;
+    }
+
+    deviceChangeCbStub->SetAvailableDeviceChangeCallback(callback);
+
+    sptr<IRemoteObject> object = deviceChangeCbStub->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("SetAvailableDeviceChangeCallback: listenerStub->AsObject is nullptr..");
+        delete deviceChangeCbStub;
+        return ERROR;
+    }
+
+    return gsp->SetAvailableDeviceChangeCallback(clientId, usage, object);
+}
+
+int32_t AudioPolicyManager::UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("UnsetAvailableDeviceChangeCallback: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    return gsp->UnsetAvailableDeviceChangeCallback(clientId, usage);
+}
 } // namespace AudioStandard
 } // namespace OHOS

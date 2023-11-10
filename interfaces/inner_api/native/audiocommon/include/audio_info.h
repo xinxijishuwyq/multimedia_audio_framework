@@ -343,6 +343,58 @@ enum AudioScene : int32_t {
     AUDIO_SCENE_MAX,
 };
 
+enum AudioDeviceUsage : int32_t {
+    /**
+     * Media output devices.
+     * @syscap SystemCapability.Multimedia.Audio.Device
+     * @systemapi
+     * @since 11
+     */
+    MEDIA_OUTPUT_DEVICES = 1,
+    /**
+     * Media input devices.
+     * @syscap SystemCapability.Multimedia.Audio.Device
+     * @systemapi
+     * @since 11
+     */
+    MEDIA_INPUT_DEVICES = 2,
+    /**
+     * All media devices.
+     * @syscap SystemCapability.Multimedia.Audio.Device
+     * @systemapi
+     * @since 11
+     */
+    ALL_MEDIA_DEVICES = 3,
+    /**
+     * Call output devices.
+     * @syscap SystemCapability.Multimedia.Audio.Device
+     * @systemapi
+     * @since 11
+     */
+    CALL_OUTPUT_DEVICES = 4,
+    /**
+     * Call input devices.
+     * @syscap SystemCapability.Multimedia.Audio.Device
+     * @systemapi
+     * @since 11
+     */
+    CALL_INPUT_DEVICES = 8,
+    /**
+     * All call devices.
+     * @syscap SystemCapability.Multimedia.Audio.Device
+     * @systemapi
+     * @since 11
+     */
+    ALL_CALL_DEVICES = 12,
+    /**
+     * All devices.
+     * @syscap SystemCapability.Multimedia.Audio.Device
+     * @systemapi
+     * @since 11
+     */
+    D_ALL_DEVICES = 15,
+};
+
 inline AudioScene GetAudioSceneFromStreamType(AudioStreamType streamType, StreamUsage streamUsage)
 {
     if (streamType == STREAM_RING) {
