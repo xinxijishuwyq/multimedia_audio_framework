@@ -208,6 +208,7 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
     asClient->state_ = STOPPED;
+    asClient->breakingWritePa_ = false;
     asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
@@ -1175,6 +1176,9 @@ int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
 int32_t AudioServiceClient::StopStream()
 {
     AUDIO_INFO_LOG("Enter StopStream");
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && offloadEnable_) {
+        return OffloadStopStream();
+    }
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
@@ -1185,27 +1189,19 @@ int32_t AudioServiceClient::StopStream()
             return AUDIO_CLIENT_PA_ERR;
         }
 
-        if (!offloadEnable_) {
-            pa_threaded_mainloop_lock(mainLoop);
+        pa_threaded_mainloop_lock(mainLoop);
 
-            streamDrainStatus_ = 0;
-            pa_operation *operation = pa_stream_drain(paStream, PAStreamDrainInStopCb, (void *)this);
+        streamDrainStatus_ = 0;
+        pa_operation *operation = pa_stream_drain(paStream, PAStreamDrainInStopCb, (void *)this);
 
-            if (operation == nullptr) {
-                pa_threaded_mainloop_unlock(mainLoop);
-                AUDIO_ERR_LOG("pa_stream_drain operation is null");
-                return AUDIO_CLIENT_ERR;
-            }
-
-            pa_operation_unref(operation);
+        if (operation == nullptr) {
             pa_threaded_mainloop_unlock(mainLoop);
-        } else {
-            PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
-            int32_t ret = CorkStream();
-            if (ret) {
-                return ret;
-            }
+            AUDIO_ERR_LOG("pa_stream_drain operation is null");
+            return AUDIO_CLIENT_ERR;
         }
+
+        pa_operation_unref(operation);
+        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_SUCCESS;
     } else {
         PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
@@ -1227,6 +1223,29 @@ int32_t AudioServiceClient::StopStream()
             return AUDIO_CLIENT_SUCCESS;
         }
     }
+}
+
+int32_t AudioServiceClient::OffloadStopStream()
+{
+    AUDIO_INFO_LOG("Enter OffloadStopStream");
+    breakingWritePa_ = true;
+    pa_threaded_mainloop_signal(mainLoop, 0);
+    lock_guard<mutex> lockdata(dataMutex_);
+    lock_guard<mutex> lockctrl(ctrlMutex_);
+    state_ = STOPPING;
+    DrainAudioCache();
+
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        return AUDIO_CLIENT_PA_ERR;
+    }
+
+    PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
+    int32_t ret = CorkStream();
+    breakingWritePa_ = false;
+    if (ret) {
+        return ret;
+    }
+    return AUDIO_CLIENT_SUCCESS;
 }
 
 int32_t AudioServiceClient::CorkStream()
@@ -2528,9 +2547,21 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
     bufferAttrOffloadInactiveBackground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
     bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(OFFLOAD_BIG_BUFFER, sampleSpec);
 
-    bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_FOREGROUND, bufferAttrOffloadActiveForeground);
-    bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_BACKGROUND, bufferAttrOffloadActiveBackground);
-    bufferAttrStateMap_.emplace(OFFLOAD_INACTIVE_BACKGROUND, bufferAttrOffloadInactiveBackground);
+    if (bufferAttrStateMap_.count(OFFLOAD_ACTIVE_FOREGROUND)) {
+        bufferAttrStateMap_[OFFLOAD_ACTIVE_FOREGROUND] = bufferAttrOffloadActiveForeground;
+    } else {
+        bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_FOREGROUND, bufferAttrOffloadActiveForeground);
+    }
+    if (bufferAttrStateMap_.count(OFFLOAD_ACTIVE_BACKGROUND)) {
+        bufferAttrStateMap_[OFFLOAD_ACTIVE_BACKGROUND] = bufferAttrOffloadActiveBackground;
+    } else {
+        bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_BACKGROUND, bufferAttrOffloadActiveBackground);
+    }
+    if (bufferAttrStateMap_.count(OFFLOAD_INACTIVE_BACKGROUND)) {
+        bufferAttrStateMap_[OFFLOAD_INACTIVE_BACKGROUND] = bufferAttrOffloadInactiveBackground;
+    } else {
+        bufferAttrStateMap_.emplace(OFFLOAD_INACTIVE_BACKGROUND, bufferAttrOffloadInactiveBackground);
+    }
 
     return AUDIO_CLIENT_SUCCESS;
 }

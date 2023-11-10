@@ -910,10 +910,12 @@ int32_t OffloadAudioRendererSinkInner::Reset(void)
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
+        startDuringFlush_ = true;
         ret = Flush();
         if (!ret) {
             return SUCCESS;
         } else {
+            startDuringFlush_ = false;
             AUDIO_ERR_LOG("Reset failed!");
             return ERR_OPERATION_FAILED;
         }
