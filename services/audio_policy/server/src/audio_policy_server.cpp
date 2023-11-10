@@ -175,9 +175,14 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
-            ConnectServiceAdapter();
-            RegisterParamCallback();
-            LoadEffectLibrary();
+            if (!isFirstAudioServiceStart_) {
+                ConnectServiceAdapter();
+                RegisterParamCallback();
+                LoadEffectLibrary();
+                isFirstAudioServiceStart_ = true;
+            } else {
+                AUDIO_ERR_LOG("OnAddSystemAbility audio service is not first start");
+            }
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
