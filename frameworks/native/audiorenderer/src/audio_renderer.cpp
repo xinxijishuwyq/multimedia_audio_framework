@@ -38,6 +38,24 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
+static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
+    {STREAM_MUSIC, STREAM_USAGE_MUSIC},
+    {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
+    {STREAM_VOICE_ASSISTANT, STREAM_USAGE_VOICE_ASSISTANT},
+    {STREAM_ALARM, STREAM_USAGE_ALARM},
+    {STREAM_VOICE_MESSAGE, STREAM_USAGE_VOICE_MESSAGE},
+    {STREAM_RING, STREAM_USAGE_RINGTONE},
+    {STREAM_NOTIFICATION, STREAM_USAGE_NOTIFICATION},
+    {STREAM_ACCESSIBILITY, STREAM_USAGE_ACCESSIBILITY},
+    {STREAM_SYSTEM, STREAM_USAGE_SYSTEM},
+    {STREAM_MOVIE, STREAM_USAGE_MOVIE},
+    {STREAM_GAME, STREAM_USAGE_GAME},
+    {STREAM_SPEECH, STREAM_USAGE_AUDIOBOOK},
+    {STREAM_NAVIGATION, STREAM_USAGE_NAVIGATION},
+    {STREAM_DTMF, STREAM_USAGE_DTMF},
+    {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
+    {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC}
+};
 
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
@@ -203,10 +221,9 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
         AudioStreamParams tempParams = {};
         audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, tempParams, audioStreamType,
             appInfo_.appUid);
-        if (audioStream_) {
-            // Initializing with default values
-            rendererInfo_.contentType = CONTENT_TYPE_MUSIC;
-            rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+        if (audioStream_ && STREAM_TYPE_USAGE_MAP.count(audioStreamType) != 0) {
+            // Initialize the streamUsage based on the streamType
+            rendererInfo_.streamUsage = STREAM_TYPE_USAGE_MAP.at(audioStreamType);
         }
         AUDIO_INFO_LOG("AudioRendererPrivate create normal stream for old mode.");
     }
