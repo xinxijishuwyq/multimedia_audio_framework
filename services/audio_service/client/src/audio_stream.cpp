@@ -522,11 +522,6 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
 
-    // flush stream after stream paused
-    if (!offloadEnable_) {
-        FlushAudioStream();
-    }
-
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
