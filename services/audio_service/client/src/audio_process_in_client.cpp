@@ -253,10 +253,10 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
 {
     AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
     if (callbackLoop_.joinable()) {
-        if (threadStatus_ == WAITTING) {
-            threadStatusCV_.notify_all();
-        }
-        isCallbackLoopEnd_ = true;
+        std::unique_lock<std::mutex> lock(loopThreadLock_);
+        isCallbackLoopEnd_ = true; // change it with lock to break the loop
+        threadStatusCV_.notify_all();
+        lock.unlock(); // should call unlock before join
         callbackLoop_.join();
     }
     if (isInited_) {
@@ -402,7 +402,8 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     }
 
     AUDIO_INFO_LOG("Using totalSizeInFrame_ %{public}d spanSizeInFrame_ %{public}d byteSizePerFrame_ %{public}d "
-        "spanSizeInByte_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_);
+        "spanSizeInByte_ %{public}zu clientSpanSizeInByte_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_,
+        byteSizePerFrame_, spanSizeInByte_, clientSpanSizeInByte_);
 
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(callbackBuffer_ != nullptr, false, "Init callbackBuffer_ failed.");
@@ -452,6 +453,7 @@ inline size_t GetFormatSize(const AudioStreamInfo &info)
 bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
 {
     AUDIO_INFO_LOG("Call Init.");
+    processConfig_ = config;
     if (config.streamInfo.format != g_targetStreamInfo.format ||
         config.streamInfo.channels != g_targetStreamInfo.channels) {
         needConvert_ = true;
@@ -462,7 +464,6 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
     AUDIO_DEBUG_LOG("Using clientByteSizePerFrame_:%{public}zu", clientByteSizePerFrame_);
     bool isBufferInited = InitAudioBuffer();
     CHECK_AND_RETURN_RET_LOG(isBufferInited, isBufferInited, "%{public}s init audio buffer fail.", __func__);
-    processConfig_ = config;
 
     bool ret = handleTimeModel_.ConfigSampleRate(processConfig_.streamInfo.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Init LinearPosTimeModel failed.");
