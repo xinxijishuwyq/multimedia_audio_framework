@@ -84,6 +84,7 @@ class OHAudioCapturer {
 
     private:
         std::unique_ptr<AudioCapturer> audioCapturer_;
+        std::shared_ptr<AudioCapturerCallback> audioCapturerCallback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

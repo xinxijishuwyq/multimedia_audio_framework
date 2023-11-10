@@ -128,6 +128,7 @@ class OHAudioRenderer {
 
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
+        std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

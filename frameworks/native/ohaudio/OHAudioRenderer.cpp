@@ -235,7 +235,12 @@ bool OHAudioRenderer::Flush()
 bool OHAudioRenderer::Release()
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
-    return audioRenderer_->Release();
+    if (!audioRenderer_->Release()) {
+        return false;
+    }
+    audioRenderer_ = nullptr;
+    audioRendererCallback_ = nullptr;
+    return true;
 }
 
 RendererState OHAudioRenderer::GetCurrentState()
@@ -343,9 +348,9 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
     }
 
     if (callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
-        std::shared_ptr<AudioRendererCallback> callback =
+        audioRendererCallback_ =
             std::make_shared<OHAudioRendererCallback>(callbacks, (OH_AudioRenderer*)this, userData);
-        audioRenderer_->SetRendererCallback(callback);
+        audioRenderer_->SetRendererCallback(audioRendererCallback_);
     } else {
         AUDIO_ERR_LOG("audio renderer callback is nullptr");
     }
