@@ -2569,8 +2569,16 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
         AUDIO_ERR_LOG("SetA2dpDeviceVolume: Error caller uid: %{public}d", callerUid);
         return ERROR;
     }
-    AudioStreamType streamType = STREAM_MUSIC;
-    if (!IsVolumeLevelValid(streamType, volume)) {
+
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
+    if ((audioPolicyService_.GetLocalDevicesType().compare("tablet") == 0) ||
+            (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0)) {
+        streamInFocus = AudioStreamType::STREAM_ALL;
+    } else {
+        streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
+    }
+
+    if (!IsVolumeLevelValid(streamInFocus, volume)) {
         return ERR_NOT_SUPPORTED;
     }
     int32_t ret = audioPolicyService_.SetA2dpDeviceVolume(macAddress, volume);
@@ -2584,7 +2592,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
 
             AUDIO_DEBUG_LOG("SetA2dpDeviceVolume trigger volumeChangeCb clientPid : %{public}d", it->first);
             VolumeEvent volumeEvent;
-            volumeEvent.volumeType = streamType;
+            volumeEvent.volumeType = streamInFocus;
             volumeEvent.volume = volume;
             volumeEvent.updateUi = updateUi;
             volumeEvent.volumeGroupId = 0;
