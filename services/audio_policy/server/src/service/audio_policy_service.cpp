@@ -4016,6 +4016,7 @@ bool AudioPolicyService::IsOutputDevice(DeviceType deviceType) const
 DeviceRole AudioPolicyService::GetDeviceRole(DeviceType deviceType) const
 {
     switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
         case DeviceType::DEVICE_TYPE_SPEAKER:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
