@@ -4791,8 +4791,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetAvailableD
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     audioDeviceDescriptors = audioDeviceManager_.GetAvailableDevicesByUsage(usage);
-
-    AUDIO_INFO_LOG("audioDeviceDescriptors size:%{public}d", audioDeviceDescriptors.size());
     return audioDeviceDescriptors;
 }
 } // namespace AudioStandard
