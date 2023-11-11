@@ -174,6 +174,8 @@ public:
     */
     int32_t StopStream();
 
+    int32_t OffloadStopStream();
+
     /**
     * Flushes the stream created using CreateStream. This is applicable for
     * playback only
