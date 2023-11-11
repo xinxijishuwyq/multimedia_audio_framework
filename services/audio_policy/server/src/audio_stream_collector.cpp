@@ -413,7 +413,7 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
         if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
             (*it)->outputDeviceInfo.deviceType != outputDeviceInfo.deviceType) {
-            AUDIO_DEBUG_LOG("UpdateRendererDeviceInfo for client %{public}d session %{public}d: old device: %{public}d new device: %{public}d",
+            AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 clientUID, sessionId, (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
             (*it)->outputDeviceInfo = outputDeviceInfo;
             deviceInfoUpdated = true;
@@ -436,7 +436,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
         if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
             (*it)->inputDeviceInfo.deviceType != inputDeviceInfo.deviceType) {
-            AUDIO_DEBUG_LOG("UpdateCapturerDeviceInfo for client %{public}d session %{public}d: old device: %{public}d new device: %{public}d",
+            AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 (*it)->clientUID, (*it)->sessionId, (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
             (*it)->inputDeviceInfo = inputDeviceInfo;
             deviceInfoUpdated = true;

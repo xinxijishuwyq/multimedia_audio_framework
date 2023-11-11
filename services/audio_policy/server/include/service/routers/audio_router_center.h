@@ -78,6 +78,9 @@ private:
     std::vector<std::unique_ptr<RouterBase>> ringRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> toneRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> recordCaptureRouters_;
+
+    static unordered_map<StreamUsage, string> renderConfigMap_;
+    static unordered_map<SourceType, string> capturerConfigMap_;
 };
 
 } // namespace AudioStandard

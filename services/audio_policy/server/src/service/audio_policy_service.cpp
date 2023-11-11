@@ -1076,7 +1076,8 @@ int32_t AudioPolicyService::MoveToLocalInputDevice(std::vector<SourceOutput> sou
     uint32_t sourceId = -1; // invalid source id, use source name instead.
     std::string sourceName = GetSourcePortName(localDeviceDescriptor->deviceType_);
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
-        if (audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId, sourceId, sourceName) != SUCCESS) {
+        if (audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId, sourceId, sourceName)
+            != SUCCESS) {
             AUDIO_DEBUG_LOG("move [%{public}d] to local failed", sourceOutputs[i].paStreamId);
             return ERROR;
         }
@@ -1119,7 +1120,8 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<SourceOutput> so
 
     // start move.
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
-        if (audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId, sourceId, moduleName) != SUCCESS) {
+        if (audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId, sourceId, moduleName)
+            != SUCCESS) {
             AUDIO_DEBUG_LOG("move [%{public}d] failed", sourceOutputs[i].paStreamId);
             return ERROR;
         }
@@ -1484,9 +1486,10 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
 
 void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 {
-    AUDIO_DEBUG_LOG("UpdateActiveDeviceRoute Device type[%{public}d]", deviceType);
+    AUDIO_INFO_LOG("UpdateActiveDeviceRoute Device type[%{public}d]", deviceType);
 
     if (g_adProxy == nullptr) {
+        AUDIO_ERR_LOG("Audio Server Proxy is null");
         return;
     }
     auto ret = SUCCESS;
@@ -1564,37 +1567,39 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         }
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(
             rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID);
-        if ((desc->deviceType_ != DEVICE_TYPE_NONE &&
-            desc->deviceType_ != rendererChangeInfo->outputDeviceInfo.deviceType) ||
-            desc->macAddress_ != rendererChangeInfo->outputDeviceInfo.macAddress) {
-            if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-                int32_t ret = SwitchActiveA2dpDevice(new AudioDeviceDescriptor(*desc));
-                if (ret != SUCCESS) {
-                    AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
-                    desc->exceptionFlag = true;
-                    FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
-                    return;
-                }
+        if (desc->deviceType_ == DEVICE_TYPE_NONE ||
+            (desc->deviceType_ == rendererChangeInfo->outputDeviceInfo.deviceType &&
+            desc->macAddress_ == rendererChangeInfo->outputDeviceInfo.macAddress)) {
+            AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
+            continue;
+        }
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            int32_t ret = SwitchActiveA2dpDevice(new AudioDeviceDescriptor(*desc));
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
+                desc->exceptionFlag_ = true;
+                FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
+                return;
             }
-            if (needUpdateActiveDevice) {
-                if (currentActiveDevice_.deviceType_ != desc->deviceType_ ||
-                    currentActiveDevice_.macAddress_ != desc->macAddress_) {
-                    currentActiveDevice_ = AudioDeviceDescriptor(*desc);
-                    AUDIO_INFO_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
-                    isUpdateActiveDevice = true;
-                }
-                needUpdateActiveDevice = false;
+        }
+        if (needUpdateActiveDevice) {
+            if (currentActiveDevice_.deviceType_ != desc->deviceType_ ||
+                currentActiveDevice_.macAddress_ != desc->macAddress_) {
+                currentActiveDevice_ = AudioDeviceDescriptor(*desc);
+                AUDIO_INFO_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
+                isUpdateActiveDevice = true;
             }
-            // move sinkinput to target device
-            int32_t result = SelectNewOutputDevice(rendererChangeInfo, desc);
-            CHECK_AND_BREAK_LOG(result == SUCCESS,
-                "Failed to activate new device %{public}d for streamUsage %{public}d",
-                desc->deviceType_, rendererChangeInfo->rendererInfo.streamUsage);
-            UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*desc), true, true);
-            if (!isStreamStatusUpdated) {
-                streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
+            needUpdateActiveDevice = false;
+        }
+        // move sinkinput to target device
+        int32_t result = SelectNewOutputDevice(rendererChangeInfo, desc);
+        CHECK_AND_BREAK_LOG(result == SUCCESS,
+            "Failed to activate new device %{public}d for streamUsage %{public}d",
+            desc->deviceType_, rendererChangeInfo->rendererInfo.streamUsage);
+        UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*desc), true, true);
+        if (!isStreamStatusUpdated) {
+            streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
                 rendererChangeInfo->outputDeviceInfo);
-            }
         }
     }
     if (isUpdateActiveDevice) {
@@ -1618,29 +1623,31 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         }
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(
             capturerChangeInfo->capturerInfo.sourceType, capturerChangeInfo->clientUID);
-        if ((desc->deviceType_ != DEVICE_TYPE_NONE &&
-            desc->deviceType_ != capturerChangeInfo->inputDeviceInfo.deviceType) ||
-            desc->macAddress_ != capturerChangeInfo->inputDeviceInfo.macAddress) {
-            if (needUpdateActiveDevice) {
-                if (currentActiveInputDevice_.deviceType_ != desc->deviceType_ ||
-                    currentActiveInputDevice_.macAddress_ != desc->macAddress_) {
-                    currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
-                    AUDIO_INFO_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
-                    isUpdateActiveDevice = true;
-                }
-                needUpdateActiveDevice = false;
+        if (desc->deviceType_ == DEVICE_TYPE_NONE ||
+            (desc->deviceType_ == capturerChangeInfo->inputDeviceInfo.deviceType &&
+            desc->macAddress_ == capturerChangeInfo->inputDeviceInfo.macAddress)) {
+            AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
+            continue;
+        }
+        if (needUpdateActiveDevice) {
+            if (currentActiveInputDevice_.deviceType_ != desc->deviceType_ ||
+                currentActiveInputDevice_.macAddress_ != desc->macAddress_) {
+                currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
+                AUDIO_INFO_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
+                isUpdateActiveDevice = true;
             }
-            // move sourceoutput to target device
-            int32_t result = SelectNewInputDevice(capturerChangeInfo, desc);
-            CHECK_AND_BREAK_LOG(result == SUCCESS,
-                "Failed to activate new device %{public}d for sourceType %{public}d",
-                desc->deviceType_, capturerChangeInfo->capturerInfo.sourceType);
-            DeviceInfo inputDevice = {};
-            UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*desc), true, true);
-            if (!isStreamStatusUpdated) {
-                streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
+            needUpdateActiveDevice = false;
+        }
+        // move sourceoutput to target device
+        int32_t result = SelectNewInputDevice(capturerChangeInfo, desc);
+        CHECK_AND_BREAK_LOG(result == SUCCESS,
+            "Failed to activate new device %{public}d for sourceType %{public}d",
+            desc->deviceType_, capturerChangeInfo->capturerInfo.sourceType);
+        DeviceInfo inputDevice = {};
+        UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*desc), true, true);
+        if (!isStreamStatusUpdated) {
+            streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
                 capturerChangeInfo->inputDeviceInfo);
-            }
         }
     }
     if (isUpdateActiveDevice) {
@@ -3462,8 +3469,8 @@ static bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote)
     }
 }
 
-void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
-    bool hasSystemPermission)
+void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc,
+    bool hasBTPermission, bool hasSystemPermission)
 {
     deviceInfo.deviceType = desc->deviceType_;
     deviceInfo.deviceRole = desc->deviceRole_;
@@ -3543,13 +3550,15 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     if (mode == AUDIO_MODE_PLAYBACK) {
         if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
             vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-            rendererChangeInfos.push_back(make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
+            rendererChangeInfos.push_back(
+                make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
             FetchOutputDevice(rendererChangeInfos, true);
         }
     } else if (mode == AUDIO_MODE_RECORD) {
         if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RUNNING) {
             vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-            capturerChangeInfos.push_back(make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
+            capturerChangeInfos.push_back(
+                make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
             FetchInputDevice(capturerChangeInfos, true);
         }
         std::lock_guard<std::mutex> lock(microphonesMutex_);

@@ -34,7 +34,8 @@ unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallRenderDevice(StreamUs
 
 unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
+    unique_ptr<AudioDeviceDescriptor> desc =
+        AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     return make_unique<AudioDeviceDescriptor>(*(desc->pairDeviceDescriptor_));
 }
 

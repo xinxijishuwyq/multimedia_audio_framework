@@ -53,7 +53,7 @@ public:
     int32_t volumeGroupId_;
     std::string networkId_;
     std::string displayName_;
-    bool exceptionFlag = false;
+    bool exceptionFlag_ = false;
     AudioStreamInfo audioStreamInfo_ = {};
     DeviceCategory deviceCategory_;
     int64_t connectTimeStamp_;

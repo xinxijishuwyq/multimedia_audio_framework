@@ -25,12 +25,12 @@ public:
     std::string name_ = "user_select_router";
     UserSelectRouter() {};
     ~UserSelectRouter() {};
-    std::unique_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID);
-    std::unique_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID);
-    std::unique_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID);
-    std::unique_ptr<AudioDeviceDescriptor> GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID);
-    std::unique_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID);
-    std::unique_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID);
+    std::unique_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    std::unique_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    std::unique_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) override;
+    std::unique_ptr<AudioDeviceDescriptor> GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    std::unique_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) override;
+    std::unique_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS

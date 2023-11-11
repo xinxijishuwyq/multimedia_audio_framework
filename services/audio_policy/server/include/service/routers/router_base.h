@@ -34,16 +34,19 @@ public:
     virtual std::unique_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
     virtual std::unique_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
 
-    std::unique_ptr<AudioDeviceDescriptor> GetLatestConnectDeivce(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs) {
+    std::unique_ptr<AudioDeviceDescriptor> GetLatestConnectDeivce(
+        std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
+    {
         // remove abnormal device
         for (size_t i = 0; i < descs.size(); i++) {
-            if (descs[i]->exceptionFlag) {
+            if (descs[i]->exceptionFlag_) {
                 descs.erase(descs.begin() + i);
                 i--;
             }
         }
         if (descs.size() > 0) {
-            auto compare = [&] (std::unique_ptr<AudioDeviceDescriptor> &desc1, std::unique_ptr<AudioDeviceDescriptor> &desc2) {
+            auto compare = [&] (std::unique_ptr<AudioDeviceDescriptor> &desc1,
+                std::unique_ptr<AudioDeviceDescriptor> &desc2) {
                 return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
             };
             sort(descs.begin(), descs.end(), compare);
@@ -53,7 +56,8 @@ public:
     }
 
     std::unique_ptr<AudioDeviceDescriptor> GetPairCaptureDevice(std::unique_ptr<AudioDeviceDescriptor> &desc,
-        std::vector<std::unique_ptr<AudioDeviceDescriptor>> &captureDescs) {
+        std::vector<std::unique_ptr<AudioDeviceDescriptor>> &captureDescs)
+    {
         for (auto &captureDesc : captureDescs) {
             if (captureDesc->deviceId_ == desc->deviceId_) {
                 return std::move(captureDesc);

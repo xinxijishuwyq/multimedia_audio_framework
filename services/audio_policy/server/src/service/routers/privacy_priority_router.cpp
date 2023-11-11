@@ -21,48 +21,58 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetMediaRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
     unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
-    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
-        desc->deviceType_);
+    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
+        clientUID, desc->deviceType_);
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
-    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
-        desc->deviceType_);
+    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
+        clientUID, desc->deviceType_);
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(SourceType sourceType,
+    int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs = AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePrivacyDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePrivacyDevices();
     unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
-    AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
-        desc->deviceType_);
+    AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
+        clientUID, desc->deviceType_);
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRingRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,
+    int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
     unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
-    AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
-        desc->deviceType_);
+    AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
+        clientUID, desc->deviceType_);
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetToneRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
 }

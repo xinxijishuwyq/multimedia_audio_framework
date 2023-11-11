@@ -21,32 +21,38 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetMediaRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(SourceType sourceType,
+    int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRingRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(SourceType sourceType,
+    int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetToneRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
 }

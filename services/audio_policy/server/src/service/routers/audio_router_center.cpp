@@ -29,7 +29,7 @@ const string CALL_CAPTURE_ROUTERS = "CallCaptureRouters";
 const string RING_RENDER_ROUTERS = "RingRenderRouters";
 const string TONE_RENDER_ROUTERS = "ToneRenderRouters";
 
-unordered_map<StreamUsage, string> renderConfigMap_ = {
+unordered_map<StreamUsage, string> AudioRouterCenter::renderConfigMap_ = {
     {STREAM_USAGE_MEDIA, MEDIA_RENDER_ROUTERS},
     {STREAM_USAGE_MUSIC, MEDIA_RENDER_ROUTERS},
     {STREAM_USAGE_VOICE_COMMUNICATION, CALL_RENDER_ROUTERS},
@@ -52,7 +52,7 @@ unordered_map<StreamUsage, string> renderConfigMap_ = {
     {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, CALL_RENDER_ROUTERS},
 };
 
-unordered_map<SourceType, string> capturerConfigMap_ = {
+unordered_map<SourceType, string> AudioRouterCenter::capturerConfigMap_ = {
     {SOURCE_TYPE_MIC, RECORD_CAPTURE_ROUTERS},
     {SOURCE_TYPE_VOICE_RECOGNITION, RECORD_CAPTURE_ROUTERS},
     {SOURCE_TYPE_PLAYBACK_CAPTURE, RECORD_CAPTURE_ROUTERS},
@@ -70,15 +70,18 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsa
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
         if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
-            auto isPresent = [] (const unique_ptr<RouterBase> &router) { return router->name_ == "package_filter_router"; };
+            auto isPresent = [] (const unique_ptr<RouterBase> &router) {
+                return router->name_ == "package_filter_router";
+            };
             auto itr = find_if(mediaRenderRouters_.begin(), mediaRenderRouters_.end(), isPresent);
+            unique_ptr<AudioDeviceDescriptor> desc;
             if (itr != mediaRenderRouters_.end()) {
-                unique_ptr<AudioDeviceDescriptor> desc = (*itr)->GetMediaRenderDevice(streamUsage, clientUID);
-                if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                    AUDIO_INFO_LOG("CallRender streamUsage %{public}d clientUID %{public}d fetch device %{public}d",
-                        streamUsage, clientUID, desc->deviceType_);
-                    return desc;
-                }
+                desc = (*itr)->GetMediaRenderDevice(streamUsage, clientUID);
+            }
+            if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+                AUDIO_INFO_LOG("CallRender streamUsage %{public}d clientUID %{public}d fetch device %{public}d",
+                    streamUsage, clientUID, desc->deviceType_);
+                return desc;
             }
             streamUsage = audioScene == AUDIO_SCENE_PHONE_CALL ? STREAM_USAGE_VOICE_MODEM_COMMUNICATION
                                                                : STREAM_USAGE_VOICE_COMMUNICATION;
