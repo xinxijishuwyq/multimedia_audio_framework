@@ -797,19 +797,21 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
         if (halName_ == "usb") {
             audioSceneInPort = PIN_IN_USB_HEADSET;
         }
-        int32_t ret = SetInputRoute(activeDevice, audioSceneInPort);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
-        }
+
         struct AudioSceneDescriptor scene;
         scene.scene.id = GetAudioCategory(audioScene);
         scene.desc.pins = audioSceneInPort;
         scene.desc.desc = (char *)"";
 
-        ret = audioCapture_->SelectScene(audioCapture_, &scene);
+        int32_t ret = audioCapture_->SelectScene(audioCapture_, &scene);
         if (ret < 0) {
             AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;
+        }
+
+        ret = SetInputRoute(activeDevice, audioSceneInPort);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
         }
     }
     AUDIO_DEBUG_LOG("Select audio scene SUCCESS: %{public}d", audioScene);

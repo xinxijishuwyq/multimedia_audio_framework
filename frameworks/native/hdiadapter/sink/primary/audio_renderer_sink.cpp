@@ -756,10 +756,6 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         if (halName_ == "usb") {
             audioSceneOutPort = PIN_OUT_USB_HEADSET;
         }
-        int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
-        }
 
         AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
         struct AudioSceneDescriptor scene;
@@ -767,10 +763,15 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         scene.desc.pins = audioSceneOutPort;
         scene.desc.desc = (char *)"";
 
-        ret = audioRender_->SelectScene(audioRender_, &scene);
+        int32_t ret = audioRender_->SelectScene(audioRender_, &scene);
         if (ret < 0) {
             AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
             return ERR_OPERATION_FAILED;
+        }
+
+        ret = SetOutputRoute(activeDevice, audioSceneOutPort);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
         }
     }
     return SUCCESS;
