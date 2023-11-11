@@ -62,6 +62,32 @@ unordered_map<SourceType, string> AudioRouterCenter::capturerConfigMap_ = {
     {SOURCE_TYPE_VOICE_MODEM_COMMUNICATION, CALL_CAPTURE_ROUTERS}
 };
 
+unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+{
+    for (auto &router : mediaRenderRouters_) {
+        unique_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID);
+        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+            AUDIO_INFO_LOG("MediaRender streamUsage %{public}d clientUID %{public}d fetch device %{public}d",
+                streamUsage, clientUID, desc->deviceType_);
+            return desc;
+        }
+    }
+    return make_unique<AudioDeviceDescriptor>();
+}
+
+unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+{
+    for (auto &router : callRenderRouters_) {
+        unique_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
+        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+            AUDIO_INFO_LOG("CallRender streamUsage %{public}d clientUID %{public}d fetch device %{public}d",
+                streamUsage, clientUID, desc->deviceType_);
+            return desc;
+        }
+    }
+    return make_unique<AudioDeviceDescriptor>();
+}
+
 unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     AUDIO_INFO_LOG("streamUsage %{public}d clientUID %{public}d start fetch device", streamUsage, clientUID);
@@ -85,32 +111,20 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsa
             }
             streamUsage = audioScene == AUDIO_SCENE_PHONE_CALL ? STREAM_USAGE_VOICE_MODEM_COMMUNICATION
                                                                : STREAM_USAGE_VOICE_COMMUNICATION;
-            for (auto &router : callRenderRouters_) {
-                unique_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
-                if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                    AUDIO_INFO_LOG("CallRender streamUsage %{public}d clientUID %{public}d fetch device %{public}d",
-                        streamUsage, clientUID, desc->deviceType_);
-                    return desc;
-                }
+            desc = FetchCallRenderDevice(streamUsage, clientUID);
+            if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+                return desc;
             }
         } else {
-            for (auto &router : mediaRenderRouters_) {
-                unique_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID);
-                if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                    AUDIO_INFO_LOG("MediaRender streamUsage %{public}d clientUID %{public}d fetch device %{public}d",
-                        streamUsage, clientUID, desc->deviceType_);
-                    return desc;
-                }
+            unique_ptr<AudioDeviceDescriptor> desc = FetchMediaRenderDevice(streamUsage, clientUID);
+            if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+                return desc;
             }
         }
     } else if (renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS) {
-        for (auto &router : callRenderRouters_) {
-            unique_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
-            if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                AUDIO_INFO_LOG("CallRender streamUsage %{public}d clientUID %{public}d fetch device %{public}d",
-                    streamUsage, clientUID, desc->deviceType_);
-                return desc;
-            }
+        unique_ptr<AudioDeviceDescriptor> desc = FetchCallRenderDevice(streamUsage, clientUID);
+        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+            return desc;
         }
     }
     AUDIO_INFO_LOG("streamUsage %{public}d clientUID %{public}d fetch no device", streamUsage, clientUID);

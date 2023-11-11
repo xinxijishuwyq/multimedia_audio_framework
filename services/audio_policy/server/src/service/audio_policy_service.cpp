@@ -1520,8 +1520,8 @@ void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
     }
 }
 
-int32_t AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    unique_ptr<AudioDeviceDescriptor> &outputDevice)
+void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated = false)
 {
     std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId);
 
@@ -1529,16 +1529,20 @@ int32_t AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChange
     auto ret = (outputDevice->networkId_ == LOCAL_NETWORK_ID)
                 ? MoveToLocalOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevice))
                 : MoveToRemoteOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevice));
-    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), ret, "Move sink input %{public}d to device %{public}d failed!",
+    CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move sink input %{public}d to device %{public}d failed!",
         rendererChangeInfo->sessionId, outputDevice->deviceType_);
     if (isUpdateRouteSupported_) {
         UpdateActiveDeviceRoute(outputDevice->deviceType_);
     }
-    return SUCCESS;
+    UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
+    if (!isStreamStatusUpdated) {
+        streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
+            rendererChangeInfo->outputDeviceInfo);
+    }
 }
 
-int32_t AudioPolicyService::SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
-    unique_ptr<AudioDeviceDescriptor> &inputDevice)
+void AudioPolicyService::SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+    unique_ptr<AudioDeviceDescriptor> &inputDevice, bool isStreamStatusUpdated = false)
 {
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(capturerChangeInfo->sessionId);
 
@@ -1546,18 +1550,22 @@ int32_t AudioPolicyService::SelectNewInputDevice(unique_ptr<AudioCapturerChangeI
     auto ret = (inputDevice->networkId_ == LOCAL_NETWORK_ID)
                 ? MoveToLocalInputDevice(targetSourceOutputs, new AudioDeviceDescriptor(*inputDevice))
                 : MoveToRemoteInputDevice(targetSourceOutputs, new AudioDeviceDescriptor(*inputDevice));
-    CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), ret, "Move source output %{public}d to device %{public}d failed!",
+    CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         capturerChangeInfo->sessionId, inputDevice->deviceType_);
     if (isUpdateRouteSupported_) {
         UpdateActiveDeviceRoute(inputDevice->deviceType_);
     }
-    return SUCCESS;
+    UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*inputDevice), true, true);
+    if (!isStreamStatusUpdated) {
+        streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
+            capturerChangeInfo->inputDeviceInfo);
+    }
 }
 
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     bool isStreamStatusUpdated = false)
 {
-    AUDIO_INFO_LOG("Fecth output device for %{public}u stream", rendererChangeInfos.size());
+    AUDIO_INFO_LOG("Fecth output device for %{public}zu stream", rendererChangeInfos.size());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
@@ -1592,15 +1600,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             needUpdateActiveDevice = false;
         }
         // move sinkinput to target device
-        int32_t result = SelectNewOutputDevice(rendererChangeInfo, desc);
-        CHECK_AND_BREAK_LOG(result == SUCCESS,
-            "Failed to activate new device %{public}d for streamUsage %{public}d",
-            desc->deviceType_, rendererChangeInfo->rendererInfo.streamUsage);
-        UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*desc), true, true);
-        if (!isStreamStatusUpdated) {
-            streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
-                rendererChangeInfo->outputDeviceInfo);
-        }
+        SelectNewOutputDevice(rendererChangeInfo, desc);
     }
     if (isUpdateActiveDevice) {
         if (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID) {
@@ -1613,7 +1613,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
 void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
     bool isStreamStatusUpdated = false)
 {
-    AUDIO_INFO_LOG("Fecth input device for %{public}u stream", capturerChangeInfos.size());
+    AUDIO_INFO_LOG("Fecth input device for %{public}zu stream", capturerChangeInfos.size());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     for (auto &capturerChangeInfo : capturerChangeInfos) {
@@ -1639,16 +1639,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             needUpdateActiveDevice = false;
         }
         // move sourceoutput to target device
-        int32_t result = SelectNewInputDevice(capturerChangeInfo, desc);
-        CHECK_AND_BREAK_LOG(result == SUCCESS,
-            "Failed to activate new device %{public}d for sourceType %{public}d",
-            desc->deviceType_, capturerChangeInfo->capturerInfo.sourceType);
-        DeviceInfo inputDevice = {};
-        UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*desc), true, true);
-        if (!isStreamStatusUpdated) {
-            streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
-                capturerChangeInfo->inputDeviceInfo);
-        }
+        SelectNewInputDevice(capturerChangeInfo, desc, isStreamStatusUpdated);
     }
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
@@ -2189,6 +2180,9 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
         SetEarpieceState();
     }
 
+    int32_t result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
+
     // fetch input&output device
     FetchDevice(true);
     FetchDevice(false);
@@ -2197,9 +2191,6 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
-
-    int32_t result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
 
     return SUCCESS;
 }
@@ -2621,7 +2612,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool
 
     AudioStreamInfo streamInfo = {};
 #ifdef BLUETOOTH_ENABLE
-    if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && isConnected) {
         int32_t ret = Bluetooth::AudioA2dpManager::GetA2dpDeviceStreamInfo(macAddress, streamInfo);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Get a2dp device stream info failed!");

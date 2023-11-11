@@ -72,6 +72,9 @@ private:
 
     ~AudioRouterCenter() {};
 
+    unique_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID);
+    unique_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID);
+
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callCaptureRouters_;

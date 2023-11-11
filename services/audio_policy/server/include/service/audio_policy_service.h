@@ -438,10 +438,10 @@ private:
 
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
-    int32_t SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        unique_ptr<AudioDeviceDescriptor> &outputDevice);
-    int32_t SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
-        unique_ptr<AudioDeviceDescriptor> &inputDevice);
+    void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated);
+    void SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+        unique_ptr<AudioDeviceDescriptor> &inputDevice, bool isStreamStatusUpdated);
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
 
