@@ -41,6 +41,9 @@ public:
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo);
+    AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
+    int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
+    int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);

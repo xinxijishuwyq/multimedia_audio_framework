@@ -53,6 +53,7 @@ config("audio_policy_public_config") {
     "server/include/service/interface",
     "server/include/service/listener",
     "server/include/service/manager",
+    "server/include/service/routers",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../../frameworks/native/audiorenderer/include",
@@ -163,6 +164,15 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/effect/audio_effect_manager.cpp",
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
+    "server/src/service/routers/audio_router_center.cpp",
+    "server/src/service/routers/cockpit_phone_router.cpp",
+    "server/src/service/routers/default_router.cpp",
+    "server/src/service/routers/package_filter_router.cpp",
+    "server/src/service/routers/pair_device_router.cpp",
+    "server/src/service/routers/privacy_priority_router.cpp",
+    "server/src/service/routers/public_priority_router.cpp",
+    "server/src/service/routers/stream_filter_router.cpp",
+    "server/src/service/routers/user_select_router.cpp",
   ]
 
   defines = []
