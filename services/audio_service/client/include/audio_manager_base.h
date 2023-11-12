@@ -36,13 +36,6 @@ public:
      */
     virtual int32_t SetMicrophoneMute(bool isMute) = 0;
 
-     /**
-     * Gets Microphone Mute status.
-     *
-     * @return Returns true or false
-     */
-    virtual bool IsMicrophoneMute() = 0;
-
     /**
      * @brief Set the Voice Volume.
      *
@@ -271,7 +264,6 @@ private:
     int HandleGetAudioParameter(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioParameter(MessageParcel &data, MessageParcel &reply);
     int HandleSetMicrophoneMute(MessageParcel &data, MessageParcel &reply);
-    int HandleIsMicrophoneMute(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
     int HandleRetrieveCookie(MessageParcel &data, MessageParcel &reply);
@@ -304,7 +296,6 @@ private:
         &AudioManagerStub::HandleGetAudioParameter,
         &AudioManagerStub::HandleSetAudioParameter,
         &AudioManagerStub::HandleSetMicrophoneMute,
-        &AudioManagerStub::HandleIsMicrophoneMute,
         &AudioManagerStub::HandleSetAudioScene,
         &AudioManagerStub::HandleUpdateActiveDeviceRoute,
         &AudioManagerStub::HandleRetrieveCookie,

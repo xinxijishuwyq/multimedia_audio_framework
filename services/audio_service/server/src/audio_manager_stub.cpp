@@ -79,14 +79,6 @@ int AudioManagerStub::HandleSetMicrophoneMute(MessageParcel &data, MessageParcel
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleIsMicrophoneMute(MessageParcel &data, MessageParcel &reply)
-{
-    AUDIO_DEBUG_LOG("IS_MICROPHONE_MUTE AudioManagerStub");
-    bool isMute = IsMicrophoneMute();
-    reply.WriteBool(isMute);
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("SET_AUDIO_SCENE AudioManagerStub");

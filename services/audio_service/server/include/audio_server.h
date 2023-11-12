@@ -52,7 +52,6 @@ public:
         std::unordered_map<std::string, std::string> &map) override;
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     int32_t SetMicrophoneMute(bool isMute) override;
-    bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;

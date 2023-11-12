@@ -49,26 +49,6 @@ int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
     return result;
 }
 
-bool AudioManagerProxy::IsMicrophoneMute()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return false;
-    }
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::IS_MICROPHONE_MUTE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("IsMicrophoneMute failed, error: %d", error);
-        return false;
-    }
-
-    bool isMute = reply.ReadBool();
-    return isMute;
-}
-
 int32_t AudioManagerProxy::SetVoiceVolume(float volume)
 {
     MessageParcel data;
