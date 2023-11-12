@@ -25,6 +25,7 @@
 
 #include "audio_process_in_server.h"
 #include "audio_endpoint.h"
+#include "ipc_stream_in_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +33,9 @@ class AudioService : public ProcessReleaseCallback {
 public:
     static AudioService *GetInstance();
     ~AudioService();
+
+    sptr<IpcStreamInServer> GetIpcStream(int32_t &ret, const AudioProcessConfig &config);
+
     sptr<AudioProcessInServer> GetAudioProcess(const AudioProcessConfig &config);
     // override for ProcessReleaseCallback, do release process work.
     int32_t OnProcessRelease(IAudioProcessStream *process) override;

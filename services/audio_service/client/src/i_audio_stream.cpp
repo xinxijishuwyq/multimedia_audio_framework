@@ -17,8 +17,12 @@
 #include <map>
 
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "audio_stream.h"
 #include "fast_audio_stream.h"
+
+#include "capturer_in_client.h"
+#include "renderer_in_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -169,7 +173,15 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
         AUDIO_INFO_LOG("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
     }
+    int32_t mediaUid = 1041;
+    int32_t ipcFlag = 0;
+    if (getuid() != mediaUid && GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
+        AUDIO_INFO_LOG("Create ipc playback stream");
+        return RendererInClient::GetInstance(eStreamType, appUid);
+    }
+
     if (streamClass == PA_STREAM) {
+        AUDIO_INFO_LOG("Create pa playback stream");
         return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
     }
     return nullptr;
@@ -183,10 +195,84 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
         AUDIO_INFO_LOG("Create fast record stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
     }
+
+    // in plan
+    int32_t mediaUid = 1041;
+    int32_t ipcFlag = 0;
+    if (getuid() != mediaUid && GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
+        AUDIO_INFO_LOG("Create ipc record stream");
+        return CapturerInClient::GetInstance(eStreamType, appUid);
+    }
+
     if (streamClass == PA_STREAM) {
+        AUDIO_INFO_LOG("Create pa record stream");
         return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
     }
     return nullptr;
+}
+
+bool IAudioStream::IsFormatValid(uint8_t format)
+{
+    bool isValidFormat = (find(AUDIO_SUPPORTED_FORMATS.begin(), AUDIO_SUPPORTED_FORMATS.end(), format)
+                          != AUDIO_SUPPORTED_FORMATS.end());
+    AUDIO_DEBUG_LOG("AudioStream: IsFormatValid: %{public}s", isValidFormat ? "true" : "false");
+    return isValidFormat;
+}
+
+bool IAudioStream::IsRendererChannelValid(uint8_t channel)
+{
+    bool isValidChannel = (find(RENDERER_SUPPORTED_CHANNELS.begin(), RENDERER_SUPPORTED_CHANNELS.end(), channel)
+                           != RENDERER_SUPPORTED_CHANNELS.end());
+    AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
+    return isValidChannel;
+}
+
+bool IAudioStream::IsCapturerChannelValid(uint8_t channel)
+{
+    bool isValidChannel = (find(CAPTURER_SUPPORTED_CHANNELS.begin(), CAPTURER_SUPPORTED_CHANNELS.end(), channel)
+                           != CAPTURER_SUPPORTED_CHANNELS.end());
+    AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
+    return isValidChannel;
+}
+
+bool IAudioStream::IsEncodingTypeValid(uint8_t encodingType)
+{
+    bool isValidEncodingType
+            = (find(AUDIO_SUPPORTED_ENCODING_TYPES.begin(), AUDIO_SUPPORTED_ENCODING_TYPES.end(), encodingType)
+               != AUDIO_SUPPORTED_ENCODING_TYPES.end());
+    AUDIO_DEBUG_LOG("AudioStream: IsEncodingTypeValid: %{public}s", isValidEncodingType ? "true" : "false");
+    return isValidEncodingType;
+}
+
+bool IAudioStream::IsSamplingRateValid(uint32_t samplingRate)
+{
+    bool isValidSamplingRate
+            = (find(AUDIO_SUPPORTED_SAMPLING_RATES.begin(), AUDIO_SUPPORTED_SAMPLING_RATES.end(), samplingRate)
+               != AUDIO_SUPPORTED_SAMPLING_RATES.end());
+    AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s", isValidSamplingRate ? "true" : "false");
+    return isValidSamplingRate;
+}
+
+bool IAudioStream::IsRendererChannelLayoutValid(uint64_t channelLayout)
+{
+    bool isValidRendererChannelLayout = (find(RENDERER_SUPPORTED_CHANNELLAYOUTS.begin(),
+        RENDERER_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != RENDERER_SUPPORTED_CHANNELLAYOUTS.end());
+    AUDIO_DEBUG_LOG("AudioStream: isValidRendererChannelLayout: %{public}s",
+        isValidRendererChannelLayout ? "true" : "false");
+    return isValidRendererChannelLayout;
+}
+
+bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
+{
+    if (!IsRendererChannelValid(channels)) {
+        AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", channels);
+        return false;
+    }
+    if (!IsRendererChannelLayoutValid(channelLayout)) {
+        AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
+        return false;
+    }
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

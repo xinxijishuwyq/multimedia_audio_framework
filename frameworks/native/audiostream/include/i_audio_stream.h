@@ -233,6 +233,20 @@ public:
     }
 
     virtual void SetState() {}
+
+    bool IsFormatValid(uint8_t format);
+
+    bool IsRendererChannelValid(uint8_t channel);
+
+    bool IsCapturerChannelValid(uint8_t channel);
+
+    bool IsEncodingTypeValid(uint8_t encodingType);
+
+    bool IsSamplingRateValid(uint32_t samplingRate);
+
+    bool IsRendererChannelLayoutValid(uint64_t channelLayout);
+
+    bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 };
 } // namespace AudioStandard
 } // namespace OHOS
