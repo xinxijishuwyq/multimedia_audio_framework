@@ -169,6 +169,8 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         parmKey = AudioParamKey::BT_WBS;
     } else if (key == "mmi") {
         parmKey = AudioParamKey::MMI;
+    } else if (key == "perf_info") {
+        parmKey = AudioParamKey::PERF_INFO;
     } else {
         AUDIO_ERR_LOG("SetAudioParameter: key %{publbic}s is invalid for hdi interface", key.c_str());
         return;
