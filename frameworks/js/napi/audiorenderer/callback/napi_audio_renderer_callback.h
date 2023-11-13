@@ -12,9 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "napi_audio_renderer_callback.h"
+#ifndef NAPI_AUDIO_RENDERER_CALLBACK_H
+#define NAPI_AUDIO_RENDERER_CALLBACK_H
+
+#include "napi/native_api.h"
+#include "napi/native_node_api.h"
+#include "audio_renderer.h"
+
 namespace OHOS {
 namespace AudioStandard {
+class NapiAudioRendererCallback : public AudioRendererCallback {
+public:
+    explicit NapiAudioRendererCallback(napi_env env);
+    virtual ~NapiAudioRendererCallback();
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
+    void OnStateChange(const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType) override;
 
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+};
 }  // namespace AudioStandard
 }  // namespace OHOS
+#endif /* NAPI_AUDIO_RENDERER_CALLBACK_H */

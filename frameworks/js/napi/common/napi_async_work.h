@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NAPI_ASYNC_WORK_H_
-#define NAPI_ASYNC_WORK_H_
+#ifndef NAPI_ASYNC_WORK_H
+#define NAPI_ASYNC_WORK_H
 
 #include <functional>
 #include <memory>
@@ -79,4 +79,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // NAPI_ASYNC_WORK_H_
+#endif // NAPI_ASYNC_WORK_H

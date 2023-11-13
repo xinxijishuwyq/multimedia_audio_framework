@@ -67,6 +67,20 @@ napi_status NapiParamUtils::SetValueInt32(const napi_env& env, const std::string
     return status;
 }
 
+napi_status NapiParamUtils::GetValueUInt32(const napi_env& env, uint32_t &value, napi_value in)
+{
+    napi_status status = napi_get_value_uint32(env, in, &value);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueUInt32 napi_get_value_uint32 failed");
+    return status;
+}
+
+napi_status NapiParamUtils::SetValueUInt32(const napi_env& env, const uint32_t &value, napi_value &result)
+{
+    napi_status status = napi_create_uint32(env, value, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueUInt32 napi_create_uint32 failed");
+    return status;
+}
+
 napi_status NapiParamUtils::GetValueDouble(const napi_env& env, double &value, napi_value in)
 {
     napi_status status = napi_get_value_double(env, in, &value);
@@ -226,6 +240,80 @@ napi_status NapiParamUtils::SetValueInt64(const napi_env& env, const std::string
     status = napi_set_named_property(env, result, fieldStr.c_str(), jsValue);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt64 napi_set_named_property failed");
     return status;
+}
+
+napi_status NapiParamUtils::GetArrayBuffer(const napi_env& env, void* &data, size_t &length, napi_value in)
+{
+    napi_status status = napi_get_arraybuffer_info(env, in, &data, &length);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetArrayBuffer napi_get_arraybuffer_info failed");
+    return status;
+}
+
+napi_status NapiParamUtils::GetRendererOptions(const napi_env& env, AudioRendererOptions *opts, napi_value in)
+{
+    napi_value res = nullptr;
+
+    napi_status status = napi_get_named_property(env, in, "rendererInfo", &res);
+    if (status == napi_ok) {
+        GetRendererInfo(env, &(opts->rendererInfo), res);
+    }
+
+    status = napi_get_named_property(env, in, "streamInfo", &res);
+    if (status == napi_ok) {
+        GetStreamInfo(env, &(opts->streamInfo), res);
+    }
+
+    int32_t intValue = {};
+    status = GetValueInt32(env, "privacyType", intValue, in);
+    if (status == napi_ok) {
+        opts->privacyType = static_cast<AudioPrivacyType>(intValue);
+    }
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetRendererInfo(const napi_env& env, AudioRendererInfo *rendererInfo, napi_value in)
+{
+    int32_t intValue = {0};
+    napi_status status = GetValueInt32(env, "content", intValue, in);
+    if (status == napi_ok) {
+        rendererInfo->contentType = static_cast<ContentType>(intValue);
+    }
+
+    status = GetValueInt32(env, "usage", intValue, in);
+    if (status == napi_ok) {
+        rendererInfo->streamUsage = static_cast<StreamUsage>(intValue);
+    }
+
+    GetValueInt32(env, "rendererFlags", rendererInfo->rendererFlags, in);
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetStreamInfo(const napi_env& env, AudioStreamInfo* streamInfo, napi_value in)
+{
+    int32_t intValue = {0};
+    napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
+    if (status == napi_ok) {
+        streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
+    }
+
+    status = GetValueInt32(env, "channels", intValue, in);
+    if (status == napi_ok) {
+        streamInfo->channels = static_cast<AudioChannel>(intValue);
+    }
+
+    status = GetValueInt32(env, "sampleFormat", intValue, in);
+    if (status == napi_ok) {
+        streamInfo->format = static_cast<OHOS::AudioStandard::AudioSampleFormat>(intValue);
+    }
+
+    status = GetValueInt32(env, "encodingType", intValue, in);
+    if (status == napi_ok) {
+        streamInfo->encoding = static_cast<AudioEncodingType>(intValue);
+    }
+
+    return napi_ok;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NAPI_AUDIO_ERROR_H_
-#define NAPI_AUDIO_ERROR_H_
+#ifndef NAPI_AUDIO_ERROR_H
+#define NAPI_AUDIO_ERROR_H
 
 #include <map>
 #include <string>
@@ -56,4 +56,4 @@ const std::string NAPI_ERR_SYSTEM_INFO = "system error";
 const std::string NAPI_ERR_NO_PERMISSION_INFO = "permission denied";
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // NAPI_AUDIO_ERROR_H_
+#endif // NAPI_AUDIO_ERROR_H
