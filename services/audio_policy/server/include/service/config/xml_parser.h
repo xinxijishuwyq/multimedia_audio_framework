@@ -21,6 +21,7 @@
 #include <libxml/tree.h>
 #include <unordered_map>
 #include <string>
+#include <regex>
 
 #include "audio_module_info.h"
 #include "iport_observer.h"
@@ -62,6 +63,25 @@ private:
     void ParseGroupModule(xmlNode& node, NodeName type, std::string groupName);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
     ClassType GetDeviceClassType(const std::string &deviceClass);
+
+    template<typename T> std::set<T> SeparatedListParser(const std::string &separatedList)
+    {
+        std::set<T> res;
+        std::regex regexDelimiter(",");
+        const std::sregex_token_iterator itEnd;
+        for (std::sregex_token_iterator it(separatedList.begin(), separatedList.end(), regexDelimiter, -1);
+            it != itEnd; ++it) {
+            res.insert(atoi(it->str().c_str()));
+        }
+        return res;
+    }
+
+    template<typename T> void SeparatedListParserAndFetchMaxValue(const std::string &separatedList,
+        std::set<T> &supportedSet, std::string &value)
+    {
+        supportedSet = SeparatedListParser<T>(separatedList);
+        value = std::to_string(*(supportedSet.rbegin()));
+    }
 
     IPortObserver &mPortObserver;
     xmlDoc *mDoc;
