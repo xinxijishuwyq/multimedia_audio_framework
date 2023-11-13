@@ -134,7 +134,7 @@ public:
 
     void SetAbsVolumeScene(bool isAbsVolumeScene);
 
-    bool GetAbsVolumeScene() const;
+    bool IsAbsVolumeScene() const;
 private:
     friend class PolicyCallbackImpl;
 
@@ -248,7 +248,7 @@ public:
             return 0.0f;
         }
 
-        bool isAbsVolumeScene = audioAdapterManager_->GetAbsVolumeScene();
+        bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
         if (activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
             return 1.0f;

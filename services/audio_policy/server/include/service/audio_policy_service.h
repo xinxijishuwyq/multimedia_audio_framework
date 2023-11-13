@@ -337,6 +337,8 @@ public:
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
 
+    bool IsAbsVolumeScene() const;
+
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
     void OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);

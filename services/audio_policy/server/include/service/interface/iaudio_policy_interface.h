@@ -106,7 +106,7 @@ public:
 
     virtual void SetAbsVolumeScene(bool isAbsVolumeScene) = 0;
 
-    virtual bool GetAbsVolumeScene() const = 0;
+    virtual bool IsAbsVolumeScene() const = 0;
 
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 };

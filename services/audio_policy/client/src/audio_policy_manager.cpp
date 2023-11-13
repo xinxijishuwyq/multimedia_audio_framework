@@ -1311,6 +1311,16 @@ int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     return gsp->SetDeviceAbsVolumeSupported(macAddress, support);
 }
 
+bool AudioPolicyManager::IsAbsVolumeScene()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsAbsVolumeScene: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+    return gsp->IsAbsVolumeScene();
+}
+
 int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {

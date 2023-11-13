@@ -226,6 +226,8 @@ public:
 
     virtual int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) = 0;
 
+    virtual bool IsAbsVolumeScene() = 0;
+
     virtual int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool updateUi) = 0;
 
     virtual std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage) = 0;

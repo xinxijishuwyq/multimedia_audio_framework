@@ -1000,6 +1000,12 @@ void AudioPolicyManagerStub::SetDeviceAbsVolumeSupportedInternal(MessageParcel &
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::IsAbsVolumeSceneInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = IsAbsVolumeScene();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::SetA2dpDeviceVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::string macAddress = data.ReadString();
