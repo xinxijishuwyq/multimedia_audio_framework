@@ -100,7 +100,6 @@
                 "header_files": [
                   "audio_system_manager.h",
                   "audio_stream_manager.h",
-                  "audio_info.h"
                 ],
                 "header_base": [
                     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
@@ -113,7 +112,6 @@
               "header": {
                 "header_files": [
                   "audio_capturer.h",
-                  "audio_info.h"
                 ],
                 "header_base": [
                     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include"
@@ -126,7 +124,6 @@
               "header": {
                 "header_files": [
                   "audio_renderer.h",
-                  "audio_info.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiorenderer/include"
               }
@@ -138,7 +135,6 @@
                 "header_files": [
                   "tone_player.h",
                   "audio_renderer.h",
-                  "audio_info.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include"
               }
