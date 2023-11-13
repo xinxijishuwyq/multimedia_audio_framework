@@ -51,19 +51,19 @@ describe("AudioStreamManagerJsTest", function () {
   }
 
   beforeAll(async function () {
-    console.info(TAG + "beforeAll called");
+    console.info(TAG + "AudioStreamManagerJsTest:beforeAll called");
   })
 
   afterAll(function () {
-    console.info(TAG + 'afterAll called')
+    console.info(TAG + 'AudioStreamManagerJsTest:afterAll called')
   })
 
   beforeEach(function () {
-    console.info(TAG + 'beforeEach called')
+    console.info(TAG + 'AudioStreamManagerJsTest:beforeEach called')
   })
 
   afterEach(function () {
-    console.info(TAG + 'afterEach called')
+    console.info(TAG + 'AudioStreamManagerJsTest:afterEach called')
   })
 
   function sleep(time) {
