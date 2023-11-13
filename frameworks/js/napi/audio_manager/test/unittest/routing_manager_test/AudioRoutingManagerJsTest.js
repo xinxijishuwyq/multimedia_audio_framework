@@ -26,19 +26,19 @@ describe("AudioRoutingManagerJsTest", function () {
 
   beforeAll(async function () {
 
-    console.info(TAG + "beforeAll called");
+    console.info(TAG + "AudioRoutingManagerJsTest:beforeAll called");
   })
 
   afterAll(function () {
-    console.info(TAG + 'afterAll called')
+    console.info(TAG + 'AudioRoutingManagerJsTest:afterAll called')
   })
 
   beforeEach(function () {
-    console.info(TAG + 'beforeEach called')
+    console.info(TAG + 'AudioRoutingManagerJsTest:beforeEach called')
   })
 
   afterEach(function () {
-    console.info(TAG + 'afterEach called')
+    console.info(TAG + 'AudioRoutingManagerJsTest:afterEach called')
   })
 
   function sleep(time) {
