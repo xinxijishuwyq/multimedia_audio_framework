@@ -296,6 +296,8 @@ private:
     bool isFirstRender = true;
     bool isFirstCapture = true;
     int32_t biHighFrameTimeMs = 900000;
+    int64_t playLastTime_ = 0;
+    int64_t recordLastTime_ = 0;
 };
 
 class AudioProcessTest {
@@ -320,7 +322,7 @@ public:
     bool StopMic();
     bool ReleaseMic();
 
-    void SelectDevice(DeviceRole deviceRole);
+    int32_t SelectDevice(DeviceRole deviceRole);
 private:
     std::shared_ptr<AudioProcessInClient> spkProcessClient_ = nullptr;
     std::shared_ptr<AudioProcessInClient> micProcessClient_ = nullptr;
@@ -380,7 +382,6 @@ int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
         }
         g_stampTime = ClockTime::GetCurNano();
     }
-    int64_t lastTime = 0;
     if (g_isLatencyTesting) {
         if (recordIndex_ == 0) {
             cout << "First record time : " << GetNowTimeUs() << endl;
@@ -388,13 +389,13 @@ int32_t AudioProcessTestCallback::CaptureToFile(const BufferDesc &bufDesc)
 
         int64_t bt = RecordBeepTime(bufDesc.buffer, bufDesc.bufLength, isFirstCapture);
         if (bt != 0 && g_captureBeepTime_.size() < g_playBeepTime_.size()) {
-            if (GetNowTimeUs() - lastTime <= biHighFrameTimeMs) {
+            if (GetNowTimeUs() - recordLastTime_ <= biHighFrameTimeMs) {
                 cout << "catch high frame, but not in 900ms" << endl;
                 recordIndex_++;
                 return SUCCESS;
             }
             g_captureBeepTime_.push_back(bt);
-            lastTime = GetNowTimeUs();
+            recordLastTime_ = GetNowTimeUs();
             cout << "Capture beep frame: " << recordIndex_ << " record time : " << GetNowTimeUs() << endl;
         }
     }
@@ -423,20 +424,19 @@ int32_t AudioProcessTestCallback::RenderFromFile(const BufferDesc &bufDesc)
         return SUCCESS;
     }
     fread(bufDesc.buffer, 1, bufDesc.bufLength, g_spkWavFile);
-    int64_t lastTime = 0;
     if (g_isLatencyTesting) {
         if (playIndex_ == 0) {
             cout << "First play time: " << GetNowTimeUs() << endl;
         }
         int64_t bt = RecordBeepTime(bufDesc.buffer, bufDesc.bufLength, isFirstRender);
         if (bt != 0) {
-            if (GetNowTimeUs() - lastTime <= biHighFrameTimeMs) {
+            if (GetNowTimeUs() - playLastTime_ <= biHighFrameTimeMs) {
                 cout << "Catch high frame, but not in 900ms" << endl;
                 playIndex_++;
                 return SUCCESS;
             }
             g_playBeepTime_.push_back(bt);
-            lastTime = GetNowTimeUs();
+            playLastTime_ = GetNowTimeUs();
             cout << "Play beep frame: " << playIndex_ << "play time: " << GetNowTimeUs() << endl;
         }
     }
@@ -493,12 +493,12 @@ inline AudioSampleFormat GetSampleFormat(int32_t wavSampleFormat)
     }
 }
 
-void AudioProcessTest::SelectDevice(DeviceRole deviceRole)
+int32_t AudioProcessTest::SelectDevice(DeviceRole deviceRole)
 {
     AudioSystemManager *manager = AudioSystemManager::GetInstance();
     if (manager == nullptr) {
         std::cout << "Get AudioSystemManager failed" << std::endl;
-        return;
+        return ERR_INVALID_OPERATION;
     }
 
     std::vector<sptr<AudioDeviceDescriptor>> devices;
@@ -509,7 +509,7 @@ void AudioProcessTest::SelectDevice(DeviceRole deviceRole)
     }
     if (devices.size() != 1) {
         std::cout << "GetDevices failed, unsupported size:" << devices.size() << std::endl;
-        return;
+        return ERR_INVALID_OPERATION;
     }
 
     std::cout << "using device:" << devices[0]->networkId_ << std::endl;
@@ -533,6 +533,7 @@ void AudioProcessTest::SelectDevice(DeviceRole deviceRole)
     } else {
         std::cout << "SelectDevice failed, ret:" << ret << std::endl;
     }
+    return ret;
 }
 
 int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
@@ -544,8 +545,9 @@ int32_t AudioProcessTest::InitSpk(int32_t loopCount, bool isRemote)
     } else {
         loopCount_ = loopCount;
     }
-    if (isRemote) {
-        SelectDevice(OUTPUT_DEVICE);
+    if (isRemote && SelectDevice(OUTPUT_DEVICE) != SUCCESS) {
+        std::cout << "Select remote device error." << std::endl;
+        return ERROR_UNSUPPORTED;
     }
 
     AudioProcessConfig config;
@@ -666,8 +668,9 @@ int32_t AudioProcessTest::InitMic(bool isRemote)
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
 
-    if (isRemote) {
-        SelectDevice(INPUT_DEVICE);
+    if (isRemote && SelectDevice(INPUT_DEVICE) != SUCCESS) {
+        std::cout << "Select remote device error." << std::endl;
+        return ERROR_UNSUPPORTED;
     }
 
     micProcessClient_ = AudioProcessInClient::Create(config);
