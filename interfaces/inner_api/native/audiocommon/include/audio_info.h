@@ -724,9 +724,9 @@ enum AudioParamKey {
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
+    USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,
-    USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PARAM_KEY_LOWPOWER = 1000,
 };
 
