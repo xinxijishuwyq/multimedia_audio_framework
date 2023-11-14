@@ -623,6 +623,8 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
             return STREAM_VOICE_CALL;
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;
+        case SOURCE_TYPE_VOICE_CALL:
+            return STREAM_SOURCE_VOICE_CALL;
         default:
             return STREAM_MUSIC;
     }

@@ -133,9 +133,13 @@ enum AudioStreamType {
      */
     STREAM_INTERNAL_FORCE_STOP = 22,
     /**
+     * Indicates audio streams for voice call.
+     */
+    STREAM_SOURCE_VOICE_CALL = 23,
+    /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_INTERNAL_FORCE_STOP,
+    STREAM_TYPE_MAX = STREAM_SOURCE_VOICE_CALL,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.

@@ -305,6 +305,8 @@ AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName
             } else {
                 return GetWakeupInstance(false);
             }
+        case SourceType::SOURCE_TYPE_VOICE_CALL:
+            return GetVoiceCallRecInstance();
         default:
             AUDIO_ERR_LOG("sourceType error %{public}d", sourceType);
             return GetMicInstance();
@@ -332,6 +334,9 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
         case SOURCE_TYPE_VOICE_RECOGNITION:
             hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
             break;
+        case SOURCE_TYPE_VOICE_CALL:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
+            break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
             break;
@@ -340,6 +345,12 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
 }
 
 AudioCapturerSource *AudioCapturerSource::GetMicInstance()
+{
+    static AudioCapturerSourceInner audioCapturer;
+    return &audioCapturer;
+}
+
+AudioCapturerSource *AudioCapturerSource::GetVoiceCallRecInstance()
 {
     static AudioCapturerSourceInner audioCapturer;
     return &audioCapturer;

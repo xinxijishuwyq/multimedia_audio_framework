@@ -694,7 +694,8 @@ private:
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
         SOURCE_TYPE_PLAYBACK_CAPTURE,
         SOURCE_TYPE_WAKEUP,
-        SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
+        SOURCE_TYPE_VOICE_MODEM_COMMUNICATION,
+        SOURCE_TYPE_VOICE_CALL
     };
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;

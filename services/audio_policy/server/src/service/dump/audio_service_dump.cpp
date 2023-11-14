@@ -269,6 +269,9 @@ const std::string AudioServiceDump::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_WAKEUP:
             name = "WAKEUP";
             break;
+        case SOURCE_TYPE_VOICE_CALL:
+            name = "VOICE_CALL";
+            break;
         default:
             name = "UNKNOWN";
     }
