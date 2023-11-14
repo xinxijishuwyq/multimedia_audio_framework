@@ -112,10 +112,13 @@ private:
     int32_t RecordReSyncServicePos();
     int32_t RecordPrepareCurrent(uint64_t curReadPos);
     int32_t RecordFinishHandleCurrent(uint64_t &curReadPos, int64_t &clientReadCost);
+    bool PrepareCurrentLoop(uint64_t curWritePos);
+    bool FinishHandleCurrentLoop(uint64_t &curWritePos, int64_t &clientWriteCost);
 
     void UpdateHandleInfo();
     int64_t GetPredictNextHandleTime(uint64_t posInFrame);
     bool PrepareNext(uint64_t curHandPos, int64_t &wakeUpTime);
+    bool ClientPrepareNextLoop(uint64_t curHandPos, int64_t &wakeUpTime);
 
     std::string GetStatusInfo(StreamStatus status);
     bool KeepLoopRunning();
@@ -130,6 +133,8 @@ private:
     static constexpr int64_t WRITE_BEFORE_DURATION_NANO = 2000000; // 2ms
     static constexpr int64_t RECORD_RESYNC_SLEEP_NANO = 2000000; // 2ms
     static constexpr int64_t RECORD_HANDLE_DELAY_NANO = 3000000; // 3ms
+    static constexpr size_t MAX_TIMES = 4; // 4 times spanSizeInFrame_
+    static constexpr size_t DIV = 2; // halt of span
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -387,27 +392,22 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
     if (tmp <= span) {
         clientSpanSizeInFrame_ = span;
         clientSpanSizeInByte_ = static_cast<size_t>(spanSizeInByte_);
-    }
-    else if (tmp >= 4 * span) {
-        clientSpanSizeInFrame_ = 4 * span;
-        clientSpanSizeInByte_ = 4 * static_cast<size_t>(spanSizeInByte_);
-    }
-    else {
+    } else if (tmp >= MAX_TIMES * span) {
+        clientSpanSizeInFrame_ = MAX_TIMES * span;
+        clientSpanSizeInByte_ = MAX_TIMES * static_cast<size_t>(spanSizeInByte_);
+    } else {
         size_t count = frameSize / spanSizeInFrame_;
         size_t rest = frameSize % spanSizeInFrame_;
-        if (rest <= span / 2){
+        if (rest <= span / DIV) {
             clientSpanSizeInFrame_ = count * spanSizeInFrame_;
             clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
-        }
-        else {
+        } else {
             count++;
             clientSpanSizeInFrame_ = count * spanSizeInFrame_;
             clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
         }
     }
-
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
-
 }
 
 bool AudioProcessInClientInner::InitAudioBuffer()
@@ -704,8 +704,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
 
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
-    for (int count = 0 ;count < round ;count++)
-    {
+    for (int count = 0 ; count < round ; count++) {
         BufferDesc curCallbackBuffer = {nullptr, 0, 0};
         curCallbackBuffer.buffer = bufDesc.buffer + count * spanSizeInByte_;
         curCallbackBuffer.bufLength = spanSizeInByte_;
@@ -734,9 +733,9 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             }
             writeProcessDataTrace.End();
 
-            DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer), clientSpanSizeInByte_);
+            DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer),
+                clientSpanSizeInByte_);
         }
-
     }
 
     CHECK_AND_BREAK_LOG(memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) == EOK,
@@ -976,6 +975,20 @@ bool AudioProcessInClientInner::PrepareNext(uint64_t curHandPos, int64_t &wakeUp
     return true;
 }
 
+bool AudioProcessInClientInner::ClientPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime)
+{
+    size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
+    bool prepared = true;
+    for (size_t count = 0; count < round; count++) {
+        if (!PrepareNext(curWritePos + count * spanSizeInFrame_, wakeUpTime)) {
+            AUDIO_ERR_LOG("PrepareNextLoop in process failed!");
+            prepared = false;
+            return prepared;
+        }
+    }    
+    return prepared;
+}
+
 std::string AudioProcessInClientInner::GetStatusInfo(StreamStatus status)
 {
     switch (status) {
@@ -1209,6 +1222,22 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
     return true;
 }
 
+bool AudioProcessInClientInner::PrepareCurrentLoop(uint64_t curWritePos)
+{
+    bool prepared = true;
+    size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
+    for (size_t count = 0; count < round; count++) {
+        uint64_t tmp = curWritePos + count * static_cast<uint64_t>(spanSizeInFrame_);
+        AUDIO_INFO_LOG("curWritePos = %{public}" PRIu64" ", tmp);
+        if (!PrepareCurrent(tmp)) {
+            prepared = false;
+            AUDIO_ERR_LOG("PrepareCurrent failed at %{public}" PRIu64" ", tmp);
+            return prepared;
+        }
+    }
+    return prepared;
+}
+
 bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64_t &clientWriteCost)
 {
     Trace trace("AudioProcessInClient::FinishHandleCurrent " + std::to_string(curWritePos));
@@ -1245,6 +1274,21 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
     return true;
 }
 
+bool AudioProcessInClientInner::FinishHandleCurrentLoop(uint64_t &curWritePos, int64_t &clientWriteCost)
+{
+    bool finished = true;
+    size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
+    for (size_t count = 0; count < round; count++) {
+        uint64_t tmp = curWritePos + count * static_cast<uint64_t>(spanSizeInFrame_);
+        if (!FinishHandleCurrent(tmp, clientWriteCost)) {
+            finished = false;
+            AUDIO_ERR_LOG("FinishHandleCurrent failed at %{public}" PRIu64" ", tmp);
+            return finished;
+        }
+    }
+    return finished;
+}
+
 void AudioProcessInClientInner::ProcessCallbackFuc()
 {
     AUDIO_INFO_LOG("Callback loop start.");
@@ -1268,52 +1312,23 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
             wakeUpTime = curTime;
         }
         curWritePos = audioBuffer_->GetCurWriteFrame();
-
-
-        size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
         bool prepared = true;
-        for (size_t count = 0; count < round; count++)
-        {
-            uint64_t tmp = curWritePos + count * static_cast<uint64_t>(spanSizeInFrame_);
-            AUDIO_INFO_LOG("curWritePos = %{public}" PRIu64" ",tmp);
-            if (!PrepareCurrent(tmp)) {
-                prepared = false;
-                AUDIO_ERR_LOG("PrepareCurrent failed at %{public}" PRIu64" ",tmp);
-                break;
-            }
-        }
-        if (!prepared)
+        prepared = PrepareCurrentLoop(curWritePos);
+        if (!prepared) {
             continue;
-
+        }
         // call client write
         CallClientHandleCurrent();
-
         // client write done, check if time out
-
         bool finished = true;
-        for (size_t count = 0; count < round; count++) 
-        {
-            uint64_t tmp = curWritePos + count * static_cast<uint64_t>(spanSizeInFrame_);
-            if (!FinishHandleCurrent(tmp, clientWriteCost)) {
-                finished = false;
-                AUDIO_ERR_LOG("FinishHandleCurrent failed at %{public}" PRIu64" ",tmp);
-                break;
-            }
-        }
-        if (!finished)
+        finished = FinishHandleCurrentLoop(curWritePos, clientWriteCost);
+        if (!finished) {
             continue;
-
-        for (size_t count = 0; count < round; count++)
-        {
-            if (!PrepareNext(curWritePos + count * spanSizeInFrame_, wakeUpTime)) {
-                AUDIO_ERR_LOG("PrepareNextLoop in process failed!");
-                break;
-            }
-
         }
-        if (!prepared)
-            continue;
-
+        prepared = ClientPrepareNextLoop(curWritePos, wakeUpTime);      
+        if (!prepared) {
+            break;
+        }
         traceLoop.End();
         // start safe sleep
         threadStatus_ = SLEEPING;
