@@ -187,7 +187,7 @@ public:
     virtual void SetApplicationCachePath(const std::string cachePath) = 0;
     virtual int32_t SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
     virtual int32_t SetVolumeWithRamp(float volume, int32_t duration) = 0;
-
+    virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
     virtual IAudioStream::StreamClass GetStreamClass() = 0;
     virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
     virtual void GetSwitchInfo(SwitchInfo& info) = 0;

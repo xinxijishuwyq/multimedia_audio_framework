@@ -53,7 +53,7 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
-
+    void SetPreferredFrameSize(int32_t frameSize) override;
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
     AudioRenderMode GetRenderMode() override;

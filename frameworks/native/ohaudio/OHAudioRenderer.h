@@ -125,6 +125,7 @@ class OHAudioRenderer {
         int32_t Enqueue(const BufferDesc &bufDesc) const;
 
         void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
+        void SetPreferredFrameSize(int32_t frameSize);
 
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;

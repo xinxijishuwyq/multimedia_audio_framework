@@ -696,6 +696,11 @@ inline size_t GetFormatSize(const AudioStreamParams& info)
     return result;
 }
 
+void AudioStream::SetPreferredFrameSize(int32_t frameSize)
+{
+    
+}
+
 int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
 {
     int32_t ret = SetAudioRenderMode(renderMode);

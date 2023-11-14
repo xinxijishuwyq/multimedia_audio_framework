@@ -57,6 +57,15 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetSampleFormat(OH_AudioStreamBuilde
     return audioStreamBuilder->SetSampleFormat(sampleFormat);
 }
 
+
+OH_AudioStream_Result OH_AudioStreamBuilder_SetPreferredFrameSizeInCallback(OH_AudioStreamBuilder* builder,
+    int32_t frameSize)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    return audioStreamBuilder->SetPreferredFrameSize(frameSize);
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilder* builder,
     OH_AudioStream_EncodingType encodingType)
 {
@@ -215,6 +224,13 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSampleFormat(AudioSampleFormat sa
     return AUDIOSTREAM_SUCCESS;
 }
 
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetPreferredFrameSize(int32_t frameSize)
+{
+    preferredFrameSize_ = frameSize;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage, ContentType contentType)
 {
     if (streamType_ == CAPTURER_TYPE || usage == StreamUsage::STREAM_USAGE_UNKNOWN
@@ -281,6 +297,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
     if (audioRenderer->Initialize(options)) {
         audioRenderer->SetRendererCallback(rendererCallbacks_, userData_);
         *renderer = (OH_AudioRenderer*)audioRenderer;
+        audioRenderer->SetPreferredFrameSize(preferredFrameSize_);
         return AUDIOSTREAM_SUCCESS;
     }
     AUDIO_ERR_LOG("Create OHAudioRenderer failed");

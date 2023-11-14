@@ -840,6 +840,8 @@ public:
      */
     virtual int32_t SetVolumeWithRamp(float volume, int32_t duration) = 0;
 
+    virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
+
     virtual ~AudioRenderer();
 private:
     static std::mutex createRendererMutex_;

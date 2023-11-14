@@ -322,6 +322,11 @@ int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
     return SUCCESS;
 }
 
+void FastAudioStream::SetPreferredFrameSize(int32_t frameSize)
+{
+    processClient_->SetPreferredFrameSize(frameSize);
+}
+
 int32_t FastAudioStream::Clear()
 {
     AUDIO_INFO_LOG("Clear will do nothing.");

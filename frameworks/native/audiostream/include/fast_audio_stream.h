@@ -92,7 +92,7 @@ public:
     int32_t GetBufQueueState(BufferQueueState &bufState) override;
     int32_t Enqueue(const BufferDesc &bufDesc) override;
     int32_t Clear() override;
-
+    void SetPreferredFrameSize(int32_t frameSize) override;
     int32_t SetLowPowerVolume(float volume) override;
     float GetLowPowerVolume() override;
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
