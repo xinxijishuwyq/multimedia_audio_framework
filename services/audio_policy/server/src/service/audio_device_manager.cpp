@@ -240,11 +240,40 @@ void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDevi
     }
 }
 
+bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    auto isPresent = [&deviceDescriptor](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
+        if (descriptor->deviceType_ == deviceDescriptor->deviceType_ &&
+            descriptor->networkId_ == deviceDescriptor->networkId_ &&
+            descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+                return true;
+            } else {
+                // if the disconnecting device is A2DP, need to compare mac address in addition.
+                return descriptor->macAddress_ == deviceDescriptor->macAddress_;
+            }
+        }
+        return false;
+    };
+
+    auto iter = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (iter != connectedDevices_.end()) {
+        **iter = deviceDescriptor;
+        UpdateDeviceInfo(*iter);
+        return true;
+    }
+    return false;
+}
+
 void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     if (!devDesc) {
         AUDIO_ERR_LOG("Memory allocation failed");
+        return;
+    }
+
+    if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
         return;
     }
 
@@ -477,31 +506,22 @@ void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usa
 void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
     vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    switch (usage) {
-        case MEDIA_OUTPUT_DEVICES:
+    if (((usage & MEDIA_OUTPUT_DEVICES) != 0) || ((usage & CALL_OUTPUT_DEVICES) != 0)) {
+        if (speaker_ != nullptr) {
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
-            break;
-        case MEDIA_INPUT_DEVICES:
+        }
+    }
+
+    if (((usage & MEDIA_INPUT_DEVICES) != 0) || ((usage & CALL_INPUT_DEVICES) != 0)) {
+        if (defalutMic_ != nullptr) {
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
-            break;
-        case ALL_MEDIA_DEVICES:
-            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
-            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
-            break;
-        case CALL_OUTPUT_DEVICES:
-            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
+        }
+    }
+
+    if ((usage & CALL_OUTPUT_DEVICES) != 0) {
+        if (earpiece_ != nullptr) {
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(earpiece_));
-            break;
-        case CALL_INPUT_DEVICES:
-            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
-            break;
-        case ALL_CALL_DEVICES:
-            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
-            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(earpiece_));
-            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
-            break;
-        default:
-            break;
+        }
     }
 }
 
@@ -510,7 +530,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
-
     for (auto &dev : connectedDevices_) {
         for (auto &devicePrivacy : devicePrivacyMaps_) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;

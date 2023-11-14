@@ -96,6 +96,7 @@ private:
         std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
         vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    bool UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;
@@ -114,9 +115,9 @@ private:
     vector<shared_ptr<AudioDeviceDescriptor>> capturePublicDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
-    sptr<AudioDeviceDescriptor> earpiece_;
-    sptr<AudioDeviceDescriptor> speaker_;
-    sptr<AudioDeviceDescriptor> defalutMic_;
+    sptr<AudioDeviceDescriptor> earpiece_ = nullptr;
+    sptr<AudioDeviceDescriptor> speaker_ = nullptr;
+    sptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
