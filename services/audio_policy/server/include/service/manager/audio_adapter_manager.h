@@ -306,6 +306,16 @@ public:
         }
     }
 
+    void OnVoiceCallRecCapturerStop()
+    {
+        AUDIO_INFO_LOG("PolicyCallbackImpl OnVoiceCallRecCapturerStop");
+        if (audioAdapterManager_->sessionCallback_ == nullptr) {
+            AUDIO_DEBUG_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
+        } else {
+            audioAdapterManager_->sessionCallback_->OnVoiceCallRecCapturerStop();
+        }
+    }
+
     void OnDstatusUpdated(bool isConnected)
     {
         AUDIO_INFO_LOG("PolicyCallbackImpl OnDstatusUpdated");

@@ -123,6 +123,7 @@ private:
     void GetAvailableDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void SetVoiceCallRecCapturerInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -220,6 +221,7 @@ private:
         &AudioPolicyManagerStub::GetAvailableDevicesInternal,
         &AudioPolicyManagerStub::SetAvailableDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal,
+        &AudioPolicyManagerStub::SetVoiceCallRecCapturerInternal,
     };
 };
 } // namespace AudioStandard

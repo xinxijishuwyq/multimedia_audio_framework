@@ -54,6 +54,8 @@ public:
 
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) override;
 
+    int32_t SetVoiceCallRecCapturer() override;
+
     int32_t CloseWakeUpAudioCapturer() override;
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;

@@ -238,6 +238,13 @@ void AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal(MessageParcel &data,
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetVoiceCallRecCapturerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_DEBUG_LOG("SetVoiceCallRecCapturerInternal AudioManagerStub");
+    int32_t result = SetVoiceCallRecCapturer();
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("CloseWakeUpAudioCapturerInternal AudioManagerStub");

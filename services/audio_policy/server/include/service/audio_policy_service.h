@@ -117,6 +117,10 @@ public:
 
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
+    int32_t SetVoiceCallRecCapturer();
+
+    int32_t CloseVoiceCallRecCapturer();
+
     int32_t CloseWakeUpAudioCapturer();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
@@ -400,6 +404,8 @@ private:
 
     AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo);
 
+    AudioModuleInfo ConstructVoiceCallRecModuleInfo();
+
     AudioIOHandle GetSinkIOHandle(InternalDeviceType deviceType);
 
     AudioIOHandle GetSourceIOHandle(InternalDeviceType deviceType);
@@ -671,6 +677,9 @@ private:
 
     int wakeupCount_ = 0;
     std::mutex wakeupCountMutex_;
+
+    int voiceCallRecCount_=0;
+    std::mutex voiceCallRecCountMutex_;
 
     std::mutex deviceClassInfoMutex_;
 

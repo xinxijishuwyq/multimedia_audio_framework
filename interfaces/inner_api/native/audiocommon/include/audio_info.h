@@ -63,6 +63,7 @@ constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
     PRIMARY_WAKEUP,
     PRIMARY_WAKEUP_MIRROR
 };
+constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment

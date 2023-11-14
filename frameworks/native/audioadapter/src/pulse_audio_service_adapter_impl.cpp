@@ -24,6 +24,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_info.h"
 #include "hisysevent.h"
 #include <set>
 
@@ -37,6 +38,8 @@ std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndex
 int32_t g_playbackCapturerSourceOutputIndex = -1;
 
 std::set<uint32_t> g_wakeupCapturerSourceOutputIndexs;
+
+std::set<uint32_t> g_voiceCallSourceOutputIndexs;
 
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
@@ -868,6 +871,11 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     if (isWakeup && !strcmp("1", isWakeup)) {
         g_wakeupCapturerSourceOutputIndexs.insert(i->index);
     }
+
+    auto capturerSource =  pa_proplist_gets(i->proplist, "stream.capturerSource");
+    if (std::to_string(static_cast<int>(SourceType::SOURCE_TYPE_VOICE_CALL)).c_str() == capturerSource) {
+        g_voiceCallSourceOutputIndexs.insert(i->index);
+    }
 }
 
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
@@ -1003,6 +1011,17 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
             pa_threaded_mainloop_once_unlocked(thiz->mMainLoop,
                 []([[maybe_unused]] pa_threaded_mainloop *m, void *userdata) {
                     g_audioServiceAdapterCallback->OnWakeupCapturerStop();
+                },
+                nullptr);
+        }
+
+        it = g_voiceCallSourceOutputIndexs.find(idx);
+        if (it != g_voiceCallSourceOutputIndexs.end()) {
+            g_voiceCallSourceOutputIndexs.erase(it);
+
+            pa_threaded_mainloop_once_unlocked(thiz->mMainLoop,
+                []([[maybe_unused]] pa_threaded_mainloop *m, void *userdata) {
+                    g_audioServiceAdapterCallback->OnVoiceCallRecCapturerStop();
                 },
                 nullptr);
         }

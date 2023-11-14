@@ -1241,6 +1241,28 @@ AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t wakeu
     return audioModuleInfo;
 }
 
+AudioModuleInfo AudioPolicyService::ConstructVoiceCallRecModuleInfo()
+{
+    AudioModuleInfo audioModuleInfo = {};
+    audioModuleInfo.lib = "libmodule-hdi-source.z.so";
+    audioModuleInfo.format = "s16le";
+
+    audioModuleInfo.name = VOICE_CALL_REC_NAME;
+    audioModuleInfo.networkId = "LocalDevice";
+
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.className = "primary";
+    audioModuleInfo.fileName = "";
+
+    audioModuleInfo.channels = "1";
+    audioModuleInfo.rate = "16000";
+    audioModuleInfo.bufferSize = "1280";
+    audioModuleInfo.OpenMicSpeaker = "1";
+
+    audioModuleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_VOICE_CALL);
+    return audioModuleInfo;
+}
+
 void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor)
 {
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
@@ -1310,6 +1332,54 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer([[maybe_unused]] InternalAudi
 
     AUDIO_DEBUG_LOG("SetWakeUpAudioCapturer Active Success!");
     return wakeupNo;
+}
+
+int32_t AudioPolicyService::SetVoiceCallRecCapturer()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    {
+        std::lock_guard<std::mutex> lock(voiceCallRecCountMutex_);
+        voiceCallRecCount_++;
+        if (voiceCallRecCount_ > 1) {
+            return SUCCESS;
+        }
+    }
+
+    AudioModuleInfo moduleInfo = ConstructVoiceCallRecModuleInfo();
+    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
+    CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+        "OpenAudioPort failed for SetVoiceCallRecCapturer %{public}d", ioHandle);
+
+    {
+        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+        IOHandles_[moduleInfo.name] = ioHandle;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::CloseVoiceCallRecCapturer()
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    std::lock_guard<std::mutex> lock(voiceCallRecCountMutex_);
+    voiceCallRecCount_--;
+    if (voiceCallRecCount_ > 0) {
+        return SUCCESS;
+    }
+    auto key = VOICE_CALL_REC_NAME;
+    AudioIOHandle ioHandle;
+    {
+        std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+        auto ioHandleIter = IOHandles_.find(std::string(key));
+        if (ioHandleIter == IOHandles_.end()) {
+            AUDIO_ERR_LOG("VoiceCallRecCapturer not found");
+            return ERROR;
+        } else {
+            ioHandle = ioHandleIter->second;
+            IOHandles_.erase(ioHandleIter);
+        }
+    }
+    return audioPolicyManager_.CloseAudioPort(ioHandle);
 }
 
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
