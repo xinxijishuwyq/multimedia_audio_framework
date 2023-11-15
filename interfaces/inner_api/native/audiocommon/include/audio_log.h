@@ -17,7 +17,6 @@
 #define OHOS_AUDIO_LOG_H
 
 #include <stdio.h>
-#undef HILOG_RAWFORMAT
 #include "hilog/log.h"
 
 #undef LOG_DOMAIN
