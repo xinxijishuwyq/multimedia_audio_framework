@@ -433,19 +433,19 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
     return descs;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevices()
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice()
 {
     unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
     return devDesc;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetRenderDefaultDevices()
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetRenderDefaultDevice()
 {
     unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(speaker_);
     return devDesc;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevices()
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevice()
 {
     unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(defalutMic_);
     return devDesc;

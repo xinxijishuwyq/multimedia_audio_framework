@@ -28,6 +28,7 @@
 #include "audio_manager_base.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
+#include "audio_router_center.h"
 #include "ipc_skeleton.h"
 #include "power_mgr_client.h"
 #ifdef FEATURE_DTMF_TONE
@@ -123,6 +124,8 @@ public:
 
     DeviceType GetActiveOutputDevice() const;
 
+    unique_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor() const;
+
     DeviceType GetActiveInputDevice() const;
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
@@ -178,6 +181,7 @@ public:
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
+    void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected);
 
     int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected);
 
@@ -196,11 +200,6 @@ public:
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
     {
         AUDIO_INFO_LOG("enter the OnForcedDeviceSelected");
-    }
-
-    void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected)
-    {
-        AUDIO_INFO_LOG("enter the OnDeviceStatusUpdated");
     }
 
     void OnMonoAudioConfigChanged(bool audioMono);
@@ -354,6 +353,7 @@ private:
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         configParser_(ParserFactory::GetInstance().CreateParser(*this)),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+        audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
     {
@@ -364,6 +364,9 @@ private:
     }
 
     ~AudioPolicyService();
+
+    void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
+        bool hasSystemPermission);
 
     std::string GetSinkPortName(InternalDeviceType deviceType);
 
@@ -377,13 +380,17 @@ private:
 
     std::vector<SinkInput> FilterSinkInputs(sptr<AudioRendererFilter> audioRendererFilter, bool moveAll);
 
+    std::vector<SinkInput> FilterSinkInputs(int32_t sessionId);
+
+    std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
+
     int32_t MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
         sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
-    int32_t MoveToLocalInputDevice(std::vector<uint32_t> sourceOutputIds,
+    int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputIds,
         sptr<AudioDeviceDescriptor> localDeviceDescriptor);
 
-    int32_t MoveToRemoteInputDevice(std::vector<uint32_t> sourceOutputIds,
+    int32_t MoveToRemoteInputDevice(std::vector<SourceOutput> sourceOutputIds,
         sptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
@@ -431,11 +438,12 @@ private:
 
     int32_t HandleArmUsbDevice(DeviceType deviceType);
 
-    int32_t HandleFileDevice(DeviceType deviceType);
-
-    int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
-
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
+
+    void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated);
+    void SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
+        unique_ptr<AudioDeviceDescriptor> &inputDevice, bool isStreamStatusUpdated);
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
 
@@ -444,6 +452,14 @@ private:
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
     DeviceType FetchHighPriorityDevice(bool isOutputDevice);
+
+    void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+        bool isStreamStatusUpdated);
+
+    void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+        bool isStreamStatusUpdated);
+
+    void FetchDevice(bool isOutputDevice);
 
     void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& deviceDescriptor,
         std::vector<sptr<AudioDeviceDescriptor>>& desc);
@@ -582,7 +598,7 @@ private:
     std::mutex serviceFlagMutex_;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
-    DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
+    AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::vector<std::pair<DeviceType, bool>> pnpDeviceList_;
     std::string localDevicesType_ = "";
 
@@ -597,6 +613,7 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> toneDescriptorMap;
 #endif
     AudioStreamCollector& streamCollector_;
+    AudioRouterCenter& audioRouterCenter_;
 #ifdef ACCESSIBILITY_ENABLE
     std::shared_ptr<AccessibilityConfigListener> accessibilityConfigListener_;
 #endif

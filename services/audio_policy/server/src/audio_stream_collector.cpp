@@ -404,6 +404,53 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceIn
     return SUCCESS;
 }
 
+int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId,
+    DeviceInfo &outputDeviceInfo)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    bool deviceInfoUpdated = false;
+
+    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
+            (*it)->outputDeviceInfo.deviceType != outputDeviceInfo.deviceType) {
+            AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
+                clientUID, sessionId, (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
+            (*it)->outputDeviceInfo = outputDeviceInfo;
+            deviceInfoUpdated = true;
+        }
+    }
+
+    if (deviceInfoUpdated) {
+        mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
+            audioRendererChangeInfos_);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId,
+    DeviceInfo &inputDeviceInfo)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    bool deviceInfoUpdated = false;
+
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
+            (*it)->inputDeviceInfo.deviceType != inputDeviceInfo.deviceType) {
+            AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
+                (*it)->clientUID, (*it)->sessionId, (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
+            (*it)->inputDeviceInfo = inputDeviceInfo;
+            deviceInfoUpdated = true;
+        }
+    }
+
+    if (deviceInfoUpdated) {
+        mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
+            audioCapturerChangeInfos_);
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioStreamCollector::UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
@@ -427,6 +474,21 @@ int32_t AudioStreamCollector::UpdateTracker(AudioMode &mode, AudioStreamChangeIn
         UpdateCapturerStream(streamChangeInfo);
     }
     return SUCCESS;
+}
+
+AudioStreamType AudioStreamCollector::GetStreamType(ContentType contentType, StreamUsage streamUsage)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+    auto pos = streamTypeMap_.find(std::make_pair(contentType, streamUsage));
+    if (pos != streamTypeMap_.end()) {
+        streamType = pos->second;
+    }
+
+    if (streamType == STREAM_MEDIA) {
+        streamType = STREAM_MUSIC;
+    }
+
+    return streamType;
 }
 
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
