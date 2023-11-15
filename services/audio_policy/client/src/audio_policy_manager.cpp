@@ -705,22 +705,18 @@ int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
         return ERR_INVALID_PARAM;
     }
 
-    // Need to lock member variable listenerStub_ as SetAudioInterruptCallback
-    // can be called from different threads in multi renderer usage
-    std::unique_lock<std::mutex> lock(listenerStubMutex_);
-    listenerStub_ = new(std::nothrow) AudioPolicyManagerListenerStub();
-    if (listenerStub_ == nullptr) {
+    sptr<AudioPolicyManagerListenerStub> listener = new(std::nothrow) AudioPolicyManagerListenerStub();
+    if (listener == nullptr) {
         AUDIO_ERR_LOG("SetAudioInterruptCallback: object null");
         return ERROR;
     }
-    listenerStub_->SetInterruptCallback(callback);
+    listener->SetInterruptCallback(callback);
 
-    sptr<IRemoteObject> object = listenerStub_->AsObject();
+    sptr<IRemoteObject> object = listener->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("SetAudioInterruptCallback: listenerStub->AsObject is nullptr..");
         return ERROR;
     }
-    lock.unlock(); // unlock once it is converted into IRemoteObject
 
     return gsp->SetAudioInterruptCallback(sessionID, object);
 }
@@ -986,15 +982,15 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
     }
 
     std::unique_lock<std::mutex> lock(clientTrackerStubMutex_);
-    clientTrackerCbStub_ = new(std::nothrow) AudioClientTrackerCallbackStub();
-    if (clientTrackerCbStub_ == nullptr) {
+    sptr<AudioClientTrackerCallbackStub> callback = new(std::nothrow) AudioClientTrackerCallbackStub();
+    if (callback == nullptr) {
         AUDIO_ERR_LOG("clientTrackerCbStub: memory allocation failed");
         return ERROR;
     }
 
-    clientTrackerCbStub_->SetClientTrackerCallback(clientTrackerObj);
+    callback->SetClientTrackerCallback(clientTrackerObj);
 
-    sptr<IRemoteObject> object = clientTrackerCbStub_->AsObject();
+    sptr<IRemoteObject> object = callback->AsObject();
     if (object == nullptr) {
         AUDIO_ERR_LOG("clientTrackerCbStub: IPC object creation failed");
         return ERROR;
