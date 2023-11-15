@@ -335,7 +335,8 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
             hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
             break;
         case SOURCE_TYPE_VOICE_CALL:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
+            // hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
+            hdiAudioInputType = static_cast<AudioInputType> (1<<6);
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
