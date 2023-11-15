@@ -44,6 +44,7 @@ ohos_shared_library("audio_common") {
 
   sources = [
     "common/src/audio_process_config.cpp",
+    "common/src/audio_ring_cache.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
   ]

@@ -77,6 +77,16 @@ int32_t IpcStreamStub::HandleUpdatePosition(MessageParcel &data, MessageParcel &
     return AUDIO_OK;
 }
 
+int32_t IpcStreamStub::HandleGetAudioSessionID(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    uint32_t sessionId = 0;
+    reply.WriteInt32(GetAudioSessionID(sessionId));
+    reply.WriteUint32(sessionId);
+
+    return AUDIO_OK;
+}
+
 int32_t IpcStreamStub::HandleStart(MessageParcel &data, MessageParcel &reply)
 {
     (void)data;

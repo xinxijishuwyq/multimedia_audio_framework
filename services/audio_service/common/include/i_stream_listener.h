@@ -13,25 +13,29 @@
  * limitations under the License.
  */
 
-#ifndef IPC_STREAM_LISTENER_PROXY_H
-#define IPC_STREAM_LISTENER_PROXY_H
+#ifndef I_STREAM_LISTENER_H
+#define I_STREAM_LISTENER_H
 
-#include "message_parcel.h"
-
-#include "ipc_stream.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class IpcStreamListenerProxy : public IRemoteProxy<IpcStreamListener> {
+enum Operation : int32_t {
+    START_STREAM = 0,
+    PAUSE_STREAM,
+    STOP_STREAM,
+    RELEASE_STREAM,
+    FLUSH_STREAM,
+    DRAIN_STREAM,
+    UPDATE_STREAM, // when server notify client index update
+    MAX_OPERATION_CODE
+};
+class IStreamListener {
 public:
-    explicit IpcStreamListenerProxy(const sptr<IRemoteObject> &impl);
-    virtual ~IpcStreamListenerProxy();
+    virtual ~IStreamListener() = default;
 
-    int32_t OnOperationHandled(Operation operation, int64_t result) override;
-
-private:
-    static inline BrokerDelegator<IpcStreamListenerProxy> delegator_;
+    virtual int32_t OnOperationHandled(Operation operation, int64_t result) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // IPC_STREAM_LISTENER_PROXY_H
+#endif // I_STREAM_LISTENER_H

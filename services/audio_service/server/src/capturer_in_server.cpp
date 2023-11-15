@@ -28,6 +28,7 @@ namespace {
 
 CapturerInServer::CapturerInServer(AudioStreamParams params, AudioStreamType audioType)
 {
+    (void)streamListener_; // LYH in plan
     audioStreamParams_ = params;
     audioType_ = audioType;
     int32_t ret = IStreamManager::GetRecorderManager().CreateCapturer(params, audioType, stream_);
@@ -233,6 +234,16 @@ void CapturerInServer::UpdateReadIndex()
 {
     AUDIO_INFO_LOG("UpdateReadIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d",
         audioServerBuffer_->GetAvailableDataFrames(), needStart);
+}
+
+int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetSessionId failed, stream_ is null");
+    sessionId = stream_->GetStreamIndex();
+    CHECK_AND_RETURN_RET_LOG(sessionId < INT32_MAX, ERR_OPERATION_FAILED, "GetSessionId failed, sessionId:%{public}d",
+        sessionId);
+
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::Start()

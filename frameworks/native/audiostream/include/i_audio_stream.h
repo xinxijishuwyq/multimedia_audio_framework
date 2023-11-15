@@ -98,6 +98,7 @@ public:
 
     virtual ~IAudioStream() = default;
 
+    static int32_t GetByteSizePerFrame(const AudioStreamParams &params, size_t &result);
     static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);

@@ -16,6 +16,7 @@
 #include "i_audio_stream.h"
 #include <map>
 
+#include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_stream.h"
@@ -130,6 +131,89 @@ const std::string IAudioStream::GetEffectSceneName(AudioStreamType audioType)
     return sceneName;
 }
 
+int32_t IAudioStream::GetByteSizePerFrame(const AudioStreamParams &params, size_t &result)
+{
+    result = 0;
+    size_t bitWidthSize = 0;
+    switch (params.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        case SAMPLE_F32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            return ERR_INVALID_PARAM;
+            break;
+    }
+
+    size_t channelSize = 0;
+    switch (params.channels) {
+        case MONO:
+            channelSize = 1;
+            break;
+        case STEREO:
+            channelSize = 2;
+            break;
+        case CHANNEL_3:
+            channelSize = 3;
+            break;
+        case CHANNEL_4:
+            channelSize = 4;
+            break;
+        case CHANNEL_5:
+            channelSize = 5;
+            break;
+        case CHANNEL_6:
+            channelSize = 6;
+            break;
+        case CHANNEL_7:
+            channelSize = 7;
+            break;
+        case CHANNEL_8:
+            channelSize = 8;
+            break;
+        case CHANNEL_9:
+            channelSize = 9;
+            break;
+        case CHANNEL_10:
+            channelSize = 10;
+            break;
+        case CHANNEL_11:
+            channelSize = 11;
+            break;
+        case CHANNEL_12:
+            channelSize = 12;
+            break;
+        case CHANNEL_13:
+            channelSize = 13;
+            break;
+        case CHANNEL_14:
+            channelSize = 14;
+            break;
+        case CHANNEL_15:
+            channelSize = 15;
+            break;
+        case CHANNEL_16:
+            channelSize = 16;
+            break;
+        default:
+            return ERR_INVALID_PARAM;
+            break;
+    }
+    result = bitWidthSize * channelSize;
+    return SUCCESS;
+}
+
 bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params)
 {
     // 0 for normal stream
@@ -173,7 +257,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
         AUDIO_INFO_LOG("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
     }
-    int32_t mediaUid = 1041;
+    int32_t mediaUid = 1013;
     int32_t ipcFlag = 0;
     if (getuid() != mediaUid && GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
         AUDIO_INFO_LOG("Create ipc playback stream");
@@ -197,7 +281,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     }
 
     // in plan
-    int32_t mediaUid = 1041;
+    int32_t mediaUid = 1013;
     int32_t ipcFlag = 0;
     if (getuid() != mediaUid && GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
         AUDIO_INFO_LOG("Create ipc record stream");

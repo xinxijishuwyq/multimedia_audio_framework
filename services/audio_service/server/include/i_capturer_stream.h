@@ -33,7 +33,6 @@ public:
 
     virtual void RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback) = 0;
     virtual int32_t GetMinimumBufferSize(size_t &minBufferSize) const = 0;
-    virtual uint32_t GetStreamIndex() = 0;
     virtual int32_t DropBuffer() = 0;
     virtual void AbortCallback(int32_t abortTimes) = 0;
 };

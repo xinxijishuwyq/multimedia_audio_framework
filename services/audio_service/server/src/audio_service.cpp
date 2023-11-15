@@ -85,11 +85,12 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
     return SUCCESS;
 }
 
-sptr<IpcStreamInServer> AudioService::GetIpcStream(int32_t &ret, const AudioProcessConfig &config)
+sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
     // DeviceInfo deviceInfo = GetDeviceInfoForProcess(config); // in plan
-    sptr<IpcStreamInServer> ipcStreamInServer = new(std::nothrow) IpcStreamInServer(config);
-    ret = SUCCESS;
+    // in plan: stream limit check
+    sptr<IpcStreamInServer> ipcStreamInServer = IpcStreamInServer::Create(config, ret);
+
     return ipcStreamInServer;
 }
 

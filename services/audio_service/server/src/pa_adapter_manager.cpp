@@ -269,7 +269,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioStreamParams params, AudioStreamT
     // Set streamName and sessionID after pa_stream_new
     const std::string streamName = GetStreamName(audioType);
 
-    int32_t sessionID_ = 1;
+    int32_t sessionID_ = 1; // LYH in plan: change to pa_stream id, so we should update it after create or in stream
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
     auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     const std::string streamStartTime = ctime(&timenow);

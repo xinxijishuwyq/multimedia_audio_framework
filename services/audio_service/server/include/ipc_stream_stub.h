@@ -32,6 +32,7 @@ private:
     int32_t HandleRegisterStreamListener(MessageParcel &data, MessageParcel &reply);
     int32_t HandleResolveBuffer(MessageParcel &data, MessageParcel &reply);
     int32_t HandleUpdatePosition(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleGetAudioSessionID(MessageParcel &data, MessageParcel &reply);
     int32_t HandleStart(MessageParcel &data, MessageParcel &reply);
     int32_t HandlePause(MessageParcel &data, MessageParcel &reply);
     int32_t HandleStop(MessageParcel &data, MessageParcel &reply);
@@ -55,6 +56,7 @@ private:
         &IpcStreamStub::HandleRegisterStreamListener,
         &IpcStreamStub::HandleResolveBuffer,
         &IpcStreamStub::HandleUpdatePosition,
+        &IpcStreamStub::HandleGetAudioSessionID,
         &IpcStreamStub::HandleStart,
         &IpcStreamStub::HandlePause,
         &IpcStreamStub::HandleStop,

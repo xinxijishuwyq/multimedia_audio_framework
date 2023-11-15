@@ -17,8 +17,8 @@
 #define RENDERER_IN_SERVER_H
 
 #include <mutex>
-#include "i_stream.h"
 #include "i_renderer_stream.h"
+#include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
 
 namespace OHOS {
@@ -34,11 +34,13 @@ public:
 class RendererInServer : public IStatusCallback, public IWriteCallback,
     public std::enable_shared_from_this<RendererInServer> {
 public:
+    // LYH in plan: add IStreamListener
     RendererInServer(AudioStreamParams params, AudioStreamType audioType);
     virtual ~RendererInServer() {};
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
     
+    int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
     int32_t Pause();
     int32_t Flush();
@@ -71,6 +73,8 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
+    // LYH in plan
+    std::weak_ptr<IStreamListener> streamListener_;
     std::weak_ptr<RendererListener> testCallback_;
     AudioStreamParams audioStreamParams_;
     AudioStreamType audioType_;

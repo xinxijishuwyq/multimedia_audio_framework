@@ -25,18 +25,32 @@
 #include <mutex>
 #include <thread>
 
-#include "ipc_stream.h"
-#include "audio_log.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+
 #include "audio_errors.h"
+#include "audio_manager_base.h"
+#include "audio_log.h"
+#include "audio_ring_cache.h"
+#include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
+#include "audio_utils.h"
+#include "ipc_stream_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class RendererInClientInner : public RendererInClient {
+namespace {
+static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
+}
+class RendererInClientInner : public RendererInClient , public IpcStreamListenerStub {
 public:
     RendererInClientInner(AudioStreamType eStreamType, int32_t appUid);
     ~RendererInClientInner();
 
+    // IpcStreamListenerStub
+    int32_t OnOperationHandled(Operation operation, int64_t result) override;
+
+    // IAudioStream
     void SetClientID(int32_t clientPid, int32_t clientUid) override;
 
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
@@ -125,9 +139,20 @@ public:
     void GetSwitchInfo(IAudioStream::SwitchInfo& info) override;
 
     IAudioStream::StreamClass GetStreamClass() override;
+
+    static const sptr<IStandardAudioService> GetAudioServerProxy();
+    static void AudioServerDied(pid_t pid);
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
 
+    int32_t DeinitIpcStream();
+
+    int32_t InitIpcStream();
+
+    const AudioProcessConfig ConstructConfig();
+
+    int32_t InitSharedBuffer();
+    int32_t InitCacheBuffer(size_t targetSize);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -144,7 +169,17 @@ private:
     bool streamTrackerRegistered_ = false;
 
     AudioStreamParams streamParams_;
-    State state_;
+    std::atomic<State> state_;
+
+    size_t cacheSizeInByte_ = 0;
+    size_t clientSpanSizeInByte_ = 0;
+    size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
+
+    // ipc stream related
+    sptr<IpcStream> ipcStream_ = nullptr;
+    std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
+
+    std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
 };
 
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
@@ -157,11 +192,19 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 {
     AUDIO_INFO_LOG("RendererInClientInner() with appUid:%{public}d", appUid_);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
+    state_ = NEW;
 }
 
 RendererInClientInner::~RendererInClientInner()
 {
     AUDIO_INFO_LOG("~RendererInClientInner()");
+}
+
+int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
+{
+    // in plan: read/write operation may print many log, use debug log later
+    AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
+    return SUCCESS;
 }
 
 void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid)
@@ -170,7 +213,6 @@ void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid)
     clientPid_ = clientPid;
     clientUid_ = clientUid;
 }
-
 
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
@@ -187,8 +229,8 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
 void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
     if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
-        // GetSessionID(sessionId_); // in plan
-        AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
+        // GetSessionID(sessionId_); // in plan:make sure sessionId_ is valid.
+        AUDIO_INFO_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
         audioStreamTracker_->RegisterTracker(sessionId_, state_, audioRendererInfo_, capturerInfo_, proxyObj);
         streamTrackerRegistered_ = true;
     }
@@ -201,22 +243,180 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
         eStreamType_, info.encoding);
 
+    AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND);
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("RendererInClient: Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
-    }
-    if (state_ != NEW) {
-        AUDIO_INFO_LOG("RendererInClient: State is not new, release existing stream");
-        // StopAudioStream(); // in plan
-        // ReleaseAudioStream(false); // in plan
     }
     if (!IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout)) {
         return ERR_NOT_SUPPORTED;
     }
 
+    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+        ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
+
+    if (state_ != NEW) {
+        AUDIO_INFO_LOG("RendererInClient: State is not new, release existing stream and recreate.");
+        int32_t ret = DeinitIpcStream();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
+    }
+
+    streamParams_ = info; // keep it for later use
+    int32_t initRet = InitIpcStream();
+    CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
-    streamParams_ = info;
+
     RegisterTracker(proxyObj);
+    return SUCCESS;
+}
+
+std::mutex g_serverProxyMutex;
+sptr<IStandardAudioService> gServerProxy_ = nullptr;
+const sptr<IStandardAudioService> RendererInClientInner::GetAudioServerProxy()
+{
+    std::lock_guard<std::mutex> lock(g_serverProxyMutex);
+    if (gServerProxy_ == nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (samgr == nullptr) {
+            AUDIO_ERR_LOG("GetAudioServerProxy: get sa manager failed");
+            return nullptr;
+        }
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service remote object failed");
+            return nullptr;
+        }
+        gServerProxy_ = iface_cast<IStandardAudioService>(object);
+        if (gServerProxy_ == nullptr) {
+            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service proxy failed");
+            return nullptr;
+        }
+
+        // register death recipent to restore proxy
+        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        if (asDeathRecipient != nullptr) {
+            asDeathRecipient->SetNotifyCb(std::bind(&RendererInClientInner::AudioServerDied,
+                std::placeholders::_1));
+            bool result = object->AddDeathRecipient(asDeathRecipient);
+            if (!result) {
+                AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
+            }
+        }
+    }
+    sptr<IStandardAudioService> gasp = gServerProxy_;
+    return gasp;
+}
+
+void RendererInClientInner::AudioServerDied(pid_t pid)
+{
+    AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
+    std::lock_guard<std::mutex> lock(g_serverProxyMutex);
+    gServerProxy_ = nullptr;
+}
+
+// call this without lock, we should be able to call deinit in any case.
+int32_t RendererInClientInner::DeinitIpcStream()
+{
+    // in plan
+    return SUCCESS;
+}
+
+const AudioProcessConfig RendererInClientInner::ConstructConfig()
+{
+    AudioProcessConfig config = {};
+    // in plan: get token id
+    config.appInfo.appPid = clientPid_;
+    config.appInfo.appUid = clientUid_;
+
+    config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+    config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
+    config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
+    config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo = audioRendererInfo_;
+    if (audioRendererInfo_.rendererFlags != 0) {
+        AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", audioRendererInfo_.rendererFlags);
+    }
+
+    config.capturerInfo = {};
+
+    config.streamType = eStreamType_;
+
+    // in plan: add privacyType_
+
+    return config;
+}
+
+int32_t RendererInClientInner::InitSharedBuffer()
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitSharedBuffer failed, null ipcStream_.");
+    int32_t ret = ipcStream_->ResolveBuffer(clientBuffer_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
+
+    uint32_t totalSizeInFrame = 0;
+    uint32_t spanSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret, "ResolveBuffer failed"
+        ":%{public}d", ret);
+
+    clientSpanSizeInByte_ = spanSizeInFrame * byteSizePerFrame;
+
+    AUDIO_INFO_LOG("InitSharedBuffer totalSizeInFrame_[%{public}d] spanSizeInFrame_[%{public}d] sizePerFrameInByte_["
+        "%{public}d] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame, sizePerFrameInByte_,
+        clientSpanSizeInByte_);
+
+    return SUCCESS;
+}
+
+// InitCacheBuffer should be able to modify the cache size between clientSpanSizeInByte_ and 4 * clientSpanSizeInByte_
+int32_t RendererInClientInner::InitCacheBuffer(size_t targetSize)
+{
+    CHECK_AND_RETURN_RET_LOG(clientSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "clientSpanSizeInByte_ invalid");
+
+    AUDIO_INFO_LOG("InitCacheBuffer old size:%{public}zu, new size:%{public}zu", cacheSizeInByte_, targetSize);
+    cacheSizeInByte_ = targetSize;
+
+    if (ringCache_ == nullptr) {
+        ringCache_ = AudioRingCache::Create(cacheSizeInByte_);
+    } else {
+        // in plan
+        OptResult result = ringCache_->ReConfig(cacheSizeInByte_, false); // false --> clear buffer
+        if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_ERR_LOG("ReConfig AudioRingCache to size %{public}zu failed:ret%{public}d", result.ret, targetSize);
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::InitIpcStream()
+{
+    AudioProcessConfig config = ConstructConfig();
+
+    sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
+    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config); // in plan: add ret
+    CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "InitIpcStream failed with null ipcProxy.");
+    ipcStream_ = iface_cast<IpcStream>(ipcProxy);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitIpcStream failed when iface_cast.");
+
+    int32_t ret = ipcStream_->RegisterStreamListener(this->AsObject());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterStreamListener failed:%{public}d", ret);
+
+    ret = InitSharedBuffer();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer failed:%{public}d", ret);
+
+    ret = InitCacheBuffer(clientSpanSizeInByte_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitCacheBuffer failed:%{public}d", ret);
+
+    ret = ipcStream_->GetAudioSessionID(sessionId_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
+
     return SUCCESS;
 }
 

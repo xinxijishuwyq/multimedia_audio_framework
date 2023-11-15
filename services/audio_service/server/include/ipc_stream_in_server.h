@@ -21,31 +21,41 @@
 #include "ipc_stream_stub.h"
 #include "audio_info.h"
 #include "audio_process_config.h"
-// #include "audio_renderer_in_server.h"
-// #include "audio_capturer_in_server.h"
+#include "renderer_in_server.h"
+#include "capturer_in_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
 // in plan extends IStatusCallback
-class StreamListenerHolder {
+class StreamListenerHolder : public IStreamListener{
 public:
-    StreamListenerHolder(sptr<IpcStreamListener> listener);
+    StreamListenerHolder();
     ~StreamListenerHolder();
+    int32_t RegisterStreamListener(sptr<IpcStreamListener> listener);
+
+    // override IStreamListener
+    int32_t OnOperationHandled(Operation operation, int64_t result) override;
 private:
+    std::mutex listenerMutex_;
     sptr<IpcStreamListener> streamListener_ = nullptr;
 };
 
 class IpcStreamInServer : public IpcStreamStub {
 public:
-    IpcStreamInServer(const AudioProcessConfig &config);
+    static sptr<IpcStreamInServer> Create(const AudioProcessConfig &config, int32_t &ret);
 
+    IpcStreamInServer(const AudioProcessConfig &config, AudioMode mode);
     ~IpcStreamInServer();
+
+    int32_t Config();
 
     int32_t RegisterStreamListener(sptr<IRemoteObject> object) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
 
     int32_t UpdatePosition() override;
+
+    int32_t GetAudioSessionID(uint32_t &sessionId) override;
 
     int32_t Start() override;
 
@@ -78,11 +88,17 @@ public:
     int32_t SetPrivacyType(int32_t privacyType) override; // renderer only
 
     int32_t GetPrivacyType(int32_t &privacyType) override; // renderer only
+
+private:
+    int32_t ConfigRenderer();
+    int32_t ConfigCapturer();
+
 private:
     AudioProcessConfig config_;
-    // in plan std::shared_ptr<StreamListenerHolder> streamListenerHolder_ = nullptr;
-    // in plan std::shared_ptr<RendererInServer> rendererInServer_ = nullptr;
-    // in plan std::shared_ptr<CapturerInServer> capturerInServer_ = nullptr;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder_ = nullptr;
+    AudioMode mode_ = AUDIO_MODE_PLAYBACK;
+    std::shared_ptr<RendererInServer> rendererInServer_ = nullptr;
+    std::shared_ptr<CapturerInServer> capturerInServer_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -33,7 +33,6 @@ public:
 
     virtual void RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback) = 0;
     virtual int32_t GetMinimumBufferSize(size_t &minBufferSize) const = 0;
-    virtual uint32_t GetStreamIndex() = 0;
     virtual void AbortCallback(int32_t abortTimes) = 0;
 };
 } // namespace AudioStandard

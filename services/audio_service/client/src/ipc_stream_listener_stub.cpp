@@ -44,7 +44,14 @@ int IpcStreamListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, M
 
 int32_t IpcStreamListenerStub::HandleOnOperationHandled(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t operation = data.ReadInt32();
+    int32_t temp = data.ReadInt32();
+    if (temp < 0 || temp >= MAX_OPERATION_CODE) {
+        reply.WriteInt32(AUDIO_INVALID_PARAM);
+        AUDIO_ERR_LOG("HandleOnOperationHandled failed, invalid operation: %{public}d", temp);
+        return AUDIO_INVALID_PARAM;
+    }
+
+    Operation operation = static_cast<Operation>(temp);
     int64_t result = data.ReadInt64();
     reply.WriteInt32(OnOperationHandled(operation, result));
     return AUDIO_OK;

@@ -69,6 +69,7 @@ public:
 
 class IStream {
 public:
+    virtual uint32_t GetStreamIndex() = 0;
     virtual int32_t Start() = 0;
     virtual int32_t Pause() = 0;
     virtual int32_t Flush() = 0;

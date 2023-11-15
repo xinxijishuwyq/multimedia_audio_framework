@@ -17,8 +17,8 @@
 #define CAPTURER_IN_SERVER_H
 
 #include <mutex>
-#include "i_stream.h"
 #include "i_capturer_stream.h"
+#include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
 
 namespace OHOS {
@@ -31,11 +31,13 @@ public:
 class CapturerInServer : public IStatusCallback, public IReadCallback,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
+    // LYH in plan: add IStreamListener
     CapturerInServer(AudioStreamParams params, AudioStreamType audioType);
     virtual ~CapturerInServer() {};
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnReadData(size_t length) override;
-    
+
+    int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
     int32_t Pause();
     int32_t Flush();
@@ -65,6 +67,8 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
+    // LYH in plan: IStreamListener
+    std::weak_ptr<IStreamListener> streamListener_;
     std::weak_ptr<CapturerListener> testCallback_;
     AudioStreamParams audioStreamParams_;
     AudioStreamType audioType_;

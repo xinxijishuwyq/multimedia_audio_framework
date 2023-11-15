@@ -25,6 +25,7 @@
 
 #include "audio_info.h"
 #include "audio_process_config.h"
+#include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
 
 namespace OHOS {
@@ -38,6 +39,8 @@ public:
     virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) = 0;
 
     virtual int32_t UpdatePosition() = 0;
+
+    virtual int32_t GetAudioSessionID(uint32_t &sessionId) = 0;
 
     virtual int32_t Start() = 0;
 
@@ -76,6 +79,7 @@ public:
         ON_REGISTER_STREAM_LISTENER = 0,
         ON_RESOLVE_BUFFER,
         ON_UPDATE_POSITION,
+        ON_GET_AUDIO_SESSIONID,
         ON_START,
         ON_PAUSE,
         ON_STOP,
@@ -98,11 +102,9 @@ public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IpcStream");
 };
 
-class IpcStreamListener : public IRemoteBroker {
+class IpcStreamListener : public IRemoteBroker ,public IStreamListener {
 public:
     virtual ~IpcStreamListener() = default;
-
-    virtual int32_t OnOperationHandled(int32_t operation, int64_t result) = 0;
 
     // IPC code.
     enum IpcStreamListenerMsg : uint32_t {

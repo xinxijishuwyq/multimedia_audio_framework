@@ -34,7 +34,7 @@ public:
     static AudioService *GetInstance();
     ~AudioService();
 
-    sptr<IpcStreamInServer> GetIpcStream(int32_t &ret, const AudioProcessConfig &config);
+    sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
 
     sptr<AudioProcessInServer> GetAudioProcess(const AudioProcessConfig &config);
     // override for ProcessReleaseCallback, do release process work.

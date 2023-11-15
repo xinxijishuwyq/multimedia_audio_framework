@@ -29,7 +29,7 @@ IpcStreamListenerProxy::~IpcStreamListenerProxy()
     AUDIO_INFO_LOG("~IpcStreamListenerProxy()");
 }
 
-int32_t IpcStreamListenerProxy::OnOperationHandled(int32_t operation, int64_t result)
+int32_t IpcStreamListenerProxy::OnOperationHandled(Operation operation, int64_t result)
 {
     MessageParcel data;
     MessageParcel reply;
