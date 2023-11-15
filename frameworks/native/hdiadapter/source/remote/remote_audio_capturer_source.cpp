@@ -121,7 +121,7 @@ RemoteAudioCapturerSourceInner::RemoteAudioCapturerSourceInner(const std::string
 RemoteAudioCapturerSourceInner::~RemoteAudioCapturerSourceInner()
 {
     if (capturerInited_.load()) {
-        DeInit();
+        RemoteAudioCapturerSourceInner::DeInit();
     } else {
         AUDIO_INFO_LOG("RemoteAudioCapturerSource has already DeInit.");
     }
