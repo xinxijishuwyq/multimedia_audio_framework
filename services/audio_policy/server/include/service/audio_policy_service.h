@@ -678,7 +678,7 @@ private:
     int wakeupCount_ = 0;
     std::mutex wakeupCountMutex_;
 
-    int voiceCallRecCount_=0;
+    int voiceCallRecCount_ = 0;
     std::mutex voiceCallRecCountMutex_;
 
     std::mutex deviceClassInfoMutex_;

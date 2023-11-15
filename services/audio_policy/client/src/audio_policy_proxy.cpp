@@ -17,6 +17,7 @@
 #include "audio_log.h"
 #include "audio_policy_proxy.h"
 #include "microphone_descriptor.h"
+#include "audio_message_object.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,9 +40,7 @@ void AudioPolicyProxy::WriteStreamChangeInfo(MessageParcel &data,
 
 int32_t AudioPolicyProxy::GetMaxVolumeLevel(AudioVolumeType volumeType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetMaxVolumeLevel: WriteInterfaceToken failed");
@@ -59,9 +58,7 @@ int32_t AudioPolicyProxy::GetMaxVolumeLevel(AudioVolumeType volumeType)
 
 int32_t AudioPolicyProxy::GetMinVolumeLevel(AudioVolumeType volumeType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetMinVolumeLevel: WriteInterfaceToken failed");
@@ -79,9 +76,7 @@ int32_t AudioPolicyProxy::GetMinVolumeLevel(AudioVolumeType volumeType)
 
 int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
@@ -101,9 +96,7 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32
 
 int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -124,9 +117,7 @@ int32_t AudioPolicyProxy::SetRingerMode(AudioRingerMode ringMode, API_VERSION ap
 #ifdef FEATURE_DTMF_TONE
 std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     int32_t lListSize = 0;
     AUDIO_DEBUG_LOG("get GetSupportedTones,");
     std::vector<int> lSupportedToneList = {};
@@ -149,9 +140,7 @@ std::vector<int32_t> AudioPolicyProxy::GetSupportedTones()
 
 std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     std::shared_ptr<ToneInfo> spToneInfo =  std::make_shared<ToneInfo>();
     if (spToneInfo == nullptr) {
         return nullptr;
@@ -175,9 +164,7 @@ std::shared_ptr<ToneInfo> AudioPolicyProxy::GetToneConfig(int32_t ltonetype)
 
 int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -196,9 +183,7 @@ int32_t AudioPolicyProxy::SetMicrophoneMute(bool isMute)
 
 int32_t AudioPolicyProxy::SetMicrophoneMuteAudioConfig(bool isMute)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -217,9 +202,7 @@ int32_t AudioPolicyProxy::SetMicrophoneMuteAudioConfig(bool isMute)
 
 bool AudioPolicyProxy::IsMicrophoneMute(API_VERSION api_v)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -238,9 +221,7 @@ bool AudioPolicyProxy::IsMicrophoneMute(API_VERSION api_v)
 
 AudioRingerMode AudioPolicyProxy::GetRingerMode()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -256,9 +237,7 @@ AudioRingerMode AudioPolicyProxy::GetRingerMode()
 
 int32_t AudioPolicyProxy::SetAudioScene(AudioScene scene)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -277,9 +256,7 @@ int32_t AudioPolicyProxy::SetAudioScene(AudioScene scene)
 
 AudioScene AudioPolicyProxy::GetAudioScene()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -295,9 +272,7 @@ AudioScene AudioPolicyProxy::GetAudioScene()
 
 int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioVolumeType volumeType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -315,9 +290,7 @@ int32_t AudioPolicyProxy::GetSystemVolumeLevel(AudioVolumeType volumeType)
 
 int32_t AudioPolicyProxy::SetLowPowerVolume(int32_t streamId, float volume)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
@@ -336,9 +309,7 @@ int32_t AudioPolicyProxy::SetLowPowerVolume(int32_t streamId, float volume)
 
 float AudioPolicyProxy::GetLowPowerVolume(int32_t streamId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -356,9 +327,7 @@ float AudioPolicyProxy::GetLowPowerVolume(int32_t streamId)
 
 float AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -376,9 +345,7 @@ float AudioPolicyProxy::GetSingleStreamVolume(int32_t streamId)
 
 int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute, API_VERSION api_v)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -398,9 +365,7 @@ int32_t AudioPolicyProxy::SetStreamMute(AudioVolumeType volumeType, bool mute, A
 
 bool AudioPolicyProxy::GetStreamMute(AudioVolumeType volumeType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -418,9 +383,7 @@ bool AudioPolicyProxy::GetStreamMute(AudioVolumeType volumeType)
 
 bool AudioPolicyProxy::IsStreamActive(AudioVolumeType volumeType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -438,9 +401,7 @@ bool AudioPolicyProxy::IsStreamActive(AudioVolumeType volumeType)
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag deviceFlag)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -465,9 +426,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
 
 int32_t AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -486,9 +445,7 @@ int32_t AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions op
 
 int32_t AudioPolicyProxy::SetVoiceCallRecCapturer()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -505,9 +462,7 @@ int32_t AudioPolicyProxy::SetVoiceCallRecCapturer()
 
 int32_t AudioPolicyProxy::CloseWakeUpAudioCapturer()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -524,9 +479,7 @@ int32_t AudioPolicyProxy::CloseWakeUpAudioCapturer()
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -553,9 +506,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDev
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDeviceDescriptors(
     AudioCapturerInfo &captureInfo)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -580,9 +531,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDevi
 
 int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool active)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -601,9 +550,7 @@ int32_t AudioPolicyProxy::SetDeviceActive(InternalDeviceType deviceType, bool ac
 
 bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -621,9 +568,7 @@ bool AudioPolicyProxy::IsDeviceActive(InternalDeviceType deviceType)
 
 DeviceType AudioPolicyProxy::GetActiveOutputDevice()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -642,9 +587,7 @@ DeviceType AudioPolicyProxy::GetActiveOutputDevice()
 
 DeviceType AudioPolicyProxy::GetActiveInputDevice()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -664,9 +607,7 @@ DeviceType AudioPolicyProxy::GetActiveInputDevice()
 int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -700,9 +641,7 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
 }
 std::string AudioPolicyProxy::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -724,9 +663,7 @@ std::string AudioPolicyProxy::GetSelectedDeviceInfo(int32_t uid, int32_t pid, Au
 int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -762,9 +699,7 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
 int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object, API_VERSION api_v)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyProxy: SetRingerModeCallback object is null");
@@ -789,9 +724,7 @@ int32_t AudioPolicyProxy::SetRingerModeCallback(const int32_t clientId,
 
 int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -810,9 +743,7 @@ int32_t AudioPolicyProxy::UnsetRingerModeCallback(const int32_t clientId)
 
 int32_t AudioPolicyProxy::SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyProxy: SetMicStateChangeCallback object is null");
@@ -838,9 +769,7 @@ int32_t AudioPolicyProxy::SetMicStateChangeCallback(const int32_t clientId, cons
 int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyProxy: SetDeviceChangeCallback object is null");
@@ -866,9 +795,7 @@ int32_t AudioPolicyProxy::SetDeviceChangeCallback(const int32_t clientId, const 
 
 int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -889,9 +816,7 @@ int32_t AudioPolicyProxy::UnsetDeviceChangeCallback(const int32_t clientId, Devi
 int32_t AudioPolicyProxy::SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback object is null");
@@ -916,9 +841,7 @@ int32_t AudioPolicyProxy::SetPreferredOutputDeviceChangeCallback(const int32_t c
 
 int32_t AudioPolicyProxy::SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("SetPreferredInputDeviceChangeCallback object is null");
@@ -942,9 +865,7 @@ int32_t AudioPolicyProxy::SetPreferredInputDeviceChangeCallback(const sptr<IRemo
 
 int32_t AudioPolicyProxy::UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
@@ -964,9 +885,7 @@ int32_t AudioPolicyProxy::UnsetPreferredOutputDeviceChangeCallback(const int32_t
 
 int32_t AudioPolicyProxy::UnsetPreferredInputDeviceChangeCallback()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
@@ -994,9 +913,7 @@ void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
 
 int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG(" GetAudioFocusInfoList WriteInterfaceToken failed");
@@ -1024,9 +941,7 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
 int32_t AudioPolicyProxy::RegisterFocusInfoChangeCallback(const int32_t clientId,
     const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("RegisterFocusInfoChangeCallback object is null");
@@ -1051,9 +966,7 @@ int32_t AudioPolicyProxy::RegisterFocusInfoChangeCallback(const int32_t clientId
 
 int32_t AudioPolicyProxy::UnregisterFocusInfoChangeCallback(const int32_t clientId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
@@ -1073,9 +986,7 @@ int32_t AudioPolicyProxy::UnregisterFocusInfoChangeCallback(const int32_t client
 
 int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioInterruptCallback object is null");
@@ -1099,9 +1010,7 @@ int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, co
 
 int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1120,9 +1029,7 @@ int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID)
 
 int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1141,9 +1048,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInte
 
 int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1162,9 +1067,7 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
 
 int32_t AudioPolicyProxy::SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioManagerInterruptCallback object is null");
@@ -1188,9 +1091,7 @@ int32_t AudioPolicyProxy::SetAudioManagerInterruptCallback(const int32_t clientI
 
 int32_t AudioPolicyProxy::UnsetAudioManagerInterruptCallback(const int32_t clientId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1211,9 +1112,7 @@ int32_t AudioPolicyProxy::UnsetAudioManagerInterruptCallback(const int32_t clien
 
 int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1235,9 +1134,7 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioI
 
 int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1258,9 +1155,7 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
 
 AudioStreamType AudioPolicyProxy::GetStreamInFocus()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1276,9 +1171,7 @@ AudioStreamType AudioPolicyProxy::GetStreamInFocus()
 
 int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1297,9 +1190,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
 int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const int32_t clientPid,
     const sptr<IRemoteObject> &object, API_VERSION api_v)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1325,9 +1216,7 @@ int32_t AudioPolicyProxy::SetVolumeKeyEventCallback(const int32_t clientPid,
 
 int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
@@ -1348,9 +1237,7 @@ int32_t AudioPolicyProxy::UnsetVolumeKeyEventCallback(const int32_t clientPid)
 bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
 {
     AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("CheckRecordingCreate: WriteInterfaceToken failed");
@@ -1374,9 +1261,7 @@ bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFul
 bool AudioPolicyProxy::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("CheckRecordingStateChange: WriteInterfaceToken failed");
@@ -1400,9 +1285,7 @@ bool AudioPolicyProxy::CheckRecordingStateChange(uint32_t appTokenId, uint64_t a
 
 int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("ReconfigureAudioChannel: WriteInterfaceToken failed");
@@ -1424,9 +1307,7 @@ int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceT
 
 int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clientPid, const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterAudioRendererEventListener: WriteInterfaceToken failed");
@@ -1451,9 +1332,7 @@ int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clien
 
 int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("UnregisterAudioRendererEventListener WriteInterfaceToken failed");
@@ -1473,9 +1352,7 @@ int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t cli
 
 int32_t AudioPolicyProxy::GetAudioLatencyFromXml()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: GetAudioLatencyFromXml WriteInterfaceToken failed");
@@ -1494,9 +1371,7 @@ int32_t AudioPolicyProxy::GetAudioLatencyFromXml()
 
 bool AudioPolicyProxy::IsVolumeUnadjustable()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("IsVolumeUnadjustable: WriteInterfaceToken failed");
@@ -1512,9 +1387,7 @@ bool AudioPolicyProxy::IsVolumeUnadjustable()
 
 int32_t AudioPolicyProxy::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: AdjustVolumeByStep WriteInterfaceToken failed");
@@ -1535,9 +1408,7 @@ int32_t AudioPolicyProxy::AdjustVolumeByStep(VolumeAdjustType adjustType)
 
 int32_t AudioPolicyProxy::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: AdjustSystemVolumeByStep WriteInterfaceToken failed");
@@ -1558,9 +1429,7 @@ int32_t AudioPolicyProxy::AdjustSystemVolumeByStep(AudioVolumeType volumeType, V
 
 float AudioPolicyProxy::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: GetSystemVolumeInDb failed");
@@ -1582,9 +1451,7 @@ float AudioPolicyProxy::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t 
 
 uint32_t AudioPolicyProxy::GetSinkLatencyFromXml()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy: GetSinkLatencyFromXml WriteInterfaceToken failed");
@@ -1603,9 +1470,7 @@ uint32_t AudioPolicyProxy::GetSinkLatencyFromXml()
 
 int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clientPid, const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterAudioCapturerEventListener:: WriteInterfaceToken failed");
@@ -1630,9 +1495,7 @@ int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clien
 
 int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("AudioPolicyProxy:: WriteInterfaceToken failed");
@@ -1653,9 +1516,7 @@ int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t cli
 int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("RegisterTracker WriteInterfaceToken failed");
@@ -1683,9 +1544,7 @@ int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
 
 int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("UpdateTracker: WriteInterfaceToken failed");
@@ -1708,9 +1567,7 @@ int32_t AudioPolicyProxy::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
 int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     AUDIO_DEBUG_LOG("AudioPolicyProxy::GetCurrentRendererChangeInfos");
 
@@ -1741,9 +1598,7 @@ int32_t AudioPolicyProxy::GetCurrentRendererChangeInfos(
 int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
     vector<unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     AUDIO_DEBUG_LOG("AudioPolicyProxy::GetCurrentCapturerChangeInfos");
 
@@ -1774,9 +1629,7 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
 int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
     AudioStreamType audioStreamType)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     AUDIO_DEBUG_LOG("AudioPolicyProxy::UpdateStreamState");
 
@@ -1801,9 +1654,7 @@ int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetSt
 
 int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG(" GetVolumeGroupById WriteInterfaceToken failed");
@@ -1830,9 +1681,7 @@ int32_t AudioPolicyProxy::GetVolumeGroupInfos(std::string networkId, std::vector
 
 int32_t AudioPolicyProxy::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG(" GetNetworkIdByGroupId WriteInterfaceToken failed");
@@ -1853,9 +1702,7 @@ int32_t AudioPolicyProxy::GetNetworkIdByGroupId(int32_t groupId, std::string &ne
 
 bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("IsAudioRendererLowLatencySupported WriteInterfaceToken failed");
@@ -1874,9 +1721,7 @@ bool AudioPolicyProxy::IsAudioRendererLowLatencySupported(const AudioStreamInfo 
 
 int32_t AudioPolicyProxy::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("SetSystemSoundUri WriteInterfaceToken failed");
@@ -1895,9 +1740,7 @@ int32_t AudioPolicyProxy::SetSystemSoundUri(const std::string &key, const std::s
 
 std::string AudioPolicyProxy::GetSystemSoundUri(const std::string &key)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetSystemSoundUri WriteInterfaceToken failed");
@@ -1915,9 +1758,7 @@ std::string AudioPolicyProxy::GetSystemSoundUri(const std::string &key)
 
 float AudioPolicyProxy::GetMinStreamVolume()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetMinStreamVolume WriteInterfaceToken failed");
@@ -1934,9 +1775,7 @@ float AudioPolicyProxy::GetMinStreamVolume()
 
 float AudioPolicyProxy::GetMaxStreamVolume()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetMaxStreamVolume: WriteInterfaceToken failed");
@@ -1953,9 +1792,7 @@ float AudioPolicyProxy::GetMaxStreamVolume()
 
 int32_t AudioPolicyProxy::GetMaxRendererInstances()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetMaxRendererInstances WriteInterfaceToken failed");
@@ -2045,9 +1882,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
 {
     int i;
     int32_t error;
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("QueryEffectSceneMode: WriteInterfaceToken failed");
         return -1;
@@ -2089,9 +1924,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
 
 int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG(" SetPlaybackCapturerFilterInfos WriteInterfaceToken failed");
@@ -2116,9 +1949,7 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCapt
 
 int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetHardwareOutputSamplingRate: WriteInterfaceToken failed");
@@ -2143,9 +1974,7 @@ int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDe
 std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAudioCapturerMicrophoneDescriptors(
     int32_t sessionId)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     std::vector<sptr<MicrophoneDescriptor>> micDescs;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -2172,9 +2001,7 @@ std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAudioCapturerMicrop
 
 std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAvailableMicrophones()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     std::vector<sptr<MicrophoneDescriptor>> micDescs;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
@@ -2199,9 +2026,7 @@ std::vector<sptr<MicrophoneDescriptor>> AudioPolicyProxy::GetAvailableMicrophone
 
 int32_t AudioPolicyProxy::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG(" SetDeviceAbsVolumeSupported WriteInterfaceToken failed");
@@ -2221,9 +2046,7 @@ int32_t AudioPolicyProxy::SetDeviceAbsVolumeSupported(const std::string &macAddr
 
 bool AudioPolicyProxy::IsAbsVolumeScene()
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG(" IsAbsVolumeScene WriteInterfaceToken failed");
@@ -2242,9 +2065,7 @@ bool AudioPolicyProxy::IsAbsVolumeScene()
 int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG(" SetA2dpDeviceVolume WriteInterfaceToken failed");
@@ -2265,9 +2086,7 @@ int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, con
 
 std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailableDevices(AudioDeviceUsage usage)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()),
@@ -2293,9 +2112,7 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
 int32_t AudioPolicyProxy::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
     const sptr<IRemoteObject> &object)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "SetAvailableDeviceChangeCallback object is null");
 
@@ -2317,9 +2134,7 @@ int32_t AudioPolicyProxy::SetAvailableDeviceChangeCallback(const int32_t clientI
 
 int32_t AudioPolicyProxy::UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage)
 {
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
+    auto &&[data, reply, option] = AudioMessageObject{};
 
     bool token = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(token, ERROR, "data WriteInterfaceToken failed");
