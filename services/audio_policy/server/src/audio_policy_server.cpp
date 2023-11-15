@@ -824,7 +824,17 @@ int32_t AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions o
 
 int32_t AudioPolicyServer::SetVoiceCallRecCapturer()
 {
-    //todo 权限校验
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("SetVoiceCallRecCapturer: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    bool hasRecordVoiceCallPermission = VerifyPermission(RECORD_VOICE_CALL_PERMISSION);
+    if (!hasRecordVoiceCallPermission) {
+        AUDIO_ERR_LOG("SetVoiceCallRecCapturer: No permission");
+        return ERR_PERMISSION_DENIED;
+    }
     return audioPolicyService_.SetVoiceCallRecCapturer();
 }
 
