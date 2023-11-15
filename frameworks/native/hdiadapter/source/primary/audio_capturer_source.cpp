@@ -563,6 +563,10 @@ int32_t AudioCapturerSourceInner::Start(void)
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         switch (attr_.sourceType) {
+            case SOURCE_TYPE_VOICE_CALL:
+                keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioCallRecCapturer",
+                    PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+                break;
             case SOURCE_TYPE_WAKEUP:
                 keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
