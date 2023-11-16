@@ -254,22 +254,20 @@ napi_value AudioVolumeGroupManagerNapi::Construct(napi_env env, napi_callback_in
 
     if (status == napi_ok) {
         unique_ptr<AudioVolumeGroupManagerNapi> objectInfo = make_unique<AudioVolumeGroupManagerNapi>();
-        if (objectInfo != nullptr) {
-            ObjectRefMap<AudioVolumeGroupManagerNapi>::Insert(objectInfo.get());
-            objectInfo->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-            if (objectInfo->audioGroupMngr_ == nullptr) {
-                HiLog::Error(LABEL, "Failed in AudioVolumeGroupManagerNapi::Construct()!");
-                AudioVolumeGroupManagerNapi::isConstructSuccess_ = NAPI_ERR_SYSTEM;
-            }
-            objectInfo->cachedClientId_ = getpid();
-            status = napi_wrap(env, jsThis, static_cast<void*>(objectInfo.get()),
-                AudioVolumeGroupManagerNapi::Destructor, nullptr, nullptr);
-            if (status == napi_ok) {
-                objectInfo.release();
-                return jsThis;
-            } else {
-                ObjectRefMap<AudioVolumeGroupManagerNapi>::Erase(objectInfo.get());
-            }
+        ObjectRefMap<AudioVolumeGroupManagerNapi>::Insert(objectInfo.get());
+        objectInfo->audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+        if (objectInfo->audioGroupMngr_ == nullptr) {
+            HiLog::Error(LABEL, "Failed in AudioVolumeGroupManagerNapi::Construct()!");
+            AudioVolumeGroupManagerNapi::isConstructSuccess_ = NAPI_ERR_SYSTEM;
+        }
+        objectInfo->cachedClientId_ = getpid();
+        status = napi_wrap(env, jsThis, static_cast<void*>(objectInfo.get()),
+            AudioVolumeGroupManagerNapi::Destructor, nullptr, nullptr);
+        if (status == napi_ok) {
+            objectInfo.release();
+            return jsThis;
+        } else {
+            ObjectRefMap<AudioVolumeGroupManagerNapi>::Erase(objectInfo.get());
         }
     }
 

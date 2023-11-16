@@ -43,7 +43,7 @@ AudioService::~AudioService()
 
 int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
 {
-    std::lock_guard<std::mutex> lock(processListMutex_);
+    std::lock_guard<std::mutex> processListLock(processListMutex_);
     bool isFind = false;
     int32_t ret = ERROR;
     auto paired = linkedPairedList_.begin();
