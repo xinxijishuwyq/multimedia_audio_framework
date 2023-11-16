@@ -268,7 +268,6 @@ private:
     }
     ~AudioPolicyManager() {}
 
-    sptr<AudioPolicyManagerListenerStub> listenerStub_ = nullptr;
     std::mutex listenerStubMutex_;
     std::mutex volumeCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
@@ -278,7 +277,6 @@ private:
     sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
-    sptr<AudioClientTrackerCallbackStub> clientTrackerCbStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::unordered_map<int32_t, OHOS::wptr<AudioCapturerStateChangeListenerStub>> capturerStateChangeCBMap_;
 };
