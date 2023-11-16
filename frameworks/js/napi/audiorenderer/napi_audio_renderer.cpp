@@ -189,7 +189,6 @@ fail:
 
 napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("CreateAudioRenderer");
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("CreateAudioRenderer failed : no memory");
@@ -197,7 +196,7 @@ napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_in
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    auto inputParser = [env, context](size_t argc, napi_value* argv) {
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetRendererOptions(env, &context->rendererOptions, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioRendererRate failed",
@@ -205,7 +204,7 @@ napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_in
     };
     context->GetCbInfo(env, info, inputParser);
 
-    auto complete = [env, context](napi_value& output) {
+    auto complete = [env, context](napi_value &output) {
         output = CreateAudioRendererWrapper(env, context->rendererOptions);
     };
 
@@ -214,9 +213,8 @@ napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_in
 
 napi_value NapiAudioRenderer::CreateAudioRendererSync(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("%{public}s IN", __func__);
-
-    size_t argc = PARAM0;
+    AUDIO_INFO_LOG("CreateAudioRendererSync");
+    size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     napi_status status = NapiParamUtils::GetParam(env, info, argc, argv);
     CHECK_AND_RETURN_RET_LOG((argc == ARGS_ONE) && (status == napi_ok),
@@ -236,7 +234,6 @@ napi_value NapiAudioRenderer::CreateAudioRendererSync(napi_env env, napi_callbac
 
 napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("SetRenderRate");
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetRenderRate failed : no memory");
@@ -244,7 +241,7 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    auto inputParser = [env, context](size_t argc, napi_value* argv) {
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->audioRendererRate, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioRendererRate failed",
@@ -254,7 +251,7 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto* napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         AudioRendererRate audioRenderRate = static_cast<AudioRendererRate>(context->audioRendererRate);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
@@ -268,7 +265,7 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
             }
         }
     };
-    auto complete = [env](napi_value& output) {
+    auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetRenderRate", executor, complete);
@@ -276,7 +273,6 @@ napi_value NapiAudioRenderer::SetRenderRate(napi_env env, napi_callback_info inf
 
 napi_value NapiAudioRenderer::GetRenderRate(napi_env env, napi_callback_info info)
 {
-    AUDIO_INFO_LOG("GetRenderRate");
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("GetRenderRate failed : no memory");
@@ -288,12 +284,12 @@ napi_value NapiAudioRenderer::GetRenderRate(napi_env env, napi_callback_info inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto* napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->intValue = napiAudioRenderer->audioRenderer_->GetRenderRate();
     };
-    auto complete = [env, context](napi_value& output) {
+    auto complete = [env, context](napi_value &output) {
         NapiParamUtils::SetValueInt32(env, context->intValue, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "GetRenderRate", executor, complete);

@@ -29,7 +29,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-using NapiCbInfoParser = std::function<void(size_t argc, napi_value* argv)>;
+using NapiCbInfoParser = std::function<void(size_t argc, napi_value *argv)>;
 using NapiAsyncExecute = std::function<void(void)>;
 using NapiAsyncComplete = std::function<void(napi_value&)>;
 
@@ -64,7 +64,7 @@ private:
 
 class NapiAsyncWork {
 public:
-    static napi_value Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string& name,
+    static napi_value Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string &name,
         NapiAsyncExecute execute = NapiAsyncExecute(),
         NapiAsyncComplete complete = NapiAsyncComplete());
 
@@ -75,7 +75,7 @@ private:
         RESULT_DATA = 1,
         RESULT_ALL = 2
     };
-    static void CommonCallbackRoutine(ContextBase* ctxt);
+    static void CommonCallbackRoutine(ContextBase *ctxt);
 };
 } // namespace AudioStandard
 } // namespace OHOS

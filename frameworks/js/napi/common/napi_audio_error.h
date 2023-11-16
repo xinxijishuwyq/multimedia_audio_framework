@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 class NapiAudioError {
 public:
-    static napi_status ThrowError(napi_env env, const char* napiMessage, int32_t napiCode);
+    static napi_status ThrowError(napi_env env, const char *napiMessage, int32_t napiCode);
     static void ThrowError(napi_env env, int32_t code);
     static std::string GetMessageByCode(int32_t &code);
 };

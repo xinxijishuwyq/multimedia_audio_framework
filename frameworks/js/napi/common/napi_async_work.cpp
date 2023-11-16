@@ -75,10 +75,10 @@ void ContextBase::SignError(int32_t code)
     errMessage = NapiAudioError::GetMessageByCode(errCode);
 }
 
-napi_value NapiAsyncWork::Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string& name,
+napi_value NapiAsyncWork::Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string &name,
     NapiAsyncExecute execute, NapiAsyncComplete complete)
 {
-    AUDIO_INFO_LOG("name=%{public}s", name.c_str());
+    AUDIO_DEBUG_LOG("name=%{public}s", name.c_str());
     ctxt->execute = std::move(execute);
     ctxt->complete = std::move(complete);
     ctxt->taskName = name;
@@ -121,7 +121,7 @@ napi_value NapiAsyncWork::Enqueue(napi_env env, std::shared_ptr<ContextBase> ctx
     return promise;
 }
 
-void NapiAsyncWork::CommonCallbackRoutine(ContextBase* ctxt)
+void NapiAsyncWork::CommonCallbackRoutine(ContextBase *ctxt)
 {
     napi_value result[RESULT_ALL] = {nullptr};
     if (ctxt->status == napi_ok) {

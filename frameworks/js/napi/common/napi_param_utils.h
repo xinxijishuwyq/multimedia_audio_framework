@@ -60,20 +60,20 @@ const int PARAM2 = 2;
 
 class NapiParamUtils {
 public:
-    static napi_status GetParam(const napi_env& env, napi_callback_info info, size_t &argc, napi_value *args);
-    static napi_status GetValueInt32(const napi_env& env, int32_t &value, napi_value in);
-    static napi_status SetValueInt32(const napi_env& env, const int32_t &value, napi_value &result);
-    static napi_status GetValueInt32(const napi_env& env, const std::string& fieldStr, int32_t &value, napi_value in);
-    static napi_status SetValueInt32(const napi_env& env, const std::string& fieldStr,
+    static napi_status GetParam(const napi_env &env, napi_callback_info info, size_t &argc, napi_value *args);
+    static napi_status GetValueInt32(const napi_env &env, int32_t &value, napi_value in);
+    static napi_status SetValueInt32(const napi_env &env, const int32_t &value, napi_value &result);
+    static napi_status GetValueInt32(const napi_env &env, const std::string &fieldStr, int32_t &value, napi_value in);
+    static napi_status SetValueInt32(const napi_env &env, const std::string &fieldStr,
         const int32_t value, napi_value &result);
 
-    static napi_status GetValueUInt32(const napi_env& env, uint32_t &value, napi_value in);
-    static napi_status SetValueUInt32(const napi_env& env, const uint32_t &value, napi_value &result);
+    static napi_status GetValueUInt32(const napi_env &env, uint32_t &value, napi_value in);
+    static napi_status SetValueUInt32(const napi_env &env, const uint32_t &value, napi_value &result);
 
-    static napi_status GetValueDouble(const napi_env& env, double &value, napi_value in);
-    static napi_status SetValueDouble(const napi_env& env, const double &value, napi_value &result);
-    static napi_status GetValueDouble(const napi_env& env, const std::string& fieldStr, double &value, napi_value in);
-    static napi_status SetValueDouble(const napi_env& env, const std::string& fieldStr,
+    static napi_status GetValueDouble(const napi_env &env, double &value, napi_value in);
+    static napi_status SetValueDouble(const napi_env &env, const double &value, napi_value &result);
+    static napi_status GetValueDouble(const napi_env &env, const std::string &fieldStr, double &value, napi_value in);
+    static napi_status SetValueDouble(const napi_env &env, const std::string &fieldStr,
         const double value, napi_value &result);
 
     static std::string GetStringArgument(napi_env env, napi_value value);
@@ -82,26 +82,26 @@ public:
     static napi_status SetValueString(const napi_env &env, const std::string &fieldStr, const std::string stringValue,
         napi_value &result);
 
-    static napi_status GetValueBoolean(const napi_env& env, bool &boolValue, napi_value in);
-    static napi_status SetValueBoolean(const napi_env& env, const bool boolValue, napi_value& result);
-    static napi_status GetValueBoolean(const napi_env& env, const std::string& fieldStr,
+    static napi_status GetValueBoolean(const napi_env &env, bool &boolValue, napi_value in);
+    static napi_status SetValueBoolean(const napi_env &env, const bool boolValue, napi_value &result);
+    static napi_status GetValueBoolean(const napi_env &env, const std::string &fieldStr,
         bool &boolValue, napi_value in);
-    static napi_status SetValueBoolean(const napi_env& env, const std::string& fieldStr,
-        const bool boolValue, napi_value& result);
+    static napi_status SetValueBoolean(const napi_env &env, const std::string &fieldStr,
+        const bool boolValue, napi_value &result);
 
-    static napi_status GetValueInt64(const napi_env& env, int64_t &value, napi_value in);
-    static napi_status SetValueInt64(const napi_env& env, const int64_t &value, napi_value &result);
-    static napi_status GetValueInt64(const napi_env& env, const std::string& fieldStr, int64_t &value, napi_value in);
-    static napi_status SetValueInt64(const napi_env& env, const std::string& fieldStr,
+    static napi_status GetValueInt64(const napi_env &env, int64_t &value, napi_value in);
+    static napi_status SetValueInt64(const napi_env &env, const int64_t &value, napi_value &result);
+    static napi_status GetValueInt64(const napi_env &env, const std::string &fieldStr, int64_t &value, napi_value in);
+    static napi_status SetValueInt64(const napi_env &env, const std::string &fieldStr,
         const int64_t value, napi_value &result);
-    static napi_status GetArrayBuffer(const napi_env& env, void* &data, size_t &length, napi_value in);
+    static napi_status GetArrayBuffer(const napi_env &env, void* &data, size_t &length, napi_value in);
 
     static napi_value GetUndefinedValue(napi_env env);
 
     /* NapiAudioRenderer Get&&Set object */
-    static napi_status GetRendererOptions(const napi_env& env, AudioRendererOptions *opts, napi_value in);
-    static napi_status GetRendererInfo(const napi_env& env, AudioRendererInfo *rendererInfo, napi_value in);
-    static napi_status GetStreamInfo(const napi_env& env, AudioStreamInfo* streamInfo, napi_value in);
+    static napi_status GetRendererOptions(const napi_env &env, AudioRendererOptions *opts, napi_value in);
+    static napi_status GetRendererInfo(const napi_env &env, AudioRendererInfo *rendererInfo, napi_value in);
+    static napi_status GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in);
 };
 } // namespace AudioStandard
 } // namespace OHOS
