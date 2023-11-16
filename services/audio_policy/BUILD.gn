@@ -163,6 +163,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/effect/audio_effect_config_parser.cpp",
     "server/src/service/effect/audio_effect_manager.cpp",
     "server/src/service/listener/device_status_listener.cpp",
+    "server/src/service/listener/power_state_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
     "server/src/service/routers/audio_router_center.cpp",
     "server/src/service/routers/cockpit_phone_router.cpp",

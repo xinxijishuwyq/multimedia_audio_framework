@@ -136,6 +136,7 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
 
     bool res = Publish(this);
     if (!res) {
@@ -155,6 +156,7 @@ void AudioPolicyServer::OnStart()
 void AudioPolicyServer::OnStop()
 {
     audioPolicyService_.Deinit();
+    UnRegisterPowerStateListener();
     return;
 }
 
@@ -197,6 +199,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case POWER_MANAGER_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
             SubscribePowerStateChangeEvents();
+            RegisterPowerStateListener();
             break;
         default:
             AUDIO_ERR_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -2747,6 +2750,43 @@ int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(const int32_t /*cl
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioPolicyService_.UnsetAvailableDeviceChangeCallback(clientPid, usage);
+}
+
+void AudioPolicyServer::RegisterPowerStateListener()
+{
+    if (powerStateListener_ == nullptr) {
+        powerStateListener_ = new (std::nothrow) PowerStateListener(this);
+    }
+
+    if (powerStateListener_ == nullptr) {
+        AUDIO_ERR_LOG("create power state listener failed");
+        return;
+    }
+
+    auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
+    bool ret = powerMgrClient.RegisterSyncSleepCallback(powerStateListener_, SleepPriority::HIGH);
+    if (!ret) {
+        AUDIO_ERR_LOG("register sync sleep callback failed");
+    } else {
+        AUDIO_INFO_LOG("register sync sleep callback success");
+    }
+}
+
+void AudioPolicyServer::UnRegisterPowerStateListener()
+{
+    if (powerStateListener_ == nullptr) {
+        AUDIO_ERR_LOG("power state listener is null");
+        return;
+    }
+
+    auto& powerMgrClient = OHOS::PowerMgr::PowerMgrClient::GetInstance();
+    bool ret = powerMgrClient.UnRegisterSyncSleepCallback(powerStateListener_);
+    if (!ret) {
+        AUDIO_ERR_LOG("unregister sync sleep callback failed");
+    } else {
+        powerStateListener_ = nullptr;
+        AUDIO_INFO_LOG("unregister sync sleep callback success");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

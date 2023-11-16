@@ -27,6 +27,7 @@
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
 #include "power_state_callback_stub.h"
+#include "power_state_listener.h"
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -426,6 +427,8 @@ private:
     void RegisterBluetoothListener();
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
+    void RegisterPowerStateListener();
+    void UnRegisterPowerStateListener();
     
     bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
@@ -436,6 +439,7 @@ private:
     std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
     std::vector<pid_t> clientDiedListenerState_;
+    sptr<PowerStateListener> powerStateListener_;
 
     std::unordered_map<int32_t, std::shared_ptr<VolumeKeyEventCallback>> volumeChangeCbsMap_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
