@@ -58,7 +58,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetSampleFormat(OH_AudioStreamBuilde
 }
 
 
-OH_AudioStream_Result OH_AudioStreamBuilder_SetPreferredFrameSizeInCallback(OH_AudioStreamBuilder* builder,
+OH_AudioStream_Result OH_AudioStreamBuilder_SetFrameSizeInCallback(OH_AudioStreamBuilder* builder,
     int32_t frameSize)
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);

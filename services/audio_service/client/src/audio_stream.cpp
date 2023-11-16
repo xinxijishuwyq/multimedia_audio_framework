@@ -698,6 +698,7 @@ inline size_t GetFormatSize(const AudioStreamParams& info)
 
 void AudioStream::SetPreferredFrameSize(int32_t frameSize)
 {
+    AUDIO_INFO_LOG("Not Supported Yet");
 }
 
 int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)

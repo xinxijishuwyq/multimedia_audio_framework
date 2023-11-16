@@ -1495,10 +1495,6 @@ void AudioPolicyServer::UpdateAudioScene(const AudioScene audioScene, AudioInter
     AUDIO_INFO_LOG("UpdateAudioScene: currentAudioScene=%{public}d, audioScene=%{public}d, changeType=%{public}d",
         currentAudioScene, audioScene, changeType);
 
-    if (currentAudioScene == audioScene) {
-        return;
-    }
-
     switch (changeType) {
         case ACTIVATE_AUDIO_INTERRUPT:
             break;

@@ -387,27 +387,30 @@ void AudioProcessInClientInner::SetApplicationCachePath(const std::string &cache
 
 void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
-    size_t span = static_cast<size_t>(spanSizeInFrame_);
+    size_t originalSpanSizeInFrame = static_cast<size_t>(spanSizeInFrame_);
     size_t tmp = static_cast<size_t>(frameSize);
-    if (tmp <= span) {
-        clientSpanSizeInFrame_ = span;
-        clientSpanSizeInByte_ = static_cast<size_t>(spanSizeInByte_);
-    } else if (tmp >= MAX_TIMES * span) {
-        clientSpanSizeInFrame_ = MAX_TIMES * span;
-        clientSpanSizeInByte_ = MAX_TIMES * static_cast<size_t>(spanSizeInByte_);
+    size_t count = frameSize / spanSizeInFrame_;
+    size_t rest = frameSize % spanSizeInFrame_;
+    if (tmp <= originalSpanSizeInFrame) {
+        clientSpanSizeInFrame_ = originalSpanSizeInFrame;
+    } else if (tmp >= MAX_TIMES * originalSpanSizeInFrame) {
+        clientSpanSizeInFrame_ = MAX_TIMES * originalSpanSizeInFrame;
     } else {
-        size_t count = frameSize / spanSizeInFrame_;
-        size_t rest = frameSize % spanSizeInFrame_;
-        if (rest <= span / DIV) {
+        if (rest <= originalSpanSizeInFrame / DIV) {
             clientSpanSizeInFrame_ = count * spanSizeInFrame_;
-            clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
         } else {
             count++;
             clientSpanSizeInFrame_ = count * spanSizeInFrame_;
-            clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
         }
     }
+    if (clientByteSizePerFrame_ == 0) {
+        clientSpanSizeInByte_ = count * spanSizeInByte_;
+    }
+    else {
+        clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
+    }
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
+    memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
 }
 
 bool AudioProcessInClientInner::InitAudioBuffer()
@@ -704,11 +707,12 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
 
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
-    for (int count = 0 ; count < round ; count++) {
+    for (size_t count = 0 ; count < round ; count++) {
         BufferDesc curCallbackBuffer = {nullptr, 0, 0};
-        curCallbackBuffer.buffer = bufDesc.buffer + count * spanSizeInByte_;
-        curCallbackBuffer.bufLength = spanSizeInByte_;
-        curCallbackBuffer.dataLength = spanSizeInByte_;
+        size_t offSet = clientSpanSizeInByte_ / round;
+        curCallbackBuffer.buffer = bufDesc.buffer + count * offSet;
+        curCallbackBuffer.bufLength = offSet;
+        curCallbackBuffer.dataLength = offSet;
         uint64_t curPos = curWritePos + count * spanSizeInFrame_;
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
             BufferDesc curWriteBuffer = {nullptr, 0, 0};
@@ -722,7 +726,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
 
             if (!needConvert_) {
                 ret = memcpy_s(static_cast<void *>(curWriteBuffer.buffer), spanSizeInByte_,
-                    static_cast<void *>(curCallbackBuffer.buffer), spanSizeInByte_);
+                    static_cast<void *>(curCallbackBuffer.buffer), offSet);
                 CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Copy data failed!");
             } else {
                 Trace traceConvert("AudioProcessInClient::ChannelFormatConvert");
@@ -734,7 +738,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             writeProcessDataTrace.End();
 
             DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer),
-                clientSpanSizeInByte_);
+                offSet);
         }
     }
 
@@ -978,15 +982,13 @@ bool AudioProcessInClientInner::PrepareNext(uint64_t curHandPos, int64_t &wakeUp
 bool AudioProcessInClientInner::ClientPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime)
 {
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
-    bool prepared = true;
     for (size_t count = 0; count < round; count++) {
         if (!PrepareNext(curWritePos + count * spanSizeInFrame_, wakeUpTime)) {
             AUDIO_ERR_LOG("PrepareNextLoop in process failed!");
-            prepared = false;
-            return prepared;
+            return false;
         }
     }    
-    return prepared;
+    return true;
 }
 
 std::string AudioProcessInClientInner::GetStatusInfo(StreamStatus status)
@@ -1224,18 +1226,15 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
 
 bool AudioProcessInClientInner::PrepareCurrentLoop(uint64_t curWritePos)
 {
-    bool prepared = true;
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     for (size_t count = 0; count < round; count++) {
         uint64_t tmp = curWritePos + count * static_cast<uint64_t>(spanSizeInFrame_);
-        AUDIO_INFO_LOG("curWritePos = %{public}" PRIu64" ", tmp);
         if (!PrepareCurrent(tmp)) {
-            prepared = false;
             AUDIO_ERR_LOG("PrepareCurrent failed at %{public}" PRIu64" ", tmp);
-            return prepared;
+            return false;
         }
     }
-    return prepared;
+    return true;
 }
 
 bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64_t &clientWriteCost)
@@ -1276,17 +1275,15 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
 
 bool AudioProcessInClientInner::FinishHandleCurrentLoop(uint64_t &curWritePos, int64_t &clientWriteCost)
 {
-    bool finished = true;
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     for (size_t count = 0; count < round; count++) {
         uint64_t tmp = curWritePos + count * static_cast<uint64_t>(spanSizeInFrame_);
         if (!FinishHandleCurrent(tmp, clientWriteCost)) {
-            finished = false;
             AUDIO_ERR_LOG("FinishHandleCurrent failed at %{public}" PRIu64" ", tmp);
-            return finished;
+            return false;
         }
     }
-    return finished;
+    return true;
 }
 
 void AudioProcessInClientInner::ProcessCallbackFuc()

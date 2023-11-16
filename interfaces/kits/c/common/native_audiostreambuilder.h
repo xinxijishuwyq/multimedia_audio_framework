@@ -200,7 +200,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_GenerateRenderer(OH_AudioStreamBuild
 OH_AudioStream_Result OH_AudioStreamBuilder_GenerateCapturer(OH_AudioStreamBuilder* builder,
     OH_AudioCapturer** audioCapturer);
 
-OH_AudioStream_Result OH_AudioStreamBuilder_SetPreferredFrameSizeInCallback(OH_AudioStreamBuilder* builder,
+OH_AudioStream_Result OH_AudioStreamBuilder_SetFrameSizeInCallback(OH_AudioStreamBuilder* builder,
     int32_t frameSize);
 #ifdef __cplusplus
 }
