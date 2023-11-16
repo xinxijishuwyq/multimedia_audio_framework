@@ -17,7 +17,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-napi_status NapiAudioError::ThrowError(napi_env env, const char* napiMessage, int32_t napiCode)
+napi_status NapiAudioError::ThrowError(napi_env env, const char *napiMessage, int32_t napiCode)
 {
     napi_value message = nullptr;
     napi_value code = nullptr;

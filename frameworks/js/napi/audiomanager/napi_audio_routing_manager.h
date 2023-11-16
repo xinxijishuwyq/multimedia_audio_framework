@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NAPI_AUDIO_ROUNTING_MANAGER_H_
-#define NAPI_AUDIO_ROUNTING_MANAGER_H_
+#ifndef NAPI_AUDIO_ROUNTING_MANAGER_H
+#define NAPI_AUDIO_ROUNTING_MANAGER_H
 namespace OHOS {
 namespace AudioStandard {
 
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif /* NAPI_AUDIO_ROUNTING_MANAGER_H_ */
+#endif /* NAPI_AUDIO_ROUNTING_MANAGER_H */

@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NAPI_AUDIO_ENUM_H_
-#define NAPI_AUDIO_ENUM_H_
+#ifndef NAPI_AUDIO_ENUM_H
+#define NAPI_AUDIO_ENUM_H
 
 #include <map>
 #include <string>
@@ -170,4 +170,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // OHOS_NAPI_AUDIO_ERROR_H_
+#endif // OHOS_NAPI_AUDIO_ENUM_H
