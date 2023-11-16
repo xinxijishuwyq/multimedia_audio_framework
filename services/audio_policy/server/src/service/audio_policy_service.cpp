@@ -775,59 +775,8 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
 
-    if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
-        return SelectFastOutputDevice(audioRendererFilter, audioDeviceDescriptors[0]);
-    }
-
-    std::string networkId = audioDeviceDescriptors[0]->networkId_;
-    DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
-
-    if (networkId == LOCAL_NETWORK_ID) {
-        UpdateOutputDeviceSelectedByCalling(deviceType);
-    }
-    // switch between local devices
-    if (!isCurrentRemoteRenderer && networkId == LOCAL_NETWORK_ID &&
-        (currentActiveDevice_.deviceType_ != deviceType || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
-        deviceType = (deviceType == DEVICE_TYPE_DEFAULT) ? FetchHighPriorityDevice(true) : deviceType;
-        auto ret = SelectNewDevice(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors[0]);
-        ResetOffloadMode();
-        return ret;
-    }
-
-    // move all sink-input.
-    bool moveAll = audioRendererFilter->uid == -1 ? true : false;
-    if (moveAll) {
-        AUDIO_INFO_LOG("Move all sink inputs.");
-        std::lock_guard<std::mutex> lock(routerMapMutex_);
-        routerMap_.clear();
-    }
-
-    std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(audioRendererFilter, moveAll);
-
-    // move target uid, but no stream played yet, record the routing info for first start.
-    if (!moveAll && targetSinkInputs.size() == 0) {
-        return RememberRoutingInfo(audioRendererFilter, audioDeviceDescriptors[0]);
-    }
-
-    auto ret = (networkId == LOCAL_NETWORK_ID) ? MoveToLocalOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]):
-                                                 MoveToRemoteOutputDevice(targetSinkInputs, audioDeviceDescriptors[0]);
-    UpdateTrackerDeviceChange(audioDeviceDescriptors);
-    OnPreferredOutputDeviceUpdated(currentActiveDevice_);
-    AUDIO_DEBUG_LOG("SelectOutputDevice result[%{public}d], [%{public}zu] moved.", ret, targetSinkInputs.size());
-    return ret;
-}
-
-int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    sptr<AudioDeviceDescriptor> deviceDescriptor)
-{
-    AUDIO_INFO_LOG("SelectFastOutputDevice for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
-        deviceDescriptor->networkId_.c_str());
-    // note: check if stream is already running
-    // if is running, call moveProcessToEndpoint.
-
-    // otherwises, keep router info in the map
-    std::lock_guard<std::mutex> lock(routerMapMutex_);
-    fastRouterMap_[audioRendererFilter->uid] = std::make_pair(deviceDescriptor->networkId_, OUTPUT_DEVICE);
+    audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
+    FetchDevice(true);
     return SUCCESS;
 }
 

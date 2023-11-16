@@ -154,6 +154,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_volume_key_event_callback_proxy.cpp",
     "server/src/service/audio_device_manager.cpp",
     "server/src/service/audio_policy_service.cpp",
+    "server/src/service/audio_state_manager.cpp",
     "server/src/service/config/audio_device_parser.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
     "server/src/service/config/audio_volume_parser.cpp",
