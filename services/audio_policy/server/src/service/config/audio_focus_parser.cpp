@@ -42,6 +42,7 @@ AudioFocusParser::AudioFocusParser()
         {"STREAM_VOICE_ASSISTANT", {AudioStreamType::STREAM_VOICE_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
         {"STREAM_ACCESSIBILITY", {AudioStreamType::STREAM_ACCESSIBILITY, SourceType::SOURCE_TYPE_INVALID, true}},
         {"STREAM_ULTRASONIC", {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}},
+        {"STREAM_INTERNAL_FORCE_STOP", {AudioStreamType::STREAM_INTERNAL_FORCE_STOP, SourceType::SOURCE_TYPE_INVALID, true}},
         // source type for audio interrupt
         {"SOURCE_TYPE_MIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
         {"SOURCE_TYPE_VOICE_RECOGNITION", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_RECOGNITION,
