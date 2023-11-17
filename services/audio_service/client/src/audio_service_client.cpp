@@ -2740,7 +2740,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
         "APP_PID", client.clientPid_,
         "STREAMTYPE", client.streamType_,
         "VOLUME", vol,
-        "SYSVOLUME", systemVolumeDb,
+        "SYSVOLUME", systemVolumeLevel,
         "VOLUMEFACTOR", client.volumeFactor_,
         "POWERVOLUMEFACTOR", client.powerVolumeFactor_);
 }
