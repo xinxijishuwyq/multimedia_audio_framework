@@ -1602,7 +1602,8 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
-        if (rendererChangeInfo->rendererState != RENDERER_RUNNING) {
+        if (rendererChangeInfo->rendererInfo.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+            rendererChangeInfo->rendererState != RENDERER_RUNNING) {
             AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", rendererChangeInfo->sessionId);
             continue;
         }
@@ -1650,7 +1651,8 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     for (auto &capturerChangeInfo : capturerChangeInfos) {
-        if (capturerChangeInfo->capturerState != CAPTURER_RUNNING) {
+        if (capturerChangeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_MODEM_COMMUNICATION &&
+            capturerChangeInfo->capturerState != CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", capturerChangeInfo->sessionId);
             continue;
         }

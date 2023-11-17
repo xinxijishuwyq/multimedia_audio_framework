@@ -137,6 +137,8 @@ private:
     int32_t InitRender();
 
     FILE *dumpFile_ = nullptr;
+    DeviceType currentActiveDevice_;
+    AudioScene currentAudioScene_;
 };
 
 AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
@@ -687,14 +689,17 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
 
 int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
 {
+    if (outputDevice == currentActiveDevice_) {
+        AUDIO_INFO_LOG("SetOutputRoute output device not change");
+        return SUCCESS;
+    }
+    currentActiveDevice_ = outputDevice;
+
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
     int32_t ret = SetOutputPortPin(outputDevice, sink);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("SetOutputRoute FAILED: %{public}d", ret);
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOutputRoute FAILED: %{public}d", ret);
 
     outputPortPin = sink.ext.device.type;
     AUDIO_INFO_LOG("Output PIN is: 0x%{public}X", outputPortPin);
@@ -758,15 +763,19 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         }
 
         AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
-        struct AudioSceneDescriptor scene;
-        scene.scene.id = GetAudioCategory(audioScene);
-        scene.desc.pins = audioSceneOutPort;
-        scene.desc.desc = (char *)"";
+        int32_t ret = SUCCESS;
+        if (audioScene != currentAudioScene_) {
+            struct AudioSceneDescriptor scene;
+            scene.scene.id = GetAudioCategory(audioScene);
+            scene.desc.pins = audioSceneOutPort;
+            scene.desc.desc = (char *)"";
 
-        int32_t ret = audioRender_->SelectScene(audioRender_, &scene);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
-            return ERR_OPERATION_FAILED;
+            ret = audioRender_->SelectScene(audioRender_, &scene);
+            if (ret < 0) {
+                AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
+                return ERR_OPERATION_FAILED;
+            }
+            currentAudioScene_ = audioScene;
         }
 
         ret = SetOutputRoute(activeDevice, audioSceneOutPort);

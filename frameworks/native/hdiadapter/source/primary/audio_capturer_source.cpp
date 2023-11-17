@@ -114,6 +114,8 @@ private:
     std::mutex audioCapturerSourceCallbackMutex_;
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
+    DeviceType currentActiveDevice_;
+    AudioScene currentAudioScene_;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -737,6 +739,11 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
 
 int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin)
 {
+    if (inputDevice == currentActiveDevice_) {
+        AUDIO_INFO_LOG("SetInputRoute input device not change");
+        return SUCCESS;
+    }
+    currentActiveDevice_ = inputDevice;
     AudioRouteNode source = {};
     AudioRouteNode sink = {};
 
@@ -798,15 +805,19 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
             audioSceneInPort = PIN_IN_USB_HEADSET;
         }
 
-        struct AudioSceneDescriptor scene;
-        scene.scene.id = GetAudioCategory(audioScene);
-        scene.desc.pins = audioSceneInPort;
-        scene.desc.desc = (char *)"";
+        int32_t ret = SUCCESS;
+        if (audioScene != currentAudioScene_) {
+            struct AudioSceneDescriptor scene;
+            scene.scene.id = GetAudioCategory(audioScene);
+            scene.desc.pins = audioSceneInPort;
+            scene.desc.desc = (char *)"";
 
-        int32_t ret = audioCapture_->SelectScene(audioCapture_, &scene);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
-            return ERR_OPERATION_FAILED;
+            ret = audioCapture_->SelectScene(audioCapture_, &scene);
+            if (ret < 0) {
+                AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
+                return ERR_OPERATION_FAILED;
+            }
+            currentAudioScene_ = audioScene;
         }
 
         ret = SetInputRoute(activeDevice, audioSceneInPort);
