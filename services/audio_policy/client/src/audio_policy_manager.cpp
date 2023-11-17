@@ -351,16 +351,6 @@ int32_t AudioPolicyManager::SetWakeUpAudioCapturer(InternalAudioCapturerOptions 
     return gsp->SetWakeUpAudioCapturer(options);
 }
 
-int32_t AudioPolicyManager::SetVoiceCallRecCapturer()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetVoiceCallRecCapturer: audio policy manager proxy is NULL.");
-        return -1;
-    }
-    return gsp->SetVoiceCallRecCapturer();
-}
-
 int32_t AudioPolicyManager::CloseWakeUpAudioCapturer()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

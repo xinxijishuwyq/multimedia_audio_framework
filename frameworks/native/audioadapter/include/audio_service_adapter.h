@@ -44,8 +44,6 @@ public:
 
     virtual void OnWakeupCapturerStop() = 0;
 
-    virtual void OnVoiceCallRecCapturerStop() = 0;
-
     virtual ~AudioServiceAdapterCallback() {}
 };
 

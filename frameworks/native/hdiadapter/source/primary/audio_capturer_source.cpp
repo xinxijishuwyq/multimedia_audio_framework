@@ -298,6 +298,7 @@ AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName
 
     switch (sourceType) {
         case SourceType::SOURCE_TYPE_MIC:
+        case SourceType::SOURCE_TYPE_VOICE_CALL:
             return GetMicInstance();
         case SourceType::SOURCE_TYPE_WAKEUP:
             if (!strcmp(sourceName, "Built_in_wakeup_mirror")) {
@@ -305,8 +306,6 @@ AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName
             } else {
                 return GetWakeupInstance(false);
             }
-        case SourceType::SOURCE_TYPE_VOICE_CALL:
-            return GetVoiceCallRecInstance();
         default:
             AUDIO_ERR_LOG("sourceType error %{public}d", sourceType);
             return GetMicInstance();
@@ -345,12 +344,6 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
 }
 
 AudioCapturerSource *AudioCapturerSource::GetMicInstance()
-{
-    static AudioCapturerSourceInner audioCapturer;
-    return &audioCapturer;
-}
-
-AudioCapturerSource *AudioCapturerSource::GetVoiceCallRecInstance()
 {
     static AudioCapturerSourceInner audioCapturer;
     return &audioCapturer;
@@ -562,10 +555,6 @@ int32_t AudioCapturerSourceInner::Start(void)
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         switch (attr_.sourceType) {
-            case SOURCE_TYPE_VOICE_CALL:
-                keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioCallRecCapturer",
-                    PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
-                break;
             case SOURCE_TYPE_WAKEUP:
                 keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);

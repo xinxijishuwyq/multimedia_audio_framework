@@ -33,8 +33,6 @@ public:
 
     virtual void OnWakeupCapturerStop() = 0;
 
-    virtual void OnVoiceCallRecCapturerStop() = 0;
-
     virtual void OnDstatusUpdated(bool isConnected) = 0;
 };
 } // namespce AudioStandard

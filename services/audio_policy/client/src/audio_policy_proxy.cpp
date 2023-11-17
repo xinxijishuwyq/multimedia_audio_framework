@@ -484,25 +484,6 @@ int32_t AudioPolicyProxy::SetWakeUpAudioCapturer(InternalAudioCapturerOptions op
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetVoiceCallRecCapturer()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
-        return -1;
-    }
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VOICE_CALL_REC_CAPTURER), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("CreateWakeUpAudioCapturer failed, error: %d", error);
-        return -1;
-    }
-    return reply.ReadInt32();
-}
-
 int32_t AudioPolicyProxy::CloseWakeUpAudioCapturer()
 {
     MessageParcel data;

@@ -826,12 +826,6 @@ std::pair<const int32_t, const std::string> AudioServiceClient::GetDeviceNameFor
                 return {AUDIO_CLIENT_SUCCESS, deviceName};
             }
         }
-
-        if (capturerSource_ == SourceType::SOURCE_TYPE_VOICE_CALL) {
-            auto res = AudioPolicyManager::GetInstance().SetVoiceCallRecCapturer();
-            deviceName = VOICE_CALL_REC_NAME;
-            return {res, deviceName};
-        }
     }
     return {AUDIO_CLIENT_SUCCESS, deviceName};
 }

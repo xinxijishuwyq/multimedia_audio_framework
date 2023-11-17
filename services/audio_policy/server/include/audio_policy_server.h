@@ -116,8 +116,6 @@ public:
 
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options) override;
 
-    int32_t SetVoiceCallRecCapturer() override;
-
     int32_t CloseWakeUpAudioCapturer() override;
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) override;
@@ -206,8 +204,6 @@ public:
     void OnPlaybackCapturerStop() override;
 
     void OnWakeupCapturerStop() override;
-
-    void OnVoiceCallRecCapturerStop() override;
 
     void OnDstatusUpdated(bool isConnected) override;
 
@@ -358,6 +354,8 @@ private:
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
     static std::map<InterruptHint, AudioFocuState> CreateStateMap();
+
+    int32_t VerifyVoiceCallPermission();
 
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:

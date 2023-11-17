@@ -822,20 +822,20 @@ int32_t AudioPolicyServer::SetWakeUpAudioCapturer(InternalAudioCapturerOptions o
     return audioPolicyService_.SetWakeUpAudioCapturer(options);
 }
 
-int32_t AudioPolicyServer::SetVoiceCallRecCapturer()
+int32_t AudioPolicyServer::VerifyVoiceCallPermission()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
-        AUDIO_ERR_LOG("SetVoiceCallRecCapturer: No system permission");
+        AUDIO_ERR_LOG("VerifyVoiceCallPermission: No system permission");
         return ERR_PERMISSION_DENIED;
     }
 
     bool hasRecordVoiceCallPermission = VerifyPermission(RECORD_VOICE_CALL_PERMISSION);
     if (!hasRecordVoiceCallPermission) {
-        AUDIO_ERR_LOG("SetVoiceCallRecCapturer: No permission");
+        AUDIO_ERR_LOG("VerifyVoiceCallPermission: No permission");
         return ERR_PERMISSION_DENIED;
     }
-    return audioPolicyService_.SetVoiceCallRecCapturer();
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::CloseWakeUpAudioCapturer()
@@ -1746,11 +1746,6 @@ void AudioPolicyServer::OnPlaybackCapturerStop()
 void AudioPolicyServer::OnWakeupCapturerStop()
 {
     audioPolicyService_.CloseWakeUpAudioCapturer();
-}
-
-void AudioPolicyServer::OnVoiceCallRecCapturerStop()
-{
-    audioPolicyService_.CloseVoiceCallRecCapturer();
 }
 
 void AudioPolicyServer::OnDstatusUpdated(bool isConnected)

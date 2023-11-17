@@ -117,10 +117,6 @@ public:
 
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
-    int32_t SetVoiceCallRecCapturer();
-
-    int32_t CloseVoiceCallRecCapturer();
-
     int32_t CloseWakeUpAudioCapturer();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
@@ -404,8 +400,6 @@ private:
 
     AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo);
 
-    AudioModuleInfo ConstructVoiceCallRecModuleInfo();
-
     AudioIOHandle GetSinkIOHandle(InternalDeviceType deviceType);
 
     AudioIOHandle GetSourceIOHandle(InternalDeviceType deviceType);
@@ -678,9 +672,6 @@ private:
     int wakeupCount_ = 0;
     std::mutex wakeupCountMutex_;
 
-    int voiceCallRecCount_ = 0;
-    std::mutex voiceCallRecCountMutex_;
-
     std::mutex deviceClassInfoMutex_;
 
     std::shared_mutex deviceStatusUpdateSharedMutex_;
@@ -703,8 +694,7 @@ private:
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
         SOURCE_TYPE_PLAYBACK_CAPTURE,
         SOURCE_TYPE_WAKEUP,
-        SOURCE_TYPE_VOICE_MODEM_COMMUNICATION,
-        SOURCE_TYPE_VOICE_CALL
+        SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
     };
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
