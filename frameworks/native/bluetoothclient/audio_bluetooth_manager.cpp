@@ -25,9 +25,9 @@ namespace Bluetooth {
 using namespace AudioStandard;
 
 A2dpSource *AudioA2dpManager::a2dpInstance_ = nullptr;
-AudioA2dpListener AudioA2dpManager::a2dpListener_;
+std::shared_ptr<AudioA2dpListener> AudioA2dpManager::a2dpListener_ = std::make_shared<AudioA2dpListener>();
 HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
-AudioHfpListener AudioHfpManager::hfpListener_;
+std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 int AudioA2dpManager::connectionState_ = static_cast<int>(BTConnectState::DISCONNECTED);
 BluetoothRemoteDevice AudioA2dpManager::activeA2dpDevice_;
 std::mutex g_a2dpInstanceLock;
@@ -86,7 +86,7 @@ void AudioA2dpManager::RegisterBluetoothA2dpListener()
     std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
     a2dpInstance_ = A2dpSource::GetProfile();
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "Failed to obtain A2DP profile instance");
-    a2dpInstance_->RegisterObserver(&a2dpListener_);
+    a2dpInstance_->RegisterObserver(a2dpListener_);
 }
 
 void AudioA2dpManager::UnregisterBluetoothA2dpListener()
@@ -94,14 +94,14 @@ void AudioA2dpManager::UnregisterBluetoothA2dpListener()
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
-    a2dpInstance_->DeregisterObserver(&a2dpListener_);
+    a2dpInstance_->DeregisterObserver(a2dpListener_);
     a2dpInstance_ = nullptr;
 }
 
 void AudioA2dpManager::DisconnectBluetoothA2dpSink()
 {
     int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
-    a2dpListener_.OnConnectionStateChanged(activeA2dpDevice_, connectionState);
+    a2dpListener_->OnConnectionStateChanged(activeA2dpDevice_, connectionState);
     MediaBluetoothDeviceManager::ClearAllA2dpBluetoothDevice();
 }
 
@@ -206,7 +206,7 @@ void AudioHfpManager::RegisterBluetoothScoListener()
     hfpInstance_ = HandsFreeAudioGateway::GetProfile();
     CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "Failed to obtain HFP AG profile instance");
 
-    hfpInstance_->RegisterObserver(&hfpListener_);
+    hfpInstance_->RegisterObserver(hfpListener_);
 }
 
 void AudioHfpManager::UnregisterBluetoothScoListener()
@@ -214,7 +214,7 @@ void AudioHfpManager::UnregisterBluetoothScoListener()
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "HFP AG profile instance unavailable");
 
-    hfpInstance_->DeregisterObserver(&hfpListener_);
+    hfpInstance_->DeregisterObserver(hfpListener_);
     hfpInstance_ = nullptr;
 }
 
