@@ -905,7 +905,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
+bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType)
 {
     AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
     MessageParcel data;
@@ -920,6 +920,7 @@ bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFul
     data.WriteUint32(appTokenId);
     data.WriteUint64(appFullTokenId);
     data.WriteInt32(appUid);
+    data.WriteInt32(sourceType);
 
     int result = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_MICROPHONE_PERMISSION), data, reply, option);

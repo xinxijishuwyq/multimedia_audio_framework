@@ -183,7 +183,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid)) {
+    if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid, capturerInfo_.sourceType)) {
         AUDIO_ERR_LOG("recording create check failed");
         return ERR_PERMISSION_DENIED;
     }

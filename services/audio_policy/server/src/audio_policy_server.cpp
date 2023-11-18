@@ -1900,7 +1900,7 @@ bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
     return false;
 }
 
-bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
+bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType)
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
@@ -1919,6 +1919,12 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFu
     uint64_t targetFullTokenId = GetTargetFullTokenId(callingUid, callingFullTokenId, appFullTokenId);
     if (!CheckAppBackgroundPermission(callingUid, targetFullTokenId, targetTokenId)) {
         return false;
+    }
+
+    if (sourceType == SOURCE_TYPE_VOICE_CALL) {
+        if (VerifyVoiceCallPermission() != SUCCESS) {
+            return false;
+        }
     }
 
     return true;

@@ -609,7 +609,8 @@ void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, M
     uint32_t appTokenId = data.ReadUint32();
     uint64_t appFullTokenId = data.ReadUint64();
     uint32_t appUid = data.ReadInt32();
-    bool ret = CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
+    SourceType sourceType = static_cast<SourceType> (data.ReadInt32());
+    bool ret = CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
     reply.WriteBool(ret);
 }
 
