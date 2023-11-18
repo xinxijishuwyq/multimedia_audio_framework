@@ -81,7 +81,8 @@
               "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:ohaudio",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
               "//foundation/multimedia/audio_framework/frameworks/native/audiocompatibility:audio_renderer_gateway",
-              "//foundation/multimedia/audio_framework/frameworks/native/audiocompatibility:audio_capturer_gateway"
+              "//foundation/multimedia/audio_framework/frameworks/native/audiocompatibility:audio_capturer_gateway",
+              "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"
             ],
             "service_group": [
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
@@ -93,6 +94,15 @@
             ]
           },
           "inner_kits": [
+            {
+                "header": {
+                  "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosasdk/include",
+                  "header_files": [
+                    "audio_sasdk.h"
+                  ]
+                },
+                "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"
+            },
             {
               "type": "none",
               "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_client",
