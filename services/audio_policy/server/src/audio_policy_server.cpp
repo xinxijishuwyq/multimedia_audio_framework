@@ -179,6 +179,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
             if (!isFirstAudioServiceStart_) {
                 ConnectServiceAdapter();
+                sessionProcessor_.Start();
                 RegisterParamCallback();
                 LoadEffectLibrary();
                 isFirstAudioServiceStart_ = true;

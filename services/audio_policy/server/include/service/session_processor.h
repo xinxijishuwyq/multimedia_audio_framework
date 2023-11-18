@@ -47,7 +47,6 @@ public:
         std::function<void(SessionEvent)> processorSessionAdded)
         : processorSessionRemoved_(processorSessionRemoved), processorSessionAdded_(processorSessionAdded)
     {
-        Start();
     }
 
     ~SessionProcessor()
