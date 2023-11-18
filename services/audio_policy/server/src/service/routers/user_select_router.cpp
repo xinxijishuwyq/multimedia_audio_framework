@@ -14,6 +14,7 @@
  */
 
 #include "user_select_router.h"
+#include "audio_log.h"
 
 using namespace std;
 
@@ -22,7 +23,24 @@ namespace AudioStandard {
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    unique_ptr<AudioDeviceDescriptor> perDev_ =
+        AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> defaultDevice =
+        AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+    vector<unique_ptr<AudioDeviceDescriptor>> publicDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> privacyDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
+    publicDevices.push_back(std::move(defaultDevice));
+    publicDevices.insert(publicDevices.end(),
+        std::make_move_iterator(privacyDevices.begin()), std::make_move_iterator(privacyDevices.end()));
+    if (perDev_ == nullptr) {
+        AUDIO_INFO_LOG(" PerferredMediaRenderDevice is null");
+        return make_unique<AudioDeviceDescriptor>();
+    } else {
+        AUDIO_INFO_LOG(" PerferredMediaRenderDevice deviceId is %{public}d", perDev_->deviceId_);
+        return RouterBase::GetPairCaptureDevice(perDev_, publicDevices);
+    }
 }
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)

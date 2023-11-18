@@ -17,6 +17,8 @@
 #define ST_USER_SELECT_ROUTER_H
 
 #include "router_base.h"
+#include "audio_device_manager.h"
+#include "audio_state_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
