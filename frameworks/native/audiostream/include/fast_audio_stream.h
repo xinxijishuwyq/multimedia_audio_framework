@@ -148,6 +148,7 @@ public:
     IAudioStream::StreamClass GetStreamClass() override;
 
 private:
+    void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;

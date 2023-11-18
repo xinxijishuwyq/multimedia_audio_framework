@@ -26,10 +26,9 @@ class AudioStreamTracker {
 public:
     AudioStreamTracker(AudioMode mode, int32_t clientUid);
     virtual ~AudioStreamTracker();
-    void RegisterTracker(const int32_t sessionId, const State state,
-        const AudioRendererInfo &rendererInfo, const AudioCapturerInfo &capturerInfo,
-		const std::shared_ptr<AudioClientTracker> &clientTrackerObj);
-    void UpdateTracker(const int32_t sessionId, const State state,
+    void RegisterTracker(const AudioRegisterTrackerInfo &registerTrackerInfo,
+        const std::shared_ptr<AudioClientTracker> &clientTrackerObj);
+    void UpdateTracker(const int32_t sessionId, const State state, const int32_t clientPid,
         const AudioRendererInfo &rendererInfo, const AudioCapturerInfo &capturerInfo);
 
 private:

@@ -30,6 +30,7 @@ namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t MAX_WRITECB_NUM_BUFFERS = 1;
 static constexpr int32_t MAX_READCB_NUM_BUFFERS = 3;
+static constexpr int32_t ONE_MINUTE = 60;
 
 class AudioStream : public AudioServiceClient {
 public:
@@ -112,6 +113,7 @@ private:
     void ProcessDataByAudioBlend(uint8_t *buffer, size_t bufferSize);
     void ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize);
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
+    void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
@@ -148,6 +150,8 @@ private:
     VolumeRamp volumeRamp_;
     FILE *pfd_;
     bool streamTrackerRegistered_ = false;
+    std::time_t startMuteTime_ = 0;
+    bool isUpEvent_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

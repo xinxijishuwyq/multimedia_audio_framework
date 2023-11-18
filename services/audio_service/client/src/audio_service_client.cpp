@@ -187,7 +187,6 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
 
     asClient->state_ = RUNNING;
     asClient->breakingWritePa_ = false;
-    asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(RUNNING, asClient->stateChangeCmdType_);
@@ -209,7 +208,6 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
 
     asClient->state_ = STOPPED;
     asClient->breakingWritePa_ = false;
-    asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(STOPPED);
@@ -233,7 +231,6 @@ void AudioServiceClient::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t s
         asClient->audioSystemManager_->OffloadDrain();
     }
     asClient->state_ = STOPPED;
-    asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(STOPPED);
@@ -256,7 +253,6 @@ void AudioServiceClient::PAStreamPauseSuccessCb(pa_stream *stream, int32_t succe
 
     asClient->state_ = PAUSED;
     asClient->breakingWritePa_ = false;
-    asClient->WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = asClient->streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(PAUSED, asClient->stateChangeCmdType_);
@@ -1078,7 +1074,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     }
 
     state_ = PREPARED;
-    WriteStateChangedSysEvents();
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(PREPARED);
@@ -1905,7 +1900,6 @@ int32_t AudioServiceClient::ReleaseStream(bool releaseRunner)
 {
     state_ = RELEASED;
     lock_guard<mutex> lockdata(dataMutex_);
-    WriteStateChangedSysEvents();
     ResetPAAudioClient();
 
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
@@ -2019,6 +2013,11 @@ int32_t AudioServiceClient::GetFrameCountForCapturer(uint32_t &frameCount)
     size_t sampleSize = pa_sample_size_of_format(sampleSpec.format);
     frameCount = bufferSize / (sampleSize * sampleSpec.channels);
     return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::GetClientPid()
+{
+    return clientPid_;
 }
 
 uint32_t AudioServiceClient::GetSamplingRate() const
@@ -2499,22 +2498,6 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
     offloadStatePolicy_ = statePolicy;
     UpdatebufferAttrOffload(offloadStatePolicy_);
 
-    uint32_t sessionID = 0;
-    GetSessionID(sessionID);
-    DeviceType deviceType = audioSystemManager_->GetActiveInputDevice();
-    uint64_t transactionId = audioSystemManager_->GetTransactionId(deviceType, OUTPUT_DEVICE);
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CHANGE",
-        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1,
-        "STREAMID", sessionID,
-        "UID", clientUid_,
-        "PID", clientPid_,
-        "TRANSACTIONID", transactionId,
-        "STREAMTYPE", streamType_,
-        "STATE", state_,
-        "OFFLOADSTATE", statePolicy,
-        "DEVICETYPE", deviceType);
-
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -2857,36 +2840,6 @@ void AudioServiceClient::SaveStreamCallback(const std::weak_ptr<AudioStreamCallb
     if (streamCb != nullptr) {
         streamCb->OnStateChange(PREPARED);
     }
-}
-
-void AudioServiceClient::WriteStateChangedSysEvents()
-{
-    uint32_t sessionID = 0;
-    uint64_t transactionId = 0;
-    DeviceType deviceType = DEVICE_TYPE_INVALID;
-
-    bool isOutput = true;
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        deviceType = audioSystemManager_->GetActiveOutputDevice();
-        transactionId = audioSystemManager_->GetTransactionId(deviceType, OUTPUT_DEVICE);
-    } else {
-        deviceType = audioSystemManager_->GetActiveInputDevice();
-        transactionId = audioSystemManager_->GetTransactionId(deviceType, INPUT_DEVICE);
-        isOutput = false;
-    }
-
-    GetSessionID(sessionID);
-
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CHANGE",
-        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", isOutput ? 1 : 0,
-        "STREAMID", sessionID,
-        "UID", clientUid_,
-        "PID", clientPid_,
-        "TRANSACTIONID", transactionId,
-        "STREAMTYPE", streamType_,
-        "STATE", state_,
-        "DEVICETYPE", deviceType);
 }
 
 int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)

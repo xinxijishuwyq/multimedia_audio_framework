@@ -568,6 +568,14 @@ enum State {
     STOPPING
 };
 
+struct AudioRegisterTrackerInfo {
+    uint32_t sessionId;
+    int32_t clientPid;
+    State state;
+    AudioRendererInfo rendererInfo;
+    AudioCapturerInfo capturerInfo;
+};
+
 enum StateChangeCmdType {
     CMD_FROM_CLIENT = 0,
     CMD_FROM_SYSTEM = 1
@@ -613,6 +621,7 @@ public:
     int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
+    int32_t clientPid;
     int32_t tokenId;
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
@@ -629,6 +638,7 @@ public:
         return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUID)
             && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
@@ -641,6 +651,7 @@ public:
         createrUID = parcel.ReadInt32();
         clientUID = parcel.ReadInt32();
         sessionId = parcel.ReadInt32();
+        clientPid = parcel.ReadInt32();
         tokenId = parcel.ReadInt32();
 
         rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
@@ -657,6 +668,7 @@ public:
     int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
+    int32_t clientPid;
     AudioCapturerInfo capturerInfo;
     CapturerState capturerState;
     DeviceInfo inputDeviceInfo;
@@ -673,6 +685,7 @@ public:
         return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUID)
             && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(clientPid)
             && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(capturerState))
             && inputDeviceInfo.Marshalling(parcel)
@@ -683,6 +696,7 @@ public:
         createrUID = parcel.ReadInt32();
         clientUID = parcel.ReadInt32();
         sessionId = parcel.ReadInt32();
+        clientPid = parcel.ReadInt32();
         capturerInfo.Unmarshalling(parcel);
         capturerState = static_cast<CapturerState>(parcel.ReadInt32());
         inputDeviceInfo.Unmarshalling(parcel);
