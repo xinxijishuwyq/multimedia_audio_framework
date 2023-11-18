@@ -239,22 +239,21 @@ public:
         AUDIO_WARNING_LOG("Destructor PolicyCallbackImpl");
     }
 
-    float OnGetVolumeDbCb(AudioStreamType streamType)
+    virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType)
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
-
+        int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
         bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
         if (muteStatus) {
-            return 0.0f;
+            return {0.0f, 0};
         }
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
         if (activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
-            return 1.0f;
+            return {1.0f, volumeLevel};
         }
 
-        int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
         float volumeDb = 1.0f;
         if (audioAdapterManager_->IsUseNonlinearAlgo()) {
             volumeDb = audioAdapterManager_->CalculateVolumeDbNonlinear(streamForVolumeMap,
@@ -262,7 +261,7 @@ public:
         } else {
             volumeDb = audioAdapterManager_->CalculateVolumeDb(volumeLevel);
         }
-        return volumeDb;
+        return {volumeDb, volumeLevel};
     }
 
     void OnSessionRemoved(const uint64_t sessionID)

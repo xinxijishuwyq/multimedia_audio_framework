@@ -34,7 +34,7 @@ public:
      * @param streamType streamType for which volume will be computed
      * @return Returns volume level in float
      */
-    virtual float OnGetVolumeDbCb(AudioStreamType streamType) = 0;
+    virtual std::pair<float, int32_t> OnGetVolumeDbCb(AudioStreamType streamType) = 0;
 
     virtual void OnSessionRemoved(const uint64_t sessionID) = 0;
 

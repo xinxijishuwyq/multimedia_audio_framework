@@ -791,7 +791,9 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
     AudioStreamType streamTypeID = thiz->GetIdByStreamType(streamType);
-    float volumeDbCb = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamTypeID);
+    auto volumePair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamTypeID);
+    float volumeDbCb = volumePair.first;
+    int32_t volumeLevel = volumePair.second;
     float vol = volumeDbCb * volumeFactor * powerVolumeFactor;
 
     pa_cvolume cv = i->volume;
@@ -806,7 +808,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamTypeID, "VOLUME", vol,
-        "SYSVOLUME", volumeDbCb, "VOLUMEFACTOR", volumeFactor, "POWERVOLUMEFACTOR", powerVolumeFactor);
+        "SYSVOLUME", volumeLevel, "VOLUMEFACTOR", volumeFactor, "POWERVOLUMEFACTOR", powerVolumeFactor);
 }
 
 void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol,
