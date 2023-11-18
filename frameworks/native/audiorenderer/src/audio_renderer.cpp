@@ -93,7 +93,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
 {
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback = audioDeviceChangeCallback_;
     if (audioDeviceChangeCallback != nullptr) {
-        audioDeviceChangeCallback -> UnSetAudioRendererObj();
+        audioDeviceChangeCallback->UnSetAudioRendererObj();
     }
 
     RendererState state = GetStatus();
@@ -1073,13 +1073,13 @@ void AudioRendererStateChangeCallbackImpl::SaveCallback(
 
 void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPrivate *rendererObj)
 {
-    std::lock_guard<std::mutex> lock {mutex_};
+    std::lock_guard<std::mutex> lock(mutex_);
     renderer_ = rendererObj;
 }
 
 void AudioRendererStateChangeCallbackImpl::UnSetAudioRendererObj()
 {
-    std::lock_guard<std::mutex> lock {mutex_};
+    std::lock_guard<std::mutex> lock(mutex_);
     renderer_ = nullptr;
 }
 
@@ -1216,7 +1216,7 @@ void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
     std::shared_ptr<AudioRendererDeviceChangeCallback> cb = callback_.lock();
     AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl OnRendererStateChange");
     DeviceInfo deviceInfo = {};
-    std::lock_guard<std::mutex> lock{mutex_};
+    std::lock_guard<std::mutex> lock(mutex_);
     if (renderer_ == nullptr) {
         return;
     }
