@@ -49,3 +49,8 @@ HEADSET_CHANGE:
   ISCONNECT: {type: INT32, desc: is plugged in}
   HASMIC: {type: INT32, desc: mic available}
   DEVICETYPE: {type: INT32, desc: device type}
+
+BACKGROUND_SILENT_PLAYBACK:
+  __BASE: {type: STATISTIC, level: MINOR, tag: PowerStats, desc: application play silently background}
+  APP_NAME: {type: STRING, desc: application name}
+  APP_VERSION_CODE: {type: UINT32, desc: application version code}

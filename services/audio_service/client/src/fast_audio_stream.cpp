@@ -97,7 +97,6 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
         config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
     } else {
-        AUDIO_ERR_LOG("FastAudioStream: error eMode.");
         return ERR_INVALID_OPERATION;
     }
     CHECK_AND_RETURN_RET_LOG(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
@@ -110,8 +109,10 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
 
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         processClient_->GetSessionID(sessionId_);
-        AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
-        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
+
+        AudioRegisterTrackerInfo registerTrackerInfo;
+        UpdateRegisterTrackerInfo(registerTrackerInfo);
+        audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
     }
     return SUCCESS;
 }
@@ -409,7 +410,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
 
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
     return true;
 }
@@ -435,7 +436,7 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     AUDIO_DEBUG_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
     return true;
 }
@@ -460,7 +461,7 @@ bool FastAudioStream::StopAudioStream()
     AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
     return true;
 }
@@ -494,7 +495,7 @@ bool FastAudioStream::ReleaseAudioStream(bool releaseRunner)
     AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS, sessionId: %{public}d", sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
     return true;
 }
@@ -672,6 +673,15 @@ int32_t FastAudioStream::SetVolumeWithRamp(float volume, int32_t duration)
 {
     AUDIO_ERR_LOG("SetVolumeWithRamp is not supported");
     return SUCCESS;
+}
+
+void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo)
+{
+    registerTrackerInfo.sessionId = sessionId_;
+    registerTrackerInfo.clientPid = clientPid_;
+    registerTrackerInfo.state = state_;
+    registerTrackerInfo.rendererInfo = rendererInfo_;
+    registerTrackerInfo.capturerInfo = capturerInfo_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

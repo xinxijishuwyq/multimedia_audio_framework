@@ -22,8 +22,17 @@
 #include "audio_utils.h"
 #include "parameters.h"
 #include "audio_stream.h"
+#include "hisysevent.h"
+
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
 
 using namespace std;
+using namespace OHOS::HiviewDFX;
+using namespace OHOS::AppExecFwk;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,6 +42,40 @@ const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_MS = 80;
+static AppExecFwk::BundleInfo gBundleInfo_;
+
+static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
+{
+    std::string bundleName {""};
+    AppExecFwk::BundleInfo bundleInfo;
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        return bundleInfo;
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        return bundleInfo;
+    }
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (bundleMgrProxy == nullptr) {
+        return bundleInfo;
+    }
+    if (bundleMgrProxy != nullptr) {
+        bundleMgrProxy->GetNameForUid(appUid, bundleName);
+    }
+
+    bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
+        bundleInfo,
+        AppExecFwk::Constants::ALL_USERID);
+
+    return bundleInfo;
+}
 
 AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid)
     : eStreamType_(eStreamType),
@@ -51,6 +94,7 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
+    gBundleInfo_ = GetBundleInfoFromUid(appUid);
     AUDIO_DEBUG_LOG("AudioStreamTracker created");
 }
 
@@ -76,7 +120,7 @@ AudioStream::~AudioStream()
         AudioRendererInfo rendererInfo = {};
         AudioCapturerInfo capturerInfo = {};
         state_ = RELEASED;
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo, capturerInfo);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo, capturerInfo);
     }
 
     if (pfd_ != nullptr) {
@@ -287,7 +331,16 @@ void AudioStream::RegisterTracker(const std::shared_ptr<AudioClientTracker> &pro
     if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
         (void)GetSessionID(sessionId_);
         AUDIO_DEBUG_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
-        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
+
+        AudioRegisterTrackerInfo registerTrackerInfo;
+
+        registerTrackerInfo.sessionId = sessionId_;
+        registerTrackerInfo.clientPid = GetClientPid();
+        registerTrackerInfo.state = state_;
+        registerTrackerInfo.rendererInfo = rendererInfo_;
+        registerTrackerInfo.capturerInfo = capturerInfo_;
+
+        audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
     }
 }
@@ -385,7 +438,7 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
 
     OpenDumpFile();
@@ -460,6 +513,8 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
         return ERR_ILLEGAL_STATE;
     }
 
+    WriteMuteDataSysEvent(buffer, bufferSize);
+
     int32_t writeError;
     StreamBuffer stream;
     stream.buffer = buffer;
@@ -524,7 +579,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
     isPausing_ = false;
     return true;
@@ -537,6 +592,7 @@ bool AudioStream::StopAudioStream()
         AUDIO_ERR_LOG("StopAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
         return false;
     }
+    startMuteTime_ = 0;
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
 
@@ -563,7 +619,7 @@ bool AudioStream::StopAudioStream()
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
 
     if (pfd_ != nullptr) {
@@ -626,7 +682,7 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
 
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
     return true;
 }
@@ -1113,6 +1169,27 @@ void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
 {
     if (volumeRamp_.IsActive()) {
         SetStreamVolume(volumeRamp_.GetRampVolume());
+    }
+}
+
+void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
+{
+    std::string name = gBundleInfo_.name;
+    int32_t versionCode = gBundleInfo_.versionCode;
+    if (buffer[0] == 0) {
+        if (startMuteTime_ == 0) {
+            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
+            isUpEvent_ = true;
+            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "BACKGROUND_SILENT_PLAYBACK",
+                HiviewDFX::HiSysEvent::EventType::STATISTIC,
+                "APP_NAME", name,
+                "APP_VERSION_CODE", versionCode);
+        }
+    } else if (buffer[0] != 0 && startMuteTime_ != 0) {
+        startMuteTime_ = 0;
     }
 }
 } // namespace AudioStandard

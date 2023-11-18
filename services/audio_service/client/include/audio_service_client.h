@@ -561,6 +561,8 @@ public:
 
     int32_t GetFrameCountForCapturer(uint32_t &frameCount);
 
+    int32_t GetClientPid();
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
