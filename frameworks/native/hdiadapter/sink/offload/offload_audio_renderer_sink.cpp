@@ -411,7 +411,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.offloadInfo.bitWidth = PCM_32_BIT;
 }
 
-static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string adapterNameCase,
+static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, const string adapterNameCase,
     enum AudioPortDirection portFlag, struct AudioPort &renderPort, uint32_t size)
 {
     if (descs == nullptr) {
@@ -526,10 +526,9 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
     CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_NOT_STARTED, "Init audio manager Fail.");
 
-    uint32_t size = MAX_AUDIO_ADAPTER_NUM, majorVer, minorVer;
+    uint32_t size = MAX_AUDIO_ADAPTER_NUM;
     int32_t ret;
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
-    ret = audioManager_->GetVersion(audioManager_, &majorVer, &minorVer);
     ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
     if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
         AUDIO_ERR_LOG("Get adapters Fail.");
@@ -578,7 +577,6 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AUDIO_ERR_LOG("failed! state not in started");
         return ERR_OPERATION_FAILED;
     }
-    int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
@@ -597,10 +595,9 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     if (ret != 0) {
-        AUDIO_ERR_LOG("failed! ret: %{public}x", ret);
+        AUDIO_ERR_LOG("RenderFrameOffload failed! ret: %{public}x", ret);
         return ERR_WRITE_FAILED;
     }
-    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     renderPos_ += writeLen;
     return SUCCESS;
 }
@@ -624,7 +621,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
     return SUCCESS;
 }
 
-int32_t OffloadAudioRendererSinkInner::SetVolume(float theleft, float theright)
+int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 {
     int32_t ret;
     float thevolume;
@@ -634,8 +631,8 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float theleft, float theright)
         return ERR_INVALID_HANDLE;
     }
 
-    leftVolume_ = theleft;
-    rightVolume_ = theright;
+    leftVolume_ = left;
+    rightVolume_ = right;
     if ((leftVolume_ == 0) && (rightVolume_ !=0)) {
         thevolume = rightVolume_;
     } else if ((leftVolume_ != 0) && (rightVolume_ ==0)) {
@@ -873,16 +870,13 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 
 int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
-    int32_t ret;
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG(" failed audio render null");
         return ERR_INVALID_HANDLE;
     }
 
     if (started_) {
-        ret = Flush();
-        if (ret) {
+        if (Flush()) {
             AUDIO_ERR_LOG("Flush failed!");
             return ERR_OPERATION_FAILED;
         }
@@ -907,12 +901,9 @@ int32_t OffloadAudioRendererSinkInner::Resume(void)
 
 int32_t OffloadAudioRendererSinkInner::Reset(void)
 {
-    int32_t ret;
-
     if (started_ && audioRender_ != nullptr) {
         startDuringFlush_ = true;
-        ret = Flush();
-        if (!ret) {
+        if (!Flush()) {
             return SUCCESS;
         } else {
             startDuringFlush_ = false;
