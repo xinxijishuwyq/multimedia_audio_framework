@@ -188,9 +188,11 @@ public:
         const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void SaveCallback(const std::weak_ptr<AudioRendererDeviceChangeCallback> &callback);
     void setAudioRendererObj(AudioRendererPrivate *rendererObj);
+    void UnSetAudioRendererObj();
 private:
     std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
     AudioRendererPrivate *renderer_;
+    std::mutex mutex_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

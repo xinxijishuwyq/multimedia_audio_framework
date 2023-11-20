@@ -91,6 +91,11 @@ std::mutex AudioRenderer::createRendererMutex_;
 AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
+    std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback = audioDeviceChangeCallback_;
+    if (audioDeviceChangeCallback != nullptr) {
+        audioDeviceChangeCallback->UnSetAudioRendererObj();
+    }
+
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
         Release();
@@ -1068,7 +1073,14 @@ void AudioRendererStateChangeCallbackImpl::SaveCallback(
 
 void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPrivate *rendererObj)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     renderer_ = rendererObj;
+}
+
+void AudioRendererStateChangeCallbackImpl::UnSetAudioRendererObj()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    renderer_ = nullptr;
 }
 
 void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
@@ -1204,15 +1216,27 @@ void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
     std::shared_ptr<AudioRendererDeviceChangeCallback> cb = callback_.lock();
     AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl OnRendererStateChange");
     DeviceInfo deviceInfo = {};
-    if (renderer_->IsDeviceChanged(deviceInfo)) {
-        if (deviceInfo.deviceType != DEVICE_TYPE_NONE && deviceInfo.deviceType != DEVICE_TYPE_INVALID) {
-            // switch audio channel
-            renderer_->SwitchStream(deviceInfo.isLowLatencyDevice);
-        }
-        if (cb == nullptr) {
-            AUDIO_ERR_LOG("AudioRendererStateChangeCallbackImpl::OnStateChange cb == nullptr.");
+    bool isDevicedChanged = false;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (renderer_ == nullptr) {
             return;
         }
+    
+        isDevicedChanged = renderer_->IsDeviceChanged(deviceInfo);
+        if (isDevicedChanged) {
+            if (deviceInfo.deviceType != DEVICE_TYPE_NONE && deviceInfo.deviceType != DEVICE_TYPE_INVALID) {
+                // switch audio channel
+                renderer_->SwitchStream(deviceInfo.isLowLatencyDevice);
+            }
+            if (cb == nullptr) {
+                AUDIO_ERR_LOG("AudioRendererStateChangeCallbackImpl::OnStateChange cb == nullptr.");
+                return;
+            }
+        }
+    }
+
+    if (isDevicedChanged) {
         cb->OnStateChange(deviceInfo);
     }
 }
