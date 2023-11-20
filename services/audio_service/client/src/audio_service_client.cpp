@@ -3314,7 +3314,7 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
 
     effectMode = audioEffectMode;
     if (mStreamUsage == STREAM_USAGE_SYSTEM || mStreamUsage == STREAM_USAGE_DTMF ||
-        mStreamUsage == STREAM_USAGE_ENFORCED_TONE || mStreamUsage == STREAM_USAGE_ULTRASONIC||
+        mStreamUsage == STREAM_USAGE_ENFORCED_TONE || mStreamUsage == STREAM_USAGE_ULTRASONIC ||
         mStreamUsage == STREAM_USAGE_NAVIGATION) {
         audioEffectMode = EFFECT_NONE;
     }
