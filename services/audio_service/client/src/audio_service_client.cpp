@@ -1370,6 +1370,7 @@ int32_t AudioServiceClient::DrainStream()
         pa_threaded_mainloop_wait(mainLoop);
         StopTimer();
         if (IsTimeOut()) {
+            pa_threaded_mainloop_unlock(mainLoop);
             AUDIO_ERR_LOG("Drain timeout");
             return AUDIO_CLIENT_ERR;
         }
