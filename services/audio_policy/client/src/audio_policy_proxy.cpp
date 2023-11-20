@@ -905,7 +905,8 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
     return reply.ReadInt32();
 }
 
-bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType)
+bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    SourceType sourceType)
 {
     AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
     MessageParcel data;

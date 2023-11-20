@@ -1900,7 +1900,8 @@ bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
     return false;
 }
 
-bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType)
+bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    SourceType sourceType)
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();

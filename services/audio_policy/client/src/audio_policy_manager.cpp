@@ -1011,7 +1011,8 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return gsp->UpdateTracker(mode, streamChangeInfo);
 }
 
-bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType)
+bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    SourceType sourceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
