@@ -132,7 +132,7 @@ int32_t IpcStreamStub::HandleGetAudioTime(MessageParcel &data, MessageParcel &re
 {
     (void)data;
     uint64_t framePos = 0;
-    int64_t timeStamp = 0;
+    uint64_t timeStamp = 0;
     reply.WriteInt32(GetAudioTime(framePos, timeStamp));
     reply.WriteUint64(framePos);
     reply.WriteInt64(timeStamp);

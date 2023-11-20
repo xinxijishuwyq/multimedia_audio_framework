@@ -33,11 +33,9 @@ public:
     static IStreamManager &GetPlaybackManager();
     static IStreamManager &GetRecorderManager();
 
-    virtual int32_t CreateRender(AudioStreamParams params, AudioStreamType audioType,
-        std::shared_ptr<IRendererStream> &stream) = 0;
+    virtual int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) = 0;
     virtual int32_t ReleaseRender(uint32_t streamIndex_) = 0;
-    virtual int32_t CreateCapturer(AudioStreamParams params, AudioStreamType audioType,
-        std::shared_ptr<ICapturerStream> &stream) = 0;
+    virtual int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) = 0;
     virtual int32_t ReleaseCapturer(uint32_t streamIndex_) = 0;
     virtual int32_t GetInfo() = 0;
 };

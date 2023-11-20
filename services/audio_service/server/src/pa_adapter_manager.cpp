@@ -70,8 +70,7 @@ PaAdapterManager::PaAdapterManager(ManagerType type)
     managerType_ = type;
 }
 
-int32_t PaAdapterManager::CreateRender(AudioStreamParams params, AudioStreamType audioType,
-    std::shared_ptr<IRendererStream> &stream)
+int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
 {
     AUDIO_DEBUG_LOG("Create renderer start");
     if (context_ == nullptr) {
@@ -80,8 +79,8 @@ int32_t PaAdapterManager::CreateRender(AudioStreamParams params, AudioStreamType
         CHECK_AND_RETURN_RET_LOG(ret == PA_ADAPTER_SUCCESS, ret, "Failed to init pa context");
     }
 
-    pa_stream *paStream = InitPaStream(params, audioType);
-    std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(params, paStream);
+    pa_stream *paStream = InitPaStream(processConfig);
+    std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, PA_ADAPTER_INIT_ERR, "Failed to init pa stream");
     stream = rendererStream;
     return PA_ADAPTER_SUCCESS;
@@ -113,8 +112,7 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     return PA_ADAPTER_SUCCESS;
 }
 
-int32_t PaAdapterManager::CreateCapturer(AudioStreamParams params, AudioStreamType audioType,
-    std::shared_ptr<ICapturerStream> &stream)
+int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream)
 {
     AUDIO_DEBUG_LOG("Create capturer start");
     if (context_ == nullptr) {
@@ -122,8 +120,8 @@ int32_t PaAdapterManager::CreateCapturer(AudioStreamParams params, AudioStreamTy
         int32_t ret = InitPaContext();
         CHECK_AND_RETURN_RET_LOG(ret == PA_ADAPTER_SUCCESS, ret, "Failed to init pa context");
     }
-    pa_stream *paStream = InitPaStream(params, audioType);
-    std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(params, paStream);
+    pa_stream *paStream = InitPaStream(processConfig);
+    std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, PA_ADAPTER_INIT_ERR, "Failed to init pa stream");
     stream = capturerStream;
     return PA_ADAPTER_SUCCESS;
@@ -247,7 +245,7 @@ int32_t PaAdapterManager::HandleMainLoopStart()
     return PA_ADAPTER_SUCCESS;
 }
 
-pa_stream *PaAdapterManager::InitPaStream(AudioStreamParams params, AudioStreamType audioType)
+pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig)
 {
     AUDIO_DEBUG_LOG("Enter InitPaStream");
     int32_t error = PA_ADAPTER_ERR;
@@ -257,32 +255,16 @@ pa_stream *PaAdapterManager::InitPaStream(AudioStreamParams params, AudioStreamT
     pa_threaded_mainloop_lock(mainLoop_);
 
     // Use struct to save spec size
-    pa_sample_spec sampleSpec = ConvertToPAAudioParams(params);
+    pa_sample_spec sampleSpec = ConvertToPAAudioParams(processConfig);
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
         pa_threaded_mainloop_unlock(mainLoop_);
         return nullptr;
     }
-    pa_proplist_sets(propList, "stream.type", "STREAM_MUSIC");
-
-    // Set streamName and sessionID after pa_stream_new
-    const std::string streamName = GetStreamName(audioType);
-
-    int32_t sessionID_ = 1; // LYH in plan: change to pa_stream id, so we should update it after create or in stream
-    pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
-    auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    const std::string streamStartTime = ctime(&timenow);
-    pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
-    pa_proplist_sets(propList, "scene.type", "SCENE_MUSIC");
-
-    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
-    pa_proplist_sets(propList, "stream.usage", std::to_string(streamUsage).c_str());
-    float mVolumeFactor = 1.0f;
-    float mPowerVolumeFactor = 1.0f;
-    pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
-    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
-    AUDIO_INFO_LOG("Creating stream of channels %{public}d", params.channels);
+    const std::string streamName = GetStreamName(processConfig.streamType);
+    pa_channel_map map;
+    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName) == 0, nullptr, "set pa proplist failed");
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec, nullptr, propList);
     if (!paStream) {
@@ -305,9 +287,53 @@ pa_stream *PaAdapterManager::InitPaStream(AudioStreamParams params, AudioStreamT
     return paStream;
 }
 
-std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioStreamParams params, pa_stream *paStream)
+int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
+    const std::string &streamName)
 {
-    std::shared_ptr<PaRendererStreamImpl> rendererStream = std::make_shared<PaRendererStreamImpl>(paStream, params, mainLoop_);
+    // for remote audio device router filter
+    pa_proplist_sets(propList, "stream.client.uid", std::to_string(processConfig.appInfo.appUid).c_str());
+    pa_proplist_sets(propList, "stream.client.pid", std::to_string(processConfig.appInfo.appPid).c_str());
+    pa_proplist_sets(propList, "stream.type", streamName.c_str());
+    pa_proplist_sets(propList, "media.name", streamName.c_str());
+    const std::string effectSceneName = GetEffectSceneName(processConfig.streamType);
+    pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
+    float mVolumeFactor = 1.0f;
+    float mPowerVolumeFactor = 1.0f;
+    pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
+    pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
+    auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    const std::string streamStartTime = ctime(&timenow);
+    pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
+
+    if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+        pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
+        pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
+    } else if (processConfig.audioMode == AUDIO_MODE_RECORD){
+        pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
+        pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
+        pa_proplist_sets(propList, "stream.capturerSource", std::to_string(processConfig.capturerInfo.sourceType).c_str());
+    }
+
+    AUDIO_INFO_LOG("Creating stream of channels %{public}d", processConfig.streamInfo.channels);
+    if (processConfig.streamInfo.channelLayout == 0) {
+        processConfig.streamInfo.channelLayout = defaultChCountToLayoutMap[processConfig.streamInfo.channels];
+    }
+    pa_proplist_sets(propList, "stream.channelLayout", std::to_string(processConfig.streamInfo.channelLayout).c_str());
+
+    pa_channel_map_init(&map);
+    map.channels = processConfig.streamInfo.channels;
+    uint32_t channelsInLayout = ConvertChLayoutToPaChMap(processConfig.streamInfo.channelLayout, map);
+    if (channelsInLayout != processConfig.streamInfo.channels || channelsInLayout == 0) {
+        AUDIO_ERR_LOG("Invalid channel Layout");
+        return -1;
+    }
+    return 0;
+}
+
+std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream)
+{
+    std::shared_ptr<PaRendererStreamImpl> rendererStream = std::make_shared<PaRendererStreamImpl>(paStream, processConfig, mainLoop_);
     if (rendererStream == nullptr) {
         AUDIO_ERR_LOG("Create rendererStream Failed");
         return nullptr;
@@ -318,9 +344,9 @@ std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioStr
     return rendererStream;
 }
 
-std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioStreamParams params, pa_stream *paStream)
+std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioProcessConfig processConfig, pa_stream *paStream)
 {
-    std::shared_ptr<PaCapturerStreamImpl> capturerStream = std::make_shared<PaCapturerStreamImpl>(paStream, params, mainLoop_);
+    std::shared_ptr<PaCapturerStreamImpl> capturerStream = std::make_shared<PaCapturerStreamImpl>(paStream, processConfig, mainLoop_);
     if (capturerStream == nullptr) {
         AUDIO_ERR_LOG("Create capturerStream Failed");
         return nullptr;
@@ -406,8 +432,25 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         }
         pa_threaded_mainloop_wait(mainLoop_);
     }
+    UpdateStreamIndexToPropList(paStream);
     pa_threaded_mainloop_unlock(mainLoop_);
     return PA_ADAPTER_SUCCESS;
+}
+
+void PaAdapterManager::UpdateStreamIndexToPropList(pa_stream *paStream)
+{
+    uint32_t paStreamIndex = pa_stream_get_index(paStream);
+    pa_proplist *propListForUpdate = pa_proplist_new();
+    if (propListForUpdate == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop_);
+        return;
+    }
+    pa_proplist_sets(propListForUpdate, "stream.sessionID", std::to_string(paStreamIndex).c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propListForUpdate,
+        nullptr, nullptr);
+    pa_proplist_free(propListForUpdate);
+    pa_operation_unref(updatePropOperation);
 }
 
 void PaAdapterManager::PAContextStateCb(pa_context *context, void *userdata)
@@ -466,12 +509,12 @@ const std::string PaAdapterManager::GetStreamName(AudioStreamType audioType)
     return streamName;
 }
 
-pa_sample_spec PaAdapterManager::ConvertToPAAudioParams(AudioStreamParams params)
+pa_sample_spec PaAdapterManager::ConvertToPAAudioParams(AudioProcessConfig processConfig)
 {
     pa_sample_spec paSampleSpec;
-    paSampleSpec.channels = params.channels;
-    paSampleSpec.rate = params.samplingRate;
-    switch ((AudioSampleFormat)params.format) {
+    paSampleSpec.channels = processConfig.streamInfo.channels;
+    paSampleSpec.rate = processConfig.streamInfo.samplingRate;
+    switch (processConfig.streamInfo.format) {
         case SAMPLE_U8:
             paSampleSpec.format = (pa_sample_format_t)PA_SAMPLE_U8;
             break;
@@ -489,6 +532,69 @@ pa_sample_spec PaAdapterManager::ConvertToPAAudioParams(AudioStreamParams params
             break;
     }
     return paSampleSpec;
+}
+
+
+uint32_t PaAdapterManager::ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap)
+{
+    uint32_t channelNum = 0;
+    uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
+    switch (mode) {
+        case 0: {
+            for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
+                if ((channelLayout & (bit->first)) != 0) {
+                    paMap.map[channelNum++] = bit->second;
+                }
+            }
+            break;
+        }
+        case 1: {
+            uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+            channelNum = (order + 1) * (order + 1);
+            for (uint32_t i = 0; i < channelNum; ++i) {
+                paMap.map[i] = chSetToPaPositionMap[FRONT_LEFT];
+            }
+            break;
+        }
+        default:
+            channelNum = 0;
+            break;
+    }
+    return channelNum;
+}
+
+const std::string PaAdapterManager::GetEffectSceneName(AudioStreamType audioType)
+{
+    std::string name;
+    switch (audioType) {
+        case STREAM_MUSIC:
+            name = "SCENE_MUSIC";
+            break;
+        case STREAM_GAME:
+            name = "SCENE_GAME";
+            break;
+        case STREAM_MOVIE:
+            name = "SCENE_MOVIE";
+            break;
+        case STREAM_SPEECH:
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_ASSISTANT:
+            name = "SCENE_SPEECH";
+            break;
+        case STREAM_RING:
+        case STREAM_ALARM:
+        case STREAM_NOTIFICATION:
+        case STREAM_SYSTEM:
+        case STREAM_DTMF:
+        case STREAM_SYSTEM_ENFORCED:
+            name = "SCENE_RING";
+            break;
+        default:
+            name = "SCENE_OTHERS";
+    }
+
+    const std::string sceneName = name;
+    return sceneName;
 }
 
 

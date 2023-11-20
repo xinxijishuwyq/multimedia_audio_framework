@@ -47,7 +47,7 @@ public:
 
     int32_t Drain() override;
 
-    int32_t GetAudioTime(uint64_t &framePos, int64_t &timeStamp) override;
+    int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp) override;
 
     int32_t GetLatency(uint64_t &latency) override;
 

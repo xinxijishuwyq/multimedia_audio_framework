@@ -178,7 +178,7 @@ int32_t IpcStreamProxy::Drain()
     return reply.ReadInt32();
 }
 
-int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, int64_t &timeStamp)
+int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
 {
     MessageParcel data;
     MessageParcel reply;

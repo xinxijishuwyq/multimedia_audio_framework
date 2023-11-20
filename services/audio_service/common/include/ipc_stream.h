@@ -54,7 +54,7 @@ public:
 
     virtual int32_t Drain() = 0;
 
-    virtual int32_t GetAudioTime(uint64_t &framePos, int64_t &timeStamp) = 0;
+    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp) = 0;
 
     virtual int32_t GetLatency(uint64_t &latency) = 0;
 

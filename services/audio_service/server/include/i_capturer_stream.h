@@ -30,9 +30,14 @@ public:
 class ICapturerStream : public IStream {
 public:
     virtual ~ICapturerStream() = default;
+    virtual int32_t GetStreamFramesRead(uint64_t &framesRead) = 0;
+    virtual int32_t GetCurrentTimeStamp(uint64_t &timeStamp) = 0;
+    virtual int32_t GetLatency(uint64_t &latency) = 0;
 
     virtual void RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback) = 0;
     virtual int32_t GetMinimumBufferSize(size_t &minBufferSize) const = 0;
+    virtual void GetByteSizePerFrame(size_t &byteSizePerFrame) const = 0;
+    virtual void GetSpanSizePerFrame(size_t &spanSizeInFrame) const = 0;
     virtual int32_t DropBuffer() = 0;
     virtual void AbortCallback(int32_t abortTimes) = 0;
 };

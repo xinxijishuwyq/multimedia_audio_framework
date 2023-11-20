@@ -59,7 +59,7 @@ sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &conf
     sptr<IpcStreamInServer> streamInServer = new(std::nothrow) IpcStreamInServer(config, mode);
     ret = streamInServer->Config();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("IpcStreamInServer Config failed: %{public}d", ret); // in plan: add uid.
+        AUDIO_ERR_LOG("IpcStreamInServer Config failed: %{public}d, uid: %{public}d", ret, config.appInfo.appUid); // waiting for review: add uid.
         streamInServer = nullptr;
     }
     return streamInServer;
@@ -67,19 +67,19 @@ sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &conf
 
 IpcStreamInServer::IpcStreamInServer(const AudioProcessConfig &config, AudioMode mode) : config_(config), mode_(mode)
 {
-    AUDIO_INFO_LOG("IpcStreamInServer()"); // in plan: add uid.
+    AUDIO_INFO_LOG("IpcStreamInServer(), uid: %{public}d", config.appInfo.appUid); // waiting for review: add uid.
 }
 
 IpcStreamInServer::~IpcStreamInServer()
 {
-    AUDIO_INFO_LOG("~IpcStreamInServer()"); // in plan: add uid.
+    AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
 }
 
 int32_t IpcStreamInServer::Config()
 {
     streamListenerHolder_ = std::make_shared<StreamListenerHolder>();
 
-    // LYH in plan: pass streamListenerHolder_ to RendererInServer or CapturerInServer
+    // LYH waiting for review: pass streamListenerHolder_ to RendererInServer or CapturerInServer
     if (mode_ == AUDIO_MODE_PLAYBACK) {
         return ConfigRenderer();
     }
@@ -92,18 +92,16 @@ int32_t IpcStreamInServer::Config()
 
 int32_t IpcStreamInServer::ConfigRenderer()
 {
-    // LYH in plan: use config_.streamInfo instead of AudioStreamParams
-    AudioStreamParams params = {};
-    rendererInServer_ = std::make_shared<RendererInServer>(params, config_.streamType);
+    // LYH waiting for review: use config_.streamInfo instead of AudioStreamParams
+    rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
     CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "create RendererInServer failed");
     return SUCCESS;
 }
 
 int32_t IpcStreamInServer::ConfigCapturer()
 {
-    // LYH in plan: use config_.streamInfo instead of AudioStreamParams
-    AudioStreamParams params = {};
-    capturerInServer_ = std::make_shared<CapturerInServer>(params, config_.streamType);
+    // LYH waiting for review: use config_.streamInfo instead of AudioStreamParams
+    capturerInServer_ = std::make_shared<CapturerInServer>(config_, streamListenerHolder_);
     CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed");
     return SUCCESS;
 }
@@ -123,15 +121,26 @@ int32_t IpcStreamInServer::RegisterStreamListener(sptr<IRemoteObject> object)
 
 int32_t IpcStreamInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->ResolveBuffer(buffer);
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->ResolveBuffer(buffer);
+    }
+    AUDIO_ERR_LOG("GetAudioSessionID failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::UpdatePosition()
 {
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->UpdateWriteIndex();
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->UpdateReadIndex();
+    }
+    AUDIO_ERR_LOG("UpdatePosition failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
@@ -148,114 +157,167 @@ int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
 
 int32_t IpcStreamInServer::Start()
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->Start();
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->Start();
+    }
+    AUDIO_ERR_LOG("Start failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::Pause()
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->Pause();
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->Pause();
+    }
+    AUDIO_ERR_LOG("Pause failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::Stop()
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->Stop();
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->Stop();
+    }
+    AUDIO_ERR_LOG("Stop failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::Release()
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->Release();
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->Release();
+    }
+    AUDIO_ERR_LOG("Release failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::Flush()
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->Flush();
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->Flush();
+    }
+    AUDIO_ERR_LOG("Flush failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::Drain()
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->Drain();
+    }
+    AUDIO_ERR_LOG("Drain failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, int64_t &timeStamp)
+int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->GetAudioTime(framePos, timeStamp);
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->GetAudioTime(framePos, timeStamp);
+    }
+    AUDIO_ERR_LOG("GetAudioTime failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::GetLatency(uint64_t &latency)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->GetLatency(latency);
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->GetLatency(latency);
+    }
+    AUDIO_ERR_LOG("GetAudioSessionID failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::SetRate(int32_t rate)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetRate(rate);
+    }
+    AUDIO_ERR_LOG("SetRate failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::GetRate(int32_t &rate)
 {
-
-    // in plan
-    return SUCCESS;
+    // if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+    //     return rendererInServer_->GetRate(rate);
+    // }
+    // AUDIO_ERR_LOG("GetRate failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::SetLowPowerVolume(float volume)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetLowPowerVolume(volume);
+    }
+    AUDIO_ERR_LOG("SetLowPowerVolume failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::GetLowPowerVolume(float &volume)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->GetLowPowerVolume(volume);
+    }
+    AUDIO_ERR_LOG("GetLowPowerVolume failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::SetAudioEffectMode(int32_t effectMode)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetAudioEffectMode(effectMode);
+    }
+    AUDIO_ERR_LOG("SetAudioEffectMode failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::GetAudioEffectMode(int32_t &effectMode)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->GetAudioEffectMode(effectMode);
+    }
+    AUDIO_ERR_LOG("GetAudioEffectMode failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::SetPrivacyType(int32_t privacyType)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetPrivacyType(privacyType);
+    }
+    AUDIO_ERR_LOG("SetPrivacyType failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::GetPrivacyType(int32_t &privacyType)
 {
-
-    // in plan
-    return SUCCESS;
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->GetPrivacyType(privacyType);
+    }
+    AUDIO_ERR_LOG("GetPrivacyType failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

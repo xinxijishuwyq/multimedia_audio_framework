@@ -25,16 +25,47 @@
 
 namespace OHOS {
 namespace AudioStandard {
+    
+static std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap = {
+    {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
+    {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1_BACK},
+    {7, CH_LAYOUT_6POINT1_BACK}, {8, CH_LAYOUT_5POINT1POINT2}, {10, CH_LAYOUT_7POINT1POINT2},
+    {12, CH_LAYOUT_7POINT1POINT4}, {14, CH_LAYOUT_9POINT1POINT4}, {16, CH_LAYOUT_9POINT1POINT6}
+};
+
+static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
+    {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+    {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
+    {SIDE_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SIDE_RIGHT, PA_CHANNEL_POSITION_SIDE_RIGHT},
+    {BACK_LEFT, PA_CHANNEL_POSITION_REAR_LEFT}, {BACK_RIGHT, PA_CHANNEL_POSITION_REAR_RIGHT},
+    {FRONT_LEFT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER},
+    {FRONT_RIGHT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER},
+    {BACK_CENTER, PA_CHANNEL_POSITION_REAR_CENTER}, {TOP_CENTER, PA_CHANNEL_POSITION_TOP_CENTER},
+    {TOP_FRONT_LEFT, PA_CHANNEL_POSITION_TOP_FRONT_LEFT}, {TOP_FRONT_CENTER, PA_CHANNEL_POSITION_TOP_FRONT_CENTER},
+    {TOP_FRONT_RIGHT, PA_CHANNEL_POSITION_TOP_FRONT_RIGHT}, {TOP_BACK_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT},
+    {TOP_BACK_CENTER, PA_CHANNEL_POSITION_TOP_REAR_CENTER}, {TOP_BACK_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
+    /** Channel layout positions below do not have precise mapped pulseaudio positions */
+    {STEREO_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {STEREO_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+    {WIDE_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {WIDE_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+    {SURROUND_DIRECT_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SURROUND_DIRECT_RIGHT, PA_CHANNEL_POSITION_SIDE_LEFT},
+    {BOTTOM_FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER},
+    {BOTTOM_FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {BOTTOM_FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
+    {TOP_SIDE_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT}, {TOP_SIDE_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
+    {LOW_FREQUENCY_2, PA_CHANNEL_POSITION_LFE},
+};
+
 class PaAdapterManager : public IStreamManager{
 public:
     PaAdapterManager(ManagerType type);
 
-    int32_t CreateRender(AudioStreamParams params, AudioStreamType audioType,
-        std::shared_ptr<IRendererStream> &stream) override;
+    int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) override;
     int32_t ReleaseRender(uint32_t streamIndex_) override;
-    int32_t CreateCapturer(AudioStreamParams params, AudioStreamType audioType,
-        std::shared_ptr<ICapturerStream> &stream) override;
+    int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex_) override;
+    void UpdateStreamIndexToPropList(pa_stream *paStream);
+    uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
+    const std::string GetEffectSceneName(AudioStreamType audioType);
+
     int32_t GetInfo() override;
 
 private:
@@ -63,17 +94,18 @@ private:
     int32_t ResetPaContext();
     int32_t InitPaContext();
     int32_t HandleMainLoopStart();
-    pa_stream *InitPaStream(AudioStreamParams params, AudioStreamType audioType);
-    std::shared_ptr<IRendererStream> CreateRendererStream(AudioStreamParams params, pa_stream *paStream);
-    std::shared_ptr<ICapturerStream> CreateCapturerStream(AudioStreamParams params, pa_stream *paStream);
+    pa_stream *InitPaStream(AudioProcessConfig processConfig);
+    int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
+        const std::string &streamName);
+    std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream);
+    std::shared_ptr<ICapturerStream> CreateCapturerStream(AudioProcessConfig processConfig, pa_stream *paStream);
     int32_t ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec);
 
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
     const std::string GetStreamName(AudioStreamType audioType);
-    pa_sample_spec ConvertToPAAudioParams(AudioStreamParams audioParams);
-    uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
+    pa_sample_spec ConvertToPAAudioParams(AudioProcessConfig processConfig);
 
     pa_threaded_mainloop *mainLoop_;
     pa_mainloop_api *api_;

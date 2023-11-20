@@ -26,57 +26,37 @@ namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
 
-RendererInServer::RendererInServer(AudioStreamParams params, AudioStreamType audioType)
+RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
 {
-    (void)streamListener_; // LYH in plan
-    audioStreamParams_ = params;
-    audioType_ = audioType;
-    int32_t ret = IStreamManager::GetPlaybackManager().CreateRender(params, audioType, stream_);
+    processConfig_ = processConfig;
+    streamListener_ = streamListener; // LYH wating for review
+
+    int32_t ret = IStreamManager::GetPlaybackManager().CreateRender(processConfig_, stream_);
     AUDIO_INFO_LOG("Construct rendererInServer result: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
     ConfigServerBuffer();
 }
 
-inline uint32_t PcmFormatToBits(uint8_t format)
-{
-    switch (format) {
-        case SAMPLE_U8:
-            return 1; // 1 byte
-        case SAMPLE_S16LE:
-            return 2; // 2 byte
-        case SAMPLE_S24LE:
-            return 3; // 3 byte
-        case SAMPLE_S32LE:
-            return 4; // 4 byte
-        case SAMPLE_F32LE:
-            return 4; // 4 byte
-        default:
-            return 2; // 2 byte
-    }
-}
-
 int32_t RendererInServer::ConfigServerBuffer()
 {
-    spanSizeInFrame_ = 20 * audioStreamParams_.samplingRate / 1000; // 20ms per span
-    totalSizeInFrame_ = 4 * spanSizeInFrame_;
-
     if (audioServerBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
         return SUCCESS;
     }
+    stream_->GetSpanSizePerFrame(spanSizeInFrame_);
+    stream_->GetMinimumBufferSize(totalSizeInFrame_);
+    stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
         return ERR_INVALID_PARAM;
     }
 
-    uint8_t channel = audioStreamParams_.channels;
-    uint32_t formatbyte = PcmFormatToBits(audioStreamParams_.format);
-    byteSizePerFrame_ = channel * formatbyte;
-    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}u, spanSizeInFrame_: %{public}u, byteSizePerFrame_:%{public}u, channel: %{public}u, formatbyte:%{public}u",
-        totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, channel, formatbyte);
+    stream_->GetByteSizePerFrame(byteSizePerFrame_);
+    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}u, spanSizeInFrame_: %{public}u, byteSizePerFrame_:%{public}u",
+        totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     
     // create OHAudioBuffer in server
-    audioServerBuffer_ = OHAudioBuffer::CreateFormLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
+    audioServerBuffer_ = OHAudioBuffer::CreateFormLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_); // Waiting for review, 后两个参数都从impl获取
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
 
     // we need to clear data buffer to avoid dirty data.
@@ -239,7 +219,7 @@ int32_t RendererInServer::OnWriteData(size_t length)
     return PA_ADAPTER_SUCCESS;
 }
 
-void RendererInServer::UpdateWriteIndex()
+int32_t RendererInServer::UpdateWriteIndex()
 {
     AUDIO_INFO_LOG("UpdateWriteIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d", audioServerBuffer_->GetAvailableDataFrames(), needStart);
     if (audioServerBuffer_->GetAvailableDataFrames() == spanSizeInFrame_ && needStart < 3) {
@@ -252,12 +232,19 @@ void RendererInServer::UpdateWriteIndex()
         AUDIO_WARNING_LOG("After drain, start write data");
         WriteData();
     }
+    return 0;
+}
+
+int32_t RendererInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
+{
+    buffer = audioServerBuffer_;
+    return 0;
 }
 
 int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetSessionId failed, stream_ is null");
-    sessionId = stream_->GetStreamIndex();
+    sessionId = streamIndex_;
     CHECK_AND_RETURN_RET_LOG(sessionId < INT32_MAX, ERR_OPERATION_FAILED, "GetSessionId failed, sessionId:%{public}d",
         sessionId);
 
@@ -280,6 +267,7 @@ int32_t RendererInServer::Start()
         status_ = I_STATUS_INVALID;
         return ret;
     }
+    resetTime_ = true;
     return PA_ADAPTER_SUCCESS;
 }
 
@@ -408,6 +396,61 @@ int32_t RendererInServer::Release()
     }
 
     return PA_ADAPTER_SUCCESS;
+}
+
+int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
+{
+    if (status_ == I_STATUS_STOPPED) {
+        AUDIO_WARNING_LOG("Current status is stopped");
+        return -1;
+    }
+    stream_->GetStreamFramesWritten(framePos);
+    stream_->GetCurrentTimeStamp(timeStamp);
+    if (resetTime_) {
+        resetTime_ = false;
+        resetTimestamp_ = timeStamp;
+    }
+    return 0;
+}
+
+int32_t RendererInServer::GetLatency(uint64_t &latency)
+{
+    return stream_->GetLatency(latency);
+}
+
+int32_t RendererInServer::SetRate(int32_t rate)
+{
+    return stream_->SetRate(rate);
+}
+
+int32_t RendererInServer::SetLowPowerVolume(float volume)
+{
+    return stream_->SetLowPowerVolume(volume);
+}
+
+int32_t RendererInServer::GetLowPowerVolume(float &volume)
+{
+    return stream_->GetLowPowerVolume(volume);
+}
+
+int32_t RendererInServer::SetAudioEffectMode(int32_t effectMode)
+{
+    return stream_->SetAudioEffectMode(effectMode);
+}
+
+int32_t RendererInServer::GetAudioEffectMode(int32_t &effectMode)
+{
+    return stream_->GetAudioEffectMode(effectMode);
+}
+
+int32_t RendererInServer::SetPrivacyType(int32_t privacyType)
+{
+    return stream_->SetPrivacyType(privacyType);
+}
+
+int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
+{
+    return stream_->GetPrivacyType(privacyType);
 }
 
 void RendererInServer::RegisterTestCallback(const std::weak_ptr<RendererListener> &callback)

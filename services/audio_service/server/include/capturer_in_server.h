@@ -31,12 +31,13 @@ public:
 class CapturerInServer : public IStatusCallback, public IReadCallback,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
-    // LYH in plan: add IStreamListener
-    CapturerInServer(AudioStreamParams params, AudioStreamType audioType);
+    // LYH waiting for review: add IStreamListener
+    CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
     virtual ~CapturerInServer() {};
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnReadData(size_t length) override;
 
+    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
     int32_t Pause();
@@ -44,13 +45,16 @@ public:
     int32_t Stop();
     int32_t Release();
 
+    int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp);
+    int32_t GetLatency(uint64_t &latency);
+
     void RegisterStatusCallback();
     void RegisterReadCallback();
     void RegisterTestCallback(const std::weak_ptr<CapturerListener> &callback);
 
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
-    void UpdateReadIndex();
+    int32_t UpdateReadIndex();
     BufferDesc DequeueBuffer(size_t length);
     void ReadData(size_t length);
     int32_t DrainAudioBuffer();
@@ -67,11 +71,10 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
-    // LYH in plan: IStreamListener
+    // LYH waiting for review: IStreamListener
     std::weak_ptr<IStreamListener> streamListener_;
     std::weak_ptr<CapturerListener> testCallback_;
-    AudioStreamParams audioStreamParams_;
-    AudioStreamType audioType_;
+    AudioProcessConfig processConfig_;
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;
     uint32_t byteSizePerFrame_ = 0;
@@ -80,6 +83,8 @@ private:
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
     int32_t needStart = 0;
     int32_t underflowCount = 0;
+    bool resetTime_ = false;
+    uint64_t resetTimestamp_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

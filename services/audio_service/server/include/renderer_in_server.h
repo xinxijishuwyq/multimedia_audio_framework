@@ -34,12 +34,13 @@ public:
 class RendererInServer : public IStatusCallback, public IWriteCallback,
     public std::enable_shared_from_this<RendererInServer> {
 public:
-    // LYH in plan: add IStreamListener
-    RendererInServer(AudioStreamParams params, AudioStreamType audioType);
+    // LYH waiting for review: add IStreamListener
+    RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
     virtual ~RendererInServer() {};
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
     
+    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
     int32_t Pause();
@@ -48,12 +49,27 @@ public:
     int32_t Stop();
     int32_t Release();
 
+    int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp);
+    int32_t GetLatency(uint64_t &latency);
+    int32_t SetRate(int32_t rate);
+    int32_t SetLowPowerVolume(float volume);
+    int32_t GetLowPowerVolume(float &volume);
+    int32_t SetAudioEffectMode(int32_t effectMode);
+    int32_t GetAudioEffectMode(int32_t &effectMode);
+    int32_t SetPrivacyType(int32_t privacyType);
+    int32_t GetPrivacyType(int32_t &privacyType);
+
+
+
+
+
+
     void RegisterStatusCallback();
     void RegisterWriteCallback();
     void RegisterTestCallback(const std::weak_ptr<RendererListener> &callback);
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
-    void UpdateWriteIndex();
+    int32_t UpdateWriteIndex();
     BufferDesc DequeueBuffer(size_t length);
     void WriteData();
     void WriteEmptyData();
@@ -73,11 +89,10 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
-    // LYH in plan
+    // LYH waiting for review
     std::weak_ptr<IStreamListener> streamListener_;
     std::weak_ptr<RendererListener> testCallback_;
-    AudioStreamParams audioStreamParams_;
-    AudioStreamType audioType_;
+    AudioProcessConfig processConfig_;
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;
     uint32_t byteSizePerFrame_ = 0;
@@ -87,6 +102,8 @@ private:
     int32_t needStart = 0;
     bool afterDrain = false;
     std::mutex updateIndexLock_;
+    bool resetTime_ = false;
+    uint64_t resetTimestamp_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -23,7 +23,8 @@ namespace OHOS {
 namespace AudioStandard {
 class PaCapturerStreamImpl : public ICapturerStream {
 public:
-    PaCapturerStreamImpl(pa_stream *paStream, AudioStreamParams params, pa_threaded_mainloop *mainloop);
+    PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop);
+    void InitParams();
     int32_t Start() override;
     int32_t Pause() override;
     int32_t Flush() override;
@@ -31,11 +32,17 @@ public:
     int32_t Stop() override;
     int32_t Release() override;
     int32_t CorkStream();
+    int32_t GetStreamFramesRead(uint64_t &framesRead) override;
+    int32_t GetCurrentTimeStamp(uint64_t &timeStamp) override;
+    int32_t GetLatency(uint64_t &latency) override;
+
     void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override;
     void RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback) override;
     BufferDesc DequeueBuffer(size_t length) override;
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override;
     int32_t GetMinimumBufferSize(size_t &minBufferSize) const override;
+    void GetByteSizePerFrame(size_t &byteSizePerFrame) const override;
+    void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
     uint32_t GetStreamIndex() override;
     int32_t DropBuffer() override;
     void AbortCallback(int32_t abortTimes) override;
@@ -49,19 +56,24 @@ private:
     static void PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
-    static void PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
 
     pa_stream *paStream_ = nullptr;
-    AudioStreamParams params_;
+    AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IReadCallback> readCallback_;
     int32_t streamCmdStatus_;
     int32_t streamFlushStatus_;
     State state_;
     uint32_t underFlowCount_;
-    bool isDrain_ = false;
     pa_threaded_mainloop *mainloop_;
+
+    uint32_t byteSizePerFrame_ = 0;
+    uint32_t spanSizeInFrame_ = 0;
+    uint32_t minBufferSize_ = 0;
+
+    size_t totalBytesRead_ = 0;
+    pa_sample_spec *sampleSpec_;
 
     // Only for debug
     int32_t abortFlag_ = 0;

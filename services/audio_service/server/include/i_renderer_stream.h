@@ -30,10 +30,24 @@ public:
 class IRendererStream : public IStream {
 public:
     virtual ~IRendererStream() = default;
+    virtual int32_t GetStreamFramesWritten(uint64_t &framesWritten) = 0;
+    virtual int32_t GetCurrentTimeStamp(uint64_t &timeStamp) = 0;
+    virtual int32_t GetLatency(uint64_t &latency) = 0;
+    virtual int32_t SetRate(int32_t rate) = 0;
+    virtual int32_t SetLowPowerVolume(float volume) = 0;
+    virtual int32_t GetLowPowerVolume(float &volume) = 0;
+    virtual int32_t SetAudioEffectMode(int32_t effectMode) = 0;
+    virtual int32_t GetAudioEffectMode(int32_t &effectMode) = 0;
+    virtual int32_t SetPrivacyType(int32_t privacyType) = 0;
+    virtual int32_t GetPrivacyType(int32_t &privacyType) = 0;
 
     virtual void RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback) = 0;
     virtual int32_t GetMinimumBufferSize(size_t &minBufferSize) const = 0;
+    virtual void GetByteSizePerFrame(size_t &byteSizePerFrame) const = 0;
+    virtual void GetSpanSizePerFrame(size_t &spanSizeInFrame) const = 0;
     virtual void AbortCallback(int32_t abortTimes) = 0;
+
+
 };
 } // namespace AudioStandard
 } // namespace OHOS

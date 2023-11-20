@@ -29,16 +29,68 @@ static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t ret
     return 0;
 }
 
-PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioStreamParams params, pa_threaded_mainloop *mainloop)
+PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop)
 {
     mainloop_ = mainloop;
     paStream_ = paStream;
-    params_ = params;
+    processConfig_ = processConfig;
 
     pa_stream_set_moved_callback(paStream, PAStreamMovedCb, (void *)this); // used to notify sink/source moved
     pa_stream_set_read_callback(paStream, PAStreamReadCb, (void *)this);
     pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
     pa_stream_set_started_callback(paStream, PAStreamSetStartedCb, (void *)this);
+
+    InitParams();
+}
+
+inline uint32_t PcmFormatToBits(uint8_t format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return 1; // 1 byte
+        case SAMPLE_S16LE:
+            return 2; // 2 byt
+        case SAMPLE_S24LE:
+            return 3; // 3 byte
+        case SAMPLE_S32LE:
+            return 4; // 4 byte
+        case SAMPLE_F32LE:
+            return 4; // 4 byte
+        default:
+            return 2; // 2 byte
+    }
+}
+
+void PaCapturerStreamImpl::InitParams()
+{
+    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
+        return;
+    }
+
+    // Get byte size per frame
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    sampleSpec_->channels = sampleSpec->channels;
+    sampleSpec_->format = sampleSpec->format;
+    sampleSpec_->rate = sampleSpec->rate;
+    if (sampleSpec->channels != processConfig_.streamInfo.channels) {
+        AUDIO_WARNING_LOG("Unequal channels, in server: %{public}d, in client: %{public}d", sampleSpec->channels,
+            processConfig_.streamInfo.channels);
+    }
+    if (static_cast<uint8_t>(sampleSpec->format) != processConfig_.streamInfo.format) {
+        AUDIO_WARNING_LOG("Unequal format, in server: %{public}d, in client: %{public}d", sampleSpec->format,
+            processConfig_.streamInfo.format);
+    }
+    uint32_t formatbyte = PcmFormatToBits(sampleSpec->format);
+    byteSizePerFrame_ = sampleSpec->channels * formatbyte;
+
+    // Get min buffer size in frame
+    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
+    if (bufferAttr == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
+        return;
+    }
+    minBufferSize_ = (size_t)bufferAttr->minreq;
+    spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
 }
 
 int32_t PaCapturerStreamImpl::Start()
@@ -81,6 +133,98 @@ int32_t PaCapturerStreamImpl::CorkStream()
     operation = pa_stream_cork(paStream_, 1, PAStreamCorkSuccessCb, (void *)this);
     pa_operation_unref(operation);
     return PA_ADAPTER_SUCCESS;
+}
+
+int32_t PaCapturerStreamImpl::GetStreamFramesRead(uint64_t &framesRead)
+{
+    if (byteSizePerFrame_ == 0) {
+        AUDIO_ERR_LOG("Error frame size");
+        return -1;
+    }
+    framesRead = totalBytesRead_ / byteSizePerFrame_;
+    return 0;
+}
+
+int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
+{
+    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
+        return PA_ADAPTER_PA_ERR;
+    }
+    pa_threaded_mainloop_lock(mainloop_);
+
+    pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
+    if (operation != nullptr) {
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainloop_);
+        }
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+    }
+
+    const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
+    if (info == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
+        pa_threaded_mainloop_unlock(mainloop_);
+        return -1;
+    }
+
+    if (pa_stream_get_time(paStream_, &timeStamp)) {
+        AUDIO_ERR_LOG("GetCurrentTimeStamp failed for AUDIO_SERVICE_CLIENT_RECORD");
+        pa_threaded_mainloop_unlock(mainloop_);
+        return -1;
+    }
+    int32_t uid = static_cast<int32_t>(getuid());
+
+    // 1013 is media_service's uid
+    int32_t media_service = 1013;
+    if (uid == media_service) {
+        timeStamp = pa_bytes_to_usec(totalBytesRead_, sampleSpec_);
+    }
+    pa_threaded_mainloop_unlock(mainloop_);
+    return 0;
+}
+
+int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
+{
+    // LYH in plan, 增加dataMutex的锁
+    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
+        return PA_ADAPTER_PA_ERR;
+    }
+    pa_usec_t paLatency {0};
+    pa_usec_t cacheLatency {0};
+    int32_t negative {0};
+
+    // Get PA latency
+    pa_threaded_mainloop_lock(mainloop_);
+    while (true) {
+        pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
+        if (operation != nullptr) {
+            pa_operation_unref(operation);
+        } else {
+            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+        }
+        if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
+            if (negative) {
+                latency = 0;
+                pa_threaded_mainloop_unlock(mainloop_);
+                return -1;
+            }
+            break;
+        }
+        AUDIO_INFO_LOG("waiting for audio latency information");
+        pa_threaded_mainloop_wait(mainloop_);
+    }
+    pa_threaded_mainloop_unlock(mainloop_);
+
+    // In plan, 怎么计算cacheLatency
+    // Get audio read cache latency
+    cacheLatency = pa_bytes_to_usec(minBufferSize_, sampleSpec_);
+
+    // Total latency will be sum of audio read cache latency + PA latency
+    latency = paLatency + cacheLatency;
+    AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64, latency, paLatency);
+    return 0;
 }
 
 int32_t PaCapturerStreamImpl::Flush()
@@ -150,6 +294,7 @@ BufferDesc PaCapturerStreamImpl::DequeueBuffer(size_t length)
     const void *tempBuffer = nullptr;
     pa_stream_peek(paStream_, &tempBuffer, &bufferDesc.bufLength);
     bufferDesc.buffer = static_cast<uint8_t *>(const_cast<void* >(tempBuffer));
+    totalBytesRead_ += bufferDesc.bufLength;
     AUDIO_INFO_LOG("PaCapturerStreamImpl::DequeueBuffer length %{public}zu", bufferDesc.bufLength);
     return bufferDesc;
 }
@@ -299,17 +444,18 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
 
 int32_t PaCapturerStreamImpl::GetMinimumBufferSize(size_t &minBufferSize) const
 {
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
-    }
+    minBufferSize = minBufferSize_;
+    return 0;
+}
 
-    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
-    if (bufferAttr == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
-        return PA_ADAPTER_ERR;
-    }
-    minBufferSize = (size_t)bufferAttr->minreq;
-    return PA_ADAPTER_SUCCESS;
+void PaCapturerStreamImpl::GetByteSizePerFrame(size_t &byteSizePerFrame) const
+{
+    byteSizePerFrame = byteSizePerFrame_;
+}
+
+void PaCapturerStreamImpl::GetSpanSizePerFrame(size_t &spanSizeInFrame) const
+{
+    spanSizeInFrame = spanSizeInFrame_;
 }
 
 uint32_t PaCapturerStreamImpl::GetStreamIndex()
