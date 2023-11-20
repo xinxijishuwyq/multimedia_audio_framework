@@ -100,7 +100,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsa
                 return router->name_ == "package_filter_router";
             };
             auto itr = find_if(mediaRenderRouters_.begin(), mediaRenderRouters_.end(), isPresent);
-            unique_ptr<AudioDeviceDescriptor> desc;
+            unique_ptr<AudioDeviceDescriptor> desc = make_unique<AudioDeviceDescriptor>();
             if (itr != mediaRenderRouters_.end()) {
                 desc = (*itr)->GetMediaRenderDevice(streamUsage, clientUID);
             }
