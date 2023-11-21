@@ -69,12 +69,12 @@ public:
 private:
     AudioStateManager() {};
     ~AudioStateManager() {};
-    sptr<AudioDeviceDescriptor> perferredMediaRenderDevice_ = nullptr;
-    sptr<AudioDeviceDescriptor> perferredCallRenderDevice_ = nullptr;
-    sptr<AudioDeviceDescriptor> perferredCallCaptureDevice_ = nullptr;
-    sptr<AudioDeviceDescriptor> perferredRingRenderDevice_ = nullptr;
-    sptr<AudioDeviceDescriptor> perferredRecordCaptureDevice_ = nullptr;
-    sptr<AudioDeviceDescriptor> perferredToneRenderDevice_ = nullptr;
+    sptr<AudioDeviceDescriptor> perferredMediaRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> perferredCallRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> perferredCallCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> perferredRingRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> perferredRecordCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    sptr<AudioDeviceDescriptor> perferredToneRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
 };
 
 } // namespace AudioStandard

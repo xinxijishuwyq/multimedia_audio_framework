@@ -2330,6 +2330,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
         UpdateDisplayName(audioDescriptor);
         connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
         audioDeviceManager_.AddNewDevice(audioDescriptor);
+        audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
     if (IsInputDevice(deviceDescriptor.deviceType_)) {
         AUDIO_INFO_LOG("Filling input device for %{public}d", deviceDescriptor.deviceType_);
@@ -2377,6 +2378,9 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
         it = find_if(it, connectedDevices_.end(), isPresent);
         if (it != connectedDevices_.end()) {
+            if ((*it)->deviceId_ == audioStateManager_.GetPerferredMediaRenderDevice()->deviceId_) {
+                audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+            }
             desc.push_back(*it);
             it = connectedDevices_.erase(it);
         }
