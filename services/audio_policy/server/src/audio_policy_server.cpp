@@ -2715,6 +2715,29 @@ std::vector<std::unique_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvaila
     }
 
     deviceDescs = audioPolicyService_.GetAvailableDevices(usage);
+
+    if (!hasSystemPermission) {
+        for (auto &desc : deviceDescs) {
+            desc->networkId_ = "";
+            desc->interruptGroupId_ = GROUP_ID_NONE;
+            desc->volumeGroupId_ = GROUP_ID_NONE;
+        }
+    }
+
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDevices = {};
+    for (auto &desc : deviceDescs) {
+        deviceDevices.push_back(new(std::nothrow) AudioDeviceDescriptor(*desc));
+    }
+
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
+    if (!hasBTPermission) {
+        audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDevices);
+        deviceDescs.clear();
+        for (auto &dec : deviceDevices) {
+            deviceDescs.push_back(make_unique<AudioDeviceDescriptor>(*dec));
+        }
+    }
+
     return deviceDescs;
 }
 
