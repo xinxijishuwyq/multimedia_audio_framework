@@ -35,7 +35,7 @@ public:
     OH_AudioStream_Result SetChannelCount(int32_t channelCount);
     OH_AudioStream_Result SetSampleFormat(AudioSampleFormat sampleFormat);
     OH_AudioStream_Result SetEncodingType(AudioEncodingType encodingType);
-
+    OH_AudioStream_Result SetPreferredFrameSize(int32_t frameSize);
     OH_AudioStream_Result SetLatencyMode(int32_t latencyMode);
 
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage, ContentType contentType);
@@ -47,6 +47,7 @@ public:
 private:
     int32_t streamType_;
     int32_t latencyMode_ = 0; // default value is normal mode
+    int32_t preferredFrameSize_ = 240; // initial clientBufferSizeInFrame
 
     // stream params
     int32_t samplingRate_ = SAMPLE_RATE_48000;

@@ -594,5 +594,9 @@ float AudioRendererGateway::GetSingleStreamVolume() const
 {
     return 0;
 }
+
+void AudioRendererGateway::SetPreferredFrameSize(int32_t frameSize)
+{    
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

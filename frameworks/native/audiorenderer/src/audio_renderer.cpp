@@ -1287,5 +1287,10 @@ int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 {
     return audioStream_->SetVolumeWithRamp(volume, duration);
 }
+
+void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
+{
+    audioStream_->SetPreferredFrameSize(frameSize);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

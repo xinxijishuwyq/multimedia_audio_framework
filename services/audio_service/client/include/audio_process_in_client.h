@@ -96,6 +96,8 @@ public:
     virtual int64_t GetFramesRead() = 0;
 
     virtual void SetApplicationCachePath(const std::string &cachePath) = 0;
+
+    virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

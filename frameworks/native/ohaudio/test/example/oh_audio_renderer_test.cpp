@@ -31,6 +31,7 @@ namespace AudioTestConstants {
     constexpr int32_t SECOND_ARG_IDX = 2;
     constexpr int32_t THIRD_ARG_IDX = 3;
     constexpr int32_t FOUR_ARG_IDX = 4;
+    constexpr int32_t FIFTH_ARG_IDX = 5;
     constexpr int32_t WAIT_INTERVAL = 1000;
 }
 
@@ -40,6 +41,7 @@ bool g_readEnd = false;
 int32_t g_samplingRate = 48000;
 int32_t g_channelCount = 2;
 int32_t g_latencyMode = 0;
+int32_t g_sampleFormat = 1;
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     void* userData,
@@ -73,11 +75,13 @@ void PlayerTest(char *argv[])
     OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);
     OH_AudioStreamBuilder_SetChannelCount(builder, g_channelCount);
     OH_AudioStreamBuilder_SetLatencyMode(builder, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder,(OH_AudioStream_SampleFormat)g_sampleFormat);
 
     OH_AudioRenderer_Callbacks callbacks;
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
     ret = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, nullptr);
     printf("setcallback ret: %d \n", ret);
+    ret = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder,960);
 
     // 3. create OH_AudioRenderer
     OH_AudioRenderer* audioRenderer;
@@ -126,11 +130,13 @@ int main(int argc, char *argv[])
     printf("sample rate =%s ", argv[AudioTestConstants::SECOND_ARG_IDX]);
     printf("channel count =%s \n", argv[AudioTestConstants::THIRD_ARG_IDX]);
     printf("latency mode =%s \n", argv[AudioTestConstants::FOUR_ARG_IDX]);
+    printf("sample Format = %s \n", argv[AudioTestConstants::FIFTH_ARG_IDX]);
 
     g_filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
     g_samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
     g_channelCount = atoi(argv[AudioTestConstants::THIRD_ARG_IDX]);
     g_latencyMode = atoi(argv[AudioTestConstants::FOUR_ARG_IDX]);
+    g_sampleFormat = atoi(argv[AudioTestConstants::FIFTH_ARG_IDX]);
 
     printf("filePATH: %s \n", g_filePath.c_str());
 
