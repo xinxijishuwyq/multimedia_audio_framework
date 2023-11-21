@@ -193,6 +193,8 @@ struct AudioBuffer {
         int16_t*  s16;
         uint8_t*  u8;
     };
+    size_t metaDataLength;
+    void *metaData;
 };
 
 struct AudioBufferConfig {
@@ -200,6 +202,7 @@ struct AudioBufferConfig {
     uint32_t channels;
     uint8_t format;
     uint64_t channelLayout;
+    AudioEncodingType encoding;
 };
 
 struct AudioEffectConfig {
