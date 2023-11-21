@@ -68,7 +68,7 @@ public:
 
 private:
     static A2dpSource *a2dpInstance_;
-    static AudioA2dpListener a2dpListener_;
+    static std::shared_ptr<AudioA2dpListener> a2dpListener_;
     static int connectionState_;
     static BluetoothRemoteDevice activeA2dpDevice_;
 };
@@ -97,7 +97,7 @@ public:
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;
-    static AudioHfpListener hfpListener_;
+    static std::shared_ptr<AudioHfpListener> hfpListener_;
 };
 }
 }
