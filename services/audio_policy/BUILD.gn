@@ -361,6 +361,7 @@ ohos_shared_library("audio_policy_client") {
     "../audio_service/client/src/microphone_descriptor.cpp",
     "client/src/audio_capturer_state_change_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
+    "client/src/audio_policy_callback_proxy.cpp",
     "client/src/audio_policy_manager.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_policy_proxy.cpp",

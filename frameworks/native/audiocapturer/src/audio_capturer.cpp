@@ -183,7 +183,8 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid)) {
+    if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid,
+        capturerInfo_.sourceType)) {
         AUDIO_ERR_LOG("recording create check failed");
         return ERR_PERMISSION_DENIED;
     }
@@ -623,6 +624,8 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
             return STREAM_VOICE_CALL;
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;
+        case SOURCE_TYPE_VOICE_CALL:
+            return STREAM_SOURCE_VOICE_CALL;
         default:
             return STREAM_MUSIC;
     }

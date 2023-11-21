@@ -151,7 +151,8 @@ public:
 
     int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
 
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid);
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+        SourceType sourceType = SOURCE_TYPE_MIC);
 
     bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state);

@@ -4714,6 +4714,10 @@ std::tuple<SourceType, uint32_t, uint32_t> AudioPolicyService::FetchTargetInfoFo
                 targetChannels, highestSupportedChannels);
             targetChannels = highestSupportedChannels;
         }
+    } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
+        targetSourceType = SOURCE_TYPE_VOICE_CALL;
+        targetRate = highestSupportedRate;
+        targetChannels = highestSupportedChannels;
     } else {
         // For normal sourcetype, continue to use the default value
         targetSourceType = SOURCE_TYPE_MIC;

@@ -926,6 +926,7 @@ static bool isValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_VOICE_COMMUNICATION:
         case SourceType::SOURCE_TYPE_VOICE_RECOGNITION:
         case SourceType::SOURCE_TYPE_WAKEUP:
+        case SourceType::SOURCE_TYPE_VOICE_CALL:
             return true;
         default:
             return false;

@@ -52,6 +52,7 @@ constexpr int PARAM1 = 1;
 constexpr int PARAM2 = 2;
 
 constexpr int TYPE_COMMUNICATION = 7;
+constexpr int TYPE_VOICE_CALL = 4;
 constexpr int TYPE_PLAYBACK_CAPTURE = 2;
 constexpr int TYPE_WAKEUP = 3;
 constexpr int TYPE_VOICE_RECOGNITION = 1;
@@ -2002,6 +2003,7 @@ bool AudioCapturerNapi::ParseCapturerInfo(napi_env env, napi_value root, AudioCa
             case TYPE_PLAYBACK_CAPTURE:
             case TYPE_WAKEUP:
             case TYPE_COMMUNICATION:
+            case TYPE_VOICE_CALL:
                 capturerInfo->sourceType = static_cast<SourceType>(intValue);
                 break;
             default:

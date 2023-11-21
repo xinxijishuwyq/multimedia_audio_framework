@@ -112,7 +112,8 @@ private:
         {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
         {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
         {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
-        {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP}
+        {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
+        {AudioStreamType::STREAM_SOURCE_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_CALL},
     };
     std::mutex lock_;
     bool isValid_ = true;

@@ -24,6 +24,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_info.h"
 #include "hisysevent.h"
 #include <set>
 
@@ -1003,8 +1004,7 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
             pa_threaded_mainloop_once_unlocked(thiz->mMainLoop,
                 []([[maybe_unused]] pa_threaded_mainloop *m, void *userdata) {
                     g_audioServiceAdapterCallback->OnWakeupCapturerStop();
-                },
-                nullptr);
+                }, nullptr);
         }
     }
 }

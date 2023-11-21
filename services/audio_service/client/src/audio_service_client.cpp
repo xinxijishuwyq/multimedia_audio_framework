@@ -76,7 +76,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_ULTRASONIC, "ultrasonic"},
     {STREAM_WAKEUP, "wakeup"},
     {STREAM_VOICE_MESSAGE, "voice_message"},
-    {STREAM_NAVIGATION, "navigation"}
+    {STREAM_NAVIGATION, "navigation"},
+    {STREAM_SOURCE_VOICE_CALL, "source_voice_call"}
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -678,9 +679,10 @@ void AudioServiceClient::SetApplicationCachePath(const std::string cachePath)
     cachePath_ = realPath;
 }
 
-bool AudioServiceClient::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
+bool AudioServiceClient::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    SourceType sourceType)
 {
-    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
+    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
 }
 
 bool AudioServiceClient::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,

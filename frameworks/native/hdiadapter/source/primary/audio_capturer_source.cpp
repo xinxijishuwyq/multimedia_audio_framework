@@ -298,6 +298,7 @@ AudioCapturerSource *AudioCapturerSource::GetInstance(const std::string &halName
 
     switch (sourceType) {
         case SourceType::SOURCE_TYPE_MIC:
+        case SourceType::SOURCE_TYPE_VOICE_CALL:
             return GetMicInstance();
         case SourceType::SOURCE_TYPE_WAKEUP:
             if (!strcmp(sourceName, "Built_in_wakeup_mirror")) {
@@ -331,6 +332,9 @@ static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceTy
             break;
         case SOURCE_TYPE_VOICE_RECOGNITION:
             hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
