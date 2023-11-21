@@ -318,7 +318,10 @@ public:
         ContentType contentType = ContentType::CONTENT_TYPE_MUSIC;
         StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
 
-        if (argc > ARGS_COUNT_THREE) {
+        float speed = 1.0;
+        if (argc == ARGS_COUNT_THREE) {
+            speed = static_cast<float>(atof(argv[ARGS_COUNT_TWO]));
+        } else if (argc > ARGS_COUNT_THREE) {
             contentType = static_cast<ContentType>(strtol(argv[ARGS_INDEX_TWO], NULL, numBase));
             streamUsage = static_cast<StreamUsage>(strtol(argv[ARGS_INDEX_THREE], NULL, numBase));
         }
@@ -367,6 +370,7 @@ public:
             fclose(wavFile);
             return false;
         }
+        audioRenderer->SetSpeed(speed);
 
         if (!StartRender(audioRenderer, wavFile)) {
             AUDIO_ERR_LOG("AudioRendererTest: Start render failed");
@@ -398,8 +402,8 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    if (argc < ARGS_COUNT_TWO || argc == ARGS_COUNT_THREE) {
-        AUDIO_ERR_LOG("AudioRendererTest: incorrect argc. Enter either 2 or 4 args");
+    if (argc < ARGS_COUNT_TWO) {
+        AUDIO_ERR_LOG("AudioRendererTest: incorrect argc. Enter either 2 or 3 or 4 args");
         return 0;
     }
 

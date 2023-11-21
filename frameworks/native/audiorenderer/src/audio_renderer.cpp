@@ -30,6 +30,10 @@ namespace AudioStandard {
 
 static const int32_t MAX_VOLUME_LEVEL = 15;
 static const int32_t CONST_FACTOR = 100;
+#ifdef SONIC_ENABLE
+static const int32_t MAX_BUFFER_SIZE = 200000;
+static const float MINIMUM_SPEED_CHANGE = 0.01;
+#endif
 static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -105,6 +109,12 @@ AudioRendererPrivate::~AudioRendererPrivate()
 
     RemoveRendererPolicyServiceDiedCallback();
 
+#ifdef SONIC_ENABLE
+    if (sonicStream_ != nullptr) {
+        sonicDestroyStream(sonicStream_);
+        sonicStream_ = nullptr;
+    }
+#endif
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -272,6 +282,31 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
     return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
 }
 
+inline size_t GetFormatSize(const AudioStreamParams& info)
+{
+    size_t result = 0;
+    size_t bitWidthSize = 0;
+    switch (info.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            bitWidthSize = 2; // size is 2
+            break;
+    }
+    result = bitWidthSize * info.channels;
+    return result;
+}
+
 int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParams)
 {
     AudioRenderer *renderer = this;
@@ -290,6 +325,12 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     if (isFastRenderer_) {
         SetSelfRendererStateCallback();
     }
+
+#ifdef SONIC_ENABLE
+    GetBufferSize(bufferSize_);
+    formatSize_ = GetFormatSize(audioStreamParams);
+    sonicStream_ = sonicCreateStream(audioStreamParams.samplingRate, audioStreamParams.channels);
+#endif
     return SUCCESS;
 }
 
@@ -518,9 +559,52 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
     return audioStream_->StartAudioStream(cmdType);
 }
 
+#ifdef SONIC_ENABLE
+int32_t AudioRendererPrivate::ChangeSpeed(uint8_t *buffer, int32_t bufferSize)
+{
+    int32_t numSamples = bufferSize/formatSize_;
+    int32_t res = sonicWriteShortToStream(sonicStream_, (short*)(buffer), numSamples);
+    if (res != 1) {
+        AUDIO_ERR_LOG("sonic write short to stream failed: %{public}d", res);
+        return 0;
+    }
+    auto outBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+    int32_t outSamples = sonicReadShortFromStream(sonicStream_, (short*)(outBuffer.get()), MAX_BUFFER_SIZE);
+    if (outSamples == 0) {
+        AUDIO_INFO_LOG("sonic stream is not full continue to write %{public}d", outSamples);
+        return bufferSize;
+    }
+
+    size_t outBufferSize = outSamples * formatSize_;
+    int32_t writeIndex = 0;
+    int32_t writeSize = bufferSize_;
+    while (outBufferSize > 0) {
+        if (outBufferSize < bufferSize_) {
+            writeSize = outBufferSize;
+        }
+        int32_t writtenSize = audioStream_->Write(outBuffer.get()+writeIndex, writeSize);
+        if (writtenSize < 0) return writtenSize;
+        if (writtenSize == 0) {
+            AUDIO_WARNING_LOG("writeen size is zero");
+            continue;
+        }
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(outBuffer.get() + writeIndex), writtenSize);
+        writeIndex += writtenSize;
+        outBufferSize -= writtenSize;
+    }
+
+    return bufferSize;
+}
+#endif
+
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
+#ifdef SONIC_ENABLE
+    if ((speed_ - 1 > MINIMUM_SPEED_CHANGE || 1 - speed_ > MINIMUM_SPEED_CHANGE) && sonicStream_ != nullptr) {
+        return ChangeSpeed(buffer, bufferSize);
+    }
+#endif
     int32_t size = audioStream_->Write(buffer, bufferSize);
     if (size > 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), size);
@@ -1438,6 +1522,29 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
             }
         }
     }
+}
+
+int32_t AudioRendererPrivate::SetSpeed(float speed)
+{
+    AUDIO_INFO_LOG("set speed %{public}f", speed);
+    CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
+        ERR_INVALID_PARAM, "invaild speed index");
+    speed_ = speed;
+#ifdef SONIC_ENABLE
+    CHECK_AND_RETURN_RET_LOG(sonicStream_ != nullptr, ERROR, "change speed failed, sonicStream is nullptr");
+    sonicSetSpeed(sonicStream_, speed_);
+    return audioStream_->SetSpeed(speed_);
+#endif
+    AUDIO_WARNING_LOG("SetSpeed: sonic cannot be used");
+    return SUCCESS;
+}
+
+float AudioRendererPrivate::GetSpeed()
+{
+#ifdef SONIC_ENABLE
+    return audioStream_->GetSpeed();
+#endif
+    return speed_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

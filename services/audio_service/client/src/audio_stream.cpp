@@ -173,7 +173,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             resetTimestamp_ = paTimeStamp;
         }
         if (eMode_ == AUDIO_MODE_PLAYBACK) {
-            timestamp.framePosition = GetStreamFramesWritten();
+            timestamp.framePosition = GetStreamFramesWritten() * speed_;
         } else {
             timestamp.framePosition = GetStreamFramesRead();
         }
@@ -1172,6 +1172,17 @@ int64_t AudioStream::GetFramesWritten()
 int64_t AudioStream::GetFramesRead()
 {
     return GetStreamFramesRead();
+}
+
+int32_t AudioStream::SetSpeed(float speed)
+{
+    speed_ = speed;
+    return SetStreamSpeed(speed);
+}
+
+float AudioStream::GetSpeed()
+{
+    return GetStreamSpeed();
 }
 
 int32_t AudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)

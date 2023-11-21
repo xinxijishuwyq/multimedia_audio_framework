@@ -189,6 +189,24 @@ OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* 
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_GetSpeed(OH_AudioRenderer* renderer, float* speed)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    *speed = audioRenderer->GetSpeed();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer* renderer, float speed)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    if (audioRenderer->SetSpeed(speed)) {
+        return AUDIOSTREAM_SUCCESS;
+    } else {
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
+}
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -339,6 +357,18 @@ int32_t OHAudioRenderer::Enqueue(const BufferDesc &bufDesc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->Enqueue(bufDesc);
+}
+
+int32_t OHAudioRenderer::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->SetSpeed(speed);
+}
+
+float OHAudioRenderer::GetSpeed()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetSpeed();
 }
 
 void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)

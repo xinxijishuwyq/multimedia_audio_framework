@@ -577,6 +577,10 @@ public:
 
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
 
+    int32_t SetStreamSpeed(float speed);
+
+    float GetStreamSpeed();
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -709,6 +713,7 @@ private:
     AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
+    float speed_ = 1.0;
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
     int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);

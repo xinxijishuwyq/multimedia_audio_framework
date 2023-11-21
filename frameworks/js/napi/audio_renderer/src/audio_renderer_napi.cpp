@@ -550,6 +550,8 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setAudioEffectMode", SetAudioEffectMode),
         DECLARE_NAPI_FUNCTION("setChannelBlendMode", SetChannelBlendMode),
         DECLARE_NAPI_FUNCTION("setVolumeWithRamp", SetVolumeWithRamp),
+        DECLARE_NAPI_FUNCTION("setSpeed", SetSpeed),
+        DECLARE_NAPI_FUNCTION("getSpeed", GetSpeed),
         DECLARE_NAPI_GETTER("state", GetState)
     };
 
@@ -3637,6 +3639,68 @@ napi_value AudioRendererNapi::SetVolumeWithRamp(napi_env env, napi_callback_info
     if (ret == ERR_ILLEGAL_STATE) {
         AudioCommonNapi::throwError(env, NAPI_ERR_ILLEGAL_STATE);
     }
+    return result;
+}
+
+napi_value AudioRendererNapi::SetSpeed(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    void *native = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRendererNapi = reinterpret_cast<AudioRendererNapi *>(native);
+    if (status != napi_ok || audioRendererNapi == nullptr) {
+        AUDIO_ERR_LOG("SetSpeed unwrap failure!");
+        return result;
+    }
+
+    napi_valuetype speedType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &speedType);
+    if (speedType != napi_number) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    double speed;
+    napi_get_value_double(env, argv[PARAM0], &speed);
+    if (speed < MIN_STREAM_SPEED_LEVEL || speed > MAX_STREAM_SPEED_LEVEL) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
+
+    int32_t ret = audioRendererNapi->audioRenderer_->SetSpeed(static_cast<float>(speed));
+    if (ret == ERR_ILLEGAL_STATE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_ILLEGAL_STATE);
+    }
+    return result;
+}
+
+napi_value AudioRendererNapi::GetSpeed(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value result = nullptr;
+    void *native = nullptr;
+
+    GET_PARAMS(env, info, ARGS_ONE);
+
+    status = napi_unwrap(env, thisVar, &native);
+    auto *audioRendererNapi = reinterpret_cast<AudioRendererNapi *>(native);
+    if (status != napi_ok || audioRendererNapi == nullptr) {
+        AUDIO_ERR_LOG("GetSpeed unwrap failure!");
+        return result;
+    }
+
+    double ret = audioRendererNapi->audioRenderer_->GetSpeed();
+
+    napi_create_double(env, ret, &result);
     return result;
 }
 } // namespace AudioStandard

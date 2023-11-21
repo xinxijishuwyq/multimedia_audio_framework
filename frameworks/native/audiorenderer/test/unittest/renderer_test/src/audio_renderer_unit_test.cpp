@@ -6277,5 +6277,54 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFramesWritten_001, TestSize.Leve
 
     audioRenderer->Release();
 }
+
+/**
+ * @tc.name  : Test SetSpeed
+ * @tc.number: Audio_Renderer_SetSpeed_001
+ * @tc.desc  : Test SetSpeed interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetSpeed(0.5);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test GetSpeed
+ * @tc.number: Audio_Renderer_GetSpeed_001
+ * @tc.desc  : Test GetSpeed interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSpeed_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    float speed = audioRenderer->GetSpeed();
+    EXPECT_EQ(1.0, speed);
+
+    ret = audioRenderer->SetSpeed(4.0);
+    EXPECT_EQ(SUCCESS, ret);
+
+    speed = audioRenderer->GetSpeed();
+    EXPECT_EQ(4.0, speed);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

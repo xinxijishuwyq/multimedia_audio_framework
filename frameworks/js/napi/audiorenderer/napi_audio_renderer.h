@@ -115,6 +115,8 @@ private:
     static napi_value SetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetChannelBlendMode(napi_env env, napi_callback_info info);
     static napi_value SetVolumeWithRamp(napi_env env, napi_callback_info info);
+    static napi_value SetSpeed(napi_env env, napi_callback_info info);
+    static napi_value GetSpeed(napi_env env, napi_callback_info info);
     static napi_value GetState(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);

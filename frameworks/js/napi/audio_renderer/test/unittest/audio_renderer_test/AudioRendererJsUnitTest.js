@@ -330,4 +330,23 @@ describe("AudioRendererJsUnitTest", function() {
         }
     })
 
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_SET_SPEED_TEST_001
+     * @tc.desc:setSpeed and getSpeed success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_SET_SPEED_TEST_001', 0, async function (done) {
+        try {
+            let speed = 2.0
+            audioRenderer.setSpeed(speed);
+            let data = audioRenderer.getSpeed();
+            expect(data).assertEqual(speed);
+            done();
+        } catch (error) {
+            console.error(`setSpeed ERROR: ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
 })

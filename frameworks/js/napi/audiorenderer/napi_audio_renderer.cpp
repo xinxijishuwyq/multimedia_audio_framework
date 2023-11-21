@@ -89,6 +89,8 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("setAudioEffectMode", SetAudioEffectMode),
         DECLARE_NAPI_FUNCTION("setChannelBlendMode", SetChannelBlendMode),
         DECLARE_NAPI_FUNCTION("setVolumeWithRamp", SetVolumeWithRamp),
+        DECLARE_NAPI_FUNCTION("setSpeed", SetSpeed),
+        DECLARE_NAPI_FUNCTION("getSpeed", GetSpeed),
         DECLARE_NAPI_GETTER("state", GetState),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
@@ -1307,6 +1309,48 @@ napi_value NapiAudioRenderer::SetVolumeWithRamp(napi_env env, napi_callback_info
         napiAudioRenderer->audioRenderer_->SetVolumeWithRamp(static_cast<float>(volume), duration);
     CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE,
         ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "err illegal state");
+    return result;
+}
+
+napi_value NapiAudioRenderer::SetSpeed(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("SetSpeed");
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "valueType param0 invaild");
+
+    double speed;
+    NapiParamUtils::GetValueDouble(env, speed, argv[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
+        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "invaild speed index");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+    int32_t ret = napiAudioRenderer->audioRenderer_->SetSpeed(static_cast<float>(speed));
+    CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE,
+        ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "err illegal state");
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetSpeed(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("GetSpeed");
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    double ret = napiAudioRenderer->audioRenderer_->GetSpeed();
+    napi_create_double(env, ret, &result);
     return result;
 }
 

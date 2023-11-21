@@ -395,6 +395,18 @@ int64_t FastAudioStream::GetFramesRead()
     return result;
 }
 
+int32_t FastAudioStream::SetSpeed(float speed)
+{
+    AUDIO_ERR_LOG("SetSpeed  is not supported");
+    return ERR_OPERATION_FAILED;
+}
+
+float FastAudioStream::GetSpeed()
+{
+    AUDIO_ERR_LOG("GetSpeed  is not supported");
+    return static_cast<float>(ERROR);
+}
+
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
 {
     AUDIO_INFO_LOG("StartAudioStream in.");
