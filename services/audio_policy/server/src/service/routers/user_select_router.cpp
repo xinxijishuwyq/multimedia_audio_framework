@@ -20,7 +20,6 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> perDev_ =

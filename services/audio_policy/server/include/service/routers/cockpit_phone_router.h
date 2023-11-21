@@ -25,6 +25,11 @@ public:
     std::string name_ = "cockpit_phone_router";
     CockpitPhoneRouter() {};
     ~CockpitPhoneRouter() {};
+    std::string GetClassName() override
+    {
+        return name_;
+    }
+
     std::unique_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
     std::unique_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
     std::unique_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) override;

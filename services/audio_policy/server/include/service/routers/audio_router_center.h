@@ -26,6 +26,8 @@
 #include "pair_device_router.h"
 #include "default_router.h"
 #include "audio_stream_collector.h"
+#include "audio_strategy_router_parser.h"
+#include "audio_usage_strategy_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,41 +38,60 @@ public:
         static AudioRouterCenter audioRouterCenter;
         return audioRouterCenter;
     }
-
     std::unique_ptr<AudioDeviceDescriptor> FetchOutputDevice(StreamUsage streamUsage, int32_t clientUID);
     std::unique_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID);
+
 private:
     AudioRouterCenter()
     {
-        // media render router
-        mediaRenderRouters_.push_back(std::make_unique<UserSelectRouter>());
-        mediaRenderRouters_.push_back(std::make_unique<PrivacyPriorityRouter>());
-        mediaRenderRouters_.push_back(std::make_unique<PublicPriorityRouter>());
-        mediaRenderRouters_.push_back(std::make_unique<StreamFilterRouter>());
-        mediaRenderRouters_.push_back(std::make_unique<DefaultRouter>());
+        unique_ptr<AudioStrategyRouterParser> audioStrategyRouterParser = make_unique<AudioStrategyRouterParser>();
+        if (audioStrategyRouterParser->LoadConfiguration()) {
+            AUDIO_INFO_LOG("audioStrategyRouterParser load configuration successfully.");
+            audioStrategyRouterParser->Parse();
+            for (auto &mediaRounter : audioStrategyRouterParser->mediaRenderRouters_) {
+                AUDIO_INFO_LOG("mediaRenderRouters_, class %{public}s", mediaRounter->GetClassName().c_str());
+                mediaRenderRouters_.push_back(std::move(mediaRounter));
+            }
+            for (auto &callRenderRouter : audioStrategyRouterParser->callRenderRouters_) {
+                AUDIO_INFO_LOG("callRenderRouters_, class %{public}s", callRenderRouter->GetClassName().c_str());
+                callRenderRouters_.push_back(std::move(callRenderRouter));
+            }
+            for (auto &callCaptureRouter : audioStrategyRouterParser->callCaptureRouters_) {
+                AUDIO_INFO_LOG("callCaptureRouters_, class %{public}s", callCaptureRouter->GetClassName().c_str());
+                callCaptureRouters_.push_back(std::move(callCaptureRouter));
+            }
+            for (auto &ringRenderRouter : audioStrategyRouterParser->ringRenderRouters_) {
+                AUDIO_INFO_LOG("ringRenderRouters_, class %{public}s", ringRenderRouter->GetClassName().c_str());
+                ringRenderRouters_.push_back(std::move(ringRenderRouter));
+            }
+            for (auto &toneRenderRouter : audioStrategyRouterParser->toneRenderRouters_) {
+                AUDIO_INFO_LOG("toneRenderRouters_, class %{public}s", toneRenderRouter->GetClassName().c_str());
+                toneRenderRouters_.push_back(std::move(toneRenderRouter));
+            }
+            for (auto &recordCaptureRouter : audioStrategyRouterParser->recordCaptureRouters_) {
+                AUDIO_INFO_LOG("recordCaptureRouters_, class %{public}s", recordCaptureRouter->GetClassName().c_str());
+                recordCaptureRouters_.push_back(std::move(recordCaptureRouter));
+            }
+        }
 
-        // record capture router
-        recordCaptureRouters_.push_back(std::make_unique<UserSelectRouter>());
-        recordCaptureRouters_.push_back(std::make_unique<PrivacyPriorityRouter>());
-        recordCaptureRouters_.push_back(std::make_unique<PublicPriorityRouter>());
-        recordCaptureRouters_.push_back(std::make_unique<StreamFilterRouter>());
-        recordCaptureRouters_.push_back(std::make_unique<DefaultRouter>());
+        unique_ptr<AudioUsageStrategyParser> audioUsageStrategyParser = make_unique<AudioUsageStrategyParser>();
+        if (audioUsageStrategyParser->LoadConfiguration()) {
+            AUDIO_INFO_LOG("AudioUsageStrategyParser load configuration successfully.");
+            audioUsageStrategyParser->Parse();
+            renderConfigMap_ = audioUsageStrategyParser->renderConfigMap_;
+            capturerConfigMap_ = audioUsageStrategyParser->capturerConfigMap_;
+            for (auto &renderConfig : renderConfigMap_) {
+                AUDIO_INFO_LOG("streamusage:%{public}d, routername:%{public}s",
+                    renderConfig.first, renderConfig.second.c_str());
+            }
+            for (auto &capturerConfig : capturerConfigMap_) {
+                AUDIO_INFO_LOG("sourceType:%{public}d, sourceTypeName:%{public}s",
+                    capturerConfig.first, capturerConfig.second.c_str());
+            }
+        }
+    }
 
-        // call render router
-        callRenderRouters_.push_back(std::make_unique<UserSelectRouter>());
-        callRenderRouters_.push_back(std::make_unique<PrivacyPriorityRouter>());
-        callRenderRouters_.push_back(std::make_unique<CockpitPhoneRouter>());
-        callRenderRouters_.push_back(std::make_unique<DefaultRouter>());
-
-        // call capture router
-        callCaptureRouters_.push_back(std::make_unique<UserSelectRouter>());
-        callCaptureRouters_.push_back(std::make_unique<PairDeviceRouter>());
-        callCaptureRouters_.push_back(std::make_unique<PrivacyPriorityRouter>());
-        callCaptureRouters_.push_back(std::make_unique<CockpitPhoneRouter>());
-        callCaptureRouters_.push_back(std::make_unique<DefaultRouter>());
-    };
-
-    ~AudioRouterCenter() {};
+    ~AudioRouterCenter() {}
 
     unique_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID);
     unique_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID);
@@ -85,8 +106,6 @@ private:
     static unordered_map<StreamUsage, string> renderConfigMap_;
     static unordered_map<SourceType, string> capturerConfigMap_;
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
-
 #endif // ST_AUDIO_ROUTER_CENTER_H
