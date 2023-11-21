@@ -417,6 +417,18 @@ int AudioManagerStub::HandleOffloadSetBufferSize(MessageParcel &data, MessagePar
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t size = data.ReadInt32();
+    std::vector<bool> spatializationState;
+    for (int32_t i = 0; i < size; i++) {
+        spatializationState.push_back(data.ReadBool());
+    }
+    int32_t ret = UpdateSpatializationState(spatializationState);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);

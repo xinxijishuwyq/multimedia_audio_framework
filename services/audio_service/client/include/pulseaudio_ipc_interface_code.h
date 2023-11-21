@@ -55,7 +55,8 @@ namespace AudioStandard {
         OFFLOAD_DRAIN = 30,
         OFFLOAD_GET_PRESENTATION_POSITION = 31,
         OFFLOAD_SET_BUFFER_SIZE = 32,
-        AUDIO_SERVER_CODE_MAX = OFFLOAD_SET_BUFFER_SIZE,
+        UPDATE_SPATIALIZATION_STATE = 33,
+        AUDIO_SERVER_CODE_MAX = UPDATE_SPATIALIZATION_STATE,
     };
 } // namespace AudioStandard
 } // namespace OHOS

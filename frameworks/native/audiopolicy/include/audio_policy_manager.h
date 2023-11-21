@@ -35,6 +35,9 @@
 #include "i_standard_client_tracker.h"
 #include "audio_log.h"
 #include "microphone_descriptor.h"
+#include "audio_spatialization_manager.h"
+#include "audio_spatialization_state_change_listener_stub.h"
+#include "i_standard_spatialization_state_change_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -262,6 +265,39 @@ public:
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage);
 
+    bool IsSpatializationEnabled();
+
+    int32_t SetSpatializationEnabled(const bool enable);
+
+    bool IsHeadTrackingEnabled();
+
+    int32_t SetHeadTrackingEnabled(const bool enable);
+
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
+
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
+
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid);
+
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid);
+
+    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage);
+
+    bool IsSpatializationSupported();
+
+    bool IsSpatializationSupportedForDevice(const std::string address);
+
+    bool IsHeadTrackingSupported();
+
+    bool IsHeadTrackingSupportedForDevice(const std::string address);
+
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
+
+    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+        const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback);
+
 private:
     AudioPolicyManager()
     {
@@ -274,12 +310,24 @@ private:
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
     std::mutex ringerModelistenerStubMutex_;
+    std::mutex spatializationEnabledListenerMutex_;
+    std::mutex headTrackingEnabledListenerMutex_;
+    std::mutex spatializationStateListenerMutex_;
     sptr<AudioVolumeKeyEventCallbackStub> volumeKeyEventListenerStub_ = nullptr;
     sptr<AudioRingerModeUpdateListenerStub> ringerModelistenerStub_ = nullptr;
     sptr<AudioRendererStateChangeListenerStub> rendererStateChangelistenerStub_ = nullptr;
     sptr<AudioCapturerStateChangeListenerStub> capturerStateChangelistenerStub_ = nullptr;
+    sptr<AudioSpatializationEnabledChangeListenerStub> spatializationEnabledChangeListenerStub_ = nullptr;
+    sptr<AudioHeadTrackingEnabledChangeListenerStub> headTrackingEnabledChangeListenerStub_ = nullptr;
+    sptr<AudioSpatializationStateChangeListenerStub> spatializationStateChangeListenerStub_ = nullptr;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::unordered_map<int32_t, OHOS::wptr<AudioCapturerStateChangeListenerStub>> capturerStateChangeCBMap_;
+    static std::unordered_map<int32_t, OHOS::wptr<AudioSpatializationEnabledChangeListenerStub>>
+        spatializationEnabledChangeCBMap_;
+    static std::unordered_map<int32_t, OHOS::wptr<AudioHeadTrackingEnabledChangeListenerStub>>
+        headTrackingEnabledChangeCBMap_;
+    static std::unordered_map<uint32_t, OHOS::wptr<AudioSpatializationStateChangeListenerStub>>
+        spatializationStateChangeCBMap_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

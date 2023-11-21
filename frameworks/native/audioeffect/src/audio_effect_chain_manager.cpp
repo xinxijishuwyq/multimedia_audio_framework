@@ -55,7 +55,7 @@ int32_t EffectChainManagerGetFrameLen()
     return audioEffectChainManager->GetFrameLen();
 }
 
-bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
+bool EffectChainManagerExist(const char *sceneType, const char *effectMode, const char *spatializationEnabled)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
@@ -67,7 +67,12 @@ bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
     if (effectMode) {
         effectModeString = effectMode;
     }
-    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString);
+    std::string spatializationEnabledString = "";
+    if (spatializationEnabled) {
+        spatializationEnabledString = spatializationEnabled;
+    }
+    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString,
+        spatializationEnabledString);
 }
 
 int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
@@ -138,12 +143,12 @@ bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
 }
 
 bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
-    const char *sinkChannelLayout)
+    const char *sinkChannelLayout, const char *sinkSpatializationEnabled)
 {
     if (sinkChannels == DEFAULT_NUM_CHANNEL) {
         return false;
     }
-    if (!EffectChainManagerExist(sinkSceneType, sinkSceneMode)) {
+    if (!EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled)) {
         return true;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -760,7 +765,8 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(std::string scen
     return SUCCESS;
 }
 
-bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
+bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode,
+    std::string spatializationEnabled)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, false, "AudioEffectChainManager has not been initialized");
@@ -773,6 +779,9 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     }
 #endif
 
+    if ((spatializationEnabled == "0") && (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+        return false;
+    }
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     if (!SceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
         return false;
@@ -854,5 +863,21 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneTy
 
     return SUCCESS;
 }
+
+int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spatializationState)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    if (spatializationState.size() != SIZE_OF_SPATIALIZATION_STATE) {
+        return ERROR;
+    }
+    if (spatializatonEnabled_ != spatializationState[0]) {
+        spatializatonEnabled_ = spatializationState[0];
+    }
+    if (headTrackingEnabled_ != spatializationState[1]) {
+        headTrackingEnabled_ = spatializationState[1];
+    }
+    return SUCCESS;
+}
+
 }
 }

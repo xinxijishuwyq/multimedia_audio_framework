@@ -37,6 +37,22 @@ constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64; // max conf for sc
 constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32; // max num of effectChain
 constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of effect per effectChain
 
+enum AudioSpatialDeviceType {
+    EARPHONE_TYPE_NONE = 0,
+    EARPHONE_TYPE_INEAR,
+    EARPHONE_TYPE_HALF_INEAR,
+    EARPHONE_TYPE_HEADPHONE,
+    EARPHONE_TYPE_GLASSES,
+    EARPHONE_TYPE_OTHERS,
+};
+
+struct AudioSpatialDeviceState {
+    std::string address;
+    bool isSpatializationSupported;
+    bool isHeadTrackingSupported;
+    AudioSpatialDeviceType spatialDeviceType;
+};
+
 struct Library {
     std::string name;
     std::string path;

@@ -61,6 +61,8 @@ ohos_shared_library("audio") {
     "audio_manager/src/audio_rounting_available_devicechange_callback.cpp",
     "audio_manager/src/audio_routing_manager_callback_napi.cpp",
     "audio_manager/src/audio_routing_manager_napi.cpp",
+    "audio_manager/src/audio_spatialization_manager_callback_napi.cpp",
+    "audio_manager/src/audio_spatialization_manager_napi.cpp",
     "audio_manager/src/audio_stream_mgr_napi.cpp",
     "audio_manager/src/audio_volume_group_manager_napi.cpp",
     "audio_manager/src/audio_volume_key_event_napi.cpp",

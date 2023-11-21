@@ -104,6 +104,8 @@ public:
     
     int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
 
+    int32_t UpdateSpatializationState(std::vector<bool> spatializationState) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
