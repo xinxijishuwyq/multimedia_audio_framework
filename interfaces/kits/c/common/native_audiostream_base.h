@@ -413,6 +413,14 @@ typedef enum {
      */
     AUDIOSTREAM_SOURCE_TYPE_PLAYBACK_CAPTURE = 2,
     /**
+     * Voice call source type.
+     *
+     * @permission ohos.permission.RECORD_VOICE_CALL
+     * @systemapi
+     * @since 11
+     */
+    AUDIOSTREAM_SOURCE_TYPE_VOICE_CALL = 4,
+    /**
      * Voice communication source type.
      *
      * @since 10
