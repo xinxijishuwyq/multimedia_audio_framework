@@ -110,21 +110,6 @@ ohos_executable("audio_renderer_test") {
   subsystem_name = "multimedia"
 }
 
-ohos_executable("audio_renderer_3d_test") {
-  install_enable = false
-
-  sources = [ "test/example/audio_renderer_3d_test.cpp" ]
-
-  configs = [ ":audio_renderer_config" ]
-
-  deps = [ ":audio_renderer" ]
-
-  external_deps = [ "hilog:libhilog" ]
-
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
-}
-
 ohos_executable("audio_latency_accuracy_test") {
   install_enable = false
 

@@ -52,7 +52,7 @@ static bool LoadFromXML(Library &lib, AudioChannelLayout &layout)
     return true;
 }
 
-int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps) { 
+int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps) {
     if (encoding_ == ENCODING_AUDIOVIVID)
         return channels * AUDIO_VIVID_SAMPLES * bps;
     AUDIO_INFO_LOG("encodingType is not supported."); // never run
@@ -106,13 +106,13 @@ bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const 
         return false;
     }
     if (pcmBuffer.bufLength - GetPcmLength(inChannel_, bps_) != 0) {
-        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}d, excepted %{public}d", 
-        pcmBuffer.bufLength, GetPcmLength(inChannel_, bps_));
+        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}d, excepted %{public}d",
+            pcmBuffer.bufLength, GetPcmLength(inChannel_, bps_));
         return false;
     }
     if (metaBuffer.bufLength - GetMetaLength() != 0) {
-        AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}d, excepted %{public}d", 
-        metaBuffer.bufLength, GetMetaLength());
+        AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}d, excepted %{public}d",
+            metaBuffer.bufLength, GetMetaLength());
         return false;
     }
     return true;
@@ -222,7 +222,7 @@ void LibLoader::SetIOBufferConfig(bool isInput, uint8_t format, uint32_t channel
     }
 }
 
-bool LibLoader::AddAlgoHandle(Library library) 
+bool LibLoader::AddAlgoHandle(Library library)
 {
     AudioEffectDescriptor descriptor = {.libraryName = library.name, .effectName = library.name};
     libEntry_ = std::make_unique<AudioEffectLibEntry>();

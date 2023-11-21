@@ -382,7 +382,9 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
             if (info.encoding == ENCODING_AUDIOVIVID)
             {
                 converter_ = std::make_unique<AudioFormatConverter3DA>();
-                if (converter_ == nullptr || converter_->Init(info) != SUCCESS || !converter_->AllocateMem()) 
+                if (converter_ == nullptr ||
+                    converter_->Init(info) != SUCCESS ||
+                    !converter_->AllocateMem())
                     AUDIO_ERR_LOG("AudioStream: converter construct error");
             }
         } else if (eMode_ == AUDIO_MODE_RECORD) {
