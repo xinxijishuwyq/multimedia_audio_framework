@@ -18,11 +18,11 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <dlfcn.h>
+#include <unistd.h>
 #include "audio_info.h"
 #include "audio_effect.h"
 #include "audio_converter_parser.h"
-#include "unistd.h"
-#include "dlfcn.h"
 
 namespace OHOS {
 namespace AudioStandard {

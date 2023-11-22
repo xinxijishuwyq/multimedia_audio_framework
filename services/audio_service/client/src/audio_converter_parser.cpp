@@ -130,11 +130,12 @@ static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode* currNode)
         AUDIO_ERR_LOG("missing information: config has no out_channel_layout attribute");
     } else {
         std::string strChannelLayout = reinterpret_cast<char*>
-                                       (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("out_channel_layout")));
+            (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("out_channel_layout")));
         if (str2layout.count(strChannelLayout) == 0) {
             AUDIO_ERR_LOG("unsupported format: invalid channel layout");
-        } else 
+        } else {
             result.outChannelLayout = str2layout[strChannelLayout];
+        }
     }
 }
 
@@ -156,7 +157,7 @@ int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
     xmlNode *rootElement = nullptr;
     AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
     if ((doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, 
-                           XML_PARSE_NOERROR | XML_PARSE_NOWARNING)) == nullptr) {
+            XML_PARSE_NOERROR | XML_PARSE_NOWARNING)) == nullptr) {
         AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
         return FILE_PARSE_ERROR;
     }

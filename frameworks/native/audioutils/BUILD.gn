@@ -24,19 +24,12 @@ ohos_shared_library("audio_utils") {
   include_dirs = [
     "./include",
     "../../../interfaces/inner_api/native/audiocommon/include/",
-    "//third_party/libxml2/include",
   ]
 
   sources = [
     "./src/audio_channel_blend.cpp",
     "./src/audio_utils.cpp",
     "./src/volume_ramp.cpp",
-    "./src/audio_format_converter_3DA.cpp",
-    "./src/audio_converter_parser.cpp",
-  ]
-
-  deps = [
-    "//third_party/libxml2:xml2",
   ]
 
   external_deps = [
