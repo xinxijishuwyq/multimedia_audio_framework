@@ -446,6 +446,20 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
         return ERR_NOT_SUPPORTED;
     }
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
+    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+
+    if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->IsInited()) {
+        AUDIO_WARNING_LOG("Capturer is not initialized.");
+    } else {
+        audioCapturerSourceInstance->SetAudioScene(audioScene, activeDevice);
+    }
+
+    if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
+        AUDIO_WARNING_LOG("Renderer is not initialized.");
+    } else {
+        audioRendererSinkInstance->SetAudioScene(audioScene, activeDevice);
+    }
 
     audioScene_ = audioScene;
     return SUCCESS;
