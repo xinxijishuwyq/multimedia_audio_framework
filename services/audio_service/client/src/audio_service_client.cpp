@@ -1022,7 +1022,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     sampleSpec = ConvertToPAAudioParams(audioParams);
     mFrameSize = pa_frame_size(&sampleSpec);
     channelLayout_ = audioParams.channelLayout;
-	std::vector<bool> spatializationState = AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
+    std::vector<bool> spatializationState = AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
     if (spatializationState.size() != SPATIALIZATION_STATE_SIZE) {
         AUDIO_WARNING_LOG("spatialization state vector size is incorrect");
     } else {
