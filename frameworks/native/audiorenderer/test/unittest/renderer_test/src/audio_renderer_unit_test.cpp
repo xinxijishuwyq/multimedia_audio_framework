@@ -106,6 +106,24 @@ void AudioRendererUnitTest::Initialize3DRendererOptions(AudioRendererOptions &re
     return;
 }
 
+void AudioRendererUnitTest::GetBuffersAndLen(unique_ptr<AudioRenderer> &audioRenderer, uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen)
+{
+    uint32_t ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+    buffer = new uint8_t[bufferLen];
+    ASSERT_NE(nullptr, buffer);
+    metaBuffer = new uint8_t[AVS3METADATA_SIZE];
+    ASSERT_NE(nullptr, metaBuffer);
+}
+
+void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &metaBuffer, FILE* &wavFile, FILE* &metaFile)
+{
+    delete []buffer;
+    delete []metaBuffer;
+    fclose(wavFile);
+    fclose(metaFile);
+}
+
 void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit)
 {
     int32_t ret = -1;
@@ -2066,7 +2084,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_009, TestSize.Level1)
 
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
 {
-    int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -2081,13 +2098,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     size_t bytesToWrite = 0;
     size_t bytesWritten = 0;
@@ -2096,9 +2110,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
     while (numBuffersToRender) {
         bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
         fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-        if (bytesToWrite < bufferLen) {
-            std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
-        }
+        std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
         bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
         EXPECT_GE(bytesWritten, VALUE_ZERO);
         numBuffersToRender--;
@@ -2108,10 +2120,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
     audioRenderer->Stop();
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2122,7 +2131,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
 {
-    int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -2135,23 +2143,17 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
     EXPECT_EQ(false, isStarted);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     fread(buffer, 1, bufferLen, wavFile);
     fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
     int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
     EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2161,7 +2163,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
 {
-    int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -2174,13 +2175,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     fread(buffer, 1, bufferLen, wavFile);
     fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
@@ -2189,10 +2187,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
 
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2232,10 +2227,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
     audioRenderer->Stop();
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2245,7 +2237,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
 {
-    int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -2261,7 +2252,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
+    int32_t ret = audioRenderer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
 
     uint8_t *buffer = new uint8_t[bufferLen];
@@ -2278,10 +2269,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
     audioRenderer->Stop();
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2291,7 +2279,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
 {
-    int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -2307,13 +2294,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     fread(buffer, 1, bufferLen, wavFile);
     fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
@@ -2324,10 +2308,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
     audioRenderer->Stop();
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2337,7 +2318,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
 {
-    int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -2353,13 +2333,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     fread(buffer, 1, bufferLen, wavFile);
     fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
@@ -2370,10 +2347,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
     audioRenderer->Stop();
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2383,7 +2357,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
 {
-    int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -2399,13 +2372,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);
@@ -2417,10 +2387,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
 
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2430,7 +2397,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
 {
-    int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -2446,13 +2412,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
@@ -2463,10 +2426,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
     int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
     EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2492,13 +2452,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    int32_t ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     size_t bytesToWrite = 0;
     int32_t bytesWritten = 0;
@@ -2509,9 +2466,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
         bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
         fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
 
-        if (bytesToWrite < bufferLen) {
-            std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
-        }
+        std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
 
         bytesWritten = 0;
         uint64_t currFilePos = ftell(wavFile);
@@ -2521,7 +2476,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
             isStarted = audioRenderer->Start();
             EXPECT_EQ(true, isStarted);
 
-            ret = audioRenderer->SetVolume(0.5);
+            int32_t ret = audioRenderer->SetVolume(0.5);
             EXPECT_EQ(SUCCESS, ret);
             float volume = audioRenderer->GetVolume();
             EXPECT_EQ(0.5, volume);
@@ -2536,10 +2491,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
     audioRenderer->Stop();
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2566,13 +2518,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_011, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     size_t bufferLen;
-    ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
@@ -2584,10 +2533,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_011, TestSize.Level1)
 
     audioRenderer->Release();
 
-    delete []buffer;
-    delete []metaBuffer;
-    fclose(wavFile);
-    fclose(metaFile);
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**

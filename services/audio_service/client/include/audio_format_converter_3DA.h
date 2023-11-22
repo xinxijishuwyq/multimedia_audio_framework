@@ -69,7 +69,7 @@ private:
     bool loadSuccess_;
 
     LibLoader externalLoader_;
-}; 
+};
 
 } // namespace AudioStandard
 } // namespace OHOS

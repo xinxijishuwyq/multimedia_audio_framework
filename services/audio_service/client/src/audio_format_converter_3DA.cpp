@@ -35,11 +35,13 @@ std::map<uint8_t, int8_t> format2bps = {{SAMPLE_S16LE, sizeof(int16_t)},
                                         {SAMPLE_S32LE, sizeof(int32_t)},
                                         {SAMPLE_F32LE, sizeof(int32_t)}};
 
-static int8_t GetBps(uint8_t format) {
+static int8_t GetBps(uint8_t format)
+{
     return format2bps.count(format) > 0 ? format2bps[format] : INVALID_FORMAT;
 }
 
-static int32_t GetBits(uint64_t x) {
+static int32_t GetBits(uint64_t x)
+{
     return x == 0 ? 0 : (x & 1) + GetBits(x >> 1);
 }
 
@@ -58,7 +60,7 @@ static bool LoadFromXML(Library &lib, AudioChannelLayout &layout)
     return true;
 }
 
-int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps) 
+int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps)
 {
     if (encoding_ == ENCODING_AUDIOVIVID) {
         return channels * AUDIO_VIVID_SAMPLES * bps;
@@ -67,7 +69,7 @@ int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps)
     return 0;
 }
 
-int32_t AudioFormatConverter3DA::GetMetaLength() 
+int32_t AudioFormatConverter3DA::GetMetaLength()
 {
     if (encoding_ == ENCODING_AUDIOVIVID) {
         return AVS3METADATA_SIZE;
@@ -116,7 +118,7 @@ bool AudioFormatConverter3DA::GetInputBufferSize(size_t &bufferSize)
     return bufferSize > 0;
 }
 
-bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const BufferDesc metaBuffer) 
+bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const BufferDesc metaBuffer)
 {
     if (pcmBuffer.buffer == nullptr || metaBuffer.buffer == nullptr) {
         AUDIO_ERR_LOG("pcm or metadata buffer is nullptr");

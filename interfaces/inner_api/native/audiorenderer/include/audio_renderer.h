@@ -307,10 +307,10 @@ public:
     /**
      * @brief Writes audio PCM data and associated metadata.
      *
-     * Note: This function is not available when the renderer is set to RENDER_MODE_CALLBACK. 
+     * Note: This function is not available when the renderer is set to RENDER_MODE_CALLBACK.
      * It should be used only with AUDIOVIVID encoding type.
      *
-     * @param pcmBuffer Pointer to the PCM data buffer to be written. 
+     * @param pcmBuffer Pointer to the PCM data buffer to be written.
      * @param pcmBufferSize Size of the PCM data buffer, in bytes.
 	 * The buffer must exactly contain 1024 samples, which is the length of one frame.
      * @param metaBuffer Pointer to the metadata buffer to be written.

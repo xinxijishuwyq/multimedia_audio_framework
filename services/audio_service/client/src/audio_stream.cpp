@@ -561,7 +561,6 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
 
 int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
 {
-    Trace trace("AudioStream::Write");
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
         return ERR_INCORRECT_MODE;
