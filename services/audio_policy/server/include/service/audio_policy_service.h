@@ -30,7 +30,6 @@
 #include "audio_stream_collector.h"
 #include "audio_router_center.h"
 #include "ipc_skeleton.h"
-#include "power_mgr_client.h"
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -83,12 +82,6 @@ public:
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
 
     float GetLowPowerVolume(int32_t streamId) const;
-
-    int32_t SetOffloadStream(uint32_t sessionId, DeviceType devicesType = DEVICE_TYPE_NONE);
-
-    int32_t ReleaseOffloadStream(uint32_t sessionId);
-
-    void HandlePowerStateChanged(PowerMgr::PowerState state);
 
     float GetSingleStreamVolume(int32_t streamId) const;
 
@@ -264,10 +257,6 @@ public:
     void OnSinkLatencyParsed(uint32_t latency);
 
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
-
-    AudioStreamType GetStreamType(int32_t sessionId);
-
-    int32_t GetUid(int32_t sessionId);
 
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
@@ -518,8 +507,6 @@ private:
 
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
 
-    void SetOffloadVolume();
-
     void RemoveDeviceInRouterMap(std::string networkId);
 
     void RemoveDeviceInFastRouterMap(std::string networkId);
@@ -568,25 +555,12 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
-    int32_t SetStreamOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
-
-    int32_t SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
-
-    int32_t SetOffloadMode();
-
-    int32_t UnsetOffloadMode();
-
-    int32_t ResetOffloadMode();
-
-    int32_t PresetOffloadMode(DeviceType deviceType);
-
-    bool GetAudioOffloadAvailableFromXml() const;
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
-        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
+    const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -601,7 +575,6 @@ private:
     int32_t maxRendererInstances_ = 128;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
-    bool isOffloadAvailable_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -685,13 +658,10 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
+
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
 
-    std::optional<uint32_t> offloadSessionID_;
-    PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
-    bool currentOffloadSessionIsBackground_ = false;
-    std::mutex offloadMutex_;
     AudioModuleInfo primaryMicModuleInfo_ = {};
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;

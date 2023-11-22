@@ -172,25 +172,6 @@ enum ConnectType {
 
 typedef AudioStreamType AudioVolumeType;
 
-enum AudioOffloadType {
-    /**
-     * Indicates audio offload state default.
-     */
-    OFFLOAD_DEFAULT = -1,
-    /**
-     * Indicates audio offload state : screen is active & app is foreground.
-     */
-    OFFLOAD_ACTIVE_FOREGROUND = 0,
-    /**
-     * Indicates audio offload state : screen is active & app is background.
-     */
-    OFFLOAD_ACTIVE_BACKGROUND = 1,
-    /**
-     * Indicates audio offload state : screen is inactive & app is background.
-     */
-    OFFLOAD_INACTIVE_BACKGROUND = 3,
-};
-
 enum FocusType {
     /**
      * Recording type.

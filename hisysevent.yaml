@@ -41,7 +41,6 @@ STREAM_CHANGE:
   TRANSACTIONID: {type: UINT64, desc: transaction id}
   STREAMTYPE: {type: INT32, desc: stream type}
   STATE: {type: INT32, desc: audio state}
-  OFFLOADSTATE: {type: INT32, desc: audio offload policy state}
   DEVICETYPE: {type: INT32, desc: device type}
 
 HEADSET_CHANGE:

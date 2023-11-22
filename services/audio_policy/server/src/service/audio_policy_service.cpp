@@ -65,7 +65,6 @@ const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
-const uint32_t MEDIA_SERVICE_UID = 1013;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -183,7 +182,7 @@ void AudioPolicyService::InitKVStore()
 bool AudioPolicyService::ConnectServiceAdapter()
 {
     if (!audioPolicyManager_.ConnectServiceAdapter()) {
-        AUDIO_ERR_LOG("ConnectServiceAdapter Error in connecting to audio service adapter");
+        AUDIO_ERR_LOG("AudioPolicyService::ConnectServiceAdapter  Error in connecting to audio service adapter");
         return false;
     }
 
@@ -261,10 +260,6 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     Volume vol = {false, 1.0f, 0};
     vol.volumeFloat = GetSystemVolumeInDb(streamType, volumeLevel, currentActiveDevice_.deviceType_);
     SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
-
-    if (result == SUCCESS) {
-        SetOffloadVolume();
-    }
     return result;
 }
 
@@ -287,23 +282,6 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
 
-void AudioPolicyService::SetOffloadVolume()
-{
-    // set volume by the interface from hdi.
-    if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_SPEAKER) {
-        return;
-    }
-    const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("gsp null");
-        return;
-    }
-    int32_t volumeLevel = GetSystemVolumeLevel(STREAM_MUSIC);
-    float volumeDb = GetSystemVolumeInDb(STREAM_MUSIC, volumeLevel, currentActiveDevice_.deviceType_);
-
-    gsp->OffloadSetVolume(volumeDb);
-}
-
 void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::SetVolumeForSwitchDevice:" + std::to_string(deviceType));
@@ -314,7 +292,6 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
-    SetOffloadVolume();
 }
 
 std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
@@ -374,175 +351,6 @@ int32_t AudioPolicyService::SetLowPowerVolume(int32_t streamId, float volume) co
 float AudioPolicyService::GetLowPowerVolume(int32_t streamId) const
 {
     return streamCollector_.GetLowPowerVolume(streamId);
-}
-
-int32_t AudioPolicyService::SetStreamOffloadMode(int32_t sessionID, int32_t state, bool isAppBack)
-{
-    return streamCollector_.SetOffloadMode(sessionID, state, isAppBack);
-}
-
-int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack)
-{
-    if (!GetAudioOffloadAvailableFromXml()) {
-        AUDIO_INFO_LOG("Offload not avaliable!Blocked!");
-        return SUCCESS;
-    }
-
-    AUDIO_INFO_LOG("sessionId: %{public}d, PowerState: %{public}d, isAppBack: %{public}d",
-        sessionID, state, isAppBack);
-    
-    return SetStreamOffloadMode(sessionID, state, isAppBack);
-}
-
-
-int32_t AudioPolicyService::SetOffloadMode()
-{
-    return SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_),
-        currentOffloadSessionIsBackground_);
-}
-
-int32_t AudioPolicyService::UnsetOffloadMode()
-{
-    AUDIO_DEBUG_LOG("Doing unset offload mode!");
-    if (!offloadSessionID_.has_value()) {
-        return SUCCESS;
-    }
-
-    int32_t ret = streamCollector_.UnsetOffloadMode(*offloadSessionID_);
-    offloadSessionID_.reset();
-    return ret;
-}
-
-int32_t AudioPolicyService::ResetOffloadMode()
-{
-    AUDIO_DEBUG_LOG("Doing reset offload mode!");
-
-    if (GetActiveOutputDevice() != DEVICE_TYPE_SPEAKER) {
-        AUDIO_DEBUG_LOG("Resetting offload not available on this output device! Release.");
-        ReleaseOffloadStream(*offloadSessionID_);
-        return SUCCESS;
-    }
-
-    int32_t runningStreamId = streamCollector_.GetRunningStream();
-    if (runningStreamId == -1) {
-        AUDIO_DEBUG_LOG("No running stream, wont restart");
-        return SUCCESS;
-    }
-    return SetOffloadStream(runningStreamId);
-}
-
-int32_t AudioPolicyService::PresetOffloadMode(DeviceType deviceType)
-{
-    AUDIO_DEBUG_LOG("Doing preset offload mode!");
-    if (deviceType != DEVICE_TYPE_SPEAKER) {
-        AUDIO_DEBUG_LOG("Presetting offload not available on this output device! Release.");
-        return SUCCESS;
-    }
-
-    int32_t runningStreamId = streamCollector_.GetRunningStream();
-    if (runningStreamId == -1) {
-        AUDIO_DEBUG_LOG("No running stream, wont restart");
-        return SUCCESS;
-    }
-    return SetOffloadStream(runningStreamId, deviceType);
-}
-
-int32_t AudioPolicyService::SetOffloadStream(uint32_t sessionId, DeviceType deviceType /* = DEVICE_TYPE_NONE */)
-{
-    if (!GetAudioOffloadAvailableFromXml()) {
-        AUDIO_INFO_LOG("Offload not avaliable! Blocked for set!");
-        return SUCCESS;
-    }
-
-    if (deviceType == DEVICE_TYPE_NONE) {
-        deviceType = GetActiveOutputDevice();
-    }
-
-    if (deviceType != DEVICE_TYPE_SPEAKER) {
-        AUDIO_INFO_LOG("Offload not avaliable on current output device!Blocked!");
-        return SUCCESS;
-    }
-
-    AudioStreamType streamType = GetStreamType(sessionId);
-    if ((streamType != STREAM_MUSIC) && (streamType != STREAM_SPEECH)) {
-        AUDIO_DEBUG_LOG("StreamType not allowed get offload mode!Blocked!");
-        return SUCCESS;
-    }
-
-    int32_t offloadUID = GetUid(sessionId);
-    if (offloadUID == -1) {
-        return ERR_INVALID_PARAM;
-    }
-    if (offloadUID == MEDIA_SERVICE_UID) { // not support avplayer in current version
-        AUDIO_DEBUG_LOG("Block avplayer out of offload mode");
-        return SUCCESS;
-    }
-
-    auto CallingUid = IPCSkeleton::GetCallingUid();
-    if (CallingUid == MEDIA_SERVICE_UID) { // not support avplayer in current version
-        AUDIO_DEBUG_LOG("Block avplayer out of offload mode");
-        return SUCCESS;
-    }
-
-    AUDIO_INFO_LOG("sessionId[%{public}d] UID[%{public}d] StreamType[%{public}d] Getting offload stream",
-        sessionId, offloadUID, streamType);
-    lock_guard<mutex> lock(offloadMutex_);
-
-    if (!offloadSessionID_.has_value()) {
-        offloadSessionID_ = sessionId;
-        
-        AUDIO_DEBUG_LOG("sessionId[%{public}d] try get offload stream", sessionId);
-        SetOffloadMode();
-    } else {
-        if (sessionId == *(offloadSessionID_)) {
-            AUDIO_DEBUG_LOG("sessionId[%{public}d] is already get offload stream", sessionId);
-        } else {
-            AUDIO_DEBUG_LOG("sessionId[%{public}d] no get offload, current offload sessionId[%{public}d]",
-                sessionId, *(offloadSessionID_));
-        }
-    }
-
-    return true;
-}
-
-int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
-{
-    if (!GetAudioOffloadAvailableFromXml()) {
-        AUDIO_INFO_LOG("Offload not avaliable!Blocked for release!");
-        return SUCCESS;
-    }
-
-    lock_guard<mutex> lock(offloadMutex_);
-
-    if (((*offloadSessionID_) == sessionId) && offloadSessionID_.has_value()) {
-        UnsetOffloadMode();
-        AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
-    } else {
-        if (offloadSessionID_.has_value()) {
-            AUDIO_DEBUG_LOG("sessionId[%{public}d] stopping stream not get offload, current offload [%{public}d]",
-                sessionId, *offloadSessionID_);
-        } else {
-            AUDIO_DEBUG_LOG("sessionId[%{public}d] stopping stream not get offload, current offload stream is None",
-                sessionId);
-        }
-    }
-    return SUCCESS;
-}
-
-
-void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
-{
-    if (GetActiveOutputDevice() != DEVICE_TYPE_SPEAKER) {
-        return;
-    }
-    if (currentPowerState_ == state) {
-        return;
-    }
-    currentPowerState_ = state;
-    if (offloadSessionID_.has_value()) {
-        AUDIO_DEBUG_LOG("SetOffloadMode! Offload power is state = %{public}d", state);
-        SetOffloadMode();
-    }
 }
 
 float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
@@ -1278,7 +1086,6 @@ void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, st
 void AudioPolicyService::OnPreferredDeviceUpdated(const AudioDeviceDescriptor& activeOutputDevice,
     DeviceType activeInputDevice)
 {
-    ResetOffloadMode();
     OnPreferredOutputDeviceUpdated(activeOutputDevice);
     OnPreferredInputDeviceUpdated(activeInputDevice, LOCAL_NETWORK_ID);
 }
@@ -1783,7 +1590,6 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
         int32_t muteDuration = 200000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
-        PresetOffloadMode(deviceDescriptor->deviceType_);
     }
 
     if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
@@ -2094,8 +1900,6 @@ int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isScen
 {
     AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_.deviceType_, deviceType);
     int32_t result = SUCCESS;
-
-    ResetOffloadMode();
 
     if (currentActiveDevice_.deviceType_ == deviceType) {
         if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
@@ -2521,8 +2325,6 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
         }
     }
 
-    ResetOffloadMode();
-
     if (isArmUsbDevice_ && devType == DEVICE_TYPE_USB_HEADSET) {
         int32_t result = HandleArmUsbDevice(devType);
         return result;
@@ -2540,10 +2342,6 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
             // The disconnecting a2dp device is not active.
             return SUCCESS;
         }
-    }
-
-    if (currentActiveDevice_.deviceType_ == devType) {
-        ResetOffloadMode();
     }
 
     if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
@@ -3066,13 +2864,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
                 if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
                     result = SUCCESS;
                 }
-                if (moduleInfo.name == "Speaker") {
-                    for (auto &portInfo : moduleInfo.ports) {
-                        if ((portInfo.adapterName == "primary") && (portInfo.offloadEnable == "1")) {
-                            isOffloadAvailable_ = true;
-                        }
-                    }
-                }
             }
         }
     }
@@ -3082,7 +2873,6 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         hasModulesLoaded = true;
         unique_ptr<AudioDeviceDescriptor> outDevice = audioDeviceManager_.GetRenderDefaultDevice();
         currentActiveDevice_ = AudioDeviceDescriptor(*outDevice);
-        ResetOffloadMode();
         unique_ptr<AudioDeviceDescriptor> inDevice = audioDeviceManager_.GetCaptureDefaultDevice();
         currentActiveInputDevice_ = AudioDeviceDescriptor(*inDevice);
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
@@ -4241,11 +4031,6 @@ uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
     return sinkLatencyInMsec_;
 }
 
-bool AudioPolicyService::GetAudioOffloadAvailableFromXml() const
-{
-    return isOffloadAvailable_;
-}
-
 void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("Current input device is %{public}d", currentActiveInputDevice_.deviceType_);
@@ -4278,16 +4063,6 @@ int32_t AudioPolicyService::UpdateStreamState(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
     return streamCollector_.UpdateStreamState(clientUid, streamSetStateEventInternal);
-}
-
-AudioStreamType AudioPolicyService::GetStreamType(int32_t sessionId)
-{
-    return streamCollector_.GetStreamType(sessionId);
-}
-
-int32_t AudioPolicyService::GetUid(int32_t sessionId)
-{
-    return streamCollector_.GetUid(sessionId);
 }
 
 DeviceType AudioPolicyService::GetDeviceTypeFromPin(AudioPin hdiPin)

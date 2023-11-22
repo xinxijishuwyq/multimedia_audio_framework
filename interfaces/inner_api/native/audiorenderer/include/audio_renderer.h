@@ -699,26 +699,6 @@ public:
     virtual float GetLowPowerVolume() const = 0;
 
     /**
-     * @brief Set Stream of Renderer into specified offload state.
-     *
-     * @param state power state.
-     * @param isAppBack app state.
-     * @return Returns {@link SUCCESS} if setting is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 10
-     */
-    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) const = 0;
-
-    /**
-     * @brief Set Stream of Renderer out of offload state.
-     *
-     * @return Returns {@link SUCCESS} if unsetting is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 10
-     */
-    virtual int32_t UnsetOffloadMode() const = 0;
-
-    /**
      * @brief Get single stream volume.
      *
      * @param none.

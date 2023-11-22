@@ -585,35 +585,6 @@ bool AudioStreamCollector::GetAndCompareStreamType(AudioStreamType requiredType,
     return defaultStreamType == requiredType;
 }
 
-AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
-{
-    AudioStreamType defaultStreamType = STREAM_MUSIC;
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->sessionId == sessionId) {
-            auto pos = streamTypeMap_.find(
-                make_pair(changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage));
-            if (pos != streamTypeMap_.end()) {
-                defaultStreamType = pos->second;
-            }
-        }
-    }
-    return defaultStreamType;
-}
-
-int32_t AudioStreamCollector::GetUid(int32_t sessionId)
-{
-    int32_t defaultUid = -1;
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->sessionId == sessionId) {
-            defaultUid = changeInfo->clientUID;
-            break;
-        }
-    }
-    return defaultUid;
-}
-
 int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     StreamSetStateEventInternal &streamSetStateEventInternal)
 {
@@ -655,19 +626,6 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         }
     }
     return result;
-}
-
-int32_t AudioStreamCollector::GetRunningStream()
-{
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    int32_t runningStream = -1;
-    for (auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->rendererState == RENDERER_RUNNING) {
-            runningStream = changeInfo->sessionId;
-            break;
-        }
-    }
-    return runningStream;
 }
 
 AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage)
@@ -747,28 +705,6 @@ float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
         ret, "GetLowPowerVolume callback failed");
     callback->GetLowPowerVolumeImpl(volume);
     return volume;
-}
-
-int32_t AudioStreamCollector::SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack)
-{
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
-        ERR_INVALID_PARAM, "streamId (%{public}d) invalid.", streamId);
-    std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback failed");
-    callback->SetOffloadModeImpl(state, isAppBack);
-    return SUCCESS;
-}
-
-int32_t AudioStreamCollector::UnsetOffloadMode(int32_t streamId)
-{
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
-        ERR_INVALID_PARAM, "streamId (%{public}d) invalid.", streamId);
-    std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback failed");
-    callback->UnsetOffloadModeImpl();
-    return SUCCESS;
 }
 
 float AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
