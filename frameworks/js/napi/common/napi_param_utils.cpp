@@ -444,5 +444,15 @@ napi_status NapiParamUtils::SetValueDeviceInfo(const napi_env &env, const Device
     SetDeviceDescriptors(env, deviceDescriptors, result);
     return napi_ok;
 }
+
+napi_status NapiParamUtils::SetInterruptEvent(const napi_env &env, const InterruptEvent &interruptEvent,
+    napi_value &result)
+{
+    napi_create_object(env, &result);
+    SetValueInt32(env, "eventType", static_cast<int32_t>(interruptEvent.eventType), result);
+    SetValueInt32(env, "forceType", static_cast<int32_t>(interruptEvent.forceType), result);
+    SetValueInt32(env, "hintType", static_cast<int32_t>(interruptEvent.hintType), result);
+    return napi_ok;
+}
 } // namespace AudioStandard
 } // namespace OHOS
