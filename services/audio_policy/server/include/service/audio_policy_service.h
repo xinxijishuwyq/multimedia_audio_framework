@@ -442,6 +442,10 @@ private:
 
     int32_t HandleArmUsbDevice(DeviceType deviceType);
 
+    int32_t HandleFileDevice(DeviceType deviceType);
+
+    int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
+
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
