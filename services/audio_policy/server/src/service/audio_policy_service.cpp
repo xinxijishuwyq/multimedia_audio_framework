@@ -2522,8 +2522,8 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
 
     ResetOffloadMode();
 
-    if (isArmUsbDevice_ && deviceType == DEVICE_TYPE_USB_HEADSET) {
-        int32_t result = HandleArmUsbDevice(deviceType);
+    if (isArmUsbDevice_ && devType == DEVICE_TYPE_USB_HEADSET) {
+        int32_t result = HandleArmUsbDevice(devType);
         return result;
     }
 
