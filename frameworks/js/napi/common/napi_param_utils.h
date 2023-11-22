@@ -96,6 +96,8 @@ public:
     static napi_status SetValueInt64(const napi_env &env, const std::string &fieldStr,
         const int64_t value, napi_value &result);
     static napi_status GetArrayBuffer(const napi_env &env, void* &data, size_t &length, napi_value in);
+    static napi_status CreateArrayBuffer(const napi_env &env, const std::string &fieldStr, size_t bufferLen,
+        uint8_t *bufferData, napi_value &result);
 
     static napi_value GetUndefinedValue(napi_env env);
 
@@ -116,6 +118,8 @@ public:
     static napi_status SetValueDeviceInfo(const napi_env &env, const DeviceInfo &deviceInfo, napi_value &result);
     static napi_status SetInterruptEvent(const napi_env &env, const InterruptEvent &interruptEvent,
         napi_value &result);
+    static napi_status SetNativeAudioRendererDataInfo(const napi_env &env,
+        const AudioRendererDataInfo &audioRendererDataInfo, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS

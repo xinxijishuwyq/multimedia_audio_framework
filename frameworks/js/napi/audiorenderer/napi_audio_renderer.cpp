@@ -20,6 +20,8 @@
 #include "napi_audio_enum.h"
 #include "napi_audio_renderer_callback.h"
 #include "napi_renderer_position_callback.h"
+#include "napi_renderer_data_request_callback.h"
+#include "napi_renderer_period_position_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -102,6 +104,7 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("getAudioEffectMode", GetAudioEffectMode),
         DECLARE_NAPI_FUNCTION("setAudioEffectMode", SetAudioEffectMode),
         DECLARE_NAPI_FUNCTION("setChannelBlendMode", SetChannelBlendMode),
+        DECLARE_NAPI_FUNCTION("setVolumeWithRamp", SetVolumeWithRamp),
         DECLARE_NAPI_GETTER("state", GetState),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
@@ -1244,6 +1247,39 @@ napi_value NapiAudioRenderer::SetChannelBlendMode(napi_env env, napi_callback_in
     return result;
 }
 
+napi_value NapiAudioRenderer::SetVolumeWithRamp(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("SetVolumeWithRamp");
+    napi_value result = nullptr;
+    size_t argc = ARGS_TWO;
+    napi_value argv[ARGS_TWO] = {};
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "valueType param0 invaild");
+    napi_typeof(env, argv[PARAM1], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "valueType param1 invaild");
+
+    double volume;
+    NapiParamUtils::GetValueDouble(env, volume, argv[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG((volume >= MIN_VOLUME_IN_DOUBLE) && (volume <= MAX_VOLUME_IN_DOUBLE),
+        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "invaild volume index");
+
+    int32_t duration;
+    NapiParamUtils::GetValueInt32(env, duration, argv[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+    int32_t ret =
+        napiAudioRenderer->audioRenderer_->SetVolumeWithRamp(static_cast<float>(volume), duration);
+    CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE,
+        ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "err illegal state");
+    return result;
+}
+
 napi_value NapiAudioRenderer::GetState(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
@@ -1273,7 +1309,7 @@ napi_value NapiAudioRenderer::On(napi_env env, napi_callback_info info)
         "requireArgc is invaild");
 
     napi_valuetype eventType = napi_undefined;
-    napi_typeof(env, argv[0], &eventType);
+    napi_typeof(env, argv[PARAM0], &eventType);
     CHECK_AND_RETURN_RET_LOG(eventType == napi_string, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
         "eventType is invaild");
 
@@ -1343,9 +1379,9 @@ napi_value NapiAudioRenderer::RegisterCallback(napi_env env, napi_value jsThis,
     } else if (!cbName.compare(MARK_REACH_CALLBACK_NAME)) {
         result = RegisterPositionCallback(env, argv, cbName, napiRenderer);
     } else if (!cbName.compare(PERIOD_REACH_CALLBACK_NAME)) {
-        // result = RegisterPeriodPositionCallback(env, argv, cbName, rendererNapi);
+        result = RegisterPeriodPositionCallback(env, argv, cbName, napiRenderer);
     } else if (!cbName.compare(DATA_REQUEST_CALLBACK_NAME)) {
-        // result = RegisterDataRequestCallback(env, argv, cbName, rendererNapi);
+        result = RegisterDataRequestCallback(env, argv, cbName, napiRenderer);
     } else if (!cbName.compare(DEVICECHANGE_CALLBACK_NAME)) {
         // RegisterRendererDeviceChangeCallback(env, argv, rendererNapi);
     } else {
@@ -1423,6 +1459,60 @@ napi_value NapiAudioRenderer::RegisterPositionCallback(napi_env env, napi_value 
     std::shared_ptr<NapiRendererPositionCallback> cb =
         std::static_pointer_cast<NapiRendererPositionCallback>(napiRenderer->positionCbNapi_);
     cb->SaveCallbackReference(cbName, argv[PARAM2]);
+
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::RegisterPeriodPositionCallback(napi_env env, napi_value *argv,
+    const std::string &cbName, NapiAudioRenderer *napiRenderer)
+{
+    int64_t frameCount = 0;
+    NapiParamUtils::GetValueInt64(env, frameCount, argv[PARAM1]);
+
+    if (frameCount > 0) {
+        if (napiRenderer->periodPositionCbNapi_ == nullptr) {
+            napiRenderer->periodPositionCbNapi_ = std::make_shared<NapiRendererPeriodPositionCallback>(env);
+            CHECK_AND_RETURN_RET_LOG(napiRenderer->periodPositionCbNapi_ != nullptr,
+                ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "periodPositionCbNapi_ is nullptr, No memery");
+
+            int32_t ret = napiRenderer->audioRenderer_->SetRendererPeriodPositionCallback(frameCount,
+                napiRenderer->periodPositionCbNapi_);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+                ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "SetRendererPeriodPositionCallback failed");
+
+            std::shared_ptr<NapiRendererPeriodPositionCallback> cb =
+                std::static_pointer_cast<NapiRendererPeriodPositionCallback>(napiRenderer->periodPositionCbNapi_);
+            cb->SaveCallbackReference(cbName, argv[PARAM2]);
+        } else {
+            AUDIO_DEBUG_LOG("NapiAudioRenderer: periodReach already subscribed.");
+        }
+    } else {
+        AUDIO_ERR_LOG("NapiAudioRenderer: frameCount value not supported!!");
+    }
+
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::RegisterDataRequestCallback(napi_env env, napi_value *argv,
+    const std::string &cbName, NapiAudioRenderer *napiRenderer)
+{
+    CHECK_AND_RETURN_RET_LOG(napiRenderer->dataRequestCbNapi_ == nullptr,
+        ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "NapiAudioRenderer:dataRequest already subscribed.");
+
+    napiRenderer->dataRequestCbNapi_ = std::make_shared<NapiRendererDataRequestCallback>(env, napiRenderer);
+    napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
+    CHECK_AND_RETURN_RET_LOG(napiRenderer->dataRequestCbNapi_ != nullptr,
+        ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "dataRequestCbNapi_ is nullptr");
+    int32_t ret = napiRenderer->audioRenderer_->SetRendererWriteCallback(napiRenderer->dataRequestCbNapi_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+        ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "SetRendererWriteCallback failed");
+    std::shared_ptr<NapiRendererDataRequestCallback> cb =
+        std::static_pointer_cast<NapiRendererDataRequestCallback>(napiRenderer->dataRequestCbNapi_);
+    cb->SaveCallbackReference(cbName, argv[PARAM1]);
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);

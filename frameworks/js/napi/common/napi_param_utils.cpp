@@ -249,6 +249,19 @@ napi_status NapiParamUtils::GetArrayBuffer(const napi_env &env, void* &data, siz
     return status;
 }
 
+napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const std::string &fieldStr, size_t bufferLen,
+    uint8_t *bufferData, napi_value &result)
+{
+    napi_value value = nullptr;
+
+    napi_status status = napi_create_arraybuffer(env, bufferLen, (void**)&bufferData, &value);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_create_arraybuffer failed");
+    status = napi_set_named_property(env, result, fieldStr.c_str(), value);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_set_named_property failed");
+
+    return status;
+}
+
 void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
     const DeviceInfo &deviceInfo)
 {
@@ -453,6 +466,17 @@ napi_status NapiParamUtils::SetInterruptEvent(const napi_env &env, const Interru
     SetValueInt32(env, "forceType", static_cast<int32_t>(interruptEvent.forceType), result);
     SetValueInt32(env, "hintType", static_cast<int32_t>(interruptEvent.hintType), result);
     return napi_ok;
+}
+
+napi_status NapiParamUtils::SetNativeAudioRendererDataInfo(const napi_env &env,
+    const AudioRendererDataInfo &audioRendererDataInfo, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+
+    SetValueInt32(env, "flag", static_cast<int32_t>(audioRendererDataInfo.flag), result);
+    CreateArrayBuffer(env, "buffer", audioRendererDataInfo.flag, audioRendererDataInfo.buffer, result);
+
+    return status;
 }
 } // namespace AudioStandard
 } // namespace OHOS
