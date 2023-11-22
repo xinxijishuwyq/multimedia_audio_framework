@@ -70,9 +70,11 @@ public:
     // Init 3DRenderer Options
     static void Initialize3DRendererOptions(AudioRendererOptions &rendererOptions);
     // Allocate memory
-    static void GetBuffersAndLen(std::unique_ptr<AudioRenderer> &audioRenderer, uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen);
+    static void GetBuffersAndLen(std::unique_ptr<AudioRenderer> &audioRenderer,
+        uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen);
     // Release memory
-    static void ReleaseBufferAndFiles(uint8_t *&buffer, uint8_t *&metaBuffer, FILE *&wavFile, FILE *&metaFile);
+    static void ReleaseBufferAndFiles(uint8_t *&buffer, uint8_t *&metaBuffer,
+        FILE *&wavFile, FILE *&metaFile);
 };
 } // namespace AudioStandard
 } // namespace OHOS

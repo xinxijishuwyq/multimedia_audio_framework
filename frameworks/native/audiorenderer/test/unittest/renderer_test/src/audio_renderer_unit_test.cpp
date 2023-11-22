@@ -106,7 +106,8 @@ void AudioRendererUnitTest::Initialize3DRendererOptions(AudioRendererOptions &re
     return;
 }
 
-void AudioRendererUnitTest::GetBuffersAndLen(unique_ptr<AudioRenderer> &audioRenderer, uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen)
+void AudioRendererUnitTest::GetBuffersAndLen(unique_ptr<AudioRenderer> &audioRenderer,
+    uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen)
 {
     uint32_t ret = audioRenderer->GetBufferSize(bufferLen);
     EXPECT_EQ(SUCCESS, ret);
@@ -116,7 +117,8 @@ void AudioRendererUnitTest::GetBuffersAndLen(unique_ptr<AudioRenderer> &audioRen
     ASSERT_NE(nullptr, metaBuffer);
 }
 
-void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &metaBuffer, FILE* &wavFile, FILE* &metaFile)
+void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &metaBuffer,
+    FILE* &wavFile, FILE* &metaFile)
 {
     delete []buffer;
     delete []metaBuffer;
