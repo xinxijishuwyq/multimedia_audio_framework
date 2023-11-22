@@ -102,7 +102,9 @@ ohos_shared_library("audio_client") {
   }
   install_enable = true
   sources = [
+    "client/src/audio_converter_parser.cpp",
     "client/src/audio_device_descriptor.cpp",
+    "client/src/audio_format_converter_3DA.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
@@ -118,8 +120,6 @@ ohos_shared_library("audio_client") {
     "client/src/i_audio_stream.cpp",
     "client/src/microphone_descriptor.cpp",
     "client/src/policy_provider_stub.cpp",
-    "client/src/audio_format_converter_3DA.cpp",
-    "client/src/audio_converter_parser.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
