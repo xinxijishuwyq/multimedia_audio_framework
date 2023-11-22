@@ -244,7 +244,8 @@ int32_t AudioRendererGateway::Write(uint8_t *buffer, size_t bufferSize)
     return audioStream_->Write(buffer, bufferSize);
 }
 
-int32_t AudioRendererGateway::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize){
+int32_t AudioRendererGateway::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize)
+{
     AUDIO_ERR_LOG("AudioRendererGateway::Write with meta do not supported");
     return ERR_INVALID_OPERATION;
 }

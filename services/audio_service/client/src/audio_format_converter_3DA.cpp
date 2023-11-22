@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_format_converter_3DA.h"
 #include <cstdint>
 #include <string>
 #include <iostream>
-#include "audio_format_converter_3DA.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,16 +35,22 @@ std::map<uint8_t, int8_t> format2bps = {{SAMPLE_S16LE, sizeof(int16_t)},
                                         {SAMPLE_S32LE, sizeof(int32_t)},
                                         {SAMPLE_F32LE, sizeof(int32_t)}};
 
-static int8_t GetBps(uint8_t format) { return format2bps.count(format) > 0 ? format2bps[format] : INVALID_FORMAT; }
-static int32_t GetBits(uint64_t x) { return x == 0 ? 0 : (x & 1) + GetBits(x >> 1); }
+static int8_t GetBps(uint8_t format) {
+    return format2bps.count(format) > 0 ? format2bps[format] : INVALID_FORMAT;
+}
+
+static int32_t GetBits(uint64_t x) {
+    return x == 0 ? 0 : (x & 1) + GetBits(x >> 1);
+}
 
 static bool LoadFromXML(Library &lib, AudioChannelLayout &layout)
 {
     AudioConverterParser parser;
     ConverterConfig result;
     layout = DEFAULT_LAYOUT;
-    if (parser.LoadConfig(result) != 0)
+    if (parser.LoadConfig(result) != 0) {
         return false;
+    }
     lib = result.library;
     layout = result.outChannelLayout;
     AUDIO_INFO_LOG("<log info> lib %{public}s %{public}s successful from xml", lib.path.c_str(), lib.name.c_str());
@@ -52,16 +58,20 @@ static bool LoadFromXML(Library &lib, AudioChannelLayout &layout)
     return true;
 }
 
-int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps) {
-    if (encoding_ == ENCODING_AUDIOVIVID)
+int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps) 
+{
+    if (encoding_ == ENCODING_AUDIOVIVID) {
         return channels * AUDIO_VIVID_SAMPLES * bps;
+    }
     AUDIO_INFO_LOG("encodingType is not supported."); // never run
     return 0;
 }
 
-int32_t AudioFormatConverter3DA::GetMetaLength() {
-    if (encoding_ == ENCODING_AUDIOVIVID)
+int32_t AudioFormatConverter3DA::GetMetaLength() 
+{
+    if (encoding_ == ENCODING_AUDIOVIVID) {
         return AVS3METADATA_SIZE;
+    }
     AUDIO_INFO_LOG("encodingType is not supported."); // never run
     return 0;
 }
@@ -77,14 +87,20 @@ int32_t AudioFormatConverter3DA::Init(const AudioStreamParams info)
 
     Library library;
     loadSuccess_ = false;
-    if (LoadFromXML(library, outChannelLayout_) && externalLoader_.AddAlgoHandle(library)) {
-        outChannel_ = GetBits(outChannelLayout_);
-        externalLoader_.SetIOBufferConfig(true, info.format, inChannel_, info.channelLayout);
-        externalLoader_.SetIOBufferConfig(false, info.format, outChannel_, outChannelLayout_);
-        if (externalLoader_.Init())
-            loadSuccess_ = true;
-    } else
-        outChannelLayout_ = CH_LAYOUT_UNKNOWN; // can not convert;
+    if (LoadFromXML(library, outChannelLayout_)) {
+        if (externalLoader_.AddAlgoHandle(library)) {
+            outChannel_ = GetBits(outChannelLayout_);
+            externalLoader_.SetIOBufferConfig(true, info.format, inChannel_, info.channelLayout);
+            externalLoader_.SetIOBufferConfig(false, info.format, outChannel_, outChannelLayout_);
+            if (externalLoader_.Init()) {
+                loadSuccess_ = true;
+            }
+        }
+    }
+    if (!loadSuccess_) {
+        outChannel_ = info.channels;
+        outChannelLayout_ = CH_LAYOUT_UNKNOWN; // can not convert
+    }
     return 0;
 }
 
@@ -100,7 +116,8 @@ bool AudioFormatConverter3DA::GetInputBufferSize(size_t &bufferSize)
     return bufferSize > 0;
 }
 
-bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const BufferDesc metaBuffer) {
+bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const BufferDesc metaBuffer) 
+{
     if (pcmBuffer.buffer == nullptr || metaBuffer.buffer == nullptr) {
         AUDIO_ERR_LOG("pcm or metadata buffer is nullptr");
         return false;
@@ -133,14 +150,11 @@ void AudioFormatConverter3DA::GetOutputBufferStream(uint8_t *&buffer, uint32_t &
 int32_t AudioFormatConverter3DA::Process(const BufferDesc pcmBuffer, const BufferDesc metaBuffer)
 {
     int32_t ret = 0;
-    if (!loadSuccess_)
-    {
+    if (!loadSuccess_) {
         size_t n = GetPcmLength(outChannel_, bps_);
         for (size_t i = 0; i < pcmBuffer.bufLength && i < n; i++)
             outPcmBuf_[i] = pcmBuffer.buffer[i];
-    }
-    else
-    {
+    } else {
         AudioBuffer inBuffer = {
             .frameLength = AUDIO_VIVID_SAMPLES,
             .raw = pcmBuffer.buffer,
@@ -182,9 +196,8 @@ static bool ClientLoadLibrary(const std::string &relativePath, std::unique_ptr<A
     if (!handle) {
         AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", relativePath.c_str());
         return false;
-    } else {
-        AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
     }
+    AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
 
     AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(handle,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
@@ -193,9 +206,8 @@ static bool ClientLoadLibrary(const std::string &relativePath, std::unique_ptr<A
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, audioEffectLibHandle);
         dlclose(handle);
         return false;
-    } else {
-        AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful, error: %{public}s", relativePath.c_str(), error);
     }
+    AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful, error: %{public}s", relativePath.c_str(), error);
 
     libEntry->audioEffectLibHandle = audioEffectLibHandle;
 

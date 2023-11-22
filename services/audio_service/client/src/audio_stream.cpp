@@ -208,12 +208,13 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
     }
 
     if (streamParams_.encoding == ENCODING_AUDIOVIVID) {
-        if (!converter_->GetInputBufferSize(bufferSize))
+        if (!converter_->GetInputBufferSize(bufferSize)) {
             return ERR_OPERATION_FAILED;
+        }
         return SUCCESS;
     }
-    if (GetMinimumBufferSize(bufferSize) != 0)
-    {
+
+    if (GetMinimumBufferSize(bufferSize) != 0) {
         return ERR_OPERATION_FAILED;
     }
 
@@ -379,13 +380,13 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
             }
             ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
 
-            if (info.encoding == ENCODING_AUDIOVIVID)
-            {
+            if (info.encoding == ENCODING_AUDIOVIVID) {
                 converter_ = std::make_unique<AudioFormatConverter3DA>();
                 if (converter_ == nullptr ||
                     converter_->Init(info) != SUCCESS ||
-                    !converter_->AllocateMem())
+                    !converter_->AllocateMem()) {
                     AUDIO_ERR_LOG("AudioStream: converter construct error");
+                }
             }
         } else if (eMode_ == AUDIO_MODE_RECORD) {
             AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
@@ -402,8 +403,9 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     }
 
     AudioStreamParams param = info;
-    if (converter_ != nullptr)
+    if (converter_ != nullptr) {
         converter_->ConverterChannels(param.channels, param.channelLayout);
+    }
 
     if (CreateStream(param, eStreamType_) != SUCCESS) {
         AUDIO_ERR_LOG("AudioStream:Create stream failed");

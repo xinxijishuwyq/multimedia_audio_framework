@@ -26,8 +26,7 @@ static constexpr char AUDIO_CONVERTER_CONFIG_FILE[] = "system/etc/audio/audio_co
 static constexpr int32_t FILE_CONTENT_ERROR = -2;
 static constexpr int32_t FILE_PARSE_ERROR = -3;
 
-enum XML_ERROR
-{
+enum XML_ERROR {
     XML_PARSE_RECOVER = 1 << 0,   // recover on errors
     XML_PARSE_NOERROR = 1 << 5,   // suppress error reports
     XML_PARSE_NOWARNING = 1 << 6, // suppress warning reports
@@ -94,19 +93,15 @@ static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
     }
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_converter_conf"))) {
         AUDIO_ERR_LOG("Missing tag - audio_converter_conf: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-        xmlFreeDoc(doc);
-        xmlCleanupParser();
         return FILE_CONTENT_ERROR;
     }
     
-    if (currNode->xmlChildrenNode) {
-        return 0;
-    } else {
+    if (currNode->xmlChildrenNode == nullptr) {
         AUDIO_ERR_LOG("Missing node - audio_converter_conf: %s", AUDIO_CONVERTER_CONFIG_FILE);
-        xmlFreeDoc(doc);
-        xmlCleanupParser();
         return FILE_CONTENT_ERROR;
     }
+
+    return 0;
 }
 
 static void LoadConfigLibrary(ConverterConfig &result, xmlNode* currNode)
@@ -147,7 +142,7 @@ static void LoadConfigVersion(ConverterConfig &result, xmlNode* currNode)
     }
 
     float pVersion = atof(reinterpret_cast<char*>
-    (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("version"))));
+        (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("version"))));
     result.version = pVersion;
 }
 
@@ -156,8 +151,8 @@ int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
     AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
-    if ((doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, 
-            XML_PARSE_NOERROR | XML_PARSE_NOWARNING)) == nullptr) {
+    if ((doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr,
+        XML_PARSE_NOERROR | XML_PARSE_NOWARNING)) == nullptr) {
         AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
         return FILE_PARSE_ERROR;
     }
@@ -165,14 +160,16 @@ int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
 
-    if (LoadConfigCheck(doc, currNode) == 0) {
-        LoadConfigVersion(result, currNode);
-        currNode = currNode->xmlChildrenNode;
-    } else {
+    int32_t ret = 0;
+
+    if ((ret = LoadConfigCheck(doc, currNode)) != 0) {
         xmlFreeDoc(doc);
         xmlCleanupParser();
-        return FILE_CONTENT_ERROR;
+        return ret;
     }
+
+    LoadConfigVersion(result, currNode);
+    currNode = currNode->xmlChildrenNode;
 
     while (currNode != nullptr) {
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -189,12 +186,9 @@ int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
         currNode = currNode->next;
     }
     
-    if (doc) {
-        xmlFreeDoc(doc);
-        xmlCleanupParser();
-    }
-    
-    return 0;
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+    return ret;
 }
 
 } // namespace AudioStandard

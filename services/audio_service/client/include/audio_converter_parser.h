@@ -33,8 +33,7 @@ struct ConverterConfig {
     AudioChannelLayout outChannelLayout;
 };
 
-class AudioConverterParser
-{
+class AudioConverterParser {
 public:
     explicit AudioConverterParser();
     ~AudioConverterParser();

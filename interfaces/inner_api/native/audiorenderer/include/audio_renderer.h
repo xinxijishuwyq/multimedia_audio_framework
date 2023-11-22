@@ -322,7 +322,7 @@ public:
      * - ERR_ILLEGAL_STATE: The AudioRenderer instance has not been initialized.
      * - ERR_INVALID_WRITE: The size of the audio data to write is negative.
      * - ERR_WRITE_FAILED: Writing the audio data failed.
-     * @since 11    
+     * @since 11
      */
     virtual int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) = 0;
 
