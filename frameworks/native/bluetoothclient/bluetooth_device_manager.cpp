@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "bluetooth_audio_manager.h"
 #include "bluetooth_device_manager.h"
 
 namespace OHOS {
@@ -22,6 +23,10 @@ using namespace AudioStandard;
 const int DEFAULT_COD = -1;
 const int DEFAULT_MAJOR_CLASS = -1;
 const int DEFAULT_MAJOR_MINOR_CLASS = -1;
+const int32_t WEAR_ENABLED = 1;
+const int A2DP_DEFAULT_SELECTION = 0;
+const int HFP_DEFAULT_SELECTION = 0;
+const int USER_SELECTION = 1;
 const std::map<std::pair<int, int>, DeviceCategory> bluetoothDeviceCategoryMap_ = {
     {std::make_pair(BluetoothDevice::MAJOR_AUDIO_VIDEO, BluetoothDevice::AUDIO_VIDEO_HEADPHONES), BT_HEADPHONE},
     {std::make_pair(BluetoothDevice::MAJOR_AUDIO_VIDEO, BluetoothDevice::AUDIO_VIDEO_WEARABLE_HEADSET), BT_HEADPHONE},
@@ -34,7 +39,9 @@ IDeviceStatusObserver *g_deviceObserver = nullptr;
 std::mutex g_observerLock;
 std::mutex g_a2dpDeviceLock;
 std::mutex g_a2dpDeviceMapLock;
+std::mutex g_a2dpWearStateMapLock;
 std::map<std::string, BluetoothRemoteDevice> MediaBluetoothDeviceManager::a2dpBluetoothDeviceMap_;
+std::map<std::string, BluetoothDeviceAction> MediaBluetoothDeviceManager::wearDetectionStateMap_;
 std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::privacyDevices_;
 std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::commonDevices_;
 std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::negativeDevices_;
@@ -52,26 +59,52 @@ void UnregisterDeviceObserver()
     g_deviceObserver = nullptr;
 }
 
+void SendUserSelectionEvent(DeviceType devType, const std::string &macAddress, int32_t eventType)
+{
+    AUDIO_INFO_LOG("SendUserSelectionEvent devType is %{public}d, eventType is%{public}d.", devType, eventType);
+    BluetoothRemoteDevice device;
+    if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device) != SUCCESS) {
+            AUDIO_ERR_LOG("SendUserSelectionEvent failed for the device is not connected.");
+            return;
+        }
+        BluetoothAudioManager::GetInstance().SendDeviceSelection(device, eventType,
+            HFP_DEFAULT_SELECTION, USER_SELECTION);
+    } else if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_INFO_LOG("SCO type is not currently supported.");
+        BluetoothAudioManager::GetInstance().SendDeviceSelection(device, A2DP_DEFAULT_SELECTION,
+            eventType, USER_SELECTION);
+    } else {
+        AUDIO_ERR_LOG("SendUserSelectionEvent failed for the devType is not Bluetooth type.");
+    }
+}
+
 void MediaBluetoothDeviceManager::SetMediaStack(const BluetoothRemoteDevice &device, int action)
 {
     switch (action) {
-        case BluetoothDeviceAction::CONNECT:
+        case BluetoothDeviceAction::CONNECT_ACTION:
             HandleConnectDevice(device);
             break;
-        case BluetoothDeviceAction::DISCONNECT:
+        case BluetoothDeviceAction::DISCONNECT_ACTION:
             HandleDisconnectDevice(device);
             break;
-        case BluetoothDeviceAction::WEAR:
+        case BluetoothDeviceAction::WEAR_ACTION:
             HandleWearDevice(device);
             break;
-        case BluetoothDeviceAction::UNWEAR:
+        case BluetoothDeviceAction::UNWEAR_ACTION:
             HandleUnwearDevice(device);
             break;
-        case BluetoothDeviceAction::ENABLEFROMREMOTE:
+        case BluetoothDeviceAction::ENABLEFROMREMOTE_ACTION:
             HandleEnableDevice(device);
             break;
-        case BluetoothDeviceAction::DISABLEFROMREMOTE:
+        case BluetoothDeviceAction::DISABLEFROMREMOTE_ACTION:
             HandleDisableDevice();
+            break;
+        case BluetoothDeviceAction::ENABLE_WEAR_DETECTION_ACTION:
+            HandleWearEnable(device);
+            break;
+        case BluetoothDeviceAction::DISABLE_WEAR_DETECTION_ACTION:
+            HandleWearDisable(device);
             break;
         default:
             AUDIO_ERR_LOG("SetMediaStack failed due to the unknow action: %{public}d", action);
@@ -97,9 +130,13 @@ void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevic
     if (pos != bluetoothDeviceCategoryMap_.end()) {
         bluetoothCategory = pos->second;
     }
+    int32_t wearEnabledAbility = 0;
+    bool isWearSupported = false;
     switch (bluetoothCategory) {
         case BT_HEADPHONE:
-            if (device.IsSupportWearDetection()) {
+            BluetoothAudioManager::GetInstance().IsWearDetectionEnabled(device.GetDeviceAddr(), wearEnabledAbility);
+            BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
+            if (wearEnabledAbility == WEAR_ENABLED && isWearSupported) {
                 AddDeviceInConfigVector(device, negativeDevices_);
                 NotifyToUpdateAudioDevice(device, BT_UNWEAR_HEADPHONE, DeviceStatus::ADD);
             } else {
@@ -131,9 +168,11 @@ void MediaBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDe
         AUDIO_INFO_LOG("The device is already disconnected, ignore disconnect action.");
         return;
     }
+    std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
     RemoveDeviceInConfigVector(device, privacyDevices_);
     RemoveDeviceInConfigVector(device, commonDevices_);
     RemoveDeviceInConfigVector(device, negativeDevices_);
+    wearDetectionStateMap_.erase(device.GetDeviceAddr());
     NotifyToUpdateAudioDevice(device, CATEGORY_DEFAULT, DeviceStatus::REMOVE);
 }
 
@@ -143,9 +182,11 @@ void MediaBluetoothDeviceManager::HandleWearDevice(const BluetoothRemoteDevice &
         AUDIO_ERR_LOG("HandleWearDevice failed for the device has not be reported the connected action.");
         return;
     }
+    std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
     RemoveDeviceInConfigVector(device, negativeDevices_);
     RemoveDeviceInConfigVector(device, privacyDevices_);
     AddDeviceInConfigVector(device, privacyDevices_);
+    wearDetectionStateMap_[device.GetDeviceAddr()] = BluetoothDeviceAction::WEAR_ACTION;
     NotifyToUpdateAudioDevice(device, BT_HEADPHONE, DeviceStatus::ADD);
 }
 
@@ -155,9 +196,11 @@ void MediaBluetoothDeviceManager::HandleUnwearDevice(const BluetoothRemoteDevice
         AUDIO_ERR_LOG("HandleWearDevice failed for the device has not worn.");
         return;
     }
+    std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
     RemoveDeviceInConfigVector(device, privacyDevices_);
     RemoveDeviceInConfigVector(device, negativeDevices_);
     AddDeviceInConfigVector(device, negativeDevices_);
+    wearDetectionStateMap_[device.GetDeviceAddr()] = BluetoothDeviceAction::UNWEAR_ACTION;
     NotifyToUpdateAudioDevice(device, BT_UNWEAR_HEADPHONE, DeviceStatus::ADD);
 }
 
@@ -175,6 +218,38 @@ void MediaBluetoothDeviceManager::HandleDisableDevice()
     if (g_deviceObserver != nullptr) {
         g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_A2DP, "");
     }
+}
+
+void MediaBluetoothDeviceManager::HandleWearEnable(const BluetoothRemoteDevice &device)
+{
+    if (!IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
+        AUDIO_ERR_LOG("HandleWearEnable failed for the device has not connected.");
+        return;
+    }
+    RemoveDeviceInConfigVector(device, negativeDevices_);
+    RemoveDeviceInConfigVector(device, privacyDevices_);
+    std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
+    auto wearStateIter = wearDetectionStateMap_.find(device.GetDeviceAddr());
+    if (wearStateIter != wearDetectionStateMap_.end() &&
+        wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION) {
+        AddDeviceInConfigVector(device, privacyDevices_);
+        NotifyToUpdateAudioDevice(device, BT_HEADPHONE, DeviceStatus::ADD);
+    } else {
+        AddDeviceInConfigVector(device, negativeDevices_);
+        NotifyToUpdateAudioDevice(device, BT_UNWEAR_HEADPHONE, DeviceStatus::ADD);
+    }
+}
+
+void MediaBluetoothDeviceManager::HandleWearDisable(const BluetoothRemoteDevice &device)
+{
+    if (!IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
+        AUDIO_ERR_LOG("HandleWearDisable failed for the device has not connected.");
+        return;
+    }
+    RemoveDeviceInConfigVector(device, privacyDevices_);
+    RemoveDeviceInConfigVector(device, negativeDevices_);
+    AddDeviceInConfigVector(device, privacyDevices_);
+    NotifyToUpdateAudioDevice(device, BT_HEADPHONE, DeviceStatus::ADD);
 }
 
 void MediaBluetoothDeviceManager::AddDeviceInConfigVector(const BluetoothRemoteDevice &device,
@@ -208,6 +283,7 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
 {
     AudioDeviceDescriptor audioDeviceDescriptor;
     audioDeviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioDeviceDescriptor.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     audioDeviceDescriptor.macAddress_ = device.GetDeviceAddr();
     audioDeviceDescriptor.deviceName_ = device.GetDeviceName();
     audioDeviceDescriptor.deviceCategory_ = category;
@@ -270,8 +346,10 @@ void MediaBluetoothDeviceManager::ClearAllA2dpBluetoothDevice()
 {
     AUDIO_INFO_LOG("Bluetooth Service crashed ane enter the ClearAllA2dpBluetoothDevice.");
     std::lock_guard<std::mutex> deviceMapLock(g_a2dpDeviceMapLock);
+    std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
     std::lock_guard<std::mutex> a2dpDeviceLock(g_a2dpDeviceLock);
     a2dpBluetoothDeviceMap_.clear();
+    wearDetectionStateMap_.clear();
     privacyDevices_.clear();
     commonDevices_.clear();
     negativeDevices_.clear();
