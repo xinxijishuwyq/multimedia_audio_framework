@@ -216,13 +216,13 @@ std::vector<bool> AudioSpatializationService::GetSpatializationState(const Strea
 
 bool AudioSpatializationService::IsSpatializationSupported()
 {
-    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
     return true;
 }
 
 bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::string address)
 {
-    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
     if (!address.empty()) {
         return true;
     }
@@ -234,13 +234,13 @@ bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::s
 
 bool AudioSpatializationService::IsHeadTrackingSupported()
 {
-    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
     return true;
 }
 
 bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::string address)
 {
-    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
     if (!address.empty()) {
         return true;
     }
@@ -252,7 +252,7 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::str
 
 int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
 {
-    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
     if (!addressToSpatialDeviceStateMap_.count(audioSpatialDeviceState.address)) {
         addressToSpatialDeviceStateMap_.insert(std::make_pair(audioSpatialDeviceState.address,
             audioSpatialDeviceState));

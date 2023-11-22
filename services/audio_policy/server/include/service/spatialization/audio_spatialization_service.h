@@ -84,6 +84,7 @@ private:
     bool spatializationEnabledReal_ = spatializationEnabledFlag_;
     bool headTrackingEnabledReal_ = headTrackingEnabledFlag_;
     std::mutex spatializationServiceMutex_;
+    std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;
     std::mutex headTrackingEnabledChangeListnerMutex_;
     std::mutex spatializationStateChangeListnerMutex_;

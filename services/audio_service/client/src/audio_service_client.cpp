@@ -1029,7 +1029,6 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         spatializationEnabled_ = std::to_string(spatializationState[0]);
         headTrackingEnabled_ = std::to_string(spatializationState[1]);
     }
-    AUDIO_ERR_LOG("CXX spatialization is %{public}s and headtracking is %{public}s", spatializationEnabled_.c_str(), headTrackingEnabled_.c_str());
     RegisterSpatializationStateEventListener();
 
     pa_proplist *propList = pa_proplist_new();
