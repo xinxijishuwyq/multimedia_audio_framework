@@ -56,6 +56,7 @@ static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settings
 static const std::string SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const std::string SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const std::string PREDICATES_STRING = "settings.general.device_name";
+static const char MAX_RENDERER_INSTANCE[100] = "128"; // 100 for system parameter usage
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -100,6 +101,7 @@ bool AudioPolicyService::Init(void)
         AUDIO_ERR_LOG("Audio Config Parse failed");
         return false;
     }
+    MaxRenderInstanceInit();
 
 #ifdef FEATURE_DTMF_TONE
     std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
@@ -4363,11 +4365,11 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     gsp->SetParameterCallback(object);
 }
 
-int32_t AudioPolicyService::GetMaxRendererInstances()
+void AudioPolicyService::MaxRenderInstanceInit()
 {
     // init max renderer instances before kvstore start by local prop for bootanimation
     char currentMaxRendererInstances[100] = {0}; // 100 for system parameter usage
-    auto ret = GetParameter("persist.multimedia.audio.maxrendererinstances", "16",
+    auto ret = GetParameter("persist.multimedia.audio.maxrendererinstances", MAX_RENDERER_INSTANCE,
         currentMaxRendererInstances, sizeof(currentMaxRendererInstances));
     if (ret > 0) {
         maxRendererInstances_ = atoi(currentMaxRendererInstances);
@@ -4375,6 +4377,10 @@ int32_t AudioPolicyService::GetMaxRendererInstances()
     } else {
         AUDIO_ERR_LOG("Get max renderer instances failed %{public}d", ret);
     }
+}
+
+int32_t AudioPolicyService::GetMaxRendererInstances()
+{
     return maxRendererInstances_;
 }
 
