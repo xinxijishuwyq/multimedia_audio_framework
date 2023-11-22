@@ -2473,7 +2473,7 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
 void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress,
     bool& isActiveA2dpDevice)
 {
-    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+    std::unique_lock<std::mutex> lock(a2dpDeviceMapMutex_);
     connectedA2dpDeviceMap_.erase(macAddress);
 
     if (connectedA2dpDeviceMap_.size() == 0) {
@@ -2497,6 +2497,7 @@ void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::stri
         if (configInfo.absVolumeSupport) {
             audioPolicyManager_.SetAbsVolumeScene(true);
         }
+        lock.unlock();
 
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(activeBTDevice_);
