@@ -269,8 +269,7 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
         std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-        if ((audioPolicyService_.GetLocalDevicesType().compare("tablet") == 0) ||
-            (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0)) {
+        if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
             streamInFocus = AudioStreamType::STREAM_ALL;
         } else {
             streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
