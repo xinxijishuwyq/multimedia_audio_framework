@@ -34,7 +34,7 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     publicDevices.push_back(std::move(defaultDevice));
     publicDevices.insert(publicDevices.end(),
         std::make_move_iterator(privacyDevices.begin()), std::make_move_iterator(privacyDevices.end()));
-    if (perDev_ == nullptr) {
+    if (perDev_->deviceId_ == 0) {
         AUDIO_INFO_LOG(" PerferredMediaRenderDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
