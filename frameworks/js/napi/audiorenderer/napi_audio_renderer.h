@@ -39,6 +39,8 @@ public:
     ~NapiAudioRenderer() = default;
 
     static napi_value Init(napi_env env, napi_value exports);
+    void DestroyCallbacks();
+    void DestroyNAPICallbacks();
 
     std::unique_ptr<AudioRenderer> audioRenderer_;
 
@@ -132,9 +134,9 @@ private:
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *argv,
         const std::string &cbName);
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value *args, NapiAudioRenderer *napiRenderer);
-    static void UnregisterRendererCallback(napi_env env, napi_value *argv,
+    static void UnregisterRendererCallback(napi_env env,
         const std::string &cbName, NapiAudioRenderer *napiRenderer);
-    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
+    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value *argv,
         NapiAudioRenderer *napiRenderer);
     /* common interface in AudioRendererNapi */
     static bool CheckContextStatus(std::shared_ptr<AudioRendererAsyncContext> context);
