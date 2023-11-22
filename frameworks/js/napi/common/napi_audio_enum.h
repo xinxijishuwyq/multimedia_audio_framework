@@ -67,6 +67,9 @@ public:
         FOCUS_TYPE_RECORDING
     };
     static napi_value Init(napi_env env, napi_value exports);
+    static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
+    static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
+    static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);

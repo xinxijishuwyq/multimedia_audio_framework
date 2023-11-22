@@ -25,6 +25,7 @@
 #include "napi_base_context.h"
 #include "audio_log.h"
 #include "audio_info.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -99,9 +100,20 @@ public:
     static napi_value GetUndefinedValue(napi_env env);
 
     /* NapiAudioRenderer Get&&Set object */
+    static void ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
+        const DeviceInfo &deviceInfo);
     static napi_status GetRendererOptions(const napi_env &env, AudioRendererOptions *opts, napi_value in);
     static napi_status GetRendererInfo(const napi_env &env, AudioRendererInfo *rendererInfo, napi_value in);
+    static napi_status SetRendererInfo(const napi_env &env, const AudioRendererInfo &rendererInfo, napi_value &result);
     static napi_status GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in);
+    static napi_status SetStreamInfo(const napi_env &env, const AudioStreamInfo &streamInfo, napi_value &result);
+    static napi_status SetValueInt32Element(const napi_env &env, const std::string &fieldStr,
+        const std::vector<int32_t> &values, napi_value &result);
+    static napi_status SetDeviceDescriptor(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
+        napi_value &result);
+    static napi_status SetDeviceDescriptors(const napi_env &env,
+        const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result);
+    static napi_status SetValueDeviceInfo(const napi_env &env, const DeviceInfo &deviceInfo, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS

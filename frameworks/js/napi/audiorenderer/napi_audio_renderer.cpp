@@ -17,6 +17,7 @@
 #include "xpower_event_js.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
+#include "napi_audio_enum.h"
 #include "napi_audio_renderer_callback.h"
 
 namespace OHOS {
@@ -30,6 +31,24 @@ static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode)
 {
     NapiAudioError::ThrowError(env, errCode);
     return nullptr;
+}
+
+static AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode)
+{
+    AudioStandard::InterruptMode result;
+    switch (interruptMode) {
+        case NapiAudioEnum::InterruptMode::SHARE_MODE:
+            result = AudioStandard::InterruptMode::SHARE_MODE;
+            break;
+        case NapiAudioEnum::InterruptMode::INDEPENDENT_MODE:
+            result = AudioStandard::InterruptMode::INDEPENDENT_MODE;
+            break;
+        default:
+            result = AudioStandard::InterruptMode::SHARE_MODE;
+            AUDIO_ERR_LOG("Unknown interruptMode type, Set it to default SHARE_MODE!");
+            break;
+    }
+    return result;
 }
 
 NapiAudioRenderer::NapiAudioRenderer()
@@ -65,6 +84,24 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("getAudioStreamId", GetAudioStreamId),
         DECLARE_NAPI_FUNCTION("getAudioStreamIdSync", GetAudioStreamIdSync),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
+        DECLARE_NAPI_FUNCTION("getRendererInfo", GetRendererInfo),
+        DECLARE_NAPI_FUNCTION("getRendererInfoSync", GetRendererInfoSync),
+        DECLARE_NAPI_FUNCTION("getStreamInfo", GetStreamInfo),
+        DECLARE_NAPI_FUNCTION("getStreamInfoSync", GetStreamInfoSync),
+        DECLARE_NAPI_FUNCTION("setInterruptMode", SetInterruptMode),
+        DECLARE_NAPI_FUNCTION("setInterruptModeSync", SetInterruptModeSync),
+        DECLARE_NAPI_FUNCTION("getMinStreamVolume", GetMinStreamVolume),
+        DECLARE_NAPI_FUNCTION("getMinStreamVolumeSync", GetMinStreamVolumeSync),
+        DECLARE_NAPI_FUNCTION("getMaxStreamVolume", GetMaxStreamVolume),
+        DECLARE_NAPI_FUNCTION("getMaxStreamVolumeSync", GetMaxStreamVolumeSync),
+        DECLARE_NAPI_FUNCTION("getCurrentOutputDevices", GetCurrentOutputDevices),
+        DECLARE_NAPI_FUNCTION("getCurrentOutputDevicesSync", GetCurrentOutputDevicesSync),
+        DECLARE_NAPI_FUNCTION("getUnderflowCount", GetUnderflowCount),
+        DECLARE_NAPI_FUNCTION("getUnderflowCountSync", GetUnderflowCountSync),
+        DECLARE_NAPI_FUNCTION("getAudioEffectMode", GetAudioEffectMode),
+        DECLARE_NAPI_FUNCTION("setAudioEffectMode", SetAudioEffectMode),
+        DECLARE_NAPI_FUNCTION("setChannelBlendMode", SetChannelBlendMode),
+        DECLARE_NAPI_GETTER("state", GetState),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(),
@@ -795,6 +832,429 @@ napi_value NapiAudioRenderer::SetVolume(napi_env env, napi_callback_info info)
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetVolume", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetRendererInfo(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetRendererInfo failed : no memory");
+        NapiAudioError::ThrowError(env, "GetRendererInfo failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        context->intValue = napiAudioRenderer->audioRenderer_->GetRendererInfo(context->rendererInfo);
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetRendererInfo(env, context->rendererInfo, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetRendererInfo", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetRendererInfoSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+    AudioRendererInfo rendererInfo = {};
+    int32_t ret = napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetRendererInfo failure!");
+    NapiParamUtils::SetRendererInfo(env, rendererInfo, result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetStreamInfo(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetStreamInfo failed : no memory");
+        NapiAudioError::ThrowError(env, "GetStreamInfo failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        context->intValue = napiAudioRenderer->audioRenderer_->GetStreamInfo(context->streamInfo);
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetStreamInfo(env, context->streamInfo, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetStreamInfo", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetStreamInfoSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    AudioStreamInfo streamInfo;
+    int32_t ret = napiAudioRenderer->audioRenderer_->GetStreamInfo(streamInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetStreamInfo failure!");
+    NapiParamUtils::SetStreamInfo(env, streamInfo, result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::SetInterruptMode(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("SetInterruptMode failed : no memory");
+        NapiAudioError::ThrowError(env, "SetInterruptMode failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->interruptMode, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get interruptMode failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        InterruptMode interruptMode = GetNativeInterruptMode(context->interruptMode);
+        napiAudioRenderer->audioRenderer_->SetInterruptMode(interruptMode);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetInterruptMode", executor, complete);
+}
+
+napi_value NapiAudioRenderer::SetInterruptModeSync(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("SetInterruptModeSync");
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number,
+        ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "valueType invaild");
+
+    int32_t interruptMode;
+    NapiParamUtils::GetValueInt32(env, interruptMode, args[PARAM0]);
+
+    if (!NapiAudioEnum::IsLegalInputArgumentInterruptMode(interruptMode)) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+    napiAudioRenderer->audioRenderer_->SetInterruptMode(GetNativeInterruptMode(interruptMode));
+
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetMinStreamVolume(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetMinStreamVolume failed : no memory");
+        NapiAudioError::ThrowError(env, "GetMinStreamVolume failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        context->volLevel = napiAudioRenderer->audioRenderer_->GetMinStreamVolume();
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueDouble(env, context->volLevel, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetMinStreamVolume", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetMinStreamVolumeSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    double volLevel = napiAudioRenderer->audioRenderer_->GetMinStreamVolume();
+    NapiParamUtils::SetValueDouble(env, volLevel, result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetMaxStreamVolume(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetMaxStreamVolume failed : no memory");
+        NapiAudioError::ThrowError(env, "GetMaxStreamVolume failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        context->volLevel = napiAudioRenderer->audioRenderer_->GetMaxStreamVolume();
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueDouble(env, context->volLevel, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetMaxStreamVolume", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetMaxStreamVolumeSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    double volLevel = napiAudioRenderer->audioRenderer_->GetMaxStreamVolume();
+    NapiParamUtils::SetValueDouble(env, volLevel, result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetCurrentOutputDevices(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetCurrentOutputDevices failed : no memory");
+        NapiAudioError::ThrowError(env, "GetCurrentOutputDevices failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        DeviceInfo deviceInfo;
+        context->intValue = napiAudioRenderer->audioRenderer_->GetCurrentOutputDevices(deviceInfo);
+        if (context->intValue == ERR_INVALID_PARAM) {
+            context->SignError(NAPI_ERROR_INVALID_PARAM);
+            return;
+        }
+        context->deviceInfo = deviceInfo;
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueDeviceInfo(env, context->deviceInfo, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetCurrentOutputDevices", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetCurrentOutputDevicesSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    DeviceInfo deviceInfo;
+    int32_t ret = napiAudioRenderer->audioRenderer_->GetCurrentOutputDevices(deviceInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetCurrentOutputDevices failure!");
+
+    NapiParamUtils::SetValueDeviceInfo(env, deviceInfo, result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetUnderflowCount(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetUnderflowCount failed : no memory");
+        NapiAudioError::ThrowError(env, "GetUnderflowCount failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        context->underflowCount = napiAudioRenderer->audioRenderer_->GetUnderflowCount();
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueUInt32(env, context->underflowCount, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetUnderflowCount", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetUnderflowCountSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    uint32_t underflowCount = napiAudioRenderer->audioRenderer_->GetUnderflowCount();
+    NapiParamUtils::SetValueUInt32(env, underflowCount, result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetAudioEffectMode(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, "GetAudioEffectMode failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        context->intValue = napiAudioRenderer->audioRenderer_->GetAudioEffectMode();
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueInt32(env, context->intValue, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetAudioEffectMode", executor, complete);
+}
+
+napi_value NapiAudioRenderer::SetAudioEffectMode(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, "SetAudioEffectMode failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->audioEffectMode, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get audioEffctMode failed",
+            NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context,
+            NapiAudioEnum::IsLegalInputArgumentAudioEffectMode(context->audioEffectMode), "unsupport mode",
+            NAPI_ERR_UNSUPPORTED);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto *napiAudioRenderer = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        AudioEffectMode audioEffectMode = static_cast<AudioEffectMode>(context->audioEffectMode);
+        context->intValue = napiAudioRenderer->audioRenderer_->SetAudioEffectMode(audioEffectMode);
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetAudioEffectMode", executor, complete);
+}
+
+napi_value NapiAudioRenderer::SetChannelBlendMode(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "argcCount invaild");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "valueType params");
+
+    int32_t channelBlendMode;
+    NapiParamUtils::GetValueInt32(env, channelBlendMode, argv[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentChannelBlendMode(channelBlendMode),
+        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "unsupport params");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+    int32_t ret =
+        napiAudioRenderer->audioRenderer_->SetChannelBlendMode(static_cast<ChannelBlendMode>(channelBlendMode));
+    CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE,
+        ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "err illegal state");
+
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetState(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invaild params");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    uint32_t rendererState = napiAudioRenderer->audioRenderer_->GetStatus();
+    napi_status status = NapiParamUtils::SetValueInt32(env, rendererState, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "SetValueInt32 failed");
+    return result;
 }
 } // namespace AudioStandard
 } // namespace OHOS
