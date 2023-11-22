@@ -1624,7 +1624,7 @@ int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint3
         AUDIO_ERR_LOG("RegisterSpatializationStateEventListener:IPC object creation failed");
         return ERROR;
     }
-    headTrackingEnabledChangeCBMap_[sessionID] = spatializationStateChangeListenerStub_;
+    spatializationStateChangeCBMap_[sessionID] = spatializationStateChangeListenerStub_;
     lock.unlock();
 
     return gsp->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
