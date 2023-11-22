@@ -305,6 +305,28 @@ public:
     virtual int32_t Write(uint8_t *buffer, size_t bufferSize) = 0;
 
     /**
+     * @brief Writes audio PCM data and associated metadata.
+     *
+     * Note: This function is not available when the renderer is set to RENDER_MODE_CALLBACK.
+     * It should be used only with AUDIOVIVID encoding type.
+     *
+     * @param pcmBuffer Pointer to the PCM data buffer to be written.
+     * @param pcmBufferSize Size of the PCM data buffer, in bytes.
+	 * The buffer must exactly contain 1024 samples, which is the length of one frame.
+     * @param metaBuffer Pointer to the metadata buffer to be written.
+     * @param metaBufferSize Size of the metadata buffer, in bytes.
+	 * The buffer must exactly contain one metadata, which matches pcm buffer.
+     * @return The number of bytes successfully written, ranging from 0 to pcmBufferSize.
+     * If the operation fails, an error code is returned:
+     * - ERR_INVALID_PARAM: The input parameters are invalid.
+     * - ERR_ILLEGAL_STATE: The AudioRenderer instance has not been initialized.
+     * - ERR_INVALID_WRITE: The size of the audio data to write is negative.
+     * - ERR_WRITE_FAILED: Writing the audio data failed.
+     * @since 11
+     */
+    virtual int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) = 0;
+
+    /**
      * @brief Obtains the audio renderer state.
      *
      * @return Returns the audio renderer state defined in {@link RendererState}.

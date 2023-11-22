@@ -25,6 +25,7 @@
 #include "audio_service_client.h"
 #include "audio_stream_tracker.h"
 #include "volume_ramp.h"
+#include "audio_format_converter_3DA.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -95,6 +96,7 @@ public:
     // Playback related APIs
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
+    int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
@@ -152,6 +154,8 @@ private:
     bool streamTrackerRegistered_ = false;
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
+	
+    std::unique_ptr<AudioFormatConverter3DA> converter_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

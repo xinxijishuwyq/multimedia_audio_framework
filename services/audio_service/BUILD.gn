@@ -102,7 +102,9 @@ ohos_shared_library("audio_client") {
   }
   install_enable = true
   sources = [
+    "client/src/audio_converter_parser.cpp",
     "client/src/audio_device_descriptor.cpp",
+    "client/src/audio_format_converter_3DA.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
@@ -127,6 +129,7 @@ ohos_shared_library("audio_client") {
     "$pulseaudio_build_path/src/pulse:pulse",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",
+    "//third_party/libxml2:xml2",
   ]
 
   include_dirs = [
@@ -139,6 +142,7 @@ ohos_shared_library("audio_client") {
     "../../../../utils/system/safwk/native/include",
     "../../../../commonlibrary/c_utils/base/include",
     "//third_party/bounds_checking_function/include",
+    "//third_party/libxml2/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]

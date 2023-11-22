@@ -518,6 +518,12 @@ int32_t FastAudioStream::Write(uint8_t *buffer, size_t buffer_size)
     return ERR_INVALID_OPERATION;
 }
 
+int32_t FastAudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
+{
+    AUDIO_ERR_LOG("Unsupported operation: Write");
+    return ERR_INVALID_OPERATION;
+}
+
 uint32_t FastAudioStream::GetUnderflowCount()
 {
     AUDIO_INFO_LOG("GetUnderflowCount in.");

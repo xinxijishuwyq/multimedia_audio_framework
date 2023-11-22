@@ -35,6 +35,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
+    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/test_48k_5.1.2+2_32bit.pcm";
+    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/test_48k_5.1.2+2.metadata";
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_INVALID = -2;
@@ -52,6 +54,8 @@ namespace {
     constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
     constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
     constexpr uint32_t PLAYBACK_DURATION = 2;
+
+    constexpr size_t AVS3METADATA_SIZE = 19824;
 
     static size_t g_reqBufLen = 0;
 } // namespace
@@ -88,6 +92,38 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 
     return;
+}
+
+void AudioRendererUnitTest::Initialize3DRendererOptions(AudioRendererOptions &rendererOptions)
+{
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    rendererOptions.streamInfo.channels = AudioChannel::CHANNEL_10;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
+    return;
+}
+
+void AudioRendererUnitTest::GetBuffersAndLen(unique_ptr<AudioRenderer> &audioRenderer,
+    uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen)
+{
+    uint32_t ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+    buffer = new uint8_t[bufferLen];
+    ASSERT_NE(nullptr, buffer);
+    metaBuffer = new uint8_t[AVS3METADATA_SIZE];
+    ASSERT_NE(nullptr, metaBuffer);
+}
+
+void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &metaBuffer,
+    FILE* &wavFile, FILE* &metaFile)
+{
+    delete []buffer;
+    delete []metaBuffer;
+    fclose(wavFile);
+    fclose(metaFile);
 }
 
 void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit)
@@ -2042,6 +2078,464 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_009, TestSize.Level1)
 
     free(buffer);
     fclose(wavFile);
+}/**
+ * @tc.name  : Test Write API.
+ * @tc.number: Audio_Renderer_Write_3D_001
+ * @tc.desc  : Test Write interface. Returns number of bytes written, if the write is successful.
+ */
+
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    size_t bytesToWrite = 0;
+    size_t bytesWritten = 0;
+    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+
+    while (numBuffersToRender) {
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
+        bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_GE(bytesWritten, VALUE_ZERO);
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegl state, RENDERER_NEW : without Initializing the renderer.
+ * @tc.number: Audio_Renderer_Write_3D_002
+ * @tc.desc  : Test Write interface. Returns error code, if the renderer state is RENDERER_NEW.
+ *           : bufferLen is invalid here, firstly bufferLen is validated in Write. So it returns ERR_INVALID_PARAM.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(false, isStarted);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegl state, RENDERER_PREPARED : Write without Start.
+ * @tc.number: Audio_Renderer_Write_3D_003
+ * @tc.desc  : Test Write interface. Returns error code, if the renderer state is not RENDERER_RUNNING.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
+
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegal input, bufferLength = 0.
+ * @tc.number: Audio_Renderer_Write_3D_004
+ * @tc.desc  : Test Write interface. Returns error code, if the bufferLength != samples * inchs * bps.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen = 0;
+
+    uint8_t *buffer = new uint8_t[bufferLen];
+    ASSERT_NE(nullptr, buffer);
+    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
+    ASSERT_NE(nullptr, metaBuffer);
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+
+    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegal input, metaLength = 0.
+ * @tc.number: Audio_Renderer_Write_3D_005
+ * @tc.desc  : Test Write interface. Returns error code, if the metaLength != sizeoof(avs3metadata).
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    int32_t ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = new uint8_t[bufferLen];
+    ASSERT_NE(nullptr, buffer);
+    uint8_t *metaBuffer = new uint8_t[0];
+    ASSERT_NE(nullptr, metaBuffer);
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, 0, metaFile);
+
+    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, 0);
+    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegal input, buffer = nullptr.
+ * @tc.number: Audio_Renderer_Write_3D_006
+ * @tc.desc  : Test Write interface. Returns error code, if the buffer = nullptr.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+    uint8_t *buffer_null = nullptr;
+    int32_t bytesWritten = audioRenderer->Write(buffer_null, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegal input, metaBuffer = nullptr.
+ * @tc.number: Audio_Renderer_Write_3D_007
+ * @tc.desc  : Test Write interface. Returns error code, if the metaBuffer = nullptr.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+    uint8_t *buffer_null = nullptr;
+    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, buffer_null, AVS3METADATA_SIZE);
+    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegal state, RENDERER_STOPPED: Write after Stop
+ * @tc.number: Audio_Renderer_Write_3D_008
+ * @tc.desc  : Test Write interface. Returns error code, if the renderer state is not RENDERER_RUNNING
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
+
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegal state, RENDERER_RELEASED: Write after Release
+ * @tc.number: Audio_Renderer_Write_3D_009
+ * @tc.desc  : Test Write interface. Returns error code, if the renderer state is not RENDERER_RUNNING
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API.
+ * @tc.number: Audio_Renderer_Write_3D_010
+ * @tc.desc  : Test Write interface after pause and resume. Returns number of bytes written, if the write is successful.
+ */
+
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
+{
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+    bool pauseTested = false;
+
+    while (numBuffersToRender) {
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+
+        std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
+
+        bytesWritten = 0;
+        uint64_t currFilePos = ftell(wavFile);
+        if (!pauseTested && (currFilePos > PAUSE_BUFFER_POSITION) && audioRenderer->Pause()) {
+            pauseTested = true;
+            sleep(PAUSE_RENDER_TIME_SECONDS);
+            isStarted = audioRenderer->Start();
+            EXPECT_EQ(true, isStarted);
+
+            int32_t ret = audioRenderer->SetVolume(0.5);
+            EXPECT_EQ(SUCCESS, ret);
+            float volume = audioRenderer->GetVolume();
+            EXPECT_EQ(0.5, volume);
+        }
+
+        bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_GE(bytesWritten, VALUE_ZERO);
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
+ * @tc.name  : Test Write API via illegl render mode, RENDER_MODE_CALLBACK.
+ * @tc.number: Audio_Renderer_Write_3D_011
+ * @tc.desc  : Test Write interface. Returns error code, if the render mode is RENDER_MODE_CALLBACK.
+ *           : In RENDER_MODE_CALLBACK Write API call not supported. By default render mode is RENDER_MODE_NORMAL.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_011, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+
+    size_t bufferLen;
+    uint8_t *buffer;
+    uint8_t *metaBuffer;
+
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    fread(buffer, 1, bufferLen, wavFile);
+    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+    EXPECT_EQ(ERR_INCORRECT_MODE, bytesWritten);
+
+    audioRenderer->Release();
+
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -4691,7 +5185,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Set_Renderer_Instance_001, TestSize
 
     float count = audioRenderer->GetUnderflowCount();
     EXPECT_GE(count, 0);
-    
+
     AppInfo appInfo = {};
     std::unique_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_unique<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);

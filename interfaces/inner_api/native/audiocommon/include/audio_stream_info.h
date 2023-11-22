@@ -216,8 +216,9 @@ enum AudioSamplingRate {
 };
 
 enum AudioEncodingType {
+    ENCODING_INVALID = -1,
     ENCODING_PCM = 0,
-    ENCODING_INVALID = -1
+    ENCODING_AUDIOVIVID = 1
 };
 
 
@@ -405,7 +406,8 @@ const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
 
 
 const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
-    ENCODING_PCM
+    ENCODING_PCM,
+    ENCODING_AUDIOVIVID
 };
 
 const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {

@@ -207,6 +207,13 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
         return GetBufferSizeForCapturer(bufferSize);
     }
 
+    if (streamParams_.encoding == ENCODING_AUDIOVIVID) {
+        if (!converter_->GetInputBufferSize(bufferSize)) {
+            return ERR_OPERATION_FAILED;
+        }
+        return SUCCESS;
+    }
+
     if (GetMinimumBufferSize(bufferSize) != 0) {
         return ERR_OPERATION_FAILED;
     }
@@ -372,6 +379,15 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
                 return ERR_NOT_SUPPORTED;
             }
             ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
+
+            if (info.encoding == ENCODING_AUDIOVIVID) {
+                converter_ = std::make_unique<AudioFormatConverter3DA>();
+                if (converter_ == nullptr ||
+                    converter_->Init(info) != SUCCESS ||
+                    !converter_->AllocateMem()) {
+                    AUDIO_ERR_LOG("AudioStream: converter construct error");
+                }
+            }
         } else if (eMode_ == AUDIO_MODE_RECORD) {
             AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
             if (!IsCapturerChannelValid(info.channels)) {
@@ -386,13 +402,18 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "AudioStream: Error initializing!");
     }
 
-    if (CreateStream(info, eStreamType_) != SUCCESS) {
+    AudioStreamParams param = info;
+    if (converter_ != nullptr) {
+        converter_->ConverterChannels(param.channels, param.channelLayout);
+    }
+
+    if (CreateStream(param, eStreamType_) != SUCCESS) {
         AUDIO_ERR_LOG("AudioStream:Create stream failed");
         return ERROR;
     }
     state_ = PREPARED;
     AUDIO_DEBUG_LOG("AudioStream:Set stream Info SUCCESS");
-    streamParams_ = info;
+    streamParams_ = param;
     RegisterTracker(proxyObj);
     return SUCCESS;
 }
@@ -536,6 +557,62 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
         return ERR_WRITE_FAILED;
     }
     return bytesWritten;
+}
+
+int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
+{
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
+        return ERR_INCORRECT_MODE;
+    }
+
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("Write: Illegal state:%{public}u", state_);
+        // To allow context switch for APIs running in different thread contexts
+        std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
+        return ERR_ILLEGAL_STATE;
+    }
+
+    BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
+    BufferDesc metaDesc = {metaBuffer, metaBufferSize};
+
+    if (!converter_->CheckInputValid(pcmDesc, metaDesc)) {
+        AUDIO_ERR_LOG("Write: Invalid input.");
+        return ERR_INVALID_PARAM;
+    }
+    
+    int32_t writeError;
+    StreamBuffer stream;
+
+    converter_->Process(pcmDesc, metaDesc);
+
+    converter_->GetOutputBufferStream(stream.buffer, stream.bufferLen);
+
+    if (isFirstWrite_ && !offloadEnable_) {
+        if (RenderPrebuf(stream.bufferLen)) {
+            AUDIO_ERR_LOG("ERR_WRITE_FAILED");
+            return ERR_WRITE_FAILED;
+        }
+        isFirstWrite_ = false;
+    }
+
+    ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
+    
+    size_t bytesWritten = 0;
+    size_t totLen = 0;
+    while (stream.bufferLen > 0) {
+        bytesWritten = WriteStream(stream, writeError);
+        if (bytesWritten < 0)
+            break;
+        stream.buffer += bytesWritten;
+        stream.bufferLen -= bytesWritten;
+        totLen += bytesWritten;
+    }
+    if (writeError != 0) {
+        AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
+        return ERR_WRITE_FAILED;
+    }
+    return totLen;
 }
 
 bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)

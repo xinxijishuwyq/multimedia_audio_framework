@@ -507,6 +507,13 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
     return size;
 }
 
+int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize)
+{
+    Trace trace("Write");
+    int32_t size = audioStream_->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);
+    return size;
+}
+
 RendererState AudioRendererPrivate::GetStatus() const
 {
     return static_cast<RendererState>(audioStream_->GetState());
