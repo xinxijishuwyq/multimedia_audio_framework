@@ -26,12 +26,4 @@ enum HdiAdapterFormat {
     INVALID_WIDTH = -1
 };
 
-enum RenderCallbackType {
-    CB_NONBLOCK_WRITE_COMPLETED = 0,
-    CB_DRAIN_COMPLETED = 1,
-    CB_FLUSH_COMPLETED = 2,
-    CB_RENDER_FULL = 3,
-    CB_ERROR_OCCUR = 4,
-};
-
 #endif

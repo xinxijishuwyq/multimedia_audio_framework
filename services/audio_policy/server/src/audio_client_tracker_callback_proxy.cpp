@@ -111,41 +111,6 @@ void AudioClientTrackerCallbackProxy::GetSingleStreamVolumeImpl(float &volume)
     volume = reply.ReadFloat();
 }
 
-void AudioClientTrackerCallbackProxy::SetOffloadModeImpl(int32_t state, bool isAppBack)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
-        return;
-    }
-
-    data.WriteInt32(static_cast<int32_t>(state));
-    data.WriteBool(static_cast<bool>(isAppBack));
-    
-    int error = Remote()->SendRequest(SETOFFLOADMODE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SETOFFLOADMODE failed, error: %{public}d", error);
-    }
-}
-
-void AudioClientTrackerCallbackProxy::UnsetOffloadModeImpl()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
-        return;
-    }
-    
-    int error = Remote()->SendRequest(UNSETOFFLOADMODE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UNSETOFFLOADMODE failed, error: %{public}d", error);
-    }
-}
-
 ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener)
     : listener_(listener)
 {
@@ -192,20 +157,6 @@ void ClientTrackerCallbackListener::GetSingleStreamVolumeImpl(float &volume)
 {
     if (listener_ != nullptr) {
         listener_->GetSingleStreamVolumeImpl(volume);
-    }
-}
-
-void ClientTrackerCallbackListener::SetOffloadModeImpl(int32_t state, bool isAppBack)
-{
-    if (listener_ != nullptr) {
-        listener_->SetOffloadModeImpl(state, isAppBack);
-    }
-}
-
-void ClientTrackerCallbackListener::UnsetOffloadModeImpl()
-{
-    if (listener_ != nullptr) {
-        listener_->UnsetOffloadModeImpl();
     }
 }
 } // namespace AudioStandard

@@ -74,8 +74,6 @@ public:
 
     int32_t SetLowPowerVolume(float volume) override;
     float GetLowPowerVolume() override;
-    int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
-    int32_t UnsetOffloadMode() override;
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
@@ -142,9 +140,6 @@ private:
 
     bool isFirstRead_;
     bool isFirstWrite_;
-    bool isPausing_;
-    uint64_t offloadTsLast_ = 0;
-    uint64_t offloadTsOffset_ = 0;
 
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;

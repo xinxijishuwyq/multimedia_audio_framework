@@ -122,7 +122,6 @@ private:
     void AdjustAudioBalance(char *data, uint64_t len);
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     FILE *dumpFile_ = nullptr;
-    std::mutex mutex_; // add lock, when stop and renderframe call in same millisecond, cause crash some time
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner()
@@ -421,7 +420,6 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
 int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     int32_t ret = SUCCESS;
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Bluetooth Render Handle is nullptr!");
@@ -569,7 +567,6 @@ int32_t BluetoothRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t BluetoothRendererSinkInner::Stop(void)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     Trace trace("BluetoothRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop in");
 #ifdef FEATURE_POWER_MANAGER

@@ -381,42 +381,6 @@ int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessagePa
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply)
-{
-    const float volume = data.ReadFloat();
-    int32_t result = OffloadSetVolume(volume);
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadDrain(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t result = OffloadDrain();
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply)
-{
-    uint64_t frames;
-    int64_t timeSec, timeNanoSec;
-    int32_t result = OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
-    reply.WriteInt32(result);
-    reply.WriteUint64(frames);
-    reply.WriteInt64(timeSec);
-    reply.WriteInt64(timeNanoSec);
-                    
-    return AUDIO_OK;
-}
-
-int AudioManagerStub::HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t sizeMs = data.ReadUint32();
-    int32_t result = OffloadSetBufferSize(sizeMs);
-    reply.WriteInt32(result);
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)
 {
     int32_t size = data.ReadInt32();
