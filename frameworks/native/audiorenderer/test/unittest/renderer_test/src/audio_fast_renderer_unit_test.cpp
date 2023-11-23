@@ -436,5 +436,37 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(false, isStopped);
 }
+
+/**
+ * @tc.name  : Test Fast Renderer
+ * @tc.number: Audio_Fast_Renderer_010
+ * @tc.desc  : Audio_Fast_Renderer_010
+ */
+HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
+{
+    if (!g_flag) {
+        return;
+    }
+    int32_t SET_FRAME_SIZE = 960;
+    uint32_t GET_FRAME_SIZE = 0;
+    AudioRendererOptions rendererOptions;
+
+    InitializeFastRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    audioRenderer->SetPreferredFrameSize(SET_FRAME_SIZE);
+    bool gotFrameSize = audioRenderer->GetFrameCount(GET_FRAME_SIZE);
+    EXPECT_EQ(SUCCESS, gotFrameSize);
+    EXPECT_EQ(static_cast<uint32_t>(SET_FRAME_SIZE), GET_FRAME_SIZE);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    audioRenderer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS
