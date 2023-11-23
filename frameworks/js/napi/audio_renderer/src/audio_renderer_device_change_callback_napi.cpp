@@ -145,15 +145,25 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &jsChangeInfoOb
 
     napi_value value = nullptr;
     napi_value sampleRates;
-    napi_create_array_with_length(env, 1, &sampleRates);
-    napi_create_int32(env, deviceInfo.audioStreamInfo.samplingRate, &value);
-    napi_set_element(env, sampleRates, 0, value);
+    size_t size = deviceInfo.audioStreamInfo.samplingRate.size();
+    napi_create_array_with_length(env, size, &sampleRates);
+    size_t count = 0;
+    for (const auto &samplingRate : deviceInfo.audioStreamInfo.samplingRate) {
+        napi_create_int32(env, samplingRate, &value);
+        napi_set_element(env, sampleRates, count, value);
+        count++;
+    }
     napi_set_named_property(env, jsChangeInfoObj, "sampleRates", sampleRates);
 
     napi_value channelCounts;
-    napi_create_array_with_length(env, 1, &channelCounts);
-    napi_create_int32(env, deviceInfo.audioStreamInfo.channels, &value);
-    napi_set_element(env, channelCounts, 0, value);
+    size = deviceInfo.audioStreamInfo.channels.size();
+    napi_create_array_with_length(env, size, &channelCounts);
+    count = 0;
+    for (const auto &channels : deviceInfo.audioStreamInfo.channels) {
+        napi_create_int32(env, channels, &value);
+        napi_set_element(env, channelCounts, count, value);
+        count++;
+    }
     napi_set_named_property(env, jsChangeInfoObj, "channelCounts", channelCounts);
 
     napi_value channelMasks;
