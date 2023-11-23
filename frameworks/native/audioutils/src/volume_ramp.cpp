@@ -24,6 +24,7 @@ constexpr float MIN_CURVE_TIME = 0.0f;
 constexpr float MAX_CURVE_TIME = 1.0f;
 constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
+constexpr unsigned long VOLUME_SIZE = 2;
 
 VolumeRamp::VolumeRamp()
 {
@@ -35,7 +36,7 @@ VolumeRamp::VolumeRamp()
 void VolumeRamp::SetVolumeCurve(vector<float> &volumes)
 {
     vector<float> times = {0.0f, 1.0f};
-    if (volumes.size() != 2) {
+    if (volumes.size() != VOLUME_SIZE) {
         AUDIO_ERR_LOG("Array size must 2!");
         return;
     }
