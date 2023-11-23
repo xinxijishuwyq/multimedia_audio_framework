@@ -328,7 +328,10 @@ void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devD
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : remoteRenderDevices_) {
+    for (const auto &desc : remoteRenderDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -337,7 +340,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDev
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : remoteCaptureDevices_) {
+    for (const auto &desc : remoteCaptureDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -346,7 +352,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDe
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : commRenderPrivacyDevices_) {
+    for (const auto &desc : commRenderPrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -355,7 +364,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPriva
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : commRenderPublicDevices_) {
+    for (const auto &desc : commRenderPublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -364,7 +376,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPubli
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : commCapturePrivacyDevices_) {
+    for (const auto &desc : commCapturePrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -373,7 +388,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePriv
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : commCapturePublicDevices_) {
+    for (const auto &desc : commCapturePublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -382,7 +400,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePubl
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : mediaRenderPrivacyDevices_) {
+    for (const auto &desc : mediaRenderPrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -391,7 +412,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPriv
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : mediaRenderPublicDevices_) {
+    for (const auto &desc : mediaRenderPublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -400,7 +424,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPubl
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : mediaCapturePrivacyDevices_) {
+    for (const auto &desc : mediaCapturePrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -409,7 +436,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePri
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : mediaCapturePublicDevices_) {
+    for (const auto &desc : mediaCapturePublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -418,7 +448,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePub
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : capturePrivacyDevices_) {
+    for (const auto &desc : capturePrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -427,7 +460,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePrivacyD
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : capturePublicDevices_) {
+    for (const auto &desc : capturePublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -530,8 +566,8 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
-    for (auto &dev : connectedDevices_) {
-        for (auto &devicePrivacy : devicePrivacyMaps_) {
+    for (const auto &dev : connectedDevices_) {
+        for (const auto &devicePrivacy : devicePrivacyMaps_) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor(*dev);
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);

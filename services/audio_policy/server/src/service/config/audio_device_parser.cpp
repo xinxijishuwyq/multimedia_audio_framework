@@ -212,11 +212,10 @@ std::vector<std::string> split(const std::string &line, const std::string &sep)
 void AudioDeviceParser::ParseDeviceRole(const std::string &deviceRole, int32_t &deviceRoleFlag)
 {
     std::vector<std::string> buf = split(deviceRole, ",");
-    typedef std::vector<std::string>::iterator itr;
-    for (itr i = buf.begin(); i != buf.end(); i++) {
-        if (*i == "output") {
+    for (auto &role : buf) {
+        if (role == "output") {
             deviceRoleFlag |= DeviceRole::OUTPUT_DEVICE;
-        } else if (*i == "input") {
+        } else if (role == "input") {
             deviceRoleFlag |= DeviceRole::INPUT_DEVICE;
         }
     }
@@ -225,19 +224,18 @@ void AudioDeviceParser::ParseDeviceRole(const std::string &deviceRole, int32_t &
 void AudioDeviceParser::ParseDeviceCategory(const std::string &deviceCategory, int32_t &deviceCategoryFlag)
 {
     std::vector<std::string> buf = split(deviceCategory, ",");
-    typedef std::vector<std::string>::iterator itr;
-    for (itr i = buf.begin(); i != buf.end(); i++) {
-        if (*i == "HEADPHONE") {
+    for (auto &category : buf) {
+        if (category == "HEADPHONE") {
             deviceCategoryFlag |= DeviceCategory::BT_HEADPHONE;
-        } else if (*i == "GLASSES") {
+        } else if (category == "GLASSES") {
             deviceCategoryFlag |= DeviceCategory::BT_GLASSES;
-        } else if (*i == "SOUNDBOX") {
+        } else if (category == "SOUNDBOX") {
             deviceCategoryFlag |= DeviceCategory::BT_SOUNDBOX;
-        } else if (*i == "CAR") {
+        } else if (category == "CAR") {
             deviceCategoryFlag |= DeviceCategory::BT_CAR;
-        } else if (*i == "HEADPHONE_UNWEAR") {
+        } else if (category == "HEADPHONE_UNWEAR") {
             deviceCategoryFlag |= DeviceCategory::BT_UNWEAR_HEADPHONE;
-        } else if (*i == "WATCH") {
+        } else if (category == "WATCH") {
             deviceCategoryFlag |= DeviceCategory::BT_WATCH;
         }
     }
@@ -246,11 +244,10 @@ void AudioDeviceParser::ParseDeviceCategory(const std::string &deviceCategory, i
 void AudioDeviceParser::ParseDeviceUsage(const std::string &deviceUsage, int32_t &deviceUsageFlag)
 {
     std::vector<std::string> buf = split(deviceUsage, ",");
-    typedef std::vector<std::string>::iterator itr;
-    for (itr i = buf.begin(); i != buf.end(); i++) {
-        if (*i == "media") {
+    for (auto &usage : buf) {
+        if (usage == "media") {
             deviceUsageFlag |= DeviceUsage::MEDIA;
-        } else if (*i == "voice") {
+        } else if (usage == "voice") {
             deviceUsageFlag |= DeviceUsage::VOICE;
         }
     }
