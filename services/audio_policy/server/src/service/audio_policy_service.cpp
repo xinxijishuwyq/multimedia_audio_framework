@@ -2029,17 +2029,103 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::HandleFileDevice(DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("HandleFileDevice");
+
+    std::string sinkPortName = GetSinkPortName(deviceType);
+    std::string sourcePortName = GetSourcePortName(deviceType);
+    if (sinkPortName == PORT_NONE && sourcePortName == PORT_NONE) {
+        AUDIO_ERR_LOG("HandleFileDevice failed for sinkPortName and sourcePortName are none");
+        return ERR_OPERATION_FAILED;
+    }
+    if (sinkPortName != PORT_NONE) {
+        AudioIOHandle ioHandle = GetSinkIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sinkPortName, true);
+        audioPolicyManager_.SuspendAudioDevice(sinkPortName, false);
+    }
+    if (sourcePortName != PORT_NONE) {
+        AudioIOHandle ioHandle = GetSourceIOHandle(deviceType);
+        audioPolicyManager_.SetDeviceActive(ioHandle, deviceType, sourcePortName, true);
+        audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
+    }
+    if (isUpdateRouteSupported_) {
+        UpdateActiveDeviceRoute(deviceType);
+    }
+
+    UpdateInputDeviceInfo(deviceType);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation = false)
+{
+    bool isVolumeSwitched = false;
+    if (isUpdateRouteSupported_ && !isSceneActivation) {
+        if (GetDeviceRole(deviceType) == OUTPUT_DEVICE) {
+            int32_t muteDuration = 1200000; // us
+            std::string sinkPortName = GetSinkPortName(deviceType);
+            CHECK_AND_RETURN_RET_LOG(sinkPortName != PORT_NONE,
+                ERR_OPERATION_FAILED,
+                "Invalid port %{public}s",
+                sinkPortName.c_str());
+            std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, sinkPortName, deviceType);
+            switchThread.detach();
+            int32_t beforSwitchDelay = 300000; // 300 ms
+            usleep(beforSwitchDelay);
+        }
+        UpdateActiveDeviceRoute(deviceType);
+        if (GetDeviceRole(deviceType) == OUTPUT_DEVICE) {
+            if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(deviceType)) {
+                SetVolumeForSwitchDevice(deviceType);
+            }
+            isVolumeSwitched = true;
+        }
+    }
+    if (GetDeviceRole(deviceType) == OUTPUT_DEVICE && !isVolumeSwitched &&
+        GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(deviceType)) {
+        SetVolumeForSwitchDevice(deviceType);
+    }
+    UpdateInputDeviceInfo(deviceType);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::ActivateNewDevice(DeviceType deviceType, bool isSceneActivation = false)
 {
+    AUDIO_INFO_LOG("Switch device: [%{public}d]-->[%{public}d]", currentActiveDevice_.deviceType_, deviceType);
     int32_t result = SUCCESS;
+
     ResetOffloadMode();
 
+    if (currentActiveDevice_.deviceType_ == deviceType) {
+        if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || currentActiveDevice_.macAddress_ == activeBTDevice_) {
+            return result;
+        }
+    }
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = HandleA2dpDevice(deviceType);
+        return result;
+    }
     if (isArmUsbDevice_ && deviceType == DEVICE_TYPE_USB_HEADSET) {
         result = HandleArmUsbDevice(deviceType);
         return result;
     }
-
-    return SUCCESS;
+    if (deviceType == DEVICE_TYPE_FILE_SINK) {
+        result = HandleFileDevice(deviceType);
+        return result;
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        result = HandleA2dpDevice(deviceType);
+        return result;
+    }
+    if (isArmUsbDevice_ && currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
+        result = HandleArmUsbDevice(deviceType);
+        return result;
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_FILE_SINK) {
+        result = HandleFileDevice(deviceType);
+        return result;
+    }
+    return ActivateNormalNewDevice(deviceType, isSceneActivation);
 }
 
 void AudioPolicyService::KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType)
@@ -2434,10 +2520,12 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
         }
     }
 
-    // new device found. If connected, add into active device list
-    int32_t result = ActivateNewDevice(devType);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to activate new device %{public}d", devType);
     ResetOffloadMode();
+
+    if (isArmUsbDevice_ && devType == DEVICE_TYPE_USB_HEADSET) {
+        int32_t result = HandleArmUsbDevice(devType);
+        return result;
+    }
 
     return SUCCESS;
 }
