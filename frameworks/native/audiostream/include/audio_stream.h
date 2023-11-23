@@ -116,6 +116,7 @@ private:
     void ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize);
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    int32_t InitFromParams(AudioStreamParams &param);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
