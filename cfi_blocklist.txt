@@ -19,8 +19,12 @@ src:*frameworks/native/ohaudio/OHAudioStreamBuilder.cpp
 src:*frameworks/native/ohaudio/OHAudioRenderer.cpp
 src:*frameworks/native/ohaudio/OHAudioCapturer.cpp
 src:*services/audio_policy/server/src/service/config/audio_volume_parser.cpp
+src:*services/audio_policy/server/src/service/config/audio_strategy_router_parser.cpp
+src:*services/audio_policy/server/src/service/config/audio_usage_strategy_parser.cpp
 fun:*AudioFocusParser*
 fun:*AudioToneParser*
+fun:*AudioStrategyRouterParser*
+fun:*AudioUsageStrategyParser*
 fun:*XMLParser*
 src:*services/audio_service/server/src/audio_effect_server.cpp
 src:*frameworks/native/audioeffect/src/audio_effect_chain_manager.cpp

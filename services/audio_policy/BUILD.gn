@@ -26,6 +26,8 @@ group("audio_policy_packages") {
     ":audio_interrupt_policy_config",
     ":audio_policy_init",
     ":audio_policy_service",
+    ":audio_strategy_router",
+    ":audio_usage_strategy",
     ":audio_volume_config",
   ]
 
@@ -159,6 +161,8 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/audio_state_manager.cpp",
     "server/src/service/config/audio_device_parser.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
+    "server/src/service/config/audio_strategy_router_parser.cpp",
+    "server/src/service/config/audio_usage_strategy_parser.cpp",
     "server/src/service/config/audio_volume_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
     "server/src/service/data_share_observer_callback.cpp",
@@ -272,6 +276,22 @@ ohos_shared_library("audio_policy_service") {
 
 ohos_prebuilt_etc("audio_interrupt_policy_config") {
   source = "server/config/audio_interrupt_policy_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_strategy_router") {
+  source = "server/config/audio_strategy_router.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_usage_strategy") {
+  source = "server/config/audio_usage_strategy.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
