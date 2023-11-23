@@ -390,12 +390,11 @@ void AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &channels
         tmpIoBufferConfig.inputCfg.channels = DEFAULT_NUM_CHANNEL;
         tmpIoBufferConfig.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     }
-    int32_t ret;
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     for (AudioEffectHandle handle: standByEffectHandles) {
-        ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+        int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
         if (ret != 0) {
             AUDIO_ERR_LOG("Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
             return;

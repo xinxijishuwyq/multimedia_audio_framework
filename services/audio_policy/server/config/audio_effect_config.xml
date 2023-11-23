@@ -16,7 +16,7 @@
 <audio_effects_conf version="1.0">
     <libraries>
         <library name="histen" path="libaudio_integration.z.so"/>
-        <library name="hvs" path="libaudio_integration_hvs.z.so"/>
+        <library name="hvs" path="libaudio_integration_hvs_1.z.so"/>
     </libraries>
 
     <effects>
