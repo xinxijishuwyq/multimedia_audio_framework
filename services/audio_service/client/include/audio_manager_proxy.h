@@ -62,6 +62,7 @@ public:
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
     int32_t SetCaptureSilentState(bool state) override;
+    int32_t UpdateSpatializationState(std::vector<bool> spatializationState) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

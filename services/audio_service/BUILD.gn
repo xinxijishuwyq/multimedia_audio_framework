@@ -112,6 +112,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_process_proxy.cpp",
     "client/src/audio_routing_manager.cpp",
     "client/src/audio_service_client.cpp",
+    "client/src/audio_spatialization_manager.cpp",
     "client/src/audio_stream.cpp",
     "client/src/audio_stream_manager.cpp",
     "client/src/audio_stream_tracker.cpp",

@@ -237,6 +237,39 @@ public:
         const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) = 0;
+
+    virtual bool IsSpatializationEnabled() = 0;
+
+    virtual int32_t SetSpatializationEnabled(const bool enable) = 0;
+
+    virtual bool IsHeadTrackingEnabled() = 0;
+
+    virtual int32_t SetHeadTrackingEnabled(const bool enable) = 0;
+
+    virtual int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) = 0;
+
+    virtual int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) = 0;
+
+    virtual std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) = 0;
+
+    virtual bool IsSpatializationSupported() = 0;
+
+    virtual bool IsSpatializationSupportedForDevice(const std::string address) = 0;
+
+    virtual bool IsHeadTrackingSupported() = 0;
+
+    virtual bool IsHeadTrackingSupportedForDevice(const std::string address) = 0;
+
+    virtual int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) = 0;
+
+    virtual int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+        const sptr<IRemoteObject> &object) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

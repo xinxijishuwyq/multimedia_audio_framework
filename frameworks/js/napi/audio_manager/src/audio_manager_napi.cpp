@@ -28,6 +28,7 @@
 #include "audio_volume_manager_napi.h"
 #include "audio_volume_group_manager_napi.h"
 #include "audio_interrupt_manager_napi.h"
+#include "audio_spatialization_manager_napi.h"
 #include "audio_utils.h"
 #include "hilog/log.h"
 #include "audio_log.h"
@@ -521,6 +522,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getRoutingManager", GetRoutingManager),
         DECLARE_NAPI_FUNCTION("getVolumeManager", GetVolumeManager),
         DECLARE_NAPI_FUNCTION("getInterruptManager", GetInterruptManager),
+        DECLARE_NAPI_FUNCTION("getSpatializationManager", GetSpatializationManager),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -2563,6 +2565,20 @@ napi_value AudioManagerNapi::GetInterruptManager(napi_env env, napi_callback_inf
     return AudioInterruptManagerNapi::CreateInterruptManagerWrapper(env);
 }
 
+napi_value AudioManagerNapi::GetSpatializationManager(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    size_t argCount = 0;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        HiLog::Error(LABEL, "Invalid arguments!");
+        return nullptr;
+    }
+
+    return AudioSpatializationManagerNapi::CreateSpatializationManagerWrapper(env);
+}
+
 void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result)
 {
     for (int i = NONE_DEVICES_FLAG; i < DEVICE_FLAG_MAX; i++) {
@@ -2614,6 +2630,7 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioVolumeGroupManagerNapi::Init(env, exports);
     AudioVolumeManagerNapi::Init(env, exports);
     AudioInterruptManagerNapi::Init(env, exports);
+    AudioSpatializationManagerNapi::Init(env, exports);
 
     return exports;
 }

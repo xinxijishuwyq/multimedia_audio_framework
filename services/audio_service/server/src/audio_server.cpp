@@ -960,5 +960,20 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
     return SUCCESS;
 }
 
+int32_t AudioServer::UpdateSpatializationState(std::vector<bool> spatializationState)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
+        AUDIO_ERR_LOG("UpdateSpatializationState refused for %{public}d", callingUid);
+        return ERR_NOT_SUPPORTED;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+        return ERROR;
+    } else {
+        return audioEffectChainManager->UpdateSpatializationState(spatializationState);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

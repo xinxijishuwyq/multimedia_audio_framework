@@ -51,6 +51,7 @@ const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
 const uint32_t OFFLOAD_SMALL_BUFFER = 20;
 const uint32_t OFFLOAD_BIG_BUFFER = 100;
+const uint32_t SPATIALIZATION_STATE_SIZE = 2;
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
@@ -986,6 +987,8 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
         audioParams.channelLayout = defaultChCountToLayoutMap[audioParams.channels];
     }
     pa_proplist_sets(propList, "stream.channelLayout", std::to_string(audioParams.channelLayout).c_str());
+    pa_proplist_sets(propList, "spatialization.enabled", spatializationEnabled_.c_str());
+    pa_proplist_sets(propList, "headtracking.enabled", headTrackingEnabled_.c_str());
     pa_channel_map_init(&map);
     map.channels = audioParams.channels;
     uint32_t channelsInLayout = ConvertChLayoutToPaChMap(audioParams.channelLayout, map);
@@ -1019,6 +1022,14 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     sampleSpec = ConvertToPAAudioParams(audioParams);
     mFrameSize = pa_frame_size(&sampleSpec);
     channelLayout_ = audioParams.channelLayout;
+    std::vector<bool> spatializationState = AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
+    if (spatializationState.size() != SPATIALIZATION_STATE_SIZE) {
+        AUDIO_WARNING_LOG("spatialization state vector size is incorrect");
+    } else {
+        spatializationEnabled_ = std::to_string(spatializationState[0]);
+        headTrackingEnabled_ = std::to_string(spatializationState[1]);
+    }
+    RegisterSpatializationStateEventListener();
 
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;
@@ -3401,5 +3412,78 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
     return channelNum;
 }
 
+int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
+{
+    if (!spatializationStateChangeCallback_) {
+        spatializationStateChangeCallback_ = std::make_shared<AudioSpatializationStateChangeCallbackImpl>();
+        if (!spatializationStateChangeCallback_) {
+            AUDIO_ERR_LOG("RegisterSpatializationStateEventListener: Memory Allocation Failed !!");
+            return ERROR;
+        }
+    }
+
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(
+        sessionID_, mStreamUsage, spatializationStateChangeCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioServiceClient::RegisterSpatializationStateEventListener failed");
+        return ERROR;
+    }
+
+    spatializationStateChangeCallback_->setAudioServiceClientObj(this);
+    return SUCCESS;
+}
+
+void AudioServiceClient::OnSpatializationStateChange(const std::vector<bool> &spatializationState)
+{
+    if (spatializationState.size() != SPATIALIZATION_STATE_SIZE) {
+        AUDIO_WARNING_LOG("spatialization state vector size is incorrect");
+        return;
+    }
+    spatializationEnabled_ = std::to_string(spatializationState[0]);
+    headTrackingEnabled_ = std::to_string(spatializationState[1]);
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("context is null");
+        return;
+    }
+
+    pa_threaded_mainloop_lock(mainLoop);
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return;
+    }
+
+    pa_proplist_sets(propList, "spatialization.enabled", spatializationEnabled_.c_str());
+    pa_proplist_sets(propList, "headtracking.enabled", headTrackingEnabled_.c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    pa_threaded_mainloop_unlock(mainLoop);
+}
+
+AudioSpatializationStateChangeCallbackImpl::AudioSpatializationStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioSpatializationStateChangeCallbackImpl instance create");
+}
+
+AudioSpatializationStateChangeCallbackImpl::~AudioSpatializationStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioSpatializationStateChangeCallbackImpl instance destory");
+}
+
+void AudioSpatializationStateChangeCallbackImpl::setAudioServiceClientObj(AudioServiceClient *serviceClientObj)
+{
+    serviceClient_ = serviceClientObj;
+}
+
+void AudioSpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
+    const std::vector<bool> &spatializationState)
+{
+    serviceClient_->OnSpatializationStateChange(spatializationState);
+}
 } // namespace AudioStandard
 } // namespace OHOS
