@@ -358,7 +358,6 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
         eStreamType_, info.encoding);
-
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("AudioStream: Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
@@ -368,43 +367,13 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         StopAudioStream();
         ReleaseAudioStream(false);
     }
-    {
-        int32_t ret = 0;
-        static std::mutex connectServerMutex;
-        std::lock_guard<std::mutex> lockConnect(connectServerMutex);
-        Trace trace("AudioStream::Initialize");
-        if (eMode_ == AUDIO_MODE_PLAYBACK) {
-            AUDIO_DEBUG_LOG("AudioStream: Initialize playback");
-            if (!IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout)) {
-                return ERR_NOT_SUPPORTED;
-            }
-            ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
-
-            if (info.encoding == ENCODING_AUDIOVIVID) {
-                converter_ = std::make_unique<AudioFormatConverter3DA>();
-                if (converter_ == nullptr ||
-                    converter_->Init(info) != SUCCESS ||
-                    !converter_->AllocateMem()) {
-                    AUDIO_ERR_LOG("AudioStream: converter construct error");
-                }
-            }
-        } else if (eMode_ == AUDIO_MODE_RECORD) {
-            AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
-            if (!IsCapturerChannelValid(info.channels)) {
-                AUDIO_ERR_LOG("AudioStream: Invalid source channel %{public}d", info.channels);
-                return ERR_NOT_SUPPORTED;
-            }
-            ret = Initialize(AUDIO_SERVICE_CLIENT_RECORD);
-        } else {
-            AUDIO_ERR_LOG("AudioStream: error eMode.");
-            return ERR_INVALID_OPERATION;
-        }
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "AudioStream: Error initializing!");
-    }
 
     AudioStreamParams param = info;
-    if (converter_ != nullptr) {
-        converter_->ConverterChannels(param.channels, param.channelLayout);
+
+    int32_t ret = 0;
+
+    if ((ret = InitFromParams(param)) != SUCCESS) {
+        return ret;
     }
 
     if (CreateStream(param, eStreamType_) != SUCCESS) {
@@ -1273,6 +1242,45 @@ void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
     }
+}
+
+int32_t AudioStream::InitFromParams(AudioStreamParams &info)
+{
+    int32_t ret = 0;
+    static std::mutex connectServerMutex;
+    std::lock_guard<std::mutex> lockConnect(connectServerMutex);
+    Trace trace("AudioStream::Initialize");
+    if (eMode_ == AUDIO_MODE_PLAYBACK) {
+        AUDIO_DEBUG_LOG("AudioStream: Initialize playback");
+        if (!IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout)) {
+            return ERR_NOT_SUPPORTED;
+        }
+        ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
+
+        if (info.encoding == ENCODING_AUDIOVIVID) {
+            converter_ = std::make_unique<AudioFormatConverter3DA>();
+            if (converter_ == nullptr ||
+                converter_->Init(info) != SUCCESS ||
+                !converter_->AllocateMem()) {
+                AUDIO_ERR_LOG("AudioStream: converter construct error");
+                return ERROR;
+            } else {
+                converter_->ConverterChannels(info.channels, info.channelLayout);
+            }
+        }
+    } else if (eMode_ == AUDIO_MODE_RECORD) {
+        AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
+        if (!IsCapturerChannelValid(info.channels)) {
+            AUDIO_ERR_LOG("AudioStream: Invalid source channel %{public}d", info.channels);
+            return ERR_NOT_SUPPORTED;
+        }
+        ret = Initialize(AUDIO_SERVICE_CLIENT_RECORD);
+    } else {
+        AUDIO_ERR_LOG("AudioStream: error eMode.");
+        return ERR_INVALID_OPERATION;
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "AudioStream: Error initializing!");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
