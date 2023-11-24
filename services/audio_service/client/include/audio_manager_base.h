@@ -328,7 +328,7 @@ private:
         &AudioManagerStub::HandleSetWakeupSourceCallback,
         &AudioManagerStub::HandleSetCaptureSilentState,
         &AudioManagerStub::HandleUpdateSpatializationState,
-  };
+    };
 };
 } // namespace AudioStandard
 } // namespace OHOS
