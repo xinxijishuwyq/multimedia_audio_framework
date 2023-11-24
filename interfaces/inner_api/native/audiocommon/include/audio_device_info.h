@@ -271,6 +271,17 @@ struct DeviceStreamInfo {
         samplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel);
         channels = UnmarshallingSetInt32<AudioChannel>(parcel);
     }
+
+    bool CheckParams()
+    {
+        if (samplingRate.size() == 0) {
+            return false;
+        }
+        if (channels.size() == 0) {
+            return false;
+        }
+        return true;
+    }
 };
 
 class DeviceInfo {

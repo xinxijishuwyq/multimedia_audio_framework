@@ -574,8 +574,8 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRendere
         EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.deviceType, DeviceType::DEVICE_TYPE_SPEAKER);
         EXPECT_GE(audioRendererChangeInfos[0]->outputDeviceInfo.deviceId, MIN_DEVICE_ID);
         EXPECT_EQ(true, (*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.samplingRate.rbegin()
-            >= SAMPLE_RATE_8000) || 
-            ((*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.samplingRate.begin() 
+            >= SAMPLE_RATE_8000) ||
+            ((*audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.samplingRate.begin()
             <= SAMPLE_RATE_96000)));
         EXPECT_EQ(audioRendererChangeInfos[0]->outputDeviceInfo.audioStreamInfo.encoding,
             AudioEncodingType::ENCODING_PCM);

@@ -360,12 +360,8 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
 {
     AUDIO_INFO_LOG("%{public}s enter, deviceRole %{public}d.", __func__, deviceInfo.deviceRole);
     deviceInfo_ = deviceInfo;
-    if (deviceInfo_.audioStreamInfo.samplingRate.size() == 0) {
-        AUDIO_ERR_LOG("%{public}s samplingRate size is 0", __func__);
-        return false;
-    }
-    if (deviceInfo_.audioStreamInfo.channels.size() == 0) {
-        AUDIO_ERR_LOG("%{public}s channels size is 0", __func__);
+    if (!deviceInfo_.audioStreamInfo.CheckParams()) {
+        AUDIO_ERR_LOG("%{public}s samplingRate or channels size is 0", __func__);
         return false;
     }
 

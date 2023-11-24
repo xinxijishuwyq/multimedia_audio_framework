@@ -123,26 +123,23 @@ static void NativeDeviceDescToJsObj(const napi_env& env, napi_value& jsObj,
         SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(desc[i]->volumeGroupId_), valueParam);
 
         napi_value value = nullptr;
-        napi_value sampleRates;
-        size_t size = desc[i]->audioStreamInfo_.samplingRate.size();
-        napi_create_array_with_length(env, size, &sampleRates);
-        size_t count = 0;
-        for (const auto &samplingRate : desc[i]->audioStreamInfo_.samplingRate) {
-            napi_create_int32(env, samplingRate, &value);
-            napi_set_element(env, sampleRates, count, value);
-            count++;
-        }
-        napi_set_named_property(env, valueParam, "sampleRates", sampleRates);
 
-        napi_value channelCounts;
-        size = desc[i]->audioStreamInfo_.channels.size();
-        napi_create_array_with_length(env, size, &channelCounts);
-        for (const auto &channels : desc[i]->audioStreamInfo_.channels) {
-            napi_create_int32(env, channels, &value);
-            napi_set_element(env, channelCounts, count, value);
-            count++;
-        }
-        napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
+        auto setToArray = [&env, &valueParam, &value](const auto &set, const char* utf8Name) {
+            napi_value napiValue;
+            size_t size = set.size();
+            napi_create_array_with_length(env, size, &napiValue);
+            size_t count = 0;
+            for (const auto &valueOfSet : set) {
+                napi_create_int32(env, valueOfSet, &value);
+                napi_set_element(env, napiValue, count, value);
+                count++;
+            }
+            napi_set_named_property(env, valueParam, utf8Name, napiValue);
+        };
+
+        setToArray(desc[i]->audioStreamInfo_.samplingRate, "sampleRates");
+
+        setToArray(desc[i]->audioStreamInfo_.channels, "channelCounts");
 
         napi_value channelMasks;
         napi_create_array_with_length(env, 1, &channelMasks);
