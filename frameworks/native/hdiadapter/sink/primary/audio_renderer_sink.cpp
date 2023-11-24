@@ -683,16 +683,16 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 
 int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
 {
+    if (outputDevice == currentActiveDevice_) {
+        AUDIO_INFO_LOG("SetOutputRoute output device not change");
+        return SUCCESS;
+    }
     AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
     return SetOutputRoute(outputDevice, outputPortPin);
 }
 
 int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
 {
-    if (outputDevice == currentActiveDevice_) {
-        AUDIO_INFO_LOG("SetOutputRoute output device not change");
-        return SUCCESS;
-    }
     currentActiveDevice_ = outputDevice;
 
     AudioRouteNode source = {};
@@ -764,6 +764,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
 
         AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
         int32_t ret = SUCCESS;
+        bool isAudioSceneUpdate = false;
         if (audioScene != currentAudioScene_) {
             struct AudioSceneDescriptor scene;
             scene.scene.id = GetAudioCategory(audioScene);
@@ -776,11 +777,16 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
                 return ERR_OPERATION_FAILED;
             }
             currentAudioScene_ = audioScene;
+            isAudioSceneUpdate = true;
         }
 
-        ret = SetOutputRoute(activeDevice, audioSceneOutPort);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
+        if (activeDevice != currentActiveDevice_ ||
+            (isAudioSceneUpdate &&
+                (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
+            ret = SetOutputRoute(activeDevice, audioSceneOutPort);
+            if (ret < 0) {
+                AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
+            }
         }
     }
     return SUCCESS;
