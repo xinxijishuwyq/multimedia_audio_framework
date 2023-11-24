@@ -31,6 +31,7 @@
 
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
+#include "sensor_agent.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +45,9 @@ const uint32_t FACTOR_TWO = 2;
 const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
+const uint32_t NONE_SPATIALIZER_ENGINE = 0;
+const uint32_t ARM_SPATIALIZER_ENGINE = 1;
+const uint32_t DSP_SPATIALIZER_ENGINE = 2;
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
@@ -56,9 +60,28 @@ const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_9POINT1POINT4,
     CH_LAYOUT_9POINT1POINT6
 };
+
+class HeadTracker {
+public:
+    HeadTracker();
+    ~HeadTracker();
+    int32_t SensorInit();
+    int32_t SensorSetConfig(int32_t spatializerEngineState);
+    int32_t SensorActive();
+    int32_t SensorDeactive();
+    HeadPostureData GetHeadPostureData();
+    void SetHeadPostureData(HeadPostureData headPostureData);
+private:
+    static void HeadPostureDataProcCb(SensorEvent *event);
+    static HeadPostureData headPostureData_;
+    SensorUser sensorUser_;
+    int64_t sensorSamplingInterval_ = 30000000; // 30000000 ns = 30 ms
+    static std::mutex headTrackerMutex_;
+};
+
 class AudioEffectChain {
 public:
-    AudioEffectChain(std::string scene);
+    AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker);
     ~AudioEffectChain();
     std::string GetEffectMode();
     void SetEffectMode(std::string mode);
@@ -76,6 +99,7 @@ public:
     void StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig);
     AudioEffectConfig GetIoBufferConfig();
     void InitEffectChain();
+    void SetHeadTrackingDisabled();
 private:
     std::mutex reloadMutex;
     std::string sceneType;
@@ -85,6 +109,7 @@ private:
     AudioEffectConfig ioBufferConfig;
     AudioBuffer audioBufIn;
     AudioBuffer audioBufOut;
+    std::shared_ptr<HeadTracker> headTracker_;
 };
 
 class AudioEffectChainManager {
@@ -112,6 +137,7 @@ public:
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
 private:
+    void UpdateSensorState();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
@@ -126,6 +152,8 @@ private:
     std::mutex dynamicMutex_;
     bool spatializatonEnabled_ = true;
     bool headTrackingEnabled_ = false;
+    std::shared_ptr<HeadTracker> headTracker_;
+    bool offloadEnabled_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

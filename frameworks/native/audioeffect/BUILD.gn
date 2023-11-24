@@ -56,6 +56,7 @@ ohos_shared_library("audio_effect") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "sensor:sensor_interface_native",
   ]
 
   version_script = "../../../audio_framework.versionscript"

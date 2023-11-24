@@ -179,6 +179,7 @@ enum AudioEffectCommandCode {
     EFFECT_CMD_SET_PARAM = 4,
     EFFECT_CMD_GET_PARAM = 5,
     EFFECT_CMD_GET_CONFIG = 6,
+    EFFECT_CMD_SET_IMU = 7
 };
 
 enum AudioEffectParamSetCode {
