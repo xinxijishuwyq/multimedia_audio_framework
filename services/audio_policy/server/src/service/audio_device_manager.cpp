@@ -246,7 +246,8 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
         if (descriptor->deviceType_ == deviceDescriptor->deviceType_ &&
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
             descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
                 return true;
             } else {
                 // if the disconnecting device is A2DP, need to compare mac address in addition.
@@ -258,6 +259,13 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
 
     auto iter = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (iter != connectedDevices_.end()) {
+        if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) &&
+            (*iter)->deviceCategory_ != deviceDescriptor->deviceCategory_) {
+            AUDIO_INFO_LOG("A2DP device category changed,RemoveConnectedDevices");
+            RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(deviceDescriptor));
+            return false;
+        }
         **iter = deviceDescriptor;
         UpdateDeviceInfo(*iter);
         return true;
@@ -271,6 +279,7 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
+        AUDIO_INFO_LOG("The device has been added and will not be added again.");
         return;
     }
 
