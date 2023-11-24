@@ -405,8 +405,7 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
     }
     if (clientByteSizePerFrame_ == 0) {
         clientSpanSizeInByte_ = count * spanSizeInByte_;
-    }
-    else {
+    } else {
         clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
     }
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
@@ -987,7 +986,7 @@ bool AudioProcessInClientInner::ClientPrepareNextLoop(uint64_t curWritePos, int6
             AUDIO_ERR_LOG("PrepareNextLoop in process failed!");
             return false;
         }
-    }    
+    }
     return true;
 }
 
@@ -1322,7 +1321,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         if (!finished) {
             continue;
         }
-        prepared = ClientPrepareNextLoop(curWritePos, wakeUpTime);      
+        prepared = ClientPrepareNextLoop(curWritePos, wakeUpTime);
         if (!prepared) {
             break;
         }
