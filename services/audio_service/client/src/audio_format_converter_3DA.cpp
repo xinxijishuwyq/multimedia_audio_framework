@@ -56,7 +56,6 @@ static bool LoadFromXML(Library &lib, AudioChannelLayout &layout)
     lib = result.library;
     layout = result.outChannelLayout;
     AUDIO_INFO_LOG("<log info> lib %{public}s %{public}s successful from xml", lib.path.c_str(), lib.name.c_str());
-    AUDIO_INFO_LOG("<log info> outChannelLayout %{public}llu from xml", layout);
     return true;
 }
 
@@ -125,13 +124,13 @@ bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const 
         return false;
     }
     if (pcmBuffer.bufLength - GetPcmLength(inChannel_, bps_) != 0) {
-        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}d, excepted %{public}d",
-            pcmBuffer.bufLength, GetPcmLength(inChannel_, bps_));
+        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}u, excepted %{public}d",
+            static_cast<uint32_t>(pcmBuffer.bufLength), GetPcmLength(inChannel_, bps_));
         return false;
     }
     if (metaBuffer.bufLength - GetMetaLength() != 0) {
-        AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}d, excepted %{public}d",
-            metaBuffer.bufLength, GetMetaLength());
+        AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}u, excepted %{public}d",
+            static_cast<uint32_t>(metaBuffer.bufLength), GetMetaLength());
         return false;
     }
     return true;
