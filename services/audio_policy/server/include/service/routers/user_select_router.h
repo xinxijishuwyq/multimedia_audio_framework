@@ -18,6 +18,7 @@
 
 #include "router_base.h"
 #include "audio_device_manager.h"
+#include "audio_info.h"
 #include "audio_state_manager.h"
 
 namespace OHOS {

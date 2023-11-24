@@ -44,7 +44,17 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    unique_ptr<AudioDeviceDescriptor> perDev_ =
+        AudioStateManager::GetAudioStateManager().GetPerferredCallRenderDevice();
+    vector<unique_ptr<AudioDeviceDescriptor>> callDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
+    if (perDev_->deviceId_ == 0) {
+        AUDIO_INFO_LOG(" PerferredCallRenderDevice is null");
+        return make_unique<AudioDeviceDescriptor>();
+    } else {
+        AUDIO_INFO_LOG(" PerferredCallRenderDevice deviceId is %{public}d", perDev_->deviceId_);
+        return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
+    }
 }
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
