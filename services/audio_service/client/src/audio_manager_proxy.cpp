@@ -551,7 +551,7 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("WriteInterfaceToken failed");
