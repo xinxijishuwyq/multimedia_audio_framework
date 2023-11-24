@@ -79,6 +79,11 @@ ohos_shared_library("audio") {
   if (audio_framework_feature_new_napi) {
     sources += [
       "audiorenderer/callback/napi_audio_renderer_callback.cpp",
+      "audiorenderer/callback/napi_audio_renderer_device_change_callback.cpp",
+      "audiorenderer/callback/napi_audio_renderer_policy_service_died_callback.cpp",
+      "audiorenderer/callback/napi_renderer_data_request_callback.cpp",
+      "audiorenderer/callback/napi_renderer_period_position_callback.cpp",
+      "audiorenderer/callback/napi_renderer_position_callback.cpp",
       "audiorenderer/napi_audio_renderer.cpp",
       "common/napi_async_work.cpp",
       "common/napi_audio_enum.cpp",

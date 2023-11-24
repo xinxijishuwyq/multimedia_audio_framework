@@ -779,5 +779,52 @@ napi_value NapiAudioEnum::SetDeviceType(napi_env env, napi_callback_info info)
 
     return jsResult;
 }
+
+bool NapiAudioEnum::IsLegalInputArgumentInterruptMode(int32_t interruptMode)
+{
+    bool result = false;
+    switch (interruptMode) {
+        case InterruptMode::SHARE_MODE:
+        case InterruptMode::INDEPENDENT_MODE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode)
+{
+    bool result = false;
+    switch (audioEffectMode) {
+        case AudioEffectMode::EFFECT_NONE:
+        case AudioEffectMode::EFFECT_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentChannelBlendMode(int32_t blendMode)
+{
+    bool result = false;
+    switch (blendMode) {
+        case ChannelBlendMode::MODE_DEFAULT:
+        case ChannelBlendMode::MODE_BLEND_LR:
+        case ChannelBlendMode::MODE_ALL_LEFT:
+        case ChannelBlendMode::MODE_ALL_RIGHT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

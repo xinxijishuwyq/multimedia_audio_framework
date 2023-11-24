@@ -249,6 +249,40 @@ napi_status NapiParamUtils::GetArrayBuffer(const napi_env &env, void* &data, siz
     return status;
 }
 
+napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const std::string &fieldStr, size_t bufferLen,
+    uint8_t *bufferData, napi_value &result)
+{
+    napi_value value = nullptr;
+
+    napi_status status = napi_create_arraybuffer(env, bufferLen, (void**)&bufferData, &value);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_create_arraybuffer failed");
+    status = napi_set_named_property(env, result, fieldStr.c_str(), value);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_set_named_property failed");
+
+    return status;
+}
+
+void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
+    const DeviceInfo &deviceInfo)
+{
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
+    audioDeviceDescriptor->deviceRole_ = deviceInfo.deviceRole;
+    audioDeviceDescriptor->deviceType_ = deviceInfo.deviceType;
+    audioDeviceDescriptor->deviceId_ = deviceInfo.deviceId;
+    audioDeviceDescriptor->channelMasks_ = deviceInfo.channelMasks;
+    audioDeviceDescriptor->channelIndexMasks_ = deviceInfo.channelIndexMasks;
+    audioDeviceDescriptor->deviceName_ = deviceInfo.deviceName;
+    audioDeviceDescriptor->macAddress_ = deviceInfo.macAddress;
+    audioDeviceDescriptor->interruptGroupId_ = deviceInfo.interruptGroupId;
+    audioDeviceDescriptor->volumeGroupId_ = deviceInfo.volumeGroupId;
+    audioDeviceDescriptor->networkId_ = deviceInfo.networkId;
+    audioDeviceDescriptor->displayName_ = deviceInfo.displayName;
+    audioDeviceDescriptor->audioStreamInfo_.samplingRate = deviceInfo.audioStreamInfo.samplingRate;
+    audioDeviceDescriptor->audioStreamInfo_.encoding = deviceInfo.audioStreamInfo.encoding;
+    audioDeviceDescriptor->audioStreamInfo_.format = deviceInfo.audioStreamInfo.format;
+    audioDeviceDescriptor->audioStreamInfo_.channels = deviceInfo.audioStreamInfo.channels;
+}
+
 napi_status NapiParamUtils::GetRendererOptions(const napi_env &env, AudioRendererOptions *opts, napi_value in)
 {
     napi_value res = nullptr;
@@ -290,6 +324,18 @@ napi_status NapiParamUtils::GetRendererInfo(const napi_env &env, AudioRendererIn
     return napi_ok;
 }
 
+napi_status NapiParamUtils::SetRendererInfo(const napi_env &env, const AudioRendererInfo &rendererInfo,
+    napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetRendererInfo napi_create_object failed");
+    SetValueInt32(env, "content", static_cast<int32_t>(rendererInfo.contentType), result);
+    SetValueInt32(env, "usage", static_cast<int32_t>(rendererInfo.streamUsage), result);
+    SetValueInt32(env, "rendererFlags", rendererInfo.rendererFlags, result);
+
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in)
 {
     int32_t intValue = {0};
@@ -314,6 +360,123 @@ napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *
     }
 
     return napi_ok;
+}
+
+napi_status NapiParamUtils::SetStreamInfo(const napi_env &env, const AudioStreamInfo &streamInfo, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetStreamInfo napi_create_object failed");
+    SetValueInt32(env, "samplingRate", static_cast<int32_t>(streamInfo.samplingRate), result);
+    SetValueInt32(env, "channels", static_cast<int32_t>(streamInfo.channels), result);
+    SetValueInt32(env, "sampleFormat", static_cast<int32_t>(streamInfo.format), result);
+    SetValueInt32(env, "encodingType", static_cast<int32_t>(streamInfo.encoding), result);
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetValueInt32Element(const napi_env &env, const std::string &fieldStr,
+    const std::vector<int32_t> &values, napi_value &result)
+{
+    napi_value jsValues = nullptr;
+    napi_status status = napi_create_array_with_length(env, values.size(), &jsValues);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32Element napi_create_array_with_length failed");
+    int32_t count = 0;
+    for (auto value : values) {
+        napi_value jsValue = nullptr;
+        status = SetValueInt32(env, value, jsValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32Element SetValueInt32 failed");
+        status = napi_set_element(env, jsValues, count, jsValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32Element napi_set_element failed");
+        count++;
+    }
+    status = napi_set_named_property(env, result, fieldStr.c_str(), jsValues);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32Element napi_set_named_property failed");
+    return status;
+}
+
+napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
+    napi_value &result)
+{
+    (void)napi_create_object(env, &result);
+    SetValueInt32(env, "deviceRole", static_cast<int32_t>(deviceInfo.deviceRole_), result);
+    SetValueInt32(env, "deviceType", static_cast<int32_t>(deviceInfo.deviceType_), result);
+    SetValueInt32(env, "id", static_cast<int32_t>(deviceInfo.deviceId_), result);
+    SetValueString(env, "name", deviceInfo.deviceName_, result);
+    SetValueString(env, "address", deviceInfo.macAddress_, result);
+    SetValueString(env, "networkId", deviceInfo.networkId_, result);
+    SetValueString(env, "displayName", deviceInfo.displayName_, result);
+    SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(deviceInfo.interruptGroupId_), result);
+    SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(deviceInfo.volumeGroupId_), result);
+
+    std::vector<int32_t> samplingRate;
+    samplingRate.push_back(deviceInfo.audioStreamInfo_.samplingRate);
+    SetValueInt32Element(env, "sampleRates", samplingRate, result);
+
+    std::vector<int32_t> channels;
+    channels.push_back(deviceInfo.audioStreamInfo_.channels);
+    SetValueInt32Element(env, "channelCounts", channels, result);
+
+    std::vector<int32_t> channelMasks_;
+    channelMasks_.push_back(deviceInfo.channelMasks_);
+    SetValueInt32Element(env, "channelMasks", channelMasks_, result);
+
+    std::vector<int32_t> channelIndexMasks_;
+    channelIndexMasks_.push_back(deviceInfo.channelIndexMasks_);
+    SetValueInt32Element(env, "channelIndexMasks", channelIndexMasks_, result);
+
+    std::vector<int32_t> encoding;
+    encoding.push_back(deviceInfo.audioStreamInfo_.encoding);
+    SetValueInt32Element(env, "encodingTypes", encoding, result);
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetDeviceDescriptors(const napi_env &env,
+    const std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptors, napi_value &result)
+{
+    napi_status status = napi_create_array_with_length(env, deviceDescriptors.size(), &result);
+    for (size_t i = 0; i < deviceDescriptors.size(); i++) {
+        if (deviceDescriptors[i] != nullptr) {
+            napi_value valueParam = nullptr;
+            SetDeviceDescriptor(env, deviceDescriptors[i], valueParam);
+            napi_set_element(env, result, i, valueParam);
+        }
+    }
+    return status;
+}
+
+
+napi_status NapiParamUtils::SetValueDeviceInfo(const napi_env &env, const DeviceInfo &deviceInfo, napi_value &result)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
+    sptr<AudioDeviceDescriptor> audioDeviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor != nullptr, napi_generic_failure,
+        "audioDeviceDescriptor malloc failed");
+    ConvertDeviceInfoToAudioDeviceDescriptor(audioDeviceDescriptor, deviceInfo);
+    deviceDescriptors.push_back(std::move(audioDeviceDescriptor));
+    SetDeviceDescriptors(env, deviceDescriptors, result);
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetInterruptEvent(const napi_env &env, const InterruptEvent &interruptEvent,
+    napi_value &result)
+{
+    napi_create_object(env, &result);
+    SetValueInt32(env, "eventType", static_cast<int32_t>(interruptEvent.eventType), result);
+    SetValueInt32(env, "forceType", static_cast<int32_t>(interruptEvent.forceType), result);
+    SetValueInt32(env, "hintType", static_cast<int32_t>(interruptEvent.hintType), result);
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetNativeAudioRendererDataInfo(const napi_env &env,
+    const AudioRendererDataInfo &audioRendererDataInfo, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+
+    SetValueInt32(env, "flag", static_cast<int32_t>(audioRendererDataInfo.flag), result);
+    CreateArrayBuffer(env, "buffer", audioRendererDataInfo.flag, audioRendererDataInfo.buffer, result);
+
+    return status;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -62,6 +62,21 @@ private:
     friend class NapiAsyncWork;
 };
 
+struct AutoRef {
+    AutoRef(napi_env env, napi_ref cb)
+        : env_(env), cb_(cb)
+    {
+    }
+    ~AutoRef()
+    {
+        if (env_ != nullptr && cb_ != nullptr) {
+            (void)napi_delete_reference(env_, cb_);
+        }
+    }
+    napi_env env_;
+    napi_ref cb_;
+};
+
 class NapiAsyncWork {
 public:
     static napi_value Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string &name,
