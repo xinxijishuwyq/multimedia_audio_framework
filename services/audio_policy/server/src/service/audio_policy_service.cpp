@@ -4689,14 +4689,14 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsage
 
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps =
         audioDeviceManager_.GetDevicePrivacyMaps();
-    for (auto &dev : descs) {
-        for (auto &devicePrivacy : devicePrivacyMaps) {
+    for (const auto &dev : descs) {
+        for (const auto &devicePrivacy : devicePrivacyMaps) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             audioDeviceManager_.GetAvailableDevicesWithUsage(usage, deviceInfos, dev, audioDeviceDescriptors);
         }
     }
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors;
-    for (auto &dec : audioDeviceDescriptors) {
+    for (const auto &dec : audioDeviceDescriptors) {
         sptr<AudioDeviceDescriptor> tempDec = new(std::nothrow) AudioDeviceDescriptor(*dec);
         deviceDescriptors.push_back(move(tempDec));
     }

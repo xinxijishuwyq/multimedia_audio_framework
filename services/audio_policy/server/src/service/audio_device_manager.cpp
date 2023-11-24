@@ -268,10 +268,7 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
 void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
-    if (!devDesc) {
-        AUDIO_ERR_LOG("Memory allocation failed");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
         return;
