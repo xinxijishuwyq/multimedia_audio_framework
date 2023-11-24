@@ -124,13 +124,13 @@ bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const 
         return false;
     }
     if (pcmBuffer.bufLength - GetPcmLength(inChannel_, bps_) != 0) {
-        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}u, excepted %{public}d",
-            static_cast<uint32_t>(pcmBuffer.bufLength), GetPcmLength(inChannel_, bps_));
+        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}zu, excepted %{public}d",
+            pcmBuffer.bufLength, GetPcmLength(inChannel_, bps_));
         return false;
     }
     if (metaBuffer.bufLength - GetMetaLength() != 0) {
-        AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}u, excepted %{public}d",
-            static_cast<uint32_t>(metaBuffer.bufLength), GetMetaLength());
+        AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}zu, excepted %{public}d",
+            metaBuffer.bufLength, GetMetaLength());
         return false;
     }
     return true;
