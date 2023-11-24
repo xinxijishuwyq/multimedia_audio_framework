@@ -314,9 +314,6 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             // Capturer state not changed
             return SUCCESS;
         }
-    } else {
-        AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d not found in capturerStatequeue_",
-            streamChangeInfo.audioCapturerChangeInfo.clientUID);
     }
 
     // Update the capturer info in audioCapturerChangeInfos_
@@ -353,7 +350,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                     audioCapturerChangeInfo.sessionId));
                 clientTracker_.erase(audioCapturerChangeInfo.sessionId);
             }
-        return SUCCESS;
+            return SUCCESS;
         }
     }
     AUDIO_DEBUG_LOG("UpdateCapturerStream: clientUI not in audioCapturerChangeInfos_::%{public}d",

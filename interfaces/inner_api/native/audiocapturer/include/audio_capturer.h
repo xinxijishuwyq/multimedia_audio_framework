@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -143,7 +143,7 @@ public:
      * refer AudioCapturerOptions in audio_info.h.
      * @return Returns unique pointer to the AudioCapturer object
      * @since 8
-    */
+     */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType);
 
     /**
@@ -154,7 +154,7 @@ public:
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
      * @since 9
-    */
+     */
     static std::unique_ptr<AudioCapturer> Create(AudioStreamType audioStreamType, const AppInfo &appInfo);
 
     /**
@@ -164,7 +164,7 @@ public:
      * refer AudioCapturerOptions in audio_info.h.
      * @return Returns unique pointer to the AudioCapturer object
      * @since 8
-    */
+     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options);
 
     /**
@@ -175,7 +175,7 @@ public:
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
      * @since 9
-    */
+     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const AppInfo &appInfo);
 
     /**
@@ -186,7 +186,7 @@ public:
      * @param cachePath Application cache path
      * @return Returns unique pointer to the AudioCapturer object
      * @since 9
-    */
+     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath);
 
     /**
@@ -198,7 +198,7 @@ public:
      * @param appInfo Originating application's uid and token id can be passed here
      * @return Returns unique pointer to the AudioCapturer object
      * @since 9
-    */
+     */
     static std::unique_ptr<AudioCapturer> Create(const AudioCapturerOptions &options, const std::string cachePath,
         const AppInfo &appInfo);
 
