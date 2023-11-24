@@ -135,25 +135,18 @@ napi_value AudioCapturerNapi::Init(napi_env env, napi_value exports)
     napi_status status = napi_define_class(env, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
         nullptr, sizeof(audio_capturer_properties) / sizeof(audio_capturer_properties[PARAM0]),
         audio_capturer_properties, &constructor);
-    if (status != napi_ok) {
-        return result;
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "Init failed for define class");
 
     status = napi_create_reference(env, constructor, refCount, &g_capturerConstructor);
-    if (status == napi_ok) {
-        status = napi_set_named_property(env, exports, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), constructor);
-        if (status == napi_ok) {
-            status = napi_define_properties(env, exports,
-                                            sizeof(static_prop) / sizeof(static_prop[PARAM0]), static_prop);
-            if (status == napi_ok) {
-                return exports;
-            }
-        }
-    }
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "Init failed for create ref");
 
-    HiLog::Error(LABEL, "Failure in AudioCapturerNapi::Init()");
+    status = napi_set_named_property(env, exports, AUDIO_CAPTURER_NAPI_CLASS_NAME.c_str(), constructor);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "Init failed for name property set");
 
-    return result;
+    status = napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[PARAM0]), static_prop);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "Init failed for property define");
+
+    return exports;
 }
 
 napi_status AudioCapturerNapi::AddNamedProperty(napi_env env, napi_value object,
