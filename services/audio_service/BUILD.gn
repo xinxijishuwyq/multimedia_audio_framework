@@ -310,14 +310,14 @@ ohos_shared_library("audio_service") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
+    "drivers_interface_audio:effect_idl_headers",
+    "drivers_interface_audio:libeffect_proxy_1.0",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "sensor:sensor_interface_native",
-    "drivers_interface_audio:effect_idl_headers",
-    "drivers_interface_audio:libeffect_proxy_1.0",
   ]
 
   if (ressche_enable == true) {

@@ -996,7 +996,7 @@ void AudioEffectChainManager::InitHdi()
 void AudioEffectChainManager::UpdateHdiState()
 {
     if (hdiControl_ == nullptr) {
-        AUDIO_WARNING_LOG("hdiControl_ is nullptr");
+        AUDIO_WARNING_LOG("hdiControl_ is nullptr.");
         offloadEnabled_ = false;
         return;
     }
