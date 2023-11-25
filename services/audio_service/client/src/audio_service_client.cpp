@@ -309,6 +309,24 @@ void AudioServiceClient::PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t 
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
+void AudioServiceClient::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    if (!userdata) {
+        AUDIO_ERR_LOG("PAStreamUpdateTimingInfoSuccessCb: userdata is null");
+        return;
+    }
+
+    AudioServiceClient *asClient = (AudioServiceClient *)userdata;
+    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
+    int negative = 0;
+    asClient->paLatency_ = 0;
+    asClient->isGetLatencySuccess_ = true;
+    if (pa_stream_get_latency(stream, &asClient->paLatency_, &negative) >= 0 && negative) {
+        asClient->isGetLatencySuccess_ = false;
+    }
+    pa_threaded_mainloop_signal(mainLoop, 0);
+}
+
 int32_t AudioServiceClient::SetAudioRenderMode(AudioRenderMode renderMode)
 {
     AUDIO_DEBUG_LOG("SetAudioRenderMode begin");
@@ -2007,38 +2025,30 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
         return AUDIO_CLIENT_PA_ERR;
     }
-    pa_usec_t paLatency {0};
     pa_usec_t cacheLatency {0};
-    int negative {0};
-
+    
     // Get PA latency
     pa_threaded_mainloop_lock(mainLoop);
-    while (true) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
-        if (operation != nullptr) {
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-        }
-        if (pa_stream_get_latency(paStream, &paLatency, &negative) >= 0) {
-            if (negative) {
-                latency = 0;
-                pa_threaded_mainloop_unlock(mainLoop);
-                return AUDIO_CLIENT_ERR;
-            }
-            break;
-        }
-        AUDIO_INFO_LOG("waiting for audio latency information");
-        pa_threaded_mainloop_wait(mainLoop);
+    pa_operation *operation = pa_stream_update_timing_info(paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
+    AUDIO_INFO_LOG("waiting for audio latency information");
+    pa_threaded_mainloop_wait(mainLoop);
     pa_threaded_mainloop_unlock(mainLoop);
+    if (isGetLatencySuccess_ == false) {
+        AUDIO_ERR_LOG("Get audio latency failed");
+        return AUDIO_CLIENT_ERR;
+    }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         // Get audio write cache latency
         cacheLatency = pa_bytes_to_usec((acache_.totalCacheSize - acache_.writeIndex), &sampleSpec);
 
         // Total latency will be sum of audio write cache latency + PA latency
-        uint64_t fwLatency = paLatency + cacheLatency;
+        uint64_t fwLatency = paLatency_ + cacheLatency;
         uint64_t sinkLatency = sinkLatencyInMsec_ * PA_USEC_PER_MSEC;
         if (fwLatency > sinkLatency) {
             latency = fwLatency - sinkLatency;
@@ -2046,14 +2056,14 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
             latency = fwLatency;
         }
         AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
-            PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
+            PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency_, cacheLatency);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         // Get audio read cache latency
         cacheLatency = pa_bytes_to_usec(internalRdBufLen_, &sampleSpec);
 
         // Total latency will be sum of audio read cache latency + PA latency
-        latency = paLatency + cacheLatency;
-        AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64, latency, paLatency);
+        latency = paLatency_ + cacheLatency;
+        AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64, latency, paLatency_);
     }
 
     return AUDIO_CLIENT_SUCCESS;

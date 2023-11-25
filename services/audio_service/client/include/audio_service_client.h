@@ -668,6 +668,8 @@ private:
     std::string spatializationEnabled_ = "Invalid";
     std::string headTrackingEnabled_ = "Invalid";
     std::shared_ptr<AudioSpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
+    pa_usec_t paLatency_ = 0;
+    bool isGetLatencySuccess_ = true;
 
     // To be set while using audio stream
     // functionality for callbacks
@@ -762,6 +764,7 @@ private:
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
     static void PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
