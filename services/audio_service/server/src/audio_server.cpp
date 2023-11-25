@@ -54,6 +54,7 @@ namespace AudioStandard {
 std::map<std::string, std::string> AudioServer::audioParameters;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const unsigned int TIME_OUT_SECONDS = 10;
+const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -853,6 +854,7 @@ void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
 
     uint32_t pid = IPCSkeleton::GetCallingPid();
+    AudioXCollie audioXCollie("AudioServer::ScheduleReportData", SCHEDULE_REPORT_TIME_OUT_SECONDS);
     ScheduleReportData(pid, tid, bundleName.c_str());
 }
 
