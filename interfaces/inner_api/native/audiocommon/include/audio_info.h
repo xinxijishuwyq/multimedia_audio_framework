@@ -722,6 +722,7 @@ enum AudioParamKey {
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
+    A2DP_OFFLOAD_STATE = 9, //for a2dp offload
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,
@@ -789,6 +790,12 @@ struct SessionInfo {
     SourceType sourceType;
     uint32_t rate;
     uint32_t channels;
+};
+
+enum BluetoothOffloadState {
+    NoBtDevice = 0,
+    A2dpHal = 1,
+    A2dpOffload = 2,
 };
 } // namespace AudioStandard
 } // namespace OHOS

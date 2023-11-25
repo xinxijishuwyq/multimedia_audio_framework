@@ -163,6 +163,21 @@ bool AudioA2dpManager::HasA2dpDeviceConnected()
     return !devices.empty();
 }
 
+int32_t AudioA2dpManager::A2dpOffloadSessionRequest(const std::vector<A2dpStreamInfo> &info)
+{
+    return a2dpInstance_->A2dpOffloadSessionRequest(activeA2dpDevice_, info);
+}
+
+int32_t AudioA2dpManager::OffloadStartPlaying(const std::vector<int32_t> &sessionsID)
+{
+    return a2dpInstance_->OffloadStartPlaying(activeA2dpDevice_, sessionsID);
+}
+
+int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &sessionsID)
+{
+    return a2dpInstance_->OffloadStopPlaying(activeA2dpDevice_, sessionsID);
+}
+
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
 {
     AUDIO_INFO_LOG("OnConnectionStateChanged: state: %{public}d", state);

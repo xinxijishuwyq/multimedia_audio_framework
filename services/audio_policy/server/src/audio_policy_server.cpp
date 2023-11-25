@@ -1606,6 +1606,8 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     }
 
     UpdateAudioScene(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
+    
+    OffloadStopPlaying(audioInterrupt);
 
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList();
@@ -2712,6 +2714,11 @@ int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(const int32_t /*cl
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioPolicyService_.UnsetAvailableDeviceChangeCallback(clientPid, usage);
+}
+
+int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterrupt)
+{
+    return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.sessionID));
 }
 
 void AudioPolicyServer::RegisterPowerStateListener()

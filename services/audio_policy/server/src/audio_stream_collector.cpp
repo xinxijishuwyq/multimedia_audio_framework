@@ -491,6 +491,18 @@ AudioStreamType AudioStreamCollector::GetStreamType(ContentType contentType, Str
     return streamType;
 }
 
+AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->sessionId == sessionId) {
+            streamType = GetStreamType(changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage);
+        }
+    }
+    return streamType;
+}
+
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {

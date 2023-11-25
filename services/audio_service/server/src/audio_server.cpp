@@ -168,6 +168,11 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
         parmKey = AudioParamKey::BT_HEADSET_NREC;
     } else if (key == "bt_wbs") {
         parmKey = AudioParamKey::BT_WBS;
+    } else if (key == "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
+        parmKey = AudioParamKey::A2DP_OFFLOAD_STATE;
+        std::string value_new = "a2dpOffloadConfig=" + value;
+        audioRendererSinkInstance->SetAudioParameter(parmKey, "", value_new);
+        return;
     } else if (key == "mmi") {
         parmKey = AudioParamKey::MMI;
     } else if (key == "perf_info") {
