@@ -24,14 +24,14 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
 {
     unique_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
-    vector<unique_ptr<AudioDeviceDescriptor>> publicDevices =
+    vector<unique_ptr<AudioDeviceDescriptor>> mediaDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0) {
         AUDIO_INFO_LOG(" PerferredMediaRenderDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
         AUDIO_INFO_LOG(" PerferredMediaRenderDevice deviceId is %{public}d", perDev_->deviceId_);
-        return RouterBase::GetPairCaptureDevice(perDev_, publicDevices);
+        return RouterBase::GetPairCaptureDevice(perDev_, mediaDevices);
     }
 }
 
