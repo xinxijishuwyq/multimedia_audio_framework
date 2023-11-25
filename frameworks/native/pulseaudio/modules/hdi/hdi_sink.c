@@ -1337,6 +1337,9 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->bufferAttr->frameLen = DEFAULT_FRAMELEN;
     u->bufferAttr->numChanIn = u->ss.channels;
     u->bufferAttr->numChanOut = u->ss.channels;
+    u->sinkSceneMode = "";
+    u->sinkSceneType = "";
+    u->spatialEnabled = false;
 }
 
 static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
