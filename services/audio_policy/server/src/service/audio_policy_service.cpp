@@ -64,7 +64,6 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
-const uint32_t PRIORITY_LIST_OFFSET_POSTION = 1;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -2053,10 +2052,6 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     audioScene_ = audioScene;
 
-    if (isUpdateRouteSupported_) {
-        SetEarpieceState();
-    }
-
     int32_t result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
 
@@ -2072,58 +2067,18 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     return SUCCESS;
 }
 
-void AudioPolicyService::SetEarpieceState()
+void AudioPolicyService::AddEarpiece()
 {
-    if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
-        AUDIO_INFO_LOG("SetEarpieceState: add earpiece device only for [phone], localDevicesType [%{public}s]",
-            localDevicesType_.c_str());
-        if (localDevicesType_.compare("phone") != 0) {
-            return;
-        }
-
-        // add earpiece to connectedDevices_
-        auto isPresent = [](const sptr<AudioDeviceDescriptor> &desc) {
-            CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-            return desc->deviceType_ == DEVICE_TYPE_EARPIECE;
-        };
-        auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-        if (itr == connectedDevices_.end()) {
-            sptr<AudioDeviceDescriptor> audioDescriptor =
-                new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
-            UpdateDisplayName(audioDescriptor);
-            audioDeviceManager_.AddNewDevice(audioDescriptor);
-            connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
-            AUDIO_INFO_LOG("SetAudioScene: Add earpiece to connectedDevices_");
-        }
-
-        // add earpiece to outputPriorityList_
-        auto earpiecePos = find(outputPriorityList_.begin(), outputPriorityList_.end(), DEVICE_TYPE_EARPIECE);
-        if (earpiecePos == outputPriorityList_.end()) {
-            outputPriorityList_.insert(outputPriorityList_.end() - PRIORITY_LIST_OFFSET_POSTION,
-                DEVICE_TYPE_EARPIECE);
-            AUDIO_INFO_LOG("SetAudioScene: Add earpiece to outputPriorityList_");
-        }
-    } else {
-        // remove earpiece from connectedDevices_
-        auto isPresent = [] (const sptr<AudioDeviceDescriptor> &desc) {
-            CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-            return desc->deviceType_ == DEVICE_TYPE_EARPIECE;
-        };
-
-        std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
-        auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-        if (itr != connectedDevices_.end()) {
-            audioDeviceManager_.RemoveNewDevice(*itr);
-            connectedDevices_.erase(itr);
-            AUDIO_INFO_LOG("SetAudioScene: Remove earpiece from connectedDevices_");
-        }
-        // remove earpiece from outputPriorityList_
-        auto earpiecePos = find(outputPriorityList_.begin(), outputPriorityList_.end(), DEVICE_TYPE_EARPIECE);
-        if (earpiecePos != outputPriorityList_.end()) {
-            outputPriorityList_.erase(earpiecePos);
-            AUDIO_INFO_LOG("SetAudioScene: Remove earpiece from outputPriorityList_");
-        }
+    if (localDevicesType_.compare("phone") != 0) {
+        return;
     }
+    sptr<AudioDeviceDescriptor> audioDescriptor =
+        new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+    audioDescriptor->deviceId_ = startDeviceId++;
+    UpdateDisplayName(audioDescriptor);
+    audioDeviceManager_.AddNewDevice(audioDescriptor);
+    connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+    AUDIO_INFO_LOG("Add earpiece to device list");
 }
 
 std::string AudioPolicyService::GetLocalDevicesType()
@@ -2877,6 +2832,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         currentActiveInputDevice_ = AudioDeviceDescriptor(*inDevice);
         SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
         OnPreferredDeviceUpdated(currentActiveDevice_, currentActiveInputDevice_.deviceType_);
+        AddEarpiece();
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);
         }

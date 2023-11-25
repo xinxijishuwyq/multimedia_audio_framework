@@ -497,8 +497,6 @@ private:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
-    void SetEarpieceState();
-
     void SetVolumeForSwitchDevice(DeviceType deviceType);
 
     void SetVoiceCallVolume(int32_t volume);
@@ -561,6 +559,8 @@ private:
 
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
     const std::vector<sptr<AudioDeviceDescriptor>>& descs);
+
+    void AddEarpiece();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
