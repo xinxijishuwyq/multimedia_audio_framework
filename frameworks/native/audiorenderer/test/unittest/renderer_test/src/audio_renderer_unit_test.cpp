@@ -2148,7 +2148,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
     uint8_t *buffer;
     uint8_t *metaBuffer;
 
-    ret = audioRenderer->GetBufferSize(bufferLen);
+    int32_t ret = audioRenderer->GetBufferSize(bufferLen);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 
     buffer = new uint8_t[bufferLen];
