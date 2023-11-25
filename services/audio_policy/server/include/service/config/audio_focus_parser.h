@@ -38,10 +38,10 @@ public:
     int32_t LoadConfig(std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
 
 private:
-    static const std::map<std::string, InterruptHint> actionMap;
-    static const std::map<std::string, AudioFocusType> audioFocusMap;
-    static const std::map<std::string, ActionTarget> targetMap;
-    static const std::map<std::string, InterruptForceType> forceMap;
+    static std::map<std::string, AudioFocusType> audioFocusMap;
+    static std::map<std::string, InterruptHint> actionMap;
+    static std::map<std::string, ActionTarget> targetMap;
+    static std::map<std::string, InterruptForceType> forceMap;
 
     void LoadDefaultConfig(std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
     void ParseFocusMap(xmlNode *node, const std::string &curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,

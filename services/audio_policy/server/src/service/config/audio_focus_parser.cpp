@@ -21,7 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 // Initialize stream map with string vs AudioStreamType
-AudioFocusParser::audioFocusMap = {
+std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
     // stream type for audio interrupt
     {"STREAM_VOICE_CALL",
         {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
@@ -75,7 +75,7 @@ AudioFocusParser::audioFocusMap = {
 };
 
 // Initialize action map with string vs InterruptActionType
-AudioFocusParser::actionMap = {
+std::map<std::string, InterruptHint> AudioFocusParser::actionMap = {
     {"DUCK", INTERRUPT_HINT_DUCK},
     {"PAUSE", INTERRUPT_HINT_PAUSE},
     {"REJECT", INTERRUPT_HINT_NONE},
@@ -84,13 +84,13 @@ AudioFocusParser::actionMap = {
 };
 
 // Initialize target map with string vs InterruptActionTarget
-AudioFocusParser::targetMap = {
+std::map<std::string, ActionTarget> AudioFocusParser::targetMap = {
     {"incoming", INCOMING},
     {"existing", CURRENT},
     {"both", BOTH},
 };
 
-AudioFocusParser::forceMap = {
+std::map<std::string, InterruptForceType> AudioFocusParser::forceMap = {
     {"true", INTERRUPT_FORCE},
     {"false", INTERRUPT_SHARE},
 };
