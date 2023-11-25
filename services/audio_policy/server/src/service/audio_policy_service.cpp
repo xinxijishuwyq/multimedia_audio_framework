@@ -542,7 +542,8 @@ bool AudioPolicyService::IsDeviceConnected(sptr<AudioDeviceDescriptor> &audioDev
                 && connectedDevices_[i]->deviceType_ == audioDeviceDescriptors->deviceType_
                 && connectedDevices_[i]->interruptGroupId_ == audioDeviceDescriptors->interruptGroupId_
                 && connectedDevices_[i]->volumeGroupId_ == audioDeviceDescriptors->volumeGroupId_
-                && connectedDevices_[i]->networkId_ == audioDeviceDescriptors->networkId_) {
+                && connectedDevices_[i]->networkId_ == audioDeviceDescriptors->networkId_
+                && connectedDevices_[i]->macAddress_ == audioDeviceDescriptors->macAddress_) {
                 return true;
             }
         }
@@ -583,8 +584,12 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // check size == 1 && output device
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
-
-    audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
+    StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
+    if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        audioStateManager_.SetPerferredCallRenderDevice(audioDeviceDescriptors[0]);
+    } else {
+        audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
+    }
     FetchDevice(true);
     return SUCCESS;
 }
@@ -1959,18 +1964,6 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     AUDIO_INFO_LOG("SetDeviceActive: Device type[%{public}d] flag[%{public}d]", deviceType, active);
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
-    int32_t result = SUCCESS;
-
-    if (!active) {
-        CHECK_AND_RETURN_RET_LOG(deviceType == currentActiveDevice_.deviceType_, SUCCESS, "This device is not active");
-        deviceType = FetchHighPriorityDevice();
-    }
-
-    if (deviceType == currentActiveDevice_.deviceType_) {
-        AUDIO_INFO_LOG("Device %{public}d is already activate. No need to activate again", deviceType);
-        return SUCCESS;
-    }
-
     // Activate new device if its already connected
     auto isPresent = [&deviceType] (const sptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "SetDeviceActive::Invalid device descriptor");
@@ -1981,37 +1974,13 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     CHECK_AND_RETURN_RET_LOG(itr != connectedDevices_.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
 
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-            result = ActivateNewDevice(DEVICE_TYPE_EARPIECE);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Earpiece activation err %{public}d", result);
-            result = ActivateNewDevice(DEVICE_TYPE_MIC);
-            currentActiveInputDevice_.deviceType_ = DEVICE_TYPE_MIC;
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Microphone activation err %{public}d", result);
-            break;
-        case DEVICE_TYPE_SPEAKER:
-            result = ActivateNewDevice(DEVICE_TYPE_SPEAKER);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Speaker activation err %{public}d", result);
-            result = ActivateNewDevice(DEVICE_TYPE_MIC);
-            currentActiveInputDevice_.deviceType_ = DEVICE_TYPE_MIC;
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Microphone activation err %{public}d", result);
-            break;
-        case DEVICE_TYPE_FILE_SINK:
-            result = ActivateNewDevice(DEVICE_TYPE_FILE_SINK);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "FILE_SINK activation err %{public}d", result);
-            result = ActivateNewDevice(DEVICE_TYPE_FILE_SOURCE);
-            currentActiveInputDevice_.deviceType_ = DEVICE_TYPE_FILE_SOURCE;
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "FILE_SOURCE activation err %{public}d", result);
-            break;
-        default:
-            result = ActivateNewDevice(deviceType);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Activation failed for %{public}d", deviceType);
-            break;
+    if (!active) {
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    } else {
+        audioStateManager_.SetPerferredCallRenderDevice(*itr);
     }
-
-    currentActiveDevice_.deviceType_ = deviceType;
-    OnPreferredDeviceUpdated(currentActiveDevice_, currentActiveInputDevice_.deviceType_);
-    return result;
+    FetchDevice(true);
+    return SUCCESS;
 }
 
 bool AudioPolicyService::IsDeviceActive(InternalDeviceType deviceType) const
@@ -2054,6 +2023,10 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
     int32_t result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
+
+    if (audioScene_ == AUDIO_SCENE_DEFAULT) {
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
 
     // fetch input&output device
     FetchDevice(true);
@@ -2179,6 +2152,7 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
         connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
         audioDeviceManager_.AddNewDevice(audioDescriptor);
         audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
     if (IsInputDevice(deviceDescriptor.deviceType_)) {
         AUDIO_INFO_LOG("Filling input device for %{public}d", deviceDescriptor.deviceType_);
@@ -2228,6 +2202,9 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
         if (it != connectedDevices_.end()) {
             if ((*it)->deviceId_ == audioStateManager_.GetPerferredMediaRenderDevice()->deviceId_) {
                 audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+            }
+            if ((*it)->deviceId_ == audioStateManager_.GetPerferredCallRenderDevice()->deviceId_) {
+                audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
             desc.push_back(*it);
             it = connectedDevices_.erase(it);
