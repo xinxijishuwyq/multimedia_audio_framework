@@ -926,7 +926,17 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spa
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string effectMode, bool enabled)
+AudioEffectHdi::AudioEffectHdi()
+{
+    AUDIO_INFO_LOG("AudioEffectHdi constructor!");
+}
+
+AudioEffectHdi::~AudioEffectHdi()
+{
+    AUDIO_INFO_LOG("AudioEffectHdi destructor!");
+}
+
+int32_t HeadTracker::SetHdiParam(std::string sceneType, std::string effectMode, bool enabled)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
@@ -953,7 +963,7 @@ int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string 
     return SUCCESS;
 }
 
-void AudioEffectChainManager::InitHdi()
+void HeadTracker::InitHdi()
 {
     hdiModel_ = IEffectModelGet(false);
     if (hdiModel_ == nullptr) {
@@ -962,13 +972,11 @@ void AudioEffectChainManager::InitHdi()
         hdiControl_ = nullptr;
         return;
     }
-    std::string libName = "";
-    std::string effectId = "";
     libName = strdup("libspatialization_processing_dsp");
     effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966ff");
     EffectInfo info = {
-        .libName = libName,
-        .effectId = effectId,
+        .libName = &libName[0],
+        .effectId = &effectId[0],
         .ioDirection = 1,
     };
     ControllerId controllerId;
@@ -993,7 +1001,7 @@ void AudioEffectChainManager::InitHdi()
     }
 }
 
-void AudioEffectChainManager::UpdateHdiState()
+void HeadTracker::UpdateHdiState()
 {
     if (hdiControl_ == nullptr) {
         AUDIO_WARNING_LOG("hdiControl_ is nullptr.");

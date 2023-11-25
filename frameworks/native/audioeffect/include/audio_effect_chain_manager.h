@@ -83,6 +83,21 @@ private:
     static std::mutex headTrackerMutex_;
 };
 
+class AudioEffectHdi {
+public:
+    AudioEffectHdi();
+    ~AudioEffectHdi();
+    void InitHdi();
+    void UpdateHdiState();
+    // int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
+private:
+    IEffectModel *hdiModel_ = nullptr;
+    IEffectControl *hdiControl_ = nullptr;
+    std::string libName;
+    std::string effectId;
+
+}
+
 class AudioEffectChain {
 public:
     AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker);
@@ -141,9 +156,10 @@ public:
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
+    bool offloadEnabled_ = false;
 private:
-    void InitHdi();
-    void UpdateHdiState();
+    // void InitHdi();
+    // void UpdateHdiState();
     void UpdateSensorState();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
@@ -160,9 +176,8 @@ private:
     bool spatializatonEnabled_ = true;
     bool headTrackingEnabled_ = false;
     std::shared_ptr<HeadTracker> headTracker_;
-    bool offloadEnabled_ = false;
-    IEffectModel *hdiModel_ = nullptr;
-    IEffectControl *hdiControl_ = nullptr;
+    // IEffectModel *hdiModel_ = nullptr;
+    // IEffectControl *hdiControl_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
