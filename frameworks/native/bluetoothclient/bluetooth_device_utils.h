@@ -20,18 +20,26 @@
 
 namespace OHOS {
 namespace Bluetooth {
-enum BluetoothDeviceAction {
-    WEAR = 0,
-    UNWEAR = 1,
-    ENABLEFROMREMOTE = 2,
-    DISABLEFROMREMOTE = 3,
-    CONNECT = 4,
-    DISCONNECT = 5,
+enum BluetoothDeviceAction : int32_t {
+    WEAR_ACTION = 0,
+    UNWEAR_ACTION = 1,
+    ENABLEFROMREMOTE_ACTION = 2,
+    DISABLEFROMREMOTE_ACTION = 3,
+    ENABLE_WEAR_DETECTION_ACTION = 4,
+    DISABLE_WEAR_DETECTION_ACTION = 5,
+    CONNECT_ACTION = 6,
+    DISCONNECT_ACTION = 7,
 };
 
-enum DeviceStatus {
+enum DeviceStatus : int32_t {
     ADD = 0,
     REMOVE = 1,
+};
+
+enum EventType : int32_t {
+    DEFAULT_SELECT = 0,
+    USER_UNSELECT = 1,
+    USER_SELECT = 2,
 };
 } // namespace Bluetooth
 } // namespace OHOS

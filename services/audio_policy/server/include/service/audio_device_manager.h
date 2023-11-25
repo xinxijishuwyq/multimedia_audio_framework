@@ -63,6 +63,8 @@ public:
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
         const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
         std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
+        const std::string &macAddress);
 
 private:
     AudioDeviceManager() {};

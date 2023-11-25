@@ -587,5 +587,17 @@ unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManage
 {
     return devicePrivacyMaps_;
 }
+
+std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableBluetoothDevice(DeviceType devType,
+    const std::string &macAddress)
+{
+    std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    for (auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == devType && desc->macAddress_ == macAddress) {
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+        }
+    }
+    return audioDeviceDescriptors;
+}
 }
 }

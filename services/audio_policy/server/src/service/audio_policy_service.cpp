@@ -2851,6 +2851,26 @@ void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
     }
 }
 
+void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
+{
+    if (macAddress.empty()) {
+        sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor();
+        audioStateManager_.SetPerferredMediaRenderDevice(audioDescriptor);
+    } else {
+        std::vector<unique_ptr<AudioDeviceDescriptor>> bluetoothDevices =
+            audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
+        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+        for (auto &dec : bluetoothDevices) {
+            sptr<AudioDeviceDescriptor> tempDec = new(std::nothrow) AudioDeviceDescriptor(*dec);
+            audioDeviceDescriptors.push_back(move(tempDec));
+        }
+        int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
+        CHECK_AND_RETURN_LOG(res == SUCCESS, "OnForcedDeviceSelected DeviceParamsCheck no success");
+        audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
+    }
+    FetchDevice(true);
+}
+
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
     AUDIO_INFO_LOG("AudioPolicyService::OnMonoAudioConfigChanged: audioMono = %{public}s", audioMono? "true": "false");

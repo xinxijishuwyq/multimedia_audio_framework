@@ -30,6 +30,7 @@ namespace Bluetooth {
 
 int32_t RegisterDeviceObserver(AudioStandard::IDeviceStatusObserver &observer);
 void UnregisterDeviceObserver();
+void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string &macAddress, int32_t eventType);
 
 class MediaBluetoothDeviceManager {
 public:
@@ -42,6 +43,8 @@ public:
     static void HandleUnwearDevice(const BluetoothRemoteDevice &device);
     static void HandleEnableDevice(const BluetoothRemoteDevice &device);
     static void HandleDisableDevice();
+    static void HandleWearEnable(const BluetoothRemoteDevice &device);
+    static void HandleWearDisable(const BluetoothRemoteDevice &device);
     static void AddDeviceInConfigVector(const BluetoothRemoteDevice &device,
         std::vector<BluetoothRemoteDevice> &deviceVector);
     static void RemoveDeviceInConfigVector(const BluetoothRemoteDevice &device,
@@ -56,6 +59,7 @@ public:
 
 private:
     static std::map<std::string, BluetoothRemoteDevice> a2dpBluetoothDeviceMap_;
+    static std::map<std::string, BluetoothDeviceAction> wearDetectionStateMap_;
     static std::vector<BluetoothRemoteDevice> privacyDevices_;
     static std::vector<BluetoothRemoteDevice> commonDevices_;
     static std::vector<BluetoothRemoteDevice> negativeDevices_;
