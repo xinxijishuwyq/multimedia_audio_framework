@@ -2791,7 +2791,6 @@ int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(int32_t cl
     const sptr<IRemoteObject> &object)
 {
     clientPid = IPCSkeleton::GetCallingPid();
-    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterSpatializationEnabledEventListener(
         clientPid, object, hasSystemPermission);
@@ -2801,7 +2800,6 @@ int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(int32_t clie
     const sptr<IRemoteObject> &object)
 {
     clientPid = IPCSkeleton::GetCallingPid();
-    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterHeadTrackingEnabledEventListener(clientPid, object, hasSystemPermission);
 }
@@ -2882,7 +2880,6 @@ int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32
     if (!hasSystemPermission) {
         return ERR_PERMISSION_DENIED;
     }
-    RegisterClientDeathRecipient(object, LISTENER_CLIENT);
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
 } // namespace AudioStandard
