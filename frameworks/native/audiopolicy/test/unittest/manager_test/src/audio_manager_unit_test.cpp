@@ -124,11 +124,11 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
     EXPECT_EQ(inputDevice->deviceRole_, DeviceRole::INPUT_DEVICE);
     EXPECT_EQ(inputDevice->deviceType_, DeviceType::DEVICE_TYPE_MIC);
     EXPECT_GE(inputDevice->deviceId_, MIN_DEVICE_ID);
-    EXPECT_EQ(true, (inputDevice->audioStreamInfo_.samplingRate >= SAMPLE_RATE_8000)
-        || ((inputDevice->audioStreamInfo_.samplingRate <= SAMPLE_RATE_96000)));
+    EXPECT_EQ(true, (*inputDevice->audioStreamInfo_.samplingRate.rbegin() >= SAMPLE_RATE_8000)
+        || ((*inputDevice->audioStreamInfo_.samplingRate.begin() <= SAMPLE_RATE_96000)));
     EXPECT_EQ(inputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
-    EXPECT_EQ(true, (inputDevice->audioStreamInfo_.channels >= MONO)
-        && ((inputDevice->audioStreamInfo_.channels <= CHANNEL_8)));
+    EXPECT_EQ(true, (*inputDevice->audioStreamInfo_.channels.rbegin() >= MONO)
+        && ((*inputDevice->audioStreamInfo_.channels.begin() <= CHANNEL_8)));
     EXPECT_EQ(true, (inputDevice->audioStreamInfo_.format >= SAMPLE_U8)
         && ((inputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
 }
@@ -146,11 +146,11 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level1)
     EXPECT_EQ(outputDevice->deviceRole_, DeviceRole::OUTPUT_DEVICE);
     EXPECT_EQ(outputDevice->deviceType_, DeviceType::DEVICE_TYPE_SPEAKER);
     EXPECT_GE(outputDevice->deviceId_, MIN_DEVICE_ID);
-    EXPECT_EQ(true, (outputDevice->audioStreamInfo_.samplingRate >= SAMPLE_RATE_8000)
-        && ((outputDevice->audioStreamInfo_.samplingRate <= SAMPLE_RATE_96000)));
+    EXPECT_EQ(true, (*outputDevice->audioStreamInfo_.samplingRate.rbegin() >= SAMPLE_RATE_8000)
+        && ((*outputDevice->audioStreamInfo_.samplingRate.begin() <= SAMPLE_RATE_96000)));
     EXPECT_EQ(outputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
-    EXPECT_EQ(true, (outputDevice->audioStreamInfo_.channels >= MONO)
-        && ((outputDevice->audioStreamInfo_.channels <= CHANNEL_8)));
+    EXPECT_EQ(true, (*outputDevice->audioStreamInfo_.channels.rbegin() >= MONO)
+        && ((*outputDevice->audioStreamInfo_.channels.rbegin() <= CHANNEL_8)));
     EXPECT_EQ(true, (outputDevice->audioStreamInfo_.format >= SAMPLE_U8)
         && ((outputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
 }

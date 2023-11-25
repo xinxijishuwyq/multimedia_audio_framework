@@ -124,10 +124,8 @@ bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
     parcel.WriteInt32(deviceRole_);
     parcel.WriteInt32(deviceId_);
 
-    parcel.WriteInt32(audioStreamInfo_.channels);
-    parcel.WriteInt32(audioStreamInfo_.encoding);
-    parcel.WriteInt32(audioStreamInfo_.format);
-    parcel.WriteInt32(audioStreamInfo_.samplingRate);
+    audioStreamInfo_.Marshalling(parcel);
+
     parcel.WriteInt32(channelMasks_);
     parcel.WriteInt32(channelIndexMasks_);
 
@@ -152,10 +150,8 @@ sptr<AudioDeviceDescriptor> AudioDeviceDescriptor::Unmarshalling(Parcel &in)
     audioDeviceDescriptor->deviceRole_ = static_cast<DeviceRole>(in.ReadInt32());
     audioDeviceDescriptor->deviceId_ = in.ReadInt32();
 
-    audioDeviceDescriptor->audioStreamInfo_.channels = static_cast<AudioChannel>(in.ReadInt32());
-    audioDeviceDescriptor->audioStreamInfo_.encoding = static_cast<AudioEncodingType>(in.ReadInt32());
-    audioDeviceDescriptor->audioStreamInfo_.format = static_cast<AudioSampleFormat>(in.ReadInt32());
-    audioDeviceDescriptor->audioStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(in.ReadInt32());
+    audioDeviceDescriptor->audioStreamInfo_.Unmarshalling(in);
+
     audioDeviceDescriptor->channelMasks_ = in.ReadInt32();
     audioDeviceDescriptor->channelIndexMasks_ = in.ReadInt32();
 
@@ -176,7 +172,7 @@ void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string ma
     macAddress_ = macAddress;
 }
 
-void AudioDeviceDescriptor::SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask,
+void AudioDeviceDescriptor::SetDeviceCapability(const DeviceStreamInfo &audioStreamInfo, int32_t channelMask,
     int32_t channelIndexMasks)
 {
     audioStreamInfo_.channels = audioStreamInfo.channels;

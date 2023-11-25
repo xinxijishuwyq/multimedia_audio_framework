@@ -248,7 +248,7 @@ struct AudioParameters {
 };
 
 struct A2dpDeviceConfigInfo {
-    AudioStreamInfo streamInfo;
+    DeviceStreamInfo streamInfo;
     bool absVolumeSupport = false;
     int32_t volumeLevel;
     bool mute = false;
@@ -738,7 +738,7 @@ struct DStatusInfo {
     std::string deviceName = "";
     bool isConnected = false;
     std::string macAddress;
-    AudioStreamInfo streamInfo = {};
+    DeviceStreamInfo streamInfo = {};
     ConnectType connectType = CONNECT_TYPE_LOCAL;
 };
 

@@ -319,15 +319,16 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
     std::string macAddress = "";
     audioDeviceDescriptor->SetDeviceInfo(deviceName, macAddress);
 
-    AudioStreamInfo audioStreamInfo;
-    audioStreamInfo.channels = STEREO;
-    audioStreamInfo.encoding = ENCODING_PCM;
-    audioStreamInfo.format = SAMPLE_S16LE;
-    audioStreamInfo.samplingRate = SAMPLE_RATE_48000;
+    DeviceStreamInfo audioStreamInfo = {
+        SAMPLE_RATE_48000,
+        ENCODING_PCM,
+        SAMPLE_S16LE,
+        STEREO
+    };
     int32_t channelMask = 1;
     audioDeviceDescriptor->SetDeviceCapability(audioStreamInfo, channelMask);
 
-    AudioStreamInfo streamInfo = audioDeviceDescriptor->audioStreamInfo_;
+    DeviceStreamInfo streamInfo = audioDeviceDescriptor->audioStreamInfo_;
     EXPECT_EQ(streamInfo.channels, audioStreamInfo.channels);
     EXPECT_EQ(streamInfo.encoding, audioStreamInfo.encoding);
     EXPECT_EQ(streamInfo.format, audioStreamInfo.format);

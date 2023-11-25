@@ -2122,9 +2122,9 @@ bool AudioPolicyService::GetActiveDeviceStreamInfo(DeviceType deviceType, AudioS
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
         if (configInfoPos != connectedA2dpDeviceMap_.end()) {
-            streamInfo.samplingRate = configInfoPos->second.streamInfo.samplingRate;
+            streamInfo.samplingRate = *configInfoPos->second.streamInfo.samplingRate.rbegin();
             streamInfo.format = configInfoPos->second.streamInfo.format;
-            streamInfo.channels = configInfoPos->second.streamInfo.channels;
+            streamInfo.channels = *configInfoPos->second.streamInfo.channels.rbegin();
             return true;
         }
     }
@@ -2256,7 +2256,7 @@ void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isCon
 }
 
 void AudioPolicyService::UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
-    const std::string& deviceName, const AudioStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc)
+    const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc)
 {
     deviceDesc.SetDeviceInfo(deviceName, macAddress);
     deviceDesc.SetDeviceCapability(streamInfo, 0);
@@ -2268,7 +2268,7 @@ void AudioPolicyService::UpdateLocalGroupInfo(bool isConnected, const std::strin
 }
 
 int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const std::string& macAddress,
-    const std::string& deviceName, const AudioStreamInfo& streamInfo)
+    const std::string& deviceName, const DeviceStreamInfo& streamInfo)
 {
     AUDIO_INFO_LOG("[%{public}s], macAddress:[%{public}s]", __func__, macAddress.c_str());
     {
@@ -3069,10 +3069,14 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
 
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(devType,
         GetDeviceRole(moduleInfo.role), volumeGroupId, interruptGroupId, LOCAL_NETWORK_ID);
-    if (!moduleInfo.rate.empty() && !moduleInfo.channels.empty()) {
-        AudioStreamInfo streamInfo = {};
-        streamInfo.samplingRate = static_cast<AudioSamplingRate>(stoi(moduleInfo.rate));
-        streamInfo.channels = static_cast<AudioChannel>(stoi(moduleInfo.channels));
+    if (!moduleInfo.supportedRate_.empty() && !moduleInfo.supportedChannels_.empty()) {
+        DeviceStreamInfo streamInfo = {};
+        for (auto supportedRate : moduleInfo.supportedRate_) {
+            streamInfo.samplingRate.insert(static_cast<AudioSamplingRate>(supportedRate));
+        }
+        for (auto supportedChannels : moduleInfo.supportedChannels_) {
+            streamInfo.channels.insert(static_cast<AudioChannel>(supportedChannels));
+        }
         audioDescriptor->SetDeviceCapability(streamInfo, 0);
     }
 
