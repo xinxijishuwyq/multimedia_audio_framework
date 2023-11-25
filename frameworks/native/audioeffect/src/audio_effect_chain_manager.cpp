@@ -162,6 +162,21 @@ bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t s
     return false;
 }
 
+int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    std::string sceneTypeString = "";
+    if (sceneType) {
+        sceneTypeString = sceneType;
+    }
+    std::string effectModeString = "";
+    if (effectMode) {
+        effectModeString = effectMode;
+    }
+    return audioEffectChainManager->SetHdiParam(sceneTypeString, effectModeString, enabled);
+}
+
 int32_t EffectChainManagerInitCb(const char *sceneType)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -656,6 +671,8 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_DEBUG_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         SceneTypeAndModeToEffectChainNameMap_.size());
 
+    InitHdi();
+
     isInitialized_ = true;
 }
 
@@ -900,12 +917,110 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spa
     }
     if (spatializatonEnabled_ != spatializationState[0]) {
         spatializatonEnabled_ = spatializationState[0];
+        UpdateHdiState();
     }
     if (headTrackingEnabled_ != spatializationState[1]) {
         headTrackingEnabled_ = spatializationState[1];
         UpdateSensorState();
     }
     return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string effectMode, bool enabled)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
+    if ((offloadEnabled_ == false) || (hdiControl_ == nullptr)) {
+        return SUCCESS;
+    }
+    int8_t input[SEND_HDI_COMMAND_LEN] = {0};
+    int8_t output[GET_HDI_BUFFER_LEN] = {0};
+    uint32_t replyLen = GET_HDI_BUFFER_LEN;
+    input[0] = HDI_BYPASS;
+    input[1] = enabled == true ? 0 : 1;
+    int32_t ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+    if (ret != 0) {
+        return ret;
+    }
+    input[0] = HDI_ROOM_MODE;
+    input[1] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
+    input[HDI_ROOM_MODE_INDEX_TWO] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
+    ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+    if (ret != 0) {
+        return ret;
+    }
+    return SUCCESS;
+}
+
+void AudioEffectChainManager::InitHdi()
+{
+    hdiModel_ = IEffectModelGet(false);
+    if (hdiModel_ == nullptr) {
+        AUDIO_WARNING_LOG("IEffectModelGet failed");
+        offloadEnabled_ = false;
+        hdiControl_ = nullptr;
+        return;
+    }
+    char *libName = nullptr;
+    char *effectId = nullptr;
+    libName = strdup("libhvsprocessing_dsp");
+    effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966ff");
+    EffectInfo info = {
+        .libName = libName,
+        .effectId = effectId,
+        .ioDirection = 1,
+    };
+    ControllerId controllerId;
+    int32_t ret = hdiModel_->CreateEffectController(hdiModel_, &info, &hdiControl_, &controllerId);
+    if ((ret != 0) || (hdiControl_ == nullptr)) {
+        AUDIO_WARNING_LOG("hdi init failed");
+        offloadEnabled_ = false;
+        hdiControl_ = nullptr;
+        return;
+    }
+    int8_t input[SEND_HDI_COMMAND_LEN] = {0};
+    int8_t output[GET_HDI_BUFFER_LEN] = {0};
+    uint32_t replyLen = GET_HDI_BUFFER_LEN;
+    input[0] = HDI_BLUETOOTH_MODE;
+    input[1] = 0;
+    ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("hdi set bluetooth mode failed");
+        offloadEnabled_ = false;
+        hdiControl_ = nullptr;
+        return;
+    }
+}
+
+void AudioEffectChainManager::UpdateHdiState()
+{
+    if (hdiControl_ == nullptr) {
+        AUDIO_WARNING_LOG("hdiControl_ is nullptr");
+        offloadEnabled_ = false;
+        return;
+    }
+    int8_t input[SEND_HDI_COMMAND_LEN] = {0};
+    int8_t output[GET_HDI_BUFFER_LEN] = {0};
+    uint32_t replyLen = GET_HDI_BUFFER_LEN;
+    int32_t ret;
+    if (spatializatonEnabled_) {
+        input[0] = HDI_INIT;
+        ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("hdi allocate failed");
+            offloadEnabled_ = false;
+        } else {
+            offloadEnabled_ = true;
+        }
+    } else {
+        input[0] = HDI_DESTROY;
+        ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("hdi destroy failed");
+        }
+        offloadEnabled_ = false;
+    }
 }
 
 void AudioEffectChainManager::UpdateSensorState()

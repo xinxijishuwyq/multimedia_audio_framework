@@ -32,6 +32,7 @@
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
 #include "sensor_agent.h"
+#include "v1_0/ieffect_model.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,6 +49,12 @@ const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t NONE_SPATIALIZER_ENGINE = 0;
 const uint32_t ARM_SPATIALIZER_ENGINE = 1;
 const uint32_t DSP_SPATIALIZER_ENGINE = 2;
+const uint32_t NONE_SPATIALIZER_ENGINE = 0;
+const uint32_t ARM_SPATIALIZER_ENGINE = 1;
+const uint32_t DSP_SPATIALIZER_ENGINE = 2;
+const uint32_t SEND_HDI_COMMAND_LEN = 20;
+const uint32_t GET_HDI_BUFFER_LEN = 10;
+const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
@@ -136,7 +143,10 @@ public:
         const uint64_t &channelLayout);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
+    int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
 private:
+    void InitHdi();
+    void UpdateHdiState();
     void UpdateSensorState();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
@@ -154,6 +164,8 @@ private:
     bool headTrackingEnabled_ = false;
     std::shared_ptr<HeadTracker> headTracker_;
     bool offloadEnabled_ = false;
+    IEffectModel *hdiModel_ = nullptr;
+    IEffectControl *hdiControl_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -106,6 +106,9 @@ struct Userdata {
     BufferAttr *bufferAttr;
     int32_t processLen;
     size_t processSize;
+    char *sinkSceneType;
+    char *sinkSceneMode;
+    bool spatialEnabled;
 };
 
 static void UserdataFree(struct Userdata *u);
@@ -913,6 +916,41 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     u->timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
 }
 
+static void SetHdiParam(struct Userdata *userdata)
+{
+    pa_sink_input *i;
+    void *state = NULL;
+    int sessionIDMax = -1;
+    char *sinkSceneTypeMax = "";
+    char *sinkSceneModeMax = "";
+    bool spatialEnabledMax = false;
+    while ((i = pa_hashmap_iterate(userdata->sink->thread_info.inputs, &state, NULL))) {
+        pa_sink_input_assert_ref(i);
+        const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
+        const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
+        const char *sinkSpatialization = pa_proplist_gets(i->proplist, "spatialization.enabled");
+        const char *sinkSessionStr = pa_proplist_gets(i->proplist, "stream.sessionID");
+        bool spatializationEnabled = strcmp(sinkSpatialization, "1") ? false : true;
+        bool effectEnabled = strcmp(sinkSceneMode, "EFFECT_DEFAULT") ? false : true;
+        bool spatialEnabled = spatializationEnabled && effectEnabled;
+        int sessionID = atoi(sinkSessionStr);
+        if (sessionID > sessionIDMax) {
+            sessionIDMax = sessionID;
+            sinkSceneTypeMax = (char *)sinkSceneType;
+            sinkSceneModeMax = (char *)sinkSceneMode;
+            spatialEnabledMax = spatialEnabled;
+        }
+    }
+
+    if (strcmp(userdata->sinkSceneType, sinkSceneTypeMax) || strcmp(userdata->sinkSceneMode, sinkSceneModeMax) ||
+        (userdata->spatialEnabled != spatialEnabledMax)) {
+            userdata->sinkSceneMode = sinkSceneModeMax;
+            userdata->sinkSceneType = sinkSceneTypeMax;
+            userdata->spatialEnabled = spatialEnabledMax;
+            EffectChainManagerSetHdiParam(userdata->sinkSceneType, userdata->sinkSceneMode, userdata->spatialEnabled);
+        }
+}
+
 static void ThreadFuncRendererTimer(void *userdata)
 {
     // set audio thread priority
@@ -929,6 +967,8 @@ static void ThreadFuncRendererTimer(void *userdata)
     while (true) {
         pa_usec_t now = 0;
         int32_t ret;
+
+        SetHdiParam(u);
 
         bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
             (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
