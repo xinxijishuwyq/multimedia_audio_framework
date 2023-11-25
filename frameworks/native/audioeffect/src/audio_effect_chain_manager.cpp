@@ -964,7 +964,7 @@ void AudioEffectChainManager::InitHdi()
     }
     char *libName = nullptr;
     char *effectId = nullptr;
-    libName = strdup("libhvsprocessing_dsp");
+    libName = strdup("libspatialization_processing_dsp");
     effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966ff");
     EffectInfo info = {
         .libName = libName,
