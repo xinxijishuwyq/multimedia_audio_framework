@@ -212,31 +212,47 @@ bool OHAudioCapturer::Initialize(const AudioCapturerOptions& capturerOptions)
 
 bool OHAudioCapturer::Start()
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    if (audioCapturer_ == nullptr) {
+        AUDIO_ERR_LOG("capturer client is nullptr");
+        return false;
+    }
     return audioCapturer_->Start();
 }
     
 bool OHAudioCapturer::Pause()
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    if (audioCapturer_ == nullptr) {
+        AUDIO_ERR_LOG("capturer client is nullptr");
+        return false;
+    }
     return audioCapturer_->Pause();
 }
 
 bool OHAudioCapturer::Stop()
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    if (audioCapturer_ == nullptr) {
+        AUDIO_ERR_LOG("capturer client is nullptr");
+        return false;
+    }
     return audioCapturer_->Stop();
 }
 
 bool OHAudioCapturer::Flush()
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    if (audioCapturer_ == nullptr) {
+        AUDIO_ERR_LOG("capturer client is nullptr");
+        return false;
+    }
     return audioCapturer_->Flush();
 }
 
 bool OHAudioCapturer::Release()
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    if (audioCapturer_ == nullptr) {
+        AUDIO_ERR_LOG("capturer client is nullptr");
+        return false;
+    }
+
     if (!audioCapturer_->Release()) {
         return false;
     }
