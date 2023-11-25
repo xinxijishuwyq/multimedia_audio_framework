@@ -930,8 +930,8 @@ static void SetHdiParam(struct Userdata *userdata)
         const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
         const char *sinkSpatialization = pa_proplist_gets(i->proplist, "spatialization.enabled");
         const char *sinkSessionStr = pa_proplist_gets(i->proplist, "stream.sessionID");
-        bool spatializationEnabled = strcmp(sinkSpatialization, "1") ? false : true;
-        bool effectEnabled = strcmp(sinkSceneMode, "EFFECT_DEFAULT") ? false : true;
+        bool spatializationEnabled = pa_safe_streq(sinkSpatialization, "1") ? true : false;
+        bool effectEnabled = pa_safe_streq(sinkSceneMode, "EFFECT_DEFAULT") ? true : false;
         bool spatialEnabled = spatializationEnabled && effectEnabled;
         int sessionID = atoi(sinkSessionStr);
         if (sessionID > sessionIDMax) {
@@ -942,7 +942,8 @@ static void SetHdiParam(struct Userdata *userdata)
         }
     }
 
-    if (strcmp(userdata->sinkSceneType, sinkSceneTypeMax) || strcmp(userdata->sinkSceneMode, sinkSceneModeMax) ||
+    if (!pa_safe_streq(userdata->sinkSceneType, sinkSceneTypeMax) ||
+        !pa_safe_streq(userdata->sinkSceneMode, sinkSceneModeMax) ||
         (userdata->spatialEnabled != spatialEnabledMax)) {
             userdata->sinkSceneMode = sinkSceneModeMax;
             userdata->sinkSceneType = sinkSceneTypeMax;

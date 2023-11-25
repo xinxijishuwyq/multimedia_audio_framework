@@ -165,7 +165,7 @@ bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t s
 int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     std::string sceneTypeString = "";
     if (sceneType) {
         sceneTypeString = sceneType;
@@ -962,8 +962,8 @@ void AudioEffectChainManager::InitHdi()
         hdiControl_ = nullptr;
         return;
     }
-    char *libName = nullptr;
-    char *effectId = nullptr;
+    std::string libName = "";
+    std::string effectId = "";
     libName = strdup("libspatialization_processing_dsp");
     effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966ff");
     EffectInfo info = {
