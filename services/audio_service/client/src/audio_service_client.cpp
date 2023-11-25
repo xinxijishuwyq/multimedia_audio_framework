@@ -1173,8 +1173,7 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        bool needDrain = (state_ != PAUSED);
-        if (needDrain) {
+        if (state_ != PAUSED) {
             state_ = STOPPING;
             DrainAudioCache();
 
@@ -1195,9 +1194,12 @@ int32_t AudioServiceClient::StopStream()
 
             pa_operation_unref(operation);
             pa_threaded_mainloop_unlock(mainLoop);
-        }
-        if (!needDrain) {
+        } else {
             state_ = STOPPED;
+            std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+            if (streamCb != nullptr) {
+                streamCb->OnStateChange(STOPPED);
+            }
         }
         return AUDIO_CLIENT_SUCCESS;
     } else {
