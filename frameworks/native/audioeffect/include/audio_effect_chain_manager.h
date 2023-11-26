@@ -156,8 +156,6 @@ public:
     int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
 private:
-    // void InitHdi();
-    // void UpdateHdiState();
     void UpdateSensorState();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
@@ -175,9 +173,7 @@ private:
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
     std::shared_ptr<HeadTracker> headTracker_;
-    std::shared_ptr<AuioEffectHdi> audioEffectHdi_;
-    // IEffectModel *hdiModel_ = nullptr;
-    // IEffectControl *hdiControl_ = nullptr;
+    std::shared_ptr<AudioEffectHdi> audioEffectHdi_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
