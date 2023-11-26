@@ -932,8 +932,7 @@ int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string 
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
-    int ret;
-    ret = audioEffectHdi_->SetEffectHdiParam(sceneType, effectMode, enabled, offloadEnabled_);
+    int ret = audioEffectHdi_->SetEffectHdiParam(sceneType, effectMode, enabled, offloadEnabled_);
     if (ret != 0) {
         return ret;
     }
