@@ -307,6 +307,10 @@ public:
      * @since 9
      */
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
+
+    virtual void OnAudioFocusRequested(const AudioInterrupt &) {}
+
+    virtual void OnAudioFocusAbandoned(const AudioInterrupt &) {}
 };
 
 class AudioFocusInfoChangeCallbackImpl : public AudioFocusInfoChangeCallback {
@@ -322,6 +326,8 @@ public:
      * @since 9
      */
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
+    void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
+    void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
     void SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
 
     /**
