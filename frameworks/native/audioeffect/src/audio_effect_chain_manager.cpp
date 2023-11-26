@@ -672,7 +672,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_DEBUG_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         SceneTypeAndModeToEffectChainNameMap_.size());
 
-    audioEffetHdi_->InitHdi(offloadEnabled_);
+    audioEffectHdi_->InitHdi(offloadEnabled_);
 
     isInitialized_ = true;
 }
@@ -918,7 +918,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spa
     }
     if (spatializatonEnabled_ != spatializationState[0]) {
         spatializatonEnabled_ = spatializationState[0];
-        audioEffetHdi_->UpdateHdiState(spatializatonEnabled_, offloadEnabled_);
+        audioEffectHdi_->UpdateHdiState(spatializatonEnabled_, offloadEnabled_);
     }
     if (headTrackingEnabled_ != spatializationState[1]) {
         headTrackingEnabled_ = spatializationState[1];
@@ -932,7 +932,7 @@ int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string 
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
-
+    int ret;
     ret = audioEffectHdi_->SetEffectHdiParam(sceneType, effectMode, enabled, offloadEnabled_);
     if (ret != 0) {
         return ret;
