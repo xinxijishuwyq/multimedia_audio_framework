@@ -87,16 +87,15 @@ class AudioEffectHdi {
 public:
     AudioEffectHdi();
     ~AudioEffectHdi();
-    void InitHdi();
-    void UpdateHdiState();
-    // int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
-private:
+    void InitHdi(bool &offloadEnabled_);
+    void UpdateHdiState(bool spatializatonEnabled_, bool &offloadEnabled_);
+    int32_t SetEffectHdiParam(std::string sceneType, std::string effectMode, bool enabled, bool offloadEnabled_);
     IEffectModel *hdiModel_ = nullptr;
     IEffectControl *hdiControl_ = nullptr;
+private:
     std::string libName;
     std::string effectId;
-
-}
+};
 
 class AudioEffectChain {
 public:
@@ -156,7 +155,6 @@ public:
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
-    bool offloadEnabled_ = false;
 private:
     // void InitHdi();
     // void UpdateHdiState();
@@ -175,7 +173,9 @@ private:
     std::mutex dynamicMutex_;
     bool spatializatonEnabled_ = true;
     bool headTrackingEnabled_ = false;
+    bool offloadEnabled_ = false;
     std::shared_ptr<HeadTracker> headTracker_;
+    std::shared_ptr<AuioEffectHdi> audioEffectHdi_;
     // IEffectModel *hdiModel_ = nullptr;
     // IEffectControl *hdiControl_ = nullptr;
 };
