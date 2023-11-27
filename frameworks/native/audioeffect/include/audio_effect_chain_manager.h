@@ -87,14 +87,16 @@ class AudioEffectHdi {
 public:
     AudioEffectHdi();
     ~AudioEffectHdi();
-    void InitHdi(bool &offloadEnabled_);
-    void UpdateHdiState(bool spatializatonEnabled_, bool &offloadEnabled_);
-    int32_t SetEffectHdiParam(std::string sceneType, std::string effectMode, bool enabled, bool offloadEnabled_);
-    IEffectModel *hdiModel_ = nullptr;
-    IEffectControl *hdiControl_ = nullptr;
+    void InitHdi();
+    int32_t UpdateHdiState(int8_t *effectHdiInput);
 private:
     std::string libName;
     std::string effectId;
+    int8_t input[SEND_HDI_COMMAND_LEN];
+    int8_t output[GET_HDI_BUFFER_LEN];
+    uint32_t replyLen;
+    IEffectModel *hdiModel_ = nullptr;
+    IEffectControl *hdiControl_ = nullptr;
 };
 
 class AudioEffectChain {
@@ -174,6 +176,7 @@ private:
     bool offloadEnabled_ = false;
     std::shared_ptr<HeadTracker> headTracker_;
     std::shared_ptr<AudioEffectHdi> audioEffectHdi_;
+    int8_t effectHdiInput[SEND_HDI_COMMAND_LEN];
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
