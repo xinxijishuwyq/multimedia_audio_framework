@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,25 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_HDIADAPTER_INFO_H
-#define AUDIO_HDIADAPTER_INFO_H
+#ifndef OFFLOAD_AUDIO_RENDERER_SINK_H
+#define OFFLOAD_AUDIO_RENDERER_SINK_H
 
-// should be same with AudioSampleFormat in audio_info.h
-enum HdiAdapterFormat {
-    SAMPLE_U8 = 0,
-    SAMPLE_S16 = 1,
-    SAMPLE_S24 = 2,
-    SAMPLE_S32 = 3,
-    SAMPLE_F32 = 4,
-    INVALID_WIDTH = -1
+#include "audio_info.h"
+#include "i_audio_renderer_sink.h"
+
+#include <cstdio>
+#include <list>
+
+namespace OHOS {
+namespace AudioStandard {
+class OffloadRendererSink : public IOffloadAudioRendererSink {
+public:
+    static OffloadRendererSink *GetInstance(void);
+
+    OffloadRendererSink() = default;
+    ~OffloadRendererSink() = default;
 };
-
-enum RenderCallbackType {
-    CB_NONBLOCK_WRITE_COMPLETED = 0,
-    CB_DRAIN_COMPLETED = 1,
-    CB_FLUSH_COMPLETED = 2,
-    CB_RENDER_FULL = 3,
-    CB_ERROR_OCCUR = 4,
-};
-
-#endif
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // OFFLOAD_AUDIO_RENDERER_SINK_H

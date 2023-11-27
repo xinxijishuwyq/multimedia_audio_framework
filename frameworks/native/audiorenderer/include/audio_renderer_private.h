@@ -77,6 +77,8 @@ public:
     int32_t SetParallelPlayFlag(bool parallelPlayFlag) override;
     int32_t SetLowPowerVolume(float volume) const override;
     float GetLowPowerVolume() const override;
+    int32_t SetOffloadMode(int32_t state, bool isAppBack) const override;
+    int32_t UnsetOffloadMode() const override;
     float GetSingleStreamVolume() const override;
     float GetMinStreamVolume() const override;
     float GetMaxStreamVolume() const override;
