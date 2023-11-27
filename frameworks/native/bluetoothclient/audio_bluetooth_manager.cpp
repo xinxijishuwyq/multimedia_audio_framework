@@ -169,10 +169,10 @@ void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &de
     // Record connection state and device for hdi start time to check
     AudioA2dpManager::SetConnectionState(state);
     if (state == static_cast<int>(BTConnectState::CONNECTED)) {
-        MediaBluetoothDeviceManager::SetMediaStack(device, CONNECT);
+        MediaBluetoothDeviceManager::SetMediaStack(device, BluetoothDeviceAction::CONNECT_ACTION);
     }
     if (state == static_cast<int>(BTConnectState::DISCONNECTED)) {
-        MediaBluetoothDeviceManager::SetMediaStack(device, DISCONNECT);
+        MediaBluetoothDeviceManager::SetMediaStack(device, BluetoothDeviceAction::DISCONNECT_ACTION);
     }
 }
 

@@ -25,6 +25,7 @@
 #include "audio_service_client.h"
 #include "audio_stream_tracker.h"
 #include "volume_ramp.h"
+#include "audio_format_converter_3DA.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -73,8 +74,6 @@ public:
 
     int32_t SetLowPowerVolume(float volume) override;
     float GetLowPowerVolume() override;
-    int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
-    int32_t UnsetOffloadMode() override;
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
@@ -95,6 +94,7 @@ public:
     // Playback related APIs
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
+    int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
@@ -114,6 +114,7 @@ private:
     void ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize);
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    int32_t InitFromParams(AudioStreamParams &param);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
@@ -139,9 +140,6 @@ private:
 
     bool isFirstRead_;
     bool isFirstWrite_;
-    bool isPausing_;
-    uint64_t offloadTsLast_ = 0;
-    uint64_t offloadTsOffset_ = 0;
 
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;
@@ -152,6 +150,8 @@ private:
     bool streamTrackerRegistered_ = false;
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
+	
+    std::unique_ptr<AudioFormatConverter3DA> converter_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

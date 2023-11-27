@@ -89,7 +89,6 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
       isReadyToRead_(false),
       isFirstRead_(false),
       isFirstWrite_(false),
-      isPausing_(false),
       pfd_(nullptr)
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
@@ -167,13 +166,6 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     }
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
-        if (offloadEnable_) {
-            if (paTimeStamp < offloadTsLast_) {
-                offloadTsOffset_ += offloadTsLast_;
-            }
-            offloadTsLast_ = paTimeStamp;
-            paTimeStamp += offloadTsOffset_;
-        }
         if (resetTime_) {
             AUDIO_INFO_LOG("AudioStream::GetAudioTime resetTime_ %{public}d", resetTime_);
             resetTime_ = false;
@@ -185,10 +177,9 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             timestamp.framePosition = GetStreamFramesRead();
         }
 
-        uint64_t delta = paTimeStamp > resetTimestamp_ ? paTimeStamp - resetTimestamp_ : 0;
-        timestamp.time.tv_sec = static_cast<time_t>(delta / TIME_CONVERSION_US_S);
+        timestamp.time.tv_sec = static_cast<time_t>((paTimeStamp - resetTimestamp_) / TIME_CONVERSION_US_S);
         timestamp.time.tv_nsec
-            = static_cast<time_t>((delta - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
+            = static_cast<time_t>(((paTimeStamp - resetTimestamp_) - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
                                   * TIME_CONVERSION_NS_US);
         timestamp.time.tv_sec += baseTimestamp_.tv_sec;
         timestamp.time.tv_nsec += baseTimestamp_.tv_nsec;
@@ -205,6 +196,13 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
     AUDIO_INFO_LOG("AudioStream: Get Buffer size");
     if (eMode_ == AUDIO_MODE_RECORD) {
         return GetBufferSizeForCapturer(bufferSize);
+    }
+
+    if (streamParams_.encoding == ENCODING_AUDIOVIVID) {
+        if (converter_ == nullptr || !converter_->GetInputBufferSize(bufferSize)) {
+            return ERR_OPERATION_FAILED;
+        }
+        return SUCCESS;
     }
 
     if (GetMinimumBufferSize(bufferSize) != 0) {
@@ -351,7 +349,6 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
         eStreamType_, info.encoding);
-
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("AudioStream: Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
@@ -361,38 +358,22 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         StopAudioStream();
         ReleaseAudioStream(false);
     }
-    {
-        int32_t ret = 0;
-        static std::mutex connectServerMutex;
-        std::lock_guard<std::mutex> lockConnect(connectServerMutex);
-        Trace trace("AudioStream::Initialize");
-        if (eMode_ == AUDIO_MODE_PLAYBACK) {
-            AUDIO_DEBUG_LOG("AudioStream: Initialize playback");
-            if (!IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout)) {
-                return ERR_NOT_SUPPORTED;
-            }
-            ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
-        } else if (eMode_ == AUDIO_MODE_RECORD) {
-            AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
-            if (!IsCapturerChannelValid(info.channels)) {
-                AUDIO_ERR_LOG("AudioStream: Invalid source channel %{public}d", info.channels);
-                return ERR_NOT_SUPPORTED;
-            }
-            ret = Initialize(AUDIO_SERVICE_CLIENT_RECORD);
-        } else {
-            AUDIO_ERR_LOG("AudioStream: error eMode.");
-            return ERR_INVALID_OPERATION;
-        }
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "AudioStream: Error initializing!");
+
+    AudioStreamParams param = info;
+
+    int32_t ret = 0;
+
+    if ((ret = InitFromParams(param)) != SUCCESS) {
+        return ret;
     }
 
-    if (CreateStream(info, eStreamType_) != SUCCESS) {
+    if (CreateStream(param, eStreamType_) != SUCCESS) {
         AUDIO_ERR_LOG("AudioStream:Create stream failed");
         return ERROR;
     }
     state_ = PREPARED;
     AUDIO_DEBUG_LOG("AudioStream:Set stream Info SUCCESS");
-    streamParams_ = info;
+    streamParams_ = param;
     RegisterTracker(proxyObj);
     return SUCCESS;
 }
@@ -401,10 +382,6 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 {
     if ((state_ != PREPARED) && (state_ != STOPPED) && (state_ != PAUSED)) {
         AUDIO_ERR_LOG("StartAudioStream Illegal state:%{public}u", state_);
-        return false;
-    }
-    if (isPausing_) {
-        AUDIO_ERR_LOG("StartAudioStream Illegal isPausing_:%{public}u", isPausing_);
         return false;
     }
 
@@ -520,7 +497,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     stream.buffer = buffer;
     stream.bufferLen = bufferSize;
 
-    if (isFirstWrite_ && !offloadEnable_) {
+    if (isFirstWrite_) {
         if (RenderPrebuf(stream.bufferLen)) {
             AUDIO_ERR_LOG("ERR_WRITE_FAILED");
             return ERR_WRITE_FAILED;
@@ -538,6 +515,67 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     return bytesWritten;
 }
 
+int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
+{
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
+        return ERR_INCORRECT_MODE;
+    }
+
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("Write: Illegal state:%{public}u", state_);
+        // To allow context switch for APIs running in different thread contexts
+        std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
+        return ERR_ILLEGAL_STATE;
+    }
+
+    BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
+    BufferDesc metaDesc = {metaBuffer, metaBufferSize};
+
+    if (converter_ == nullptr) {
+        AUDIO_ERR_LOG("Write: converter isn't init.");
+        return ERR_WRITE_FAILED;
+    }
+    
+    if (!converter_->CheckInputValid(pcmDesc, metaDesc)) {
+        AUDIO_ERR_LOG("Write: Invalid input.");
+        return ERR_INVALID_PARAM;
+    }
+    
+    int32_t writeError;
+    StreamBuffer stream;
+
+    converter_->Process(pcmDesc, metaDesc);
+
+    converter_->GetOutputBufferStream(stream.buffer, stream.bufferLen);
+
+    if (isFirstWrite_) {
+        if (RenderPrebuf(stream.bufferLen)) {
+            AUDIO_ERR_LOG("ERR_WRITE_FAILED");
+            return ERR_WRITE_FAILED;
+        }
+        isFirstWrite_ = false;
+    }
+
+    ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
+    
+    size_t bytesWritten = 0;
+    size_t totLen = 0;
+    while (stream.bufferLen > 0) {
+        bytesWritten = WriteStream(stream, writeError);
+        if (bytesWritten < 0)
+            break;
+        stream.buffer += bytesWritten;
+        stream.bufferLen -= bytesWritten;
+        totLen += bytesWritten;
+    }
+    if (writeError != 0) {
+        AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
+        return ERR_WRITE_FAILED;
+    }
+    return totLen;
+}
+
 bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
     if (state_ != RUNNING) {
@@ -547,7 +585,6 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     State oldState = state_;
     // Update state to stop write thread
     state_ = PAUSED;
-    isPausing_ = true;
 
     if (captureMode_ == CAPTURE_MODE_CALLBACK) {
         isReadyToRead_ = false;
@@ -571,7 +608,6 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     if (ret != SUCCESS) {
         AUDIO_DEBUG_LOG("StreamPause fail,ret:%{public}d", ret);
         state_ = oldState;
-        isPausing_ = false;
         return false;
     }
 
@@ -581,7 +617,6 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
-    isPausing_ = false;
     return true;
 }
 
@@ -727,31 +762,6 @@ int32_t AudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback
     return SUCCESS;
 }
 
-inline size_t GetFormatSize(const AudioStreamParams& info)
-{
-    size_t result = 0;
-    size_t bitWidthSize = 0;
-    switch (info.format) {
-        case SAMPLE_U8:
-            bitWidthSize = 1; // size is 1
-            break;
-        case SAMPLE_S16LE:
-            bitWidthSize = 2; // size is 2
-            break;
-        case SAMPLE_S24LE:
-            bitWidthSize = 3; // size is 3
-            break;
-        case SAMPLE_S32LE:
-            bitWidthSize = 4; // size is 4
-            break;
-        default:
-            bitWidthSize = 2; // size is 2
-            break;
-    }
-    result = bitWidthSize * info.channels;
-    return result;
-}
-
 void AudioStream::SetPreferredFrameSize(int32_t frameSize)
 {
     AUDIO_INFO_LOG("Not Supported Yet");
@@ -773,8 +783,7 @@ int32_t AudioStream::SetRenderMode(AudioRenderMode renderMode)
         GetMinimumBufferSize(length);
         AUDIO_INFO_LOG("AudioServiceClient:: GetMinimumBufferSize: %{public}zu", length);
 
-        writeBufferPool_[i] = std::make_unique<uint8_t[]>(max(length,
-            (size_t)(0.2 * GetFormatSize(streamParams_) * streamParams_.samplingRate))); // 0.2: 200ms is init size
+        writeBufferPool_[i] = std::make_unique<uint8_t[]>(length);
         if (writeBufferPool_[i] == nullptr) {
             AUDIO_ERR_LOG(
                 "AudioServiceClient::GetBufferDescriptor writeBufferPool_[i]==nullptr. Allocate memory failed.");
@@ -1063,16 +1072,6 @@ float AudioStream::GetLowPowerVolume()
     return GetStreamLowPowerVolume();
 }
 
-int32_t AudioStream::SetOffloadMode(int32_t state, bool isAppBack)
-{
-    return SetStreamOffloadMode(state, isAppBack);
-}
-
-int32_t AudioStream::UnsetOffloadMode()
-{
-    return UnsetStreamOffloadMode();
-}
-
 float AudioStream::GetSingleStreamVolume()
 {
     return GetSingleStreamVol();
@@ -1196,6 +1195,45 @@ void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
     }
+}
+
+int32_t AudioStream::InitFromParams(AudioStreamParams &info)
+{
+    int32_t ret = 0;
+    static std::mutex connectServerMutex;
+    std::lock_guard<std::mutex> lockConnect(connectServerMutex);
+    Trace trace("AudioStream::Initialize");
+    if (eMode_ == AUDIO_MODE_PLAYBACK) {
+        AUDIO_DEBUG_LOG("AudioStream: Initialize playback");
+        if (!IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout)) {
+            return ERR_NOT_SUPPORTED;
+        }
+        ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
+
+        if (info.encoding == ENCODING_AUDIOVIVID) {
+            converter_ = std::make_unique<AudioFormatConverter3DA>();
+            if (converter_ == nullptr ||
+                converter_->Init(info) != SUCCESS ||
+                !converter_->AllocateMem()) {
+                AUDIO_ERR_LOG("AudioStream: converter construct error");
+                return ERROR;
+            } else {
+                converter_->ConverterChannels(info.channels, info.channelLayout);
+            }
+        }
+    } else if (eMode_ == AUDIO_MODE_RECORD) {
+        AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
+        if (!IsCapturerChannelValid(info.channels)) {
+            AUDIO_ERR_LOG("AudioStream: Invalid source channel %{public}d", info.channels);
+            return ERR_NOT_SUPPORTED;
+        }
+        ret = Initialize(AUDIO_SERVICE_CLIENT_RECORD);
+    } else {
+        AUDIO_ERR_LOG("AudioStream: error eMode.");
+        return ERR_INVALID_OPERATION;
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "AudioStream: Error initializing!");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

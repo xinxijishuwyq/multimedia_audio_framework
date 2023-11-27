@@ -28,6 +28,7 @@
 #include "audio_volume_manager_napi.h"
 #include "audio_volume_group_manager_napi.h"
 #include "audio_interrupt_manager_napi.h"
+#include "audio_spatialization_manager_napi.h"
 #include "audio_utils.h"
 #include "hilog/log.h"
 #include "audio_log.h"
@@ -521,6 +522,7 @@ napi_value AudioManagerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getRoutingManager", GetRoutingManager),
         DECLARE_NAPI_FUNCTION("getVolumeManager", GetVolumeManager),
         DECLARE_NAPI_FUNCTION("getInterruptManager", GetInterruptManager),
+        DECLARE_NAPI_FUNCTION("getSpatializationManager", GetSpatializationManager),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -2066,15 +2068,25 @@ static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, co
 
     napi_value value = nullptr;
     napi_value sampleRates;
-    napi_create_array_with_length(env, 1, &sampleRates);
-    napi_create_int32(env, deviceInfo.audioStreamInfo_.samplingRate, &value);
-    napi_set_element(env, sampleRates, 0, value);
+    size_t size = deviceInfo.audioStreamInfo_.samplingRate.size();
+    napi_create_array_with_length(env, size, &sampleRates);
+    size_t count = 0;
+    for (const auto &samplingRate : deviceInfo.audioStreamInfo_.samplingRate) {
+        napi_create_int32(env, samplingRate, &value);
+        napi_set_element(env, sampleRates, count, value);
+        count++;
+    }
     napi_set_named_property(env, valueParam, "sampleRates", sampleRates);
 
     napi_value channelCounts;
-    napi_create_array_with_length(env, 1, &channelCounts);
-    napi_create_int32(env, deviceInfo.audioStreamInfo_.channels, &value);
-    napi_set_element(env, channelCounts, 0, value);
+    size = deviceInfo.audioStreamInfo_.channels.size();
+    napi_create_array_with_length(env, size, &channelCounts);
+    count = 0;
+    for (const auto &channels : deviceInfo.audioStreamInfo_.channels) {
+        napi_create_int32(env, channels, &value);
+        napi_set_element(env, channelCounts, count, value);
+        count++;
+    }
     napi_set_named_property(env, valueParam, "channelCounts", channelCounts);
 
     napi_value channelMasks;
@@ -2465,7 +2477,7 @@ template<typename T> void AudioManagerNapi::UnregisterInterruptCallback(napi_env
             managerNapi->interruptCallbackNapi_.reset();
             managerNapi->interruptCallbackNapi_ = nullptr;
         }
-        AUDIO_INFO_LOG("Off Abandon Focus and UnsetAudioInterruptCallback success");
+        AUDIO_INFO_LOG("Off Abandon Focus and UnSetAudioInterruptCallback success");
     }
 }
 
@@ -2563,6 +2575,20 @@ napi_value AudioManagerNapi::GetInterruptManager(napi_env env, napi_callback_inf
     return AudioInterruptManagerNapi::CreateInterruptManagerWrapper(env);
 }
 
+napi_value AudioManagerNapi::GetSpatializationManager(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    size_t argCount = 0;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        HiLog::Error(LABEL, "Invalid arguments!");
+        return nullptr;
+    }
+
+    return AudioSpatializationManagerNapi::CreateSpatializationManagerWrapper(env);
+}
+
 void AudioManagerNapi::AddPropName(std::string& propName, napi_status& status, napi_env env, napi_value& result)
 {
     for (int i = NONE_DEVICES_FLAG; i < DEVICE_FLAG_MAX; i++) {
@@ -2614,6 +2640,7 @@ static napi_value Init(napi_env env, napi_value exports)
     AudioVolumeGroupManagerNapi::Init(env, exports);
     AudioVolumeManagerNapi::Init(env, exports);
     AudioInterruptManagerNapi::Init(env, exports);
+    AudioSpatializationManagerNapi::Init(env, exports);
 
     return exports;
 }

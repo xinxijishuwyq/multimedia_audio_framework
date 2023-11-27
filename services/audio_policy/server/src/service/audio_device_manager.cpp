@@ -246,7 +246,8 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
         if (descriptor->deviceType_ == deviceDescriptor->deviceType_ &&
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
             descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
                 return true;
             } else {
                 // if the disconnecting device is A2DP, need to compare mac address in addition.
@@ -258,6 +259,13 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
 
     auto iter = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (iter != connectedDevices_.end()) {
+        if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) &&
+            (*iter)->deviceCategory_ != deviceDescriptor->deviceCategory_) {
+            AUDIO_INFO_LOG("A2DP device category changed,RemoveConnectedDevices");
+            RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(deviceDescriptor));
+            return false;
+        }
         **iter = deviceDescriptor;
         UpdateDeviceInfo(*iter);
         return true;
@@ -268,12 +276,10 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
 void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
-    if (!devDesc) {
-        AUDIO_ERR_LOG("Memory allocation failed");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
+        AUDIO_INFO_LOG("The device has been added and will not be added again.");
         return;
     }
 
@@ -328,7 +334,10 @@ void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devD
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : remoteRenderDevices_) {
+    for (const auto &desc : remoteRenderDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -337,7 +346,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDev
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : remoteCaptureDevices_) {
+    for (const auto &desc : remoteCaptureDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -346,7 +358,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDe
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : commRenderPrivacyDevices_) {
+    for (const auto &desc : commRenderPrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -355,7 +370,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPriva
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : commRenderPublicDevices_) {
+    for (const auto &desc : commRenderPublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -364,7 +382,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPubli
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : commCapturePrivacyDevices_) {
+    for (const auto &desc : commCapturePrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -373,7 +394,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePriv
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : commCapturePublicDevices_) {
+    for (const auto &desc : commCapturePublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -382,7 +406,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePubl
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : mediaRenderPrivacyDevices_) {
+    for (const auto &desc : mediaRenderPrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -391,7 +418,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPriv
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : mediaRenderPublicDevices_) {
+    for (const auto &desc : mediaRenderPublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -400,7 +430,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPubl
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : mediaCapturePrivacyDevices_) {
+    for (const auto &desc : mediaCapturePrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -409,7 +442,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePri
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : mediaCapturePublicDevices_) {
+    for (const auto &desc : mediaCapturePublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -418,7 +454,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePub
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePrivacyDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : capturePrivacyDevices_) {
+    for (const auto &desc : capturePrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -427,7 +466,10 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePrivacyD
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDevices()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
-    for (auto &desc : capturePublicDevices_) {
+    for (const auto &desc : capturePublicDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
         descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     }
     return descs;
@@ -491,12 +533,28 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
     }
 }
 
+bool AudioDeviceManager::IsExistedDevice(const sptr<AudioDeviceDescriptor> &device,
+    const vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    bool isExistedDev = false;
+    for (const auto &dev : audioDeviceDescriptors) {
+        if (device->deviceType_ == dev->deviceType_ &&
+            device->networkId_ == dev->networkId_ &&
+            device->deviceRole_ == dev->deviceRole_ &&
+            device->macAddress_ == dev->macAddress_) {
+            isExistedDev = true;
+        }
+    }
+    return isExistedDev;
+}
+
 void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
     const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
     vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     for (auto &deviceInfo : deviceInfos) {
-        if (dev->deviceType_ != deviceInfo.deviceType) {
+        if (dev->deviceType_ != deviceInfo.deviceType ||
+            IsExistedDevice(dev, audioDeviceDescriptors)) {
             continue;
         }
         AddAvailableDevicesByUsage(usage, deviceInfo, dev, audioDeviceDescriptors);
@@ -530,8 +588,8 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
-    for (auto &dev : connectedDevices_) {
-        for (auto &devicePrivacy : devicePrivacyMaps_) {
+    for (const auto &dev : connectedDevices_) {
+        for (const auto &devicePrivacy : devicePrivacyMaps_) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor(*dev);
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
@@ -544,6 +602,18 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
 unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> AudioDeviceManager::GetDevicePrivacyMaps()
 {
     return devicePrivacyMaps_;
+}
+
+std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableBluetoothDevice(DeviceType devType,
+    const std::string &macAddress)
+{
+    std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    for (auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == devType && desc->macAddress_ == macAddress) {
+            audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+        }
+    }
+    return audioDeviceDescriptors;
 }
 }
 }

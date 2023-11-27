@@ -28,12 +28,7 @@ public:
     virtual ~AudioManagerProxy() = default;
     
     int32_t SetMicrophoneMute(bool isMute) override;
-    bool IsMicrophoneMute() override;
     int32_t SetVoiceVolume(float volume) override;
-    int32_t OffloadSetVolume(float volume) override;
-    int32_t OffloadDrain() override;
-    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
-    int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     const std::string GetAudioParameter(const std::string &key) override;
@@ -62,6 +57,7 @@ public:
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
     int32_t SetCaptureSilentState(bool state) override;
+    int32_t UpdateSpatializationState(std::vector<bool> spatializationState) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

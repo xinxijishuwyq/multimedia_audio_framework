@@ -38,6 +38,7 @@ public:
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
     bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
+    int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Drain() const override;
@@ -76,8 +77,6 @@ public:
     int32_t SetParallelPlayFlag(bool parallelPlayFlag) override;
     int32_t SetLowPowerVolume(float volume) const override;
     float GetLowPowerVolume() const override;
-    int32_t SetOffloadMode(int32_t state, bool isAppBack) const override;
-    int32_t UnsetOffloadMode() const override;
     float GetSingleStreamVolume() const override;
     float GetMinStreamVolume() const override;
     float GetMaxStreamVolume() const override;

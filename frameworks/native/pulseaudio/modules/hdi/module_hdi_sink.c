@@ -52,10 +52,9 @@ PA_MODULE_USAGE(
         "test_mode_on<is test mode on>"
         "network_id<device network id>"
         "device_type<device type or port>"
-        "offload_enable<if device support offload>"
         );
 
-static const char *const VALID_MODARGS[] = {
+static const char * const VALID_MODARGS[] = {
     "sink_name",
     "device_class",
     "sink_properties",
@@ -73,7 +72,6 @@ static const char *const VALID_MODARGS[] = {
     "test_mode_on",
     "network_id",
     "device_type",
-    "offload_enable",
     NULL
 };
 

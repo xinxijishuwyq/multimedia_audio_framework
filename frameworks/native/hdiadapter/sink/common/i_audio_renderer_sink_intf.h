@@ -46,17 +46,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkStop)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererRenderFrame)(struct RendererSinkAdapter *adapter, char *data, uint64_t len, uint64_t *writeLen);
     int32_t (*RendererSinkSetVolume)(struct RendererSinkAdapter *adapter, float left, float right);
-    int32_t (*RendererSinkGetVolume)(struct RendererSinkAdapter *adapter, float *left, float *right);
     int32_t (*RendererSinkGetLatency)(struct RendererSinkAdapter *adapter, uint32_t *latency);
-    int32_t (*RendererRegCallback)(struct RendererSinkAdapter *adapter, int8_t *cb, int8_t *userdata);
-    int32_t (*RendererSinkGetPresentationPosition)(struct RendererSinkAdapter *adapter, uint64_t* frames,
-        int64_t* timeSec, int64_t* timeNanoSec);
-    int32_t (*RendererSinkFlush)(struct RendererSinkAdapter *adapter);
-    int32_t (*RendererSinkReset)(struct RendererSinkAdapter *adapter);
-    int32_t (*RendererSinkSetBufferSize)(struct RendererSinkAdapter *adapter, uint32_t sizeMs);
-    int32_t (*RendererSinkOffloadRunningLockInit)(struct RendererSinkAdapter *adapter);
-    int32_t (*RendererSinkOffloadRunningLockLock)(struct RendererSinkAdapter *adapter);
-    int32_t (*RendererSinkOffloadRunningLockUnlock)(struct RendererSinkAdapter *adapter);
 };
 
 int32_t FillinSinkWapper(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter *adapter);
@@ -69,17 +59,7 @@ int32_t IAudioRendererSinkResume(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkRenderFrame(struct RendererSinkAdapter *adapter, char *data, uint64_t len,
     uint64_t *writeLen);
 int32_t IAudioRendererSinkSetVolume(struct RendererSinkAdapter *adapter, float left, float right);
-int32_t IAudioRendererSinkGetVolume(struct RendererSinkAdapter *adapter, float *left, float *right);
 int32_t IAudioRendererSinkGetLatency(struct RendererSinkAdapter *adapter, uint32_t *latency);
-int32_t IAudioRendererSinkRegCallback(struct RendererSinkAdapter *adapter, int8_t *cb, int8_t *userdata);
-int32_t IAudioRendererSinkGetPresentationPosition(struct RendererSinkAdapter *adapter, uint64_t* frames,
-    int64_t* timeSec, int64_t* timeNanoSec);
-int32_t IAudioRendererSinkFlush(struct RendererSinkAdapter *adapter);
-int32_t IAudioRendererSinkReset(struct RendererSinkAdapter *adapter);
-int32_t IAudioRendererSinkSetBufferSize(struct RendererSinkAdapter *adapter, uint32_t sizeMs);
-int32_t IAudioRendererSinkOffloadRunningLockInit(struct RendererSinkAdapter *adapter);
-int32_t IAudioRendererSinkOffloadRunningLockLock(struct RendererSinkAdapter *adapter);
-int32_t IAudioRendererSinkOffloadRunningLockUnlock(struct RendererSinkAdapter *adapter);
 
 #ifdef __cplusplus
 }

@@ -63,6 +63,8 @@ public:
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
         const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
         std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
+        const std::string &macAddress);
 
 private:
     AudioDeviceManager() {};
@@ -91,6 +93,8 @@ private:
     void AddMediaDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddCaptureDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool IsExistedDevice(const sptr<AudioDeviceDescriptor> &device,
+        const vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
         const DevicePrivacyInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &dev,
         std::vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);

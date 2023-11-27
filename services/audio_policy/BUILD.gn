@@ -26,6 +26,8 @@ group("audio_policy_packages") {
     ":audio_interrupt_policy_config",
     ":audio_policy_init",
     ":audio_policy_service",
+    ":audio_strategy_router",
+    ":audio_usage_strategy",
     ":audio_volume_config",
   ]
 
@@ -54,6 +56,7 @@ config("audio_policy_public_config") {
     "server/include/service/listener",
     "server/include/service/manager",
     "server/include/service/routers",
+    "server/include/service/spatialization",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../../frameworks/native/audiorenderer/include",
@@ -149,6 +152,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_renderer_state_change_listener_proxy.cpp",
     "server/src/audio_ringermode_update_listener_proxy.cpp",
     "server/src/audio_routing_manager_listener_proxy.cpp",
+    "server/src/audio_spatialization_state_change_listener_proxy.cpp",
     "server/src/audio_stream_collector.cpp",
     "server/src/audio_stream_event_dispatcher.cpp",
     "server/src/audio_volume_key_event_callback_proxy.cpp",
@@ -157,6 +161,8 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/audio_state_manager.cpp",
     "server/src/service/config/audio_device_parser.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
+    "server/src/service/config/audio_strategy_router_parser.cpp",
+    "server/src/service/config/audio_usage_strategy_parser.cpp",
     "server/src/service/config/audio_volume_parser.cpp",
     "server/src/service/config/xml_parser.cpp",
     "server/src/service/data_share_observer_callback.cpp",
@@ -175,6 +181,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/routers/public_priority_router.cpp",
     "server/src/service/routers/stream_filter_router.cpp",
     "server/src/service/routers/user_select_router.cpp",
+    "server/src/service/spatialization/audio_spatialization_service.cpp",
   ]
 
   defines = []
@@ -275,6 +282,22 @@ ohos_prebuilt_etc("audio_interrupt_policy_config") {
   part_name = "audio_framework"
 }
 
+ohos_prebuilt_etc("audio_strategy_router") {
+  source = "server/config/audio_strategy_router.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_usage_strategy") {
+  source = "server/config/audio_usage_strategy.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
 ohos_prebuilt_etc("audio_device_config") {
   source = "server/config/audio_device_privacy.xml"
 
@@ -368,6 +391,7 @@ ohos_shared_library("audio_policy_client") {
     "client/src/audio_renderer_state_change_listener_stub.cpp",
     "client/src/audio_ringermode_update_listener_stub.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
+    "client/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
     "client/src/audio_volume_key_event_callback_stub.cpp",
   ]

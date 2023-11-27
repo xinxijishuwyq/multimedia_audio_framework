@@ -210,31 +210,47 @@ bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
 
 bool OHAudioRenderer::Start()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    if (audioRenderer_ == nullptr) {
+        AUDIO_ERR_LOG("renderer client is nullptr");
+        return false;
+    }
     return audioRenderer_->Start();
 }
 
 bool OHAudioRenderer::Pause()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    if (audioRenderer_ == nullptr) {
+        AUDIO_ERR_LOG("renderer client is nullptr");
+        return false;
+    }
     return audioRenderer_->Pause();
 }
 
 bool OHAudioRenderer::Stop()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    if (audioRenderer_ == nullptr) {
+        AUDIO_ERR_LOG("renderer client is nullptr");
+        return false;
+    }
     return audioRenderer_->Stop();
 }
 
 bool OHAudioRenderer::Flush()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    if (audioRenderer_ == nullptr) {
+        AUDIO_ERR_LOG("renderer client is nullptr");
+        return false;
+    }
     return audioRenderer_->Flush();
 }
 
 bool OHAudioRenderer::Release()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    if (audioRenderer_ == nullptr) {
+        AUDIO_ERR_LOG("renderer client is nullptr");
+        return false;
+    }
+
     if (!audioRenderer_->Release()) {
         return false;
     }

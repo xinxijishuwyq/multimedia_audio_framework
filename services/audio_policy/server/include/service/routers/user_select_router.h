@@ -18,6 +18,7 @@
 
 #include "router_base.h"
 #include "audio_device_manager.h"
+#include "audio_info.h"
 #include "audio_state_manager.h"
 
 namespace OHOS {
@@ -27,6 +28,11 @@ public:
     std::string name_ = "user_select_router";
     UserSelectRouter() {};
     ~UserSelectRouter() {};
+    std::string GetClassName() override
+    {
+        return name_;
+    }
+
     std::unique_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
     std::unique_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
     std::unique_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) override;

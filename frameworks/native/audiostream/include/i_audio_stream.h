@@ -136,8 +136,6 @@ public:
     virtual int32_t SetLowPowerVolume(float volume) = 0;
     virtual float GetLowPowerVolume() = 0;
     virtual float GetSingleStreamVolume() = 0;
-    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) = 0;
-    virtual int32_t UnsetOffloadMode() = 0;
 
     // for effect
     virtual AudioEffectMode GetAudioEffectMode() = 0;
@@ -156,6 +154,7 @@ public:
     // Playback related APIs
     virtual bool DrainAudioStream() = 0;
     virtual int32_t Write(uint8_t *buffer, size_t buffer_size) = 0;
+    virtual int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) = 0;
 
     // Recording related APIs
     virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) = 0;

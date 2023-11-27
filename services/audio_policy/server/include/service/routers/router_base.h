@@ -18,6 +18,7 @@
 
 #include "audio_system_manager.h"
 #include "audio_device_manager.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +35,10 @@ public:
     virtual std::unique_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
     virtual std::unique_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
 
+    virtual std::string GetClassName()
+    {
+        return name_;
+    }
     std::unique_ptr<AudioDeviceDescriptor> GetLatestConnectDeivce(
         std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
     {

@@ -24,6 +24,7 @@
 #include <vector>
 #include <set>
 
+#include "securec.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_log.h"
@@ -55,7 +56,7 @@ int32_t EffectChainManagerGetFrameLen()
     return audioEffectChainManager->GetFrameLen();
 }
 
-bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
+bool EffectChainManagerExist(const char *sceneType, const char *effectMode, const char *spatializationEnabled)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
@@ -67,7 +68,12 @@ bool EffectChainManagerExist(const char *sceneType, const char *effectMode)
     if (effectMode) {
         effectModeString = effectMode;
     }
-    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString);
+    std::string spatializationEnabledString = "";
+    if (spatializationEnabled) {
+        spatializationEnabledString = spatializationEnabled;
+    }
+    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString,
+        spatializationEnabledString);
 }
 
 int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
@@ -138,12 +144,12 @@ bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
 }
 
 bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
-    const char *sinkChannelLayout)
+    const char *sinkChannelLayout, const char *sinkSpatializationEnabled)
 {
     if (sinkChannels == DEFAULT_NUM_CHANNEL) {
         return false;
     }
-    if (!EffectChainManagerExist(sinkSceneType, sinkSceneMode)) {
+    if (!EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled)) {
         return true;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -155,6 +161,21 @@ bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t s
         return true;
     }
     return false;
+}
+
+int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    std::string sceneTypeString = "";
+    if (sceneType) {
+        sceneTypeString = sceneType;
+    }
+    std::string effectModeString = "";
+    if (effectMode) {
+        effectModeString = effectMode;
+    }
+    return audioEffectChainManager->SetHdiParam(sceneTypeString, effectModeString, enabled);
 }
 
 int32_t EffectChainManagerInitCb(const char *sceneType)
@@ -174,7 +195,7 @@ int32_t EffectChainManagerInitCb(const char *sceneType)
 namespace OHOS {
 namespace AudioStandard {
 
-AudioEffectChain::AudioEffectChain(std::string scene)
+AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
 {
     sceneType = scene;
     effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
@@ -188,6 +209,7 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    headTracker_ = headTracker;
 }
 
 AudioEffectChain::~AudioEffectChain()
@@ -326,12 +348,17 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         return;
     }
 
+    int32_t replyData = 0;
+    auto imuData = headTracker_->GetHeadPostureData();
+    AudioEffectTransInfo cmdInfo = {sizeof(HeadPostureData), &imuData};
+    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     audioBufIn.frameLength = frameLen;
     audioBufOut.frameLength = frameLen;
     int32_t count = 0;
     {
         std::lock_guard<std::mutex> lock(reloadMutex);
         for (AudioEffectHandle handle: standByEffectHandles) {
+            (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
             if (count % FACTOR_TWO == 0) {
                 audioBufIn.raw = bufIn;
                 audioBufOut.raw = bufOut;
@@ -385,12 +412,11 @@ void AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &channels
         tmpIoBufferConfig.inputCfg.channels = DEFAULT_NUM_CHANNEL;
         tmpIoBufferConfig.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     }
-    int32_t ret;
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     for (AudioEffectHandle handle: standByEffectHandles) {
-        ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+        int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
         if (ret != 0) {
             AUDIO_ERR_LOG("Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
             return;
@@ -408,6 +434,27 @@ void AudioEffectChain::StoreOldEffectChainInfo(std::string &sceneMode, AudioEffe
     sceneMode = GetEffectMode();
     ioBufferConfig = GetIoBufferConfig();
     return;
+}
+
+void AudioEffectChain::SetHeadTrackingDisabled()
+{
+    if (IsEmptyEffectHandles()) {
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(reloadMutex);
+        for (AudioEffectHandle handle: standByEffectHandles) {
+            int32_t replyData = 0;
+            HeadPostureData imuDataDisabled = {1, 1.0, 0.0, 0.0, 0.0};
+            AudioEffectTransInfo cmdInfo = {sizeof(HeadPostureData), &imuDataDisabled};
+            AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+            int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("SetHeadTrackingDisabled failed");
+            }
+        }
+    }
 }
 
 int32_t FindEffectLib(const std::string &effect,
@@ -480,6 +527,10 @@ AudioEffectChainManager::AudioEffectChainManager()
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
     isInitialized_ = false;
+    headTracker_ = std::make_shared<HeadTracker>();
+    headTracker_->SensorInit();
+    audioEffectHdi_ = std::make_shared<AudioEffectHdi>();
+    memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -536,7 +587,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
             sceneMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
         }
         SceneTypeToEffectChainMap_.erase(key);
-        audioEffectChain = new AudioEffectChain(sceneType);
+        audioEffectChain = new AudioEffectChain(sceneType, headTracker_);
         if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
             SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
         } else {
@@ -623,6 +674,8 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_DEBUG_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         SceneTypeAndModeToEffectChainNameMap_.size());
 
+    audioEffectHdi_->InitHdi();
+
     isInitialized_ = true;
 }
 
@@ -658,7 +711,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(std::string scene
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]++;
         return SUCCESS;
     } else {
-        audioEffectChain = new AudioEffectChain(sceneType);
+        audioEffectChain = new AudioEffectChain(sceneType, headTracker_);
         SceneTypeToEffectChainMap_.insert(std::make_pair(sceneTypeAndDeviceKey, audioEffectChain));
         if (!SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey)) {
             SceneTypeToEffectChainCountMap_.insert(std::make_pair(sceneTypeAndDeviceKey, 1));
@@ -760,7 +813,8 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(std::string scen
     return SUCCESS;
 }
 
-bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode)
+bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::string effectMode,
+    std::string spatializationEnabled)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, false, "AudioEffectChainManager has not been initialized");
@@ -773,6 +827,9 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     }
 #endif
 
+    if ((spatializationEnabled == "0") && (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+        return false;
+    }
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     if (!SceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
         return false;
@@ -853,6 +910,270 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneTy
     }
 
     return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spatializationState)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    if (spatializationState.size() != SIZE_OF_SPATIALIZATION_STATE) {
+        return ERROR;
+    }
+    int32_t ret;
+    if (spatializatonEnabled_ != spatializationState[0]) {
+        spatializatonEnabled_ = spatializationState[0];
+        memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
+        if (spatializatonEnabled_) {
+            effectHdiInput[0] = HDI_INIT;
+            AUDIO_INFO_LOG("set hdi init.");
+            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("set hdi init failed");
+                return ERROR;
+            } else {
+                offloadEnabled_ = true;
+            }
+        } else {
+            effectHdiInput[0] = HDI_DESTROY;
+            AUDIO_INFO_LOG("set hdi destory.");
+            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("set hdi destory failed");
+                return ERROR;
+            }
+        }
+    }
+    if (headTrackingEnabled_ != spatializationState[1]) {
+        headTrackingEnabled_ = spatializationState[1];
+        UpdateSensorState();
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string effectMode, bool enabled)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
+    memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
+    effectHdiInput[0] = HDI_BYPASS;
+    effectHdiInput[1] = enabled == true ? 0 : 1;
+    AUDIO_INFO_LOG("set hdi bypass.");
+    int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi bypass failed");
+        return ret;
+    }
+
+    effectHdiInput[0] = HDI_ROOM_MODE;
+    effectHdiInput[1] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
+    effectHdiInput[HDI_ROOM_MODE_INDEX_TWO] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
+    AUDIO_INFO_LOG("set hdi room mode.");
+    ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi room mode failed");
+        return ret;
+    }
+    return SUCCESS;
+}
+
+AudioEffectHdi::AudioEffectHdi()
+{
+    AUDIO_INFO_LOG("AudioEffectHdi constructor!");
+    memset_s(static_cast<void *>(input), sizeof(input), 0, sizeof(input));
+    memset_s(static_cast<void *>(output), sizeof(output), 0, sizeof(output));
+    replyLen = GET_HDI_BUFFER_LEN;
+}
+
+AudioEffectHdi::~AudioEffectHdi()
+{
+    AUDIO_INFO_LOG("AudioEffectHdi destructor!");
+}
+
+void AudioEffectHdi::InitHdi()
+{
+    hdiModel_ = IEffectModelGet(false);
+    if (hdiModel_ == nullptr) {
+        AUDIO_WARNING_LOG("IEffectModelGet failed");
+        hdiControl_ = nullptr;
+        return;
+    }
+    libName = strdup("libspatialization_processing_dsp");
+    effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966ff");
+    EffectInfo info = {
+        .libName = &libName[0],
+        .effectId = &effectId[0],
+        .ioDirection = 1,
+    };
+    ControllerId controllerId;
+    int32_t ret = hdiModel_->CreateEffectController(hdiModel_, &info, &hdiControl_, &controllerId);
+    if ((ret != 0) || (hdiControl_ == nullptr)) {
+        AUDIO_WARNING_LOG("hdi init failed");
+        hdiControl_ = nullptr;
+        return;
+    }
+
+    uint32_t replyLen = GET_HDI_BUFFER_LEN;
+    input[0] = HDI_BLUETOOTH_MODE;
+    input[1] = 0;
+    AUDIO_INFO_LOG("set hdi bluetooth mode.");
+    ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
+        hdiControl_ = nullptr;
+        return;
+    }
+}
+
+int32_t AudioEffectHdi::UpdateHdiState(int8_t *effectHdiInput)
+{
+    if (hdiControl_ == nullptr) {
+        AUDIO_WARNING_LOG("hdiControl_ is nullptr.");
+        return ERROR;
+    }
+    memcpy_s(static_cast<void *>(input), sizeof(input), static_cast<void *>(effectHdiInput), sizeof(input));
+    uint32_t replyLen = GET_HDI_BUFFER_LEN;
+    int32_t ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("hdi send command failed");
+        return ret;
+    }
+    return ret;
+}
+
+
+void AudioEffectChainManager::UpdateSensorState()
+{
+    effectHdiInput[0] = HDI_HEAD_MODE;
+    effectHdiInput[1] = headTrackingEnabled_ == true ? 1 : 0;
+    int32_t ret;
+    if (headTrackingEnabled_) {
+        if (offloadEnabled_) {
+            headTracker_->SensorSetConfig(DSP_SPATIALIZER_ENGINE);
+            AUDIO_INFO_LOG("set hdi head mode enable.");
+            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+            if (ret != 0) {
+                AUDIO_ERR_LOG("set hdi head mode enable failed");
+            }
+        } else {
+            headTracker_->SensorSetConfig(ARM_SPATIALIZER_ENGINE);
+        }
+        headTracker_->SensorActive();
+        return;
+    }
+
+    if (offloadEnabled_) {
+        AUDIO_INFO_LOG("set hdi head mode disable.");
+        ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("set hdi head mode disable failed");
+        }
+        return;
+    }
+
+    if (headTracker_->SensorDeactive() != 0) {
+        AUDIO_ERR_LOG("SensorDeactive failed");
+    }
+    HeadPostureData headPostureData = {1, 1.0, 0.0, 0.0, 0.0};
+    headTracker_->SetHeadPostureData(headPostureData);
+    for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
+        auto *audioEffectChain = it->second;
+        if (audioEffectChain == nullptr) {
+            continue;
+        }
+        audioEffectChain->SetHeadTrackingDisabled();
+    }
+}
+
+HeadPostureData HeadTracker::headPostureData_ = {1, 1.0, 0.0, 0.0, 0.0};
+std::mutex HeadTracker::headTrackerMutex_;
+
+void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
+{
+    std::lock_guard<std::mutex> lock(headTrackerMutex_);
+
+    if (event == nullptr) {
+        AUDIO_ERR_LOG("Audio HeadTracker Sensor event is nullptr!");
+        return;
+    }
+
+    if (event[0].data == nullptr) {
+        AUDIO_ERR_LOG("Audio HeadTracker Sensor event[0].data is nullptr!");
+        return;
+    }
+
+    if (event[0].dataLen < sizeof(HeadPostureData)) {
+        AUDIO_ERR_LOG("Event dataLen less than head posture data size, event.dataLen:%{public}u", event[0].dataLen);
+        return;
+    }
+    HeadPostureData *headPostureDataTmp = reinterpret_cast<HeadPostureData *>(event[0].data);
+    headPostureData_.order = headPostureDataTmp->order;
+    headPostureData_.w = headPostureDataTmp->w;
+    headPostureData_.x = headPostureDataTmp->x;
+    headPostureData_.y = headPostureDataTmp->y;
+    headPostureData_.z = headPostureDataTmp->z;
+}
+
+HeadTracker::HeadTracker()
+{
+    AUDIO_INFO_LOG("HeadTracker ctor!");
+}
+
+HeadTracker::~HeadTracker()
+{
+    UnsubscribeSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+}
+
+int32_t HeadTracker::SensorInit()
+{
+    sensorUser_.callback = HeadPostureDataProcCb;
+    return SubscribeSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+}
+
+int32_t HeadTracker::SensorSetConfig(int32_t spatializerEngineState)
+{
+    int32_t ret;
+    switch (spatializerEngineState) {
+        case NONE_SPATIALIZER_ENGINE:
+            AUDIO_ERR_LOG("system has no spatializer engine!");
+            ret = ERROR;
+            break;
+        case ARM_SPATIALIZER_ENGINE:
+            AUDIO_DEBUG_LOG("system uses arm spatializer engine!");
+            ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_,
+                sensorSamplingInterval_, sensorSamplingInterval_);
+            break;
+        case DSP_SPATIALIZER_ENGINE:
+            AUDIO_DEBUG_LOG("system uses dsp spatializer engine!");
+            // 2 * sampling for DSP
+            ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_,
+                sensorSamplingInterval_, sensorSamplingInterval_ * 2);
+            break;
+        default:
+            AUDIO_ERR_LOG("spatializerEngineState error!");
+            ret = ERROR;
+            break;
+    }
+    return ret;
+}
+
+int32_t HeadTracker::SensorActive()
+{
+    return ActivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+}
+
+int32_t HeadTracker::SensorDeactive()
+{
+    return DeactivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+}
+HeadPostureData HeadTracker::GetHeadPostureData()
+{
+    std::lock_guard<std::mutex> lock(headTrackerMutex_);
+    return headPostureData_;
+}
+void HeadTracker::SetHeadPostureData(HeadPostureData headPostureData)
+{
+    std::lock_guard<std::mutex> lock(headTrackerMutex_);
+    headPostureData_ = headPostureData;
 }
 }
 }

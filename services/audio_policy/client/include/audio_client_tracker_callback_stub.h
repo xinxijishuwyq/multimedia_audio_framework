@@ -34,12 +34,8 @@ public:
 
     void SetLowPowerVolumeImpl(float volume) override;
     void GetLowPowerVolumeImpl(float &volume) override;
-    void SetOffloadModeImpl(int32_t state, bool isAppBack) override;
-    void UnsetOffloadModeImpl() override;
     void GetSingleStreamVolumeImpl(float &volume) override;
 
-    int OffloadRemoteRequest(uint32_t code, MessageParcel &data,
-        MessageParcel &reply, MessageOption &option);
 private:
     std::weak_ptr<AudioClientTracker> callback_;
 };

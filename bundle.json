@@ -62,7 +62,8 @@
             "power_manager",
             "resource_schedule_service",
             "safwk",
-            "samgr"
+            "samgr",
+            "sensor"
             ],
           "third_party": [
             "bounds_checking_function",

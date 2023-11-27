@@ -348,18 +348,6 @@ float FastAudioStream::GetLowPowerVolume()
     return 1.0f;
 }
 
-int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)
-{
-    AUDIO_WARNING_LOG("SetOffloadMode in.");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t FastAudioStream::UnsetOffloadMode()
-{
-    AUDIO_WARNING_LOG("UnsetOffloadMode in.");
-    return ERR_NOT_SUPPORTED;
-}
-
 float FastAudioStream::GetSingleStreamVolume()
 {
     AUDIO_INFO_LOG("GetSingleStreamVolume in.");
@@ -513,6 +501,12 @@ int32_t FastAudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingR
 }
 
 int32_t FastAudioStream::Write(uint8_t *buffer, size_t buffer_size)
+{
+    AUDIO_ERR_LOG("Unsupported operation: Write");
+    return ERR_INVALID_OPERATION;
+}
+
+int32_t FastAudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
 {
     AUDIO_ERR_LOG("Unsupported operation: Write");
     return ERR_INVALID_OPERATION;

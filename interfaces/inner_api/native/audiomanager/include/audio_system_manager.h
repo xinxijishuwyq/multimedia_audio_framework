@@ -54,7 +54,7 @@ public:
     std::string networkId_;
     std::string displayName_;
     bool exceptionFlag_ = false;
-    AudioStreamInfo audioStreamInfo_ = {};
+    DeviceStreamInfo audioStreamInfo_ = {};
     DeviceCategory deviceCategory_;
     int64_t connectTimeStamp_;
     std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
@@ -71,7 +71,7 @@ public:
     bool Marshalling(Parcel &parcel) const override;
     static sptr<AudioDeviceDescriptor> Unmarshalling(Parcel &parcel);
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
-    void SetDeviceCapability(const AudioStreamInfo &audioStreamInfo, int32_t channelMask,
+    void SetDeviceCapability(const DeviceStreamInfo &audioStreamInfo, int32_t channelMask,
         int32_t channelIndexMasks = 0);
 };
 
@@ -985,12 +985,6 @@ public:
     int32_t SetAudioCapturerSourceCallback(const std::shared_ptr<AudioCapturerSourceCallback> &callback);
 
     int32_t SetWakeUpSourceCloseCallback(const std::shared_ptr<WakeUpSourceCloseCallback> &callback);
-
-    int32_t OffloadDrain();
-
-    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
-
-    int32_t OffloadSetBufferSize(uint32_t sizeMs);
 
     /**
      * @brief Set whether or not absolute volume is supported for the specified Bluetooth device

@@ -17,6 +17,7 @@
 
 #include <parcel.h>
 #include <audio_stream_info.h>
+#include <set>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -216,6 +217,73 @@ struct DevicePrivacyInfo {
     DeviceUsage deviceUsage;
 };
 
+template<typename T>bool MarshallingSetInt32(const std::set<T> &value, Parcel &parcel)
+{
+    size_t size = value.size();
+    if (!parcel.WriteUint64(size)) {
+        return false;
+    }
+    for (const auto &i : value) {
+        if (!parcel.WriteInt32(i)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel)
+{
+    size_t size = parcel.ReadUint64();
+    std::set<T> res;
+    for (size_t i = 0; i < size; i++) {
+        res.insert(static_cast<T>(parcel.ReadInt32()));
+    }
+    return res;
+}
+
+struct DeviceStreamInfo {
+    AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
+    AudioSampleFormat format;
+    AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+    std::set<AudioSamplingRate> samplingRate;
+    std::set<AudioChannel> channels;
+
+    DeviceStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
+        AudioChannel channels_) : encoding(encoding_), format(format_),
+        samplingRate({samplingRate_}), channels({channels_})
+    {}
+    DeviceStreamInfo(AudioStreamInfo audioStreamInfo) : DeviceStreamInfo(audioStreamInfo.samplingRate,
+        audioStreamInfo.encoding, audioStreamInfo.format, audioStreamInfo.channels)
+    {}
+    DeviceStreamInfo() = default;
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(encoding))
+            && parcel.WriteInt32(static_cast<int32_t>(format))
+            && MarshallingSetInt32(samplingRate, parcel)
+            && MarshallingSetInt32(channels, parcel);
+    }
+    void Unmarshalling(Parcel &parcel)
+    {
+        encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
+        format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+        samplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel);
+        channels = UnmarshallingSetInt32<AudioChannel>(parcel);
+    }
+
+    bool CheckParams()
+    {
+        if (samplingRate.size() == 0) {
+            return false;
+        }
+        if (channels.size() == 0) {
+            return false;
+        }
+        return true;
+    }
+};
+
 class DeviceInfo {
 public:
     DeviceType deviceType;
@@ -225,7 +293,7 @@ public:
     int32_t channelIndexMasks;
     std::string deviceName;
     std::string macAddress;
-    AudioStreamInfo audioStreamInfo;
+    DeviceStreamInfo audioStreamInfo;
     std::string networkId;
     std::string displayName;
     int32_t interruptGroupId;

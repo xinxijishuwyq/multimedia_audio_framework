@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,25 +12,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef AUDIO_CONVERTER_PARSER_H
+#define AUDIO_CONVERTER_PARSER_H
 
-#ifndef OFFLOAD_AUDIO_RENDERER_SINK_H
-#define OFFLOAD_AUDIO_RENDERER_SINK_H
-
-#include "audio_info.h"
-#include "i_audio_renderer_sink.h"
-
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+#include <iostream>
 #include <cstdio>
-#include <list>
+#include "audio_log.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class OffloadRendererSink : public IOffloadAudioRendererSink {
-public:
-    static OffloadRendererSink *GetInstance(void);
 
-    OffloadRendererSink() = default;
-    ~OffloadRendererSink() = default;
+struct ConverterConfig {
+    float version;
+    Library library;
+    AudioChannelLayout outChannelLayout;
+};
+
+class AudioConverterParser {
+public:
+    explicit AudioConverterParser();
+    ~AudioConverterParser();
+    int32_t LoadConfig(ConverterConfig &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // OFFLOAD_AUDIO_RENDERER_SINK_H
+#endif // AUDIO_CONVERTER_PARSER_H

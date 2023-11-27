@@ -123,6 +123,21 @@ private:
     void GetAvailableDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAvailableDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void SetHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void IsSpatializationSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void IsHeadTrackingSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void IsHeadTrackingSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void UpdateSpatialDeviceStateInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -220,6 +235,21 @@ private:
         &AudioPolicyManagerStub::GetAvailableDevicesInternal,
         &AudioPolicyManagerStub::SetAvailableDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::UnsetAvailableDeviceChangeCallbackInternal,
+        &AudioPolicyManagerStub::IsSpatializationEnabledInternal,
+        &AudioPolicyManagerStub::SetSpatializationEnabledInternal,
+        &AudioPolicyManagerStub::IsHeadTrackingEnabledInternal,
+        &AudioPolicyManagerStub::SetHeadTrackingEnabledInternal,
+        &AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal,
+        &AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal,
+        &AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal,
+        &AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal,
+        &AudioPolicyManagerStub::GetSpatializationStateInternal,
+        &AudioPolicyManagerStub::IsSpatializationSupportedInternal,
+        &AudioPolicyManagerStub::IsSpatializationSupportedForDeviceInternal,
+        &AudioPolicyManagerStub::IsHeadTrackingSupportedInternal,
+        &AudioPolicyManagerStub::IsHeadTrackingSupportedForDeviceInternal,
+        &AudioPolicyManagerStub::UpdateSpatialDeviceStateInternal,
+        &AudioPolicyManagerStub::RegisterSpatializationStateEventListenerInternal,
     };
 };
 } // namespace AudioStandard

@@ -94,6 +94,7 @@ private:
     static napi_value GetRoutingManager(napi_env env, napi_callback_info info);
     static napi_value GetVolumeManager(napi_env env, napi_callback_info info);
     static napi_value GetInterruptManager(napi_env env, napi_callback_info info);
+    static napi_value GetSpatializationManager(napi_env env, napi_callback_info info);
     static void UnregisterDeviceChangeCallback(napi_env env, napi_value callback, AudioManagerNapi *audioMgrNapi);
     template<typename T> static void RegisterInterruptCallback(napi_env env, const T &args,
     AudioManagerNapi *managerNapi);

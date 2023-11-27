@@ -44,16 +44,6 @@ void AudioRendererProxyObj::GetLowPowerVolumeImpl(float &volume)
     volume = renderer->GetLowPowerVolume();
 }
 
-void AudioRendererProxyObj::SetOffloadModeImpl(int32_t state, bool isAppBack)
-{
-    renderer->SetOffloadMode(state, isAppBack);
-}
-
-void AudioRendererProxyObj::UnsetOffloadModeImpl()
-{
-    renderer->UnsetOffloadMode();
-}
-
 void AudioRendererProxyObj::GetSingleStreamVolumeImpl(float &volume)
 {
     volume = renderer->GetSingleStreamVolume();

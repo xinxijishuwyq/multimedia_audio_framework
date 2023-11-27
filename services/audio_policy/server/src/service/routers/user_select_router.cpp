@@ -20,32 +20,34 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     unique_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
-    unique_ptr<AudioDeviceDescriptor> defaultDevice =
-        AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
-    vector<unique_ptr<AudioDeviceDescriptor>> publicDevices =
-        AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
-    vector<unique_ptr<AudioDeviceDescriptor>> privacyDevices =
-        AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
-    publicDevices.push_back(std::move(defaultDevice));
-    publicDevices.insert(publicDevices.end(),
-        std::make_move_iterator(privacyDevices.begin()), std::make_move_iterator(privacyDevices.end()));
-    if (perDev_ == nullptr) {
+    vector<unique_ptr<AudioDeviceDescriptor>> mediaDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
+    if (perDev_->deviceId_ == 0) {
         AUDIO_INFO_LOG(" PerferredMediaRenderDevice is null");
         return make_unique<AudioDeviceDescriptor>();
     } else {
         AUDIO_INFO_LOG(" PerferredMediaRenderDevice deviceId is %{public}d", perDev_->deviceId_);
-        return RouterBase::GetPairCaptureDevice(perDev_, publicDevices);
+        return RouterBase::GetPairCaptureDevice(perDev_, mediaDevices);
     }
 }
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    unique_ptr<AudioDeviceDescriptor> perDev_ =
+        AudioStateManager::GetAudioStateManager().GetPerferredCallRenderDevice();
+    vector<unique_ptr<AudioDeviceDescriptor>> callDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
+    if (perDev_->deviceId_ == 0) {
+        AUDIO_INFO_LOG(" PerferredCallRenderDevice is null");
+        return make_unique<AudioDeviceDescriptor>();
+    } else {
+        AUDIO_INFO_LOG(" PerferredCallRenderDevice deviceId is %{public}d", perDev_->deviceId_);
+        return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
+    }
 }
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)

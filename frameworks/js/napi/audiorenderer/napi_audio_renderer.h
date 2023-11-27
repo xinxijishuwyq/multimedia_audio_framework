@@ -39,6 +39,8 @@ public:
     ~NapiAudioRenderer() = default;
 
     static napi_value Init(napi_env env, napi_value exports);
+    void DestroyCallbacks();
+    void DestroyNAPICallbacks();
 
     std::unique_ptr<AudioRenderer> audioRenderer_;
 
@@ -61,18 +63,15 @@ private:
         void *data;
         int32_t audioEffectMode;
         int32_t channelBlendMode;
-        AudioSampleFormat sampleFormat;
-        AudioSamplingRate samplingRate;
-        AudioChannel channelCount;
-        AudioEncodingType encodingType;
-        ContentType contentType;
-        StreamUsage usage;
         DeviceRole deviceRole;
         DeviceType deviceType;
         AudioRendererOptions rendererOptions;
         DeviceInfo deviceInfo;
+        AudioRendererInfo rendererInfo;
+        AudioStreamInfo streamInfo;
     };
 
+    static napi_status InitNapiAudioRenderer(napi_env env, napi_value &constructor);
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
     static void CreateRendererFailed();
     static napi_value Construct(napi_env env, napi_callback_info info);
@@ -80,13 +79,70 @@ private:
     static napi_value CreateAudioRendererWrapper(napi_env env, const AudioRendererOptions rendererOptions);
     static napi_value CreateAudioRenderer(napi_env env, napi_callback_info info);
     static napi_value CreateAudioRendererSync(napi_env env, napi_callback_info info);
-
     static napi_value SetRenderRate(napi_env env, napi_callback_info info);
     static napi_value GetRenderRate(napi_env env, napi_callback_info info);
+    static napi_value GetRenderRateSync(napi_env env, napi_callback_info info);
+    static napi_value SetRendererSamplingRate(napi_env env, napi_callback_info info);
+    static napi_value GetRendererSamplingRate(napi_env env, napi_callback_info info);
+    static napi_value Start(napi_env env, napi_callback_info info);
+    static napi_value Write(napi_env env, napi_callback_info info);
+    static napi_value GetAudioTime(napi_env env, napi_callback_info info);
+    static napi_value GetAudioTimeSync(napi_env env, napi_callback_info info);
+    static napi_value Drain(napi_env env, napi_callback_info info);
+    static napi_value Pause(napi_env env, napi_callback_info info);
+    static napi_value Stop(napi_env env, napi_callback_info info);
+    static napi_value Release(napi_env env, napi_callback_info info);
+    static napi_value GetBufferSize(napi_env env, napi_callback_info info);
+    static napi_value GetBufferSizeSync(napi_env env, napi_callback_info info);
+    static napi_value GetAudioStreamId(napi_env env, napi_callback_info info);
+    static napi_value GetAudioStreamIdSync(napi_env env, napi_callback_info info);
+    static napi_value SetVolume(napi_env env, napi_callback_info info);
+    static napi_value GetRendererInfo(napi_env env, napi_callback_info info);
+    static napi_value GetRendererInfoSync(napi_env env, napi_callback_info info);
+    static napi_value GetStreamInfo(napi_env env, napi_callback_info info);
+    static napi_value GetStreamInfoSync(napi_env env, napi_callback_info info);
+    static napi_value SetInterruptMode(napi_env env, napi_callback_info info);
+    static napi_value SetInterruptModeSync(napi_env env, napi_callback_info info);
+    static napi_value GetMinStreamVolume(napi_env env, napi_callback_info info);
+    static napi_value GetMinStreamVolumeSync(napi_env env, napi_callback_info info);
+    static napi_value GetMaxStreamVolume(napi_env env, napi_callback_info info);
+    static napi_value GetMaxStreamVolumeSync(napi_env env, napi_callback_info info);
+    static napi_value GetCurrentOutputDevices(napi_env env, napi_callback_info info);
+    static napi_value GetCurrentOutputDevicesSync(napi_env env, napi_callback_info info);
+    static napi_value GetUnderflowCount(napi_env env, napi_callback_info info);
+    static napi_value GetUnderflowCountSync(napi_env env, napi_callback_info info);
+    static napi_value GetAudioEffectMode(napi_env env, napi_callback_info info);
+    static napi_value SetAudioEffectMode(napi_env env, napi_callback_info info);
+    static napi_value SetChannelBlendMode(napi_env env, napi_callback_info info);
+    static napi_value SetVolumeWithRamp(napi_env env, napi_callback_info info);
+    static napi_value GetState(napi_env env, napi_callback_info info);
+    static napi_value On(napi_env env, napi_callback_info info);
+    static napi_value Off(napi_env env, napi_callback_info info);
 
+    static napi_status WriteArrayBufferToNative(std::shared_ptr<AudioRendererAsyncContext> context);
+
+    static napi_value RegisterCallback(napi_env env, napi_value jsThis,
+        napi_value *argv, const std::string &cbName);
+    static napi_value RegisterRendererCallback(napi_env env, napi_value *argv,
+        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+    static napi_value RegisterPositionCallback(napi_env env, napi_value *argv,
+        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+    static napi_value RegisterPeriodPositionCallback(napi_env env, napi_value *argv,
+        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+    static napi_value RegisterDataRequestCallback(napi_env env, napi_value *argv,
+        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *argv,
+        const std::string &cbName);
+    static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value *args, NapiAudioRenderer *napiRenderer);
+    static void UnregisterRendererCallback(napi_env env,
+        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value *argv,
+        NapiAudioRenderer *napiRenderer);
     /* common interface in AudioRendererNapi */
     static bool CheckContextStatus(std::shared_ptr<AudioRendererAsyncContext> context);
     static bool CheckAudioRendererStatus(NapiAudioRenderer *napi, std::shared_ptr<AudioRendererAsyncContext> context);
+    static NapiAudioRenderer* GetParamWithSync(const napi_env &env, napi_callback_info info,
+        size_t &argc, napi_value *args);
 
     static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
     static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
@@ -98,6 +154,11 @@ private:
     StreamUsage streamUsage_;
     napi_env env_;
     std::shared_ptr<AudioRendererCallback> callbackNapi_ = nullptr;
+    std::shared_ptr<RendererPositionCallback> positionCbNapi_ = nullptr;
+    std::shared_ptr<RendererPeriodPositionCallback> periodPositionCbNapi_ = nullptr;
+    std::shared_ptr<AudioRendererWriteCallback> dataRequestCbNapi_ = nullptr;
+    std::shared_ptr<AudioRendererDeviceChangeCallback> rendererDeviceChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioRendererPolicyServiceDiedCallback> rendererPolicyServiceDiedCallbackNapi_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

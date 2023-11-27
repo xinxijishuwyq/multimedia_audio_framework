@@ -96,8 +96,6 @@ public:
     void SetPreferredFrameSize(int32_t frameSize) override;
     int32_t SetLowPowerVolume(float volume) override;
     float GetLowPowerVolume() override;
-    int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
-    int32_t UnsetOffloadMode() override;
     float GetSingleStreamVolume() override;
     AudioEffectMode GetAudioEffectMode() override;
     int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
@@ -119,6 +117,7 @@ public:
     // Playback related APIs
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
+    int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;

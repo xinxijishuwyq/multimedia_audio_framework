@@ -30,7 +30,6 @@
 #include "audio_stream_collector.h"
 #include "audio_router_center.h"
 #include "ipc_skeleton.h"
-#include "power_mgr_client.h"
 #ifdef FEATURE_DTMF_TONE
 #include "audio_tone_parser.h"
 #endif
@@ -50,6 +49,7 @@
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
 #include "audio_state_manager.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -82,12 +82,6 @@ public:
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
 
     float GetLowPowerVolume(int32_t streamId) const;
-
-    int32_t SetOffloadStream(uint32_t sessionId, DeviceType devicesType = DEVICE_TYPE_NONE);
-
-    int32_t ReleaseOffloadStream(uint32_t sessionId);
-
-    void HandlePowerStateChanged(PowerMgr::PowerState state);
 
     float GetSingleStreamVolume(int32_t streamId) const;
 
@@ -198,10 +192,7 @@ public:
 
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
-    {
-        AUDIO_INFO_LOG("enter the OnForcedDeviceSelected");
-    }
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
 
     void OnMonoAudioConfigChanged(bool audioMono);
 
@@ -264,10 +255,6 @@ public:
 
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
 
-    AudioStreamType GetStreamType(int32_t sessionId);
-
-    int32_t GetUid(int32_t sessionId);
-
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
     std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
@@ -306,6 +293,8 @@ public:
     float GetMinStreamVolume(void);
 
     float GetMaxStreamVolume(void);
+
+    void MaxRenderInstanceInit();
 
     int32_t GetMaxRendererInstances();
 
@@ -440,6 +429,10 @@ private:
 
     int32_t HandleArmUsbDevice(DeviceType deviceType);
 
+    int32_t HandleFileDevice(DeviceType deviceType);
+
+    int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
+
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -501,8 +494,6 @@ private:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
-    void SetEarpieceState();
-
     void SetVolumeForSwitchDevice(DeviceType deviceType);
 
     void SetVoiceCallVolume(int32_t volume);
@@ -510,8 +501,6 @@ private:
     std::string GetVolumeGroupType(DeviceType deviceType);
 
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
-
-    void SetOffloadVolume();
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
@@ -522,10 +511,10 @@ private:
     void RegisterRemoteDevStatusCallback();
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
-        const std::string& deviceName, const AudioStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
+        const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
 
     int32_t HandleLocalDeviceConnected(DeviceType devType, const std::string& macAddress, const std::string& deviceName,
-        const AudioStreamInfo& streamInfo);
+        const DeviceStreamInfo& streamInfo);
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
@@ -561,25 +550,14 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
-    int32_t SetStreamOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
-
-    int32_t SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
-
-    int32_t SetOffloadMode();
-
-    int32_t UnsetOffloadMode();
-
-    int32_t ResetOffloadMode();
-
-    int32_t PresetOffloadMode(DeviceType deviceType);
-
-    bool GetAudioOffloadAvailableFromXml() const;
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
-        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
+    const std::vector<sptr<AudioDeviceDescriptor>>& descs);
+
+    void AddEarpiece();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -591,10 +569,9 @@ private:
     bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
-    int32_t maxRendererInstances_ = 16;
+    int32_t maxRendererInstances_ = 128;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
-    bool isOffloadAvailable_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -678,13 +655,10 @@ private:
     std::mutex microphonesMutex_;
 
     bool isArmUsbDevice_ = false;
+
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
 
-    std::optional<uint32_t> offloadSessionID_;
-    PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
-    bool currentOffloadSessionIsBackground_ = false;
-    std::mutex offloadMutex_;
     AudioModuleInfo primaryMicModuleInfo_ = {};
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;

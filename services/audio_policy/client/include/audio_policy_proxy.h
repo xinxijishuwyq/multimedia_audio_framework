@@ -230,6 +230,39 @@ public:
         const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
+
+    bool IsSpatializationEnabled() override;
+
+    int32_t SetSpatializationEnabled(const bool enable) override;
+
+    bool IsHeadTrackingEnabled() override;
+
+    int32_t SetHeadTrackingEnabled(const bool enable) override;
+
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) override;
+
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
+
+    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
+
+    bool IsSpatializationSupported() override;
+
+    bool IsSpatializationSupportedForDevice(const std::string address) override;
+
+    bool IsHeadTrackingSupported() override;
+
+    bool IsHeadTrackingSupportedForDevice(const std::string address) override;
+
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
+
+    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+        const sptr<IRemoteObject> &object) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

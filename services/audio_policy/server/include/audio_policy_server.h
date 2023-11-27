@@ -26,7 +26,6 @@
 
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
-#include "power_state_callback_stub.h"
 #include "power_state_listener.h"
 
 #include "bundle_mgr_interface.h"
@@ -40,6 +39,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_service_dump.h"
 #include "session_processor.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -303,6 +303,39 @@ public:
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
 
+    bool IsSpatializationEnabled() override;
+
+    int32_t SetSpatializationEnabled(const bool enable) override;
+
+    bool IsHeadTrackingEnabled() override;
+
+    int32_t SetHeadTrackingEnabled(const bool enable) override;
+
+    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
+        const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) override;
+
+    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
+
+    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
+
+    bool IsSpatializationSupported() override;
+
+    bool IsSpatializationSupportedForDevice(const std::string address) override;
+
+    bool IsHeadTrackingSupported() override;
+
+    bool IsHeadTrackingSupportedForDevice(const std::string address) override;
+
+    int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState) override;
+
+    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
+        const sptr<IRemoteObject> &object) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -358,23 +391,6 @@ private:
 
     int32_t VerifyVoiceCallPermission();
 
-    class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
-    public:
-        AudioPolicyServerPowerStateCallback(AudioPolicyServer *policyServer);
-        void OnPowerStateChanged(PowerMgr::PowerState state) override;
-
-    private:
-        AudioPolicyServer *policyServer_;
-    };
-
-    void HandlePowerStateChanged(PowerMgr::PowerState state);
-
-    // offload session
-    int32_t SetOffloadStream(uint32_t sessionId);
-    int32_t ReleaseOffloadStream(uint32_t sessionId);
-    void InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
-    void CheckSubscribePowerStateChange();
-    
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
@@ -423,7 +439,6 @@ private:
     void RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
-    void SubscribePowerStateChangeEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
@@ -433,7 +448,6 @@ private:
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
 
-    bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
     int32_t clientOnFocus_;
     int32_t volumeStep_;
@@ -466,6 +480,8 @@ private:
         this, std::placeholders::_1),
         std::bind(&AudioPolicyServer::ProcessSessionAdded,
             this, std::placeholders::_1)};
+
+    AudioSpatializationService& audioSpatializationService_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

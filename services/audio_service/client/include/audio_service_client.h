@@ -42,9 +42,12 @@
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
 #include "i_audio_stream.h"
+#include "audio_spatialization_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioSpatializationStateChangeCallbackImpl;
+
 enum ASClientType {
     AUDIO_SERVICE_CLIENT_PLAYBACK,
     AUDIO_SERVICE_CLIENT_RECORD,
@@ -69,7 +72,6 @@ struct AudioCache {
     uint32_t readIndex;
     uint32_t writeIndex;
     uint32_t totalCacheSize;
-    uint32_t totalCacheSizeTgt;
     bool isFull;
 };
 
@@ -173,8 +175,6 @@ public:
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
     int32_t StopStream();
-
-    int32_t OffloadStopStream();
 
     /**
     * Flushes the stream created using CreateStream. This is applicable for
@@ -422,8 +422,6 @@ public:
      */
     float GetStreamVolume();
 
-    int32_t SetStreamOffloadMode(int32_t state, bool isAppBack);
-    int32_t UnsetStreamOffloadMode();
     /**
      * @brief Set the render rate
      *
@@ -564,6 +562,10 @@ public:
 
     int32_t GetClientPid();
 
+    int32_t RegisterSpatializationStateEventListener();
+
+    void OnSpatializationStateChange(const std::vector<bool> &spatializationState);
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -572,7 +574,6 @@ protected:
     void HandleReadRequestEvent();
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
-    bool offloadEnable_ = false;
 
 private:
     pa_threaded_mainloop *mainLoop;
@@ -580,7 +581,6 @@ private:
     pa_context *context;
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
-    std::map<AudioOffloadType, pa_buffer_attr> bufferAttrStateMap_;
 
     std::mutex dataMutex_;
     std::condition_variable dataCv_;
@@ -662,9 +662,14 @@ private:
 
     std::weak_ptr<AudioStreamCallback> streamCallback_;
     State state_;
-    bool breakingWritePa_ = false;
     StateChangeCmdType stateChangeCmdType_ = CMD_FROM_CLIENT;
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
+
+    std::string spatializationEnabled_ = "Invalid";
+    std::string headTrackingEnabled_ = "Invalid";
+    std::shared_ptr<AudioSpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
+    pa_usec_t paLatency_ = 0;
+    bool isGetLatencySuccess_ = true;
 
     // To be set while using audio stream
     // functionality for callbacks
@@ -682,17 +687,8 @@ private:
     ASClientType eAudioClientType;
 
     uint32_t underFlowCount;
-    AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
-    AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
-    time_t lastOffloadUpdateFinishTime_ = 0;
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
-    int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
-    int32_t UpdatebufferAttrOffload(AudioOffloadType statePolicy);
-    int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
-    int32_t InitializePAProbListOffload();
-    int32_t InitializebufferAttrOffload();
-    int32_t CheckOffloadPolicyChanged();
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();
@@ -701,8 +697,6 @@ private:
 
     int32_t UpdateReadBuffer(uint8_t *buffer, size_t &length, size_t &readSize);
     int32_t PaWriteStream(const uint8_t *buffer, size_t &length);
-    int32_t WaitWriteable(size_t length, size_t &writableSize);
-    int32_t AdjustAcache(const StreamBuffer &stream, size_t &cachedLen);
     void HandleRenderPositionCallbacks(size_t bytesWritten);
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
@@ -758,7 +752,6 @@ private:
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAStreamMovedCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
-    static void PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
     static void PAStreamReadCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata);
@@ -771,9 +764,9 @@ private:
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamLatencyUpdateCb(pa_stream *stream, void *userdata);
     static void PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
-    static void GetSinkInputInfoOffloadCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
@@ -831,6 +824,17 @@ private:
         SET_CAPTURER_MARK_REACHED_REQUEST,
         UNSET_CAPTURER_MARK_REACHED_REQUEST,
     };
+};
+
+class AudioSpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {
+public:
+    AudioSpatializationStateChangeCallbackImpl();
+    virtual ~AudioSpatializationStateChangeCallbackImpl();
+
+    void OnSpatializationStateChange(const std::vector<bool> &spatializationState) override;
+    void setAudioServiceClientObj(AudioServiceClient *serviceClientObj);
+private:
+    AudioServiceClient *serviceClient_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
