@@ -4869,7 +4869,7 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific4) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific5) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific6) + ","
-        + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific7) + ",";
+        + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific7) + ";";
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     gsp->SetAudioParameter(key, value);
 }
