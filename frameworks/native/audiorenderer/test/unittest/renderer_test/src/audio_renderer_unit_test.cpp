@@ -2148,12 +2148,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
     uint8_t *buffer;
     uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+    int32_t ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    buffer = new uint8_t[bufferLen];
+    ASSERT_NE(nullptr, buffer);
+    metaBuffer = new uint8_t[AVS3METADATA_SIZE];
+    ASSERT_NE(nullptr, metaBuffer);
 
     fread(buffer, 1, bufferLen, wavFile);
     fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
     int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
     AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }

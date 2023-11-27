@@ -199,7 +199,7 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
     }
 
     if (streamParams_.encoding == ENCODING_AUDIOVIVID) {
-        if (!converter_->GetInputBufferSize(bufferSize)) {
+        if (converter_ == nullptr || !converter_->GetInputBufferSize(bufferSize)) {
             return ERR_OPERATION_FAILED;
         }
         return SUCCESS;
@@ -532,6 +532,11 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
     BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
     BufferDesc metaDesc = {metaBuffer, metaBufferSize};
 
+    if (converter_ == nullptr) {
+        AUDIO_ERR_LOG("Write: converter isn't init.");
+        return ERR_WRITE_FAILED;
+    }
+    
     if (!converter_->CheckInputValid(pcmDesc, metaDesc)) {
         AUDIO_ERR_LOG("Write: Invalid input.");
         return ERR_INVALID_PARAM;
