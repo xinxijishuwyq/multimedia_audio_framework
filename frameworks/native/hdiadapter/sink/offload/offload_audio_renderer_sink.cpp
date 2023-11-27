@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,8 +22,10 @@
 #include <unistd.h>
 #include <future>
 
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#endif
 #include "v1_1/iaudio_manager.h"
 
 #include "audio_errors.h"
@@ -48,7 +50,9 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t OFFLOAD_OUTPUT_STREAM_ID = 53; // 13+5*8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
+#ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
+#endif
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
 const int64_t SECOND_TO_MILLISECOND = 1000;
@@ -136,16 +140,21 @@ private:
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
 
+#ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
     bool runninglocked;
+#endif
 };
     
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
     : rendererInited_(false), started_(false), isFlushing_(false), startDuringFlush_(false), renderPos_(0),
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
-      audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), runninglocked(false)
+      audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr)
 {
     attr_ = {};
+#ifdef FEATURE_POWER_MANAGER
+    runninglocked = false;
+#endif
 }
 
 OffloadAudioRendererSinkInner::~OffloadAudioRendererSinkInner()
@@ -975,17 +984,20 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
 {
+#ifdef FEATURE_POWER_MANAGER
     if (OffloadKeepRunningLock != nullptr) {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is not null, init failed!");
         return ERR_OPERATION_FAILED;
     }
     OffloadKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
         PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND);
+#endif
     return SUCCESS;
 }
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 {
+#ifdef FEATURE_POWER_MANAGER
     OffloadRunningLockInit();
     if (OffloadKeepRunningLock == nullptr) {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is null, playback can not work well!");
@@ -996,12 +1008,14 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
     }
     runninglocked = true;
     OffloadKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+#endif
 
     return SUCCESS;
 }
 
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
 {
+#ifdef FEATURE_POWER_MANAGER
     if (OffloadKeepRunningLock == nullptr) {
         AUDIO_ERR_LOG("OffloadKeepRunningLock is null, playback can not work well!");
         return ERR_OPERATION_FAILED;
@@ -1011,6 +1025,7 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
     }
     runninglocked = false;
     OffloadKeepRunningLock->UnLock();
+#endif
 
     return SUCCESS;
 }

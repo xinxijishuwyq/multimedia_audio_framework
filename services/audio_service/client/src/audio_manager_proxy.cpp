@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-#include <cinttypes>
 #include "audio_manager_proxy.h"
+
+#include <cinttypes>
+
 #include "audio_system_manager.h"
 #include "audio_log.h"
 #include "i_audio_process.h"

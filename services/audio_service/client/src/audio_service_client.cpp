@@ -27,7 +27,9 @@
 #include "unistd.h"
 #include "audio_errors.h"
 #include "audio_info.h"
+#ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
+#endif
 
 using namespace std;
 
@@ -2627,6 +2629,7 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
 
 int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
 {
+#ifdef FEATURE_POWER_MANAGER
     AudioOffloadType statePolicy = OFFLOAD_DEFAULT;
     auto powerState = static_cast<PowerMgr::PowerState>(state);
     if ((powerState != PowerMgr::PowerState::AWAKE) && (powerState != PowerMgr::PowerState::FREEZE)) {
@@ -2659,7 +2662,9 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
     if (UpdatePAProbListOffload(statePolicy) != AUDIO_CLIENT_SUCCESS) {
         return AUDIO_CLIENT_ERR;
     }
-
+#else
+    AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode not available, FEATURE_POWER_MANAGER no define");
+#endif
     return AUDIO_CLIENT_SUCCESS;
 }
 
