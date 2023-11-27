@@ -559,6 +559,8 @@ private:
 
     void AddEarpiece();
 
+    void FetchOutputDeviceWhenNoRunningStream();
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
