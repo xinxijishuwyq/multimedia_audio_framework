@@ -24,6 +24,7 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
+    "../../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
