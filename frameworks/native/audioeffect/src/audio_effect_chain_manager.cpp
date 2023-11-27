@@ -24,6 +24,7 @@
 #include <vector>
 #include <set>
 
+#include "securec.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_log.h"
@@ -160,6 +161,21 @@ bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t s
         return true;
     }
     return false;
+}
+
+int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    std::string sceneTypeString = "";
+    if (sceneType) {
+        sceneTypeString = sceneType;
+    }
+    std::string effectModeString = "";
+    if (effectMode) {
+        effectModeString = effectMode;
+    }
+    return audioEffectChainManager->SetHdiParam(sceneTypeString, effectModeString, enabled);
 }
 
 int32_t EffectChainManagerInitCb(const char *sceneType)
@@ -513,6 +529,8 @@ AudioEffectChainManager::AudioEffectChainManager()
     isInitialized_ = false;
     headTracker_ = std::make_shared<HeadTracker>();
     headTracker_->SensorInit();
+    audioEffectHdi_ = std::make_shared<AudioEffectHdi>();
+    memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -655,6 +673,8 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
     AUDIO_DEBUG_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         SceneTypeAndModeToEffectChainNameMap_.size());
+
+    audioEffectHdi_->InitHdi();
 
     isInitialized_ = true;
 }
@@ -898,8 +918,29 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spa
     if (spatializationState.size() != SIZE_OF_SPATIALIZATION_STATE) {
         return ERROR;
     }
+    int32_t ret;
     if (spatializatonEnabled_ != spatializationState[0]) {
         spatializatonEnabled_ = spatializationState[0];
+        memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
+        if (spatializatonEnabled_) {
+            effectHdiInput[0] = HDI_INIT;
+            AUDIO_INFO_LOG("set hdi init.");
+            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("set hdi init failed");
+                return ERROR;
+            } else {
+                offloadEnabled_ = true;
+            }
+        } else {
+            effectHdiInput[0] = HDI_DESTROY;
+            AUDIO_INFO_LOG("set hdi destory.");
+            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("set hdi destory failed");
+                return ERROR;
+            }
+        }
     }
     if (headTrackingEnabled_ != spatializationState[1]) {
         headTrackingEnabled_ = spatializationState[1];
@@ -908,15 +949,124 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spa
     return SUCCESS;
 }
 
+int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string effectMode, bool enabled)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
+    memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
+    effectHdiInput[0] = HDI_BYPASS;
+    effectHdiInput[1] = enabled == true ? 0 : 1;
+    AUDIO_INFO_LOG("set hdi bypass.");
+    int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi bypass failed");
+        return ret;
+    }
+
+    effectHdiInput[0] = HDI_ROOM_MODE;
+    effectHdiInput[1] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
+    effectHdiInput[HDI_ROOM_MODE_INDEX_TWO] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
+    AUDIO_INFO_LOG("set hdi room mode.");
+    ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi room mode failed");
+        return ret;
+    }
+    return SUCCESS;
+}
+
+AudioEffectHdi::AudioEffectHdi()
+{
+    AUDIO_INFO_LOG("AudioEffectHdi constructor!");
+    memset_s(static_cast<void *>(input), sizeof(input), 0, sizeof(input));
+    memset_s(static_cast<void *>(output), sizeof(output), 0, sizeof(output));
+    replyLen = GET_HDI_BUFFER_LEN;
+}
+
+AudioEffectHdi::~AudioEffectHdi()
+{
+    AUDIO_INFO_LOG("AudioEffectHdi destructor!");
+}
+
+void AudioEffectHdi::InitHdi()
+{
+    hdiModel_ = IEffectModelGet(false);
+    if (hdiModel_ == nullptr) {
+        AUDIO_WARNING_LOG("IEffectModelGet failed");
+        hdiControl_ = nullptr;
+        return;
+    }
+    libName = strdup("libspatialization_processing_dsp");
+    effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966ff");
+    EffectInfo info = {
+        .libName = &libName[0],
+        .effectId = &effectId[0],
+        .ioDirection = 1,
+    };
+    ControllerId controllerId;
+    int32_t ret = hdiModel_->CreateEffectController(hdiModel_, &info, &hdiControl_, &controllerId);
+    if ((ret != 0) || (hdiControl_ == nullptr)) {
+        AUDIO_WARNING_LOG("hdi init failed");
+        hdiControl_ = nullptr;
+        return;
+    }
+
+    uint32_t replyLen = GET_HDI_BUFFER_LEN;
+    input[0] = HDI_BLUETOOTH_MODE;
+    input[1] = 0;
+    AUDIO_INFO_LOG("set hdi bluetooth mode.");
+    ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
+        hdiControl_ = nullptr;
+        return;
+    }
+}
+
+int32_t AudioEffectHdi::UpdateHdiState(int8_t *effectHdiInput)
+{
+    if (hdiControl_ == nullptr) {
+        AUDIO_WARNING_LOG("hdiControl_ is nullptr.");
+        return ERROR;
+    }
+    memcpy_s(static_cast<void *>(input), sizeof(input), static_cast<void *>(effectHdiInput), sizeof(input));
+    uint32_t replyLen = GET_HDI_BUFFER_LEN;
+    int32_t ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("hdi send command failed");
+        return ret;
+    }
+    return ret;
+}
+
+
 void AudioEffectChainManager::UpdateSensorState()
 {
+    effectHdiInput[0] = HDI_HEAD_MODE;
+    effectHdiInput[1] = headTrackingEnabled_ == true ? 1 : 0;
+    int32_t ret;
     if (headTrackingEnabled_) {
         if (offloadEnabled_) {
             headTracker_->SensorSetConfig(DSP_SPATIALIZER_ENGINE);
+            AUDIO_INFO_LOG("set hdi head mode enable.");
+            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+            if (ret != 0) {
+                AUDIO_ERR_LOG("set hdi head mode enable failed");
+            }
         } else {
             headTracker_->SensorSetConfig(ARM_SPATIALIZER_ENGINE);
         }
         headTracker_->SensorActive();
+        return;
+    }
+
+    if (offloadEnabled_) {
+        AUDIO_INFO_LOG("set hdi head mode disable.");
+        ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+        if (ret != 0) {
+            AUDIO_ERR_LOG("set hdi head mode disable failed");
+        }
         return;
     }
 

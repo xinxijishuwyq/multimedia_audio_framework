@@ -37,6 +37,14 @@ constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64; // max conf for sc
 constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32; // max num of effectChain
 constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of effect per effectChain
 
+constexpr int32_t HDI_SET_PATAM = 6;
+constexpr int32_t HDI_INIT = 0;
+constexpr int32_t HDI_BYPASS = 1;
+constexpr int32_t HDI_HEAD_MODE = 2;
+constexpr int32_t HDI_ROOM_MODE = 3;
+constexpr int32_t HDI_BLUETOOTH_MODE = 4;
+constexpr int32_t HDI_DESTROY = 5;
+
 enum AudioSpatialDeviceType {
     EARPHONE_TYPE_NONE = 0,
     EARPHONE_TYPE_INEAR,

@@ -29,6 +29,7 @@
 #include <mutex>
 #include <set>
 
+#include "v1_0/ieffect_model.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
 #include "sensor_agent.h"
@@ -48,6 +49,9 @@ const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t NONE_SPATIALIZER_ENGINE = 0;
 const uint32_t ARM_SPATIALIZER_ENGINE = 1;
 const uint32_t DSP_SPATIALIZER_ENGINE = 2;
+const uint32_t SEND_HDI_COMMAND_LEN = 20;
+const uint32_t GET_HDI_BUFFER_LEN = 10;
+const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
@@ -77,6 +81,22 @@ private:
     SensorUser sensorUser_;
     int64_t sensorSamplingInterval_ = 30000000; // 30000000 ns = 30 ms
     static std::mutex headTrackerMutex_;
+};
+
+class AudioEffectHdi {
+public:
+    AudioEffectHdi();
+    ~AudioEffectHdi();
+    void InitHdi();
+    int32_t UpdateHdiState(int8_t *effectHdiInput);
+private:
+    std::string libName;
+    std::string effectId;
+    int8_t input[SEND_HDI_COMMAND_LEN];
+    int8_t output[GET_HDI_BUFFER_LEN];
+    uint32_t replyLen;
+    IEffectModel *hdiModel_ = nullptr;
+    IEffectControl *hdiControl_ = nullptr;
 };
 
 class AudioEffectChain {
@@ -136,6 +156,7 @@ public:
         const uint64_t &channelLayout);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
+    int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
 private:
     void UpdateSensorState();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
@@ -152,8 +173,10 @@ private:
     std::mutex dynamicMutex_;
     bool spatializatonEnabled_ = true;
     bool headTrackingEnabled_ = false;
-    std::shared_ptr<HeadTracker> headTracker_;
     bool offloadEnabled_ = false;
+    std::shared_ptr<HeadTracker> headTracker_;
+    std::shared_ptr<AudioEffectHdi> audioEffectHdi_;
+    int8_t effectHdiInput[SEND_HDI_COMMAND_LEN];
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

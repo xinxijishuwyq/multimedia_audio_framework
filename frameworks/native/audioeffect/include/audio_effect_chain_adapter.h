@@ -45,6 +45,7 @@ bool IsChannelLayoutHVSSupported(const uint64_t channelLayout);
 bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
     const char *sinkChannelLayout, const char *sinkSpatializationEnabled);
 int32_t EffectChainManagerInitCb(const char *sceneType);
+int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled);
 
 #ifdef __cplusplus
 }
