@@ -29,10 +29,10 @@
 #include <mutex>
 #include <set>
 
+#include "v1_0/ieffect_model.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
 #include "sensor_agent.h"
-#include "v1_0/ieffect_model.h"
 
 namespace OHOS {
 namespace AudioStandard {

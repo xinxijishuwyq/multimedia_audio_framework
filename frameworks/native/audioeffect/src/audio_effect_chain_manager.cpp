@@ -24,12 +24,12 @@
 #include <vector>
 #include <set>
 
+#include "securec.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
-#include "securec.h"
 
 #define DEVICE_FLAG
 
@@ -1032,8 +1032,7 @@ int32_t AudioEffectHdi::UpdateHdiState(int8_t *effectHdiInput)
     }
     memcpy_s(static_cast<void *>(input), sizeof(input), static_cast<void *>(effectHdiInput), sizeof(input));
     uint32_t replyLen = GET_HDI_BUFFER_LEN;
-    int32_t ret;
-    ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+    int32_t ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
     if (ret != 0) {
         AUDIO_WARNING_LOG("hdi send command failed");
         return ret;
