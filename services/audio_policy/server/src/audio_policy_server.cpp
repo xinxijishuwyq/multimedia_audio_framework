@@ -151,6 +151,10 @@ void AudioPolicyServer::OnStart()
     if (iRes < 0) {
         AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
     }
+
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    SubscribeVolumeKeyEvents();
+#endif
 }
 
 void AudioPolicyServer::OnStop()
@@ -254,6 +258,9 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         AUDIO_ERR_LOG("VolumeKeyEvents: invalid key type : %{public}d", keyType);
         return;
     }
+    AUDIO_INFO_LOG("RegisterVolumeKeyEvents: volume key: %{public}s.",
+        (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
+
     MMI::InputManager *im = MMI::InputManager::GetInstance();
     CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
 
@@ -298,6 +305,7 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
+    AUDIO_INFO_LOG("RegisterVolumeKeyMuteEvents: volume key: mute");
     MMI::InputManager *im = MMI::InputManager::GetInstance();
     CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
 
@@ -324,6 +332,13 @@ void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 void AudioPolicyServer::SubscribeVolumeKeyEvents()
 {
+    if (hasSubscribedVolumeKeyEvents_.load()) {
+        AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: volume key events has been sunscirbed!");
+        return;
+    }
+
+    AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: first time.");
+    hasSubscribedVolumeKeyEvents_.store(true);
     RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
     RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
     RegisterVolumeKeyMuteEvents();
@@ -2684,8 +2699,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
 
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-    if ((audioPolicyService_.GetLocalDevicesType().compare("tablet") == 0) ||
-            (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0)) {
+    if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
