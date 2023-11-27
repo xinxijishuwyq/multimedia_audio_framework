@@ -29,6 +29,7 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
+#include "securec.h"
 
 #define DEVICE_FLAG
 
@@ -529,7 +530,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     headTracker_ = std::make_shared<HeadTracker>();
     headTracker_->SensorInit();
     audioEffectHdi_ = std::make_shared<AudioEffectHdi>();
-    memset(effectHdiInput, sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
+    memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -920,33 +921,29 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spa
     int32_t ret;
     if (spatializatonEnabled_ != spatializationState[0]) {
         spatializatonEnabled_ = spatializationState[0];
-        memset(effectHdiInput, sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
+        memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
         if (spatializatonEnabled_) {
             effectHdiInput[0] = HDI_INIT;
+            AUDIO_INFO_LOG("set hdi init.");
             ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
-                AUDIO_WARNING_LOG("set hdi init failed")
+                AUDIO_WARNING_LOG("set hdi init failed");
+                return ERROR;
             } else {
                 offloadEnabled_ = true;
             }
         } else {
             effectHdiInput[0] = HDI_DESTROY;
+            AUDIO_INFO_LOG("set hdi destory.");
             ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
-                AUDIO_WARNING_LOG("set hdi destory failed")
+                AUDIO_WARNING_LOG("set hdi destory failed");
+                return ERROR;
             }
-        }
-
-        if (ret != 0) {
-            return ERROR;
         }
     }
     if (headTrackingEnabled_ != spatializationState[1]) {
         headTrackingEnabled_ = spatializationState[1];
-        ret = UpdateHdiStateHeadMode(offloadEnabled_, headTrackingEnabled_);
-        if (ret != 0) {
-            return ERROR;
-        }
         UpdateSensorState();
     }
     return SUCCESS;
@@ -957,9 +954,10 @@ int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string 
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
-    memset(effectHdiInput, sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
+    memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
     effectHdiInput[0] = HDI_BYPASS;
     effectHdiInput[1] = enabled == true ? 0 : 1;
+    AUDIO_INFO_LOG("set hdi bypass.");
     int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi bypass failed");
@@ -969,7 +967,8 @@ int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string 
     effectHdiInput[0] = HDI_ROOM_MODE;
     effectHdiInput[1] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
     effectHdiInput[HDI_ROOM_MODE_INDEX_TWO] = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-    int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+    AUDIO_INFO_LOG("set hdi room mode.");
+    ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
         return ret;
@@ -980,8 +979,8 @@ int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string 
 AudioEffectHdi::AudioEffectHdi()
 {
     AUDIO_INFO_LOG("AudioEffectHdi constructor!");
-    memset(input, sizeof(input), 0, sizeof(input));
-    memset(output, sizeof(output), 0, sizeof(output));
+    memset_s(static_cast<void *>(input), sizeof(input), 0, sizeof(input));
+    memset_s(static_cast<void *>(output), sizeof(output), 0, sizeof(output));
     replyLen = GET_HDI_BUFFER_LEN;
 }
 
@@ -1016,6 +1015,7 @@ void AudioEffectHdi::InitHdi()
     uint32_t replyLen = GET_HDI_BUFFER_LEN;
     input[0] = HDI_BLUETOOTH_MODE;
     input[1] = 0;
+    AUDIO_INFO_LOG("set hdi bluetooth mode.");
     ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
@@ -1030,7 +1030,7 @@ int32_t AudioEffectHdi::UpdateHdiState(int8_t *effectHdiInput)
         AUDIO_WARNING_LOG("hdiControl_ is nullptr.");
         return ERROR;
     }
-    memset(input, sizeof(input), effectHdiInput, sizeof(input));
+    memcpy_s(static_cast<void *>(input), sizeof(input), static_cast<void *>(effectHdiInput), sizeof(input));
     uint32_t replyLen = GET_HDI_BUFFER_LEN;
     int32_t ret;
     ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
@@ -1050,6 +1050,7 @@ void AudioEffectChainManager::UpdateSensorState()
     if (headTrackingEnabled_) {
         if (offloadEnabled_) {
             headTracker_->SensorSetConfig(DSP_SPATIALIZER_ENGINE);
+            AUDIO_INFO_LOG("set hdi head mode enable.");
             ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
                 AUDIO_ERR_LOG("set hdi head mode enable failed");
@@ -1062,6 +1063,7 @@ void AudioEffectChainManager::UpdateSensorState()
     }
 
     if (offloadEnabled_) {
+        AUDIO_INFO_LOG("set hdi head mode disable.");
         ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
         if (ret != 0) {
             AUDIO_ERR_LOG("set hdi head mode disable failed");
