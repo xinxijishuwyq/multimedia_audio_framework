@@ -533,12 +533,28 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
     }
 }
 
+bool AudioDeviceManager::IsExistedDevice(const sptr<AudioDeviceDescriptor> &device,
+    const vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    bool isExistedDev = false;
+    for (const auto &dev : audioDeviceDescriptors) {
+        if (device->deviceType_ == dev->deviceType_ &&
+            device->networkId_ == dev->networkId_ &&
+            device->deviceRole_ == dev->deviceRole_ &&
+            device->macAddress_ == dev->macAddress_) {
+            isExistedDev = true;
+        }
+    }
+    return isExistedDev;
+}
+
 void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
     const list<DevicePrivacyInfo> &deviceInfos, const sptr<AudioDeviceDescriptor> &dev,
     vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     for (auto &deviceInfo : deviceInfos) {
-        if (dev->deviceType_ != deviceInfo.deviceType) {
+        if (dev->deviceType_ != deviceInfo.deviceType ||
+            IsExistedDevice(dev, audioDeviceDescriptors)) {
             continue;
         }
         AddAvailableDevicesByUsage(usage, deviceInfo, dev, audioDeviceDescriptors);
