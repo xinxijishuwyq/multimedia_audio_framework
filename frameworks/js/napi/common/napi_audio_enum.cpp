@@ -63,6 +63,7 @@ napi_ref NapiAudioEnum::audioErrors_ = nullptr;
 napi_ref NapiAudioEnum::communicationDeviceType_ = nullptr;
 napi_ref NapiAudioEnum::interruptRequestType_ = nullptr;
 napi_ref NapiAudioEnum::interruptRequestResultType_ = nullptr;
+napi_ref NapiAudioEnum::toneType_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -305,6 +306,36 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioRingModeMap = {
     {"RINGER_MODE_NORMAL", NapiAudioEnum::RINGER_MODE_NORMAL}
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::toneTypeMap = {
+    {"TONE_TYPE_DIAL_0", TONE_TYPE_DIAL_0},
+    {"TONE_TYPE_DIAL_1", TONE_TYPE_DIAL_1},
+    {"TONE_TYPE_DIAL_2", TONE_TYPE_DIAL_2},
+    {"TONE_TYPE_DIAL_3", TONE_TYPE_DIAL_3},
+    {"TONE_TYPE_DIAL_4", TONE_TYPE_DIAL_4},
+    {"TONE_TYPE_DIAL_5", TONE_TYPE_DIAL_5},
+    {"TONE_TYPE_DIAL_6", TONE_TYPE_DIAL_6},
+    {"TONE_TYPE_DIAL_7", TONE_TYPE_DIAL_7},
+    {"TONE_TYPE_DIAL_8", TONE_TYPE_DIAL_8},
+    {"TONE_TYPE_DIAL_9", TONE_TYPE_DIAL_9},
+    {"TONE_TYPE_DIAL_S", TONE_TYPE_DIAL_S},
+    {"TONE_TYPE_DIAL_P", TONE_TYPE_DIAL_P},
+    {"TONE_TYPE_DIAL_A", TONE_TYPE_DIAL_A},
+    {"TONE_TYPE_DIAL_B", TONE_TYPE_DIAL_B},
+    {"TONE_TYPE_DIAL_C", TONE_TYPE_DIAL_C},
+    {"TONE_TYPE_DIAL_D", TONE_TYPE_DIAL_D},
+    {"TONE_TYPE_COMMON_SUPERVISORY_DIAL", TONE_TYPE_COMMON_SUPERVISORY_DIAL},
+    {"TONE_TYPE_COMMON_SUPERVISORY_BUSY", TONE_TYPE_COMMON_SUPERVISORY_BUSY},
+    {"TONE_TYPE_COMMON_SUPERVISORY_CONGESTION", TONE_TYPE_COMMON_SUPERVISORY_CONGESTION},
+    {"TONE_TYPE_COMMON_SUPERVISORY_RADIO_ACK", TONE_TYPE_COMMON_SUPERVISORY_RADIO_ACK},
+    {"TONE_TYPE_COMMON_SUPERVISORY_RADIO_NOT_AVAILABLE", TONE_TYPE_COMMON_SUPERVISORY_RADIO_NOT_AVAILABLE},
+    {"TONE_TYPE_COMMON_SUPERVISORY_CALL_WAITING", TONE_TYPE_COMMON_SUPERVISORY_CALL_WAITING},
+    {"TONE_TYPE_COMMON_SUPERVISORY_RINGTONE", TONE_TYPE_COMMON_SUPERVISORY_RINGTONE},
+    {"TONE_TYPE_COMMON_PROPRIETARY_BEEP", TONE_TYPE_COMMON_PROPRIETARY_BEEP},
+    {"TONE_TYPE_COMMON_PROPRIETARY_ACK", TONE_TYPE_COMMON_PROPRIETARY_ACK},
+    {"TONE_TYPE_COMMON_PROPRIETARY_PROMPT", TONE_TYPE_COMMON_PROPRIETARY_PROMPT},
+    {"TONE_TYPE_COMMON_PROPRIETARY_DOUBLE_BEEP", TONE_TYPE_COMMON_PROPRIETARY_DOUBLE_BEEP},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -418,9 +449,9 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("InterruptRequestType",
             CreateEnumObject(env, interruptRequestTypeMap, interruptRequestType_)),
         DECLARE_NAPI_PROPERTY("InterruptRequestResultType",
-            CreateEnumObject(env, interruptRequestResultTypeMap, interruptRequestResultType_))
+            CreateEnumObject(env, interruptRequestResultTypeMap, interruptRequestResultType_)),
+        DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap, toneType_)),
     };
-
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
     return status;

@@ -85,6 +85,7 @@ ohos_shared_library("audio") {
       "audiorenderer/callback/napi_renderer_period_position_callback.cpp",
       "audiorenderer/callback/napi_renderer_position_callback.cpp",
       "audiorenderer/napi_audio_renderer.cpp",
+      "audiorenderer/napi_toneplayer.cpp",
       "common/napi_async_work.cpp",
       "common/napi_audio_enum.cpp",
       "common/napi_audio_error.cpp",

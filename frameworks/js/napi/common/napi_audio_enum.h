@@ -21,6 +21,7 @@
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
 #include "audio_info.h"
+#include "tone_player.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -133,6 +134,7 @@ private:
     static napi_ref communicationDeviceType_;
     static napi_ref interruptRequestType_;
     static napi_ref interruptRequestResultType_;
+    static napi_ref toneType_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -166,6 +168,7 @@ private:
     static const std::map<std::string, int32_t> deviceFlagMap;
     static const std::map<std::string, int32_t> connectTypeMap;
     static const std::map<std::string, int32_t> audioRingModeMap;
+    static const std::map<std::string, int32_t> toneTypeMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;
