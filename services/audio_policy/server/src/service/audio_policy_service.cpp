@@ -2548,7 +2548,7 @@ std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
 }
 #endif
 
-void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType) /* deviceType = DEVICE_TYPE_NONE */
+void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType)
 {
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
@@ -4875,7 +4875,7 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
 }
 
 void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
-    DeviceType deviceType) /* deviceType = DEVICE_TYPE_NONE */
+    DeviceType deviceType)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         a2dpOffloadFlag_ = static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(
