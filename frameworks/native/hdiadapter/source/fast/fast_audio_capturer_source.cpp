@@ -24,7 +24,7 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 
-#include "v1_1/iaudio_manager.h"
+#include "v2_0/iaudio_manager.h"
 #include "fast_audio_capturer_source.h"
 
 using namespace std;
