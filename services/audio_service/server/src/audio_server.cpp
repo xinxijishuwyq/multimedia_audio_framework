@@ -135,9 +135,11 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS);
     AUDIO_DEBUG_LOG("server: set audio parameter");
-    if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
-        AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
-        return;
+    if (key !="AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
+        if (!VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
+            AUDIO_ERR_LOG("SetAudioParameter: MODIFY_AUDIO_SETTINGS permission denied");
+            return;
+        }
     }
 
     AudioServer::audioParameters[key] = value;
