@@ -536,6 +536,7 @@ bool AudioRendererPrivate::Flush() const
 
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
+    Trace trace("AudioRenderer::Pause");
     AUDIO_INFO_LOG("AudioRenderer::Pause");
     if (isSwitching_) {
         AUDIO_ERR_LOG("AudioRenderer::Pause failed. Switching state: %{public}d", isSwitching_);
