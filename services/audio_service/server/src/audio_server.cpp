@@ -392,18 +392,6 @@ int32_t AudioServer::SetMicrophoneMute(bool isMute)
     return SUCCESS;
 }
 
-bool AudioServer::IsMicrophoneMute()
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
-        AUDIO_ERR_LOG("IsMicrophoneMute refused for %{public}d", callingUid);
-    }
-
-    AUDIO_ERR_LOG("unused IsMicrophoneMute func");
-
-    return false;
-}
-
 int32_t AudioServer::SetVoiceVolume(float volume)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
