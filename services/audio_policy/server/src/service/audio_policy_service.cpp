@@ -1358,12 +1358,28 @@ void AudioPolicyService::SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo
     }
 }
 
+void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
+{
+    AUDIO_INFO_LOG("fetch output device when no running stream");
+    unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(STREAM_USAGE_MEDIA, -1);
+    if (desc->deviceType_ == DEVICE_TYPE_NONE || desc->deviceType_ == currentActiveDevice_.deviceType_) {
+        return;
+    }
+    if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(desc->deviceType_)) {
+        SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
+    }
+    currentActiveDevice_ = AudioDeviceDescriptor(*desc);
+    AUDIO_INFO_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
+    OnPreferredOutputDeviceUpdated(currentActiveDevice_);
+}
+
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     bool isStreamStatusUpdated = false)
 {
     AUDIO_INFO_LOG("Fecth output device for %{public}zu stream", rendererChangeInfos.size());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
+    AudioDeviceDescriptor preActiveDevice = currentActiveDevice_;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (rendererChangeInfo->rendererInfo.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
             rendererChangeInfo->rendererState != RENDERER_RUNNING) {
@@ -1400,10 +1416,12 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         SelectNewOutputDevice(rendererChangeInfo, desc);
     }
     if (isUpdateActiveDevice) {
-        if (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID) {
+        if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(preActiveDevice.deviceType_)) {
             SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
         }
         OnPreferredOutputDeviceUpdated(currentActiveDevice_);
+    } else if (needUpdateActiveDevice) {
+        FetchOutputDeviceWhenNoRunningStream();
     }
 }
 
