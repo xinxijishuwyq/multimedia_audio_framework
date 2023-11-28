@@ -463,6 +463,7 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
 
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 {
+    Trace trace("AudioRenderer::Start");
     AUDIO_INFO_LOG("AudioRenderer::Start");
     RendererState state = GetStatus();
     if ((state != RENDERER_PREPARED) && (state != RENDERER_STOPPED) && (state != RENDERER_PAUSED)) {
