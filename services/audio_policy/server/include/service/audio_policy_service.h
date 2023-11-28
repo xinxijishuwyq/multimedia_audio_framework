@@ -595,6 +595,8 @@ private:
 
     void FetchOutputDeviceWhenNoRunningStream();
 
+    void FetchInputDeviceWhenNoRunningStream();
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
