@@ -159,12 +159,10 @@ int32_t AudioFormatConverter3DA::Process(const BufferDesc pcmBuffer, const Buffe
         AudioBuffer inBuffer = {
             .frameLength = AUDIO_VIVID_SAMPLES,
             .raw = pcmBuffer.buffer,
-            .metaDataLength = metaBuffer.bufLength,
             .metaData = metaBuffer.buffer};
         AudioBuffer outBuffer = {
             .frameLength = AUDIO_VIVID_SAMPLES,
             .raw = outPcmBuf_.get(),
-            .metaDataLength = metaBuffer.bufLength,
             .metaData = metaBuffer.buffer};
         ret = externalLoader_.ApplyAlgo(inBuffer, outBuffer);
     }
