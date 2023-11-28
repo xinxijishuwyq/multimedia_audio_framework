@@ -1820,8 +1820,8 @@ int32_t AudioPolicyService::HandleA2dpDevice(DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::HandleA2dpDevice");
     int32_t ret = LoadA2dpModule(deviceType);
-    preA2dpOffloadFlag_ = A2DPHAL_;
-    a2dpOffloadFlag_ = A2DPHAL_;
+    preA2dpOffloadFlag_ = A2DP_HAL;
+    a2dpOffloadFlag_ = A2DP_HAL;
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("load A2dp module failed");
         return ERR_OPERATION_FAILED;
@@ -2464,8 +2464,8 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         }
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
         if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            preA2dpOffloadFlag_ = NOBTDEVICE_;
-            a2dpOffloadFlag_ = NOBTDEVICE_;
+            preA2dpOffloadFlag_ = NO_BT_DEVICE;
+            a2dpOffloadFlag_ = NO_BT_DEVICE;
         }
     }
 
@@ -2567,11 +2567,11 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType
     
     UpdateA2dpOffloadFlag(allSessionInfos, deviceType);
 
-    if ((preA2dpOffloadFlag_ == A2DPHAL_) && (a2dpOffloadFlag_ == A2DPOFFLOAD_)) {
+    if ((preA2dpOffloadFlag_ == A2DP_HAL) && (a2dpOffloadFlag_ == A2DPOFFLOAD_)) {
         HandleA2dpDeviceInOffload();
         return;
     }
-    if ((preA2dpOffloadFlag_ == NOBTDEVICE_) && (a2dpOffloadFlag_ == A2DPOFFLOAD_)) {
+    if ((preA2dpOffloadFlag_ == NO_BT_DEVICE) && (a2dpOffloadFlag_ == A2DPOFFLOAD_)) {
         HandleA2dpDeviceInOffload();
         return;
     }
@@ -2599,7 +2599,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
 
-        if ((preA2dpOffloadFlag_ == A2DPOFFLOAD_) && (a2dpOffloadFlag_ == A2DPHAL_)) {
+        if ((preA2dpOffloadFlag_ == A2DPOFFLOAD_) && (a2dpOffloadFlag_ == A2DP_HAL)) {
             HandleA2dpDeviceOutOffload();
             return;
         }
@@ -4884,19 +4884,19 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
         a2dpOffloadFlag_ = static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(
             allActiveSessions));
     } else if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP && deviceType != DEVICE_TYPE_NONE) {
-        a2dpOffloadFlag_ = NOBTDEVICE_;
+        a2dpOffloadFlag_ = NO_BT_DEVICE;
     } else if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && deviceType == DEVICE_TYPE_NONE) {
         a2dpOffloadFlag_ = static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(
             allActiveSessions));
     } else {
-        a2dpOffloadFlag_ = NOBTDEVICE_;
+        a2dpOffloadFlag_ = NO_BT_DEVICE;
     }
 
-    if ((preA2dpOffloadFlag_ == A2DPHAL_) && (a2dpOffloadFlag_ == A2DPOFFLOAD_)) {
+    if ((preA2dpOffloadFlag_ == A2DP_HAL) && (a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
         HandleA2dpDeviceInOffload();
         return;
     }
-    if ((preA2dpOffloadFlag_ == NOBTDEVICE_) && (a2dpOffloadFlag_ == A2DPOFFLOAD_)) {
+    if ((preA2dpOffloadFlag_ == NO_BT_DEVICE) && (a2dpOffloadFlag_ == A2DPOFFLOAD_)) {
         HandleA2dpDeviceInOffload();
         return;
     }

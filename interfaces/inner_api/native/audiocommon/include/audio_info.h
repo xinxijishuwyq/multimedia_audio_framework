@@ -793,9 +793,9 @@ struct SessionInfo {
 };
 
 enum BluetoothOffloadState {
-    NOBTDEVICE_ = 0,
-    A2DPHAL_ = 1,
-    A2DPOFFLOAD_ = 2,
+    NO_BT_DEVICE = 0,
+    A2DP_HAL = 1,
+    A2DP_OFFLOAD = 2,
 };
 } // namespace AudioStandard
 } // namespace OHOS
