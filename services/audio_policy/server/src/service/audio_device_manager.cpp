@@ -120,7 +120,7 @@ void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDevice
     DeviceRole devRole)
 {
     auto isPresent = [&devDesc, &devRole] (const shared_ptr<AudioDeviceDescriptor> &desc) {
-        if (desc->deviceRole_ != devRole) {
+        if (desc->networkId_ != devDesc->networkId_ || desc->deviceRole_ != devRole) {
             return false;
         }
         if (devDesc->macAddress_ != "" && devDesc->macAddress_ == desc->macAddress_) {
@@ -286,14 +286,16 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     UpdateDeviceInfo(devDesc);
     AddConnectedDevices(devDesc);
 
-    HandleScoWithDefaultCategory(devDesc);
-    AddDefaultDevices(deviceDescriptor);
-    AddRemoteRenderDev(devDesc);
-    AddRemoteCaptureDev(devDesc);
-
-    AddCommunicationDevices(devDesc);
-    AddMediaDevices(devDesc);
-    AddCaptureDevices(devDesc);
+    if (devDesc->networkId_ != LOCAL_NETWORK_ID) {
+        AddRemoteRenderDev(devDesc);
+        AddRemoteCaptureDev(devDesc);
+    } else {
+        HandleScoWithDefaultCategory(devDesc);
+        AddDefaultDevices(deviceDescriptor);
+        AddCommunicationDevices(devDesc);
+        AddMediaDevices(devDesc);
+        AddCaptureDevices(devDesc);
+    }
 }
 
 void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
@@ -301,7 +303,8 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
 {
     auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-        return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_;
+        return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_ &&
+            devDesc.networkId_ == desc->networkId_;
     };
 
     auto itr = find_if(descArray.begin(), descArray.end(), isPresent);
