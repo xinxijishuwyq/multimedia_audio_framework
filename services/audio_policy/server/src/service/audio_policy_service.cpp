@@ -4215,13 +4215,16 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 
 int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer)
 {
+    AUDIO_INFO_LOG("Enter InitSharedVolume");
     CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
         ERR_OPERATION_FAILED, "Get shared memory failed!");
 
     // init volume map
     // todo device
     for (size_t i = 0; i < IPolicyProvider::GetVolumeVectorSize(); i++) {
-        float volFloat = GetSystemVolumeDb(g_volumeIndexVector[i].first);
+        int32_t currentVolumeLevel = audioPolicyManager_.GetSystemVolumeLevel(g_volumeIndexVector[i].first, false);
+        float volFloat =
+            GetSystemVolumeInDb(g_volumeIndexVector[i].first, currentVolumeLevel, currentActiveDevice_.deviceType_);
         volumeVector_[i].isMute = false;
         volumeVector_[i].volumeFloat = volFloat;
         volumeVector_[i].volumeInt = 0;
