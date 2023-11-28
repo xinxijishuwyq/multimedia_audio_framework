@@ -673,6 +673,10 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
             sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
             sink.ext.device.desc = (char *)"pin_out_bluetooth_sco";
             break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            sink.ext.device.type = PIN_OUT_BLUETOOTH_A2DP;
+            sink.ext.device.desc = (char *)"pin_out_bluetooth_a2dp";
+            break;
         default:
             ret = ERR_NOT_SUPPORTED;
             break;

@@ -20,7 +20,10 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
   module_out_path = "audio_framework/audio_framework"
   fuzz_config_file = "../audiopolicy_fuzzer"
 
-  include_dirs = [ "../../../services/audio_policy/server/include" ]
+  include_dirs = [
+    "../../../services/audio_policy/server/include",
+    "../../../../../communication/bluetooth/interfaces/inner_api/include",
+  ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
 

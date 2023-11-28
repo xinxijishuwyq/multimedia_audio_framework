@@ -51,6 +51,12 @@
 #include "audio_state_manager.h"
 #include "audio_spatialization_service.h"
 
+#ifdef BLUETOOTH_ENABLE
+#include "audio_server_death_recipient.h"
+#include "audio_bluetooth_manager.h"
+#include "bluetooth_device_manager.h"
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
@@ -185,6 +191,9 @@ public:
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
+    
+    void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
+        const std::string &deviceName, const AudioStreamInfo &streamInfo);
 
     void OnDeviceStatusUpdated(DStatusInfo statusInfo);
 
@@ -254,6 +263,8 @@ public:
     void OnSinkLatencyParsed(uint32_t latency);
 
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
+    
+    AudioStreamType GetStreamType(int32_t sessionId);
 
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
 
@@ -337,6 +348,22 @@ public:
     std::vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     void TriggerAvailableDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    
+    void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
+    
+    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsId, const std::vector<int32_t> &streamTypes,
+        bool isNewDeviceActive = false);
+    
+    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsId);
+    
+    void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
+        DeviceType deviceType = DEVICE_TYPE_NONE);
+    
+    void GetA2dpOffloadCodecAndSendToDsp();
+    
+    int32_t HandleA2dpDeviceInOffload();
+        
+    int32_t HandleA2dpDeviceOutOffload();
 
 private:
     AudioPolicyService()
@@ -422,6 +449,8 @@ private:
     int32_t HandleA2dpDevice(DeviceType deviceType);
 
     int32_t LoadA2dpModule(DeviceType deviceType);
+    
+    int32_t HandleA2dpOffloadDeviceSuspend(DeviceType deviceType);
 
     int32_t LoadUsbModule(string deviceInfo);
 
@@ -466,6 +495,11 @@ private:
  
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<sptr<AudioDeviceDescriptor>>& desc);
+    
+    void GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, std::vector<int32_t> &streamTypes,
+        bool doStop = false);
+    
+    void GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, bool doStop = false);
 
     void WriteDeviceChangedSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
@@ -574,6 +608,11 @@ private:
     int32_t maxRendererInstances_ = 128;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
+    
+    BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    BluetoothOffloadState preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    std::mutex switchA2dpOffloadMutex_;
+    bool sameDeviceSwitchFlag_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
