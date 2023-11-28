@@ -19,72 +19,90 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+// Initialize stream map with string vs AudioStreamType
+std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
+    // stream type for audio interrupt
+    {"STREAM_VOICE_CALL",
+        {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_VOICE_MESSAGE",
+        {AudioStreamType::STREAM_VOICE_MESSAGE, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_SYSTEM",
+        {AudioStreamType::STREAM_SYSTEM, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_RING",
+        {AudioStreamType::STREAM_RING, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_MUSIC",
+        {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_MOVIE",
+        {AudioStreamType::STREAM_MOVIE, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_GAME",
+        {AudioStreamType::STREAM_GAME, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_SPEECH",
+        {AudioStreamType::STREAM_SPEECH, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_NAVIGATION",
+        {AudioStreamType::STREAM_NAVIGATION, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_ALARM",
+        {AudioStreamType::STREAM_ALARM, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_NOTIFICATION",
+        {AudioStreamType::STREAM_NOTIFICATION, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_SYSTEM_ENFORCED",
+        {AudioStreamType::STREAM_SYSTEM_ENFORCED, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_DTMF",
+        {AudioStreamType::STREAM_DTMF, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_VOICE_ASSISTANT",
+        {AudioStreamType::STREAM_VOICE_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_ACCESSIBILITY",
+        {AudioStreamType::STREAM_ACCESSIBILITY, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_ULTRASONIC",
+        {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_INTERNAL_FORCE_STOP",
+        {AudioStreamType::STREAM_INTERNAL_FORCE_STOP, SourceType::SOURCE_TYPE_INVALID, true}},
+    // source type for audio interrupt
+    {"SOURCE_TYPE_MIC",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
+    {"SOURCE_TYPE_VOICE_RECOGNITION",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_RECOGNITION, false}},
+    {"SOURCE_TYPE_WAKEUP",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_WAKEUP, false}},
+    {"SOURCE_TYPE_VOICE_COMMUNICATION",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION, false}},
+    {"SOURCE_TYPE_ULTRASONIC",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_ULTRASONIC, false}},
+    {"SOURCE_TYPE_PLAYBACK_CAPTURE",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE, false}},
+    {"SOURCE_TYPE_VOICE_CALL",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_CALL, false}}
+};
+
+// Initialize action map with string vs InterruptActionType
+std::map<std::string, InterruptHint> AudioFocusParser::actionMap = {
+    {"DUCK", INTERRUPT_HINT_DUCK},
+    {"PAUSE", INTERRUPT_HINT_PAUSE},
+    {"REJECT", INTERRUPT_HINT_NONE},
+    {"STOP", INTERRUPT_HINT_STOP},
+    {"PLAY", INTERRUPT_HINT_NONE}
+};
+
+// Initialize target map with string vs InterruptActionTarget
+std::map<std::string, ActionTarget> AudioFocusParser::targetMap = {
+    {"incoming", INCOMING},
+    {"existing", CURRENT},
+    {"both", BOTH},
+};
+
+std::map<std::string, InterruptForceType> AudioFocusParser::forceMap = {
+    {"true", INTERRUPT_FORCE},
+    {"false", INTERRUPT_SHARE},
+};
+
 AudioFocusParser::AudioFocusParser()
 {
-    AUDIO_INFO_LOG("AudioFocusParser ctor");
-
-    // Initialize stream map with string vs AudioStreamType
-    audioFocusMap = {
-        // stream type for audio interrupt
-        {"STREAM_VOICE_CALL", {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_VOICE_MESSAGE", {AudioStreamType::STREAM_VOICE_MESSAGE, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_SYSTEM", {AudioStreamType::STREAM_SYSTEM, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_RING", {AudioStreamType::STREAM_RING, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_MUSIC", {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_MOVIE", {AudioStreamType::STREAM_MOVIE, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_GAME", {AudioStreamType::STREAM_GAME, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_SPEECH", {AudioStreamType::STREAM_SPEECH, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_NAVIGATION", {AudioStreamType::STREAM_NAVIGATION, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_ALARM", {AudioStreamType::STREAM_ALARM, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_NOTIFICATION", {AudioStreamType::STREAM_NOTIFICATION, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_SYSTEM_ENFORCED", {AudioStreamType::STREAM_SYSTEM_ENFORCED, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_DTMF", {AudioStreamType::STREAM_DTMF, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_VOICE_ASSISTANT", {AudioStreamType::STREAM_VOICE_ASSISTANT, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_ACCESSIBILITY", {AudioStreamType::STREAM_ACCESSIBILITY, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_ULTRASONIC", {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}},
-        {"STREAM_INTERNAL_FORCE_STOP", {AudioStreamType::STREAM_INTERNAL_FORCE_STOP, SourceType::SOURCE_TYPE_INVALID, true}},
-        // source type for audio interrupt
-        {"SOURCE_TYPE_MIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
-        {"SOURCE_TYPE_VOICE_RECOGNITION", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_RECOGNITION,
-            false}},
-        {"SOURCE_TYPE_WAKEUP", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_WAKEUP, false}},
-        {"SOURCE_TYPE_VOICE_COMMUNICATION", {AudioStreamType::STREAM_DEFAULT,
-            SourceType::SOURCE_TYPE_VOICE_COMMUNICATION, false}},
-        {"SOURCE_TYPE_ULTRASONIC", {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_ULTRASONIC, false}},
-        {"SOURCE_TYPE_PLAYBACK_CAPTURE", {AudioStreamType::STREAM_DEFAULT,
-            SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE, false}},
-        {"SOURCE_TYPE_VOICE_CALL", {AudioStreamType::STREAM_DEFAULT,
-            SourceType::SOURCE_TYPE_VOICE_CALL, false}}
-    };
-
-    // Initialize action map with string vs InterruptActionType
-    actionMap = {
-        {"DUCK", INTERRUPT_HINT_DUCK},
-        {"PAUSE", INTERRUPT_HINT_PAUSE},
-        {"REJECT", INTERRUPT_HINT_NONE},
-        {"STOP", INTERRUPT_HINT_STOP},
-        {"PLAY", INTERRUPT_HINT_NONE}
-    };
-
-    // Initialize target map with string vs InterruptActionTarget
-    targetMap = {
-        {"incoming", INCOMING},
-        {"existing", CURRENT},
-        {"both", BOTH},
-    };
-
-    forceMap = {
-        {"true", INTERRUPT_FORCE},
-        {"false", INTERRUPT_SHARE},
-    };
+    AUDIO_DEBUG_LOG("AudioFocusParser ctor");
 }
 
 AudioFocusParser::~AudioFocusParser()
 {
-    audioFocusMap.clear();
-    actionMap.clear();
-    targetMap.clear();
-    forceMap.clear();
+    AUDIO_DEBUG_LOG("AudioFocusParser dtor");
 }
 
 void AudioFocusParser::LoadDefaultConfig(std::map<std::pair<AudioFocusType, AudioFocusType>,

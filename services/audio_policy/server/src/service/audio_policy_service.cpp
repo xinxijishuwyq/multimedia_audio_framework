@@ -1114,7 +1114,7 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer([[maybe_unused]] InternalAudi
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
-    
+
     {
         std::lock_guard<std::mutex> lck(ioHandlesMutex_);
         IOHandles_[moduleInfo.name] = ioHandle;

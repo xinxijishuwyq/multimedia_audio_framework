@@ -589,7 +589,7 @@ private:
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
-    const std::vector<sptr<AudioDeviceDescriptor>>& descs);
+        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
     void AddEarpiece();
 
