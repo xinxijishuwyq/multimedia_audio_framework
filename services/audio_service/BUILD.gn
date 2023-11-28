@@ -21,6 +21,7 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 group("audio_service_packages") {
   deps = [
     ":audio_common",
+    ":audio_converter_config",
     ":audio_service",
     ":audio_service_init",
   ]
@@ -178,6 +179,14 @@ ohos_shared_library("audio_client") {
   innerapi_tags = [ "platformsdk" ]
 
   subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_converter_config") {
+  source = "client/config/audio_converter_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
   part_name = "audio_framework"
 }
 
