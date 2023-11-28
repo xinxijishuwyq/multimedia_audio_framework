@@ -73,6 +73,7 @@ std::unique_ptr<AudioRingCache> AudioRingCache::Create(size_t cacheSize)
 
 OptResult AudioRingCache::ReConfig(size_t cacheSize, bool copyRemained)
 {
+    AUDIO_INFO_LOG("ReConfig with cacheSize:%{public}zu", cacheSize);
     OptResult result;
     result.ret = OPERATION_SUCCESS;
     result.size = cacheSize;
@@ -88,13 +89,27 @@ OptResult AudioRingCache::ReConfig(size_t cacheSize, bool copyRemained)
             result.ret = OPERATION_FAILED;
             return result;
         }
+        AUDIO_INFO_LOG("ReConfig success cacheSize:%{public}zu", cacheSize);
+        return result;
     }
     // if need copyRemained, we should check the cacheSize >= remained size.
-    // if (copyRemained) {
-    //     OptResult result2 = GetReadableSize()
-    // } else {
-    //     // in plan:
-    // }
+    result = GetReadableSize();
+    if (result.ret != OPERATION_SUCCESS || result.size > cacheSize) {
+        AUDIO_ERR_LOG("ReConfig in copyRemained failed ret:%{public}d size :%{public}zu", result.ret, cacheSize);
+        return result;
+    }
+    std::unique_ptr<uint8_t[]> temp = std::make_unique<uint8_t[]>(result.size);
+    result = Dequeue({temp.get(), result.size});
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, result, "ReConfig dequeue failed ret:%{public}d", result.ret);
+    std::unique_lock<std::mutex> uniqueLock(cacheMutex_);
+    cacheTotalSize_ = cacheSize;
+    if (Init() != true) {
+        result.ret = OPERATION_FAILED;
+        return result;
+    }
+    uniqueLock.unlock(); // unlock as Enqueue will lock
+    result = Enqueue({temp.get(), result.size});
+
     return result;
 }
 
@@ -164,7 +179,7 @@ OptResult AudioRingCache::Enqueue(const BufferWrap &buffer)
     std::lock_guard<std::mutex> lock(cacheMutex_);
     OptResult result;
     // params check
-    if (buffer.dataPtr == nullptr || buffer.dataSize > MAX_CACHE_SIZE) {
+    if (buffer.dataPtr == nullptr || buffer.dataSize > MAX_CACHE_SIZE || buffer.dataSize == 0) {
         result.ret = INVALID_PARAMS;
         AUDIO_ERR_LOG("Enqueue failed: BufferWrap is null or size %{public}zu is too large", buffer.dataSize);
         return result;

@@ -32,22 +32,29 @@
 #include "audio_manager_base.h"
 #include "audio_log.h"
 #include "audio_ring_cache.h"
+#include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
+#include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "ipc_stream_listener_stub.h"
+#include "volume_ramp.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+static const size_t MAX_CLIENT_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
+static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
 }
-class RendererInClientInner : public RendererInClient , public IpcStreamListenerStub {
+class RendererStreamListener;
+class RendererInClientInner : public RendererInClient, public IStreamListener,
+    public std::enable_shared_from_this<RendererInClientInner> {
 public:
     RendererInClientInner(AudioStreamType eStreamType, int32_t appUid);
     ~RendererInClientInner();
 
-    // IpcStreamListenerStub
+    // IStreamListener
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 
     // IAudioStream
@@ -144,6 +151,7 @@ public:
     static void AudioServerDied(pid_t pid);
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
+    void UpdateTracker(const std::string &updateCase);
 
     int32_t DeinitIpcStream();
 
@@ -153,34 +161,107 @@ private:
 
     int32_t InitSharedBuffer();
     int32_t InitCacheBuffer(size_t targetSize);
+
+    int32_t DrainAudioCache();
+
+    int32_t WritCacheData();
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
     uint32_t sessionId_;
+    int32_t clientPid_ = -1;
+    int32_t clientUid_ = -1;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
-    AudioRendererInfo audioRendererInfo_;
+    AudioRendererInfo rendererInfo_;
     AudioCapturerInfo capturerInfo_; // not in use
-    int32_t clientPid_ = -1;
-    int32_t clientUid_ = -1;
 
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     bool streamTrackerRegistered_ = false;
 
+    bool needSetThreadPriority_ = true;
+    uint32_t writeThreadId_ = 0; // 0 is invalid
+
     AudioStreamParams streamParams_;
-    std::atomic<State> state_;
+
+    // for data process
+    bool isBlendSet_ = false;
+    AudioBlend audioBlend_;
+    VolumeRamp volumeRamp_;
+
+    // callbacks
+    std::mutex streamCbMutex_;
+    std::weak_ptr<AudioStreamCallback> streamCallback_;
 
     size_t cacheSizeInByte_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
+    int32_t bufferSizeInMsec_ = 20; // 20ms
+    std::string cachePath_;
+
+    // callback mode
+    AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
+
+    std::atomic<State> state_ = INVALID;
+    // using this lock when change status_
+    std::mutex statusMutex_;
+    // for status operation wait and notify
+    std::mutex callServerMutex_;
+    std::condition_variable callServerCV_;
+
+    Operation notifiedOperation_ = MAX_OPERATION_CODE;
+    int64_t notifiedResult_ = 0;
+
+    // write data
+    std::mutex writeDataMutex_;
+    std::condition_variable writeDataCV_;
+
+    float clientVolume_ = 1.0;
+
+    uint64_t clientWrittenBytes_ = 0;
+    uint32_t underrunCount_ = 0;
     // ipc stream related
+    sptr<RendererStreamListener> listener_ = nullptr;
     sptr<IpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
 
+    // buffer handle
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
+    std::mutex writeMutex_; // used for prevent multi thread call write
 };
+
+// RendererStreamListener --> sptr | RendererInClientInner --> shared_ptr
+class RendererStreamListener : public IpcStreamListenerStub {
+public:
+    RendererStreamListener(std::shared_ptr<RendererInClientInner> rendererInClinet);
+    virtual ~RendererStreamListener() = default;
+
+    // IpcStreamListenerStub
+    int32_t OnOperationHandled(Operation operation, int64_t result) override;
+private:
+    std::weak_ptr<RendererInClientInner> rendererInClinet_;
+};
+
+RendererStreamListener::RendererStreamListener(std::shared_ptr<RendererInClientInner> rendererInClinet)
+{
+    if (rendererInClinet == nullptr) {
+        AUDIO_ERR_LOG("RendererStreamListener() find null rendererInClinet");
+    }
+    rendererInClinet_ = rendererInClinet;
+}
+
+int32_t RendererStreamListener::OnOperationHandled(Operation operation, int64_t result)
+{
+    std::shared_ptr<RendererInClientInner> render = rendererInClinet_.lock();
+    if(render == nullptr) {
+        AUDIO_WARNING_LOG("OnOperationHandled() find rendererInClinet is null, operation:%{public}d result:"
+            "%{public}" PRId64".", operation, result);
+        return ERR_ILLEGAL_STATE;
+    }
+    return render->OnOperationHandled(operation, result);
+}
 
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -191,7 +272,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
     : eStreamType_(eStreamType), appUid_(appUid)
 {
     AUDIO_INFO_LOG("RendererInClientInner() with appUid:%{public}d", appUid_);
-    audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
+    audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
     state_ = NEW;
 }
 
@@ -202,8 +283,24 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
-    // in plan: read/write operation may print many log, use debug log later
+    // read/write operation may print many log, use debug.
+    if (operation == UPDATE_STREAM) {
+        AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
+        // notify write if blocked
+        writeDataCV_.notify_all();
+        return SUCCESS;
+    }
+    if (operation == BUFFER_UNDERRUN) {
+        underrunCount_++;
+        // in plan: do more to reduce underrun
+        writeDataCV_.notify_all();
+        return SUCCESS;
+    }
     AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
+    std::unique_lock<std::mutex> lock(callServerMutex_);
+    notifiedOperation_ = operation;
+    notifiedResult_ = result;
+    callServerCV_.notify_all();
     return SUCCESS;
 }
 
@@ -216,8 +313,8 @@ void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid)
 
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
-    audioRendererInfo_ = rendererInfo;
-    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d", audioRendererInfo_.rendererFlags);
+    rendererInfo_ = rendererInfo;
+    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d", rendererInfo_.rendererFlags);
 }
 
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -231,8 +328,15 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
     if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
         // GetSessionID(sessionId_); // in plan:make sure sessionId_ is valid.
         AUDIO_INFO_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
-        audioStreamTracker_->RegisterTracker(sessionId_, state_, audioRendererInfo_, capturerInfo_, proxyObj);
+        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
         streamTrackerRegistered_ = true;
+    }
+}
+void RendererInClientInner::UpdateTracker(const std::string &updateCase)
+{
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
+        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for %{public}s", updateCase.c_str());
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
 }
 
@@ -317,7 +421,9 @@ void RendererInClientInner::AudioServerDied(pid_t pid)
 // call this without lock, we should be able to call deinit in any case.
 int32_t RendererInClientInner::DeinitIpcStream()
 {
-    // in plan
+    // in plan:
+    ipcStream_ = nullptr;
+    ringCache_->ResetBuffer();
     return SUCCESS;
 }
 
@@ -335,9 +441,9 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
-    config.rendererInfo = audioRendererInfo_;
-    if (audioRendererInfo_.rendererFlags != 0) {
-        AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", audioRendererInfo_.rendererFlags);
+    config.rendererInfo = rendererInfo_;
+    if (rendererInfo_.rendererFlags != 0) {
+        AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
     }
 
     config.capturerInfo = {};
@@ -405,7 +511,9 @@ int32_t RendererInClientInner::InitIpcStream()
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitIpcStream failed when iface_cast.");
 
-    int32_t ret = ipcStream_->RegisterStreamListener(this->AsObject());
+    // in plan: old listener_ is destoried here, will server receive dieth notify?
+    listener_ = sptr<RendererStreamListener>::MakeSptr(shared_from_this());
+    int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterStreamListener failed:%{public}d", ret);
 
     ret = InitSharedBuffer();
@@ -441,56 +549,69 @@ bool RendererInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint6
 
 int32_t RendererInClientInner::GetAudioSessionID(uint32_t &sessionID)
 {
-    // in plan
-    return ERROR;
+    sessionID = sessionId_;
+    return SUCCESS;
 }
 
 State RendererInClientInner::GetState()
 {
-    // in plan
     return state_;
 }
 
 bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    // in plan
+    // in plan:
+
     return false;
 }
 
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 {
-    // in plan
-    return ERROR;
+    bufferSize = clientSpanSizeInByte_;
+    AUDIO_INFO_LOG("GetBufferSize size:%{public}zu", bufferSize);
+    return SUCCESS;
 }
 
 int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 {
-    // in plan
-    return ERROR;
+    if (sizePerFrameInByte_ != 0) {
+        frameCount = clientSpanSizeInByte_ / sizePerFrameInByte_;
+        AUDIO_INFO_LOG("GetFrameCount count:%{public}d", frameCount);
+        return SUCCESS;
+    }
+    AUDIO_ERR_LOG("GetFrameCount failed clientSpanSizeInByte_ is 0");
+    return ERR_ILLEGAL_STATE;
 }
 
 int32_t RendererInClientInner::GetLatency(uint64_t &latency)
 {
-    // in plan
+    // in plan:
+    latency = 150000000; // for debug
     return ERROR;
 }
 
 int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamType)
 {
     // in plan
+    AUDIO_ERR_LOG("SetAudioStreamType is not supported");
     return ERROR;
 }
 
 int32_t RendererInClientInner::SetVolume(float volume)
 {
-    // in plan
-    return ERROR;
+    Trace trace("RendererInClientInner::SetVolume:" + std::to_string(volume));
+    if (volume < 0.0 || volume > 1.0) {
+        AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
+    clientVolume_ = volume;
+    return SUCCESS;
 }
 
 float RendererInClientInner::GetVolume()
 {
-    // in plan
-    return 0.0;
+    Trace trace("RendererInClientInner::GetVolume:" + std::to_string(clientVolume_));
+    return clientVolume_;
 }
 
 int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
@@ -507,8 +628,23 @@ AudioRendererRate RendererInClientInner::GetRenderRate()
 
 int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
 {
-    // in plan
-    return ERROR;
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetStreamCallback failed. callback == nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    streamCallback_ = callback;
+
+    if (state_ != PREPARED) {
+        return SUCCESS;
+    }
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        lock.unlock();
+        streamCb->OnStateChange(PREPARED); // in plan: put is in eventrunner for async call
+    }
+    return SUCCESS;
 }
 
 
@@ -532,19 +668,19 @@ int32_t RendererInClientInner::SetRendererWriteCallback(const std::shared_ptr<Au
 
 int32_t RendererInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
 {
-    // in plan
+    AUDIO_ERR_LOG("SetCaptureMode is not supported");
     return ERROR;
 }
 
 AudioCaptureMode RendererInClientInner::GetCaptureMode()
 {
-    // in plan
+    AUDIO_ERR_LOG("GetCaptureMode is not supported");
     return CAPTURE_MODE_NORMAL; // not supported
 }
 
 int32_t RendererInClientInner::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
 {
-    // in plan
+    AUDIO_ERR_LOG("SetCapturerReadCallback is not supported");
     return ERROR;
 }
 
@@ -612,7 +748,7 @@ AudioEffectMode RendererInClientInner::GetAudioEffectMode()
 int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 {
     // in plan
-    return ERROR;
+    return SUCCESS;
 }
 
 int64_t RendererInClientInner::GetFramesWritten()
@@ -630,17 +766,20 @@ int64_t RendererInClientInner::GetFramesRead()
 
 void RendererInClientInner::SetInnerCapturerState(bool isInnerCapturer)
 {
-    // in plan
+    AUDIO_ERR_LOG("SetInnerCapturerState is not supported");
+    return;
 }
 
 void RendererInClientInner::SetWakeupCapturerState(bool isWakeupCapturer)
 {
-    // in plan
+    AUDIO_ERR_LOG("SetWakeupCapturerState is not supported");
+    return;
 }
 
 void RendererInClientInner::SetCapturerSource(int capturerSource)
 {
-    // in plan
+    AUDIO_ERR_LOG("SetCapturerSource is not supported");
+    return;
 }
 
 void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
@@ -651,51 +790,299 @@ void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 
 bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
 {
-    // in plan
-    return false;
+    Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
+        AUDIO_ERR_LOG("StartAudioStream  failed Illegal state:%{public}d", state_.load());
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Start();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("StartAudioStream call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == START_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("StartAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        // in plan
+        // start the callback-write thread
+    }
+    state_ = RUNNING;
+    statusLock.unlock();
+    // in plan: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    (void)cmdType;
+
+    AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("RUNNING");
+    return true;
 }
 
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    // in plan
-    return false;
+    Trace trace("RendererInClientInner::PauseAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("PauseAudioStream State is not RUNNING. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        // in plan
+        // stop the callback-write thread
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Pause();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("PauseAudioStream call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == PAUSE_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != PAUSE_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("PauseAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+
+    state_ = PAUSED;
+    statusLock.unlock();
+
+    // in plan: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    (void)cmdType;
+
+    AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("PAUSED");
+    return true;
 }
 
 bool RendererInClientInner::StopAudioStream()
 {
-    // in plan
-    return false;
+    Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
+    AUDIO_INFO_LOG("StopAudioStream begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if ((state_ != RUNNING) && (state_ != PAUSED)) {
+        AUDIO_ERR_LOG("StopAudioStream failed. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        // in plan
+        // stop the callback-write thread
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Stop();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("StopAudioStream call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == STOP_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != STOP_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("StopAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+
+    state_ = STOPPED;
+    statusLock.unlock();
+
+    // in plan: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+
+    AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("STOPPED");
+    return true;
 }
 
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
-    // in plan
+    Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
+    // lock_guard<mutex> lock(statusMutex_) // no lock, call release in any case, include blocked case.
     return false;
 }
 
 bool RendererInClientInner::FlushAudioStream()
 {
-    // in plan
-    return false;
+    Trace trace("RendererInClientInner::FlushAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if ((state_ != RUNNING) && (state_ != PAUSED) && (state_ != STOPPED)) {
+        AUDIO_ERR_LOG("FlushAudioStream failed. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Flush();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("FlushAudioStream call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == FLUSH_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("FlushAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+    AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
+    return true;
 }
 
-
+int32_t RendererInClientInner::DrainAudioCache()
+{
+    // in plan: send all data in ringCache_ to server even if GetReadableSize() < clientSpanSizeInByte_. GetReadableSize() should be 0
+    return SUCCESS;
+}
 
 bool RendererInClientInner::DrainAudioStream()
 {
-    // in plan
-    return false;
+    Trace trace("RendererInClientInner::DrainAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("DrainAudioStream failed. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(DrainAudioCache() == SUCCESS, false, "Drain cache failed");
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Drain();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("DrainAudioStream call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == DRAIN_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("DrainAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+    AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
+    return true;
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t buffer_size)
 {
-    // in plan
-    return ERROR;
+    Trace trace("RendererInClient::Write " + std::to_string(buffer_size));
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && buffer_size > 0 && buffer_size < MAX_CLIENT_WRITE_SIZE,
+        ERR_INVALID_PARAM, "Write with invalid params, size is %{public}zu", buffer_size);
+
+    std::lock_guard<std::mutex> lock(writeMutex_);
+
+    // if first call, call set thread priority. if thread tid change recall set thread priority
+    if (needSetThreadPriority_ || writeThreadId_ != gettid()) {
+        AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
+        writeThreadId_ = gettid();
+        needSetThreadPriority_ = false;
+    }
+
+    std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write: Illegal state:%{public}u", state_.load());
+    statusLock.unlock();
+
+    // hold lock
+    if (isBlendSet_) {
+        audioBlend_.Process(buffer, buffer_size);
+    }
+
+    size_t targetSize = buffer_size;
+    size_t offset = 0;
+    while (targetSize > sizePerFrameInByte_) {
+        // 1. write data into ring cache
+        OptResult result = ringCache_->GetWritableSize();
+        if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_ERR_LOG("RingCache write status invalid size is:%{public}u", result.size);
+            break;
+        }
+        size_t writableSize = result.size;
+        Trace::Count("RendererInClient::CacheBuffer->writableSize", writableSize);
+
+        size_t writeSize = std::min(writableSize, targetSize);
+        BufferWrap bufferWrap = {buffer + offset, writeSize};
+
+        if (writeSize > 0) {
+            result = ringCache_->Enqueue(bufferWrap);
+            if (result.ret != OPERATION_SUCCESS) {
+                // in plan: recall enqueue in some cases
+                AUDIO_ERR_LOG("RingCache Enqueue failed ret:%{public}d size:%{public}zu", result.ret, result.size);
+                break;
+            }
+            offset += writeSize;
+            targetSize -= writeSize;
+            clientWrittenBytes_ += writeSize;
+        }
+
+        // 2. copy data from cache to OHAudioBuffer
+        result = ringCache_->GetReadableSize();
+        if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_ERR_LOG("RingCache read status invalid size is:%{public}u", result.size);
+            break;
+        }
+        size_t readableSize = result.size;
+        Trace::Count("RendererInClient::CacheBuffer->readableSize", readableSize);
+
+        if (readableSize < clientSpanSizeInByte_) {
+            continue;
+        }
+        // if readable size is enough, we will call write data to server
+        int32_t ret = WritCacheData();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WritCacheData failed %{public}d", ret);
+    }
+
+    return buffer_size - targetSize;
+}
+
+int32_t RendererInClientInner::WritCacheData()
+{
+    int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
+    CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
+    if (sizeInFrame * sizePerFrameInByte_ < clientSpanSizeInByte_) {
+        // wait for server read some data
+        std::unique_lock<std::mutex> lock(writeDataMutex_);
+        std::cv_status stat = writeDataCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
+        CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
+    }
+    BufferDesc desc = {};
+    int32_t ret = clientBuffer_->GetWriteBuffer(clientBuffer_->GetCurWriteFrame(), desc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
+    OptResult result = ringCache_->Dequeue({desc.buffer, desc.bufLength});
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d",
+                             result.ret);
+    ipcStream_->UpdatePosition(); // notiify server update position
+    return SUCCESS;
 }
 
 int32_t RendererInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 {
-    // in plan
+    AUDIO_ERR_LOG("Read is not supported");
     return ERROR;
 }
 
@@ -731,52 +1118,62 @@ void RendererInClientInner::UnsetRendererPeriodPositionCallback()
 void RendererInClientInner::SetCapturerPositionCallback(int64_t markPosition, const std::shared_ptr<CapturerPositionCallback> &callback)
        
 {
-    // in plan
+    AUDIO_ERR_LOG("SetCapturerPositionCallback is not supported");
+    return;
 }
 
 void RendererInClientInner::UnsetCapturerPositionCallback()
 {
-    // in plan
+    AUDIO_ERR_LOG("SetCapturerPositionCallback is not supported");
+    return;
 }
 
 void RendererInClientInner::SetCapturerPeriodPositionCallback(int64_t markPosition,
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
-    // in plan
+    AUDIO_ERR_LOG("SetCapturerPositionCallback is not supported");
+    return;
 }
 
 void RendererInClientInner::UnsetCapturerPeriodPositionCallback()
 {
-    // in plan
+    AUDIO_ERR_LOG("SetCapturerPositionCallback is not supported");
+    return;
 }
 
 int32_t RendererInClientInner::SetRendererSamplingRate(uint32_t sampleRate)
 {
-    // in plan
+    AUDIO_ERR_LOG("SetRendererSamplingRate to %{publid}d is not supported", sampleRate);
     return ERROR;
 }
 
 uint32_t RendererInClientInner::GetRendererSamplingRate()
 {
-    // in plan
-    return 0;
+    return streamParams_.samplingRate;
 }
 
 int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
-    // in plan
-    return ERROR;
+    bufferSizeInMsec_ = bufferSizeInMsec;
+    AUDIO_INFO_LOG("SetBufferSizeInMsec to %{publid}d", bufferSizeInMsec_);
+    return SUCCESS;
 }
 
 void RendererInClientInner::SetApplicationCachePath(const std::string cachePath)
 {
-    // in plan
+    cachePath_ = cachePath;
+    AUDIO_INFO_LOG("SetApplicationCachePath to %{publid}s", cachePath_.c_str());
 }
 
 int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
-    // in plan
-    return ERROR;
+    if ((state_ != PREPARED) && (state_ != NEW)) {
+        AUDIO_ERR_LOG("SetChannelBlendMode in invalid status:%{public}d", state_.load());
+        return ERR_ILLEGAL_STATE;
+    }
+    isBlendSet_ = true;
+    audioBlend_.SetParams(blendMode, streamParams_.format, streamParams_.channels);
+    return SUCCESS;
 }
 
 int32_t RendererInClientInner::SetVolumeWithRamp(float volume, int32_t duration)

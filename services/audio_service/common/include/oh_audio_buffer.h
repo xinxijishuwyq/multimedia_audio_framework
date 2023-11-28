@@ -100,6 +100,14 @@ struct SpanInfo {
     int32_t volumeEnd;
 };
 
+// enum ResultCode : int32_t {
+//     INVALID_PARAMS = -1,
+//     RESULT_SUCCESS = 0,
+//     TIMEOUT = 1,
+//     UNDERRUN = 2,
+//     OVERFLOW = 3,
+// };
+
 class OHAudioBuffer {
 public:
     static const int INVALID_BUFFER_FD = -1;
@@ -150,6 +158,18 @@ public:
 
     uint8_t *GetDataBase();
     size_t GetDataSize();
+
+    // void SetIndexAutoUpdate(bool isAutoUpdate = false);
+
+    // Size_t GetWritableSize(); // Get the buffer size that can be written. 0 <= WritableSize <= cacheTotalSize_
+
+    // Size_t GetReadableSize(); // Get the buffer size that can be read. 0 <= ReadableSize <= cacheTotalSize_
+
+    // ResultCode NoBlockingEnqueue(const BufferDesc &bufferDesc, uint64_t &checkPos); // can fail
+    // ResultCode BlockingEnqueue(const BufferDesc &bufferDesc, uint64_t &checkPos, int64_t timeOut = 0); // data: bufferDesc --> OHAudioBuffer
+
+    // ResultCode NoBlockingDequeue(const BufferDesc &bufferDesc, uint64_t &checkPos); // can fail
+    // ResultCode BlockingDequeue(const BufferDesc &bufferDesc, uint64_t &checkPos, int64_t timeOut = 0); // data: OHAudioBuffer --> bufferDesc
 private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();
