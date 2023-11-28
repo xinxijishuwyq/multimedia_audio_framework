@@ -436,8 +436,8 @@ private:
     
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
 
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
     // externel function call
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
     void RegisterVolumeKeyEvents(const int32_t keyType);
     void RegisterVolumeKeyMuteEvents();
@@ -456,6 +456,9 @@ private:
     int32_t clientOnFocus_;
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
+#endif
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList_;
