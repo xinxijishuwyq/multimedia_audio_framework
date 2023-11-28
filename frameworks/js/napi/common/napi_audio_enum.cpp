@@ -857,5 +857,24 @@ bool NapiAudioEnum::IsLegalInputArgumentChannelBlendMode(int32_t blendMode)
     }
     return result;
 }
+
+bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
+{
+    bool result = false;
+    switch (type) {
+        case TYPE_INVALID:
+        case TYPE_MIC:
+        case TYPE_VOICE_RECOGNITION:
+        case TYPE_PLAYBACK_CAPTURE:
+        case TYPE_WAKEUP:
+        case TYPE_COMMUNICATION:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

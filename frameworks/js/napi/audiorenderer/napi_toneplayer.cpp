@@ -234,7 +234,9 @@ napi_value NapiTonePlayer::Load(napi_env env, napi_callback_info info)
     context->GetCbInfo(env, info, inputParser);
 
     auto executor = [context]() {
-        auto *napiTonePlayer = reinterpret_cast<NapiTonePlayer*>(context->native);
+        auto obj = reinterpret_cast<NapiTonePlayer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiTonePlayer = objectGuard.GetPtr();
         ToneType toneType = static_cast<ToneType>(context->toneType);
         CHECK_AND_RETURN_LOG(CheckTonePlayerStatus(napiTonePlayer, context),
             "context object state is error.");
@@ -261,7 +263,9 @@ napi_value NapiTonePlayer::Start(napi_env env, napi_callback_info info)
     context->GetCbInfo(env, info);
 
     auto executor = [context]() {
-        auto *napiTonePlayer = reinterpret_cast<NapiTonePlayer*>(context->native);
+        auto obj = reinterpret_cast<NapiTonePlayer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiTonePlayer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckTonePlayerStatus(napiTonePlayer, context),
             "context object state is error.");
         context->isTrue = napiTonePlayer->tonePlayer_->StartTone();
@@ -287,7 +291,9 @@ napi_value NapiTonePlayer::Stop(napi_env env, napi_callback_info info)
     context->GetCbInfo(env, info);
 
     auto executor = [context]() {
-        auto *napiTonePlayer = reinterpret_cast<NapiTonePlayer*>(context->native);
+        auto obj = reinterpret_cast<NapiTonePlayer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiTonePlayer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckTonePlayerStatus(napiTonePlayer, context),
             "context object state is error.");
         context->isTrue = napiTonePlayer->tonePlayer_->StopTone();
@@ -313,7 +319,9 @@ napi_value NapiTonePlayer::Release(napi_env env, napi_callback_info info)
     context->GetCbInfo(env, info);
 
     auto executor = [context]() {
-        auto *napiTonePlayer = reinterpret_cast<NapiTonePlayer*>(context->native);
+        auto obj = reinterpret_cast<NapiTonePlayer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiTonePlayer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckTonePlayerStatus(napiTonePlayer, context),
             "context object state is error.");
         context->isTrue = napiTonePlayer->tonePlayer_->Release();

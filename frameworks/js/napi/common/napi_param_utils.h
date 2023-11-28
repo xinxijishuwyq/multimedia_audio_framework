@@ -25,6 +25,7 @@
 #include "napi_base_context.h"
 #include "audio_log.h"
 #include "audio_info.h"
+#include "audio_capturer.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -98,6 +99,8 @@ public:
     static napi_status GetArrayBuffer(const napi_env &env, void* &data, size_t &length, napi_value in);
     static napi_status CreateArrayBuffer(const napi_env &env, const std::string &fieldStr, size_t bufferLen,
         uint8_t *bufferData, napi_value &result);
+    static napi_status CreateArrayBuffer(const napi_env &env, const size_t bufferLen,
+        const uint8_t *bufferData, napi_value &result);
 
     static napi_value GetUndefinedValue(napi_env env);
 
@@ -120,6 +123,21 @@ public:
         napi_value &result);
     static napi_status SetNativeAudioRendererDataInfo(const napi_env &env,
         const AudioRendererDataInfo &audioRendererDataInfo, napi_value &result);
+
+    /* NapiAudioCapturer Get&&Set object */
+    static napi_status GetCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in);
+    static napi_status SetCapturerInfo(const napi_env &env, const AudioCapturerInfo &capturerInfo, napi_value &result);
+    static napi_status GetCaptureFilterOptionsVector(const napi_env &env,
+        CaptureFilterOptions *filterOptions, napi_value in);
+    static napi_status GetPlaybackCaptureConfig(const napi_env &env,
+        AudioPlaybackCaptureConfig* captureConfig, napi_value in);
+    static napi_status GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in);
+    static napi_status SetAudioCapturerChangeInfoDescriptors(const napi_env &env,
+        const AudioCapturerChangeInfo &changeInfo, napi_value &result);
+    static napi_status SetMicrophoneDescriptor(const napi_env &env, const sptr<MicrophoneDescriptor> &micDesc,
+        napi_value &result);
+    static napi_status SetMicrophoneDescriptors(const napi_env &env,
+        const std::vector<sptr<MicrophoneDescriptor>> &micDescs, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS
