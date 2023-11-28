@@ -1566,6 +1566,18 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
     OnPreferredOutputDeviceUpdated(currentActiveDevice_);
 }
 
+void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
+{
+    AUDIO_INFO_LOG("fetch input device when no running stream");
+    unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
+    if (desc->deviceType_ == DEVICE_TYPE_NONE || desc->deviceType_ == currentActiveInputDevice_.deviceType_) {
+        return;
+    }
+    currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
+    AUDIO_INFO_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
+    OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
+}
+
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     bool isStreamStatusUpdated = false)
 {
@@ -1659,6 +1671,8 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
     }
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
+    } else if (needUpdateActiveDevice) {
+        FetchInputDeviceWhenNoRunningStream();
     }
 }
 
