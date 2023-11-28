@@ -607,9 +607,10 @@ private:
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
     
-    BluetoothOffloadState a2dpOffloadFlag_ = NO_BT_DEVICE;
-    BluetoothOffloadState preA2dpOffloadFlag_ = NO_BT_DEVICE;
+    BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    BluetoothOffloadState preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
     std::mutex switchA2dpOffloadMutex_;
+    bool sameDeviceSwitchFlag_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
