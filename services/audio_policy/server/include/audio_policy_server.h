@@ -26,6 +26,7 @@
 
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
+#include "power_state_callback_stub.h"
 #include "power_state_listener.h"
 
 #include "bundle_mgr_interface.h"
@@ -393,6 +394,23 @@ private:
 
     int32_t VerifyVoiceCallPermission();
 
+    class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
+    public:
+        AudioPolicyServerPowerStateCallback(AudioPolicyServer *policyServer);
+        void OnPowerStateChanged(PowerMgr::PowerState state) override;
+
+    private:
+        AudioPolicyServer *policyServer_;
+    };
+
+    void HandlePowerStateChanged(PowerMgr::PowerState state);
+
+    // offload session
+    int32_t SetOffloadStream(uint32_t sessionId);
+    int32_t ReleaseOffloadStream(uint32_t sessionId);
+    void InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
+    void CheckSubscribePowerStateChange();
+    
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
@@ -443,6 +461,7 @@ private:
     void RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
+    void SubscribePowerStateChangeEvents();
     void InitKVStore();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
@@ -452,6 +471,7 @@ private:
     void RegisterPowerStateListener();
     void UnRegisterPowerStateListener();
 
+    bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
     int32_t clientOnFocus_;
     int32_t volumeStep_;

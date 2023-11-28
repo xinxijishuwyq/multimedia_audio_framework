@@ -256,6 +256,46 @@ ohos_shared_library("audio_renderer_file_sink") {
   subsystem_name = "multimedia"
 }
 
+ohos_shared_library("offload_audio_renderer_sink") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  install_enable = true
+
+  sources = [ "offload/offload_audio_renderer_sink.cpp" ]
+
+  cflags = [ "-fPIC" ]
+  cflags += [ "-Wall" ]
+
+  cflags_cc = cflags
+
+  include_dirs = [
+    "common",
+    "../common/include",
+    "../../audioutils/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  deps = [ "../../audioutils:audio_utils" ]
+
+  external_deps = [
+    "drivers_interface_audio:audio_idl_headers",
+    "drivers_interface_audio:libaudio_proxy_1.0",
+    "hilog:libhilog",
+  ]
+
+  defines = []
+  if (audio_framework_feature_power_manager) {
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_shared_library("renderer_sink_adapter") {
   sanitize = {
     cfi = true
@@ -281,6 +321,7 @@ ohos_shared_library("renderer_sink_adapter") {
     "file",
     "bluetooth",
     "remote",
+    "offload",
     "../common/include",
     "../devicemanager/interface",
     "../../../../interfaces/inner_api/native/audiocommon/include",
@@ -291,6 +332,7 @@ ohos_shared_library("renderer_sink_adapter") {
     ":audio_renderer_sink",
     ":bluetooth_renderer_sink",
     ":fast_audio_renderer_sink",
+    ":offload_audio_renderer_sink",
     ":remote_audio_renderer_sink",
     ":remote_fast_audio_renderer_sink",
   ]
