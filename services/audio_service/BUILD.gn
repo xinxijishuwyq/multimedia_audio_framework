@@ -23,6 +23,7 @@ group("audio_service_packages") {
     ":audio_common",
     ":audio_service",
     ":audio_service_init",
+    ":audio_converter_config",
   ]
 }
 
@@ -178,6 +179,14 @@ ohos_shared_library("audio_client") {
   innerapi_tags = [ "platformsdk" ]
 
   subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_converter_config") {
+  source = "server/config/audio_converter_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
   part_name = "audio_framework"
 }
 
