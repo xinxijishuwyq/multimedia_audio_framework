@@ -215,8 +215,9 @@ static bool ClientLoadLibrary(const std::string &relativePath, std::unique_ptr<A
 
 LibLoader::~LibLoader()
 {
-    if (libEntry_ != nullptr && libEntry_->audioEffectLibHandle != nullptr)
+    if (libEntry_ != nullptr && libEntry_->audioEffectLibHandle != nullptr) {
         libEntry_->audioEffectLibHandle->releaseEffect(handle_);
+    }
 }
 
 void LibLoader::SetIOBufferConfig(bool isInput, uint8_t format, uint32_t channels, uint64_t channelLayout)
