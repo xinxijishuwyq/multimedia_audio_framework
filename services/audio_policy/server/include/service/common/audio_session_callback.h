@@ -31,7 +31,7 @@ public:
 
     virtual void OnPlaybackCapturerStop() = 0;
 
-    virtual void OnWakeupCapturerStop() = 0;
+    virtual void OnWakeupCapturerStop(uint32_t sessionID) = 0;
 
     virtual void OnDstatusUpdated(bool isConnected) = 0;
 };

@@ -29,7 +29,8 @@ namespace AudioStandard {
 struct SessionEvent {
     enum class Type {
         ADD,
-        REMOVE
+        REMOVE,
+        CLOSE_WAKEUP_SOURCE,
     };
 
     SessionEvent() = delete;
@@ -44,8 +45,10 @@ public:
     DISALLOW_COPY_AND_MOVE(SessionProcessor);
 
     SessionProcessor(std::function<void(const uint64_t)> processorSessionRemoved,
-        std::function<void(SessionEvent)> processorSessionAdded)
-        : processorSessionRemoved_(processorSessionRemoved), processorSessionAdded_(processorSessionAdded)
+        std::function<void(SessionEvent)> processorSessionAdded,
+        std::function<void(const uint64_t)> processorCloseWakeupSource)
+        : processorSessionRemoved_(processorSessionRemoved), processorSessionAdded_(processorSessionAdded),
+        processorCloseWakeupSource_(processorCloseWakeupSource)
     {
     }
 
@@ -100,6 +103,9 @@ private:
             case SessionEvent::Type::ADD :
                 processorSessionAdded_(event);
                 break;
+            case SessionEvent::Type::CLOSE_WAKEUP_SOURCE :
+                processorCloseWakeupSource_(event.sessionID);
+                break;
             default:
                 break;
         }
@@ -134,6 +140,7 @@ private:
     std::queue<SessionEvent> sessionEvents_;
     std::function<void(const uint64_t)> processorSessionRemoved_;
     std::function<void(SessionEvent)> processorSessionAdded_;
+    std::function<void(const uint64_t)> processorCloseWakeupSource_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

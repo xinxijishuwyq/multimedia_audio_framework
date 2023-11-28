@@ -1000,11 +1000,7 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         auto it = g_wakeupCapturerSourceOutputIndexs.find(idx);
         if (it != g_wakeupCapturerSourceOutputIndexs.end()) {
             g_wakeupCapturerSourceOutputIndexs.erase(it);
-
-            pa_threaded_mainloop_once_unlocked(thiz->mMainLoop,
-                []([[maybe_unused]] pa_threaded_mainloop *m, void *userdata) {
-                    g_audioServiceAdapterCallback->OnWakeupCapturerStop();
-                }, nullptr);
+            g_audioServiceAdapterCallback->OnWakeupCapturerStop(sessionID);
         }
     }
 }

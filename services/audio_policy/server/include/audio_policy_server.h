@@ -203,7 +203,9 @@ public:
 
     void OnPlaybackCapturerStop() override;
 
-    void OnWakeupCapturerStop() override;
+    void OnWakeupCapturerStop(uint32_t sessionID) override;
+
+    void ProcessorCloseWakeupSource(const uint64_t sessionID);
 
     void OnDstatusUpdated(bool isConnected) override;
 
@@ -478,7 +480,8 @@ private:
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1),
         std::bind(&AudioPolicyServer::ProcessSessionAdded,
-            this, std::placeholders::_1)};
+            this, std::placeholders::_1),
+        std::bind(&AudioPolicyServer::ProcessorCloseWakeupSource, this, std::placeholders::_1)};
 
     AudioSpatializationService& audioSpatializationService_;
 };

@@ -296,13 +296,13 @@ public:
         }
     }
 
-    void OnWakeupCapturerStop()
+    void OnWakeupCapturerStop(uint32_t sessionID)
     {
         AUDIO_INFO_LOG("PolicyCallbackImpl OnWakeupCapturerStop");
         if (audioAdapterManager_->sessionCallback_ == nullptr) {
             AUDIO_DEBUG_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
         } else {
-            audioAdapterManager_->sessionCallback_->OnWakeupCapturerStop();
+            audioAdapterManager_->sessionCallback_->OnWakeupCapturerStop(sessionID);
         }
     }
 

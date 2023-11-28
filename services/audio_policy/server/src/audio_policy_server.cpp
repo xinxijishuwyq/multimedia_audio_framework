@@ -1657,14 +1657,19 @@ void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
     audioPolicyService_.OnCapturerSessionAdded(sessionEvent.sessionID, sessionEvent.sessionInfo_);
 }
 
+void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
+{
+    audioPolicyService_.CloseWakeUpAudioCapturer();
+}
+
 void AudioPolicyServer::OnPlaybackCapturerStop()
 {
     audioPolicyService_.UnloadLoopback();
 }
 
-void AudioPolicyServer::OnWakeupCapturerStop()
+void AudioPolicyServer::OnWakeupCapturerStop(uint32_t sessionID)
 {
-    audioPolicyService_.CloseWakeUpAudioCapturer();
+    sessionProcessor_.Post({SessionEvent::Type::CLOSE_WAKEUP_SOURCE, sessionID});
 }
 
 void AudioPolicyServer::OnDstatusUpdated(bool isConnected)
