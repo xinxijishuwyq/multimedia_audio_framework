@@ -1689,18 +1689,8 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::HandleA2dpOffloadDevice(DeviceType deivceType)
-{
-    HandleActiveDevice(DEVICE_TYPE_SPEAKER);
-    UpdateActiveDeviceRoute(DEVICE_TYPE_BLUETOOTH_A2DP);
-    return SUCCESS;
-}
-
 int32_t AudioPolicyService::HandleA2dpOffloadDeviceSuspend(DeviceType deviceType)
 {
-    int32_t muteDuration = 10000000; //us
-    std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, PRIMARY_SPEAKER, deviceType);
-    switchThread.detach();
     UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER);
     HandleActiveDevice(deviceType);
     return SUCCESS;
