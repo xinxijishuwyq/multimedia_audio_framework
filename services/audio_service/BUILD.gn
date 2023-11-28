@@ -183,7 +183,7 @@ ohos_shared_library("audio_client") {
 }
 
 ohos_prebuilt_etc("audio_converter_config") {
-  source = "server/config/audio_converter_config.xml"
+  source = "client/config/audio_converter_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
