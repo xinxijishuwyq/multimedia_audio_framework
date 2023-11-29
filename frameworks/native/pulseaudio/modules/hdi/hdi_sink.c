@@ -2056,7 +2056,8 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         pthread_rwlock_unlock(&u->rwlockSleep);
 
-        if (nPrimary > 0 && u->primary.fdq) {
+        // rk need send 0 even if no input in sink after stop
+        if ((nPrimary > 0 && u->primary.fdq) || (nPrimary == 0 && nOffload == 0 && nHd == 0)) { // rk need
             pa_asyncmsgq_send(u->primary.fdq, NULL, 0, NULL, 0, NULL);
         }
         if (u->offload.used && nOffload > 0 && u->offload.fdq) {
