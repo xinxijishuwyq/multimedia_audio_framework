@@ -414,6 +414,8 @@ private:
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
+    void HandleIncomingState(AudioFocuState incomingState, InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &incomingInterrupt);
     void ProcessCurrentInterrupt(const AudioInterrupt &incomingInterrupt);
     void ResumeAudioFocusList();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry();
@@ -492,6 +494,7 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
 
+    std::mutex keyEventMutex_;
     std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;
     std::mutex amInterruptMutex_;
