@@ -41,6 +41,13 @@ enum EventType : int32_t {
     USER_UNSELECT = 1,
     USER_SELECT = 2,
 };
+
+enum ScoCategory : int32_t {
+    SCO_DEFAULT = -1,
+    SCO_CALLULAR = 0,
+    SCO_VIRTUAL = 1,
+    SCO_RECOGNITION = 2,
+};
 } // namespace Bluetooth
 } // namespace OHOS
 

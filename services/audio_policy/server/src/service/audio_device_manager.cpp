@@ -618,5 +618,14 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
     }
     return audioDeviceDescriptors;
 }
+
+void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isConnnected)
+{
+    for (auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->macAddress_ == macAddress) {
+            desc->isScoRealConnected_ = isConnnected;
+        }
+    }
+}
 }
 }

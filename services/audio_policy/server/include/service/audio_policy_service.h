@@ -374,6 +374,8 @@ public:
 
     int32_t HandleA2dpDeviceOutOffload();
 
+    void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

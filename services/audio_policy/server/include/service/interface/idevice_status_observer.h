@@ -35,6 +35,7 @@ public:
     virtual void OnServiceDisconnected(AudioServiceIndex serviceIndex) = 0;
     virtual void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) = 0;
     virtual void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) = 0;
+    virtual void OnScoStateChanged(const std::string &macAddress, bool isConnected) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
