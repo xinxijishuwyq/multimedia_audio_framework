@@ -14,6 +14,7 @@
 import("//build/ohos.gni")
 import("../../config.gni")
 import("../../ressche_part.gni")
+import("../../sensor.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -334,8 +335,11 @@ ohos_shared_library("audio_service") {
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "sensor:sensor_interface_native",
   ]
+
+  if (sensor_enable == true) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
 
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]

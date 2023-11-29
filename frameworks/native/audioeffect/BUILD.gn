@@ -14,6 +14,7 @@
 import("//build/ohos.gni")
 import("../../../audio_ohcore.gni")
 import("../../../config.gni")
+import("../../../sensor.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 
@@ -34,6 +35,10 @@ config("audio_effect_config") {
     "-Wall",
     "-Werror",
   ]
+
+  if (sensor_enable == true) {
+    cflags += [ "-DSENSOR_ENABLE" ]
+  }
 }
 
 ohos_shared_library("audio_effect") {
@@ -50,7 +55,10 @@ ohos_shared_library("audio_effect") {
   # include_dirs = audio_gateway_include_dirs
   # include_dirs += [ multimedia_audio_framework_pulse_audio ]
 
-  sources = [ "src/audio_effect_chain_manager.cpp" ]
+  sources = [
+    "src/audio_effect_chain_manager.cpp",
+    "src/audio_head_tracker.cpp",
+  ]
 
   external_deps = [
     "c_utils:utils",
@@ -58,8 +66,11 @@ ohos_shared_library("audio_effect") {
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hilog:libhilog",
     "ipc:ipc_single",
-    "sensor:sensor_interface_native",
   ]
+
+  if (sensor_enable == true) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
 
   version_script = "../../../audio_framework.versionscript"
 
