@@ -241,6 +241,32 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
     return SUCCESS;
 }
 
+void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamChangeInfo,
+    unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
+    rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
+    rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
+    rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    rendererChangeInfo->clientPid = streamChangeInfo.audioRendererChangeInfo.clientPid;
+    rendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
+    rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+    rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
+    rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
+}
+
+void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
+    unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo)
+{
+    capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
+    capturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
+    capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+    capturerChangeInfo->clientPid = streamChangeInfo.audioCapturerChangeInfo.clientPid;
+    capturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
+    capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
+    capturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
+    capturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
+}
+
 int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
@@ -270,18 +296,14 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             AUDIO_DEBUG_LOG("UpdateRendererStream: update client %{public}d session %{public}d",
                 audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId);
 
-            unique_ptr<AudioRendererChangeInfo> RendererChangeInfo = make_unique<AudioRendererChangeInfo>();
-            CHECK_AND_RETURN_RET_LOG(RendererChangeInfo != nullptr,
+            unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
+            CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "RendererChangeInfo Memory Allocation Failed");
-            RendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
-            RendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
-            RendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
-            RendererChangeInfo->clientPid = streamChangeInfo.audioRendererChangeInfo.clientPid;
-            RendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
-            RendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
-            RendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
-            RendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
-            *it = move(RendererChangeInfo);
+            SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
+            if (rendererChangeInfo->rendererState != RENDERER_RUNNING) {
+                rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;
+            }
+            *it = move(rendererChangeInfo);
 
             mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
                 audioRendererChangeInfos_);
@@ -328,19 +350,14 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                 streamChangeInfo.audioCapturerChangeInfo.clientUID,
                 streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
-            unique_ptr<AudioCapturerChangeInfo> CapturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
-            CHECK_AND_RETURN_RET_LOG(CapturerChangeInfo != nullptr,
+            unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_unique<AudioCapturerChangeInfo>();
+            CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "CapturerChangeInfo Memory Allocation Failed");
-            CapturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
-            CapturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
-            CapturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
-            CapturerChangeInfo->clientPid = streamChangeInfo.audioCapturerChangeInfo.clientPid;
-            CapturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
-
-            CapturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
-            CapturerChangeInfo->capturerInfo = streamChangeInfo.audioCapturerChangeInfo.capturerInfo;
-            CapturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
-            *it = move(CapturerChangeInfo);
+            SetCapturerStreamParam(streamChangeInfo, capturerChangeInfo);
+            if (streamChangeInfo.audioCapturerChangeInfo.capturerState != CAPTURER_RUNNING) {
+                capturerChangeInfo->inputDeviceInfo = (*it)->inputDeviceInfo;
+            }
+            *it = move(capturerChangeInfo);
 
             mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
                 audioCapturerChangeInfos_);
@@ -407,8 +424,7 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
     bool deviceInfoUpdated = false;
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
-        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
-            (*it)->outputDeviceInfo.deviceType != outputDeviceInfo.deviceType) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 clientUID, sessionId, (*it)->outputDeviceInfo.deviceType, outputDeviceInfo.deviceType);
             (*it)->outputDeviceInfo = outputDeviceInfo;
@@ -430,8 +446,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
-        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId &&
-            (*it)->inputDeviceInfo.deviceType != inputDeviceInfo.deviceType) {
+        if ((*it)->clientUID == clientUID && (*it)->sessionId == sessionId) {
             AUDIO_DEBUG_LOG("uid %{public}d sessionId %{public}d update device: old %{public}d, new %{public}d",
                 (*it)->clientUID, (*it)->sessionId, (*it)->inputDeviceInfo.deviceType, inputDeviceInfo.deviceType);
             (*it)->inputDeviceInfo = inputDeviceInfo;
