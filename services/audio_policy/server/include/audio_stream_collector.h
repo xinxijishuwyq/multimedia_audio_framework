@@ -44,7 +44,6 @@ public:
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo);
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
-    AudioStreamType GetStreamType(int32_t sessionId);
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
     int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
@@ -53,11 +52,16 @@ public:
     void RegisteredStreamListenerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
+    int32_t GetRunningStream();
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
+    int32_t SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack);
+    int32_t UnsetOffloadMode(int32_t streamId);
     float GetSingleStreamVolume(int32_t streamId);
     bool GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo);
     int32_t UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus);
+    AudioStreamType GetStreamType(int32_t sessionId);
+    int32_t GetUid(int32_t sessionId);
 private:
     AudioStreamEventDispatcher &mDispatcherService;
     std::mutex streamsInfoMutex_;

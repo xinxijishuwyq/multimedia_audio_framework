@@ -21,6 +21,7 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 group("audio_service_packages") {
   deps = [
     ":audio_common",
+    ":audio_converter_config",
     ":audio_service",
     ":audio_service_init",
   ]
@@ -174,10 +175,24 @@ ohos_shared_library("audio_client") {
     "samgr:samgr_proxy",
   ]
 
+  defines = []
+  if (audio_framework_feature_power_manager) {
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
 
   subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_converter_config") {
+  source = "client/config/audio_converter_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
   part_name = "audio_framework"
 }
 
@@ -210,6 +225,7 @@ config("audio_service_config") {
     "../../frameworks/native/hdiadapter/sink/remote",
     "../../frameworks/native/hdiadapter/sink/remote_fast",
     "../../frameworks/native/hdiadapter/sink/primary",
+    "../../frameworks/native/hdiadapter/sink/offload",
     "../../frameworks/native/hdiadapter/source/common",
     "../../frameworks/native/hdiadapter/source/fast",
     "../../frameworks/native/hdiadapter/source/primary",
@@ -298,6 +314,7 @@ ohos_shared_library("audio_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",

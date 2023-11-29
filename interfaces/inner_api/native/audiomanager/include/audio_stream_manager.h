@@ -81,6 +81,20 @@ public:
     virtual void GetLowPowerVolumeImpl(float &volume) = 0;
 
     /**
+     * Set Stream into a specified Offload state
+     *
+     * @param state power state.
+     * @param isAppBack app state.
+     */
+    virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) = 0;
+
+    /**
+     * Unset Stream out of Offload state
+     *
+     */
+    virtual void UnsetOffloadModeImpl() = 0;
+
+    /**
      * Get single stream was controlled by system application
      *
      * @param volume volume value.

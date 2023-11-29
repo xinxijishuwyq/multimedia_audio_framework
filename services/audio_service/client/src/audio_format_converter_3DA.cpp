@@ -159,12 +159,10 @@ int32_t AudioFormatConverter3DA::Process(const BufferDesc pcmBuffer, const Buffe
         AudioBuffer inBuffer = {
             .frameLength = AUDIO_VIVID_SAMPLES,
             .raw = pcmBuffer.buffer,
-            .metaDataLength = metaBuffer.bufLength,
             .metaData = metaBuffer.buffer};
         AudioBuffer outBuffer = {
             .frameLength = AUDIO_VIVID_SAMPLES,
             .raw = outPcmBuf_.get(),
-            .metaDataLength = metaBuffer.bufLength,
             .metaData = metaBuffer.buffer};
         ret = externalLoader_.ApplyAlgo(inBuffer, outBuffer);
     }
@@ -217,7 +215,9 @@ static bool ClientLoadLibrary(const std::string &relativePath, std::unique_ptr<A
 
 LibLoader::~LibLoader()
 {
-    libEntry_->audioEffectLibHandle->releaseEffect(handle_);
+    if (libEntry_ != nullptr && libEntry_->audioEffectLibHandle != nullptr) {
+        libEntry_->audioEffectLibHandle->releaseEffect(handle_);
+    }
 }
 
 void LibLoader::SetIOBufferConfig(bool isInput, uint8_t format, uint32_t channels, uint64_t channelLayout)

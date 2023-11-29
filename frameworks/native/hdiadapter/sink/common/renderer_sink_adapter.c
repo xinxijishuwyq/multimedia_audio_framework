@@ -32,12 +32,14 @@ const int32_t CLASS_TYPE_A2DP = 1;
 const int32_t CLASS_TYPE_FILE = 2;
 const int32_t CLASS_TYPE_REMOTE = 3;
 const int32_t CLASS_TYPE_USB = 4;
+const int32_t CLASS_TYPE_OFFLOAD = 5;
 
 const char *g_deviceClassPrimary = "primary";
 const char *g_deviceClassUsb = "usb";
 const char *g_deviceClassA2DP = "a2dp";
 const char *g_deviceClassFile = "file_io";
 const char *g_deviceClassRemote = "remote";
+const char *g_deviceClassOffload = "offload";
 
 int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter)
 {
@@ -74,6 +76,9 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     if (!strcmp(device, g_deviceClassRemote)) {
         adapter->deviceClass = CLASS_TYPE_REMOTE;
     }
+    if (!strcmp(device, g_deviceClassOffload)) {
+        adapter->deviceClass = CLASS_TYPE_OFFLOAD;
+    }
     adapter->RendererSinkInit = IAudioRendererSinkInit;
     adapter->RendererSinkDeInit = IAudioRendererSinkDeInit;
     adapter->RendererSinkStart = IAudioRendererSinkStart;
@@ -82,7 +87,16 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     adapter->RendererSinkResume = IAudioRendererSinkResume;
     adapter->RendererRenderFrame = IAudioRendererSinkRenderFrame;
     adapter->RendererSinkSetVolume = IAudioRendererSinkSetVolume;
+    adapter->RendererSinkGetVolume = IAudioRendererSinkGetVolume;
     adapter->RendererSinkGetLatency = IAudioRendererSinkGetLatency;
+    adapter->RendererRegCallback = IAudioRendererSinkRegCallback;
+    adapter->RendererSinkGetPresentationPosition = IAudioRendererSinkGetPresentationPosition;
+    adapter->RendererSinkFlush = IAudioRendererSinkFlush;
+    adapter->RendererSinkReset = IAudioRendererSinkReset;
+    adapter->RendererSinkSetBufferSize = IAudioRendererSinkSetBufferSize;
+    adapter->RendererSinkOffloadRunningLockInit = IAudioRendererSinkOffloadRunningLockInit;
+    adapter->RendererSinkOffloadRunningLockLock = IAudioRendererSinkOffloadRunningLockLock;
+    adapter->RendererSinkOffloadRunningLockUnlock = IAudioRendererSinkOffloadRunningLockUnlock;
 
     *sinkAdapter = adapter;
 
@@ -113,6 +127,8 @@ const char *GetDeviceClass(int32_t deviceClass)
         return g_deviceClassFile;
     } else if (deviceClass == CLASS_TYPE_REMOTE) {
         return g_deviceClassRemote;
+    } else if (deviceClass == CLASS_TYPE_OFFLOAD) {
+        return g_deviceClassOffload;
     } else {
         return "";
     }

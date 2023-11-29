@@ -44,6 +44,11 @@ public:
      */
     virtual int32_t SetVoiceVolume(float volume) = 0;
 
+    virtual int32_t OffloadSetVolume(float volume) = 0;
+    virtual int32_t OffloadDrain() = 0;
+    virtual int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
+    virtual int32_t OffloadSetBufferSize(uint32_t sizeMs) = 0;
+
     /**
      * Sets Audio modes.
      *
@@ -287,6 +292,10 @@ private:
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadDrain(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
+    int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -319,6 +328,10 @@ private:
         &AudioManagerStub::HandleSetWakeupSourceCallback,
         &AudioManagerStub::HandleSetCaptureSilentState,
         &AudioManagerStub::HandleUpdateSpatializationState,
+        &AudioManagerStub::HandleOffloadSetVolume,
+        &AudioManagerStub::HandleOffloadDrain,
+        &AudioManagerStub::HandleOffloadGetPresentationPosition,
+        &AudioManagerStub::HandleOffloadSetBufferSize,
     };
 };
 } // namespace AudioStandard

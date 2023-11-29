@@ -1106,6 +1106,36 @@ std::string AudioSystemManager::GetSelfBundleName()
     return bundleName;
 }
 
+int32_t AudioSystemManager::OffloadDrain()
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("OffloadDrain Audio service unavailable.");
+        return ERR_INVALID_PARAM;
+    }
+    return gasp->OffloadDrain();
+}
+
+int32_t AudioSystemManager::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("OffloadGetPresentationPosition Audio service unavailable.");
+        return ERR_INVALID_PARAM;
+    }
+    return gasp->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
+}
+
+int32_t AudioSystemManager::OffloadSetBufferSize(uint32_t sizeMs)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("OffloadSetBufferSize Audio service unavailable.");
+        return ERR_INVALID_PARAM;
+    }
+    return gasp->OffloadSetBufferSize(sizeMs);
+}
+
 void AudioSystemManager::RequestThreadPriority(uint32_t tid)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
