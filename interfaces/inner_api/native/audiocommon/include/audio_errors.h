@@ -125,6 +125,9 @@ const int32_t  ERR_PERMISSION_DENIED = BASE_AUDIO_ERR_OFFSET - 20;
 /** Memory alloc failed */
 const int32_t  ERR_MEMORY_ALLOC_FAILED = BASE_AUDIO_ERR_OFFSET - 21;
 
+/** microphone is disabled by EDM */
+const int32_t ERR_MICROPHONE_DISABLED_BY_EDM = BASE_AUDIO_ERR_OFFSET - 22;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard
