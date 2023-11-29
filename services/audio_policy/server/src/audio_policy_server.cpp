@@ -1603,9 +1603,7 @@ void AudioPolicyServer::NotifyStateChangedEvent(AudioFocuState oldState, AudioFo
 {
     AudioInterrupt audioInterrupt = iterActive->first;
     uint32_t sessionID = audioInterrupt.sessionID;
-    std::unique_lock<std::mutex> lock(interruptMutex_);
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[sessionID];
-    lock.unlock();
     if (policyListenerCb == nullptr) {
         AUDIO_WARNING_LOG("AudioPolicyServer: sessionID policyListenerCb is null");
         return;
