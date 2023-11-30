@@ -59,7 +59,7 @@ unordered_map<SourceType, string> AudioRouterCenter::capturerConfigMap_ = {
     {SOURCE_TYPE_WAKEUP, RECORD_CAPTURE_ROUTERS},
     {SOURCE_TYPE_VOICE_COMMUNICATION, CALL_CAPTURE_ROUTERS},
     {SOURCE_TYPE_ULTRASONIC, RECORD_CAPTURE_ROUTERS},
-    {SOURCE_TYPE_VOICE_MODEM_COMMUNICATION, CALL_CAPTURE_ROUTERS}
+    {SOURCE_TYPE_VIRTUAL_CAPTURE, CALL_CAPTURE_ROUTERS}
 };
 
 unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
