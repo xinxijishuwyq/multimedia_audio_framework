@@ -360,14 +360,16 @@ public:
 
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
+    void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
+    
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsId, const std::vector<int32_t> &streamTypes,
         bool isNewDeviceActive = false);
 
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsId);
-
+#ifdef BLUETOOTH_ENABLE
     void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
         DeviceType deviceType = DEVICE_TYPE_NONE);
-
+#endif
     void GetA2dpOffloadCodecAndSendToDsp();
 
     int32_t HandleA2dpDeviceInOffload();
