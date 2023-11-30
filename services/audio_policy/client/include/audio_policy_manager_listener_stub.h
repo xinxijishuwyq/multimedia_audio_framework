@@ -35,6 +35,8 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
+    void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
+    void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
     // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
@@ -46,6 +48,7 @@ private:
     void ReadAudioDeviceChangeData(MessageParcel &data, DeviceChangeAction &devChange);
     void ReadAudioFocusInfoChangeData(MessageParcel &data,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
+    void ReadAudioFocusData(MessageParcel &data, AudioInterrupt &audioFocusInfo);
 
     std::weak_ptr<AudioInterruptCallback> callback_;
     std::weak_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_;

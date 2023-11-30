@@ -56,6 +56,12 @@ public:
         LISTENER_CLIENT
     };
 
+    enum FocusCallbackCategory : int32_t {
+        NONE_CALLBACK_CATEGORY,
+        REQUEST_CALLBACK_CATEGORY,
+        ABANDON_CALLBACK_CATEGORY,
+    };
+
     const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
         STREAM_MUSIC,
         STREAM_VOICE_CALL,
@@ -423,7 +429,9 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
-    void OnAudioFocusInfoChange();
+    void OnAudioFocusInfoChange(int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
+    void OnAudioFocusRequested(const AudioInterrupt &audioInterrupt);
+    void OnAudioFocusAbandoned(const AudioInterrupt &audioInterrupt);
     void UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void ProcessInterrupt(const InterruptHint& hint);
     AudioScene GetHighestPriorityAudioSceneFromAudioFocusInfoList() const;

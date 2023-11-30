@@ -30,6 +30,8 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
+    void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
+    void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
 
 private:
