@@ -621,6 +621,8 @@ private:
 
     void FetchInputDeviceWhenNoRunningStream();
 
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
