@@ -284,7 +284,7 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
 void AudioPolicyService::SetOffloadVolume()
 {
     // set volume by the interface from hdi.
-    if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_SPEAKER) {
+    if (!CheckActiveOutputDeviceSupportOffload()) {
         return;
     }
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
@@ -370,14 +370,14 @@ float AudioPolicyService::GetLowPowerVolume(int32_t streamId) const
     return streamCollector_.GetLowPowerVolume(streamId);
 }
 
-int32_t AudioPolicyService::SetStreamOffloadMode(int32_t sessionID, int32_t state, bool isAppBack)
-{
-    return streamCollector_.SetOffloadMode(sessionID, state, isAppBack);
-}
 
-int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack)
+int32_t AudioPolicyService::SetOffloadMode()
 {
-    if (!GetAudioOffloadAvailableFromXml()) {
+    int32_t sessionID = *offloadSessionID_;
+    int32_t state = static_cast<int32_t>(currentPowerState_);
+    bool isAppBack = currentOffloadSessionIsBackground_;
+
+    if (!GetOffloadAvailableFromXml()) {
         AUDIO_INFO_LOG("Offload not available, skipped");
         return SUCCESS;
     }
@@ -385,35 +385,16 @@ int32_t AudioPolicyService::SetOffloadMode(int32_t sessionID, int32_t state, boo
     AUDIO_INFO_LOG("sessionId: %{public}d, PowerState: %{public}d, isAppBack: %{public}d",
         sessionID, state, isAppBack);
 
-    return SetStreamOffloadMode(sessionID, state, isAppBack);
-}
-
-
-int32_t AudioPolicyService::SetOffloadMode()
-{
-    return SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_),
-        currentOffloadSessionIsBackground_);
-}
-
-int32_t AudioPolicyService::UnsetOffloadMode()
-{
-    AUDIO_DEBUG_LOG("Doing unset offload mode!");
-    if (!offloadSessionID_.has_value()) {
-        return SUCCESS;
-    }
-
-    int32_t ret = streamCollector_.UnsetOffloadMode(*offloadSessionID_);
-    offloadSessionID_.reset();
-    return ret;
+    return streamCollector_.SetOffloadMode(sessionID, state, isAppBack);
 }
 
 int32_t AudioPolicyService::ResetOffloadMode()
 {
     AUDIO_DEBUG_LOG("Doing reset offload mode!");
 
-    if (GetActiveOutputDevice() != DEVICE_TYPE_SPEAKER) {
+    if (!CheckActiveOutputDeviceSupportOffload()) {
         AUDIO_DEBUG_LOG("Resetting offload not available on this output device! Release.");
-        ReleaseOffloadStream(*offloadSessionID_);
+        OffloadStreamReleaseCheck(*offloadSessionID_);
         return SUCCESS;
     }
 
@@ -422,37 +403,17 @@ int32_t AudioPolicyService::ResetOffloadMode()
         AUDIO_DEBUG_LOG("No running stream, wont restart");
         return SUCCESS;
     }
-    return SetOffloadStream(runningStreamId);
+    return OffloadStreamSetCheck(runningStreamId);
 }
 
-int32_t AudioPolicyService::PresetOffloadMode(DeviceType deviceType)
+int32_t AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
 {
-    AUDIO_DEBUG_LOG("Doing preset offload mode!");
-    if (deviceType != DEVICE_TYPE_SPEAKER) {
-        AUDIO_DEBUG_LOG("Presetting offload not available on this output device! Release.");
-        return SUCCESS;
-    }
-
-    int32_t runningStreamId = streamCollector_.GetRunningStream();
-    if (runningStreamId == -1) {
-        AUDIO_DEBUG_LOG("No running stream, wont restart");
-        return SUCCESS;
-    }
-    return SetOffloadStream(runningStreamId, deviceType);
-}
-
-int32_t AudioPolicyService::SetOffloadStream(uint32_t sessionId, DeviceType deviceType /* = DEVICE_TYPE_NONE */)
-{
-    if (!GetAudioOffloadAvailableFromXml()) {
+    if (!GetOffloadAvailableFromXml()) {
         AUDIO_INFO_LOG("Offload not available, skipped for set");
         return SUCCESS;
     }
 
-    if (deviceType == DEVICE_TYPE_NONE) {
-        deviceType = GetActiveOutputDevice();
-    }
-
-    if (deviceType != DEVICE_TYPE_SPEAKER) {
+    if (!CheckActiveOutputDeviceSupportOffload()) {
         AUDIO_INFO_LOG("Offload not available on current output device, skipped");
         return SUCCESS;
     }
@@ -499,9 +460,9 @@ int32_t AudioPolicyService::SetOffloadStream(uint32_t sessionId, DeviceType devi
     return true;
 }
 
-int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
+int32_t AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
 {
-    if (!GetAudioOffloadAvailableFromXml()) {
+    if (!GetOffloadAvailableFromXml()) {
         AUDIO_INFO_LOG("Offload not available, skipped for release");
         return SUCCESS;
     }
@@ -509,7 +470,9 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
     lock_guard<mutex> lock(offloadMutex_);
 
     if (((*offloadSessionID_) == sessionId) && offloadSessionID_.has_value()) {
-        UnsetOffloadMode();
+        AUDIO_DEBUG_LOG("Doing unset offload mode!");
+        streamCollector_.UnsetOffloadMode(*offloadSessionID_);
+        offloadSessionID_.reset();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
         if (offloadSessionID_.has_value()) {
@@ -523,10 +486,31 @@ int32_t AudioPolicyService::ReleaseOffloadStream(uint32_t sessionId)
     return SUCCESS;
 }
 
+bool AudioPolicyService::CheckActiveOutputDeviceSupportOffload()
+{
+    DeviceType dev = GetActiveOutputDevice();
+    return dev == DEVICE_TYPE_SPEAKER || (dev == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD);
+}
+
+void AudioPolicyService::SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo)
+{
+    if (moduleInfo.name == "Speaker") {
+        for (auto &portInfo : moduleInfo.ports) {
+            if ((portInfo.adapterName == "primary") && (portInfo.offloadEnable == "1")) {
+                isOffloadAvailable_ = true;
+            }
+        }
+    }
+}
+
+bool AudioPolicyService::GetOffloadAvailableFromXml() const
+{
+    return isOffloadAvailable_;
+}
 
 void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
 {
-    if (GetActiveOutputDevice() != DEVICE_TYPE_SPEAKER) {
+    if (!CheckActiveOutputDeviceSupportOffload()) {
         return;
     }
     if (currentPowerState_ == state) {
@@ -1849,7 +1833,6 @@ int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<Au
         int32_t muteDuration = 200000; // us
         std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
         switchThread.detach(); // add another sleep before switch local can avoid pop in some case
-        PresetOffloadMode(deviceDescriptor->deviceType_);
     }
 
     if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
@@ -3121,13 +3104,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
                 if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
                     result = SUCCESS;
                 }
-                if (moduleInfo.name == "Speaker") {
-                    for (auto &portInfo : moduleInfo.ports) {
-                        if ((portInfo.adapterName == "primary") && (portInfo.offloadEnable == "1")) {
-                            isOffloadAvailable_ = true;
-                        }
-                    }
-                }
+                SetOffloadAvailableFromXML(moduleInfo);
             }
         }
     }
@@ -4328,11 +4305,6 @@ uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
     return sinkLatencyInMsec_;
 }
 
-bool AudioPolicyService::GetAudioOffloadAvailableFromXml() const
-{
-    return isOffloadAvailable_;
-}
-
 void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("Current input device is %{public}d", currentActiveInputDevice_.deviceType_);
@@ -5179,6 +5151,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
     if (preA2dpOffloadFlag_ == a2dpOffloadFlag_) {
         return SUCCESS;
     }
+    ResetOffloadMode();
     GetA2dpOffloadCodecAndSendToDsp();
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSessionAndType(allSessions);
@@ -5206,6 +5179,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload()
     if (preA2dpOffloadFlag_ == a2dpOffloadFlag_) {
         return SUCCESS;
     }
+    ResetOffloadMode();
     GetA2dpOffloadCodecAndSendToDsp();
     std::vector<int32_t> allSessions;
     std::vector<int32_t> streamTypes;
