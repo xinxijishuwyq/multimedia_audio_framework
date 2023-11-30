@@ -416,7 +416,7 @@ private:
     int32_t ReleaseOffloadStream(uint32_t sessionId);
     void InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
     void CheckSubscribePowerStateChange();
-    
+
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);

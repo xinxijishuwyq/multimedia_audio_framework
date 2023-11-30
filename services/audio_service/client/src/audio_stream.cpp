@@ -358,6 +358,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
         eStreamType_, info.encoding);
+
     if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
         AUDIO_ERR_LOG("AudioStream: Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
@@ -571,7 +572,7 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
     }
 
     ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
-    
+
     size_t bytesWritten = 0;
     size_t totLen = 0;
     while (stream.bufferLen > 0) {
