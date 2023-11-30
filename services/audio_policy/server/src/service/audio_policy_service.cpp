@@ -1472,7 +1472,7 @@ DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = tru
     return priorityDevice;
 }
 
-void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
+void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 {
     AUDIO_INFO_LOG("UpdateActiveDeviceRoute Device type[%{public}d]", deviceType);
 
@@ -1481,6 +1481,10 @@ void UpdateActiveDeviceRoute(InternalDeviceType deviceType)
         return;
     }
     auto ret = SUCCESS;
+
+    if (deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
+        deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    }
 
     switch (deviceType) {
         case DEVICE_TYPE_BLUETOOTH_SCO:
@@ -2080,7 +2084,6 @@ int32_t AudioPolicyService::HandleArmUsbDevice(DeviceType deviceType)
         }
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
         AUDIO_INFO_LOG("port %{public}s, active device %{public}d", activePort.c_str(), DEVICE_TYPE_USB_ARM_HEADSET);
-        audioPolicyManager_.SuspendAudioDevice(activePort, true);
     } else if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
         std::string activePort = GetSinkPortName(DEVICE_TYPE_USB_ARM_HEADSET);
         audioPolicyManager_.SuspendAudioDevice(activePort, true);
@@ -2271,7 +2274,12 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     audioScene_ = audioScene;
 
-    int32_t result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
+    int32_t result = SUCCESS;
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
+        result = gsp->SetAudioScene(audioScene, DEVICE_TYPE_USB_ARM_HEADSET);
+    } else {
+        result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
+    }
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
 
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
