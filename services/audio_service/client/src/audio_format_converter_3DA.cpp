@@ -85,6 +85,11 @@ int32_t AudioFormatConverter3DA::Init(const AudioStreamParams info)
     encoding_ = info.encoding;
 
     bps_ = GetBps(info.format);
+    
+    if (bps_ < 0) {
+        AUDIO_ERR_LOG("converter: Unsupported sample format");
+        return INVALID_FORMAT;
+    }
 
     Library library;
     loadSuccess_ = false;
