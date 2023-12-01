@@ -111,8 +111,8 @@ void MultipleAudioCapturerUnitTest::TestUnitFunc(SourceType s1, SourceType s2, F
  */
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_001, TestSize.Level1)
 {
-    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_MIC, START_FAIL,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_MIC, START_NORMAL,
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -124,8 +124,8 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_001, TestSize.Leve
  */
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_002, TestSize.Level1)
 {
-    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_MIC, START_FAIL,
-        SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1);
+    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_MIC, START_NORMAL,
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -137,8 +137,8 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_002, TestSize.Leve
  */
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_004, TestSize.Level1)
 {
-    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL,
-        SOURCE_TYPE_MIC, START_FAIL);
+    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL,
+        SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -150,8 +150,8 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_004, TestSize.Leve
  */
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_005, TestSize.Level1)
 {
-    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL,
-        SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1);
+    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL,
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -163,8 +163,8 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_005, TestSize.Leve
  */
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_007, TestSize.Level1)
 {
-    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1,
-        SOURCE_TYPE_MIC, START_FAIL);
+    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL,
+        SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -176,8 +176,8 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_007, TestSize.Leve
  */
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_008, TestSize.Level1)
 {
-    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+    MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL,
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -190,7 +190,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_008, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_013, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -203,7 +203,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_013, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_014, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL, SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -216,7 +216,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_014, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_016, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_MIC, START_FAIL, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -229,7 +229,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_016, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_017, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_MIC, START_FAIL, SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -242,7 +242,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_017, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_019, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -255,7 +255,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_019, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_020, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -268,7 +268,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_020, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_025, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_VOICE_COMMUNICATION, START_FAIL, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -281,7 +281,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_025, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_026, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_VOICE_COMMUNICATION, START_FAIL, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -294,7 +294,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_026, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_028, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_MIC, START_FAIL, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -307,7 +307,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_028, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_029, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_MIC, START_FAIL, SOURCE_TYPE_VOICE_COMMUNICATION, START_FAIL);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -320,7 +320,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_029, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_031, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -333,7 +333,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_031, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_032, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL, SOURCE_TYPE_VOICE_COMMUNICATION, START_FAIL);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -346,7 +346,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_032, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_049, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC,
-        SOURCE_TYPE_MIC, START_FAIL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -359,7 +359,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_049, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_050, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -372,7 +372,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_050, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_051, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC,
-        SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -385,7 +385,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_051, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_053, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -398,7 +398,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_053, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_054, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -411,7 +411,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_054, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_055, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_MIC,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -424,7 +424,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_055, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_057, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -437,7 +437,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_057, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_058, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_MIC, START_FAIL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -450,7 +450,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_058, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_059, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -463,7 +463,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_059, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_061, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -476,7 +476,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_061, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_062, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -489,7 +489,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_062, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_063, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_RECOGNITION,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP1);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -502,7 +502,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_063, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_065, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_VOICE_COMMUNICATION, START_FAIL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -515,7 +515,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_065, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_066, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_MIC, START_FAIL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -528,7 +528,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_066, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_067, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL);
 }
 
 /**
@@ -541,7 +541,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_067, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_069, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -554,7 +554,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_069, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_070, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -567,7 +567,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_070, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_071, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_VOICE_COMMUNICATION,
-        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_FAIL);
+        SOURCE_TYPE_PLAYBACK_CAPTURE, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -619,7 +619,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_083, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_085, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_PLAYBACK_CAPTURE,
-        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
@@ -632,7 +632,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_085, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_086, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_PLAYBACK_CAPTURE,
-        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP2);
+        SOURCE_TYPE_MIC, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -658,7 +658,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_088, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_089, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_PLAYBACK_CAPTURE,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -671,7 +671,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_089, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_090, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_PLAYBACK_CAPTURE,
-        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, STOP_CAP2);
+        SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL, SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL);
 }
 
 /**
@@ -697,7 +697,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_092, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_093, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_PLAYBACK_CAPTURE,
-        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_MIC, START_FAIL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_MIC, START_NORMAL);
 }
 
 /**
@@ -710,7 +710,7 @@ HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_093, TestSize.Leve
 HWTEST(MultipleAudioCapturerUnitTest, Multiple_Audio_Capturer_094, TestSize.Level1)
 {
     MultipleAudioCapturerUnitTest::TestUnitFunc(SOURCE_TYPE_PLAYBACK_CAPTURE,
-        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_FAIL);
+        SOURCE_TYPE_VOICE_COMMUNICATION, START_NORMAL, SOURCE_TYPE_VOICE_RECOGNITION, START_NORMAL);
 }
 
 /**
