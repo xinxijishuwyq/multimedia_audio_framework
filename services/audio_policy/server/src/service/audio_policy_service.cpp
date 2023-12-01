@@ -1559,7 +1559,10 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
 {
     AUDIO_INFO_LOG("fetch output device when no running stream");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(STREAM_USAGE_MEDIA, -1);
-    if (desc->deviceType_ == DEVICE_TYPE_NONE || desc->deviceType_ == currentActiveDevice_.deviceType_) {
+    if (desc->deviceType_ == DEVICE_TYPE_NONE ||
+        (desc->deviceType_ == currentActiveDevice_.deviceType_ &&
+        desc->macAddress_ == currentActiveDevice_.macAddress_)) {
+        AUDIO_INFO_LOG("output device is not change");
         return;
     }
     if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(desc->deviceType_)) {
@@ -1574,12 +1577,28 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 {
     AUDIO_INFO_LOG("fetch input device when no running stream");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
-    if (desc->deviceType_ == DEVICE_TYPE_NONE || desc->deviceType_ == currentActiveInputDevice_.deviceType_) {
+    if (desc->deviceType_ == DEVICE_TYPE_NONE ||
+        (desc->deviceType_ == currentActiveDevice_.deviceType_ &&
+        desc->macAddress_ == currentActiveDevice_.macAddress_)) {
+        AUDIO_INFO_LOG("input device is not change");
         return;
     }
     currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
     AUDIO_INFO_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
     OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
+}
+
+int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
+    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated)
+{
+    int32_t ret = SwitchActiveA2dpDevice(new AudioDeviceDescriptor(*desc));
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
+        desc->exceptionFlag_ = true;
+        FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
@@ -1604,13 +1623,8 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             continue;
         }
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            int32_t ret = SwitchActiveA2dpDevice(new AudioDeviceDescriptor(*desc));
-            if (ret != SUCCESS) {
-                AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
-                desc->exceptionFlag_ = true;
-                FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
-                return;
-            }
+            int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos, isStreamStatusUpdated);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] fail, return", desc->macAddress_.c_str());
             OffloadStartPlayingIfOffloadMode(rendererChangeInfo->sessionId);
         }
         if (needUpdateActiveDevice) {
@@ -3697,6 +3711,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
             rendererChangeInfos.push_back(
                 make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
             FetchOutputDevice(rendererChangeInfos, true);
+            streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = rendererChangeInfos[0]->outputDeviceInfo;
         }
     } else if (mode == AUDIO_MODE_RECORD) {
         if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RUNNING) {
@@ -3704,6 +3719,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
             capturerChangeInfos.push_back(
                 make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
             FetchInputDevice(capturerChangeInfos, true);
+            streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = capturerChangeInfos[0]->inputDeviceInfo;
         }
         std::lock_guard<std::mutex> lock(microphonesMutex_);
         if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {

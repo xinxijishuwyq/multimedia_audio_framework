@@ -625,6 +625,9 @@ private:
 
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
 
+    int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
