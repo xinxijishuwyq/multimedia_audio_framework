@@ -54,7 +54,7 @@ namespace {
     constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
     constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
     constexpr uint32_t PLAYBACK_DURATION = 2;
-    constexpr sizt_t MAX_RENDERER_INSTANCES = 16;
+    constexpr size_t MAX_RENDERER_INSTANCES = 16;
 
     constexpr size_t AVS3METADATA_SIZE = 19824;
 
