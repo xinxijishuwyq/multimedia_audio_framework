@@ -115,16 +115,12 @@ void MediaBluetoothDeviceManager::SetMediaStack(const BluetoothRemoteDevice &dev
 void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice &device)
 {
     if (IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_INFO_LOG("The device is already connected, ignore connect action.");
         return;
     }
     int cod = DEFAULT_COD;
     int majorClass = DEFAULT_MAJOR_CLASS;
     int majorMinorClass = DEFAULT_MAJOR_MINOR_CLASS;
-    if (device.GetDeviceProductType(cod, majorClass, majorMinorClass) != SUCCESS) {
-        AUDIO_ERR_LOG("HandleConnectDevice failed due to the product type fails to be obtained.");
-        return;
-    }
+    device.GetDeviceProductType(cod, majorClass, majorMinorClass);
     DeviceCategory bluetoothCategory = CATEGORY_DEFAULT;
     auto pos = bluetoothDeviceCategoryMap_.find(std::make_pair(majorClass, majorMinorClass));
     if (pos != bluetoothDeviceCategoryMap_.end()) {
@@ -158,6 +154,8 @@ void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevic
             NotifyToUpdateAudioDevice(device, bluetoothCategory, DeviceStatus::ADD);
             break;
         default:
+            AddDeviceInConfigVector(device, commonDevices_);
+            NotifyToUpdateAudioDevice(device, BT_SOUNDBOX, DeviceStatus::ADD);
             break;
     }
 }
