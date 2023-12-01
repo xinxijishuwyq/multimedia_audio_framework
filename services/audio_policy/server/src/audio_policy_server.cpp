@@ -73,6 +73,7 @@ constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
+constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -442,43 +443,34 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
 
 void AudioPolicyServer::CheckSubscribePowerStateChange()
 {
-    if (!powerStateCallbackRegister_) {
-        SubscribePowerStateChangeEvents();
+    if (powerStateCallbackRegister_) {
+        return;
     }
 
-    if (!powerStateCallbackRegister_) {
-        AUDIO_ERR_LOG("PowerState CallBack Register Failed");
-    } else {
+    SubscribePowerStateChangeEvents();
+
+    if (powerStateCallbackRegister_) {
         AUDIO_DEBUG_LOG("PowerState CallBack Register Success");
+    } else {
+        AUDIO_ERR_LOG("PowerState CallBack Register Failed");
     }
 }
 
-void AudioPolicyServer::HandlePowerStateChanged(PowerMgr::PowerState state)
-{
-    audioPolicyService_.HandlePowerStateChanged(state);
-}
-
-int32_t AudioPolicyServer::SetOffloadStream(uint32_t sessionId)
+void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
+    int64_t deactivateSessionId)
 {
     CheckSubscribePowerStateChange();
-    return audioPolicyService_.SetOffloadStream(sessionId);
-}
-
-int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
-{
-    return audioPolicyService_.ReleaseOffloadStream(sessionId);
-}
-
-void AudioPolicyServer::InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType,
-    uint32_t incomingSessionId)
-{
-    ReleaseOffloadStream(activeSessionId);
-    if ((incomingStreamType == AudioStreamType::STREAM_MUSIC) ||
-        (incomingStreamType == AudioStreamType::STREAM_SPEECH)) {
-        SetOffloadStream(incomingSessionId);
-    } else {
-        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", incomingSessionId,
-            incomingStreamType);
+    if (deactivateSessionId != OFFLOAD_NO_SESSION_ID) {
+        audioPolicyService_.OffloadStreamReleaseCheck(deactivateSessionId);
+    }
+    if (activateSessionId != OFFLOAD_NO_SESSION_ID) {
+        if (activateStreamType == AudioStreamType::STREAM_MUSIC ||
+            activateStreamType == AudioStreamType::STREAM_SPEECH) {
+            audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
+        } else {
+            AUDIO_DEBUG_LOG("session:%{public}d not get offload stream, type is %{public}d",
+                (int32_t)activateSessionId, (int32_t)activateStreamType);
+        }
     }
 }
 
@@ -488,7 +480,7 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
-    policyServer_->HandlePowerStateChanged(state);
+    policyServer_->audioPolicyService_.HandlePowerStateChanged(state);
 }
 
 void AudioPolicyServer::InitKVStore()
@@ -1404,7 +1396,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         if (!iterActiveErased) {
             ++iterActive;
         }
-        InterruptOffload(activeSessionID, incomingInterrupt.audioFocusType.streamType, incomingInterrupt.sessionID);
+        OffloadStreamCheck(incomingInterrupt.sessionID, incomingInterrupt.audioFocusType.streamType, activeSessionID);
     }
 }
 
@@ -1495,12 +1487,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         return SUCCESS;
     }
 
-    if ((streamType == AudioStreamType::STREAM_MUSIC) || (streamType == AudioStreamType::STREAM_SPEECH)) {
-        SetOffloadStream(audioInterrupt.sessionID);
-    } else {
-        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", audioInterrupt.sessionID,
-            streamType);
-    }
+    OffloadStreamCheck(audioInterrupt.sessionID, streamType, OFFLOAD_NO_SESSION_ID);
     
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
@@ -1669,7 +1656,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
 
-    ReleaseOffloadStream(audioInterrupt.sessionID);
+    OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, audioInterrupt.sessionID);
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;

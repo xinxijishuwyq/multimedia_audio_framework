@@ -410,12 +410,9 @@ private:
         AudioPolicyServer *policyServer_;
     };
 
-    void HandlePowerStateChanged(PowerMgr::PowerState state);
-
     // offload session
-    int32_t SetOffloadStream(uint32_t sessionId);
-    int32_t ReleaseOffloadStream(uint32_t sessionId);
-    void InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
+    void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
+        int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
 
     // for audio interrupt

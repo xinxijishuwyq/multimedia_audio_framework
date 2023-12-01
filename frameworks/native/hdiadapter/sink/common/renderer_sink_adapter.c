@@ -61,24 +61,13 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
         return ERROR;
     }
     // fill deviceClass for hdi_sink.c
-    if (!strcmp(device, g_deviceClassPrimary)) {
-        adapter->deviceClass = CLASS_TYPE_PRIMARY;
-    }
-    if (!strcmp(device, g_deviceClassUsb)) {
-        adapter->deviceClass = CLASS_TYPE_USB;
-    }
-    if (!strcmp(device, g_deviceClassA2DP)) {
-        adapter->deviceClass = CLASS_TYPE_A2DP;
-    }
-    if (!strcmp(device, g_deviceClassFile)) {
-        adapter->deviceClass = CLASS_TYPE_FILE;
-    }
-    if (!strcmp(device, g_deviceClassRemote)) {
-        adapter->deviceClass = CLASS_TYPE_REMOTE;
-    }
-    if (!strcmp(device, g_deviceClassOffload)) {
-        adapter->deviceClass = CLASS_TYPE_OFFLOAD;
-    }
+    adapter->deviceClass = !strcmp(device, g_deviceClassPrimary) ? CLASS_TYPE_PRIMARY : adapter->deviceClass;
+    adapter->deviceClass = !strcmp(device, g_deviceClassUsb) ? CLASS_TYPE_USB : adapter->deviceClass;
+    adapter->deviceClass = !strcmp(device, g_deviceClassA2DP) ? CLASS_TYPE_A2DP : adapter->deviceClass;
+    adapter->deviceClass = !strcmp(device, g_deviceClassFile) ? CLASS_TYPE_FILE : adapter->deviceClass;
+    adapter->deviceClass = !strcmp(device, g_deviceClassRemote) ? CLASS_TYPE_REMOTE : adapter->deviceClass;
+    adapter->deviceClass = !strcmp(device, g_deviceClassOffload) ? CLASS_TYPE_OFFLOAD : adapter->deviceClass;
+
     adapter->RendererSinkInit = IAudioRendererSinkInit;
     adapter->RendererSinkDeInit = IAudioRendererSinkDeInit;
     adapter->RendererSinkStart = IAudioRendererSinkStart;

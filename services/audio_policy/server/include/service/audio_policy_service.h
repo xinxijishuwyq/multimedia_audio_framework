@@ -90,10 +90,6 @@ public:
 
     float GetLowPowerVolume(int32_t streamId) const;
 
-    int32_t SetOffloadStream(uint32_t sessionId, DeviceType devicesType = DEVICE_TYPE_NONE);
-
-    int32_t ReleaseOffloadStream(uint32_t sessionId);
-
     void HandlePowerStateChanged(PowerMgr::PowerState state);
 
     float GetSingleStreamVolume(int32_t streamId) const;
@@ -358,6 +354,10 @@ public:
 
     void TriggerAvailableDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
+    void OffloadStreamSetCheck(uint32_t sessionId);
+
+    void OffloadStreamReleaseCheck(uint32_t sessionId);
+
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
     void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
@@ -597,19 +597,16 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
-    int32_t SetStreamOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
+    void SetOffloadMode();
 
-    int32_t SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
+    void ResetOffloadMode();
 
-    int32_t SetOffloadMode();
+    bool GetOffloadAvailableFromXml() const;
 
-    int32_t UnsetOffloadMode();
+    void SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo);
 
-    int32_t ResetOffloadMode();
+    bool CheckActiveOutputDeviceSupportOffload();
 
-    int32_t PresetOffloadMode(DeviceType deviceType);
-
-    bool GetAudioOffloadAvailableFromXml() const;
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
