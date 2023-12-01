@@ -1269,10 +1269,9 @@ int32_t AudioStream::InitFromParams(AudioStreamParams &info)
                 converter_->Init(info) != SUCCESS ||
                 !converter_->AllocateMem()) {
                 AUDIO_ERR_LOG("AudioStream: converter construct error");
-                return ERROR;
-            } else {
-                converter_->ConverterChannels(info.channels, info.channelLayout);
+                return ERR_NOT_SUPPORTED;
             }
+            converter_->ConverterChannels(info.channels, info.channelLayout);
         }
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("AudioStream: Initialize recording");
