@@ -72,6 +72,7 @@ constexpr uid_t UID_MEDIA_SA = 1013;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
+constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -96,7 +97,8 @@ const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_AUDIO,
-    UID_FOUNDATION_SA
+    UID_FOUNDATION_SA,
+    UID_DISTRIBUTED_CALL_SA
 };
 
 const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
