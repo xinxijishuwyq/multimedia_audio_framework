@@ -766,14 +766,17 @@ int32_t AudioStreamCollector::UnsetOffloadMode(int32_t streamId)
 
 float AudioStreamCollector::GetSingleStreamVolume(int32_t streamId)
 {
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    float ret = 1.0; // invalue volume
-    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
-        ret, "GetSingleStreamVolume streamId invalid.");
+    std::shared_ptr<AudioClientTracker> callback;
+    {
+        std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+        float ret = 1.0; // invalue volume
+        CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
+            ret, "GetSingleStreamVolume streamId invalid.");
+        callback = clientTracker_[streamId];
+        CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+            ret, "GetSingleStreamVolume callback failed");
+    }
     float volume;
-    std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
-        ret, "GetSingleStreamVolume callback failed");
     callback->GetSingleStreamVolumeImpl(volume);
     return volume;
 }
