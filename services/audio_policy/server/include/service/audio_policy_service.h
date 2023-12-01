@@ -354,9 +354,9 @@ public:
 
     void TriggerAvailableDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
-    int32_t OffloadStreamSetCheck(uint32_t sessionId);
+    void OffloadStreamSetCheck(uint32_t sessionId);
 
-    int32_t OffloadStreamReleaseCheck(uint32_t sessionId);
+    void OffloadStreamReleaseCheck(uint32_t sessionId);
 
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
@@ -597,9 +597,9 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
-    int32_t SetOffloadMode();
+    void SetOffloadMode();
 
-    int32_t ResetOffloadMode();
+    void ResetOffloadMode();
 
     bool GetOffloadAvailableFromXml() const;
 

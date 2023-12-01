@@ -411,7 +411,7 @@ private:
     };
 
     // offload session
-    int32_t OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
+    void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
         int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
 

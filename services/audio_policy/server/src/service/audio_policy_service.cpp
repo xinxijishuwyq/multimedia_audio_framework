@@ -371,72 +371,70 @@ float AudioPolicyService::GetLowPowerVolume(int32_t streamId) const
 }
 
 
-int32_t AudioPolicyService::SetOffloadMode()
+void AudioPolicyService::SetOffloadMode()
 {
-    int32_t sessionID = *offloadSessionID_;
-    int32_t state = static_cast<int32_t>(currentPowerState_);
-    bool isAppBack = currentOffloadSessionIsBackground_;
-
     if (!GetOffloadAvailableFromXml()) {
         AUDIO_INFO_LOG("Offload not available, skipped");
-        return SUCCESS;
+        return;
     }
 
     AUDIO_INFO_LOG("sessionId: %{public}d, PowerState: %{public}d, isAppBack: %{public}d",
-        sessionID, state, isAppBack);
+        *offloadSessionID_, static_cast<int32_t>(currentPowerState_), currentOffloadSessionIsBackground_);
 
-    return streamCollector_.SetOffloadMode(sessionID, state, isAppBack);
+    streamCollector_.SetOffloadMode(*offloadSessionID_, static_cast<int32_t>(currentPowerState_),
+        currentOffloadSessionIsBackground_);
 }
 
-int32_t AudioPolicyService::ResetOffloadMode()
+void AudioPolicyService::ResetOffloadMode()
 {
     AUDIO_DEBUG_LOG("Doing reset offload mode!");
 
     if (!CheckActiveOutputDeviceSupportOffload()) {
         AUDIO_DEBUG_LOG("Resetting offload not available on this output device! Release.");
         OffloadStreamReleaseCheck(*offloadSessionID_);
-        return SUCCESS;
+        return;
     }
 
     int32_t runningStreamId = streamCollector_.GetRunningStream();
     if (runningStreamId == -1) {
         AUDIO_DEBUG_LOG("No running stream, wont restart");
-        return SUCCESS;
+        return;
     }
-    return OffloadStreamSetCheck(runningStreamId);
+    OffloadStreamSetCheck(runningStreamId);
 }
 
-int32_t AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
+void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
 {
     if (!GetOffloadAvailableFromXml()) {
         AUDIO_INFO_LOG("Offload not available, skipped for set");
-        return SUCCESS;
+        return;
     }
 
     if (!CheckActiveOutputDeviceSupportOffload()) {
         AUDIO_INFO_LOG("Offload not available on current output device, skipped");
-        return SUCCESS;
+        return;
     }
 
     AudioStreamType streamType = GetStreamType(sessionId);
     if ((streamType != STREAM_MUSIC) && (streamType != STREAM_SPEECH)) {
         AUDIO_DEBUG_LOG("StreamType not allowed get offload mode, Skipped");
-        return SUCCESS;
+        return;
     }
 
     int32_t offloadUID = GetUid(sessionId);
     if (offloadUID == -1) {
-        return ERR_INVALID_PARAM;
+        AUDIO_DEBUG_LOG("offloadUID not valid, Skipped");
+        return;
     }
     if (offloadUID == MEDIA_SERVICE_UID || offloadUID == AUDIO_UID) { // not support avplayer in current version
         AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
-        return SUCCESS;
+        return;
     }
 
     auto CallingUid = IPCSkeleton::GetCallingUid();
     if (CallingUid == MEDIA_SERVICE_UID || CallingUid == AUDIO_UID) { // not support avplayer in current version
         AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
-        return SUCCESS;
+        return;
     }
 
     AUDIO_INFO_LOG("sessionId[%{public}d] UID[%{public}d] StreamType[%{public}d] Getting offload stream",
@@ -457,14 +455,14 @@ int32_t AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         }
     }
 
-    return true;
+    return;
 }
 
-int32_t AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
+void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
 {
     if (!GetOffloadAvailableFromXml()) {
         AUDIO_INFO_LOG("Offload not available, skipped for release");
-        return SUCCESS;
+        return;
     }
 
     lock_guard<mutex> lock(offloadMutex_);
@@ -483,7 +481,7 @@ int32_t AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
                 sessionId);
         }
     }
-    return SUCCESS;
+    return;
 }
 
 bool AudioPolicyService::CheckActiveOutputDeviceSupportOffload()
@@ -1516,6 +1514,7 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
         streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
             rendererChangeInfo->outputDeviceInfo);
     }
+    ResetOffloadMode();
 }
 
 void AudioPolicyService::SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
@@ -1622,7 +1621,6 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         }
         // move sinkinput to target device
         SelectNewOutputDevice(rendererChangeInfo, desc);
-        ResetOffloadMode();
     }
     sameDeviceSwitchFlag_ = false;
     if (isUpdateActiveDevice) {
