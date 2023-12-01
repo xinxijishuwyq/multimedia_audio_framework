@@ -983,6 +983,11 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != EDM_SERVICE_UID && system::GetBoolParameter("persist.edm.mic_disable", false)) {
+        AUDIO_ERR_LOG("set microphone mute failed cause feature is disabled by edm");
+        return ERR_MICROPHONE_DISABLED_BY_EDM;
+    }
     bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute) {

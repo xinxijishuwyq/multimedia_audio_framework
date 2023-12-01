@@ -77,6 +77,10 @@ std::string AudioCommonNapi::getMessageByCode(int32_t &code)
         case NAPI_ERR_NO_PERMISSION:
             err_message = NAPI_ERR_NO_PERMISSION_INFO;
             break;
+        case ERR_MICROPHONE_DISABLED_BY_EDM:
+            err_message = NAPI_ERR_MICROPHONE_DISABLED_BY_EDM_INFO;
+            code = NAPI_ERR_EDM_DISABLED;
+            break;
         default:
             err_message = NAPI_ERR_SYSTEM_INFO;
             code = NAPI_ERR_SYSTEM;
