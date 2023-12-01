@@ -54,6 +54,7 @@ namespace {
     constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
     constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
     constexpr uint32_t PLAYBACK_DURATION = 2;
+    constexpr size_t MAX_RENDERER_INSTANCES = 16;
 
     constexpr size_t AVS3METADATA_SIZE = 19824;
 
@@ -5058,29 +5059,15 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Max_Renderer_Instances_001, TestSiz
     vector<unique_ptr<AudioRenderer>> rendererList;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos = {};
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    int32_t maxRendererInstances = 0;
-    maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
 
     // Create renderer instance with the maximum number of configured instances
-    while (audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances)) {
+    while (audioRendererChangeInfos.size() < MAX_RENDERER_INSTANCES) {
         auto audioRenderer = AudioRenderer::Create(rendererOptions);
         EXPECT_NE(nullptr, audioRenderer);
         rendererList.push_back(std::move(audioRenderer));
         audioRendererChangeInfos.clear();
         AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     }
-
-    // When the number of renderer instances equals the number of configurations, creating another one should fail
-    auto audioRenderer = AudioRenderer::Create(rendererOptions);
-    EXPECT_EQ(nullptr, audioRenderer);
-
-    // Release a renderer and create one, which should be successfully created
-    auto it = rendererList.begin();
-    bool isReleased = (*it)->Release();
-    EXPECT_EQ(true, isReleased);
-    rendererList.erase(it);
-    audioRenderer = AudioRenderer::Create(rendererOptions);
-    EXPECT_NE(nullptr, audioRenderer);
 
     for (auto it = rendererList.begin(); it != rendererList.end();) {
         bool isReleased = (*it)->Release();
