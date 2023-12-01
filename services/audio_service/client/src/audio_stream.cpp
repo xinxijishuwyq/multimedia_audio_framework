@@ -204,6 +204,7 @@ int32_t AudioStream::GetBufferSize(size_t &bufferSize)
 {
     AUDIO_INFO_LOG("AudioStream: Get Buffer size");
     if (eMode_ == AUDIO_MODE_RECORD) {
+        CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Stream state is released");
         return GetBufferSizeForCapturer(bufferSize);
     }
 
@@ -225,6 +226,7 @@ int32_t AudioStream::GetFrameCount(uint32_t &frameCount)
 {
     AUDIO_INFO_LOG("AudioStream: Get frame count");
     if (eMode_ == AUDIO_MODE_RECORD) {
+        CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Stream state is released");
         return GetFrameCountForCapturer(frameCount);
     }
 
