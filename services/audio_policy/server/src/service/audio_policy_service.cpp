@@ -1649,7 +1649,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     for (auto &capturerChangeInfo : capturerChangeInfos) {
-        if (capturerChangeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_MODEM_COMMUNICATION &&
+        if (capturerChangeInfo->capturerInfo.sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE &&
             capturerChangeInfo->capturerState != CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", capturerChangeInfo->sessionId);
             continue;

@@ -22,7 +22,7 @@
     </adapter>
     <adapter name="sourceType">
         <strategy name="RECORD_CAPTURE" sourceType="SOURCE_TYPE_MIC,SOURCE_TYPE_VOICE_RECOGNITION,SOURCE_TYPE_PLAYBACK_CAPTURE,SOURCE_TYPE_WAKEUP,SOURCE_TYPE_ULTRASONIC"/>
-        <strategy name="CALL_CAPTURE"  sourceType="SOURCE_TYPE_VOICE_COMMUNICATION,SOURCE_TYPE_VOICE_MODEM_COMMUNICATION"/>
+        <strategy name="CALL_CAPTURE"  sourceType="SOURCE_TYPE_VOICE_COMMUNICATION,SOURCE_TYPE_VIRTUAL_CAPTURE"/>
     </adapter>
 </audioUsageStrategy>
 

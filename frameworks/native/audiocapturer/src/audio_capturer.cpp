@@ -183,8 +183,9 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    if (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid,
-        capturerInfo_.sourceType)) {
+    if ((audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE) &&
+        (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid,
+            capturerInfo_.sourceType))) {
         AUDIO_ERR_LOG("recording create check failed");
         return ERR_PERMISSION_DENIED;
     }
@@ -214,7 +215,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     audioInterrupt_.sessionID = sessionID_;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
-    if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VOICE_MODEM_COMMUNICATION) {
+    if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
         isVoiceCallCapturer_ = true;
         audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     }
@@ -620,7 +621,7 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
 {
     switch (sourceType) {
         case SOURCE_TYPE_VOICE_COMMUNICATION:
-        case SOURCE_TYPE_VOICE_MODEM_COMMUNICATION:
+        case SOURCE_TYPE_VIRTUAL_CAPTURE:
             return STREAM_VOICE_CALL;
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;

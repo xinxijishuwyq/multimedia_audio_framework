@@ -740,12 +740,12 @@ private:
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
-    // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
+    // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
         SOURCE_TYPE_PLAYBACK_CAPTURE,
         SOURCE_TYPE_WAKEUP,
-        SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
+        SOURCE_TYPE_VIRTUAL_CAPTURE
     };
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
