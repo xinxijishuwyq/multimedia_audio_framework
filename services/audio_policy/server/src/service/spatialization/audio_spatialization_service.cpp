@@ -326,11 +326,9 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_};
     int32_t ret = gsp->UpdateSpatializationState(spatializationState);
     if (ret != 0) {
-        AUDIO_ERR_LOG("UpdateSpatializationState fail");
-        return -1;
-    } else {
-        return SPATIALIZATION_SERVICE_OK;
+        AUDIO_WARNING_LOG("UpdateSpatializationState fail");
     }
+    return SPATIALIZATION_SERVICE_OK;
 }
 
 void AudioSpatializationService::HandleSpatializationStateChange()

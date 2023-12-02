@@ -171,7 +171,7 @@ private:
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
-    bool spatializatonEnabled_ = true;
+    bool spatializatonEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
     std::shared_ptr<HeadTracker> headTracker_;
