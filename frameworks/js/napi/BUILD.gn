@@ -38,6 +38,7 @@ ohos_shared_library("audio") {
     "audiorenderer",
     "audiorenderer/callback",
     "audiocapturer",
+    "audiocapturer/callback",
     "audiomanager",
   ]
 
@@ -78,6 +79,12 @@ ohos_shared_library("audio") {
 
   if (audio_framework_feature_new_napi) {
     sources += [
+      "audiocapturer/callback/napi_audio_capturer_callbacks.cpp",
+      "audiocapturer/callback/napi_audio_capturer_device_change_callback.cpp",
+      "audiocapturer/callback/napi_audio_capturer_info_change_callback.cpp",
+      "audiocapturer/callback/napi_capturer_period_position_callback.cpp",
+      "audiocapturer/callback/napi_capturer_position_callback.cpp",
+      "audiocapturer/napi_audio_capturer.cpp",
       "audiorenderer/callback/napi_audio_renderer_callback.cpp",
       "audiorenderer/callback/napi_audio_renderer_device_change_callback.cpp",
       "audiorenderer/callback/napi_audio_renderer_policy_service_died_callback.cpp",

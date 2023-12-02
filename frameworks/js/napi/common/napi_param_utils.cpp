@@ -14,6 +14,7 @@
  */
 
 #include "napi_param_utils.h"
+#include "napi_audio_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -262,6 +263,18 @@ napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const std::st
     return status;
 }
 
+napi_status NapiParamUtils::CreateArrayBuffer(const napi_env &env, const size_t bufferLen,
+    const uint8_t *bufferData, napi_value &result)
+{
+    uint8_t *native = nullptr;
+    napi_status status = napi_create_arraybuffer(env, bufferLen, reinterpret_cast<void **>(&native), &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_create_arraybuffer failed");
+    if (memcpy_s(native, bufferLen, bufferData, bufferLen)) {
+        result = nullptr;
+    }
+    return status;
+}
+
 void NapiParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor,
     const DeviceInfo &deviceInfo)
 {
@@ -380,8 +393,8 @@ napi_status NapiParamUtils::SetValueInt32Element(const napi_env &env, const std:
     napi_value jsValues = nullptr;
     napi_status status = napi_create_array_with_length(env, values.size(), &jsValues);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32Element napi_create_array_with_length failed");
-    int32_t count = 0;
-    for (auto value : values) {
+    size_t count = 0;
+    for (const auto &value : values) {
         napi_value jsValue = nullptr;
         status = SetValueInt32(env, value, jsValue);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32Element SetValueInt32 failed");
@@ -408,13 +421,28 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(deviceInfo.interruptGroupId_), result);
     SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(deviceInfo.volumeGroupId_), result);
 
-    std::vector<int32_t> samplingRate;
-    samplingRate.push_back(deviceInfo.audioStreamInfo_.samplingRate);
-    SetValueInt32Element(env, "sampleRates", samplingRate, result);
+    napi_value value = nullptr;
+    napi_value sampleRates;
+    size_t size = deviceInfo.audioStreamInfo_.samplingRate.size();
+    napi_create_array_with_length(env, size, &sampleRates);
+    size_t count = 0;
+    for (const auto &samplingRate : deviceInfo.audioStreamInfo_.samplingRate) {
+        napi_create_int32(env, samplingRate, &value);
+        napi_set_element(env, sampleRates, count, value);
+        count++;
+    }
+    napi_set_named_property(env, result, "sampleRates", sampleRates);
 
-    std::vector<int32_t> channels;
-    channels.push_back(deviceInfo.audioStreamInfo_.channels);
-    SetValueInt32Element(env, "channelCounts", channels, result);
+    napi_value channelCounts;
+    size = deviceInfo.audioStreamInfo_.channels.size();
+    napi_create_array_with_length(env, size, &channelCounts);
+    count = 0;
+    for (const auto &channels : deviceInfo.audioStreamInfo_.channels) {
+        napi_create_int32(env, channels, &value);
+        napi_set_element(env, channelCounts, count, value);
+        count++;
+    }
+    napi_set_named_property(env, result, "channelCounts", channelCounts);
 
     std::vector<int32_t> channelMasks_;
     channelMasks_.push_back(deviceInfo.channelMasks_);
@@ -476,6 +504,154 @@ napi_status NapiParamUtils::SetNativeAudioRendererDataInfo(const napi_env &env,
     SetValueInt32(env, "flag", static_cast<int32_t>(audioRendererDataInfo.flag), result);
     CreateArrayBuffer(env, "buffer", audioRendererDataInfo.flag, audioRendererDataInfo.buffer, result);
 
+    return status;
+}
+
+napi_status NapiParamUtils::GetCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in)
+{
+    int32_t intValue = {0};
+    napi_status status = NapiParamUtils::GetValueInt32(env, "source", intValue, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetCapturerInfo GetValueInt32 source failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalCapturerType(intValue),
+        napi_generic_failure, "Invailed captureType");
+    capturerInfo->sourceType = static_cast<SourceType>(intValue);
+
+    status = NapiParamUtils::GetValueInt32(env, "capturerFlags", capturerInfo->capturerFlags, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetCapturerInfo GetValueInt32 source failed");
+    return status;
+}
+
+napi_status NapiParamUtils::SetCapturerInfo(const napi_env &env,
+    const AudioCapturerInfo &capturerInfo, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetCapturerInfo napi_create_object failed");
+    SetValueInt32(env, "source", static_cast<int32_t>(capturerInfo.sourceType), result);
+    SetValueInt32(env, "capturerFlags", static_cast<int32_t>(capturerInfo.capturerFlags), result);
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetCaptureFilterOptionsVector(const napi_env &env,
+    CaptureFilterOptions *filterOptions, napi_value in)
+{
+    napi_value usagesValue = nullptr;
+    napi_status status = napi_get_named_property(env, in, "usages", &usagesValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_ok, "GetUsages failed");
+
+    uint32_t arrayLen = 0;
+    napi_get_array_length(env, usagesValue, &arrayLen);
+
+    if (arrayLen == 0) {
+        filterOptions->usages = {};
+        AUDIO_INFO_LOG("ParseCaptureFilterOptions get empty usage");
+        return napi_ok;
+    }
+
+    for (size_t i = 0; i < static_cast<size_t>(arrayLen); i++) {
+        napi_value element;
+        if (napi_get_element(env, usagesValue, i, &element) == napi_ok) {
+            int32_t val = {0};
+            napi_get_value_int32(env, element, &val);
+            filterOptions->usages.emplace_back(static_cast<StreamUsage>(val));
+        }
+    }
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetPlaybackCaptureConfig(const napi_env &env,
+    AudioPlaybackCaptureConfig *captureConfig, napi_value in)
+{
+    napi_value res = nullptr;
+
+    if (napi_get_named_property(env, in, "filterOptions", &res) == napi_ok) {
+        return GetCaptureFilterOptionsVector(env, &(captureConfig->filterOptions), res);
+    }
+
+    return NapiParamUtils::GetCaptureFilterOptionsVector(env, &(captureConfig->filterOptions), res);
+}
+
+napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    napi_value result = nullptr;
+    napi_status status = napi_get_named_property(env, in, "streamInfo", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get streamInfo name failed");
+
+    status = GetStreamInfo(env, &(opts->streamInfo), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseStreamInfo failed");
+
+    status = napi_get_named_property(env, in, "capturerInfo", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
+
+    status = GetCapturerInfo(env, &(opts->capturerInfo), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
+
+    if (napi_get_named_property(env, in, "playbackCaptureConfig", &result) == napi_ok) {
+        return GetPlaybackCaptureConfig(env, &(opts->playbackCaptureConfig), result);
+    }
+
+    AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureConfig");
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetAudioCapturerChangeInfoDescriptors(const napi_env &env,
+    const AudioCapturerChangeInfo &changeInfo, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "audioDeviceDescriptor malloc failed");
+    SetValueInt32(env, "streamId", changeInfo.sessionId, result);
+    SetValueInt32(env, "clientUid", changeInfo.clientUID, result);
+    SetValueInt32(env, "capturerState", static_cast<int32_t>(changeInfo.capturerState), result);
+    SetValueBoolean(env, "muted", changeInfo.muted, result);
+
+    napi_value jsCapInfoObj = nullptr;
+    SetCapturerInfo(env, changeInfo.capturerInfo, jsCapInfoObj);
+    napi_set_named_property(env, result, "capturerInfo", jsCapInfoObj);
+
+    napi_value deviceInfo = nullptr;
+    SetValueDeviceInfo(env, changeInfo.inputDeviceInfo, deviceInfo);
+    napi_set_named_property(env, result, "deviceDescriptors", deviceInfo);
+    return status;
+}
+
+napi_status NapiParamUtils::SetMicrophoneDescriptor(const napi_env &env, const sptr<MicrophoneDescriptor> &micDesc,
+    napi_value &result)
+{
+    napi_create_object(env, &result);
+    napi_value jsPositionObj = nullptr;
+    napi_value jsOrientationObj = nullptr;
+
+    SetValueInt32(env, "id", micDesc->micId_, result);
+    SetValueInt32(env, "deviceType", static_cast<int32_t>(micDesc->deviceType_), result);
+    SetValueInt32(env, "groupId", micDesc->groupId_, result);
+    SetValueInt32(env, "sensitivity", micDesc->sensitivity_, result);
+    napi_create_object(env, &jsPositionObj);
+    SetValueDouble(env, "x", micDesc->position_.x, jsPositionObj);
+    SetValueDouble(env, "y", micDesc->position_.y, jsPositionObj);
+    SetValueDouble(env, "z", micDesc->position_.z, jsPositionObj);
+    napi_set_named_property(env, result, "position", jsPositionObj);
+
+    napi_create_object(env, &jsOrientationObj);
+    SetValueDouble(env, "x", micDesc->orientation_.x, jsOrientationObj);
+    SetValueDouble(env, "y", micDesc->orientation_.y, jsOrientationObj);
+    SetValueDouble(env, "z", micDesc->orientation_.z, jsOrientationObj);
+    napi_set_named_property(env, result, "orientation", jsOrientationObj);
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetMicrophoneDescriptors(const napi_env &env,
+    const std::vector<sptr<MicrophoneDescriptor>> &micDescs, napi_value &result)
+{
+    napi_status status = napi_create_array_with_length(env, micDescs.size(), &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "audioDeviceDescriptor malloc failed");
+    int32_t index = 0;
+    for (const auto &micDesc : micDescs) {
+        napi_value valueParam = nullptr;
+        SetMicrophoneDescriptor(env, micDesc, valueParam);
+        napi_set_element(env, result, index, valueParam);
+        index++;
+    }
     return status;
 }
 } // namespace AudioStandard
