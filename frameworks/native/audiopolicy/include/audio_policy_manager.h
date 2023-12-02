@@ -283,7 +283,7 @@ public:
 
     int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid);
 
-    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage);
+    AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
 
     bool IsSpatializationSupported();
 
@@ -297,6 +297,8 @@ public:
 
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback);
+
+    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
 
 private:
     AudioPolicyManager()

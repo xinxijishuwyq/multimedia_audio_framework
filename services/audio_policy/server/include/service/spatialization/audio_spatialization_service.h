@@ -59,7 +59,7 @@ public:
     int32_t UnregisterHeadTrackingEnabledEventListener(int32_t clientPid);
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleHeadTrackingEnabledChange(const bool &enabled);
-    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage);
+    AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
     bool IsSpatializationSupported();
     bool IsSpatializationSupportedForDevice(const std::string address);
     bool IsHeadTrackingSupported();
@@ -67,6 +67,7 @@ public:
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object);
+    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
     void UpdateCurrentDevice(const std::string macAddress);
 private:
     AudioSpatializationService()
@@ -81,8 +82,8 @@ private:
     std::string currentDeviceAddress_ = "";
     bool spatializationEnabledFlag_ = true;
     bool headTrackingEnabledFlag_ = false;
-    bool spatializationEnabledReal_ = spatializationEnabledFlag_;
-    bool headTrackingEnabledReal_ = headTrackingEnabledFlag_;
+    bool spatializationEnabledReal_ = false;
+    bool headTrackingEnabledReal_ = false;
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;

@@ -51,7 +51,7 @@ public:
     explicit AudioSpatializationStateChangeListenerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioSpatializationStateChangeListenerProxy();
     DISALLOW_COPY_AND_MOVE(AudioSpatializationStateChangeListenerProxy);
-    void OnSpatializationStateChange(const std::vector<bool> &spatializationState) override;
+    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
 
 private:
     static inline BrokerDelegator<AudioSpatializationStateChangeListenerProxy> delegator_;
@@ -86,7 +86,7 @@ public:
     AudioSpatializationStateChangeListenerCallback(const sptr<IStandardSpatializationStateChangeListener> &listener);
     virtual ~AudioSpatializationStateChangeListenerCallback();
     DISALLOW_COPY_AND_MOVE(AudioSpatializationStateChangeListenerCallback);
-    void OnSpatializationStateChange(const std::vector<bool> &spatializationState) override;
+    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
 private:
     sptr<IStandardSpatializationStateChangeListener> listener_ = nullptr;
 };

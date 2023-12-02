@@ -1465,7 +1465,7 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(const int
     spatializationEnabledChangeCBMap_[clientPid] = spatializationEnabledChangeListenerStub_;
     lock.unlock();
 
-    return gsp->RegisterSpatializationEnabledEventListener(clientPid, object);
+    return gsp->RegisterSpatializationEnabledEventListener(object);
 }
 
 int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
@@ -1500,7 +1500,7 @@ int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(const int32
     headTrackingEnabledChangeCBMap_[clientPid] = headTrackingEnabledChangeListenerStub_;
     lock.unlock();
 
-    return gsp->RegisterHeadTrackingEnabledEventListener(clientPid, object);
+    return gsp->RegisterHeadTrackingEnabledEventListener(object);
 }
 
 int32_t AudioPolicyManager::UnregisterSpatializationEnabledEventListener(const int32_t clientPid)
@@ -1516,7 +1516,7 @@ int32_t AudioPolicyManager::UnregisterSpatializationEnabledEventListener(const i
         AUDIO_ERR_LOG("UnregisterSpatializationEnabledEventListener: audio policy manager proxy is NULL.");
         return ERROR;
     }
-    return gsp->UnregisterSpatializationEnabledEventListener(clientPid);
+    return gsp->UnregisterSpatializationEnabledEventListener();
 }
 
 int32_t AudioPolicyManager::UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid)
@@ -1532,15 +1532,15 @@ int32_t AudioPolicyManager::UnregisterHeadTrackingEnabledEventListener(const int
         AUDIO_ERR_LOG("UnregisterHeadTrackingEnabledEventListener: audio policy manager proxy is NULL.");
         return ERROR;
     }
-    return gsp->UnregisterHeadTrackingEnabledEventListener(clientPid);
+    return gsp->UnregisterHeadTrackingEnabledEventListener();
 }
 
-std::vector<bool> AudioPolicyManager::GetSpatializationState(const StreamUsage streamUsage)
+AudioSpatializationState AudioPolicyManager::GetSpatializationState(const StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetSpatializationState: audio policy manager proxy is NULL.");
-        std::vector<bool> spatializationState;
+        AudioSpatializationState spatializationState = {false, false};
         return spatializationState;
     }
     return gsp->GetSpatializationState(streamUsage);
@@ -1628,6 +1628,24 @@ int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint3
     lock.unlock();
 
     return gsp->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
+}
+
+int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("UnregisterSpatializationStateEventListener: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    std::unique_lock<std::mutex> lock(spatializationStateListenerMutex_);
+    auto it = spatializationStateChangeCBMap_.find(sessionID);
+    if (it != spatializationStateChangeCBMap_.end()) {
+        spatializationStateChangeCBMap_.erase(it);
+    }
+    lock.unlock();
+
+    return gsp->UnregisterSpatializationStateEventListener(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

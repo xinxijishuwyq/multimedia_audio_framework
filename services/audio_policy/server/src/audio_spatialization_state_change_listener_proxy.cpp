@@ -104,7 +104,7 @@ AudioSpatializationStateChangeListenerProxy::~AudioSpatializationStateChangeList
 }
 
 void AudioSpatializationStateChangeListenerProxy::OnSpatializationStateChange(
-    const std::vector<bool> &spatializationState)
+    const AudioSpatializationState &spatializationState)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -117,11 +117,8 @@ void AudioSpatializationStateChangeListenerProxy::OnSpatializationStateChange(
         return;
     }
 
-    int32_t size = static_cast<int32_t>(spatializationState.size());
-    data.WriteInt32(size);
-    for (int32_t i = 0; i < size; i++) {
-        data.WriteBool(spatializationState[i]);
-    }
+    data.WriteBool(spatializationState.spatializationEnabled);
+    data.WriteBool(spatializationState.headTrackingEnabled);
 
     int32_t error = Remote()->SendRequest(ON_SPATIALIZATION_STATE_CHANGE, data, reply, option);
     if (error != ERR_NONE) {
@@ -192,7 +189,7 @@ AudioSpatializationStateChangeListenerCallback::~AudioSpatializationStateChangeL
 }
 
 void AudioSpatializationStateChangeListenerCallback::OnSpatializationStateChange(
-    const std::vector<bool> &spatializationState)
+    const AudioSpatializationState &spatializationState)
 {
     AUDIO_DEBUG_LOG("AudioSpatializationStateChangeListenerCallback OnSpatializationStateChange entered");
     if (listener_ != nullptr) {

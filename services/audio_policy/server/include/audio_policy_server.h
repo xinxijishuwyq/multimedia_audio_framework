@@ -320,17 +320,15 @@ public:
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
 
-    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
-        const sptr<IRemoteObject> &object) override;
+    int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) override;
 
-    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
-        const sptr<IRemoteObject> &object) override;
+    int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) override;
+    int32_t UnregisterSpatializationEnabledEventListener() override;
 
-    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
+    int32_t UnregisterHeadTrackingEnabledEventListener() override;
 
-    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
+    AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
     bool IsSpatializationSupported() override;
 
@@ -344,6 +342,8 @@ public:
 
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:

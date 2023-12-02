@@ -34,6 +34,7 @@
 #include "device_init_callback.h"
 #include "device_manager_impl.h"
 #include "uri.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -63,7 +63,7 @@ public:
      * @param enabled the spatialization state.
      * @since 11
      */
-    virtual void OnSpatializationStateChange(const std::vector<bool> &spatializationState) = 0;
+    virtual void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) = 0;
 };
 
 /**

@@ -155,7 +155,7 @@ public:
     int32_t UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
         const uint64_t &channelLayout);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
-    int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
+    int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
 private:
     void UpdateSensorState();
