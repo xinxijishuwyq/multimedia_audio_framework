@@ -257,21 +257,21 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 #endif
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
+int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 {
     if ((keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) && (keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN)) {
         AUDIO_ERR_LOG("VolumeKeyEvents: invalid key type : %{public}d", keyType);
-        return;
+        return ERR_INVALID_PARAM;
     }
     AUDIO_INFO_LOG("RegisterVolumeKeyEvents: volume key: %{public}s.",
         (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
 
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
 
     std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_LOG(keyOption != nullptr, "Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOption != nullptr, ERR_INVALID_PARAM, "Invalid key option");
     keyOption->SetPreKeys(preKeys);
     keyOption->SetFinalKey(keyType);
     keyOption->SetFinalKeyDown(true);
@@ -304,18 +304,19 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume key: %{public}s option failed",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
     }
+    return keySubId;
 }
 #endif
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
+int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
     AUDIO_INFO_LOG("RegisterVolumeKeyMuteEvents: volume key: mute");
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
 
     std::shared_ptr<OHOS::MMI::KeyOption> keyOptionMute = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_LOG(keyOptionMute != nullptr, "keyOptionMute: Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOptionMute != nullptr, ERR_INVALID_PARAM, "keyOptionMute: Invalid key option");
     std::set<int32_t> preKeys;
     keyOptionMute->SetPreKeys(preKeys);
     keyOptionMute->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_MUTE);
@@ -331,6 +332,7 @@ void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
     }
+    return muteKeySubId;
 }
 #endif
 
@@ -343,10 +345,15 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
     }
 
     AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: first time.");
-    hasSubscribedVolumeKeyEvents_.store(true);
-    RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
-    RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
-    RegisterVolumeKeyMuteEvents();
+    int32_t resultOfVolumeUp = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    int32_t resultOfVolumeDown = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    int32_t resultOfMute = RegisterVolumeKeyMuteEvents();
+    if (resultOfVolumeUp >= 0 && resultOfVolumeDown >= 0 && resultOfMute >= 0) {
+        hasSubscribedVolumeKeyEvents_.store(true);
+    } else {
+        AUDIO_ERR_LOG("SubscribeVolumeKeyEvents: failed to subscribe key events.");
+        hasSubscribedVolumeKeyEvents_.store(false);
+    }
 }
 #endif
 

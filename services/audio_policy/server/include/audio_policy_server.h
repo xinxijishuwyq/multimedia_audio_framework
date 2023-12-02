@@ -465,8 +465,8 @@ private:
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
-    void RegisterVolumeKeyEvents(const int32_t keyType);
-    void RegisterVolumeKeyMuteEvents();
+    int32_t RegisterVolumeKeyEvents(const int32_t keyType);
+    int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
     void SubscribePowerStateChangeEvents();
