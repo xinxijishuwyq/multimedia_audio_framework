@@ -94,7 +94,6 @@ napi_value AudioSpatializationManagerNapi::Construct(napi_env env, napi_callback
     CHECK_AND_RETURN_RET_LOG(audioSpatializationManagerNapi != nullptr, result, "No memory");
 
     audioSpatializationManagerNapi->audioSpatializationMngr_ = AudioSpatializationManager::GetInstance();
-    audioSpatializationManagerNapi->cachedClientId_ = getpid();
     audioSpatializationManagerNapi->env_ = env;
 
     status = napi_wrap(env, thisVar, static_cast<void*>(audioSpatializationManagerNapi.get()),
@@ -547,7 +546,6 @@ void AudioSpatializationManagerNapi::RegisterSpatializationEnabledChangeCallback
         }
 
         int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->RegisterSpatializationEnabledEventListener(
-            spatializationManagerNapi->cachedClientId_,
             spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG(
@@ -576,7 +574,6 @@ void AudioSpatializationManagerNapi::RegisterHeadTrackingEnabledChangeCallback(n
         }
 
         int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->RegisterHeadTrackingEnabledEventListener(
-            spatializationManagerNapi->cachedClientId_,
             spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG(
@@ -662,7 +659,7 @@ void AudioSpatializationManagerNapi::UnregisterSpatializationEnabledChangeCallba
         }
         if (callback == nullptr || cb->GetSpatializationEnabledChangeCbListSize() == 0) {
             int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->
-                UnregisterSpatializationEnabledEventListener(spatializationManagerNapi->cachedClientId_);
+                UnregisterSpatializationEnabledEventListener();
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterSpatializationEnabledEventListener Failed");
             spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_.reset();
             spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_ = nullptr;
@@ -685,7 +682,7 @@ void AudioSpatializationManagerNapi::UnregisterHeadTrackingEnabledChangeCallback
         }
         if (callback == nullptr || cb->GetHeadTrackingEnabledChangeCbListSize() == 0) {
             int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->
-                UnregisterHeadTrackingEnabledEventListener(spatializationManagerNapi->cachedClientId_);
+                UnregisterHeadTrackingEnabledEventListener();
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterHeadTrackingEnabledEventListener Failed");
             spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_.reset();
             spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_ = nullptr;

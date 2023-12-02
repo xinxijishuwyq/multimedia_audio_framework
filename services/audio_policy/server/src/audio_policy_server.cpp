@@ -2915,7 +2915,7 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
 
 int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object)
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterSpatializationEnabledEventListener(
         clientPid, object, hasSystemPermission);
@@ -2923,20 +2923,20 @@ int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(const sptr
 
 int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object)
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterHeadTrackingEnabledEventListener(clientPid, object, hasSystemPermission);
 }
 
 int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener()
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterSpatializationEnabledEventListener(clientPid);
 }
 
 int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener()
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterHeadTrackingEnabledEventListener(clientPid);
 }
 
