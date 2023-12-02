@@ -2942,11 +2942,6 @@ int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener()
 
 AudioSpatializationState AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        AudioSpatializationState spatializationState = {false, false};
-        return spatializationState;
-    }
     return audioSpatializationService_.GetSpatializationState(streamUsage);
 }
 
@@ -2998,19 +2993,11 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
 int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t sessionID,
     const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        return ERR_PERMISSION_DENIED;
-    }
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
 
 int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        return ERR_PERMISSION_DENIED;
-    }
     return audioSpatializationService_.UnregisterSpatializationStateEventListener(sessionID);
 }
 } // namespace AudioStandard
