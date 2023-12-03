@@ -66,6 +66,7 @@ private:
     std::vector<std::string> split(const std::string &line, const std::string &sep);
 
     const unordered_map<string, StreamUsage> streamUsageMap = {
+        {"STREAM_USAGE_UNKNOWN", STREAM_USAGE_UNKNOWN},
         {"STREAM_USAGE_MEDIA", STREAM_USAGE_MEDIA},
         {"STREAM_USAGE_MUSIC", STREAM_USAGE_MUSIC},
         {"STREAM_USAGE_VOICE_COMMUNICATION", STREAM_USAGE_VOICE_COMMUNICATION},

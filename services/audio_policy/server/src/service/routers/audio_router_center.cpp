@@ -30,6 +30,7 @@ const string RING_RENDER_ROUTERS = "RingRenderRouters";
 const string TONE_RENDER_ROUTERS = "ToneRenderRouters";
 
 unordered_map<StreamUsage, string> AudioRouterCenter::renderConfigMap_ = {
+    {STREAM_USAGE_UNKNOWN, MEDIA_RENDER_ROUTERS},
     {STREAM_USAGE_MEDIA, MEDIA_RENDER_ROUTERS},
     {STREAM_USAGE_MUSIC, MEDIA_RENDER_ROUTERS},
     {STREAM_USAGE_VOICE_COMMUNICATION, CALL_RENDER_ROUTERS},
@@ -88,6 +89,20 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
     return make_unique<AudioDeviceDescriptor>();
 }
 
+bool AudioRouterCenter::HasScoDevice()
+{
+    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
+    bool hasScoDevice = false;
+    for (auto &desc : descs) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            hasScoDevice = true;
+            break;
+        }
+    }
+    return hasScoDevice;
+}
+
 unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     AUDIO_INFO_LOG("streamUsage %{public}d clientUID %{public}d start fetch device", streamUsage, clientUID);
@@ -95,7 +110,8 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsa
         renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
-        if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
+        if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
+            (audioScene == AUDIO_SCENE_RINGING && HasScoDevice())) {
             auto isPresent = [] (const unique_ptr<RouterBase> &router) {
                 return router->name_ == "package_filter_router";
             };

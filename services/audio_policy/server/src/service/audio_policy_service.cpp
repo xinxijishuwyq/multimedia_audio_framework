@@ -1550,7 +1550,7 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
         return;
     }
     if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(desc->deviceType_)) {
-        SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
+        SetVolumeForSwitchDevice(desc->deviceType_);
     }
     currentActiveDevice_ = AudioDeviceDescriptor(*desc);
     AUDIO_INFO_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
@@ -2630,6 +2630,14 @@ int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &i
     return SUCCESS;
 }
 
+void AudioPolicyService::ResetToSpeaker(DeviceType devType)
+{
+    if (devType == DEVICE_TYPE_BLUETOOTH_SCO || (devType == DEVICE_TYPE_USB_HEADSET && !isArmUsbDevice_) ||
+        devType == DEVICE_TYPE_WIRED_HEADSET || devType == DEVICE_TYPE_WIRED_HEADPHONES) {
+        UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER);
+    }
+}
+
 void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo)
 {
@@ -2665,6 +2673,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
+        ResetToSpeaker(devType);
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;
         }

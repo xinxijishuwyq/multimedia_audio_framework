@@ -95,6 +95,7 @@ private:
 
     unique_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID);
     unique_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID);
+    bool HasScoDevice();
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
