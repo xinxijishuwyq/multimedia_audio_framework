@@ -288,26 +288,12 @@ static void ParseAudioDeviceDescriptor(napi_env env, napi_value root, sptr<Audio
         }
         selectedAudioDevice->macAddress_ = AudioCommonNapi::GetStringArgument(env, tempValue);
     }
-    return;
 }
 
-bool AudioSpatializationManagerNapi::ParseSpatialDeviceState(napi_env env, napi_value root,
-    AudioSpatialDeviceState *spatialDeviceState)
+static bool ParseSpatialDeviceAttribute(napi_env env, napi_value root, AudioSpatialDeviceState *spatialDeviceState)
 {
     napi_value res = nullptr;
     int32_t intValue = {0};
-    bool hasAddress = true;
-    bool hasIsSpatializationSupported = true;
-    bool hasIsHeadTrackingSupported = true;
-    bool hasSpatialDeviceType = true;
-    napi_has_named_property(env, root, "address", &hasAddress);
-    napi_has_named_property(env, root, "isSpatializationSupported", &hasIsSpatializationSupported);
-    napi_has_named_property(env, root, "isHeadTrackingSupported", &hasIsHeadTrackingSupported);
-    napi_has_named_property(env, root, "spatialDeviceType", &hasSpatialDeviceType);
-
-    if (!hasAddress || !hasIsSpatializationSupported || !hasIsHeadTrackingSupported || !hasSpatialDeviceType) {
-        return false;
-    }
 
     if (napi_get_named_property(env, root, "address", &res) == napi_ok) {
         napi_valuetype valueType = napi_undefined;
@@ -358,6 +344,25 @@ bool AudioSpatializationManagerNapi::ParseSpatialDeviceState(napi_env env, napi_
     }
 
     return true;
+}
+
+bool AudioSpatializationManagerNapi::ParseSpatialDeviceState(napi_env env, napi_value root,
+    AudioSpatialDeviceState *spatialDeviceState)
+{
+    bool hasAddress = true;
+    bool hasIsSpatializationSupported = true;
+    bool hasIsHeadTrackingSupported = true;
+    bool hasSpatialDeviceType = true;
+    napi_has_named_property(env, root, "address", &hasAddress);
+    napi_has_named_property(env, root, "isSpatializationSupported", &hasIsSpatializationSupported);
+    napi_has_named_property(env, root, "isHeadTrackingSupported", &hasIsHeadTrackingSupported);
+    napi_has_named_property(env, root, "spatialDeviceType", &hasSpatialDeviceType);
+
+    if (!hasAddress || !hasIsSpatializationSupported || !hasIsHeadTrackingSupported || !hasSpatialDeviceType) {
+        return false;
+    }
+
+    return ParseSpatialDeviceAttribute(env, root, spatialDeviceState);
 }
 
 napi_value AudioSpatializationManagerNapi::IsSpatializationEnabled(napi_env env, napi_callback_info info)
