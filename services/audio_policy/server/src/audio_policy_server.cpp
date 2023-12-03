@@ -2914,44 +2914,35 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
     return audioSpatializationService_.SetHeadTrackingEnabled(enable);
 }
 
-int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object)
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterSpatializationEnabledEventListener(
         clientPid, object, hasSystemPermission);
 }
 
-int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object)
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterHeadTrackingEnabledEventListener(clientPid, object, hasSystemPermission);
 }
 
-int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener(int32_t clientPid)
+int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener()
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterSpatializationEnabledEventListener(clientPid);
 }
 
-int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener(int32_t clientPid)
+int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener()
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterHeadTrackingEnabledEventListener(clientPid);
 }
 
-std::vector<bool> AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)
+AudioSpatializationState AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        std::vector<bool> spatializationState;
-        spatializationState.push_back(false);
-        spatializationState.push_back(false);
-        return spatializationState;
-    }
     return audioSpatializationService_.GetSpatializationState(streamUsage);
 }
 
@@ -3003,11 +2994,12 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
 int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t sessionID,
     const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        return ERR_PERMISSION_DENIED;
-    }
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
+}
+
+int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    return audioSpatializationService_.UnregisterSpatializationStateEventListener(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

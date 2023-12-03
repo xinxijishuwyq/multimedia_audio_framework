@@ -246,17 +246,15 @@ public:
 
     virtual int32_t SetHeadTrackingEnabled(const bool enable) = 0;
 
-    virtual int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
-        const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
-        const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) = 0;
 
-    virtual int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) = 0;
+    virtual int32_t UnregisterSpatializationEnabledEventListener() = 0;
 
-    virtual int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) = 0;
+    virtual int32_t UnregisterHeadTrackingEnabledEventListener() = 0;
 
-    virtual std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) = 0;
+    virtual AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) = 0;
 
     virtual bool IsSpatializationSupported() = 0;
 
@@ -270,6 +268,8 @@ public:
 
     virtual int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

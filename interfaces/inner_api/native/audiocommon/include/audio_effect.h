@@ -267,6 +267,11 @@ struct AudioEffectLibEntry {
     std::vector<std::string> effectName;
 };
 
+struct AudioSpatializationState {
+    bool spatializationEnabled;
+    bool headTrackingEnabled;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 

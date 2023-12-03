@@ -912,15 +912,12 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneTy
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spatializationState)
+int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    if (spatializationState.size() != SIZE_OF_SPATIALIZATION_STATE) {
-        return ERROR;
-    }
     int32_t ret;
-    if (spatializatonEnabled_ != spatializationState[0]) {
-        spatializatonEnabled_ = spatializationState[0];
+    if (spatializatonEnabled_ != spatializationState.spatializationEnabled) {
+        spatializatonEnabled_ = spatializationState.spatializationEnabled;
         memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
         if (spatializatonEnabled_) {
             effectHdiInput[0] = HDI_INIT;
@@ -942,8 +939,8 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(std::vector<bool> spa
             }
         }
     }
-    if (headTrackingEnabled_ != spatializationState[1]) {
-        headTrackingEnabled_ = spatializationState[1];
+    if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
+        headTrackingEnabled_ = spatializationState.headTrackingEnabled;
         UpdateSensorState();
     }
     return SUCCESS;

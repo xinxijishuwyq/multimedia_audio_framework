@@ -375,11 +375,9 @@ int AudioManagerStub::HandleSetCaptureSilentState(MessageParcel &data, MessagePa
 
 int AudioManagerStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t size = data.ReadInt32();
-    std::vector<bool> spatializationState;
-    for (int32_t i = 0; i < size; i++) {
-        spatializationState.push_back(data.ReadBool());
-    }
+    AudioSpatializationState spatializationState;
+    spatializationState.spatializationEnabled = data.ReadBool();
+    spatializationState.headTrackingEnabled = data.ReadBool();
     int32_t ret = UpdateSpatializationState(spatializationState);
     reply.WriteInt32(ret);
     return AUDIO_OK;

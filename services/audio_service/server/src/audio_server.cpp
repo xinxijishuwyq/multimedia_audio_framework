@@ -957,7 +957,7 @@ int32_t AudioServer::SetCaptureSilentState(bool state)
     return SUCCESS;
 }
 
-int32_t AudioServer::UpdateSpatializationState(std::vector<bool> spatializationState)
+int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (callingUid != audioUid_ && callingUid != ROOT_UID) {
@@ -968,9 +968,8 @@ int32_t AudioServer::UpdateSpatializationState(std::vector<bool> spatializationS
     if (audioEffectChainManager == nullptr) {
         AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
         return ERROR;
-    } else {
-        return audioEffectChainManager->UpdateSpatializationState(spatializationState);
     }
+    return audioEffectChainManager->UpdateSpatializationState(spatializationState);
 }
 } // namespace AudioStandard
 } // namespace OHOS

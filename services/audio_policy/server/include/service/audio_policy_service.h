@@ -50,7 +50,6 @@
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
 #include "audio_state_manager.h"
-#include "audio_spatialization_service.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"

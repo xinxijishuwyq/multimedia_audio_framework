@@ -787,7 +787,7 @@ int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
     return reply.ReadInt32();
 }
 
-int32_t AudioManagerProxy::UpdateSpatializationState(std::vector<bool> spatializationState)
+int32_t AudioManagerProxy::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
     int32_t error;
     MessageParcel data;
@@ -798,11 +798,8 @@ int32_t AudioManagerProxy::UpdateSpatializationState(std::vector<bool> spatializ
         AUDIO_ERR_LOG("UpdateSpatializationState: WriteInterfaceToken failed");
         return -1;
     }
-    int32_t size = static_cast<int32_t>(spatializationState.size());
-    data.WriteInt32(size);
-    for (int32_t i = 0; i < size; i++) {
-        data.WriteBool(spatializationState[i]);
-    }
+    data.WriteBool(spatializationState.spatializationEnabled);
+    data.WriteBool(spatializationState.headTrackingEnabled);
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE), data, reply, option);

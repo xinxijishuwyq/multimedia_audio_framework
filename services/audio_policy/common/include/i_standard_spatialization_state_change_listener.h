@@ -52,7 +52,7 @@ public:
 class IStandardSpatializationStateChangeListener : public IRemoteBroker {
 public:
     virtual ~IStandardSpatializationStateChangeListener() = default;
-    virtual void OnSpatializationStateChange(const std::vector<bool> &spatializationState) = 0;
+    virtual void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) = 0;
 
     enum AudioSpatializationStateChangeListenerMsg {
         ON_ERROR = 0,
