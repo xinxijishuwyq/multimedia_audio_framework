@@ -2579,6 +2579,11 @@ napi_value AudioManagerNapi::GetSpatializationManager(napi_env env, napi_callbac
 {
     napi_status status;
     size_t argCount = 0;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return nullptr;
+    }
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
     if (status != napi_ok || argCount != 0) {
