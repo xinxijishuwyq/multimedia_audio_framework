@@ -32,7 +32,10 @@
 #include "v1_0/ieffect_model.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
-#include "sensor_agent.h"
+
+#ifdef SENSOR_ENABLE
+#include "audio_head_tracker.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,9 +49,6 @@ const uint32_t FACTOR_TWO = 2;
 const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
-const uint32_t NONE_SPATIALIZER_ENGINE = 0;
-const uint32_t ARM_SPATIALIZER_ENGINE = 1;
-const uint32_t DSP_SPATIALIZER_ENGINE = 2;
 const uint32_t SEND_HDI_COMMAND_LEN = 20;
 const uint32_t GET_HDI_BUFFER_LEN = 10;
 const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
@@ -63,24 +63,6 @@ const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_7POINT1POINT4,
     CH_LAYOUT_9POINT1POINT4,
     CH_LAYOUT_9POINT1POINT6
-};
-
-class HeadTracker {
-public:
-    HeadTracker();
-    ~HeadTracker();
-    int32_t SensorInit();
-    int32_t SensorSetConfig(int32_t spatializerEngineState);
-    int32_t SensorActive();
-    int32_t SensorDeactive();
-    HeadPostureData GetHeadPostureData();
-    void SetHeadPostureData(HeadPostureData headPostureData);
-private:
-    static void HeadPostureDataProcCb(SensorEvent *event);
-    static HeadPostureData headPostureData_;
-    SensorUser sensorUser_;
-    int64_t sensorSamplingInterval_ = 30000000; // 30000000 ns = 30 ms
-    static std::mutex headTrackerMutex_;
 };
 
 class AudioEffectHdi {
@@ -99,9 +81,18 @@ private:
     IEffectControl *hdiControl_ = nullptr;
 };
 
+struct AudioEffectProcInfo {
+    bool headTrackingEnabled;
+    bool offloadEnabled;
+};
+
 class AudioEffectChain {
 public:
+#ifdef SENSOR_ENABLE
     AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker);
+#else
+    AudioEffectChain(std::string scene);
+#endif
     ~AudioEffectChain();
     std::string GetEffectMode();
     void SetEffectMode(std::string mode);
@@ -110,7 +101,7 @@ public:
     void AddEffectHandleEnd();
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
     void SetEffectChain(std::vector<AudioEffectHandle> &effHandles, std::vector<AudioEffectLibrary *> &libHandles);
-    void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen);
+    void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
     void Dump();
@@ -129,7 +120,10 @@ private:
     AudioEffectConfig ioBufferConfig;
     AudioBuffer audioBufIn;
     AudioBuffer audioBufOut;
+
+#ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
+#endif
 };
 
 class AudioEffectChainManager {
@@ -174,7 +168,11 @@ private:
     bool spatializatonEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
+
+#ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
+#endif
+
     std::shared_ptr<AudioEffectHdi> audioEffectHdi_;
     int8_t effectHdiInput[SEND_HDI_COMMAND_LEN];
 };
