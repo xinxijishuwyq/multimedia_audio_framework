@@ -596,7 +596,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             sptr<AudioDeviceDescriptor> desc = new (std::nothrow) AudioDeviceDescriptor(*dev);
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
-            delete desc;
         }
     }
     return audioDeviceDescriptors;
