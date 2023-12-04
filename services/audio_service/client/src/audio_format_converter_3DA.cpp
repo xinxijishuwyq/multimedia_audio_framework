@@ -30,10 +30,10 @@ static constexpr AudioChannelLayout DEFAULT_LAYOUT = CH_LAYOUT_5POINT1POINT2;
     constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
 #endif
 
-std::map<uint8_t, int8_t> format2bps = {{SAMPLE_S16LE, sizeof(int16_t)},
+std::map<uint8_t, int8_t> format2bps = {{SAMPLE_U8, sizeof(uint8_t)},
+                                        {SAMPLE_S16LE, sizeof(int16_t)},
                                         {SAMPLE_S24LE, sizeof(int16_t) + sizeof(int8_t)},
-                                        {SAMPLE_S32LE, sizeof(int32_t)},
-                                        {SAMPLE_F32LE, sizeof(int32_t)}};
+                                        {SAMPLE_S32LE, sizeof(int32_t)}};
 
 static int8_t GetBps(uint8_t format)
 {
@@ -85,6 +85,10 @@ int32_t AudioFormatConverter3DA::Init(const AudioStreamParams info)
     encoding_ = info.encoding;
 
     bps_ = GetBps(info.format);
+    if (bps_ < 0) {
+        AUDIO_ERR_LOG("converter: Unsupported sample format");
+        return INVALID_FORMAT;
+    }
 
     Library library;
     loadSuccess_ = false;

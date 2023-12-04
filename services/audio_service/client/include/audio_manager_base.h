@@ -251,7 +251,7 @@ public:
      *
      * @return result of setting. 0 if success, error number else.
     */
-    virtual int32_t UpdateSpatializationState(std::vector<bool> spatializationState) = 0;
+    virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");

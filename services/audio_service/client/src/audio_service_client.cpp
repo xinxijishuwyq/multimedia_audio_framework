@@ -49,7 +49,6 @@ const uint32_t MAX_LENGTH_OFFLOAD = 5000;
 const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
-const uint32_t SPATIALIZATION_STATE_SIZE = 2;
 const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
 const uint32_t OFFLOAD_SMALL_BUFFER = 20;
@@ -675,6 +674,7 @@ AudioServiceClient::~AudioServiceClient()
 {
     lock_guard<mutex> lockdata(dataMutex_);
     AUDIO_INFO_LOG("start ~AudioServiceClient");
+    UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
     ResetPAAudioClient();
     StopTimer();
 }
@@ -999,6 +999,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     sessionID_ = pa_context_get_index(context);
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
+
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(isInnerCapturerStream_).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(isWakeupCapturerStream_).c_str());
@@ -1048,13 +1049,10 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     sampleSpec = ConvertToPAAudioParams(audioParams);
     mFrameSize = pa_frame_size(&sampleSpec);
     channelLayout_ = audioParams.channelLayout;
-    std::vector<bool> spatializationState = AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
-    if (spatializationState.size() != SPATIALIZATION_STATE_SIZE) {
-        AUDIO_WARNING_LOG("spatialization state vector size is incorrect");
-    } else {
-        spatializationEnabled_ = std::to_string(spatializationState[0]);
-        headTrackingEnabled_ = std::to_string(spatializationState[1]);
-    }
+    AudioSpatializationState spatializationState =
+        AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
+    spatializationEnabled_ = std::to_string(spatializationState.spatializationEnabled);
+    headTrackingEnabled_ = std::to_string(spatializationState.headTrackingEnabled);
 
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;
@@ -1092,6 +1090,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         ResetPAAudioClient();
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
+    RegisterSpatializationStateEventListener();
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         error = InitializeAudioCache();
@@ -2751,7 +2750,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     bool isAbsVolumeScene = AudioPolicyManager::GetInstance().IsAbsVolumeScene();
     float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType,
         systemVolumeLevel, deviceType);
-    if (isAbsVolumeScene) {
+    if (isAbsVolumeScene && (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
         systemVolumeDb = 1.0f; // Transfer raw pcm data to bluetooth device
     }
     float vol = systemVolumeDb * client.volumeFactor_ * client.powerVolumeFactor_ * client.duckVolumeFactor_;
@@ -3447,6 +3446,12 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
 
 int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
 {
+    if (firstSpatializationRegistered_) {
+        firstSpatializationRegistered_ = false;
+    } else {
+        UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
+    }
+
     if (!spatializationStateChangeCallback_) {
         spatializationStateChangeCallback_ = std::make_shared<AudioSpatializationStateChangeCallbackImpl>();
         if (!spatializationStateChangeCallback_) {
@@ -3454,6 +3459,7 @@ int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
             return ERROR;
         }
     }
+    spatializationStateChangeCallback_->setAudioServiceClientObj(this);
 
     int32_t ret = AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(
         sessionID_, mStreamUsage, spatializationStateChangeCallback_);
@@ -3461,19 +3467,29 @@ int32_t AudioServiceClient::RegisterSpatializationStateEventListener()
         AUDIO_ERR_LOG("AudioServiceClient::RegisterSpatializationStateEventListener failed");
         return ERROR;
     }
+    spatializationRegisteredSessionID_ = sessionID_;
 
-    spatializationStateChangeCallback_->setAudioServiceClientObj(this);
     return SUCCESS;
 }
 
-void AudioServiceClient::OnSpatializationStateChange(const std::vector<bool> &spatializationState)
+int32_t AudioServiceClient::UnregisterSpatializationStateEventListener(uint32_t sessionID)
 {
-    if (spatializationState.size() != SPATIALIZATION_STATE_SIZE) {
-        AUDIO_WARNING_LOG("spatialization state vector size is incorrect");
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioServiceClient::UnregisterSpatializationStateEventListener failed");
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+void AudioServiceClient::OnSpatializationStateChange(const AudioSpatializationState &spatializationState)
+{
+    if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
+        AUDIO_ERR_LOG("OnSpatializationStateChange: invalid stream state");
         return;
     }
-    spatializationEnabled_ = std::to_string(spatializationState[0]);
-    headTrackingEnabled_ = std::to_string(spatializationState[1]);
+    spatializationEnabled_ = std::to_string(spatializationState.spatializationEnabled);
+    headTrackingEnabled_ = std::to_string(spatializationState.headTrackingEnabled);
     if (context == nullptr) {
         AUDIO_ERR_LOG("context is null");
         return;
@@ -3514,7 +3530,7 @@ void AudioSpatializationStateChangeCallbackImpl::setAudioServiceClientObj(AudioS
 }
 
 void AudioSpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
-    const std::vector<bool> &spatializationState)
+    const AudioSpatializationState &spatializationState)
 {
     serviceClient_->OnSpatializationStateChange(spatializationState);
 }

@@ -50,7 +50,6 @@
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
 #include "audio_state_manager.h"
-#include "audio_spatialization_service.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -89,10 +88,6 @@ public:
     int32_t SetLowPowerVolume(int32_t streamId, float volume) const;
 
     float GetLowPowerVolume(int32_t streamId) const;
-
-    int32_t SetOffloadStream(uint32_t sessionId, DeviceType devicesType = DEVICE_TYPE_NONE);
-
-    int32_t ReleaseOffloadStream(uint32_t sessionId);
 
     void HandlePowerStateChanged(PowerMgr::PowerState state);
 
@@ -358,16 +353,22 @@ public:
 
     void TriggerAvailableDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
+    void OffloadStreamSetCheck(uint32_t sessionId);
+
+    void OffloadStreamReleaseCheck(uint32_t sessionId);
+
     void UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
 
+    void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
+    
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsId, const std::vector<int32_t> &streamTypes,
         bool isNewDeviceActive = false);
 
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsId);
-
+#ifdef BLUETOOTH_ENABLE
     void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
         DeviceType deviceType = DEVICE_TYPE_NONE);
-
+#endif
     void GetA2dpOffloadCodecAndSendToDsp();
 
     int32_t HandleA2dpDeviceInOffload();
@@ -488,6 +489,9 @@ private:
 
     DeviceType FetchHighPriorityDevice(bool isOutputDevice);
 
+    int32_t HandleScoDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated);
+
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         bool isStreamStatusUpdated);
 
@@ -597,19 +601,16 @@ private:
 
     void RemoveAudioCapturerMicrophoneDescriptor(int32_t uid);
 
-    int32_t SetStreamOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
+    void SetOffloadMode();
 
-    int32_t SetOffloadMode(int32_t sessionID, int32_t state, bool isAppBack);
+    void ResetOffloadMode();
 
-    int32_t SetOffloadMode();
+    bool GetOffloadAvailableFromXml() const;
 
-    int32_t UnsetOffloadMode();
+    void SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo);
 
-    int32_t ResetOffloadMode();
+    bool CheckActiveOutputDeviceSupportOffload();
 
-    int32_t PresetOffloadMode(DeviceType deviceType);
-
-    bool GetAudioOffloadAvailableFromXml() const;
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
 
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
@@ -622,6 +623,13 @@ private:
     void FetchOutputDeviceWhenNoRunningStream();
 
     void FetchInputDeviceWhenNoRunningStream();
+
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
+
+    int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated);
+
+    void ResetToSpeaker(DeviceType devType);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
@@ -738,12 +746,12 @@ private:
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
-    // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
+    // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
         SOURCE_TYPE_PLAYBACK_CAPTURE,
         SOURCE_TYPE_WAKEUP,
-        SOURCE_TYPE_VOICE_MODEM_COMMUNICATION
+        SOURCE_TYPE_VIRTUAL_CAPTURE
     };
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;

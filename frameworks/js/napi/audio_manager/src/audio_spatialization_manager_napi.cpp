@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <vector>
 
 #include "audio_spatialization_manager_napi.h"
 #include "audio_spatialization_manager_callback_napi.h"
@@ -22,6 +23,7 @@
 #include "hilog/log.h"
 #include "napi_base_context.h"
 #include "audio_system_manager.h"
+#include "audio_utils.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -39,16 +41,37 @@ static __thread napi_ref g_spatializationManagerConstructor = nullptr;
     napi_get_cb_info(env, info, &argc, argv, &thisVar, &data)
 
 namespace {
-    const int ARGS_ONE = 1;
-    const int ARGS_TWO = 2;
-    const int PARAM0 = 0;
-    const int PARAM1 = 1;
-    const int PARAM2 = 2;
-    const int PARAM3 = 3;
-    const int SIZE = 100;
+    const int32_t ARGS_ONE = 1;
+    const int32_t ARGS_TWO = 2;
+    const int32_t PARAM0 = 0;
+    const int32_t PARAM1 = 1;
+    const int32_t PARAM2 = 2;
+    const int32_t PARAM3 = 3;
     constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioSpatializationManagerNapi"};
     const std::string SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME = "spatializationEnabledChange";
     const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
+    const std::vector<DeviceRole> DEVICE_ROLE_SET = {
+        INPUT_DEVICE,
+        OUTPUT_DEVICE
+    };
+
+    const std::vector<DeviceType> DEVICE_TYPE_SET = {
+        DEVICE_TYPE_INVALID,
+        DEVICE_TYPE_EARPIECE,
+        DEVICE_TYPE_SPEAKER,
+        DEVICE_TYPE_WIRED_HEADSET,
+        DEVICE_TYPE_WIRED_HEADPHONES,
+        DEVICE_TYPE_BLUETOOTH_SCO,
+        DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_MIC,
+        DEVICE_TYPE_WAKEUP,
+        DEVICE_TYPE_USB_HEADSET,
+        DEVICE_TYPE_USB_ARM_HEADSET,
+        DEVICE_TYPE_FILE_SINK,
+        DEVICE_TYPE_FILE_SOURCE,
+        DEVICE_TYPE_EXTERN_CABLE,
+        DEVICE_TYPE_DEFAULT
+    };
 }
 
 struct AudioSpatializationManagerAsyncContext {
@@ -94,7 +117,6 @@ napi_value AudioSpatializationManagerNapi::Construct(napi_env env, napi_callback
     CHECK_AND_RETURN_RET_LOG(audioSpatializationManagerNapi != nullptr, result, "No memory");
 
     audioSpatializationManagerNapi->audioSpatializationMngr_ = AudioSpatializationManager::GetInstance();
-    audioSpatializationManagerNapi->cachedClientId_ = getpid();
     audioSpatializationManagerNapi->env_ = env;
 
     status = napi_wrap(env, thisVar, static_cast<void*>(audioSpatializationManagerNapi.get()),
@@ -215,8 +237,6 @@ static void ParseAudioDeviceDescriptor(napi_env env, napi_value root, sptr<Audio
 {
     napi_value tempValue = nullptr;
     int32_t intValue = {0};
-    char buffer[SIZE];
-    size_t res = 0;
     argTransFlag = true;
     bool hasDeviceRole = true;
     bool hasNetworkId = true;
@@ -229,64 +249,119 @@ static void ParseAudioDeviceDescriptor(napi_env env, napi_value root, sptr<Audio
     }
 
     if (napi_get_named_property(env, root, "deviceRole", &tempValue) == napi_ok) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, tempValue, &valueType);
+        if (valueType != napi_number) {
+            argTransFlag = false;
+            return;
+        }
         napi_get_value_int32(env, tempValue, &intValue);
+        if (std::find(DEVICE_ROLE_SET.begin(), DEVICE_ROLE_SET.end(), intValue) == DEVICE_ROLE_SET.end()) {
+            argTransFlag = false;
+            return;
+        }
         selectedAudioDevice->deviceRole_ = static_cast<DeviceRole>(intValue);
     }
 
     if (napi_get_named_property(env, root, "deviceType", &tempValue) == napi_ok) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, tempValue, &valueType);
+        if (valueType != napi_number) {
+            argTransFlag = false;
+            return;
+        }
         napi_get_value_int32(env, tempValue, &intValue);
+        if (std::find(DEVICE_TYPE_SET.begin(), DEVICE_TYPE_SET.end(), intValue) == DEVICE_TYPE_SET.end()) {
+            argTransFlag = false;
+            return;
+        }
         selectedAudioDevice->deviceType_ = static_cast<DeviceType>(intValue);
     }
 
-    if (napi_get_named_property(env, root, "networkId", &tempValue) == napi_ok) {
-        napi_get_value_string_utf8(env, tempValue, buffer, SIZE, &res);
-        selectedAudioDevice->networkId_ = std::string(buffer);
-    }
-
-    if (napi_get_named_property(env, root, "displayName", &tempValue) == napi_ok) {
-        napi_get_value_string_utf8(env, tempValue, buffer, SIZE, &res);
-        selectedAudioDevice->displayName_ = std::string(buffer);
-    }
-
-    if (napi_get_named_property(env, root, "interruptGroupId", &tempValue) == napi_ok) {
-        napi_get_value_int32(env, tempValue, &intValue);
-        selectedAudioDevice->interruptGroupId_ = intValue;
-    }
-
-    if (napi_get_named_property(env, root, "volumeGroupId", &tempValue) == napi_ok) {
-        napi_get_value_int32(env, tempValue, &intValue);
-        selectedAudioDevice->volumeGroupId_ = intValue;
-    }
-
     if (napi_get_named_property(env, root, "address", &tempValue) == napi_ok) {
-        napi_get_value_string_utf8(env, tempValue, buffer, SIZE, &res);
-        selectedAudioDevice->macAddress_ = std::string(buffer);
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, tempValue, &valueType);
+        if (valueType != napi_string) {
+            argTransFlag = false;
+            return;
+        }
+        selectedAudioDevice->macAddress_ = AudioCommonNapi::GetStringArgument(env, tempValue);
     }
+}
+
+static bool ParseSpatialDeviceAttribute(napi_env env, napi_value root, AudioSpatialDeviceState *spatialDeviceState)
+{
+    napi_value res = nullptr;
+    int32_t intValue = {0};
+
+    if (napi_get_named_property(env, root, "address", &res) == napi_ok) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, res, &valueType);
+        if (valueType != napi_string) {
+            return false;
+        }
+        spatialDeviceState->address = AudioCommonNapi::GetStringArgument(env, res);
+    } else {
+        return false;
+    }
+
+    if (napi_get_named_property(env, root, "isSpatializationSupported", &res) == napi_ok) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, res, &valueType);
+        if (valueType != napi_boolean) {
+            return false;
+        }
+        napi_get_value_bool(env, res, &(spatialDeviceState->isSpatializationSupported));
+    } else {
+        return false;
+    }
+
+    if (napi_get_named_property(env, root, "isHeadTrackingSupported", &res) == napi_ok) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, res, &valueType);
+        if (valueType != napi_boolean) {
+            return false;
+        }
+        napi_get_value_bool(env, res, &(spatialDeviceState->isHeadTrackingSupported));
+    } else {
+        return false;
+    }
+
+    if (napi_get_named_property(env, root, "spatialDeviceType", &res) == napi_ok) {
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, res, &valueType);
+        if (valueType != napi_number) {
+            return false;
+        }
+        napi_get_value_int32(env, res, &intValue);
+        if ((intValue < EARPHONE_TYPE_NONE) || (intValue > EARPHONE_TYPE_OTHERS)) {
+            return false;
+        }
+        spatialDeviceState->spatialDeviceType = static_cast<AudioSpatialDeviceType>(intValue);
+    } else {
+        return false;
+    }
+
+    return true;
 }
 
 bool AudioSpatializationManagerNapi::ParseSpatialDeviceState(napi_env env, napi_value root,
     AudioSpatialDeviceState *spatialDeviceState)
 {
-    napi_value res = nullptr;
-    int32_t intValue = {0};
-    if (napi_get_named_property(env, root, "address", &res) == napi_ok) {
-        spatialDeviceState->address = AudioCommonNapi::GetStringArgument(env, res);
+    bool hasAddress = true;
+    bool hasIsSpatializationSupported = true;
+    bool hasIsHeadTrackingSupported = true;
+    bool hasSpatialDeviceType = true;
+    napi_has_named_property(env, root, "address", &hasAddress);
+    napi_has_named_property(env, root, "isSpatializationSupported", &hasIsSpatializationSupported);
+    napi_has_named_property(env, root, "isHeadTrackingSupported", &hasIsHeadTrackingSupported);
+    napi_has_named_property(env, root, "spatialDeviceType", &hasSpatialDeviceType);
+
+    if (!hasAddress || !hasIsSpatializationSupported || !hasIsHeadTrackingSupported || !hasSpatialDeviceType) {
+        return false;
     }
 
-    if (napi_get_named_property(env, root, "isSpatializationSupported", &res) == napi_ok) {
-        napi_get_value_bool(env, res, &(spatialDeviceState->isSpatializationSupported));
-    }
-
-    if (napi_get_named_property(env, root, "isHeadTrackingSupported", &res) == napi_ok) {
-        napi_get_value_bool(env, res, &(spatialDeviceState->isHeadTrackingSupported));
-    }
-
-    if (napi_get_named_property(env, root, "spatialDeviceType", &res) == napi_ok) {
-        napi_get_value_int32(env, res, &intValue);
-        spatialDeviceState->spatialDeviceType = static_cast<AudioSpatialDeviceType>(intValue);
-    }
-
-    return true;
+    return ParseSpatialDeviceAttribute(env, root, spatialDeviceState);
 }
 
 napi_value AudioSpatializationManagerNapi::IsSpatializationEnabled(napi_env env, napi_callback_info info)
@@ -296,6 +371,11 @@ napi_value AudioSpatializationManagerNapi::IsSpatializationEnabled(napi_env env,
     napi_value result = nullptr;
     size_t argCount = 0;
     void *native = nullptr;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
     if (status != napi_ok) {
@@ -368,6 +448,11 @@ napi_value AudioSpatializationManagerNapi::SetSpatializationEnabled(napi_env env
 {
     napi_status status;
     napi_value result = nullptr;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     GET_PARAMS(env, info, ARGS_TWO);
 
@@ -419,6 +504,11 @@ napi_value AudioSpatializationManagerNapi::IsHeadTrackingEnabled(napi_env env, n
     napi_value result = nullptr;
     size_t argCount = 0;
     void *native = nullptr;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
     if (status != napi_ok) {
@@ -491,6 +581,11 @@ napi_value AudioSpatializationManagerNapi::SetHeadTrackingEnabled(napi_env env, 
 {
     napi_status status;
     napi_value result = nullptr;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     GET_PARAMS(env, info, ARGS_TWO);
 
@@ -547,7 +642,6 @@ void AudioSpatializationManagerNapi::RegisterSpatializationEnabledChangeCallback
         }
 
         int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->RegisterSpatializationEnabledEventListener(
-            spatializationManagerNapi->cachedClientId_,
             spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG(
@@ -576,7 +670,6 @@ void AudioSpatializationManagerNapi::RegisterHeadTrackingEnabledChangeCallback(n
         }
 
         int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->RegisterHeadTrackingEnabledEventListener(
-            spatializationManagerNapi->cachedClientId_,
             spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_);
         if (ret) {
             AUDIO_ERR_LOG(
@@ -621,6 +714,11 @@ napi_value AudioSpatializationManagerNapi::On(napi_env env, napi_callback_info i
 
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return undefinedResult;
+    }
 
     napi_value args[requireArgc + 1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
@@ -662,7 +760,7 @@ void AudioSpatializationManagerNapi::UnregisterSpatializationEnabledChangeCallba
         }
         if (callback == nullptr || cb->GetSpatializationEnabledChangeCbListSize() == 0) {
             int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->
-                UnregisterSpatializationEnabledEventListener(spatializationManagerNapi->cachedClientId_);
+                UnregisterSpatializationEnabledEventListener();
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterSpatializationEnabledEventListener Failed");
             spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_.reset();
             spatializationManagerNapi->spatializationEnabledChangeCallbackNapi_ = nullptr;
@@ -685,7 +783,7 @@ void AudioSpatializationManagerNapi::UnregisterHeadTrackingEnabledChangeCallback
         }
         if (callback == nullptr || cb->GetHeadTrackingEnabledChangeCbListSize() == 0) {
             int32_t ret = spatializationManagerNapi->audioSpatializationMngr_->
-                UnregisterHeadTrackingEnabledEventListener(spatializationManagerNapi->cachedClientId_);
+                UnregisterHeadTrackingEnabledEventListener();
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterHeadTrackingEnabledEventListener Failed");
             spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_.reset();
             spatializationManagerNapi->headTrackingEnabledChangeCallbackNapi_ = nullptr;
@@ -703,6 +801,11 @@ napi_value AudioSpatializationManagerNapi::Off(napi_env env, napi_callback_info 
 
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return undefinedResult;
+    }
 
     napi_value args[requireArgc + 1] = {nullptr, nullptr};
     napi_value jsThis = nullptr;
@@ -754,6 +857,11 @@ napi_value AudioSpatializationManagerNapi::IsSpatializationSupported(napi_env en
     napi_value result = nullptr;
     size_t argCount = 0;
     void *native = nullptr;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
     if (status != napi_ok) {
@@ -781,6 +889,11 @@ napi_value AudioSpatializationManagerNapi::IsSpatializationSupportedForDevice(na
     void *native = nullptr;
     bool argTransFlag = true;
     GET_PARAMS(env, info, ARGS_ONE);
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     if (argc < ARGS_ONE) {
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
@@ -802,6 +915,11 @@ napi_value AudioSpatializationManagerNapi::IsSpatializationSupportedForDevice(na
     }
     sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
     ParseAudioDeviceDescriptor(env, argv[PARAM0], selectedAudioDevice, argTransFlag);
+    if (argTransFlag == false) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
+
     bool isSpatializationSupportedForDevice = audioSpatializationManagerNapi
         ->audioSpatializationMngr_->IsSpatializationSupportedForDevice(selectedAudioDevice);
     napi_get_boolean(env, isSpatializationSupportedForDevice, &result);
@@ -815,6 +933,11 @@ napi_value AudioSpatializationManagerNapi::IsHeadTrackingSupported(napi_env env,
     napi_value result = nullptr;
     size_t argCount = 0;
     void *native = nullptr;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     status = napi_get_cb_info(env, info, &argCount, nullptr, &thisVar, nullptr);
     if (status != napi_ok) {
@@ -841,6 +964,11 @@ napi_value AudioSpatializationManagerNapi::IsHeadTrackingSupportedForDevice(napi
     napi_value result = nullptr;
     void *native = nullptr;
     bool argTransFlag = true;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     GET_PARAMS(env, info, ARGS_ONE);
 
@@ -864,6 +992,11 @@ napi_value AudioSpatializationManagerNapi::IsHeadTrackingSupportedForDevice(napi
     }
     sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
     ParseAudioDeviceDescriptor(env, argv[PARAM0], selectedAudioDevice, argTransFlag);
+    if (argTransFlag == false) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
+        return result;
+    }
+
     bool isHeadTrackingSupportedForDevice = audioSpatializationManagerNapi
         ->audioSpatializationMngr_->IsHeadTrackingSupportedForDevice(selectedAudioDevice);
     napi_get_boolean(env, isHeadTrackingSupportedForDevice, &result);
@@ -875,10 +1008,22 @@ napi_value AudioSpatializationManagerNapi::UpdateSpatialDeviceState(napi_env env
     napi_status status;
     napi_value result = nullptr;
     void *native = nullptr;
+    if (!PermissionUtil::VerifySelfPermission()) {
+        AUDIO_ERR_LOG("Create: No system permission");
+        AudioCommonNapi::throwError(env, NAPI_ERR_PERMISSION_DENIED);
+        return result;
+    }
 
     GET_PARAMS(env, info, ARGS_ONE);
 
     if (argc < ARGS_ONE) {
+        AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    if (valueType != napi_object) {
         AudioCommonNapi::throwError(env, NAPI_ERR_INPUT_INVALID);
         return result;
     }

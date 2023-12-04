@@ -117,6 +117,39 @@ void AudioPolicyManagerListenerProxy::OnAudioFocusInfoChange(
     }
 }
 
+void AudioPolicyManagerListenerProxy::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
+{
+    AUDIO_DEBUG_LOG("OnAudioFocusRequested in listener proxy.");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+    requestFocus.Marshalling(data);
+    int error = Remote()->SendRequest(ON_FOCUS_REQUEST_CHANGED, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnAudioFocusRequested failed, error: %{public}d", error);
+    }
+}
+
+void AudioPolicyManagerListenerProxy::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
+{
+    AUDIO_DEBUG_LOG("OnAudioFocusRequested in listener proxy.");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        return;
+    }
+    abandonFocus.Marshalling(data);
+    int error = Remote()->SendRequest(ON_FOCUS_ABANDON_CHANGED, data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("OnAudioFocusAbandoned failed, error: %{public}d", error);
+    }
+}
 AudioPolicyManagerListenerCallback::AudioPolicyManagerListenerCallback(
     const sptr<IStandardAudioPolicyManagerListener> &listener) : listener_(listener)
 {

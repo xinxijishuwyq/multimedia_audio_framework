@@ -83,6 +83,10 @@ private:
     void WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void WriteRenderStreamReleaseSysEvent(const std::unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo);
     void WriteCaptureStreamReleaseSysEvent(const std::unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo);
+    void SetRendererStreamParam(AudioStreamChangeInfo &streamChangeInfo,
+        unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+    void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
+        unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     AudioSystemManager *audioSystemMgr_;
 };
 } // namespace AudioStandard

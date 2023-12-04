@@ -56,6 +56,12 @@ public:
         LISTENER_CLIENT
     };
 
+    enum FocusCallbackCategory : int32_t {
+        NONE_CALLBACK_CATEGORY,
+        REQUEST_CALLBACK_CATEGORY,
+        ABANDON_CALLBACK_CATEGORY,
+    };
+
     const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
         STREAM_MUSIC,
         STREAM_VOICE_CALL,
@@ -314,17 +320,15 @@ public:
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
 
-    int32_t RegisterSpatializationEnabledEventListener(const int32_t clientPid,
-        const sptr<IRemoteObject> &object) override;
+    int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) override;
 
-    int32_t RegisterHeadTrackingEnabledEventListener(const int32_t clientPid,
-        const sptr<IRemoteObject> &object) override;
+    int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) override;
 
-    int32_t UnregisterSpatializationEnabledEventListener(const int32_t clientPid) override;
+    int32_t UnregisterSpatializationEnabledEventListener() override;
 
-    int32_t UnregisterHeadTrackingEnabledEventListener(const int32_t clientPid) override;
+    int32_t UnregisterHeadTrackingEnabledEventListener() override;
 
-    std::vector<bool> GetSpatializationState(const StreamUsage streamUsage) override;
+    AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
     bool IsSpatializationSupported() override;
 
@@ -338,6 +342,8 @@ public:
 
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object) override;
+
+    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -383,6 +389,7 @@ private:
     static constexpr int32_t VOLUME_KEY_DURATION = 0;
     static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 1;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
+    static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
@@ -403,17 +410,16 @@ private:
         AudioPolicyServer *policyServer_;
     };
 
-    void HandlePowerStateChanged(PowerMgr::PowerState state);
-
     // offload session
-    int32_t SetOffloadStream(uint32_t sessionId);
-    int32_t ReleaseOffloadStream(uint32_t sessionId);
-    void InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType, uint32_t incomingSessionId);
+    void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
+        int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
-    
+
     // for audio interrupt
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
     int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt);
+    void HandleIncomingState(AudioFocuState incomingState, InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &incomingInterrupt);
     void ProcessCurrentInterrupt(const AudioInterrupt &incomingInterrupt);
     void ResumeAudioFocusList();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry();
@@ -421,7 +427,9 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt);
     int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
-    void OnAudioFocusInfoChange();
+    void OnAudioFocusInfoChange(int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
+    void OnAudioFocusRequested(const AudioInterrupt &audioInterrupt);
+    void OnAudioFocusAbandoned(const AudioInterrupt &audioInterrupt);
     void UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void ProcessInterrupt(const InterruptHint& hint);
     AudioScene GetHighestPriorityAudioSceneFromAudioFocusInfoList() const;
@@ -457,8 +465,8 @@ private:
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
-    void RegisterVolumeKeyEvents(const int32_t keyType);
-    void RegisterVolumeKeyMuteEvents();
+    int32_t RegisterVolumeKeyEvents(const int32_t keyType);
+    int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
     void SubscribePowerStateChangeEvents();
@@ -492,6 +500,7 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioRingerModeCallback>> ringerModeCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCbsMap_;
 
+    std::mutex keyEventMutex_;
     std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;
     std::mutex amInterruptMutex_;

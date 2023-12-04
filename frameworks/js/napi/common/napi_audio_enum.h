@@ -67,10 +67,20 @@ public:
     enum FocusType {
         FOCUS_TYPE_RECORDING
     };
+
+    enum CapturerType {
+        TYPE_INVALID = -1,
+        TYPE_MIC = 0,
+        TYPE_VOICE_RECOGNITION = 1,
+        TYPE_WAKEUP = 3,
+        TYPE_PLAYBACK_CAPTURE = 2,
+        TYPE_COMMUNICATION = 7
+    };
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
     static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
+    static bool IsLegalCapturerType(int32_t type);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);

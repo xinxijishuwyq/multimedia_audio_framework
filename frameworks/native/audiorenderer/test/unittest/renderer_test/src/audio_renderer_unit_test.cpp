@@ -35,8 +35,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
-    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/test_48k_5.1.2+2_32bit.pcm";
-    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/test_48k_5.1.2+2.metadata";
+    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/test_48k_5.1.2+2_32bit.pcm";  // need manually push
+    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/test_48k_5.1.2+2.metadata";  // need manually push
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_INVALID = -2;
@@ -54,6 +54,7 @@ namespace {
     constexpr uint64_t BUFFER_DURATION_FIFTEEN = 15;
     constexpr uint64_t BUFFER_DURATION_TWENTY = 20;
     constexpr uint32_t PLAYBACK_DURATION = 2;
+    constexpr size_t MAX_RENDERER_INSTANCES = 16;
 
     constexpr size_t AVS3METADATA_SIZE = 19824;
 
@@ -2088,41 +2089,43 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererOptions rendererOptions;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+        AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
-    size_t bytesToWrite = 0;
-    size_t bytesWritten = 0;
-    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+        size_t bytesToWrite = 0;
+        size_t bytesWritten = 0;
+        int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
 
-    while (numBuffersToRender) {
-        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
-        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-        std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
-        bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-        EXPECT_GE(bytesWritten, VALUE_ZERO);
-        numBuffersToRender--;
+        while (numBuffersToRender) {
+            bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+            fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+            std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
+            bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+            EXPECT_GE(bytesWritten, VALUE_ZERO);
+            numBuffersToRender--;
+        }
+
+        audioRenderer->Drain();
+        audioRenderer->Stop();
+        audioRenderer->Release();
+
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
     }
-
-    audioRenderer->Drain();
-    audioRenderer->Stop();
-    audioRenderer->Release();
-
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2135,33 +2138,35 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
-    ASSERT_NE(nullptr, audioRenderer);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(false, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(false, isStarted);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    int32_t ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+        int32_t ret = audioRenderer->GetBufferSize(bufferLen);
+        EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 
-    buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+        buffer = new uint8_t[bufferLen];
+        ASSERT_NE(nullptr, buffer);
+        metaBuffer = new uint8_t[AVS3METADATA_SIZE];
+        ASSERT_NE(nullptr, metaBuffer);
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -2173,29 +2178,31 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+        AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
-    audioRenderer->Release();
+        audioRenderer->Release();
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -2207,35 +2214,37 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    size_t bufferLen = 0;
+        size_t bufferLen = 0;
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
-    ASSERT_NE(nullptr, metaBuffer);
+        uint8_t *buffer = new uint8_t[bufferLen];
+        ASSERT_NE(nullptr, buffer);
+        uint8_t *metaBuffer = new uint8_t[AVS3METADATA_SIZE];
+        ASSERT_NE(nullptr, metaBuffer);
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
 
-    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+        int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
 
-    audioRenderer->Stop();
-    audioRenderer->Release();
+        audioRenderer->Stop();
+        audioRenderer->Release();
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -2247,37 +2256,39 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    size_t bufferLen;
-    int32_t ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(SUCCESS, ret);
+        size_t bufferLen;
+        int32_t ret = audioRenderer->GetBufferSize(bufferLen);
+        EXPECT_EQ(SUCCESS, ret);
 
-    uint8_t *buffer = new uint8_t[bufferLen];
-    ASSERT_NE(nullptr, buffer);
-    uint8_t *metaBuffer = new uint8_t[0];
-    ASSERT_NE(nullptr, metaBuffer);
+        uint8_t *buffer = new uint8_t[bufferLen];
+        ASSERT_NE(nullptr, buffer);
+        uint8_t *metaBuffer = new uint8_t[0];
+        ASSERT_NE(nullptr, metaBuffer);
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, 0, metaFile);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, 0, metaFile);
 
-    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, 0);
-    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+        int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, 0);
+        EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
 
-    audioRenderer->Stop();
-    audioRenderer->Release();
+        audioRenderer->Stop();
+        audioRenderer->Release();
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -2289,34 +2300,36 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+        AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-    uint8_t *buffer_null = nullptr;
-    int32_t bytesWritten = audioRenderer->Write(buffer_null, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        uint8_t *buffer_null = nullptr;
+        int32_t bytesWritten = audioRenderer->Write(buffer_null, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
 
-    audioRenderer->Stop();
-    audioRenderer->Release();
+        audioRenderer->Stop();
+        audioRenderer->Release();
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -2328,34 +2341,36 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+        AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-    uint8_t *buffer_null = nullptr;
-    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, buffer_null, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        uint8_t *buffer_null = nullptr;
+        int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, buffer_null, AVS3METADATA_SIZE);
+        EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
 
-    audioRenderer->Stop();
-    audioRenderer->Release();
+        audioRenderer->Stop();
+        audioRenderer->Release();
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -2367,35 +2382,37 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+        AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
-    bool isStopped = audioRenderer->Stop();
-    EXPECT_EQ(true, isStopped);
+        bool isStopped = audioRenderer->Stop();
+        EXPECT_EQ(true, isStopped);
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
-    audioRenderer->Release();
+        audioRenderer->Release();
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -2407,34 +2424,36 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+        AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
+        bool isReleased = audioRenderer->Release();
+        EXPECT_EQ(true, isReleased);
 
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -2447,59 +2466,61 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+        AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
-    size_t bytesToWrite = 0;
-    int32_t bytesWritten = 0;
-    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
-    bool pauseTested = false;
+        size_t bytesToWrite = 0;
+        int32_t bytesWritten = 0;
+        int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+        bool pauseTested = false;
 
-    while (numBuffersToRender) {
-        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
-        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        while (numBuffersToRender) {
+            bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+            fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
 
-        std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
+            std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
 
-        bytesWritten = 0;
-        uint64_t currFilePos = ftell(wavFile);
-        if (!pauseTested && (currFilePos > PAUSE_BUFFER_POSITION) && audioRenderer->Pause()) {
-            pauseTested = true;
-            sleep(PAUSE_RENDER_TIME_SECONDS);
-            isStarted = audioRenderer->Start();
-            EXPECT_EQ(true, isStarted);
+            bytesWritten = 0;
+            uint64_t currFilePos = ftell(wavFile);
+            if (!pauseTested && (currFilePos > PAUSE_BUFFER_POSITION) && audioRenderer->Pause()) {
+                pauseTested = true;
+                sleep(PAUSE_RENDER_TIME_SECONDS);
+                isStarted = audioRenderer->Start();
+                EXPECT_EQ(true, isStarted);
 
-            int32_t ret = audioRenderer->SetVolume(0.5);
-            EXPECT_EQ(SUCCESS, ret);
-            float volume = audioRenderer->GetVolume();
-            EXPECT_EQ(0.5, volume);
+                int32_t ret = audioRenderer->SetVolume(0.5);
+                EXPECT_EQ(SUCCESS, ret);
+                float volume = audioRenderer->GetVolume();
+                EXPECT_EQ(0.5, volume);
+            }
+
+            bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+            EXPECT_GE(bytesWritten, VALUE_ZERO);
+            numBuffersToRender--;
         }
 
-        bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-        EXPECT_GE(bytesWritten, VALUE_ZERO);
-        numBuffersToRender--;
+        audioRenderer->Drain();
+        audioRenderer->Stop();
+        audioRenderer->Release();
+
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
     }
-
-    audioRenderer->Drain();
-    audioRenderer->Stop();
-    audioRenderer->Release();
-
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
 }
 
 /**
@@ -2513,35 +2534,37 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_011, TestSize.Level1)
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
-    ASSERT_NE(nullptr, wavFile);
-    ASSERT_NE(nullptr, metaFile);
+    if (wavFile != nullptr) {
+        ASSERT_NE(nullptr, wavFile);
+        ASSERT_NE(nullptr, metaFile);
 
-    AudioRendererOptions rendererOptions;
+        AudioRendererOptions rendererOptions;
 
-    AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+        ASSERT_NE(nullptr, audioRenderer);
 
-    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
-    EXPECT_EQ(SUCCESS, ret);
+        ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+        EXPECT_EQ(SUCCESS, ret);
 
-    size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+        size_t bufferLen;
+        uint8_t *buffer;
+        uint8_t *metaBuffer;
 
-    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+        AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+        bool isStarted = audioRenderer->Start();
+        EXPECT_EQ(true, isStarted);
 
-    fread(buffer, 1, bufferLen, wavFile);
-    fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
-    int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-    EXPECT_EQ(ERR_INCORRECT_MODE, bytesWritten);
+        fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
+        EXPECT_EQ(ERR_INCORRECT_MODE, bytesWritten);
 
-    audioRenderer->Release();
+        audioRenderer->Release();
 
-    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+        AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+    }
 }
 
 /**
@@ -5036,29 +5059,15 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Max_Renderer_Instances_001, TestSiz
     vector<unique_ptr<AudioRenderer>> rendererList;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos = {};
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    int32_t maxRendererInstances = 0;
-    maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
 
     // Create renderer instance with the maximum number of configured instances
-    while (audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances)) {
+    while (audioRendererChangeInfos.size() < MAX_RENDERER_INSTANCES) {
         auto audioRenderer = AudioRenderer::Create(rendererOptions);
         EXPECT_NE(nullptr, audioRenderer);
         rendererList.push_back(std::move(audioRenderer));
         audioRendererChangeInfos.clear();
         AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     }
-
-    // When the number of renderer instances equals the number of configurations, creating another one should fail
-    auto audioRenderer = AudioRenderer::Create(rendererOptions);
-    EXPECT_EQ(nullptr, audioRenderer);
-
-    // Release a renderer and create one, which should be successfully created
-    auto it = rendererList.begin();
-    bool isReleased = (*it)->Release();
-    EXPECT_EQ(true, isReleased);
-    rendererList.erase(it);
-    audioRenderer = AudioRenderer::Create(rendererOptions);
-    EXPECT_NE(nullptr, audioRenderer);
 
     for (auto it = rendererList.begin(); it != rendererList.end();) {
         bool isReleased = (*it)->Release();

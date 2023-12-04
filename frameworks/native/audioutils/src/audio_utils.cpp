@@ -18,6 +18,7 @@
 #include <sstream>
 #include <ostream>
 #include "audio_utils.h"
+#include "audio_utils_c.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #ifdef FEATURE_HITRACE_METER
@@ -475,3 +476,39 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
 
 } // namespace AudioStandard
 } // namespace OHOS
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct CTrace {
+    explicit CTrace(const char *traceName) : trace(OHOS::AudioStandard::Trace(traceName)) {};
+    OHOS::AudioStandard::Trace trace;
+};
+
+CTrace *GetAndStart(const char *traceName)
+{
+    std::unique_ptr<CTrace> cTrace = std::make_unique<CTrace>(traceName);
+
+    return cTrace.release();
+}
+
+void EndCTrace(CTrace *cTrace)
+{
+    if (cTrace != nullptr) {
+        cTrace->trace.End();
+    }
+}
+
+void CallEndAndClear(CTrace **cTrace)
+{
+    if (cTrace != nullptr && *cTrace != nullptr) {
+        EndCTrace(*cTrace);
+        delete *cTrace;
+        *cTrace = nullptr;
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif

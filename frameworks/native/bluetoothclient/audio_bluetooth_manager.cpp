@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+#include "audio_bluetooth_manager.h"
+#include "bluetooth_def.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "bluetooth_def.h"
-#include "audio_bluetooth_manager.h"
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"
 
@@ -33,7 +33,6 @@ HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
-std::mutex g_activeHfpDeviceLock;
 std::mutex g_hfpInstanceLock;
 std::mutex g_audioSceneLock;
 
@@ -242,41 +241,40 @@ void AudioHfpManager::UnregisterBluetoothScoListener()
 
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
 {
-    AUDIO_INFO_LOG("zcc Entered %{public}s", __func__);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     BluetoothRemoteDevice device;
     if (HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
-        AUDIO_ERR_LOG("zcc SetActiveHfpDevice failed for the HFP device does not exist.");
+        AUDIO_ERR_LOG("SetActiveHfpDevice failed for the HFP device does not exist.");
         return ERROR;
     }
-    std::lock_guard<std::mutex> activeHfpDeviceLock(g_activeHfpDeviceLock);
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
-        AUDIO_INFO_LOG("zcc Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
+        AUDIO_INFO_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
         int32_t ret = DisconnectSco();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     }
     std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     bool res = hfpInstance_->SetActiveDevice(device);
-    CHECK_AND_RETURN_RET_LOG(res == true, ERROR, "zcc SetActiveHfpDevice failed, result: %{public}d", res);
+    CHECK_AND_RETURN_RET_LOG(res == true, ERROR, "SetActiveHfpDevice failed, result: %{public}d", res);
     activeHfpDevice_ = device;
     return SUCCESS;
 }
 
 int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
 {
-    AUDIO_INFO_LOG("zcc Entered %{public}s,\
+    AUDIO_INFO_LOG("Entered %{public}s,\
         new audioScene is %{public}d, last audioScene is %{public}d", __func__, scene, scene_);
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
     if (scene_ == scene) {
         AUDIO_DEBUG_LOG("Current scene is not changed, ignore connectSco operation.");
         return SUCCESS;
     }
-    // if (scene == AUDIO_SCENE_RINGING && inbarding关闭) {
-    //     AUDIO_INFO_LOG("The inbarding switch is not on, ignore the ring scene.");
-    //     return SUCCESS;
-    // }
     std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
+    if (scene == AUDIO_SCENE_RINGING && !hfpInstance_->IsInbandRingingEnabled()) {
+        AUDIO_INFO_LOG("The inbarding switch is off, ignore the ring scene.");
+        return SUCCESS;
+    }
     int32_t ret;
     int8_t lastScoCategory = GetScoCategoryFromScene(scene_);
     if (lastScoCategory != ScoCategory::SCO_DEFAULT) {
@@ -295,15 +293,15 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
 
 int32_t AudioHfpManager::DisconnectSco()
 {
-    AUDIO_INFO_LOG("zcc Entered %{public}s", __func__);
-    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
-    CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     int8_t currentScoCategory = GetScoCategoryFromScene(scene_);
     if (currentScoCategory == ScoCategory::SCO_DEFAULT) {
-        AUDIO_INFO_LOG("zcc Current audioScene is not need to disconnect sco.");
+        AUDIO_INFO_LOG("Current audioScene is not need to disconnect sco.");
         return SUCCESS;
     }
+    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     int32_t ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(currentScoCategory));
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     scene_ = AUDIO_SCENE_DEFAULT;

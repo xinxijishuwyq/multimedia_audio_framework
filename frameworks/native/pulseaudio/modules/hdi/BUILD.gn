@@ -83,6 +83,7 @@ ohos_shared_library("module-hdi-sink") {
     "${third_party_path}/bounds_checking_function:libsec_shared",
     "../../../audioeffect:audio_effect",
     "../../../audioschedule:audio_schedule",
+    "../../../audioutils:audio_utils",
     "../../../hdiadapter/sink:renderer_sink_adapter",
     "../../../playbackcapturer:playback_capturer",
   ]

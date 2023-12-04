@@ -108,7 +108,7 @@ private:
     static HandsFreeAudioGateway *hfpInstance_;
     static std::shared_ptr<AudioHfpListener> hfpListener_;
     static AudioStandard::AudioScene scene_;
-    static BluetoothRemoteDevice activeHfpDevice_;   
+    static BluetoothRemoteDevice activeHfpDevice_;
 };
 }
 }

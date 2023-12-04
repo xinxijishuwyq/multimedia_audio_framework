@@ -1162,7 +1162,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
     bool isStarted = audioFirstCapturer->Start();
     EXPECT_EQ(true, isStarted);
     isStarted = audioSecondCapturer->Start();
-    EXPECT_EQ(false, isStarted);
+    EXPECT_EQ(true, isStarted);
 
     audioCapturerChangeInfos.clear();
     ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
@@ -1174,7 +1174,7 @@ HWTEST(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapture
     EXPECT_EQ(true, isStopped);
 
     isStopped = audioSecondCapturer->Stop();
-    EXPECT_EQ(false, isStopped);
+    EXPECT_EQ(true, isStopped);
 
     bool isReleased = audioFirstCapturer->Release();
     EXPECT_EQ(true, isReleased);

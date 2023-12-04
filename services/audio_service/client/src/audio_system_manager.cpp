@@ -799,6 +799,38 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
     return;
 }
 
+void AudioFocusInfoChangeCallbackImpl::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
+{
+    AUDIO_DEBUG_LOG("on callback Entered OnAudioFocusRequested %{public}s", __func__);
+
+    for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
+        cb_ = (*callback).lock();
+        if (cb_ != nullptr) {
+            AUDIO_DEBUG_LOG("OnAudioFocusRequested : Notify event to app complete");
+            cb_->OnAudioFocusRequested(requestFocus);
+        } else {
+            AUDIO_ERR_LOG("OnAudioFocusRequested: callback is null");
+        }
+    }
+    return;
+}
+
+void AudioFocusInfoChangeCallbackImpl::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
+{
+    AUDIO_DEBUG_LOG("on callback Entered OnAudioFocusAbandoned %{public}s", __func__);
+
+    for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
+        cb_ = (*callback).lock();
+        if (cb_ != nullptr) {
+            AUDIO_DEBUG_LOG("OnAudioFocusAbandoned : Notify event to app complete");
+            cb_->OnAudioFocusAbandoned(abandonFocus);
+        } else {
+            AUDIO_ERR_LOG("OnAudioFocusAbandoned: callback is null");
+        }
+    }
+    return;
+}
+
 int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientPid,
     const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
 {

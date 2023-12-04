@@ -51,7 +51,7 @@ public:
     virtual ~AudioSpatializationStateChangeListenerStub();
 
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
-    void OnSpatializationStateChange(const std::vector<bool> &spatializationState) override;
+    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
     void SetCallback(const std::weak_ptr<AudioSpatializationStateChangeCallback> &callback);
 private:
     std::weak_ptr<AudioSpatializationStateChangeCallback> callback_;

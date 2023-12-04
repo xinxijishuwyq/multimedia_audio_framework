@@ -68,6 +68,12 @@ void AudioPolicyManagerListenerStub::ReadAudioFocusInfoChangeData(MessageParcel 
     }
 }
 
+void AudioPolicyManagerListenerStub::ReadAudioFocusData(MessageParcel &data, AudioInterrupt &audioFocusInfo)
+{
+    AUDIO_DEBUG_LOG("Enter ReadAudioFocusData.");
+    audioFocusInfo.Unmarshalling(data);
+}
+
 int AudioPolicyManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -93,6 +99,18 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
             std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
             ReadAudioFocusInfoChangeData(data, focusInfoList);
             OnAudioFocusInfoChange(focusInfoList);
+            return AUDIO_OK;
+        }
+        case ON_FOCUS_REQUEST_CHANGED: {
+            AudioInterrupt requestFocus = {};
+            ReadAudioFocusData(data, requestFocus);
+            OnAudioFocusRequested(requestFocus);
+            return AUDIO_OK;
+        }
+        case ON_FOCUS_ABANDON_CHANGED: {
+            AudioInterrupt abandonFocus = {};
+            ReadAudioFocusData(data, abandonFocus);
+            OnAudioFocusAbandoned(abandonFocus);
             return AUDIO_OK;
         }
         case ON_AVAILABLE_DEVICE_CAHNGE: {
@@ -144,6 +162,28 @@ void AudioPolicyManagerListenerStub::OnAudioFocusInfoChange(
     }
 
     focunIfoChangedCallback->OnAudioFocusInfoChange(focusInfoList);
+}
+
+void AudioPolicyManagerListenerStub::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerStub OnAudioFocusRequested start.");
+    std::shared_ptr<AudioFocusInfoChangeCallback> focusInfoChangeCallback = focusInfoChangeCallback_.lock();
+    if (focusInfoChangeCallback == nullptr) {
+        AUDIO_ERR_LOG("OnAudioFocusRequested failed for focusInfoChangeCallback is nullptr.");
+        return;
+    }
+    focusInfoChangeCallback->OnAudioFocusRequested(requestFocus);
+}
+
+void AudioPolicyManagerListenerStub::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerStub OnAudioFocusAbandoned start.");
+    std::shared_ptr<AudioFocusInfoChangeCallback> focusInfoChangeCallback = focusInfoChangeCallback_.lock();
+    if (focusInfoChangeCallback == nullptr) {
+        AUDIO_ERR_LOG("OnAudioFocusAbandoned failed for focusInfoChangeCallback is nullptr.");
+        return;
+    }
+    focusInfoChangeCallback->OnAudioFocusAbandoned(abandonFocus);
 }
 
 void AudioPolicyManagerListenerStub::OnAvailableDeviceChange(const AudioDeviceUsage usage,

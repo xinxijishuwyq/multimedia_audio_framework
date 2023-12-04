@@ -155,7 +155,7 @@ public:
     int32_t UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
         const uint64_t &channelLayout);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
-    int32_t UpdateSpatializationState(std::vector<bool> spatializationState);
+    int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
 private:
     void UpdateSensorState();
@@ -171,7 +171,7 @@ private:
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
-    bool spatializatonEnabled_ = true;
+    bool spatializatonEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
     std::shared_ptr<HeadTracker> headTracker_;

@@ -72,6 +72,8 @@ constexpr uid_t UID_MEDIA_SA = 1013;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
+constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
+constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -96,7 +98,8 @@ const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
     UID_AUDIO,
-    UID_FOUNDATION_SA
+    UID_FOUNDATION_SA,
+    UID_DISTRIBUTED_CALL_SA
 };
 
 const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
@@ -225,6 +228,7 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
     bool volLevelCheck = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ?
         volLevel >= GetMaxVolumeLevel(streamInFocus) : volLevel <= GetMinVolumeLevel(streamInFocus);
     if (volLevelCheck) {
+        std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
             std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
             if (volumeChangeCb == nullptr) {
@@ -253,21 +257,21 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 #endif
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
+int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
 {
     if ((keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) && (keyType != OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN)) {
         AUDIO_ERR_LOG("VolumeKeyEvents: invalid key type : %{public}d", keyType);
-        return;
+        return ERR_INVALID_PARAM;
     }
     AUDIO_INFO_LOG("RegisterVolumeKeyEvents: volume key: %{public}s.",
         (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
 
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
 
     std::set<int32_t> preKeys;
     std::shared_ptr<OHOS::MMI::KeyOption> keyOption = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_LOG(keyOption != nullptr, "Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOption != nullptr, ERR_INVALID_PARAM, "Invalid key option");
     keyOption->SetPreKeys(preKeys);
     keyOption->SetFinalKey(keyType);
     keyOption->SetFinalKeyDown(true);
@@ -275,7 +279,7 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     int32_t keySubId = im->SubscribeKeyEvent(keyOption, [=](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
         AUDIO_INFO_LOG("Receive volume key event: %{public}s.",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
-        std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+        std::lock_guard<std::mutex> lock(keyEventMutex_);
         AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
         if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
             streamInFocus = AudioStreamType::STREAM_ALL;
@@ -300,18 +304,19 @@ void AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for volume key: %{public}s option failed",
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
     }
+    return keySubId;
 }
 #endif
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
+int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
 {
     AUDIO_INFO_LOG("RegisterVolumeKeyMuteEvents: volume key: mute");
     MMI::InputManager *im = MMI::InputManager::GetInstance();
-    CHECK_AND_RETURN_LOG(im != nullptr, "Failed to obtain INPUT manager");
+    CHECK_AND_RETURN_RET_LOG(im != nullptr, ERR_INVALID_PARAM, "Failed to obtain INPUT manager");
 
     std::shared_ptr<OHOS::MMI::KeyOption> keyOptionMute = std::make_shared<OHOS::MMI::KeyOption>();
-    CHECK_AND_RETURN_LOG(keyOptionMute != nullptr, "keyOptionMute: Invalid key option");
+    CHECK_AND_RETURN_RET_LOG(keyOptionMute != nullptr, ERR_INVALID_PARAM, "keyOptionMute: Invalid key option");
     std::set<int32_t> preKeys;
     keyOptionMute->SetPreKeys(preKeys);
     keyOptionMute->SetFinalKey(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_MUTE);
@@ -327,6 +332,7 @@ void AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     if (muteKeySubId < 0) {
         AUDIO_ERR_LOG("SubscribeKeyEvent: subscribing for mute failed ");
     }
+    return muteKeySubId;
 }
 #endif
 
@@ -339,10 +345,15 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
     }
 
     AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: first time.");
-    hasSubscribedVolumeKeyEvents_.store(true);
-    RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
-    RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
-    RegisterVolumeKeyMuteEvents();
+    int32_t resultOfVolumeUp = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    int32_t resultOfVolumeDown = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    int32_t resultOfMute = RegisterVolumeKeyMuteEvents();
+    if (resultOfVolumeUp >= 0 && resultOfVolumeDown >= 0 && resultOfMute >= 0) {
+        hasSubscribedVolumeKeyEvents_.store(true);
+    } else {
+        AUDIO_ERR_LOG("SubscribeVolumeKeyEvents: failed to subscribe key events.");
+        hasSubscribedVolumeKeyEvents_.store(false);
+    }
 }
 #endif
 
@@ -439,43 +450,34 @@ void AudioPolicyServer::SubscribePowerStateChangeEvents()
 
 void AudioPolicyServer::CheckSubscribePowerStateChange()
 {
-    if (!powerStateCallbackRegister_) {
-        SubscribePowerStateChangeEvents();
+    if (powerStateCallbackRegister_) {
+        return;
     }
 
-    if (!powerStateCallbackRegister_) {
-        AUDIO_ERR_LOG("PowerState CallBack Register Failed");
-    } else {
+    SubscribePowerStateChangeEvents();
+
+    if (powerStateCallbackRegister_) {
         AUDIO_DEBUG_LOG("PowerState CallBack Register Success");
+    } else {
+        AUDIO_ERR_LOG("PowerState CallBack Register Failed");
     }
 }
 
-void AudioPolicyServer::HandlePowerStateChanged(PowerMgr::PowerState state)
-{
-    audioPolicyService_.HandlePowerStateChanged(state);
-}
-
-int32_t AudioPolicyServer::SetOffloadStream(uint32_t sessionId)
+void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
+    int64_t deactivateSessionId)
 {
     CheckSubscribePowerStateChange();
-    return audioPolicyService_.SetOffloadStream(sessionId);
-}
-
-int32_t AudioPolicyServer::ReleaseOffloadStream(uint32_t sessionId)
-{
-    return audioPolicyService_.ReleaseOffloadStream(sessionId);
-}
-
-void AudioPolicyServer::InterruptOffload(uint32_t activeSessionId, AudioStreamType incomingStreamType,
-    uint32_t incomingSessionId)
-{
-    ReleaseOffloadStream(activeSessionId);
-    if ((incomingStreamType == AudioStreamType::STREAM_MUSIC) ||
-        (incomingStreamType == AudioStreamType::STREAM_SPEECH)) {
-        SetOffloadStream(incomingSessionId);
-    } else {
-        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", incomingSessionId,
-            incomingStreamType);
+    if (deactivateSessionId != OFFLOAD_NO_SESSION_ID) {
+        audioPolicyService_.OffloadStreamReleaseCheck(deactivateSessionId);
+    }
+    if (activateSessionId != OFFLOAD_NO_SESSION_ID) {
+        if (activateStreamType == AudioStreamType::STREAM_MUSIC ||
+            activateStreamType == AudioStreamType::STREAM_SPEECH) {
+            audioPolicyService_.OffloadStreamSetCheck(activateSessionId);
+        } else {
+            AUDIO_DEBUG_LOG("session:%{public}d not get offload stream, type is %{public}d",
+                (int32_t)activateSessionId, (int32_t)activateStreamType);
+        }
     }
 }
 
@@ -485,7 +487,7 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
-    policyServer_->HandlePowerStateChanged(state);
+    policyServer_->audioPolicyService_.HandlePowerStateChanged(state);
 }
 
 void AudioPolicyServer::InitKVStore()
@@ -656,6 +658,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     }
 
     int result = audioPolicyService_.SetStreamMute(streamType, mute);
+    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -716,6 +719,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     }
 
     int ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel, isUpdateUi);
+    std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
     for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -980,6 +984,11 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != EDM_SERVICE_UID && system::GetBoolParameter("persist.edm.mic_disable", false)) {
+        AUDIO_ERR_LOG("set microphone mute failed cause feature is disabled by edm");
+        return ERR_MICROPHONE_DISABLED_BY_EDM;
+    }
     bool isMicrophoneMute = IsMicrophoneMute(api_v);
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute) {
@@ -1283,6 +1292,7 @@ int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const Audio
 void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus granted in: %{public}d", clientId);
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
     if (amInterruptCbsMap_.find(clientId) == amInterruptCbsMap_.end()) {
         AUDIO_ERR_LOG("Notify focus granted in: %{public}d failed, callback does not exist", clientId);
         return;
@@ -1314,6 +1324,7 @@ void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioIn
 int32_t AudioPolicyServer::NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     AUDIO_INFO_LOG("Notify focus abandoned in: %{public}d", clientId);
+    std::lock_guard<std::mutex> lock(amInterruptMutex_);
     std::shared_ptr<AudioInterruptCallback> interruptCb = nullptr;
     interruptCb = amInterruptCbsMap_[clientId];
     if (!interruptCb) {
@@ -1365,12 +1376,11 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, focusEntry.forceType, focusEntry.hintType, 1.0f};
         uint32_t activeSessionID = (iterActive->first).sessionID;
         std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[activeSessionID];
-
         switch (focusEntry.hintType) {
             case INTERRUPT_HINT_STOP:
                 iterActive = audioFocusInfoList_.erase(iterActive);
                 iterActiveErased = true;
-                OnAudioFocusInfoChange();
+                OnAudioFocusInfoChange(NONE_CALLBACK_CATEGORY, incomingInterrupt);
                 break;
             case INTERRUPT_HINT_PAUSE:
                 iterActive->second = PAUSE;
@@ -1387,13 +1397,13 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
                 activeSessionID, interruptEvent.hintType, incomingInterrupt.sessionID);
             policyListenerCb->OnInterrupt(interruptEvent);
             if (!iterActiveErased) {
-                OnAudioFocusInfoChange();
+                OnAudioFocusInfoChange(NONE_CALLBACK_CATEGORY, incomingInterrupt);
             }
         }
         if (!iterActiveErased) {
             ++iterActive;
         }
-        InterruptOffload(activeSessionID, incomingInterrupt.audioFocusType.streamType, incomingInterrupt.sessionID);
+        OffloadStreamCheck(incomingInterrupt.sessionID, incomingInterrupt.audioFocusType.streamType, activeSessionID);
     }
 }
 
@@ -1427,6 +1437,22 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         newState = (pos == HINTSTATEMAP.end()) ? ACTIVE : pos->second;
         incomingState = (newState > incomingState) ? newState : incomingState;
     }
+    HandleIncomingState(incomingState, interruptEvent, incomingInterrupt);
+    if (incomingState != STOP) {
+        audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
+        OnAudioFocusInfoChange(REQUEST_CALLBACK_CATEGORY, incomingInterrupt);
+    }
+    if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
+        AUDIO_INFO_LOG("OnInterrupt for incoming sessionID: %{public}d, hintType: %{public}d",
+            incomingInterrupt.sessionID, interruptEvent.hintType);
+        policyListenerCb->OnInterrupt(interruptEvent);
+    }
+    return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
+}
+
+void AudioPolicyServer::HandleIncomingState(AudioFocuState incomingState, InterruptEventInternal &interruptEvent,
+    const AudioInterrupt &incomingInterrupt)
+{
     if (incomingState == STOP) {
         interruptEvent.hintType = INTERRUPT_HINT_STOP;
     } else if (incomingState == PAUSE) {
@@ -1437,16 +1463,6 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     } else {
         ProcessCurrentInterrupt(incomingInterrupt);
     }
-    if (incomingState != STOP) {
-        audioFocusInfoList_.emplace_back(std::make_pair(incomingInterrupt, incomingState));
-        OnAudioFocusInfoChange();
-    }
-    if (policyListenerCb != nullptr && interruptEvent.hintType != INTERRUPT_HINT_NONE) {
-        AUDIO_INFO_LOG("OnInterrupt for incoming sessionID: %{public}d, hintType: %{public}d",
-            incomingInterrupt.sessionID, interruptEvent.hintType);
-        policyListenerCb->OnInterrupt(interruptEvent);
-    }
-    return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
 }
 
 AudioScene AudioPolicyServer::GetHighestPriorityAudioSceneFromAudioFocusInfoList() const
@@ -1478,12 +1494,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         return SUCCESS;
     }
 
-    if ((streamType == AudioStreamType::STREAM_MUSIC) || (streamType == AudioStreamType::STREAM_SPEECH)) {
-        SetOffloadStream(audioInterrupt.sessionID);
-    } else {
-        AUDIO_DEBUG_LOG("session:%{public}d not get offload stream type is %{public}d", audioInterrupt.sessionID,
-            streamType);
-    }
+    OffloadStreamCheck(audioInterrupt.sessionID, streamType, OFFLOAD_NO_SESSION_ID);
     
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to ActivateAudioInterrupt");
@@ -1505,7 +1516,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
         // If audioFocusInfoList_ is empty, directly activate interrupt
         AUDIO_INFO_LOG("audioFocusInfoList_ is empty, add the session into it directly");
         audioFocusInfoList_.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
-        OnAudioFocusInfoChange();
+        OnAudioFocusInfoChange(REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         AudioScene targetAudioScene = GetHighestPriorityAudioSceneFromAudioFocusInfoList();
         UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         return SUCCESS;
@@ -1652,7 +1663,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
 
-    ReleaseOffloadStream(audioInterrupt.sessionID);
+    OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, audioInterrupt.sessionID);
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
@@ -1664,7 +1675,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
                 }
                 return false;
             }
-            OnAudioFocusInfoChange();
+            OnAudioFocusInfoChange(ABANDON_CALLBACK_CATEGORY, audioInterrupt);
             return true;
         });
         UpdateAudioScene(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
@@ -1686,7 +1697,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         if ((it->first).sessionID == audioInterrupt.sessionID) {
             it = audioFocusInfoList_.erase(it);
             isInterruptActive = true;
-            OnAudioFocusInfoChange();
+            OnAudioFocusInfoChange(ABANDON_CALLBACK_CATEGORY, audioInterrupt);
         } else {
             AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(it->first);
             if (GetAudioScenePriority(targetAudioScene) > GetAudioScenePriority(highestPriorityAudioScene)) {
@@ -1698,8 +1709,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     // If it was not in the audioFocusInfoList_, no need to take any action on other sessions, just return.
     if (!isInterruptActive) {
-        AUDIO_DEBUG_LOG("DeactivateAudioInterrupt: the stream (sessionID %{public}d) is not active now, return success",
-            audioInterrupt.sessionID);
+        AUDIO_DEBUG_LOG("the stream (sessionID %{public}d) is not active, return success", audioInterrupt.sessionID);
         return SUCCESS;
     }
 
@@ -1707,8 +1717,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     
     OffloadStopPlaying(audioInterrupt);
 
-    // resume if other session was forced paused or ducked
-    ResumeAudioFocusList();
+    ResumeAudioFocusList(); // resume if other session was forced paused or ducked
 
     return SUCCESS;
 }
@@ -1861,11 +1870,16 @@ int32_t AudioPolicyServer::UnsetVolumeKeyEventCallback(const int32_t /* clientId
     return SUCCESS;
 }
 
-void AudioPolicyServer::OnAudioFocusInfoChange()
+void AudioPolicyServer::OnAudioFocusInfoChange(int32_t callbackCategory, const AudioInterrupt &audioInterrupt)
 {
     std::lock_guard<std::mutex> lock(focusInfoChangeMutex_);
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     for (auto it = focusInfoChangeCbsMap_.begin(); it != focusInfoChangeCbsMap_.end(); ++it) {
+        if (callbackCategory == REQUEST_CALLBACK_CATEGORY) {
+            it->second->OnAudioFocusRequested(audioInterrupt);
+        } else if (callbackCategory == ABANDON_CALLBACK_CATEGORY) {
+            it->second->OnAudioFocusAbandoned(audioInterrupt);
+        }
         it->second->OnAudioFocusInfoChange(audioFocusInfoList_);
     }
 }
@@ -2153,6 +2167,7 @@ void AudioPolicyServer::ProcessInterrupt(const InterruptHint& hint)
     InterruptType type = INTERRUPT_TYPE_BEGIN;
     InterruptForceType forceType = INTERRUPT_SHARE;
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
+    std::lock_guard<std::mutex> lock(interruptMutex_);
     for (auto it : interruptCbsMap_) {
         if (it.second != nullptr) {
             it.second->OnInterrupt(interruptEvent);
@@ -2463,6 +2478,7 @@ void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::strin
     }
 
     volumeEvent.updateUi = false;
+    std::lock_guard<std::mutex> lock(server_->volumeKeyEventMutex_);
     for (auto it = server_->volumeChangeCbsMap_.begin(); it != server_->volumeChangeCbsMap_.end(); ++it) {
         std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -2490,6 +2506,7 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     }
 
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
+    std::lock_guard<std::mutex> lock(server_->interruptMutex_);
     for (auto it : server_->interruptCbsMap_) {
         if (it.second != nullptr) {
             it.second->OnInterrupt(interruptEvent);
@@ -2718,6 +2735,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
     int32_t ret = audioPolicyService_.SetA2dpDeviceVolume(macAddress, volume);
     if (ret == SUCCESS) {
+        std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
         for (auto it = volumeChangeCbsMap_.begin(); it != volumeChangeCbsMap_.end(); ++it) {
             std::shared_ptr<VolumeKeyEventCallback> volumeChangeCb = it->second;
             if (volumeChangeCb == nullptr) {
@@ -2896,44 +2914,35 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
     return audioSpatializationService_.SetHeadTrackingEnabled(enable);
 }
 
-int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object)
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterSpatializationEnabledEventListener(
         clientPid, object, hasSystemPermission);
 }
 
-int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object)
+int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object)
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     return audioSpatializationService_.RegisterHeadTrackingEnabledEventListener(clientPid, object, hasSystemPermission);
 }
 
-int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener(int32_t clientPid)
+int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener()
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterSpatializationEnabledEventListener(clientPid);
 }
 
-int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener(int32_t clientPid)
+int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener()
 {
-    clientPid = IPCSkeleton::GetCallingPid();
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
     return audioSpatializationService_.UnregisterHeadTrackingEnabledEventListener(clientPid);
 }
 
-std::vector<bool> AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)
+AudioSpatializationState AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        std::vector<bool> spatializationState;
-        spatializationState.push_back(false);
-        spatializationState.push_back(false);
-        return spatializationState;
-    }
     return audioSpatializationService_.GetSpatializationState(streamUsage);
 }
 
@@ -2985,11 +2994,12 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
 int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t sessionID,
     const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        return ERR_PERMISSION_DENIED;
-    }
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
+}
+
+int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
+{
+    return audioSpatializationService_.UnregisterSpatializationStateEventListener(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1038,7 +1038,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_001, TestSize.Level1)
 /**
 * @tc.name  : Test GetBufferSize API via illegal state, CAPTURER_NEW: without initializing the capturer.
 * @tc.number: Audio_Capturer_GetBufferSize_002
-* @tc.desc  : Test GetBufferSize interface. Returns error code, if the capturer state is CAPTURER_NEW.
+* @tc.desc  : Test GetBufferSize interface. Returns SUCCESS, if the capturer state is CAPTURER_NEW.
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_002, TestSize.Level1)
 {
@@ -1048,7 +1048,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_002, TestSize.Level1)
 
     size_t bufferLen;
     ret = audioCapturer->GetBufferSize(bufferLen);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1070,7 +1070,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetBufferSize_003, TestSize.Level1)
 
     size_t bufferLen;
     ret = audioCapturer->GetBufferSize(bufferLen);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**
@@ -1148,7 +1148,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_001, TestSize.Level1)
 /**
 * @tc.name  : Test GetFrameCount API via illegal state, CAPTURER_NEW: without initialiing the capturer.
 * @tc.number: Audio_Capturer_GetFrameCount_002
-* @tc.desc  : Test GetFrameCount interface. Returns error code, if the capturer state is CAPTURER_NEW.
+* @tc.desc  : Test GetFrameCount interface. Returns SUCCESS, if the capturer state is CAPTURER_NEW.
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_002, TestSize.Level1)
 {
@@ -1158,7 +1158,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_002, TestSize.Level1)
 
     uint32_t frameCount;
     ret = audioCapturer->GetFrameCount(frameCount);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1231,7 +1231,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFrameCount_005, TestSize.Level1)
 
     uint32_t frameCount;
     ret = audioCapturer->GetFrameCount(frameCount);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**
@@ -1461,8 +1461,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_002, TestSize.Level1)
 /**
 * @tc.name  : Test Read API via illegl state, CAPTURER_NEW : without Initializing the capturer.
 * @tc.number: Audio_Capturer_Read_003
-* @tc.desc  : Test Read interface. Returns error code, if the capturer state is CAPTURER_NEW.
-*           : bufferLen is invalid here, firstly bufferLen is validated in Read. So it returns ERR_INVALID_PARAM.
+* @tc.desc  : Test Read interface. Returns SUCCESS, if the capturer state is CAPTURER_NEW.
+*           : bufferLen is 0 here, so audioCapturer->Read returns ERR_INVALID_PARAM.
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_003, TestSize.Level1)
 {
@@ -1476,7 +1476,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_003, TestSize.Level1)
 
     size_t bufferLen;
     ret = audioCapturer->GetBufferSize(bufferLen);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
     ASSERT_NE(nullptr, buffer);

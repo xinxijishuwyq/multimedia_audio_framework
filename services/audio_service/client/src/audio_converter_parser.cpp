@@ -21,7 +21,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static constexpr char AUDIO_CONVERTER_CONFIG_FILE[] = "system/etc/audio/audio_converter_config.xml";
+static constexpr char AUDIO_CONVERTER_CONFIG_FILE[] = "/system/etc/audio/audio_converter_config.xml";
 
 static constexpr int32_t FILE_CONTENT_ERROR = -2;
 static constexpr int32_t FILE_PARSE_ERROR = -3;
