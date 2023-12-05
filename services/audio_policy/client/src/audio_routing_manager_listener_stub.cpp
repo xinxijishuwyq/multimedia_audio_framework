@@ -68,6 +68,12 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
 
             return AUDIO_OK;
         }
+        case ON_DISTRIBUTED_ROUTING_ROLE_CHANGE: {
+            sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
+            CastType type = static_cast<CastType>(data.ReadInt32());
+            OnDistributedRoutingRoleChange(descriptor, type);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -122,6 +128,20 @@ void AudioRoutingManagerListenerStub::OnPreferredInputDeviceUpdated(
     activeInputDeviceChangeCallback->OnPreferredInputDeviceUpdated(desc);
 }
 
+void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
+    const CastType type)
+{
+    std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback =
+        audioDistributedRoutingRoleCallback_.lock();
+
+    if (audioDistributedRoutingRoleCallback == nullptr) {
+        AUDIO_ERR_LOG("OnDistributedRoutingRoleChange: audioDistributedRoutingRoleCallback_ is nullptr");
+        return;
+    }
+
+    audioDistributedRoutingRoleCallback->OnDistributedRoutingRoleChange(descriptor, type);
+}
+
 void AudioRoutingManagerListenerStub::SetPreferredOutputDeviceChangeCallback(
     const std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
 {
@@ -132,6 +152,12 @@ void AudioRoutingManagerListenerStub::SetPreferredInputDeviceChangeCallback(
     const std::weak_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
 {
     activeInputDeviceChangeCallback_ = callback;
+}
+
+void AudioRoutingManagerListenerStub::SetDistributedRoutingRoleCallback(
+    const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback)
+{
+    audioDistributedRoutingRoleCallback_ = callback;
 }
 } // namespace AudioStandard
 } // namespace OHOS

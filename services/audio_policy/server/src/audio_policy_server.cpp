@@ -2841,6 +2841,57 @@ int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterru
     return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.sessionID));
 }
 
+int32_t AudioPolicyServer::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+{
+    audioPolicyService_.ConfigDistributedRoutingRole(descriptor, type);
+    OnDistributedRoutingRoleChange(descriptor, type);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object)
+{
+    std::lock_guard<std::mutex> lock(configDistributedRoutingMutex_);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
+        "SetDistributedRoutingRoleCallback set listener object is nullptr");
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    bool hasBTPermission = VerifyPermission(USE_BLUETOOTH_PERMISSION);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
+    if (listener != nullptr) {
+        listener->hasBTPermission_ = hasBTPermission;
+        distributedRoutingRoleChangeCbsMap_[clientPid] = listener;
+    }
+    AUDIO_DEBUG_LOG("SetDistributedRoutingRoleCallback: distributedRoutingRoleChangeCbsMap_ size: %{public}zu",
+        distributedRoutingRoleChangeCbsMap_.size());
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::UnsetDistributedRoutingRoleCallback()
+{
+    std::lock_guard<std::mutex> lock(configDistributedRoutingMutex_);
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+
+    if (distributedRoutingRoleChangeCbsMap_.erase(clientPid) == 0) {
+        AUDIO_ERR_LOG("UnsetDistributedRoutingRoleCallback clientPid %{public}d not present", clientPid);
+        return ERR_INVALID_OPERATION;
+    }
+
+    AUDIO_DEBUG_LOG("UnsetDistributedRoutingRoleCallback: distributedRoutingRoleChangeCbsMap_ size: %{public}zu",
+        distributedRoutingRoleChangeCbsMap_.size());
+    return SUCCESS;
+}
+
+void AudioPolicyServer::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
+    const CastType type)
+{
+    std::lock_guard<std::mutex> lock(configDistributedRoutingMutex_);
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    for (auto it = distributedRoutingRoleChangeCbsMap_.begin(); it != distributedRoutingRoleChangeCbsMap_.end(); it++) {
+        it->second->OnDistributedRoutingRoleChange(descriptor, type);
+    }
+}
+
 void AudioPolicyServer::RegisterPowerStateListener()
 {
     if (powerStateListener_ == nullptr) {

@@ -30,7 +30,7 @@ public:
     virtual void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo) = 0;
-    virtual void OnDeviceStatusUpdated(DStatusInfo statusInfo) = 0;
+    virtual void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false) = 0;
     virtual void OnServiceConnected(AudioServiceIndex serviceIndex) = 0;
     virtual void OnServiceDisconnected(AudioServiceIndex serviceIndex) = 0;
     virtual void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) = 0;

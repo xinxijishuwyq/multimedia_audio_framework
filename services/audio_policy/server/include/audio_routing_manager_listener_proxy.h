@@ -29,6 +29,7 @@ public:
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
+    void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> desciptor, const CastType type) override;
 
 private:
     static inline BrokerDelegator<AudioRoutingManagerListenerProxy> delegator_;

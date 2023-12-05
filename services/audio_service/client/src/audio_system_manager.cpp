@@ -1335,5 +1335,113 @@ int32_t AudioSystemManager::UnsetAvailableDeviceChangeCallback(AudioDeviceUsage 
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
     return AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
+
+int32_t AudioSystemManager::ConfigDistributedRoutingRole(AudioDeviceDescriptor *descriptor, CastType type)
+{
+    if (descriptor == nullptr) {
+        AUDIO_ERR_LOG("ConfigDistributedRoutingRole: invalid parameter");
+        return ERR_INVALID_PARAM;
+    }
+    if (descriptor->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
+        AUDIO_ERR_LOG("ConfigDistributedRoutingRole: not an output device");
+        return ERR_INVALID_PARAM;
+    }
+
+    size_t validSize = 64;
+    if (descriptor->networkId_ != LOCAL_NETWORK_ID &&
+        descriptor->networkId_.size() != validSize) {
+        AUDIO_ERR_LOG("ConfigDistributedRoutingRole: invalid networkId");
+        return ERR_INVALID_PARAM;
+    }
+
+    int32_t ret = AudioPolicyManager::GetInstance().ConfigDistributedRoutingRole(descriptor, type);
+    return ret;
+}
+
+int32_t AudioSystemManager::SetDistributedRoutingRoleCallback(
+    const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (audioDistributedRoutingRoleCallback_ != nullptr) {
+        callback->cbMutex_.lock();
+        AUDIO_DEBUG_LOG("AudioSystemManger reset existing callback project");
+        AudioPolicyManager::GetInstance().UnsetDistributedRoutingRoleCallback();
+        audioDistributedRoutingRoleCallback_.reset();
+        audioDistributedRoutingRoleCallback_ = nullptr;
+        callback->cbMutex_.unlock();
+    }
+
+    audioDistributedRoutingRoleCallback_ = std::make_shared<AudioDistributedRoutingRoleCallbackImpl>();
+    if (audioDistributedRoutingRoleCallback_ == nullptr) {
+        AUDIO_ERR_LOG("AudioSystemManger failed to allocate memory for distributedRoutingRole callback");
+        return ERROR;
+    }
+
+    int32_t ret = AudioPolicyManager::GetInstance().
+        SetDistributedRoutingRoleCallback(audioDistributedRoutingRoleCallback_);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("AudioSystemManger failed to set distributedRoutingRole callback");
+        return ERROR;
+    }
+
+    std::shared_ptr<AudioDistributedRoutingRoleCallbackImpl> cbImpl =
+        std::static_pointer_cast<AudioDistributedRoutingRoleCallbackImpl>(audioDistributedRoutingRoleCallback_);
+    if (cbImpl == nullptr) {
+        AUDIO_ERR_LOG("AudioSystemManger cbImpl is nullptr");
+        return ERROR;
+    }
+    cbImpl->SaveCallback(callback);
+    return SUCCESS;
+}
+
+int32_t AudioSystemManager::UnsetDistributedRoutingRoleCallback(
+    const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetDistributedRoutingRoleCallback();
+    if (audioDistributedRoutingRoleCallback_ != nullptr) {
+        audioDistributedRoutingRoleCallback_.reset();
+        audioDistributedRoutingRoleCallback_ = nullptr;
+    }
+    return ret;
+}
+
+void AudioDistributedRoutingRoleCallbackImpl::SaveCallback(
+    const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback)
+{
+    auto wp = callback.lock();
+    if (wp != nullptr) {
+        callback_ = callback;
+    } else {
+        AUDIO_ERR_LOG("AudioDistributedRoutingRoleCallbackImpl: SaveCallback is nullptr");
+    }
+}
+
+void AudioDistributedRoutingRoleCallbackImpl::OnDistributedRoutingRoleChange(
+    const AudioDeviceDescriptor *descriptor, const CastType type)
+{
+    cb_ = callback_.lock();
+    if (cb_ != nullptr) {
+        cb_->cbMutex_.lock();
+        cb_->OnDistributedRoutingRoleChange(descriptor, type);
+        AUDIO_DEBUG_LOG("AudioDistributedRoutingRoleCallbackImpl: OnDistributedRoutingRoleChange");
+        cb_->cbMutex_.unlock();
+    } else {
+        AUDIO_ERR_LOG("AudioDistributedRoutingRoleCallbackImpl: callback is null");
+    }
+}
+
+AudioDistributedRoutingRoleCallbackImpl::AudioDistributedRoutingRoleCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl constructor");
+}
+
+AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -298,6 +298,12 @@ public:
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback);
 
+    int32_t ConfigDistributedRoutingRole(sptr<AudioDeviceDescriptor> descriptor, CastType type);
+
+    int32_t SetDistributedRoutingRoleCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
+
+    int32_t UnsetDistributedRoutingRoleCallback();
+
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
 
 private:

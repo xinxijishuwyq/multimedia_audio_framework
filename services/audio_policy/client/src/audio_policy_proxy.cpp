@@ -740,6 +740,74 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    if (descriptor == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: ConfigDistributedRoutingRole descriptor is null");
+        return -1;
+    }
+    if (!descriptor->Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioDeviceDescriptor marshalling failed");
+        return -1;
+    }
+    data.WriteInt32(static_cast<int32_t>(type));
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CONFIG_DISTRIBUTED_ROUTING_ROLE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("ConfigDistributedRoutingRole failed error : %{public}d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: SetDistributedRoutingRoleCallback object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        return -1;
+    }
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_DISTRIBUTED_ROUTING_ROLE_CALLBACK), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback failed error : %{public}d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::UnsetDistributedRoutingRoleCallback()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool token = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(token, ERROR, "data writeInterfaceToken failed");
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_DISTRIBUTED_ROUTING_ROLE_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "AudioPolicyProxy UnsetDistributedRoutingRoleCallback failed error : %{public}d", error);
+    return reply.ReadInt32();
+}
+
 void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {

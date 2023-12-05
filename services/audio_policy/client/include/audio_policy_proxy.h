@@ -74,6 +74,12 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v) override;
 
+    int32_t ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type) override;
+
+    int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetDistributedRoutingRoleCallback() override;
+    
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones() override;
 

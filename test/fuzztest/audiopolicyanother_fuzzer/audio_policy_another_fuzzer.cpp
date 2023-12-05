@@ -92,6 +92,12 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     DeviceFlag flag = *reinterpret_cast<const DeviceFlag *>(rawData);
     AudioPolicyServerPtr->SetDeviceChangeCallback(clientId, flag, object);
     AudioPolicyServerPtr->UnsetDeviceChangeCallback(clientId, flag);
+
+    const sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
+    CastType type = *reinterpret_cast<const CastType *>(rawData);
+    AudioPolicyServerPtr->ConfigDistributedRoutingRole(deviceDescriptor, type);
+    AudioPolicyServerPtr->SetDistributedRoutingRoleCallback(object);
+    AudioPolicyServerPtr->UnsetDistributedRoutingRoleCallback();
 }
 
 void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
