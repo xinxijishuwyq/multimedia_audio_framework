@@ -120,6 +120,9 @@ AudioManagerNapi::AudioManagerNapi()
 AudioManagerNapi::~AudioManagerNapi()
 {
     AUDIO_DEBUG_LOG("AudioManagerNapi::~AudioManagerNapi()");
+    if (volumeKeyEventCallbackNapi_ != nullptr) {
+        volumeKeyEventCallbackNapi_->Release();
+    }
 }
 
 void AudioManagerNapi::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
@@ -2342,9 +2345,7 @@ template<typename T> void AudioManagerNapi::RegisterVolumeChangeCallback(napi_en
             AUDIO_DEBUG_LOG("RegisterVolumeKeyEventCallback Success");
         }
     }
-    std::shared_ptr<AudioVolumeKeyEventNapi> cb =
-        std::static_pointer_cast<AudioVolumeKeyEventNapi>(managerNapi->volumeKeyEventCallbackNapi_);
-    cb->SaveCallbackReference(VOLUME_CHANGE_CALLBACK_NAME, args[PARAM1]);
+    managerNapi->volumeKeyEventCallbackNapi_->SaveCallbackReference(VOLUME_CHANGE_CALLBACK_NAME, args[PARAM1]);
 }
 
 template<typename T> void AudioManagerNapi::RegisterDeviceChangeCallback(napi_env env, const T &args,
