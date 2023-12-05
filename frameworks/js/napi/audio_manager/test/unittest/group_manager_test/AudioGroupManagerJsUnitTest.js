@@ -36,25 +36,25 @@ describe("AudioGroupManagerJsUnitTest", function () {
         console.info("Create audioVolumeManager finished");
 
         // input testsuit setup step，setup invoked before all testcases
-        console.info('beforeAll called')
+        console.info('AudioGroupManagerJsUnitTest:beforeAll called')
     })
 
     afterAll(function () {
 
         // input testsuit teardown step，teardown invoked after all testcases
-        console.info('afterAll called')
+        console.info('AudioGroupManagerJsUnitTest:afterAll called')
     })
 
     beforeEach(function () {
 
         // input testcase setup step，setup invoked before each testcases
-        console.info('beforeEach called')
+        console.info('AudioGroupManagerJsUnitTest:beforeEach called')
     })
 
     afterEach(function () {
 
         // input testcase teardown step，teardown invoked after each testcases
-        console.info('afterEach called')
+        console.info('AudioGroupManagerJsUnitTest:afterEach called')
     })
 
     /*
@@ -173,12 +173,12 @@ describe("AudioGroupManagerJsUnitTest", function () {
         let volume = -3;
         audioVolumeGroupManager.setVolume(ACCESSIBILITY, volume, (err) => {
             if (err) {
-                console.error(`Failed to set ALARM volume. ${err}`);
+                console.error(`005.Failed to set ALARM volume. ${err}`);
                 expect(true).assertTrue();
                 done();
                 return;
             }
-            console.info('invoked to indicate a successful ACCESSIBILITY volume setting.');
+            console.info('005.invoked to indicate a successful ACCESSIBILITY volume setting.');
             expect(false).assertTrue();
             done();
         })
@@ -194,12 +194,12 @@ describe("AudioGroupManagerJsUnitTest", function () {
         let volume = 16;
         audioVolumeGroupManager.setVolume(ACCESSIBILITY, volume, (err) => {
             if (err) {
-                console.error(`Failed to set ALARM volume. ${err}`);
+                console.error(`006.Failed to set ALARM volume. ${err}`);
                 expect(true).assertTrue();
                 done();
                 return;
             }
-            console.info('invoked to indicate a successful ACCESSIBILITY volume setting.');
+            console.info('006.invoked to indicate a successful ACCESSIBILITY volume setting.');
             expect(false).assertTrue();
             done();
         })
