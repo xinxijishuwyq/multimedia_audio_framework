@@ -20,6 +20,7 @@ group("audio_unit_test") {
     "../frameworks/js/napi/audio_manager/test/unittest/audio_manager_test:jsunittest",
     "../frameworks/js/napi/audio_manager/test/unittest/group_manager_test:jsunittest",
     "../frameworks/js/napi/audio_manager/test/unittest/routing_manager_test:jsunittest",
+    "../frameworks/js/napi/audio_manager/test/unittest/spatialization_manager_test:jsunittest",
     "../frameworks/js/napi/audio_manager/test/unittest/stream_manager_test:jsunittest",
     "../frameworks/js/napi/audio_manager/test/unittest/volume_manager_test:jsunittest",
     "../frameworks/js/napi/audio_renderer/test/unittest/audio_renderer_interrupt_test:js_audio_interrupt_test",
