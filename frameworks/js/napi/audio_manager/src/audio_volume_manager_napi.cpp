@@ -61,7 +61,13 @@ struct AudioVolumeManagerAsyncContext {
 AudioVolumeManagerNapi::AudioVolumeManagerNapi()
     : audioSystemMngr_(nullptr), env_(nullptr) {}
 
-AudioVolumeManagerNapi::~AudioVolumeManagerNapi() = default;
+AudioVolumeManagerNapi::~AudioVolumeManagerNapi()
+{
+    AUDIO_DEBUG_LOG("AudioManagerNapi::~AudioManagerNapi()");
+    if (volumeKeyEventCallbackNapi_ != nullptr) {
+        volumeKeyEventCallbackNapi_->Release();
+    }
+}
 
 void AudioVolumeManagerNapi::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
 {
@@ -523,9 +529,7 @@ napi_value AudioVolumeManagerNapi::On(napi_env env, napi_callback_info info)
                 AUDIO_DEBUG_LOG("RegisterVolumeKeyEventCallback Success");
             }
         }
-        std::shared_ptr<AudioVolumeKeyEventNapi> cb =
-            std::static_pointer_cast<AudioVolumeKeyEventNapi>(volumeManagerNapi->volumeKeyEventCallbackNapi_);
-        cb->SaveCallbackReference(callbackName, args[PARAM1]);
+        volumeManagerNapi->volumeKeyEventCallbackNapi_->SaveCallbackReference(callbackName, args[PARAM1]);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         AudioCommonNapi::throwError(env, NAPI_ERR_INVALID_PARAM);
