@@ -442,8 +442,15 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
         return ERR_NOT_SUPPORTED;
     }
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
-    AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance();
-    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    AudioCapturerSource *audioCapturerSourceInstance;
+    IAudioRendererSink *audioRendererSinkInstance;
+    if (activeDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+        audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
+    } else {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+        audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    }
 
     if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->IsInited()) {
         AUDIO_WARNING_LOG("Capturer is not initialized.");
