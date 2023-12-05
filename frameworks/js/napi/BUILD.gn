@@ -40,6 +40,7 @@ ohos_shared_library("audio") {
     "audiocapturer",
     "audiocapturer/callback",
     "audiomanager",
+    "audiomanager/callback",
   ]
 
   sources = [
@@ -85,6 +86,12 @@ ohos_shared_library("audio") {
       "audiocapturer/callback/napi_capturer_period_position_callback.cpp",
       "audiocapturer/callback/napi_capturer_position_callback.cpp",
       "audiocapturer/napi_audio_capturer.cpp",
+      "audiomanager/callback/napi_audio_micstatechange_callback.cpp",
+      "audiomanager/callback/napi_audio_ringermode_callback.cpp",
+      "audiomanager/callback/napi_audio_volume_key_event.cpp",
+      "audiomanager/napi_audio_interrupt_manager.cpp",
+      "audiomanager/napi_audio_volume_group_manager.cpp",
+      "audiomanager/napi_audio_volume_manager.cpp",
       "audiorenderer/callback/napi_audio_renderer_callback.cpp",
       "audiorenderer/callback/napi_audio_renderer_device_change_callback.cpp",
       "audiorenderer/callback/napi_audio_renderer_policy_service_died_callback.cpp",

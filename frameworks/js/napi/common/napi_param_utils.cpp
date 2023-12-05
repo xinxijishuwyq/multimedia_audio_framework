@@ -321,6 +321,11 @@ napi_status NapiParamUtils::GetRendererOptions(const napi_env &env, AudioRendere
 
 napi_status NapiParamUtils::GetRendererInfo(const napi_env &env, AudioRendererInfo *rendererInfo, napi_value in)
 {
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, in, &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, napi_invalid_arg,
+        "GetRendererInfo failed, vauleType is not object");
+
     int32_t intValue = {0};
     napi_status status = GetValueInt32(env, "content", intValue, in);
     if (status == napi_ok) {
@@ -354,7 +359,12 @@ napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *
     int32_t intValue = {0};
     napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
     if (status == napi_ok) {
-        streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
+        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_96000) {
+            streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
+        } else {
+            AUDIO_ERR_LOG("invaild samplingRate");
+            return napi_generic_failure;
+        }
     }
 
     status = GetValueInt32(env, "channels", intValue, in);
@@ -653,6 +663,51 @@ napi_status NapiParamUtils::SetMicrophoneDescriptors(const napi_env &env,
         index++;
     }
     return status;
+}
+
+napi_status NapiParamUtils::SetValueMicStateChange(const napi_env &env, const MicStateChangeEvent &micStateChangeEvent,
+    napi_value &result)
+{
+    napi_create_object(env, &result);
+    NapiParamUtils::SetValueBoolean(env, "mute", micStateChangeEvent.mute, result);
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetVolumeGroupInfos(const napi_env &env,
+    const std::vector<sptr<VolumeGroupInfo>> &volumeGroupInfos, napi_value &result)
+{
+    napi_value valueParam = nullptr;
+    napi_status status = napi_create_array_with_length(env, volumeGroupInfos.size(), &result);
+    for (size_t i = 0; i < volumeGroupInfos.size(); i++) {
+        if (volumeGroupInfos[i] != nullptr) {
+            (void)napi_create_object(env, &valueParam);
+            SetValueString(env, "networkId", static_cast<std::string>(
+                volumeGroupInfos[i]->networkId_), valueParam);
+            SetValueInt32(env, "groupId", static_cast<int32_t>(
+                volumeGroupInfos[i]->volumeGroupId_), valueParam);
+            SetValueInt32(env, "mappingId", static_cast<int32_t>(
+                volumeGroupInfos[i]->mappingId_), valueParam);
+            SetValueString(env, "groupName", static_cast<std::string>(
+                volumeGroupInfos[i]->groupName_), valueParam);
+            SetValueInt32(env, "ConnectType", static_cast<int32_t>(
+                volumeGroupInfos[i]->connectType_), valueParam);
+            napi_set_element(env, result, i, valueParam);
+        }
+    }
+    return status;
+}
+
+napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const VolumeEvent &volumeEvent,
+    napi_value &result)
+{
+    napi_create_object(env, &result);
+    SetValueInt32(env, "volumeType",
+        NapiAudioEnum::GetJsAudioVolumeType(static_cast<AudioStreamType>(volumeEvent.volumeType)), result);
+    SetValueInt32(env, "volume", static_cast<int32_t>(volumeEvent.volume), result);
+    SetValueBoolean(env, "updateUi", volumeEvent.updateUi, result);
+    SetValueInt32(env, "volumeGroupId", volumeEvent.volumeGroupId, result);
+    SetValueString(env, "networkId", volumeEvent.networkId, result);
+    return napi_ok;
 }
 } // namespace AudioStandard
 } // namespace OHOS

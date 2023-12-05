@@ -64,6 +64,7 @@ napi_ref NapiAudioEnum::communicationDeviceType_ = nullptr;
 napi_ref NapiAudioEnum::interruptRequestType_ = nullptr;
 napi_ref NapiAudioEnum::interruptRequestResultType_ = nullptr;
 napi_ref NapiAudioEnum::toneType_ = nullptr;
+napi_ref NapiAudioEnum::audioDviceUsage_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -152,7 +153,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::sourceTypeMap = {
     {"SOURCE_TYPE_WAKEUP", SOURCE_TYPE_WAKEUP},
     {"SOURCE_TYPE_VOICE_RECOGNITION", SOURCE_TYPE_VOICE_RECOGNITION},
     {"SOURCE_TYPE_PLAYBACK_CAPTURE", SOURCE_TYPE_PLAYBACK_CAPTURE},
-    {"SOURCE_TYPE_VOICE_COMMUNICATION", SOURCE_TYPE_VOICE_COMMUNICATION}
+    {"SOURCE_TYPE_VOICE_COMMUNICATION", SOURCE_TYPE_VOICE_COMMUNICATION},
+    {"SOURCE_TYPE_VOICE_CALL", SOURCE_TYPE_VOICE_CALL},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::volumeAdjustTypeMap = {
@@ -336,6 +338,15 @@ const std::map<std::string, int32_t> NapiAudioEnum::toneTypeMap = {
     {"TONE_TYPE_COMMON_PROPRIETARY_DOUBLE_BEEP", TONE_TYPE_COMMON_PROPRIETARY_DOUBLE_BEEP},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioDeviceUsageMap = {
+    {"MEDIA_OUTPUT_DEVICES", MEDIA_OUTPUT_DEVICES },
+    {"MEDIA_INPUT_DEVICES", MEDIA_INPUT_DEVICES},
+    {"ALL_MEDIA_DEVICES", ALL_MEDIA_DEVICES},
+    {"CALL_OUTPUT_DEVICES", CALL_OUTPUT_DEVICES},
+    {"CALL_INPUT_DEVICES", CALL_INPUT_DEVICES},
+    {"ALL_CALL_DEVICES", ALL_CALL_DEVICES},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -407,7 +418,6 @@ napi_value NapiAudioEnum::CreateDefaultInterruptIdObject(napi_env env)
 
 napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
 {
-    AUDIO_INFO_LOG("NapiAudioEnum::InitAudioEnum()");
     napi_property_descriptor static_prop[] = {
         DECLARE_NAPI_PROPERTY("AudioChannel", CreateEnumObject(env, audioChannelMap, audioChannel_)),
         DECLARE_NAPI_PROPERTY("AudioSamplingRate", CreateEnumObject(env, samplingRateMap, samplingRate_)),
@@ -451,6 +461,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("InterruptRequestResultType",
             CreateEnumObject(env, interruptRequestResultTypeMap, interruptRequestResultType_)),
         DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap, toneType_)),
+        DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap, audioDviceUsage_)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
@@ -868,10 +879,128 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_PLAYBACK_CAPTURE:
         case TYPE_WAKEUP:
         case TYPE_COMMUNICATION:
+        case TYPE_VOICE_CALL:
             result = true;
             break;
         default:
             result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
+{
+    bool result = false;
+    switch (inputType) {
+        case AudioVolumeType::RINGTONE:
+        case AudioVolumeType::MEDIA:
+        case AudioVolumeType::VOICE_CALL:
+        case AudioVolumeType::VOICE_ASSISTANT:
+        case AudioVolumeType::ALARM:
+        case AudioVolumeType::ACCESSIBILITY:
+        case AudioVolumeType::ULTRASONIC:
+        case AudioVolumeType::ALL:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentRingMode(int32_t ringMode)
+{
+    bool result = false;
+    switch (ringMode) {
+        case AudioRingMode::RINGER_MODE_SILENT:
+        case AudioRingMode::RINGER_MODE_VIBRATE:
+        case AudioRingMode::RINGER_MODE_NORMAL:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentVolumeAdjustType(int32_t adjustType)
+{
+    bool result = false;
+    switch (adjustType) {
+        case VolumeAdjustType::VOLUME_UP:
+        case VolumeAdjustType::VOLUME_DOWN:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_FILE_SINK:
+        case DeviceType::DEVICE_TYPE_FILE_SOURCE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
+{
+    int32_t result = MEDIA;
+    switch (volumeType) {
+        case AudioStreamType::STREAM_VOICE_CALL:
+        case AudioStreamType::STREAM_VOICE_MESSAGE:
+            result = NapiAudioEnum::VOICE_CALL;
+            break;
+        case AudioStreamType::STREAM_RING:
+        case AudioStreamType::STREAM_SYSTEM:
+        case AudioStreamType::STREAM_NOTIFICATION:
+        case AudioStreamType::STREAM_SYSTEM_ENFORCED:
+        case AudioStreamType::STREAM_DTMF:
+            result = NapiAudioEnum::RINGTONE;
+            break;
+        case AudioStreamType::STREAM_MUSIC:
+        case AudioStreamType::STREAM_MEDIA:
+        case AudioStreamType::STREAM_MOVIE:
+        case AudioStreamType::STREAM_GAME:
+        case AudioStreamType::STREAM_SPEECH:
+        case AudioStreamType::STREAM_NAVIGATION:
+            result = NapiAudioEnum::MEDIA;
+            break;
+        case AudioStreamType::STREAM_ALARM:
+            result = NapiAudioEnum::ALARM;
+            break;
+        case AudioStreamType::STREAM_ACCESSIBILITY:
+            result = NapiAudioEnum::ACCESSIBILITY;
+            break;
+        case AudioStreamType::STREAM_VOICE_ASSISTANT:
+            result = NapiAudioEnum::VOICE_ASSISTANT;
+            break;
+        case AudioStreamType::STREAM_ULTRASONIC:
+            result = NapiAudioEnum::ULTRASONIC;
+            break;
+        default:
+            result = NapiAudioEnum::MEDIA;
             break;
     }
     return result;
