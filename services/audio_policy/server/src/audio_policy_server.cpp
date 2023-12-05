@@ -325,7 +325,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
     int32_t muteKeySubId = im->SubscribeKeyEvent(keyOptionMute,
         [this](std::shared_ptr<MMI::KeyEvent> keyEventCallBack) {
             AUDIO_INFO_LOG("Receive volume key event: mute");
-            std::lock_guard<std::mutex> lock(volumeKeyEventMutex_);
+            std::lock_guard<std::mutex> lock(keyEventMutex_);
             bool isMuted = GetStreamMute(AudioStreamType::STREAM_ALL);
             SetStreamMuteInternal(AudioStreamType::STREAM_ALL, !isMuted, true);
         });
