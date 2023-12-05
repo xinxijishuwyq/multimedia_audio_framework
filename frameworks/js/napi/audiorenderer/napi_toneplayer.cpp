@@ -240,8 +240,8 @@ napi_value NapiTonePlayer::Load(napi_env env, napi_callback_info info)
         ToneType toneType = static_cast<ToneType>(context->toneType);
         CHECK_AND_RETURN_LOG(CheckTonePlayerStatus(napiTonePlayer, context),
             "context object state is error.");
-        context->intValue = napiTonePlayer->tonePlayer_->LoadTone(toneType);
-        if (context->intValue != SUCCESS) {
+        context->isTrue = napiTonePlayer->tonePlayer_->LoadTone(toneType);
+        if (!context->isTrue) {
             context->SignError(NAPI_ERR_SYSTEM);
         }
     };

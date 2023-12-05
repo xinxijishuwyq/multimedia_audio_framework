@@ -14,9 +14,48 @@
  */
 #ifndef NAPI_AUDIO_MANAGER_CALLBACK_H
 #define NAPI_AUDIO_MANAGER_CALLBACK_H
+
+#include <uv.h>
+#include "napi/native_api.h"
+#include "napi/native_node_api.h"
+#include "napi_async_work.h"
+#include "audio_system_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
+const std::string DEVICE_CHANGE_CALLBACK_NAME = "deviceChange";
+const std::string MIC_STATE_CHANGE_CALLBACK_NAME = "micStateChange";
 
+class NapiAudioManagerCallback : public AudioManagerDeviceChangeCallback {
+public:
+    static bool IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback);
+
+    explicit NapiAudioManagerCallback(napi_env env);
+    virtual ~NapiAudioManagerCallback();
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    int32_t GetAudioManagerDeviceChangeCbListSize();
+
+    void SaveRoutingManagerDeviceChangeCbRef(DeviceFlag deviceFlag, napi_value callback);
+    void RemoveRoutingManagerDeviceChangeCbRef(napi_env env, napi_value callback);
+    void RemoveAllRoutingManagerDeviceChangeCb();
+    int32_t GetRoutingManagerDeviceChangeCbListSize();
+
+private:
+    struct AudioManagerJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::string callbackName = "unknown";
+        DeviceChangeAction deviceChangeAction;
+    };
+
+    static void WorkCallbackInterruptDone(uv_work_t *work, int status);
+    void OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb);
+
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+    std::shared_ptr<AutoRef> deviceChangeCallback_ = nullptr;
+    std::list<std::pair<std::shared_ptr<AutoRef>, DeviceFlag>> audioManagerDeviceChangeCbList_;
+    std::list<std::pair<std::shared_ptr<AutoRef>, DeviceFlag>> routingManagerDeviceChangeCbList_;
+};
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif /* NAPI_AUDIO_MANAGER_CALLBACK_H */

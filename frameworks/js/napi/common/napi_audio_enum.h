@@ -86,7 +86,14 @@ public:
     static bool IsLegalInputArgumentRingMode(int32_t ringMode);
     static bool IsLegalInputArgumentVolumeAdjustType(int32_t adjustType);
     static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
+    static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static int32_t GetJsAudioVolumeType(AudioStreamType volumeType);
+    static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
+    static bool IsValidSourceType(int32_t intValue);
+    static bool IsLegalDeviceUsage(int32_t usage);
+    static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);
+    static bool IsLegalOutputDeviceType(int32_t deviceType);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
