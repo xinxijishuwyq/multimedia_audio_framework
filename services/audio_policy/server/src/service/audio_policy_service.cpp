@@ -3697,6 +3697,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
             vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
             rendererChangeInfos.push_back(
                 make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
+            streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfos[0]);
             FetchOutputDevice(rendererChangeInfos, true);
             streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = rendererChangeInfos[0]->outputDeviceInfo;
         }
@@ -3705,6 +3706,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
             vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
             capturerChangeInfos.push_back(
                 make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
+            streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfos[0]);
             FetchInputDevice(capturerChangeInfos, true);
             streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = capturerChangeInfos[0]->inputDeviceInfo;
         }
