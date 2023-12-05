@@ -58,6 +58,8 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
+const uint32_t USER_NOT_SELECT_BT = 1;
+const uint32_t USER_SELECT_BT = 2;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t MEDIA_SERVICE_UID = 1013;
 const uint32_t AUDIO_UID = 1041;
@@ -754,11 +756,36 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     // check size == 1 && output device
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
+    if (audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+       audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        audioDeviceDescriptors[0]->isEnable_ = true;
+        audioDeviceManager_.AddNewDevice(audioDeviceDescriptors[0]);
+    }
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
         audioStateManager_.SetPerferredCallRenderDevice(audioDeviceDescriptors[0]);
     } else {
         audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+       audioDeviceDescriptors[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+            currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+    }
+    if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
+       audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+            audioDeviceDescriptors[0]->macAddress_, USER_SELECT_BT);
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+       audioDeviceDescriptors[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_A2DP,
+            currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+    }
+    if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+       audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_A2DP,
+            audioDeviceDescriptors[0]->macAddress_, USER_SELECT_BT);
     }
     FetchDevice(true);
     return SUCCESS;
@@ -1585,6 +1612,25 @@ int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor>
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::HandleScoDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
+    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated)
+{
+#ifdef BLUETOOTH_ENABLE
+        int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
+            desc->exceptionFlag_ = true;
+            FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
+            return ERROR;
+        }
+        if (!desc->isScoRealConnected_) {
+            Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioScene_);
+            return ERROR;
+        }
+#endif
+    return SUCCESS;
+}
+
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     bool isStreamStatusUpdated = false)
 {
@@ -1608,8 +1654,11 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         }
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos, isStreamStatusUpdated);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] fail, return", desc->macAddress_.c_str());
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", desc->macAddress_.c_str());
             OffloadStartPlayingIfOffloadMode(rendererChangeInfo->sessionId);
+        } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            int32_t ret = HandleScoDeviceFetched(desc, rendererChangeInfos, isStreamStatusUpdated);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", desc->macAddress_.c_str());
         }
         if (needUpdateActiveDevice) {
             if (currentActiveDevice_.deviceType_ != desc->deviceType_ ||
@@ -1620,7 +1669,6 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             }
             needUpdateActiveDevice = false;
         }
-        // move sinkinput to target device
         SelectNewOutputDevice(rendererChangeInfo, desc);
     }
     sameDeviceSwitchFlag_ = false;
@@ -1662,6 +1710,21 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             desc->macAddress_ == capturerChangeInfo->inputDeviceInfo.macAddress)) {
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
             continue;
+        }
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+#ifdef BLUETOOTH_ENABLE
+            int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device");
+                desc->exceptionFlag_ = true;
+                FetchInputDevice(capturerChangeInfos, isStreamStatusUpdated);
+                return;
+            }
+            if (!desc->isScoRealConnected_) {
+                Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioScene_);
+                return;
+            }
+#endif
         }
         if (needUpdateActiveDevice) {
             if (currentActiveInputDevice_.deviceType_ != desc->deviceType_ ||
@@ -2225,8 +2288,23 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
 
     if (!active) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+                currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+        }
     } else {
         audioStateManager_.SetPerferredCallRenderDevice(*itr);
+        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+                currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+        }
+        if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
+            deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+                (*itr)->macAddress_, USER_SELECT_BT);
+        }
     }
     FetchDevice(true);
     return SUCCESS;
@@ -2280,6 +2358,9 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+#ifdef BLUETOOTH_ENABLE
+        Bluetooth::AudioHfpManager::DisconnectSco();
+#endif
     }
 
     // fetch input&output device
@@ -5243,6 +5324,15 @@ void AudioPolicyService::GetAllRunningStreamSessionAndType(std::vector<int32_t> 
         allSessions.push_back(changeInfo->sessionId);
     }
 #endif
+}
+
+void AudioPolicyService::OnScoStateChanged(const std::string &macAddress, bool isConnnected)
+{
+    AUDIO_INFO_LOG("[OnScoStateChanged] macAddress: %{public}s, isConnnected: %{public}d", macAddress.c_str(),
+        isConnnected);
+    audioDeviceManager_.UpdateScoState(macAddress, isConnnected);
+    FetchDevice(true);
+    FetchDevice(false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -375,6 +375,8 @@ public:
 
     int32_t HandleA2dpDeviceOutOffload();
 
+    void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -486,6 +488,9 @@ private:
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
     DeviceType FetchHighPriorityDevice(bool isOutputDevice);
+
+    int32_t HandleScoDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated);
 
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         bool isStreamStatusUpdated);

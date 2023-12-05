@@ -83,9 +83,10 @@ public:
     virtual ~AudioHfpListener() = default;
 
     void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
-    void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state) {}
+    void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state);
     void OnActiveDeviceChanged(const BluetoothRemoteDevice &device) {}
     void OnHfEnhancedDriverSafetyChanged(const BluetoothRemoteDevice &device, int indValue) {}
+    virtual void OnHfpStackChanged(const BluetoothRemoteDevice &device, int action);
 
 private:
     BLUETOOTH_DISALLOW_COPY_AND_ASSIGN(AudioHfpListener);
@@ -97,10 +98,17 @@ public:
     virtual ~AudioHfpManager() = default;
     static void RegisterBluetoothScoListener();
     static void UnregisterBluetoothScoListener();
+    static int32_t SetActiveHfpDevice(const std::string &macAddress);
+    static int32_t ConnectScoWithAudioScene(AudioStandard::AudioScene scene);
+    static int32_t DisconnectSco();
+    static int8_t GetScoCategoryFromScene(AudioStandard::AudioScene scene);
+    static void DisconnectBluetoothHfpSink();
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;
     static std::shared_ptr<AudioHfpListener> hfpListener_;
+    static AudioStandard::AudioScene scene_;
+    static BluetoothRemoteDevice activeHfpDevice_;
 };
 }
 }
