@@ -27,24 +27,24 @@ describe("TonePlayerJsUnitTest", function () {
     beforeAll(async function () {
 
         // input testsuit setup step，setup invoked before all testcases
-        console.info('beforeAll called')
+        console.info('TonePlayerJsUnitTest:beforeAll called')
     })
 
     afterAll(function () {
 
         // input testsuit teardown step，teardown invoked after all testcases
-        console.info('afterAll called')
+        console.info('TonePlayerJsUnitTest:afterAll called')
     })
 
     beforeEach(function () {
 
         // input testcase setup step，setup invoked before each testcases
-        console.info('beforeEach called')
+        console.info('TonePlayerJsUnitTest:beforeEach called')
     })
 
     afterEach(function () {
 
         // input testcase teardown step，teardown invoked after each testcases
-        console.info('afterEach called')
+        console.info('TonePlayerJsUnitTest:afterEach called')
     })
 })
