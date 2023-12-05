@@ -709,5 +709,192 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
     SetValueString(env, "networkId", volumeEvent.networkId, result);
     return napi_ok;
 }
+
+napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
+    sptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
+{
+    int32_t intValue = {0};
+    argTransFlag = true;
+    bool hasDeviceRole = true;
+    bool hasNetworkId  = true;
+    napi_status status = napi_has_named_property(env, in, "deviceRole", &hasDeviceRole);
+    status = napi_has_named_property(env, in, "networkId", &hasNetworkId);
+    if ((!hasDeviceRole) || (!hasNetworkId)) {
+        argTransFlag = false;
+        return status;
+    }
+
+    status = GetValueInt32(env, "deviceRole", intValue, in);
+    if (status == napi_ok) {
+        selectedAudioDevice->deviceRole_ = static_cast<DeviceRole>(intValue);
+    }
+
+    status = GetValueInt32(env, "deviceType", intValue, in);
+    if (status == napi_ok) {
+        selectedAudioDevice->deviceType_ = static_cast<DeviceType>(intValue);
+    }
+
+    selectedAudioDevice->networkId_ = GetPropertyString(env, in, "networkId");
+
+    selectedAudioDevice->displayName_ = GetPropertyString(env, in, "displayName");
+
+    status = GetValueInt32(env, "interruptGroupId", intValue, in);
+    if (status == napi_ok) {
+        selectedAudioDevice->interruptGroupId_ = intValue;
+    }
+
+    status = GetValueInt32(env, "volumeGroupId", intValue, in);
+    if (status == napi_ok) {
+        selectedAudioDevice->volumeGroupId_ = intValue;
+    }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetAudioDeviceDescriptorVector(const napi_env &env,
+    std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptorsVector, bool &argTransFlag, napi_value in)
+{
+    uint32_t arrayLen = 0;
+    napi_get_array_length(env, in, &arrayLen);
+    if (arrayLen == 0) {
+        deviceDescriptorsVector = {};
+        AUDIO_INFO_LOG("Error: AudioDeviceDescriptor vector is NULL!");
+    }
+
+    for (size_t i = 0; i < arrayLen; i++) {
+        napi_value element;
+        napi_get_element(env, in, i, &element);
+        sptr<AudioDeviceDescriptor> selectedAudioDevice = new(std::nothrow) AudioDeviceDescriptor();
+        GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, element);
+        if (!argTransFlag) {
+            return napi_ok;
+        }
+        deviceDescriptorsVector.push_back(selectedAudioDevice);
+    }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetAudioCapturerFilter(const napi_env &env, sptr<AudioCapturerFilter> &audioCapturerFilter,
+    napi_value in)
+{
+    int32_t intValue = {0};
+    audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+
+    napi_status status = GetValueInt32(env, "uid", intValue, in);
+    if (status == napi_ok) {
+        audioCapturerFilter->uid = intValue;
+    }
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetAudioCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in)
+{
+    int32_t intValue = {0};
+    napi_status status = GetValueInt32(env, "source", intValue, in);
+    if (status == napi_ok && NapiAudioEnum::IsValidSourceType(intValue)) {
+        capturerInfo->sourceType = static_cast<SourceType>(intValue);
+    } else {
+        capturerInfo->sourceType = SourceType::SOURCE_TYPE_INVALID;
+    }
+
+    status = GetValueInt32(env, "capturerFlags", intValue, in);
+    if (status == napi_ok) {
+        capturerInfo->capturerFlags = intValue;
+    }
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetAudioRendererFilter(const napi_env &env, sptr<AudioRendererFilter> &audioRendererFilter,
+    bool &argTransFlag, napi_value in)
+{
+    napi_value tempValue = nullptr;
+    int32_t intValue = {0};
+    argTransFlag = true;
+    audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+
+    napi_status status = GetValueInt32(env, "uid", intValue, in);
+    if (status == napi_ok) {
+        audioRendererFilter->uid = intValue;
+    }
+
+    if (napi_get_named_property(env, in, "rendererInfo", &tempValue) == napi_ok) {
+        GetRendererInfo(env, &(audioRendererFilter->rendererInfo), tempValue);
+    }
+
+    status = GetValueInt32(env, "rendererId", intValue, in);
+    if (status == napi_ok) {
+        audioRendererFilter->streamId = intValue;
+    }
+
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetValueDeviceChangeAction(const napi_env& env, const DeviceChangeAction &action,
+    napi_value &result)
+{
+    napi_create_object(env, &result);
+    NapiParamUtils::SetValueInt32(env, "type", static_cast<int32_t>(action.type), result);
+
+    napi_value jsArray;
+    NapiParamUtils::SetDeviceDescriptors(env, action.deviceDescriptors, jsArray);
+    napi_set_named_property(env, result, "deviceDescriptors", jsArray);
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetRendererChangeInfos(const napi_env &env,
+    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &changeInfos, napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsChangeInfoObj = nullptr;
+    napi_value jsRenInfoObj = nullptr;
+    napi_create_array_with_length(env, changeInfos.size(), &result);
+    for (const auto &changeInfo : changeInfos) {
+        if (changeInfo) {
+            napi_create_object(env, &jsChangeInfoObj);
+            SetValueInt32(env, "streamId", changeInfo->sessionId, jsChangeInfoObj);
+            SetValueInt32(env, "rendererState", static_cast<int32_t>(changeInfo->rendererState), jsChangeInfoObj);
+            SetValueInt32(env, "clientUid", changeInfo->clientUID, jsChangeInfoObj);
+            SetRendererInfo(env, changeInfo->rendererInfo, jsRenInfoObj);
+            napi_set_named_property(env, jsChangeInfoObj, "rendererInfo", jsRenInfoObj);
+            napi_value deviceInfo = nullptr;
+            SetValueDeviceInfo(env, changeInfo->outputDeviceInfo, deviceInfo);
+            napi_set_named_property(env, jsChangeInfoObj, "deviceDescriptors", deviceInfo);
+            napi_set_element(env, result, position, jsChangeInfoObj);
+            position++;
+        }
+    }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetCapturerChangeInfos(const napi_env &env,
+    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &changeInfos, napi_value &result)
+{
+    int32_t position = 0;
+    napi_value jsChangeInfoObj = nullptr;
+    napi_create_array_with_length(env, changeInfos.size(), &result);
+    for (const auto &changeInfo : changeInfos) {
+        if (changeInfo) {
+            SetAudioCapturerChangeInfoDescriptors(env, *changeInfo, jsChangeInfoObj);
+            napi_set_element(env, result, position, jsChangeInfoObj);
+            position++;
+        }
+    }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::SetEffectInfo(const napi_env &env,
+    const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result)
+{
+    uint32_t i;
+    napi_value jsEffectInofObj = nullptr;
+    napi_create_array_with_length(env, audioSceneEffectInfo.mode.size(), &result);
+    napi_create_object(env, &jsEffectInofObj);
+    for (i = 0; i < audioSceneEffectInfo.mode.size(); i++) {
+        SetValueUInt32(env, audioSceneEffectInfo.mode[i], jsEffectInofObj);
+        napi_set_element(env, result, i, jsEffectInofObj);
+    }
+    return napi_ok;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -27,6 +27,7 @@
 #include "audio_info.h"
 #include "audio_capturer.h"
 #include "audio_system_manager.h"
+#include "audio_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -146,6 +147,23 @@ public:
         const std::vector<sptr<VolumeGroupInfo>> &volumeGroupInfos, napi_value &result);
     static napi_status SetValueVolumeEvent(const napi_env& env, const VolumeEvent &volumeEvent,
         napi_value &result);
+    static napi_status GetAudioDeviceDescriptor(const napi_env &env, sptr<AudioDeviceDescriptor> &selectedAudioDevice,
+        bool &argTransFlag, napi_value in);
+    static napi_status GetAudioDeviceDescriptorVector(const napi_env &env,
+        std::vector<sptr<AudioDeviceDescriptor>> &deviceDescriptorsVector, bool &argTransFlag, napi_value in);
+    static napi_status GetAudioCapturerFilter(const napi_env &env, sptr<AudioCapturerFilter> &audioCapturerFilter,
+        napi_value in);
+    static napi_status GetAudioCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in);
+    static napi_status GetAudioRendererFilter(const napi_env &env, sptr<AudioRendererFilter> &audioRendererFilter,
+        bool &argTransFlag, napi_value in);
+    static napi_status SetValueDeviceChangeAction(const napi_env& env, const DeviceChangeAction &action,
+        napi_value &result);
+    static napi_status SetRendererChangeInfos(const napi_env &env,
+        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &changeInfos, napi_value &result);
+    static napi_status SetCapturerChangeInfos(const napi_env &env,
+        const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &changeInfos, napi_value &result);
+    static napi_status SetEffectInfo(const napi_env &env,
+        const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS
