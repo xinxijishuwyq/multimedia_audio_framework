@@ -631,6 +631,12 @@ private:
 
     void ResetToSpeaker(DeviceType devType);
 
+    void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc, sptr<AudioDeviceDescriptor> &audioDescriptor);
+
+    void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc, sptr<AudioDeviceDescriptor> &audioDescriptor);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

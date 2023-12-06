@@ -1589,8 +1589,8 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
     AUDIO_INFO_LOG("fetch input device when no running stream");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
     if (desc->deviceType_ == DEVICE_TYPE_NONE ||
-        (desc->deviceType_ == currentActiveDevice_.deviceType_ &&
-        desc->macAddress_ == currentActiveDevice_.macAddress_)) {
+        (desc->deviceType_ == currentActiveInputDevice_.deviceType_ &&
+        desc->macAddress_ == currentActiveInputDevice_.macAddress_)) {
         AUDIO_INFO_LOG("input device is not change");
         return;
     }
@@ -2460,57 +2460,98 @@ bool AudioPolicyService::IsConfigurationUpdated(DeviceType deviceType, const Aud
     return false;
 }
 
+void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
+    const AudioDeviceDescriptor &deviceDescriptor, std::vector<sptr<AudioDeviceDescriptor>> &desc,
+    sptr<AudioDeviceDescriptor> &audioDescriptor)
+{
+    AUDIO_INFO_LOG("Filling output device for %{public}d", deviceDescriptor.deviceType_);
+
+    audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
+    audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
+    // Use speaker streaminfo for all output devices cap
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
+        [](const sptr<AudioDeviceDescriptor> &devDesc) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
+        return (devDesc->deviceType_ == DEVICE_TYPE_SPEAKER);
+    });
+    if (itr != connectedDevices_.end()) {
+        audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
+    }
+    auto isPresent = [&deviceDescriptor] (const sptr<AudioDeviceDescriptor> &descriptor) {
+        if (deviceDescriptor.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            descriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            return descriptor->macAddress_ == deviceDescriptor.macAddress_;
+        } else {
+            return ((descriptor->deviceType_ == deviceDescriptor.deviceType_) &&
+                (descriptor->networkId_ == deviceDescriptor.networkId_));
+        }
+    };
+    //If the device is a2dp && not the first connection, use the first connection deviceId and erase the itr
+    auto it  = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (it != connectedDevices_.end() && (*it)->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        audioDescriptor->deviceId_ = (*it)->deviceId_;
+        connectedDevices_.erase(it);
+    } else {
+        audioDescriptor->deviceId_ = startDeviceId++;
+    }
+    desc.push_back(audioDescriptor);
+    UpdateDisplayName(audioDescriptor);
+    connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+    audioDeviceManager_.AddNewDevice(audioDescriptor);
+    audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+}
+
+void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForInputDevice(
+    const AudioDeviceDescriptor &deviceDescriptor, std::vector<sptr<AudioDeviceDescriptor>> &desc,
+    sptr<AudioDeviceDescriptor> &audioDescriptor)
+{
+    AUDIO_INFO_LOG("Filling input device for %{public}d", deviceDescriptor.deviceType_);
+
+    audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
+    audioDescriptor->deviceRole_ = INPUT_DEVICE;
+    // Use mic streaminfo for all input devices cap
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
+        [](const sptr<AudioDeviceDescriptor> &devDesc) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
+        return (devDesc->deviceType_ == DEVICE_TYPE_MIC);
+    });
+    if (itr != connectedDevices_.end()) {
+        audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
+    }
+    auto isPresent = [&deviceDescriptor] (const sptr<AudioDeviceDescriptor> &descriptor) {
+        if (deviceDescriptor.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            descriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            return descriptor->macAddress_ == deviceDescriptor.macAddress_;
+        } else {
+            return ((descriptor->deviceType_ == deviceDescriptor.deviceType_) &&
+                (descriptor->networkId_ == deviceDescriptor.networkId_));
+        }
+    };
+    //If the device is a2dp && not the first connection, use the first connection deviceId and erase the it
+    auto it  = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (it != connectedDevices_.end() && (*it)->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        audioDescriptor->deviceId_ = (*it)->deviceId_;
+        connectedDevices_.erase(it);
+    } else {
+        audioDescriptor->deviceId_ = startDeviceId++;
+    }
+    desc.push_back(audioDescriptor);
+    UpdateDisplayName(audioDescriptor);
+    connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
+    AddMicrophoneDescriptor(audioDescriptor);
+    audioDeviceManager_.AddNewDevice(audioDescriptor);
+}
+
 void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor &deviceDescriptor,
     std::vector<sptr<AudioDeviceDescriptor>> &desc)
 {
     sptr<AudioDeviceDescriptor> audioDescriptor = nullptr;
-
     if (IsOutputDevice(deviceDescriptor.deviceType_)) {
-        AUDIO_INFO_LOG("Filling output device for %{public}d", deviceDescriptor.deviceType_);
-
-        audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
-        audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
-
-        // Use speaker streaminfo for all output devices cap
-        auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
-            [](const sptr<AudioDeviceDescriptor> &devDesc) {
-            CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
-            return (devDesc->deviceType_ == DEVICE_TYPE_SPEAKER);
-        });
-        if (itr != connectedDevices_.end()) {
-            audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
-        }
-
-        desc.push_back(audioDescriptor);
-        audioDescriptor->deviceId_ = startDeviceId++;
-        UpdateDisplayName(audioDescriptor);
-        connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
-        audioDeviceManager_.AddNewDevice(audioDescriptor);
-        audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
-        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+        UpdateConnectedDevicesWhenConnectingForOutputDevice(deviceDescriptor, desc, audioDescriptor);
     }
     if (IsInputDevice(deviceDescriptor.deviceType_)) {
-        AUDIO_INFO_LOG("Filling input device for %{public}d", deviceDescriptor.deviceType_);
-
-        audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
-        audioDescriptor->deviceRole_ = INPUT_DEVICE;
-
-        // Use mic streaminfo for all input devices cap
-        auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
-            [](const sptr<AudioDeviceDescriptor> &devDesc) {
-            CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
-            return (devDesc->deviceType_ == DEVICE_TYPE_MIC);
-        });
-        if (itr != connectedDevices_.end()) {
-            audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
-        }
-
-        desc.push_back(audioDescriptor);
-        audioDescriptor->deviceId_ = startDeviceId++;
-        UpdateDisplayName(audioDescriptor);
-        connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
-        AddMicrophoneDescriptor(audioDescriptor);
-        audioDeviceManager_.AddNewDevice(audioDescriptor);
+        UpdateConnectedDevicesWhenConnectingForInputDevice(deviceDescriptor, desc, audioDescriptor);
     }
 }
 
@@ -2804,10 +2845,12 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool
             return descriptor->deviceType_ == devType;
         }
     };
+    bool isDeviceChanged = true;
     if (isConnected) {
-        // If device already in list, remove it else do not modify the list
-        connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
-            connectedDevices_.end());
+        auto itr  = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+        if (itr != connectedDevices_.end()) {
+            isDeviceChanged = false;
+        }
         UpdateConnectedDevicesWhenConnecting(desc, deviceChangeDescriptor);
         int32_t result = HandleLocalDeviceConnected(devType, macAddress, deviceName, streamInfo);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
@@ -2820,7 +2863,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool
     // fetch input&output device
     FetchDevice(true);
     FetchDevice(false);
-    TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+    if (isDeviceChanged) {
+        TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
+    }
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, isConnected);
 }
 
