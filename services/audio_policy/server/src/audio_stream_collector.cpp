@@ -189,7 +189,7 @@ void AudioStreamCollector::GetRendererStreamInfo(AudioStreamChangeInfo &streamCh
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
         if ((*it)->clientUID == streamChangeInfo.audioRendererChangeInfo.clientUID &&
             (*it)->sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
-            rendererInfo = **it;
+            rendererInfo.outputDeviceInfo = (*it)->outputDeviceInfo;
             return;
         }
     }
@@ -201,7 +201,7 @@ void AudioStreamCollector::GetCapturerStreamInfo(AudioStreamChangeInfo &streamCh
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
         if ((*it)->clientUID == streamChangeInfo.audioCapturerChangeInfo.clientUID &&
             (*it)->sessionId == streamChangeInfo.audioCapturerChangeInfo.sessionId) {
-            capturerInfo = **it;
+            capturerInfo.inputDeviceInfo = (*it)->inputDeviceInfo;
             return;
         }
     }
