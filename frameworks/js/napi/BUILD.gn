@@ -112,11 +112,10 @@ ohos_shared_library("audio") {
       "audiorenderer/napi_audio_renderer.cpp",
       "audiorenderer/napi_toneplayer.cpp",
       "common/napi_async_work.cpp",
+      "common/napi_audio_entry.cpp",
       "common/napi_audio_enum.cpp",
       "common/napi_audio_error.cpp",
       "common/napi_param_utils.cpp",
-
-      #"common/napi_audio_entry.cpp",
     ]
   }
 
