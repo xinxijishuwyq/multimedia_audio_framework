@@ -1,17 +1,17 @@
 /*
-* Copyright (c) 2023 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import audio from '@ohos.multimedia.audio';
 import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from '@ohos/hypium'
@@ -41,11 +41,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_ENABLED_001
- * @tc.desc:isSpatializationEnabled success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_ENABLED_001
+   * @tc.desc:isSpatializationEnabled success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_ENABLED_001", 0, async function (done) {
     try {
       let isEnabled = audioSpatializationManager.isSpatializationEnabled();
@@ -60,11 +60,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_001
- * @tc.desc:setSpatializationEnabled enable success - promise
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_001
+   * @tc.desc:setSpatializationEnabled enable success - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_001", 0, async function (done) {
     try {
       await audioSpatializationManager.setSpatializationEnabled(true);
@@ -79,11 +79,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_002
- * @tc.desc:setSpatializationEnabled disable success - promise
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_002
+   * @tc.desc:setSpatializationEnabled disable success - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_002", 0, async function (done) {
     try {
       await audioSpatializationManager.setSpatializationEnabled(false);
@@ -98,11 +98,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_003
- * @tc.desc:setSpatializationEnabled no parameter - promise
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_003
+   * @tc.desc:setSpatializationEnabled no parameter - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_003", 0, async function (done) {
     try {
       await audioSpatializationManager.setSpatializationEnabled();
@@ -122,11 +122,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_004
- * @tc.desc:setSpatializationEnabled check number parameter - promise
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_004
+   * @tc.desc:setSpatializationEnabled check number parameter - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_004", 0, async function (done) {
     try {
       await audioSpatializationManager.setSpatializationEnabled(numberParameter);
@@ -146,11 +146,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_001
- * @tc.desc:setSpatializationEnabled enable success - callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_001
+   * @tc.desc:setSpatializationEnabled enable success - callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_001", 0, async function (done) {
     audioSpatializationManager.setSpatializationEnabled(true, (err) => {
       if (err) {
@@ -165,11 +165,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_002
- * @tc.desc:setSpatializationEnabled disable success - callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_002
+   * @tc.desc:setSpatializationEnabled disable success - callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_002", 0, async function (done) {
     audioSpatializationManager.setSpatializationEnabled(false, (err) => {
       if (err) {
@@ -184,11 +184,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_003
- * @tc.desc:setSpatializationEnabled no parameter - callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_003
+   * @tc.desc:setSpatializationEnabled no parameter - callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_003", 0, async function (done) {
     try {
       audioSpatializationManager.setSpatializationEnabled((err) => {
@@ -205,11 +205,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_004
- * @tc.desc:setSpatializationEnabled check number parameter - callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_004
+   * @tc.desc:setSpatializationEnabled check number parameter - callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_ENABLED_004", 0, async function (done) {
     try {
       audioSpatializationManager.setSpatializationEnabled(numberParameter, (err) => {
@@ -226,11 +226,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_ENABLED_001
- * @tc.desc:isHeadTrackingEnabled success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_ENABLED_001
+   * @tc.desc:isHeadTrackingEnabled success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_ENABLED_001", 0, async function (done) {
     try {
       let isEnabled = audioSpatializationManager.isHeadTrackingEnabled();
@@ -245,11 +245,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_001
- * @tc.desc:setHeadTrackingEnabled enable success - promise
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_001
+   * @tc.desc:setHeadTrackingEnabled enable success - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_001", 0, async function (done) {
     try {
       await audioSpatializationManager.setHeadTrackingEnabled(true);
@@ -264,11 +264,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_002
- * @tc.desc:setHeadTrackingEnabled disable success - promise
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_002
+   * @tc.desc:setHeadTrackingEnabled disable success - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_002", 0, async function (done) {
     try {
       await audioSpatializationManager.setHeadTrackingEnabled(false);
@@ -283,11 +283,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_003
- * @tc.desc:setHeadTrackingEnabled no parameter - promise
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_003
+   * @tc.desc:setHeadTrackingEnabled no parameter - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_003", 0, async function (done) {
     try {
       await audioSpatializationManager.setHeadTrackingEnabled();
@@ -307,11 +307,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_004
- * @tc.desc:setHeadTrackingEnabled check number parameter - promise
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_004
+   * @tc.desc:setHeadTrackingEnabled check number parameter - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_004", 0, async function (done) {
     try {
       await audioSpatializationManager.setHeadTrackingEnabled(numberParameter);
@@ -331,11 +331,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_001
- * @tc.desc:setHeadTrackingEnabled enable success - callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_001
+   * @tc.desc:setHeadTrackingEnabled enable success - callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_001", 0, async function (done) {
     audioSpatializationManager.setHeadTrackingEnabled(true, (err) => {
       if (err) {
@@ -350,11 +350,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_002
- * @tc.desc:setHeadTrackingEnabled disable success - callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_002
+   * @tc.desc:setHeadTrackingEnabled disable success - callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_002", 0, async function (done) {
     audioSpatializationManager.setHeadTrackingEnabled(false, (err) => {
       if (err) {
@@ -369,11 +369,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_003
- * @tc.desc:setHeadTrackingEnabled no parameter - callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_003
+   * @tc.desc:setHeadTrackingEnabled no parameter - callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_003", 0, async function (done) {
     try {
       audioSpatializationManager.setHeadTrackingEnabled((err) => {
@@ -390,11 +390,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_004
- * @tc.desc:setHeadTrackingEnabled check number parameter - callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_004
+   * @tc.desc:setHeadTrackingEnabled check number parameter - callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_HEAD_TRACKING_ENABLED_004", 0, async function (done) {
     try {
       audioSpatializationManager.setHeadTrackingEnabled(numberParameter, (err) => {
@@ -411,11 +411,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_001
- * @tc.desc:isSpatializationSupported success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_001
+   * @tc.desc:isSpatializationSupported success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_001", 0, async function (done) {
     try {
       let isSupported = audioSpatializationManager.isSpatializationSupported();
@@ -430,11 +430,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_001
- * @tc.desc:isHeadTrackingSupported success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_001
+   * @tc.desc:isHeadTrackingSupported success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_001", 0, async function (done) {
     try {
       let isSupported = audioSpatializationManager.isHeadTrackingSupported();
@@ -449,11 +449,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_001
- * @tc.desc:isSpatializationSupportedForDevice success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_001
+   * @tc.desc:isSpatializationSupportedForDevice success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_001", 0, async function (done) {
     let deviceDescriptor = {
       address: "123",
@@ -483,11 +483,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   });
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_002
- * @tc.desc:isSpatializationSupportedForDevice no parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_002
+   * @tc.desc:isSpatializationSupportedForDevice no parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_002", 0, async function (done) {
     try {
       let isSupported = audioSpatializationManager.isSpatializationSupportedForDevice();
@@ -504,11 +504,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   });
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_003
- * @tc.desc:isSpatializationSupportedForDevice invalid parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_003
+   * @tc.desc:isSpatializationSupportedForDevice invalid parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE_003", 0, async function (done) {
     let deviceDescriptor = {
       address: "123",
@@ -539,11 +539,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   });
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_001
- * @tc.desc:isHeadTrackingSupportedForDevice success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_001
+   * @tc.desc:isHeadTrackingSupportedForDevice success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_001", 0, async function (done) {
     let deviceDescriptor = {
       address: "123",
@@ -573,11 +573,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   });
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_002
- * @tc.desc:isHeadTrackingSupportedForDevice no parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_002
+   * @tc.desc:isHeadTrackingSupportedForDevice no parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_002", 0, async function (done) {
     try {
       let isSupported = audioSpatializationManager.isHeadTrackingSupportedForDevice();
@@ -594,11 +594,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   });
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_003
- * @tc.desc:isHeadTrackingSupportedForDevice invalid parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_003
+   * @tc.desc:isHeadTrackingSupportedForDevice invalid parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE_003", 0, async function (done) {
     let deviceDescriptor = {
       address: "123",
@@ -629,11 +629,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   });
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_SPATIALIZATION_ENABLED_CHANGE_001
- * @tc.desc:on(spatializationEnabledChange) success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_SPATIALIZATION_ENABLED_CHANGE_001
+   * @tc.desc:on(spatializationEnabledChange) success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_ON_SPATIALIZATION_ENABLED_CHANGE_001", 0, async function (done) {
     try {
       audioSpatializationManager.on("spatializationEnabledChange", (data) => {
@@ -649,11 +649,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_SPATIALIZATION_ENABLED_CHANGE_002
- * @tc.desc:on(spatializationEnabledChange) check number parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_SPATIALIZATION_ENABLED_CHANGE_002
+   * @tc.desc:on(spatializationEnabledChange) check number parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_ON_SPATIALIZATION_ENABLED_CHANGE_002", 0, async function (done) {
     try {
       audioSpatializationManager.on("spatializationEnabledChange", numberParameter, (data) => {
@@ -675,11 +675,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_SPATIALIZATION_ENABLED_CHANGE_001
- * @tc.desc:off(spatializationEnabledChange) success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_SPATIALIZATION_ENABLED_CHANGE_001
+   * @tc.desc:off(spatializationEnabledChange) success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_SPATIALIZATION_ENABLED_CHANGE_001", 0, async function (done) {
     try {
       audioSpatializationManager.off("spatializationEnabledChange", (data) => {
@@ -695,11 +695,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_SPATIALIZATION_ENABLED_CHANGE_002
- * @tc.desc:off(spatializationEnabledChange) check number parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_SPATIALIZATION_ENABLED_CHANGE_002
+   * @tc.desc:off(spatializationEnabledChange) check number parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_SPATIALIZATION_ENABLED_CHANGE_002", 0, async function (done) {
     try {
       audioSpatializationManager.off("spatializationEnabledChange", numberParameter, (data) => {
@@ -721,11 +721,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_HEAD_TRACKING_ENABLED_CHANGE_001
- * @tc.desc:on(headTrackingEnabledChange) success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_HEAD_TRACKING_ENABLED_CHANGE_001
+   * @tc.desc:on(headTrackingEnabledChange) success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_ON_HEAD_TRACKING_ENABLED_CHANGE_001", 0, async function (done) {
     try {
       audioSpatializationManager.on("headTrackingEnabledChange", (data) => {
@@ -741,11 +741,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_HEAD_TRACKING_ENABLED_CHANGE_002
- * @tc.desc:on(headTrackingEnabledChange) check number parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_HEAD_TRACKING_ENABLED_CHANGE_002
+   * @tc.desc:on(headTrackingEnabledChange) check number parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_ON_HEAD_TRACKING_ENABLED_CHANGE_002", 0, async function (done) {
     try {
       audioSpatializationManager.on("headTrackingEnabledChange", numberParameter, (data) => {
@@ -767,11 +767,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_HEAD_TRACKING_ENABLED_CHANGE_001
- * @tc.desc:off(headTrackingEnabledChange) success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_HEAD_TRACKING_ENABLED_CHANGE_001
+   * @tc.desc:off(headTrackingEnabledChange) success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_HEAD_TRACKING_ENABLED_CHANGE_001", 0, async function (done) {
     try {
       audioSpatializationManager.off("headTrackingEnabledChange", (data) => {
@@ -787,11 +787,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_HEAD_TRACKING_ENABLED_CHANGE_002
- * @tc.desc:off(headTrackingEnabledChange) check number parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_HEAD_TRACKING_ENABLED_CHANGE_002
+   * @tc.desc:off(headTrackingEnabledChange) check number parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_HEAD_TRACKING_ENABLED_CHANGE_002", 0, async function (done) {
     try {
       audioSpatializationManager.off("headTrackingEnabledChange", numberParameter, (data) => {
@@ -813,11 +813,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_UNKNOWN_CALLBACK_001
- * @tc.desc:on(unknownCallback) check unknown callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_UNKNOWN_CALLBACK_001
+   * @tc.desc:on(unknownCallback) check unknown callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_ON_UNKNOWN_CALLBACK_001", 0, async function (done) {
     try {
       audioSpatializationManager.on("unknownCallback", (data) => {
@@ -839,11 +839,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_UNKNOWN_CALLBACK_001
- * @tc.desc:off(unknownCallback) check unknown callback
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_UNKNOWN_CALLBACK_001
+   * @tc.desc:off(unknownCallback) check unknown callback
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_UNKNOWN_CALLBACK_001", 0, async function (done) {
     try {
       audioSpatializationManager.off("unknownCallback", (data) => {
@@ -865,11 +865,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   })
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_001
- * @tc.desc:updateSpatialDeviceState success
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_001
+   * @tc.desc:updateSpatialDeviceState success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_001", 0, async function (done) {
     let spatialDeviceState = {
       address: "1234",
@@ -891,11 +891,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   });
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_002
- * @tc.desc:updateSpatialDeviceState no parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_002
+   * @tc.desc:updateSpatialDeviceState no parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_002", 0, async function (done) {
     try {
       audioSpatializationManager.updateSpatialDeviceState();
@@ -911,11 +911,11 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
   });
 
   /*
- * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_003
- * @tc.desc:updateSpatialDeviceState invalid parameter
- * @tc.type: FUNC
- * @tc.require: I7V04L
- */
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_003
+   * @tc.desc:updateSpatialDeviceState invalid parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
   it("SUB_AUDIO_SPATIALIZATION_MANAGER_UPDATE_SPATIAL_DEVICE_STATE_003", 0, async function (done) {
     let spatialDeviceState = {
       address: "1234",
