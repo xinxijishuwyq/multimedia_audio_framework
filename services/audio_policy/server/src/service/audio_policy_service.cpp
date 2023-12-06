@@ -1689,7 +1689,7 @@ void AudioPolicyService::OffloadStartPlayingIfOffloadMode(uint64_t sessionId)
 #endif
 }
 
-void AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo)
+bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo)
 {
     if (desc->networkId_ == deviceInfo.networkId && desc->deviceType_ == deviceInfo.deviceType &&
         desc->macAddress_ == deviceInfo.macAddress) {
@@ -1699,7 +1699,7 @@ void AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, D
     }
 }
 
-void AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc)
+bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc)
 {
     if (desc->networkId_ == deviceDesc.networkId_ && desc->deviceType_ == deviceDesc.deviceType_ &&
         desc->macAddress_ == deviceDesc.macAddress_) {

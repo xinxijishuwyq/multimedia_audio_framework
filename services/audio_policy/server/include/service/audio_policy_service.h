@@ -637,9 +637,9 @@ private:
     void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &deviceDescriptor,
         std::vector<sptr<AudioDeviceDescriptor>> &desc, sptr<AudioDeviceDescriptor> &audioDescriptor);
 
-    void IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
+    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
-    void IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
+    bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
