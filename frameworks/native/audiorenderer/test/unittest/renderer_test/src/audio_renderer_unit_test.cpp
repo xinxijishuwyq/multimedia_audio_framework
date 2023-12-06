@@ -1779,7 +1779,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_002, TestSize.Level1)
 
     size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
     int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
-    EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
     free(buffer);
     fclose(wavFile);

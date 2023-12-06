@@ -117,6 +117,7 @@ private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     int32_t InitFromParams(AudioStreamParams &param);
+    int32_t CheckWriteValid(const AudioEncodingType &encoding);
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
