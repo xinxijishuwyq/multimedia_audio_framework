@@ -53,12 +53,12 @@ describe("AudioManagerJsUnitTest", function () {
     it("SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_001", 0, async function (done) {
         audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT, (err) => {
             if (err) {
-                console.error(`Failed to set the audio scene mode. ${err}`);
+                console.error(`001.Failed to set the audio scene mode. ${err}`);
                 expect(false).assertTrue();
                 done();
                 return;
             }
-            console.info('invoked to indicate a successful setting of the audio scene mode.');
+            console.info('001.invoked to indicate a successful setting of the audio scene mode.');
             expect(true).assertTrue();
 
             try {
@@ -83,12 +83,12 @@ describe("AudioManagerJsUnitTest", function () {
     it("SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_002", 0, async function (done) {
         audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_RINGING, (err) => {
             if (err) {
-                console.error(`Failed to set the audio scene mode. ${err}`);
+                console.error(`002.Failed to set the audio scene mode. ${err}`);
                 expect(false).assertTrue();
                 done();
                 return;
             }
-            console.info('invoked to indicate a successful setting of the audio scene mode.');
+            console.info('002.invoked to indicate a successful setting of the audio scene mode.');
             expect(true).assertTrue();
 
             try {
@@ -101,7 +101,7 @@ describe("AudioManagerJsUnitTest", function () {
             } finally {
                 audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT, (err) => {
                     if (err) {
-                        console.error(`Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
+                        console.error(`002.Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
                     }
                     done();
                 })
@@ -118,12 +118,12 @@ describe("AudioManagerJsUnitTest", function () {
     it("SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_003", 0, async function (done) {
         audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_PHONE_CALL, (err) => {
             if (err) {
-                console.error(`Failed to set the audio scene mode. ${err}`);
+                console.error(`003.Failed to set the audio scene mode. ${err}`);
                 expect(false).assertTrue();
                 done();
                 return;
             }
-            console.info('invoked to indicate a successful setting of the audio scene mode.');
+            console.info('003.invoked to indicate a successful setting of the audio scene mode.');
             expect(true).assertTrue();
 
             try {
@@ -136,7 +136,7 @@ describe("AudioManagerJsUnitTest", function () {
             } finally {
                 audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT, (err) => {
                     if (err) {
-                        console.error(`Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
+                        console.error(`003.Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
                     }
                     done();
                 })
@@ -153,12 +153,12 @@ describe("AudioManagerJsUnitTest", function () {
     it("SUB_AUDIO_MANAGER_GET_AUDIO_SCENE_SYNC_004", 0, async function (done) {
         audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_VOICE_CHAT, (err) => {
             if (err) {
-                console.error(`Failed to set the audio scene mode. ${err}`);
+                console.error(`004.Failed to set the audio scene mode. ${err}`);
                 expect(false).assertTrue();
                 done();
                 return;
             }
-            console.info('invoked to indicate a successful setting of the audio scene mode.');
+            console.info('004.invoked to indicate a successful setting of the audio scene mode.');
             expect(true).assertTrue();
 
             try {
@@ -171,7 +171,7 @@ describe("AudioManagerJsUnitTest", function () {
             } finally {
                 audioManager.setAudioScene(audio.AudioScene.AUDIO_SCENE_DEFAULT, (err) => {
                     if (err) {
-                        console.error(`Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
+                        console.error(`004.Failed to reset the audio scene mode to AUDIO_SCENE_DEFAULT. ${err}`);
                     }
                     done();
                 })

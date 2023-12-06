@@ -21,6 +21,7 @@
 #include "audio_system_manager.h"
 #include "audio_manager_callback_napi.h"
 #include "audio_volume_group_manager_napi.h"
+#include "audio_volume_key_event_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,7 +51,7 @@ private:
     AudioSystemManager *audioSystemMngr_;
 
     int32_t cachedClientId_ = -1;
-    std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioVolumeKeyEventNapi> volumeKeyEventCallbackNapi_ = nullptr;
 
     napi_env env_;
 };

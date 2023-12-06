@@ -23,12 +23,13 @@ namespace Bluetooth {
 enum BluetoothDeviceAction : int32_t {
     WEAR_ACTION = 0,
     UNWEAR_ACTION = 1,
-    ENABLEFROMREMOTE_ACTION = 2,
-    DISABLEFROMREMOTE_ACTION = 3,
-    ENABLE_WEAR_DETECTION_ACTION = 4,
-    DISABLE_WEAR_DETECTION_ACTION = 5,
-    CONNECT_ACTION = 6,
-    DISCONNECT_ACTION = 7,
+    ENABLEFROMREMOTE_ACTION,
+    DISABLEFROMREMOTE_ACTION,
+    ENABLE_WEAR_DETECTION_ACTION,
+    DISABLE_WEAR_DETECTION_ACTION,
+    USER_SELECTION_ACTION,
+    CONNECT_ACTION,
+    DISCONNECT_ACTION,
 };
 
 enum DeviceStatus : int32_t {
@@ -40,6 +41,13 @@ enum EventType : int32_t {
     DEFAULT_SELECT = 0,
     USER_UNSELECT = 1,
     USER_SELECT = 2,
+};
+
+enum ScoCategory : int32_t {
+    SCO_DEFAULT = -1,
+    SCO_CALLULAR = 0,
+    SCO_VIRTUAL = 1,
+    SCO_RECOGNITION = 2,
 };
 } // namespace Bluetooth
 } // namespace OHOS

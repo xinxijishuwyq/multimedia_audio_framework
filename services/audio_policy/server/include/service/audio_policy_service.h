@@ -384,6 +384,8 @@ public:
     bool IsIncomingDeviceInRemoteDevice(vector<unique_ptr<AudioDeviceDescriptor>> &descriptors,
         sptr<AudioDeviceDescriptor> incomingDevice);
 
+    void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -495,6 +497,9 @@ private:
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
     DeviceType FetchHighPriorityDevice(bool isOutputDevice);
+
+    int32_t HandleScoDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated);
 
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         bool isStreamStatusUpdated);
@@ -636,6 +641,12 @@ private:
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated);
 
     void ResetToSpeaker(DeviceType devType);
+
+    void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc, sptr<AudioDeviceDescriptor> &audioDescriptor);
+
+    void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &deviceDescriptor,
+        std::vector<sptr<AudioDeviceDescriptor>> &desc, sptr<AudioDeviceDescriptor> &audioDescriptor);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;

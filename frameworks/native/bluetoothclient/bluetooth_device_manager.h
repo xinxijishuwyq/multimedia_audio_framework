@@ -42,15 +42,16 @@ public:
     static void HandleWearDevice(const BluetoothRemoteDevice &device);
     static void HandleUnwearDevice(const BluetoothRemoteDevice &device);
     static void HandleEnableDevice(const BluetoothRemoteDevice &device);
-    static void HandleDisableDevice();
+    static void HandleDisableDevice(const BluetoothRemoteDevice &device);
     static void HandleWearEnable(const BluetoothRemoteDevice &device);
     static void HandleWearDisable(const BluetoothRemoteDevice &device);
+    static void HandleUserSelection(const BluetoothRemoteDevice &device);
     static void AddDeviceInConfigVector(const BluetoothRemoteDevice &device,
         std::vector<BluetoothRemoteDevice> &deviceVector);
     static void RemoveDeviceInConfigVector(const BluetoothRemoteDevice &device,
         std::vector<BluetoothRemoteDevice> &deviceVector);
     static void NotifyToUpdateAudioDevice(const BluetoothRemoteDevice &device,
-        AudioStandard::DeviceCategory category, DeviceStatus deviceStatus);
+        AudioStandard::AudioDeviceDescriptor &desc, DeviceStatus deviceStatus);
     static bool IsA2dpBluetoothDeviceExist(const std::string& macAddress);
     static int32_t GetConnectedA2dpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
     static void UpdateA2dpDeviceConfiguration(const BluetoothRemoteDevice &device,
@@ -69,7 +70,35 @@ class HfpBluetoothDeviceManager {
 public:
     HfpBluetoothDeviceManager() = default;
     virtual ~HfpBluetoothDeviceManager() = default;
-    static void OnHfpStackChanged(const BluetoothRemoteDevice &device, bool isConnected);
+    static void SetHfpStack(const BluetoothRemoteDevice &device, int action);
+    static void HandleConnectDevice(const BluetoothRemoteDevice &device);
+    static void HandleDisconnectDevice(const BluetoothRemoteDevice &device);
+    static void HandleWearDevice(const BluetoothRemoteDevice &device);
+    static void HandleUnwearDevice(const BluetoothRemoteDevice &device);
+    static void HandleEnableDevice(const BluetoothRemoteDevice &device);
+    static void HandleDisableDevice(const BluetoothRemoteDevice &device);
+    static void HandleWearEnable(const BluetoothRemoteDevice &device);
+    static void HandleWearDisable(const BluetoothRemoteDevice &device);
+    static void HandleUserSelection(const BluetoothRemoteDevice &device);
+    static void AddDeviceInConfigVector(const BluetoothRemoteDevice &device,
+        std::vector<BluetoothRemoteDevice> &deviceVector);
+    static void RemoveDeviceInConfigVector(const BluetoothRemoteDevice &device,
+        std::vector<BluetoothRemoteDevice> &deviceVector);
+    static void NotifyToUpdateAudioDevice(const BluetoothRemoteDevice &device,
+        AudioStandard::AudioDeviceDescriptor &desc, DeviceStatus deviceStatus);
+    static bool IsHfpBluetoothDeviceExist(const std::string& macAddress);
+    static void UpdateHfpDeviceConfiguration(const BluetoothRemoteDevice &device,
+        const AudioStandard::AudioStreamInfo &streamInfo);
+    static void OnScoStateChanged(const BluetoothRemoteDevice &device, bool isConnected);
+    static int32_t GetConnectedHfpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
+    static void ClearAllHfpBluetoothDevice();
+
+private:
+    static std::map<std::string, BluetoothRemoteDevice> hfpBluetoothDeviceMap_;
+    static std::map<std::string, BluetoothDeviceAction> wearDetectionStateMap_;
+    static std::vector<BluetoothRemoteDevice> privacyDevices_;
+    static std::vector<BluetoothRemoteDevice> commonDevices_;
+    static std::vector<BluetoothRemoteDevice> negativeDevices_;
 };
 } // namespace Bluetooth
 } // namespace OHOS

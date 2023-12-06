@@ -183,6 +183,30 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     return SUCCESS;
 }
 
+void AudioStreamCollector::GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo,
+    AudioRendererChangeInfo &rendererInfo)
+{
+    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
+        if ((*it)->clientUID == streamChangeInfo.audioRendererChangeInfo.clientUID &&
+            (*it)->sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
+            rendererInfo.outputDeviceInfo = (*it)->outputDeviceInfo;
+            return;
+        }
+    }
+}
+
+void AudioStreamCollector::GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo,
+    AudioCapturerChangeInfo &capturerInfo)
+{
+    for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
+        if ((*it)->clientUID == streamChangeInfo.audioCapturerChangeInfo.clientUID &&
+            (*it)->sessionId == streamChangeInfo.audioCapturerChangeInfo.sessionId) {
+            capturerInfo.inputDeviceInfo = (*it)->inputDeviceInfo;
+            return;
+        }
+    }
+}
+
 int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
     AUDIO_INFO_LOG("AddCapturerStream recording client id %{public}d session %{public}d",

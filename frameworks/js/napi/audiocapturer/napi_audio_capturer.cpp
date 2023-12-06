@@ -109,7 +109,6 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
 {
     unique_ptr<NapiAudioCapturer> napiCapturer = make_unique<NapiAudioCapturer>();
     CHECK_AND_RETURN_RET_LOG(napiCapturer != nullptr, nullptr, "No memory");
-    ObjectRefMap<NapiAudioCapturer>::Insert(napiCapturer.get());
 
     napiCapturer->env_ = env;
     napiCapturer->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
@@ -122,7 +121,10 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     if (napiCapturer->audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("Capturer Create failed");
         NapiAudioCapturer::isConstructSuccess_ = NAPI_ERR_SYSTEM;
+        napiCapturer.release();
+        return nullptr;
     }
+    ObjectRefMap<NapiAudioCapturer>::Insert(napiCapturer.get());
 
     if (napiCapturer->audioCapturer_ != nullptr && napiCapturer->callbackNapi_ == nullptr) {
         napiCapturer->callbackNapi_ = std::make_shared<NapiAudioCapturerCallback>(env);
@@ -218,7 +220,6 @@ napi_value NapiAudioCapturer::CreateAudioCapturerWrapper(napi_env env, const Aud
         AUDIO_ERR_LOG("napi_new_instance failed");
         goto fail;
     }
-    NapiAudioCapturer::isConstructSuccess_ = SUCCESS;
     return result;
 
 fail:
@@ -245,6 +246,10 @@ napi_value NapiAudioCapturer::CreateAudioCapturer(napi_env env, napi_callback_in
 
     auto complete = [env, context](napi_value &output) {
         output = CreateAudioCapturerWrapper(env, context->capturerOptions);
+        if (NapiAudioCapturer::isConstructSuccess_ != SUCCESS) {
+            context->SignError(NapiAudioCapturer::isConstructSuccess_);
+            NapiAudioCapturer::isConstructSuccess_ = SUCCESS;
+        }
     };
 
     return NapiAsyncWork::Enqueue(env, context, "CreateAudioCapturer", nullptr, complete);

@@ -1005,5 +1005,143 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
     }
     return result;
 }
+
+bool NapiAudioEnum::IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType)
+{
+    bool result = false;
+    switch (communicationDeviceType) {
+        case CommunicationDeviceType::COMMUNICATION_SPEAKER:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentDeviceFlag(int32_t deviceFlag)
+{
+    bool result = false;
+    switch (deviceFlag) {
+        case DeviceFlag::NONE_DEVICES_FLAG:
+        case DeviceFlag::OUTPUT_DEVICES_FLAG:
+        case DeviceFlag::INPUT_DEVICES_FLAG:
+        case DeviceFlag::ALL_DEVICES_FLAG:
+        case DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG:
+        case DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG:
+        case DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG:
+        case DeviceFlag::ALL_L_D_DEVICES_FLAG:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag)
+{
+    bool result = false;
+    switch (activeDeviceFlag) {
+        case ActiveDeviceType::SPEAKER:
+        case ActiveDeviceType::BLUETOOTH_SCO:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
+{
+    SourceType sourceTypeValue = static_cast<SourceType>(intValue);
+    switch (sourceTypeValue) {
+        case SourceType::SOURCE_TYPE_MIC:
+        case SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SourceType::SOURCE_TYPE_ULTRASONIC:
+        case SourceType::SOURCE_TYPE_VOICE_COMMUNICATION:
+        case SourceType::SOURCE_TYPE_VOICE_RECOGNITION:
+        case SourceType::SOURCE_TYPE_WAKEUP:
+        case SourceType::SOURCE_TYPE_VOICE_CALL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool NapiAudioEnum::IsLegalDeviceUsage(int32_t usage)
+{
+    bool result = false;
+    switch (usage) {
+        case AudioDeviceUsage::MEDIA_OUTPUT_DEVICES:
+        case AudioDeviceUsage::MEDIA_INPUT_DEVICES:
+        case AudioDeviceUsage::ALL_MEDIA_DEVICES:
+        case AudioDeviceUsage::CALL_OUTPUT_DEVICES:
+        case AudioDeviceUsage::CALL_INPUT_DEVICES:
+        case AudioDeviceUsage::ALL_CALL_DEVICES:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+
+bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
+{
+    bool result = false;
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MEDIA:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_NOTIFICATION_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_EARPIECE:
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

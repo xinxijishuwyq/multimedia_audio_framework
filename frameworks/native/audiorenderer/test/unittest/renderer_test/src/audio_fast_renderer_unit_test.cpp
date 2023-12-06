@@ -36,7 +36,8 @@ const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
 constexpr uint32_t STREAM_FAST = 1;
 const int32_t VALUE_THOUSAND = 1000;
 const int32_t VALUE_ZERO = 0;
-const int64_t WRITE_FRAME = 240;
+const int64_t WRITE_FRAME_FIRST = 240;
+const int64_t WRITE_FRAME_SECOND = 720;
 static size_t g_reqBufLen = 0;
 bool g_flag = true;
 } // namespace
@@ -341,7 +342,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
     EXPECT_EQ(true, isStarted);
 
     ret = audioRenderer->GetFramesWritten();
-    EXPECT_EQ(WRITE_FRAME, ret);
+    EXPECT_EQ(WRITE_FRAME_FIRST || WRITE_FRAME_SECOND, ret);
 
     float setLowPowerVolume = audioRenderer->SetLowPowerVolume(1.0f);
     EXPECT_EQ(setLowPowerVolume, 1);

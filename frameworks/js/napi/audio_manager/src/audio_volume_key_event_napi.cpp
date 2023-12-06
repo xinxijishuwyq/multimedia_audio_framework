@@ -74,6 +74,12 @@ void AudioVolumeKeyEventNapi::SaveCallbackReference(const std::string &callbackN
     }
 }
 
+void AudioVolumeKeyEventNapi::Release()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("Release AudioVolumeKeyEventNapi");
+}
+
 static void SetValueInt32(const napi_env& env, const std::string& fieldStr, const int intValue, napi_value& result)
 {
     napi_value value = nullptr;

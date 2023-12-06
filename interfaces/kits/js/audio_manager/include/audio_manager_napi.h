@@ -25,6 +25,7 @@
 #include "audio_routing_manager_napi.h"
 #include "audio_stream_mgr_napi.h"
 #include "audio_system_manager.h"
+#include "audio_volume_key_event_napi.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -138,7 +139,7 @@ private:
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerCallback> interruptCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModecallbackNapi_ = nullptr;
-    std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioVolumeKeyEventNapi> volumeKeyEventCallbackNapi_ = nullptr;
     napi_env env_;
 };
 

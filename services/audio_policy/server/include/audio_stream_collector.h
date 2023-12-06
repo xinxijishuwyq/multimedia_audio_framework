@@ -62,6 +62,8 @@ public:
     int32_t UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus);
     AudioStreamType GetStreamType(int32_t sessionId);
     int32_t GetUid(int32_t sessionId);
+    void GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioRendererChangeInfo &rendererInfo);
+    void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
 private:
     AudioStreamEventDispatcher &mDispatcherService;
     std::mutex streamsInfoMutex_;

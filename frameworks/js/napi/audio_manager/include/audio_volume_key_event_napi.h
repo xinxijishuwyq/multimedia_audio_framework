@@ -53,6 +53,7 @@ public:
     **/
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void Release();
 
 private:
     struct AudioVolumeKeyEventJsCallback {
