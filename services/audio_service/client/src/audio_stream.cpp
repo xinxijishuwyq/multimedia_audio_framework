@@ -488,12 +488,27 @@ int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 
 int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
 {
-    int32_t ret = CheckWriteValid(ENCODING_PCM);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Write failed");
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
+        return ERR_INCORRECT_MODE;
+    }
 
     if ((buffer == nullptr) || (bufferSize <= 0)) {
         AUDIO_ERR_LOG("Invalid buffer size:%{public}zu", bufferSize);
         return ERR_INVALID_PARAM;
+    }
+
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("Write: Illegal  state:%{public}u", state_);
+        // To allow context switch for APIs running in different thread contexts
+        std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
+        return ERR_ILLEGAL_STATE;
+    }
+
+    if (streamParams_.encoding != ENCODING_PCM) {
+        AUDIO_ERR_LOG("Write: Write not supported. encoding doesnot match");
+        AUDIO_ERR_LOG("encoding = %{public}d, excepted %{public}d", streamParams_.encoding, ENCODING_PCM);
+        return ERR_NOT_SUPPORT;
     }
 
     WriteMuteDataSysEvent(buffer, bufferSize);
@@ -523,8 +538,23 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
 
 int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
 {
-    int32_t ret = CheckWriteValid(ENCODING_AUDIOVIVID);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Write failed");
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
+        return ERR_INCORRECT_MODE;
+    }
+
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("Write: Illegal state:%{public}u", state_);
+        // To allow context switch for APIs running in different thread contexts
+        std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
+        return ERR_ILLEGAL_STATE;
+    }
+
+    if (streamParams_.encoding != ENCODING_AUDIOVIVID) {
+        AUDIO_ERR_LOG("Write: Write not supported. encoding doesnot match");
+        AUDIO_ERR_LOG("encoding = %{public}d, excepted %{public}d", streamParams_.encoding, ENCODING_AUDIOVIVID);
+        return ERR_NOT_SUPPORT;
+    }
 
     BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
     BufferDesc metaDesc = {metaBuffer, metaBufferSize};
@@ -557,20 +587,12 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
     ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
 
     size_t bytesWritten = 0;
-    size_t totLen = 0;
-    while (stream.bufferLen > 0) {
-        bytesWritten = WriteStream(stream, writeError);
-        if (bytesWritten < 0)
-            break;
-        stream.buffer += bytesWritten;
-        stream.bufferLen -= bytesWritten;
-        totLen += bytesWritten;
-    }
+    bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
         return ERR_WRITE_FAILED;
     }
-    return totLen;
+    return bytesWritten;
 }
 
 bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
@@ -1273,28 +1295,6 @@ int32_t AudioStream::InitFromParams(AudioStreamParams &info)
         return ERR_INVALID_OPERATION;
     }
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "AudioStream: Error initializing!");
-    return SUCCESS;
-}
-
-int32_t AudioStream::CheckWriteValid(const AudioEncodingType &encoding)
-{
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        AUDIO_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
-        return ERR_INCORRECT_MODE;
-    }
-
-    if (state_ != RUNNING) {
-        AUDIO_ERR_LOG("Write: Illegal state:%{public}u", state_);
-        // To allow context switch for APIs running in different thread contexts
-        std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
-        return ERR_ILLEGAL_STATE;
-    }
-
-    if (streamParams_.encoding != encoding) {
-        AUDIO_ERR_LOG("Write: Write not supported. encoding doesnot match");
-        AUDIO_ERR_LOG("encoding = %{public}d, excepted %{public}d", streamParams_.encoding, encoding);
-        return ERR_NOT_SUPPORTED;
-    }
     return SUCCESS;
 }
 } // namespace AudioStandard
