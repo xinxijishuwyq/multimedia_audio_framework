@@ -1051,7 +1051,7 @@ void AudioEffectHdi::InitHdi()
         return;
     }
     libName = strdup("libspatialization_processing_dsp");
-    effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966ff");
+    effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966gg");
     EffectInfo info = {
         .libName = &libName[0],
         .effectId = &effectId[0],
@@ -1067,7 +1067,7 @@ void AudioEffectHdi::InitHdi()
 
     uint32_t replyLen = GET_HDI_BUFFER_LEN;
     input[0] = HDI_BLUETOOTH_MODE;
-    input[1] = 0;
+    input[1] = 1;
     AUDIO_INFO_LOG("set hdi bluetooth mode.");
     ret = hdiControl_->SendCommand(hdiControl_, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
     if (ret != 0) {
