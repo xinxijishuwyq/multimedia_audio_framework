@@ -40,7 +40,7 @@ public:
         SAMPLE_FORMAT_F32LE = 4
     };
 
-    enum AudioVolumeType {
+    enum AudioJsVolumeType {
         VOLUMETYPE_DEFAULT = -1,
         VOICE_CALL = 0,
         RINGTONE = 2,
@@ -94,6 +94,11 @@ public:
     static bool IsLegalDeviceUsage(int32_t usage);
     static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);
     static bool IsLegalOutputDeviceType(int32_t deviceType);
+    static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
+    static AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode);
+    static AudioRingMode GetJsAudioRingMode(int32_t ringerMode);
+    static AudioStandard::FocusType GetNativeFocusType(int32_t focusType);
+    static AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);

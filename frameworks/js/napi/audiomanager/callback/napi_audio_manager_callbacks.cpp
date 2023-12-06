@@ -47,6 +47,23 @@ NapiAudioManagerCallback::~NapiAudioManagerCallback()
     AUDIO_DEBUG_LOG("NapiAudioManagerCallback: instance destroy");
 }
 
+void NapiAudioManagerCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    napi_ref callback = nullptr;
+    const int32_t refCount = ARGS_ONE;
+    napi_status status = napi_create_reference(env_, args, refCount, &callback);
+    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
+                         "NapiAudioManagerCallback: creating reference for callback fail");
+
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    if (callbackName == DEVICE_CHANGE_CALLBACK_NAME) {
+        deviceChangeCallback_ = cb;
+    } else {
+        AUDIO_ERR_LOG("NapiAudioManagerCallback: Unknown callback type: %{public}s", callbackName.c_str());
+    }
+}
+
 int32_t NapiAudioManagerCallback::GetAudioManagerDeviceChangeCbListSize()
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -134,6 +151,54 @@ void NapiAudioManagerCallback::OnDeviceChange(const DeviceChangeAction &deviceCh
         }
     }
     return;
+}
+
+void NapiAudioManagerCallback::SaveAudioManagerDeviceChangeCbRef(DeviceFlag deviceFlag, napi_value callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    napi_ref callbackRef = nullptr;
+    const int32_t refCount = 1;
+
+    for (auto it = audioManagerDeviceChangeCbList_.begin(); it != audioManagerDeviceChangeCbList_.end(); ++it) {
+        bool isSameCallback = IsSameCallback(env_, callback, (*it).first->cb_);
+        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: audio manager has same callback, nothing to do");
+    }
+
+    napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
+    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
+        "SaveCallbackReference: creating reference for callback fail");
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    audioManagerDeviceChangeCbList_.push_back({cb, deviceFlag});
+    AUDIO_INFO_LOG("Save manager device change callback ref success, deviceFlag [%{public}d], list size [%{public}zu]",
+        deviceFlag, audioManagerDeviceChangeCbList_.size());
+}
+
+void NapiAudioManagerCallback::RemoveAudioManagerDeviceChangeCbRef(napi_env env, napi_value callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    for (auto it = audioManagerDeviceChangeCbList_.begin(); it != audioManagerDeviceChangeCbList_.end(); ++it) {
+        bool isSameCallback = IsSameCallback(env_, callback, (*it).first->cb_);
+        if (isSameCallback) {
+            AUDIO_INFO_LOG("RemoveAudioManagerDeviceChangeCbRef: find js callback, delete it");
+            napi_delete_reference(env, (*it).first->cb_);
+            (*it).first->cb_ = nullptr;
+            audioManagerDeviceChangeCbList_.erase(it);
+            return;
+        }
+    }
+    AUDIO_INFO_LOG("RemoveCallbackReference: js callback no find");
+}
+
+void NapiAudioManagerCallback::RemoveAllAudioManagerDeviceChangeCb()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = audioManagerDeviceChangeCbList_.begin(); it != audioManagerDeviceChangeCbList_.end(); ++it) {
+        napi_delete_reference(env_, (*it).first->cb_);
+        (*it).first->cb_ = nullptr;
+    }
+    audioManagerDeviceChangeCbList_.clear();
+    AUDIO_INFO_LOG("RemoveAllCallbacks: remove all js callbacks success");
 }
 
 void NapiAudioManagerCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)

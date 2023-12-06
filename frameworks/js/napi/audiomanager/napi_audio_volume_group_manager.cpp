@@ -36,89 +36,6 @@ static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode)
     return nullptr;
 }
 
-static AudioVolumeType GetNativeAudioVolumeType(int32_t audioVolumeType)
-{
-    AudioVolumeType result = STREAM_MUSIC;
-
-    switch (audioVolumeType) {
-        case NapiAudioEnum::AudioVolumeType::RINGTONE:
-            result = STREAM_RING;
-            break;
-        case NapiAudioEnum::AudioVolumeType::MEDIA:
-            result = STREAM_MUSIC;
-            break;
-        case NapiAudioEnum::AudioVolumeType::VOICE_CALL:
-            result = STREAM_VOICE_CALL;
-            break;
-        case NapiAudioEnum::AudioVolumeType::VOICE_ASSISTANT:
-            result = STREAM_VOICE_ASSISTANT;
-            break;
-        case NapiAudioEnum::AudioVolumeType::ALARM:
-            result = STREAM_ALARM;
-            break;
-        case NapiAudioEnum::AudioVolumeType::ACCESSIBILITY:
-            result = STREAM_ACCESSIBILITY;
-            break;
-        case NapiAudioEnum::AudioVolumeType::ULTRASONIC:
-            result = STREAM_ULTRASONIC;
-            break;
-        case NapiAudioEnum::AudioVolumeType::ALL:
-            result = STREAM_ALL;
-            break;
-        default:
-            result = STREAM_MUSIC;
-            AUDIO_ERR_LOG("Unknown volume type, Set it to default MEDIA!");
-            break;
-    }
-    return result;
-}
-
-static AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode)
-{
-    AudioRingerMode result = RINGER_MODE_NORMAL;
-
-    switch (ringMode) {
-        case NapiAudioEnum::AudioRingMode::RINGER_MODE_SILENT:
-            result = RINGER_MODE_SILENT;
-            break;
-        case NapiAudioEnum::AudioRingMode::RINGER_MODE_VIBRATE:
-            result = RINGER_MODE_VIBRATE;
-            break;
-        case NapiAudioEnum::AudioRingMode::RINGER_MODE_NORMAL:
-            result = RINGER_MODE_NORMAL;
-            break;
-        default:
-            result = RINGER_MODE_NORMAL;
-            AUDIO_ERR_LOG("Unknown ringer mode requested by JS, Set it to default RINGER_MODE_NORMAL!");
-            break;
-    }
-
-    return result;
-}
-
-static NapiAudioEnum::AudioRingMode GetJsAudioRingMode(int32_t ringerMode)
-{
-    NapiAudioEnum::AudioRingMode result = NapiAudioEnum::AudioRingMode::RINGER_MODE_NORMAL;
-
-    switch (ringerMode) {
-        case RINGER_MODE_SILENT:
-            result = NapiAudioEnum::AudioRingMode::RINGER_MODE_SILENT;
-            break;
-        case RINGER_MODE_VIBRATE:
-            result = NapiAudioEnum::AudioRingMode::RINGER_MODE_VIBRATE;
-            break;
-        case RINGER_MODE_NORMAL:
-            result = NapiAudioEnum::AudioRingMode::RINGER_MODE_NORMAL;
-            break;
-        default:
-            result = NapiAudioEnum::AudioRingMode::RINGER_MODE_NORMAL;
-            AUDIO_ERR_LOG("Unknown ringer mode returned from native, Set it to default RINGER_MODE_NORMAL!");
-            break;
-    }
-
-    return result;
-}
-
 bool NapiAudioVolumeGroupManager::CheckContextStatus(std::shared_ptr<AudioVolumeGroupManagerAsyncContext> context)
 {
     CHECK_AND_RETURN_RET_LOG(context != nullptr, false, "context object is nullptr.");
@@ -313,7 +230,7 @@ napi_value NapiAudioVolumeGroupManager::GetVolume(napi_env env, napi_callback_in
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetVolume(
-            GetNativeAudioVolumeType(context->volType));
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -343,7 +260,8 @@ napi_value NapiAudioVolumeGroupManager::GetVolumeSync(napi_env env, napi_callbac
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
-    int32_t volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetVolume(GetNativeAudioVolumeType(volType));
+    int32_t volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetVolume(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, volLevel, result);
 
     return result;
@@ -380,7 +298,7 @@ napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_in
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolume(
-            GetNativeAudioVolumeType(context->volType), context->volLevel);
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setvolume failed", NAPI_ERR_SYSTEM);
     };
 
@@ -418,7 +336,7 @@ napi_value NapiAudioVolumeGroupManager::GetMaxVolume(napi_env env, napi_callback
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxVolume(
-            GetNativeAudioVolumeType(context->volType));
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -449,7 +367,8 @@ napi_value NapiAudioVolumeGroupManager::GetMaxVolumeSync(napi_env env, napi_call
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
-    int32_t volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxVolume(GetNativeAudioVolumeType(volType));
+    int32_t volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxVolume(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, volLevel, result);
 
     return result;
@@ -482,7 +401,7 @@ napi_value NapiAudioVolumeGroupManager::GetMinVolume(napi_env env, napi_callback
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetMinVolume(
-            GetNativeAudioVolumeType(context->volType));
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -512,7 +431,8 @@ napi_value NapiAudioVolumeGroupManager::GetMinVolumeSync(napi_env env, napi_call
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
-    int32_t volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetMinVolume(GetNativeAudioVolumeType(volType));
+    int32_t volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetMinVolume(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, volLevel, result);
 
     return result;
@@ -548,7 +468,7 @@ napi_value NapiAudioVolumeGroupManager::SetMute(napi_env env, napi_callback_info
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetMute(
-            GetNativeAudioVolumeType(context->volType), context->isMute);
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->isMute);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setmute failed", NAPI_ERR_SYSTEM);
     };
 
@@ -585,7 +505,7 @@ napi_value NapiAudioVolumeGroupManager::IsStreamMute(napi_env env, napi_callback
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->IsStreamMute(
-            GetNativeAudioVolumeType(context->volType), context->isMute);
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->isMute);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "isstreammute failed",
             NAPI_ERR_SYSTEM);
     };
@@ -619,7 +539,8 @@ napi_value NapiAudioVolumeGroupManager::IsStreamMuteSync(napi_env env, napi_call
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
     bool isMute;
-    int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->IsStreamMute(GetNativeAudioVolumeType(volType), isMute);
+    int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->IsStreamMute(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType), isMute);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "IsStreamMute failure!");
     NapiParamUtils::SetValueBoolean(env, isMute, result);
 
@@ -653,7 +574,7 @@ napi_value NapiAudioVolumeGroupManager::SetRingerMode(napi_env env, napi_callbac
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetRingerMode(
-            GetNativeAudioRingerMode(context->ringMode));
+            NapiAudioEnum::GetNativeAudioRingerMode(context->ringMode));
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setringermode failed",
             NAPI_ERR_SYSTEM);
     };
@@ -682,7 +603,8 @@ napi_value NapiAudioVolumeGroupManager::GetRingerMode(napi_env env, napi_callbac
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
-        context->ringMode = GetJsAudioRingMode(napiAudioVolumeGroupManager->audioGroupMngr_->GetRingerMode());
+        context->ringMode = NapiAudioEnum::GetJsAudioRingMode(
+            napiAudioVolumeGroupManager->audioGroupMngr_->GetRingerMode());
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -862,7 +784,7 @@ napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStep(napi_env env, n
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolType(context->volType) ||
-            context->volType != NapiAudioEnum::AudioVolumeType::ALL, "volType invaild", NAPI_ERR_INVALID_PARAM);
+            context->volType != NapiAudioEnum::ALL, "volType invaild", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->adjustType, argv[PARAM1]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get adjustType failed",
             NAPI_ERR_INPUT_INVALID);
@@ -883,7 +805,7 @@ napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStep(napi_env env, n
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->volumeAdjustStatus = napiAudioVolumeGroupManager->audioGroupMngr_->AdjustSystemVolumeByStep(
-            GetNativeAudioVolumeType(context->volType),
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType),
             static_cast<VolumeAdjustType>(context->adjustType));
         if (context->volumeAdjustStatus != SUCCESS) {
             if (context->volumeAdjustStatus == ERR_PERMISSION_DENIED) {
@@ -936,7 +858,7 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDb(napi_env env, napi_c
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->volumeInDb = napiAudioVolumeGroupManager->audioGroupMngr_->GetSystemVolumeInDb(
-            GetNativeAudioVolumeType(context->volType), context->volLevel,
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel,
             static_cast<DeviceType>(context->deviceType));
         if (FLOAT_COMPARE_EQ(context->volumeInDb, static_cast<float>(ERR_INVALID_PARAM))) {
             context->SignError(NAPI_ERR_INVALID_PARAM);
@@ -980,7 +902,7 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDbSync(napi_env env, na
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
     double volumeInDb = napiAudioVolumeGroupManager->audioGroupMngr_->GetSystemVolumeInDb(
-        GetNativeAudioVolumeType(volType), volLevel, static_cast<DeviceType>(deviceType));
+        NapiAudioEnum::GetNativeAudioVolumeType(volType), volLevel, static_cast<DeviceType>(deviceType));
     CHECK_AND_RETURN_RET_LOG(!FLOAT_COMPARE_EQ(static_cast<float>(volumeInDb), static_cast<float>(ERR_INVALID_PARAM)),
         ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "getsystemvolumeindb failed");
     NapiParamUtils::SetValueDouble(env, volumeInDb, result);

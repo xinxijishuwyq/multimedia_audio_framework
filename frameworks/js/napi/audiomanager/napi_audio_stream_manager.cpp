@@ -32,44 +32,6 @@ NapiAudioStreamMgr::NapiAudioStreamMgr()
 
 NapiAudioStreamMgr::~NapiAudioStreamMgr() = default;
 
-AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
-{
-    AudioVolumeType result = STREAM_MUSIC;
-
-    switch (volumeType) {
-        case NapiAudioEnum::AudioVolumeType::VOICE_CALL:
-            result = STREAM_VOICE_CALL;
-            break;
-        case NapiAudioEnum::AudioVolumeType::RINGTONE:
-            result = STREAM_RING;
-            break;
-        case NapiAudioEnum::AudioVolumeType::MEDIA:
-            result = STREAM_MUSIC;
-            break;
-        case NapiAudioEnum::AudioVolumeType::ALARM:
-            result = STREAM_ALARM;
-            break;
-        case NapiAudioEnum::AudioVolumeType::ACCESSIBILITY:
-            result = STREAM_ACCESSIBILITY;
-            break;
-        case NapiAudioEnum::AudioVolumeType::VOICE_ASSISTANT:
-            result = STREAM_VOICE_ASSISTANT;
-            break;
-        case NapiAudioEnum::AudioVolumeType::ULTRASONIC:
-            result = STREAM_ULTRASONIC;
-            break;
-        case NapiAudioEnum::AudioVolumeType::ALL:
-            result = STREAM_ALL;
-            break;
-        default:
-            result = STREAM_MUSIC;
-            AUDIO_ERR_LOG("GetNativeAudioVolumeType: Unknown volume type, Set it to default MEDIA!");
-            break;
-    }
-
-    return result;
-}
-
 static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode)
 {
     NapiAudioError::ThrowError(env, errCode);
@@ -375,7 +337,7 @@ napi_value NapiAudioStreamMgr::IsStreamActive(napi_env env, napi_callback_info i
         CHECK_AND_RETURN_LOG(CheckAudioStreamManagerStatus(napiStreamMgr, context),
             "context object state is error.");
         context->isActive = napiStreamMgr->audioStreamMngr_->IsStreamActive(
-            GetNativeAudioVolumeType(context->volType));
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
         context->isTrue = context->isActive;
     };
 
@@ -408,7 +370,7 @@ napi_value NapiAudioStreamMgr::IsStreamActiveSync(napi_env env, napi_callback_in
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
         "audioStreamMngr_ is nullptr");
     bool isActive = napiStreamMgr->audioStreamMngr_->
-        IsStreamActive(GetNativeAudioVolumeType(volType));
+        IsStreamActive(NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueBoolean(env, isActive, result);
     return result;
 }

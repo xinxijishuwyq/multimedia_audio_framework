@@ -88,14 +88,18 @@ ohos_shared_library("audio") {
       "audiocapturer/napi_audio_capturer.cpp",
       "audiomanager/callback/napi_audio_capturer_state_callback.cpp",
       "audiomanager/callback/napi_audio_manager_callbacks.cpp",
+      "audiomanager/callback/napi_audio_manager_interrupt_callback.cpp",
       "audiomanager/callback/napi_audio_micstatechange_callback.cpp",
       "audiomanager/callback/napi_audio_renderer_state_callback.cpp",
       "audiomanager/callback/napi_audio_ringermode_callback.cpp",
       "audiomanager/callback/napi_audio_rounting_available_devicechange_callback.cpp",
       "audiomanager/callback/napi_audio_routing_manager_callbacks.cpp",
+      "audiomanager/callback/napi_audio_spatialization_manager_callback.cpp",
       "audiomanager/callback/napi_audio_volume_key_event.cpp",
       "audiomanager/napi_audio_interrupt_manager.cpp",
+      "audiomanager/napi_audio_manager.cpp",
       "audiomanager/napi_audio_routing_manager.cpp",
+      "audiomanager/napi_audio_spatialization_manager.cpp",
       "audiomanager/napi_audio_stream_manager.cpp",
       "audiomanager/napi_audio_volume_group_manager.cpp",
       "audiomanager/napi_audio_volume_manager.cpp",
@@ -108,11 +112,10 @@ ohos_shared_library("audio") {
       "audiorenderer/napi_audio_renderer.cpp",
       "audiorenderer/napi_toneplayer.cpp",
       "common/napi_async_work.cpp",
+      "common/napi_audio_entry.cpp",
       "common/napi_audio_enum.cpp",
       "common/napi_audio_error.cpp",
       "common/napi_param_utils.cpp",
-
-      #"common/napi_audio_entry.cpp",
     ]
   }
 

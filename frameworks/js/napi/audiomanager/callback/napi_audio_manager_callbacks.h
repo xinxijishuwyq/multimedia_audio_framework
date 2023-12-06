@@ -32,8 +32,12 @@ public:
 
     explicit NapiAudioManagerCallback(napi_env env);
     virtual ~NapiAudioManagerCallback();
+    void SaveCallbackReference(const std::string &callbackName, napi_value callback);
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
     int32_t GetAudioManagerDeviceChangeCbListSize();
+    void SaveAudioManagerDeviceChangeCbRef(DeviceFlag deviceFlag, napi_value callback);
+    void RemoveAudioManagerDeviceChangeCbRef(napi_env env, napi_value callback);
+    void RemoveAllAudioManagerDeviceChangeCb();
 
     void SaveRoutingManagerDeviceChangeCbRef(DeviceFlag deviceFlag, napi_value callback);
     void RemoveRoutingManagerDeviceChangeCbRef(napi_env env, napi_value callback);

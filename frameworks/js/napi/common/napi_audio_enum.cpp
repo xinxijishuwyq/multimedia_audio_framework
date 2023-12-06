@@ -893,14 +893,14 @@ bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
 {
     bool result = false;
     switch (inputType) {
-        case AudioVolumeType::RINGTONE:
-        case AudioVolumeType::MEDIA:
-        case AudioVolumeType::VOICE_CALL:
-        case AudioVolumeType::VOICE_ASSISTANT:
-        case AudioVolumeType::ALARM:
-        case AudioVolumeType::ACCESSIBILITY:
-        case AudioVolumeType::ULTRASONIC:
-        case AudioVolumeType::ALL:
+        case AudioJsVolumeType::RINGTONE:
+        case AudioJsVolumeType::MEDIA:
+        case AudioJsVolumeType::VOICE_CALL:
+        case AudioJsVolumeType::VOICE_ASSISTANT:
+        case AudioJsVolumeType::ALARM:
+        case AudioJsVolumeType::ACCESSIBILITY:
+        case AudioJsVolumeType::ULTRASONIC:
+        case AudioJsVolumeType::ALL:
             result = true;
             break;
         default:
@@ -1139,6 +1139,124 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
             break;
         default:
             result = false;
+            break;
+    }
+    return result;
+}
+
+
+AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
+{
+    AudioVolumeType result = STREAM_MUSIC;
+
+    switch (volumeType) {
+        case NapiAudioEnum::VOICE_CALL:
+            result = STREAM_VOICE_CALL;
+            break;
+        case NapiAudioEnum::RINGTONE:
+            result = STREAM_RING;
+            break;
+        case NapiAudioEnum::MEDIA:
+            result = STREAM_MUSIC;
+            break;
+        case NapiAudioEnum::ALARM:
+            result = STREAM_ALARM;
+            break;
+        case NapiAudioEnum::ACCESSIBILITY:
+            result = STREAM_ACCESSIBILITY;
+            break;
+        case NapiAudioEnum::VOICE_ASSISTANT:
+            result = STREAM_VOICE_ASSISTANT;
+            break;
+        case NapiAudioEnum::ULTRASONIC:
+            result = STREAM_ULTRASONIC;
+            break;
+        case NapiAudioEnum::ALL:
+            result = STREAM_ALL;
+            break;
+        default:
+            result = STREAM_MUSIC;
+            AUDIO_ERR_LOG("GetNativeAudioVolumeType: Unknown volume type, Set it to default MEDIA!");
+            break;
+    }
+
+    return result;
+}
+
+AudioRingerMode NapiAudioEnum::GetNativeAudioRingerMode(int32_t ringMode)
+{
+    AudioRingerMode result = AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL;
+
+    switch (ringMode) {
+        case NapiAudioEnum::RINGER_MODE_SILENT:
+            result = AudioStandard::AudioRingerMode::RINGER_MODE_SILENT;
+            break;
+        case NapiAudioEnum::RINGER_MODE_VIBRATE:
+            result = AudioStandard::AudioRingerMode::RINGER_MODE_VIBRATE;
+            break;
+        case NapiAudioEnum::RINGER_MODE_NORMAL:
+            result = AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL;
+            break;
+        default:
+            result = AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL;
+            AUDIO_ERR_LOG("Unknown ringer mode requested by JS, Set it to default RINGER_MODE_NORMAL!");
+            break;
+    }
+
+    return result;
+}
+
+NapiAudioEnum::AudioRingMode NapiAudioEnum::GetJsAudioRingMode(int32_t ringerMode)
+{
+    NapiAudioEnum::AudioRingMode result = NapiAudioEnum::AudioRingMode::RINGER_MODE_NORMAL;
+
+    switch (ringerMode) {
+        case AudioStandard::AudioRingerMode::RINGER_MODE_SILENT:
+            result = NapiAudioEnum::RINGER_MODE_SILENT;
+            break;
+        case AudioStandard::AudioRingerMode::RINGER_MODE_VIBRATE:
+            result = NapiAudioEnum::RINGER_MODE_VIBRATE;
+            break;
+        case AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL:
+            result = NapiAudioEnum::RINGER_MODE_NORMAL;
+            break;
+        default:
+            result = NapiAudioEnum::RINGER_MODE_NORMAL;
+            AUDIO_ERR_LOG("Unknown ringer mode returned from native, Set it to default RINGER_MODE_NORMAL!");
+            break;
+    }
+
+    return result;
+}
+
+AudioStandard::FocusType NapiAudioEnum::GetNativeFocusType(int32_t focusType)
+{
+    AudioStandard::FocusType result = AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
+    switch (focusType) {
+        case NapiAudioEnum::FocusType::FOCUS_TYPE_RECORDING:
+            result =  AudioStandard::FocusType::FOCUS_TYPE_RECORDING;
+            break;
+        default:
+            AUDIO_ERR_LOG("Unknown focusType type, Set it to default FOCUS_TYPE_RECORDING!");
+            break;
+    }
+
+    return result;
+}
+
+AudioStandard::InterruptMode NapiAudioEnum::GetNativeInterruptMode(int32_t interruptMode)
+{
+    AudioStandard::InterruptMode result;
+    switch (interruptMode) {
+        case NapiAudioEnum::InterruptMode::SHARE_MODE:
+            result = AudioStandard::InterruptMode::SHARE_MODE;
+            break;
+        case NapiAudioEnum::InterruptMode::INDEPENDENT_MODE:
+            result = AudioStandard::InterruptMode::INDEPENDENT_MODE;
+            break;
+        default:
+            result = AudioStandard::InterruptMode::SHARE_MODE;
+            AUDIO_ERR_LOG("Unknown interruptMode type, Set it to default SHARE_MODE!");
             break;
     }
     return result;
