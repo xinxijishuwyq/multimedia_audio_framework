@@ -38,24 +38,6 @@ static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode)
     return nullptr;
 }
 
-static AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode)
-{
-    AudioStandard::InterruptMode result;
-    switch (interruptMode) {
-        case NapiAudioEnum::InterruptMode::SHARE_MODE:
-            result = AudioStandard::InterruptMode::SHARE_MODE;
-            break;
-        case NapiAudioEnum::InterruptMode::INDEPENDENT_MODE:
-            result = AudioStandard::InterruptMode::INDEPENDENT_MODE;
-            break;
-        default:
-            result = AudioStandard::InterruptMode::SHARE_MODE;
-            AUDIO_ERR_LOG("Unknown interruptMode type, Set it to default SHARE_MODE!");
-            break;
-    }
-    return result;
-}
-
 NapiAudioRenderer::NapiAudioRenderer()
     : audioRenderer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA), env_(nullptr) {}
 
@@ -987,7 +969,7 @@ napi_value NapiAudioRenderer::SetInterruptMode(napi_env env, napi_callback_info 
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        InterruptMode interruptMode = GetNativeInterruptMode(context->interruptMode);
+        InterruptMode interruptMode = NapiAudioEnum::GetNativeInterruptMode(context->interruptMode);
         napiAudioRenderer->audioRenderer_->SetInterruptMode(interruptMode);
     };
 
@@ -1020,7 +1002,7 @@ napi_value NapiAudioRenderer::SetInterruptModeSync(napi_env env, napi_callback_i
     }
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
-    napiAudioRenderer->audioRenderer_->SetInterruptMode(GetNativeInterruptMode(interruptMode));
+    napiAudioRenderer->audioRenderer_->SetInterruptMode(NapiAudioEnum::GetNativeInterruptMode(interruptMode));
 
     return result;
 }

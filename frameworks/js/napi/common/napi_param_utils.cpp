@@ -886,14 +886,68 @@ napi_status NapiParamUtils::SetCapturerChangeInfos(const napi_env &env,
 napi_status NapiParamUtils::SetEffectInfo(const napi_env &env,
     const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result)
 {
-    uint32_t i;
     napi_value jsEffectInofObj = nullptr;
     napi_create_array_with_length(env, audioSceneEffectInfo.mode.size(), &result);
     napi_create_object(env, &jsEffectInofObj);
-    for (i = 0; i < audioSceneEffectInfo.mode.size(); i++) {
+    for (auto i = 0; i < audioSceneEffectInfo.mode.size(); i++) {
         SetValueUInt32(env, audioSceneEffectInfo.mode[i], jsEffectInofObj);
         napi_set_element(env, result, i, jsEffectInofObj);
     }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetAudioInterrupt(const napi_env &env, AudioInterrupt &audioInterrupt,
+    napi_value in)
+{
+    int32_t propValue = -1;
+    napi_status status = NapiParamUtils::GetValueInt32(env, "contentType", propValue, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetAudioInterrupt: Failed to retrieve contentType");
+    audioInterrupt.contentType = static_cast<ContentType>(propValue);
+
+    status = NapiParamUtils::GetValueInt32(env, "streamUsage", propValue, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetAudioInterrupt: Failed to retrieve streamUsage");
+    audioInterrupt.streamUsage = static_cast<StreamUsage>(propValue);
+
+    status = NapiParamUtils::GetValueBoolean(env, "pauseWhenDucked", audioInterrupt.pauseWhenDucked, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetAudioInterrupt: Failed to retrieve pauseWhenDucked");
+    audioInterrupt.audioFocusType.streamType = AudioSystemManager::GetStreamType(audioInterrupt.contentType,
+        audioInterrupt.streamUsage);
+    return status;
+}
+
+napi_status NapiParamUtils::SetValueInterruptAction(const napi_env &env, const InterruptAction &interruptAction,
+    napi_value &result)
+{
+    napi_create_object(env, &result);
+    SetValueInt32(env, "actionType", static_cast<int32_t>(interruptAction.actionType), result);
+    SetValueInt32(env, "type", static_cast<int32_t>(interruptAction.interruptType), result);
+    SetValueInt32(env, "hint", static_cast<int32_t>(interruptAction.interruptHint), result);
+    SetValueBoolean(env, "activated", interruptAction.activated, result);
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetSpatialDeviceState(napi_env env, AudioSpatialDeviceState *spatialDeviceState,
+    napi_value in)
+{
+    napi_value res = nullptr;
+    int32_t intValue = {0};
+    if (napi_get_named_property(env, in, "address", &res) == napi_ok) {
+        spatialDeviceState->address = NapiParamUtils::GetStringArgument(env, res);
+    }
+
+    if (napi_get_named_property(env, in, "isSpatializationSupported", &res) == napi_ok) {
+        napi_get_value_bool(env, res, &(spatialDeviceState->isSpatializationSupported));
+    }
+
+    if (napi_get_named_property(env, in, "isHeadTrackingSupported", &res) == napi_ok) {
+        napi_get_value_bool(env, res, &(spatialDeviceState->isHeadTrackingSupported));
+    }
+
+    if (napi_get_named_property(env, in, "spatialDeviceType", &res) == napi_ok) {
+        napi_get_value_int32(env, res, &intValue);
+        spatialDeviceState->spatialDeviceType = static_cast<AudioSpatialDeviceType>(intValue);
+    }
+
     return napi_ok;
 }
 } // namespace AudioStandard

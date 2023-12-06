@@ -164,6 +164,11 @@ public:
         const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &changeInfos, napi_value &result);
     static napi_status SetEffectInfo(const napi_env &env,
         const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result);
+    static napi_status GetAudioInterrupt(const napi_env &env, AudioInterrupt &audioInterrupt, napi_value in);
+    static napi_status SetValueInterruptAction(const napi_env &env, const InterruptAction &interruptAction,
+        napi_value &result);
+    static napi_status GetSpatialDeviceState(napi_env env, AudioSpatialDeviceState *spatialDeviceState,
+        napi_value in);
 };
 } // namespace AudioStandard
 } // namespace OHOS
