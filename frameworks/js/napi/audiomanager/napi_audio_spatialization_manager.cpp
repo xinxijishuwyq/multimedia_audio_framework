@@ -176,7 +176,7 @@ napi_value NapiAudioSpatializationManager::Init(napi_env env, napi_value exports
     status = napi_create_reference(env, constructor, refCount, &g_spatializationManagerConstructor);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_create_reference fail");
     status = napi_set_named_property(env, exports, AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME.c_str(),
-            constructor);
+        constructor);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_set_named_property fail");
     return exports;
 }
@@ -418,7 +418,7 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeCallback
 
         int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
             RegisterSpatializationEnabledEventListener(
-                napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_);
+            napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS,
             "NapiAudioSpatializationManager: Registering of Spatialization Enabled Change Callback Failed");
     }
@@ -440,8 +440,8 @@ void NapiAudioSpatializationManager::RegisterHeadTrackingEnabledChangeCallback(n
         CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_ != nullptr,
             "NapiAudioSpatializationManager: Memory Allocation Failed !!");
 
-        int32_t ret =
-            napiAudioSpatializationManager->audioSpatializationMngr_->RegisterHeadTrackingEnabledEventListener(
+        int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
+            RegisterHeadTrackingEnabledEventListener(
             napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS,
             "NapiAudioSpatializationManager: Registering of Head Tracking Enabled Change Callback Failed");

@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H
+#define AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H
+
 #include <uv.h>
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
@@ -19,9 +22,6 @@
 #include "napi_audio_manager.h"
 #include "audio_system_manager.h"
 #include "audio_spatialization_manager.h"
-
-#ifndef AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H
-#define AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H
 
 namespace OHOS {
 namespace AudioStandard {

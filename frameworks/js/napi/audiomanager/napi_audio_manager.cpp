@@ -580,7 +580,7 @@ napi_value NapiAudioManager::IsStreamActive(napi_env env, napi_callback_info inf
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-         auto obj = reinterpret_cast<NapiAudioManager*>(context->native);
+        auto obj = reinterpret_cast<NapiAudioManager*>(context->native);
         ObjectRefMap objectGuard(obj);
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
