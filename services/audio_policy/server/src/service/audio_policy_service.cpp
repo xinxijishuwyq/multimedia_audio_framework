@@ -788,6 +788,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
             audioDeviceDescriptors[0]->macAddress_, USER_SELECT_BT);
     }
     FetchDevice(true);
+    FetchDevice(false);
     return SUCCESS;
 }
 
@@ -1570,9 +1571,7 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
 {
     AUDIO_INFO_LOG("fetch output device when no running stream");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(STREAM_USAGE_MEDIA, -1);
-    if (desc->deviceType_ == DEVICE_TYPE_NONE ||
-        (desc->deviceType_ == currentActiveDevice_.deviceType_ &&
-        desc->macAddress_ == currentActiveDevice_.macAddress_)) {
+    if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, currentActiveDevice_)) {
         AUDIO_INFO_LOG("output device is not change");
         return;
     }
@@ -1588,9 +1587,7 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 {
     AUDIO_INFO_LOG("fetch input device when no running stream");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
-    if (desc->deviceType_ == DEVICE_TYPE_NONE ||
-        (desc->deviceType_ == currentActiveInputDevice_.deviceType_ &&
-        desc->macAddress_ == currentActiveInputDevice_.macAddress_)) {
+    if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, currentActiveInputDevice_)) {
         AUDIO_INFO_LOG("input device is not change");
         return;
     }
@@ -1634,21 +1631,23 @@ int32_t AudioPolicyService::HandleScoDeviceFetched(unique_ptr<AudioDeviceDescrip
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     bool isStreamStatusUpdated = false)
 {
-    AUDIO_INFO_LOG("Fecth output device for %{public}zu stream", rendererChangeInfos.size());
+    AUDIO_INFO_LOG("Fetch output device for %{public}zu stream", rendererChangeInfos.size());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     AudioDeviceDescriptor preActiveDevice = currentActiveDevice_;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
-        if (rendererChangeInfo->rendererInfo.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
-            rendererChangeInfo->rendererState != RENDERER_RUNNING) {
+        StreamUsage usage = rendererChangeInfo->rendererInfo.streamUsage;
+        RendererState rendererState = rendererChangeInfo->rendererState;
+        if ((usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && audioScene_ != AUDIO_SCENE_PHONE_CALL) ||
+            (usage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION && rendererState != RENDERER_RUNNING)) {
             AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", rendererChangeInfo->sessionId);
             continue;
         }
-        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(
-            rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID);
-        if (desc->deviceType_ == DEVICE_TYPE_NONE ||
-            (desc->deviceType_ == rendererChangeInfo->outputDeviceInfo.deviceType &&
-            desc->macAddress_ == rendererChangeInfo->outputDeviceInfo.macAddress && !sameDeviceSwitchFlag_)) {
+        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(usage,
+            rendererChangeInfo->clientUID);
+        DeviceInfo outputDeviceInfo = rendererChangeInfo->outputDeviceInfo;
+        if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, outputDeviceInfo) &&
+            !sameDeviceSwitchFlag_)) {
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
             continue;
         }
@@ -1661,8 +1660,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", desc->macAddress_.c_str());
         }
         if (needUpdateActiveDevice) {
-            if (currentActiveDevice_.deviceType_ != desc->deviceType_ ||
-                currentActiveDevice_.macAddress_ != desc->macAddress_) {
+            if (!IsSameDevice(desc, currentActiveDevice_)) {
                 currentActiveDevice_ = AudioDeviceDescriptor(*desc);
                 AUDIO_INFO_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
                 isUpdateActiveDevice = true;
@@ -1691,23 +1689,43 @@ void AudioPolicyService::OffloadStartPlayingIfOffloadMode(uint64_t sessionId)
 #endif
 }
 
+bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo)
+{
+    if (desc->networkId_ == deviceInfo.networkId && desc->deviceType_ == deviceInfo.deviceType &&
+        desc->macAddress_ == deviceInfo.macAddress) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc)
+{
+    if (desc->networkId_ == deviceDesc.networkId_ && desc->deviceType_ == deviceDesc.deviceType_ &&
+        desc->macAddress_ == deviceDesc.macAddress_) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
     bool isStreamStatusUpdated = false)
 {
-    AUDIO_INFO_LOG("Fecth input device for %{public}zu stream", capturerChangeInfos.size());
+    AUDIO_INFO_LOG("Fetch input device for %{public}zu stream", capturerChangeInfos.size());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     for (auto &capturerChangeInfo : capturerChangeInfos) {
-        if (capturerChangeInfo->capturerInfo.sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE &&
-            capturerChangeInfo->capturerState != CAPTURER_RUNNING) {
+        SourceType sourceType = capturerChangeInfo->capturerInfo.sourceType;
+        if ((sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE && audioScene_ != AUDIO_SCENE_PHONE_CALL) ||
+            (sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE && capturerChangeInfo->capturerState != CAPTURER_RUNNING)) {
             AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", capturerChangeInfo->sessionId);
             continue;
         }
-        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(
-            capturerChangeInfo->capturerInfo.sourceType, capturerChangeInfo->clientUID);
-        if (desc->deviceType_ == DEVICE_TYPE_NONE ||
-            (desc->deviceType_ == capturerChangeInfo->inputDeviceInfo.deviceType &&
-            desc->macAddress_ == capturerChangeInfo->inputDeviceInfo.macAddress)) {
+        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType,
+            capturerChangeInfo->clientUID);
+        DeviceInfo inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
+        if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, inputDeviceInfo)) {
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
             continue;
         }
@@ -1727,8 +1745,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
 #endif
         }
         if (needUpdateActiveDevice) {
-            if (currentActiveInputDevice_.deviceType_ != desc->deviceType_ ||
-                currentActiveInputDevice_.macAddress_ != desc->macAddress_) {
+            if (!IsSameDevice(desc, currentActiveInputDevice_)) {
                 currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
                 AUDIO_INFO_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
                 isUpdateActiveDevice = true;
