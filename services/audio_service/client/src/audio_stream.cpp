@@ -488,7 +488,6 @@ int32_t AudioStream::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 
 int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
 {
-    Trace trace("AudioStream::Write");
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("AudioStream::Write not supported. RenderMode is callback");
         return ERR_INCORRECT_MODE;
@@ -504,6 +503,12 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
         // To allow context switch for APIs running in different thread contexts
         std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
         return ERR_ILLEGAL_STATE;
+    }
+
+    if (streamParams_.encoding != ENCODING_PCM) {
+        AUDIO_ERR_LOG("Write: Write not supported. encoding doesnot match");
+        AUDIO_ERR_LOG("encoding = %{public}d, excepted %{public}d", streamParams_.encoding, ENCODING_PCM);
+        return ERR_NOT_SUPPORTED;
     }
 
     WriteMuteDataSysEvent(buffer, bufferSize);
@@ -545,6 +550,12 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
         return ERR_ILLEGAL_STATE;
     }
 
+    if (streamParams_.encoding != ENCODING_AUDIOVIVID) {
+        AUDIO_ERR_LOG("Write: Write not supported. encoding doesnot match");
+        AUDIO_ERR_LOG("encoding = %{public}d, excepted %{public}d", streamParams_.encoding, ENCODING_AUDIOVIVID);
+        return ERR_NOT_SUPPORTED;
+    }
+
     BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
     BufferDesc metaDesc = {metaBuffer, metaBufferSize};
 
@@ -575,21 +586,12 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
 
     ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
 
-    size_t bytesWritten = 0;
-    size_t totLen = 0;
-    while (stream.bufferLen > 0) {
-        bytesWritten = WriteStream(stream, writeError);
-        if (bytesWritten < 0)
-            break;
-        stream.buffer += bytesWritten;
-        stream.bufferLen -= bytesWritten;
-        totLen += bytesWritten;
-    }
+    size_t bytesWritten = WriteStream(stream, writeError);
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
         return ERR_WRITE_FAILED;
     }
-    return totLen;
+    return bytesWritten;
 }
 
 bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
