@@ -102,6 +102,7 @@ private:
     BluetoothSinkAttr attr_;
     bool rendererInited_;
     bool started_;
+    bool isFirstWrite_ = true;
     bool paused_;
     float leftVolume_;
     float rightVolume_;
@@ -459,6 +460,10 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
         break;
     }
+    if (isFirstWrite_) {
+        isFirstWrite_ = false;
+        lastCallWriteTime_ = ClockTime::GetCurNano();
+    }
     Trace trace2("BluetoothRendererSinkInner::RenderFrame sleep");
     int64_t writeTime = BytesToNanoTime(len);
     int64_t timeBetweenCall = ClockTime::GetCurNano() - lastCallWriteTime_;
@@ -466,7 +471,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     if (timeBetweenCall < writeTime) {
         ClockTime::RelativeSleep(sleepTime);
     }
-    timeBetweenCall += writeTime;
+    lastCallWriteTime_ += writeTime;
     return ret;
 }
 
@@ -496,6 +501,7 @@ int32_t BluetoothRendererSinkInner::Start(void)
         ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (!ret) {
             started_ = true;
+            isFirstWrite_ = true;
             return SUCCESS;
         } else {
             AUDIO_ERR_LOG("Start failed!");
@@ -663,6 +669,7 @@ int32_t BluetoothRendererSinkInner::Resume(void)
         if (!ret) {
             lastCallWriteTime_ = ClockTime::GetCurNano();
             paused_ = false;
+            isFirstWrite_ = true;
             return SUCCESS;
         } else {
             AUDIO_ERR_LOG("Resume failed!");
