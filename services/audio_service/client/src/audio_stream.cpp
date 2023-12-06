@@ -508,7 +508,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     if (streamParams_.encoding != ENCODING_PCM) {
         AUDIO_ERR_LOG("Write: Write not supported. encoding doesnot match");
         AUDIO_ERR_LOG("encoding = %{public}d, excepted %{public}d", streamParams_.encoding, ENCODING_PCM);
-        return ERR_NOT_SUPPORT;
+        return ERR_NOT_SUPPORTED;
     }
 
     WriteMuteDataSysEvent(buffer, bufferSize);
@@ -553,7 +553,7 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
     if (streamParams_.encoding != ENCODING_AUDIOVIVID) {
         AUDIO_ERR_LOG("Write: Write not supported. encoding doesnot match");
         AUDIO_ERR_LOG("encoding = %{public}d, excepted %{public}d", streamParams_.encoding, ENCODING_AUDIOVIVID);
-        return ERR_NOT_SUPPORT;
+        return ERR_NOT_SUPPORTED;
     }
 
     BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
