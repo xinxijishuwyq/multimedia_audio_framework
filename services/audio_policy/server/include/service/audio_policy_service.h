@@ -197,7 +197,9 @@ public:
     void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
 
-    void OnDeviceStatusUpdated(DStatusInfo statusInfo);
+    void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
+
+    void HandleOfflineDistributedDevice();
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
@@ -374,6 +376,13 @@ public:
     int32_t HandleA2dpDeviceInOffload();
 
     int32_t HandleA2dpDeviceOutOffload();
+
+    void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
+
+    DistributedRoutingInfo GetDistributedRoutingRoleInfo();
+
+    bool IsIncomingDeviceInRemoteDevice(vector<unique_ptr<AudioDeviceDescriptor>> &descriptors,
+        sptr<AudioDeviceDescriptor> incomingDevice);
 
     void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
 
@@ -615,6 +624,8 @@ private:
 
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
+    void StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
+    
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
         const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
@@ -756,6 +767,8 @@ private:
 
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
+    DistributedRoutingInfo distributedRoutingInfo_;
+    
     // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {

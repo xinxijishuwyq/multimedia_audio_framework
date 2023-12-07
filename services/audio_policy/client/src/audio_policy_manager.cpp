@@ -1387,6 +1387,55 @@ int32_t AudioPolicyManager::UnsetAvailableDeviceChangeCallback(const int32_t cli
     return gsp->UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
 
+int32_t AudioPolicyManager::ConfigDistributedRoutingRole(sptr<AudioDeviceDescriptor> descriptor, CastType type)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("ConfigDistributedRoutingRole: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    return gsp->ConfigDistributedRoutingRole(descriptor, type);
+}
+
+int32_t AudioPolicyManager::SetDistributedRoutingRoleCallback(
+    const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    std::unique_lock<std::mutex> lock(listenerStubMutex_);
+    auto activeDistributedRoutingRoleCb = new(std::nothrow) AudioRoutingManagerListenerStub();
+    if (activeDistributedRoutingRoleCb == nullptr) {
+        AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: object is nullptr");
+        return ERROR;
+    }
+    activeDistributedRoutingRoleCb->SetDistributedRoutingRoleCallback(callback);
+    sptr<IRemoteObject> object = activeDistributedRoutingRoleCb->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: listenerStub is nullptr.");
+        delete activeDistributedRoutingRoleCb;
+        return ERROR;
+    }
+    return gsp->SetDistributedRoutingRoleCallback(object);
+}
+
+int32_t AudioPolicyManager::UnsetDistributedRoutingRoleCallback()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("UnsetDistributedRoutingRoleCallback: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    return gsp->UnsetDistributedRoutingRoleCallback();
+}
+
 bool AudioPolicyManager::IsSpatializationEnabled()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

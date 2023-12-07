@@ -77,6 +77,11 @@ public:
         int32_t channelIndexMasks = 0);
 };
 
+struct DistributedRoutingInfo {
+    sptr<AudioDeviceDescriptor> descriptor;
+    CastType type;
+};
+
 class InterruptGroupInfo;
 class InterruptGroupInfo : public Parcelable {
     friend class AudioSystemManager;
@@ -341,6 +346,40 @@ public:
 private:
     std::list<std::weak_ptr<AudioFocusInfoChangeCallback>> callbackList_;
     std::shared_ptr<AudioFocusInfoChangeCallback> cb_;
+};
+
+class AudioDistributedRoutingRoleCallback {
+public:
+    virtual ~AudioDistributedRoutingRoleCallback() = default;
+
+    /**
+     * Called when audio device descriptor change.
+     *
+     * @param descriptor Indicates the descriptor needed by client.
+     * For details, refer AudioDeviceDescriptor in audio_system_manager.h
+     * @since 9
+     */
+    virtual void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type) = 0;
+    std::mutex cbMutex_;
+};
+
+class AudioDistributedRoutingRoleCallbackImpl : public AudioDistributedRoutingRoleCallback {
+public:
+    explicit AudioDistributedRoutingRoleCallbackImpl();
+    virtual ~AudioDistributedRoutingRoleCallbackImpl();
+
+    /**
+     * Called when audio device descriptor change.
+     *
+     * @param descriptor Indicates the descriptor needed by client.
+     * For details, refer AudioDeviceDescriptor in audio_system_manager.h
+     * @since 9
+     */
+    void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type) override;
+    void SaveCallback(const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback);
+private:
+    std::weak_ptr<AudioDistributedRoutingRoleCallback> callback_;
+    std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
 };
 
 /**
@@ -1033,6 +1072,33 @@ public:
      */
     int32_t UnsetAvailableDeviceChangeCallback(AudioDeviceUsage usage);
 
+    /**
+     * @brief Switch the output device accoring different cast type.
+     *
+     * @return Returns {@link SUCCESS} if device is successfully switched; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    int32_t ConfigDistributedRoutingRole(AudioDeviceDescriptor *desciptor, CastType type);
+
+    /**
+     * @brief Registers the descriptor Change callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    int32_t SetDistributedRoutingRoleCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
+
+    /**
+     * @brief UnRegisters the descriptor Change callback callback listener.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    int32_t UnsetDistributedRoutingRoleCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
+
     static void AudioServerDied(pid_t pid);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
@@ -1080,6 +1146,7 @@ private:
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModeCallback_ = nullptr;
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
+    std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_ = nullptr;
     std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
     std::mutex ringerModeCallbackMutex_;
 

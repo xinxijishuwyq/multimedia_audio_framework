@@ -79,6 +79,10 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
 
         statusInfo.isConnected = (hdiEventType == AUDIO_DEVICE_ADD) ? true : false;
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
+    } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
+        AUDIO_DEBUG_LOG("distributed service offline");
+        DStatusInfo statusInfo;
+        devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo, true);
     }
 }
 

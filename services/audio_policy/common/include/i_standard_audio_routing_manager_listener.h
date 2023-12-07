@@ -29,7 +29,8 @@ public:
     virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
     virtual void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) = 0;
-
+    virtual void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type) = 0;
+    
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
 
@@ -38,6 +39,7 @@ public:
         ON_MIC_STATE_UPDATED,
         ON_ACTIVE_OUTPUT_DEVICE_UPDATED,
         ON_ACTIVE_INPUT_DEVICE_UPDATED,
+        ON_DISTRIBUTED_ROUTING_ROLE_CHANGE,
     };
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioRoutingManagerListener");

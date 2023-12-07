@@ -93,6 +93,24 @@ void AudioRoutingManagerListenerProxy::OnPreferredInputDeviceUpdated(
     }
 }
 
+void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> desciptor,
+    const CastType type)
+{
+    AUDIO_DEBUG_LOG("AudioRoutingManagerListenerProxy: OnDistributedRoutingRoleChange as listener proxy");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+
+    CHECK_AND_RETURN_LOG(data.WriteInterfaceToken(GetDescriptor()),
+        "OnDistributedRoutingRoleChange: WriteInterfaceToken failed");
+
+    desciptor->Marshalling(data);
+    data.WriteInt32(type);
+
+    int error = Remote()->SendRequest(ON_DISTRIBUTED_ROUTING_ROLE_CHANGE, data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnDistributedRoutingRoleChangefailed, error: %{public}d", error);
+}
+
 AudioRoutingManagerListenerCallback::AudioRoutingManagerListenerCallback(
     const sptr<IStandardAudioRoutingManagerListener> &listener) : listener_(listener)
 {

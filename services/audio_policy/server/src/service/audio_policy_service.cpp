@@ -1123,6 +1123,42 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
     return streamCollector_.IsStreamActive(streamType);
 }
 
+void AudioPolicyService::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+{
+    StoreDistributedRoutingRoleInfo(descriptor, type);
+    FetchDevice(true);
+    FetchDevice(false);
+}
+
+void AudioPolicyService::StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
+{
+    distributedRoutingInfo_.descriptor = descriptor;
+    distributedRoutingInfo_.type = type;
+}
+
+DistributedRoutingInfo AudioPolicyService::GetDistributedRoutingRoleInfo()
+{
+    return distributedRoutingInfo_;
+}
+
+bool AudioPolicyService::IsIncomingDeviceInRemoteDevice(vector<unique_ptr<AudioDeviceDescriptor>> &descriptors,
+    sptr<AudioDeviceDescriptor> incomingDevice)
+{
+    for (const auto &desc : descriptors) {
+        if (desc != nullptr) {
+            if (desc->deviceRole_ == incomingDevice->deviceRole_ &&
+                desc->deviceType_ == incomingDevice->deviceType_ &&
+                desc->interruptGroupId_ == incomingDevice->interruptGroupId_ &&
+                desc->volumeGroupId_ == incomingDevice->volumeGroupId_ &&
+                desc->networkId_ == incomingDevice->networkId_ &&
+                desc->macAddress_ == incomingDevice->macAddress_) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType)
 {
     std::string portName = PORT_NONE;
@@ -3141,13 +3177,38 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
     }
 }
 
-void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
+void AudioPolicyService::HandleOfflineDistributedDevice()
+{
+    std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
+    for (auto deviceDesc : connectedDevices_) {
+        if (deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
+            const std::string networkId = deviceDesc->networkId_;
+            UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
+            std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
+            if (IOHandles_.find(moduleName) != IOHandles_.end()) {
+                audioPolicyManager_.CloseAudioPort(IOHandles_[moduleName]);
+                IOHandles_.erase(moduleName);
+            }
+            RemoveDeviceInRouterMap(moduleName);
+            RemoveDeviceInFastRouterMap(networkId);
+            if (GetDeviceRole(deviceDesc->deviceType_) == DeviceRole::INPUT_DEVICE) {
+                remoteCapturerSwitch_ = true;
+            }
+        }
+    }
+    TriggerDeviceChangedCallback(deviceChangeDescriptor, false);
+    TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
+}
+
+void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
     AUDIO_INFO_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
         statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
-
+    if (isStop) {
+        HandleOfflineDistributedDevice();
+        return;
+    }
     std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
-
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
@@ -3158,19 +3219,13 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         statusInfo.mappingVolumeId);
     UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
-
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
-
-    // new device found. If connected, add into active device list
     if (statusInfo.isConnected) {
         for (auto devDes : connectedDevices_) {
             if (devDes->deviceType_ == devType && devDes->networkId_ == networkId) {
-                AUDIO_INFO_LOG("Device [%{public}s] Type [%{public}d] has connected already!",
-                    networkId.c_str(), devType);
                 return;
             }
         }
-
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
             statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEVICE online but open audio device failed.");
@@ -3190,7 +3245,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo)
         RemoveDeviceInRouterMap(moduleName);
         RemoveDeviceInFastRouterMap(networkId);
     }
-
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
     if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
