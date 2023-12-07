@@ -345,6 +345,8 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
+    int32_t GetA2dpDeviceVolume(const std::string& macAddress, int32_t& volume);
+
     void OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
 
     void OnCapturerSessionRemoved(uint64_t sessionID);
@@ -551,7 +553,7 @@ private:
 
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
 
-    void SetOffloadVolume();
+    void SetOffloadVolume(int32_t volume);
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
