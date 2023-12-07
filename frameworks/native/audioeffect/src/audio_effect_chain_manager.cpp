@@ -558,7 +558,6 @@ AudioEffectChainManager::AudioEffectChainManager()
     
 #ifdef SENSOR_ENABLE
     headTracker_ = std::make_shared<HeadTracker>();
-    headTracker_->SensorInit();
 #endif
 
     audioEffectHdi_ = std::make_shared<AudioEffectHdi>();
@@ -882,6 +881,10 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     }
 #endif
 
+    if (offloadEnabled_) {
+        return false;
+    }
+
     if ((spatializationEnabled == "0") && (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
         return false;
     }
@@ -980,7 +983,8 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
             AUDIO_INFO_LOG("set hdi init.");
             ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
-                AUDIO_WARNING_LOG("set hdi init failed");
+                AUDIO_ERR_LOG("set hdi init failed");
+                offloadEnabled_ = false;
                 return ERROR;
             } else {
                 offloadEnabled_ = true;
@@ -990,9 +994,10 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
             AUDIO_INFO_LOG("set hdi destory.");
             ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
-                AUDIO_WARNING_LOG("set hdi destory failed");
+                AUDIO_ERR_LOG("set hdi destory failed");
                 return ERROR;
             }
+            offloadEnabled_ = false;
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
@@ -1097,20 +1102,19 @@ void AudioEffectChainManager::UpdateSensorState()
 {
     effectHdiInput[0] = HDI_HEAD_MODE;
     effectHdiInput[1] = headTrackingEnabled_ == true ? 1 : 0;
-    int32_t ret;
-    if (headTrackingEnabled_) {
-        if (offloadEnabled_) {
-            AUDIO_INFO_LOG("set hdi head mode enable.");
-            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
-            if (ret != 0) {
-                AUDIO_ERR_LOG("set hdi head mode enable failed");
-            }
-        }
+    AUDIO_INFO_LOG("set hdi head mode.");
+    int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi head mode failed");
+    }
 
+    if (headTrackingEnabled_) {
 #ifdef SENSOR_ENABLE
         if (offloadEnabled_) {
+            headTracker_->SensorInit();
             headTracker_->SensorSetConfig(DSP_SPATIALIZER_ENGINE);
         } else {
+            headTracker_->SensorInit();
             headTracker_->SensorSetConfig(ARM_SPATIALIZER_ENGINE);
         }
 
@@ -1122,11 +1126,6 @@ void AudioEffectChainManager::UpdateSensorState()
     }
 
     if (offloadEnabled_) {
-        AUDIO_INFO_LOG("set hdi head mode disable.");
-        ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("set hdi head mode disable failed");
-        }
         return;
     }
 
@@ -1134,6 +1133,7 @@ void AudioEffectChainManager::UpdateSensorState()
     if (headTracker_->SensorDeactive() != 0) {
         AUDIO_ERR_LOG("SensorDeactive failed");
     }
+    headTracker_->SensorUnsubscribe();
     HeadPostureData headPostureData = {1, 1.0, 0.0, 0.0, 0.0}; // ori head posturedata
     headTracker_->SetHeadPostureData(headPostureData);
     for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {

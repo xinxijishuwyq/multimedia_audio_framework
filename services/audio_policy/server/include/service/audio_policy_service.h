@@ -347,6 +347,8 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
+    int32_t GetA2dpDeviceVolume(const std::string& macAddress, int32_t& volume);
+
     void OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
 
     void OnCapturerSessionRemoved(uint64_t sessionID);
@@ -385,6 +387,8 @@ public:
         sptr<AudioDeviceDescriptor> incomingDevice);
 
     void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
+
+    void UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress);
 
 private:
     AudioPolicyService()
@@ -560,7 +564,7 @@ private:
 
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
 
-    void SetOffloadVolume();
+    void SetOffloadVolume(int32_t volume);
 
     void RemoveDeviceInRouterMap(std::string networkId);
 
@@ -667,6 +671,8 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     bool isOffloadAvailable_ = false;
 
+    std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
+
     BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     BluetoothOffloadState preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
     std::mutex switchA2dpOffloadMutex_;
@@ -701,6 +707,7 @@ private:
     std::unordered_map<int32_t, sptr<MicrophoneDescriptor>> audioCaptureMicrophoneDescriptor_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
+    std::string lastBTDevice_;
 
     std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;

@@ -167,13 +167,6 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     }
     uint64_t paTimeStamp = 0;
     if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
-        if (offloadEnable_) {
-            if (paTimeStamp < offloadTsLast_) {
-                offloadTsOffset_ += offloadTsLast_;
-            }
-            offloadTsLast_ = paTimeStamp;
-            paTimeStamp += offloadTsOffset_;
-        }
         if (resetTime_) {
             AUDIO_INFO_LOG("AudioStream::GetAudioTime resetTime_ %{public}d", resetTime_);
             resetTime_ = false;
@@ -185,10 +178,9 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             timestamp.framePosition = GetStreamFramesRead();
         }
 
-        uint64_t delta = paTimeStamp > resetTimestamp_ ? paTimeStamp - resetTimestamp_ : 0;
-        timestamp.time.tv_sec = static_cast<time_t>(delta / TIME_CONVERSION_US_S);
+        timestamp.time.tv_sec = static_cast<time_t>((paTimeStamp - resetTimestamp_) / TIME_CONVERSION_US_S);
         timestamp.time.tv_nsec
-            = static_cast<time_t>((delta - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
+            = static_cast<time_t>(((paTimeStamp - resetTimestamp_) - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
                                   * TIME_CONVERSION_NS_US);
         timestamp.time.tv_sec += baseTimestamp_.tv_sec;
         timestamp.time.tv_nsec += baseTimestamp_.tv_nsec;
@@ -518,7 +510,8 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     stream.buffer = buffer;
     stream.bufferLen = bufferSize;
 
-    if (isFirstWrite_ && !offloadEnable_) {
+    isFirstWrite_ = isFirstWrite_ ? !offloadEnable_ :isFirstWrite_;
+    if (isFirstWrite_) {
         if (RenderPrebuf(stream.bufferLen)) {
             AUDIO_ERR_LOG("ERR_WRITE_FAILED");
             return ERR_WRITE_FAILED;

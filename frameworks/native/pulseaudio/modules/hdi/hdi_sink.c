@@ -1444,10 +1444,10 @@ void OffloadReset(struct Userdata* u)
     u->offload.fullTs = 0;
 }
 
-int32_t RenderWriteOffloadFunc(pa_sink_input* i, size_t length,
-    pa_mix_info* infoInputs, unsigned nInputs, int32_t* writen)
+int32_t RenderWriteOffloadFunc(struct Userdata* u, size_t length, pa_mix_info* infoInputs, unsigned nInputs,
+    int32_t* writen)
 {
-    struct Userdata* u = i->sink->userdata;
+    pa_sink_input* i = infoInputs[0].userdata;
 
     pa_assert(length != 0);
     pa_memchunk* chunk = &(u->offload.chunk);
@@ -1530,7 +1530,7 @@ int32_t ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* n
     if (u->offload.firstWrite == true) { // first length > 0
         u->offload.firstWrite = false;
     }
-    int ret = RenderWriteOffloadFunc(i, length, infoInputs, nInputs, writen);
+    int ret = RenderWriteOffloadFunc(u, length, infoInputs, nInputs, writen);
     pa_sink_unref(s);
     return ret;
 }
@@ -1550,12 +1550,9 @@ static int32_t UpdatePresentationPosition(struct Userdata* u)
     return 0;
 }
 
-static void OffloadRewindAndFlush(pa_sink_input* i, bool afterRender)
+static void OffloadRewindAndFlush(struct Userdata* u, pa_sink_input* i, bool afterRender)
 {
-    struct Userdata* u = NULL;
     pa_sink_input_assert_ref(i);
-    pa_assert(i->sink);
-    pa_assert_se(u = i->sink->userdata);
     playback_stream* ps = i->userdata;
     pa_assert(ps);
 
@@ -1664,7 +1661,7 @@ static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa
     } else if (corking) {
         // will remove this log
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
-        OffloadRewindAndFlush(i, true);
+        OffloadRewindAndFlush(u, i, true);
         OffloadUnlock(u);
     } else if (stopping) {
         if (u->offload.isHDISinkStarted) {
@@ -2364,23 +2361,25 @@ static size_t MsToAlignedSize(size_t ms, const pa_sample_spec* ss)
 static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
 {
     pa_sink_input_assert_ref(i);
-    const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) ==
-                              pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
-    if (maybeOffload || InputIsOffload(i)) {
-        OffloadRewindAndFlush(i, false);
-        OffloadUnlock(u);
+    if (u->offload_enable) {
+        const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) ==
+                                  pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
+        if (maybeOffload || InputIsOffload(i)) {
+            OffloadRewindAndFlush(u, i, false);
+            OffloadUnlock(u);
 
-        playback_stream* ps = i->userdata;
-        pa_assert(ps);
-        pa_assert(ps->memblockq);
-        const pa_sample_spec sampleSpecIn = i->thread_info.resampler ? i->thread_info.resampler->i_ss
-                                                                        : i->sample_spec;
-        // prebuf tlength maxlength minreq should same to audio_service_client.cpp
-        pa_memblockq_set_maxlength(ps->memblockq, MsToAlignedSize(20 * 5, &sampleSpecIn)); // 20 * 5 for config
-        pa_memblockq_set_tlength(ps->memblockq, MsToAlignedSize(20 * 4, &sampleSpecIn)); // 20 * 4 for config
-        pa_memblockq_set_minreq(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
-        pa_memblockq_set_prebuf(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
-        pa_sink_input_update_max_rewind(i, 0);
+            playback_stream* ps = i->userdata;
+            pa_assert(ps);
+            pa_assert(ps->memblockq);
+            const pa_sample_spec sampleSpecIn = i->thread_info.resampler ? i->thread_info.resampler->i_ss
+                                                                         : i->sample_spec;
+            // prebuf tlength maxlength minreq should same to audio_service_client.cpp
+            pa_memblockq_set_maxlength(ps->memblockq, MsToAlignedSize(20 * 5, &sampleSpecIn)); // 20 * 5 for config
+            pa_memblockq_set_tlength(ps->memblockq, MsToAlignedSize(20 * 4, &sampleSpecIn)); // 20 * 4 for config
+            pa_memblockq_set_minreq(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
+            pa_memblockq_set_prebuf(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
+            pa_sink_input_update_max_rewind(i, 0);
+        }
     }
     return PA_HOOK_OK;
 }
@@ -2388,7 +2387,7 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, st
 static pa_hook_result_t SinkInputStateChangedCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
 {
     pa_sink_input_assert_ref(i);
-    if (InputIsOffload(i)) {
+    if (u->offload_enable && InputIsOffload(i)) {
         if (i->state == PA_SINK_INPUT_CORKED) {
             pa_atomic_store(&u->offload.hdistate, 0);
         }
@@ -2401,7 +2400,6 @@ static pa_hook_result_t SinkInputPutCb(pa_core* core, pa_sink_input* i, struct U
     pa_sink_input_assert_ref(i);
     if (u->offload_enable) {
         i->state_change = PaInputStateChangeCb;
-        i->update_max_rewind = NULL;
     }
     return PA_HOOK_OK;
 }

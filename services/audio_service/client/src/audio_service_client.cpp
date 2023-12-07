@@ -40,12 +40,12 @@ AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t INIT_TIMEOUT_IN_SEC = 3;
 const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
-const uint32_t WRITE_TIMEOUT_IN_SEC = 5;
+const uint32_t WRITE_TIMEOUT_IN_SEC = 8;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_FACTOR = 5;
 const uint32_t T_LENGTH_FACTOR = 4;
-const uint32_t MAX_LENGTH_OFFLOAD = 5000;
+const uint32_t MAX_LENGTH_OFFLOAD = 500;
 const uint64_t MIN_BUF_DURATION_IN_USEC = 92880;
 const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
@@ -53,6 +53,7 @@ const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
 const uint32_t OFFLOAD_SMALL_BUFFER = 20;
 const uint32_t OFFLOAD_BIG_BUFFER = 100;
+const uint64_t AUDIO_US_PER_MS = 1000;
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
@@ -443,7 +444,7 @@ void AudioServiceClient::PAStreamEventCb(pa_stream *stream, const char *event, p
     }
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    if (strcmp(event, "signal_mainloop")) {
+    if (!strcmp(event, "signal_mainloop")) {
         pa_threaded_mainloop_signal(asClient->mainLoop, 0);
         AUDIO_DEBUG_LOG("AudioServiceClient::PAEventCb receive event signal_mainloop");
     }
@@ -1651,6 +1652,7 @@ size_t AudioServiceClient::WriteStreamInCb(const StreamBuffer &stream, int32_t &
 
 size_t AudioServiceClient::WriteStream(const StreamBuffer &stream, int32_t &pError)
 {
+    lock_guard<timed_mutex> lockoffload(offloadWaitWriteableMutex_);
     lock_guard<mutex> lock(dataMutex_);
     int error = 0;
     size_t cachedLen = WriteToAudioCache(stream);
@@ -2104,13 +2106,35 @@ int32_t AudioServiceClient::GetAudioStreamParams(AudioStreamParams& audioParams)
     return AUDIO_CLIENT_SUCCESS;
 }
 
+void AudioServiceClient::GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool beforeLocked)
+{
+    if (!offloadEnable_ || eAudioClientType != AUDIO_SERVICE_CLIENT_PLAYBACK) {
+        return;
+    }
+    if (beforeLocked) {
+        timeStamp = offloadTsLast_;
+    } else {
+        offloadTsLast_ = timeStamp;
+    }
+
+    uint64_t frames;
+    int64_t timeSec, timeNanoSec;
+    audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
+    if (!beforeLocked && (
+        (int64_t)frames + offloadTsOffset_ <
+        (int64_t)timeStamp - (OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BIG_BUFFER) * AUDIO_US_PER_MS ||
+        (int64_t)frames + offloadTsOffset_ > (int64_t)timeStamp)) {
+        offloadTsOffset_ = (int64_t)timeStamp - (int64_t)frames;
+    }
+    timeStamp = (uint64_t)((int64_t)frames + offloadTsOffset_);
+}
+
 int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && offloadEnable_) {
-        uint64_t frames;
-        int64_t timeSec, timeNanoSec;
-        audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
-        timeStamp = frames;
+    if (offloadWaitWriteableMutex_.try_lock_for(chrono::milliseconds(OFFLOAD_BIG_BUFFER))) {
+        lock_guard<timed_mutex> lockoffload(offloadWaitWriteableMutex_, adopt_lock);
+    } else if (offloadEnable_ && eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+        GetOffloadCurrentTimeStamp(timeStamp, true);
         return AUDIO_CLIENT_SUCCESS;
     }
     lock_guard<mutex> lock(dataMutex_);
@@ -2140,6 +2164,7 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         timeStamp = pa_bytes_to_usec(info->write_index, &sampleSpec);
+        GetOffloadCurrentTimeStamp(timeStamp, false);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
         if (pa_stream_get_time(paStream, &timeStamp)) {
             AUDIO_ERR_LOG("GetCurrentTimeStamp failed for AUDIO_SERVICE_CLIENT_RECORD");
@@ -2560,7 +2585,7 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
     bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
     // 4 for reservation factor
     bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * 4, sampleSpec);
-    bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
+    bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * MAX_LENGTH_FACTOR, sampleSpec);
     bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
 
     bufferAttrOffloadActiveBackground = bufferAttrOffloadActiveForeground;
@@ -2660,6 +2685,9 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
     offloadEnable_ = true;
     if (UpdatePAProbListOffload(statePolicy) != AUDIO_CLIENT_SUCCESS) {
         return AUDIO_CLIENT_ERR;
+    }
+    if (statePolicy == OFFLOAD_ACTIVE_FOREGROUND) {
+        pa_threaded_mainloop_signal(mainLoop, 0);
     }
 #else
     AUDIO_INFO_LOG("AudioServiceClient::SetStreamOffloadMode not available, FEATURE_POWER_MANAGER no define");

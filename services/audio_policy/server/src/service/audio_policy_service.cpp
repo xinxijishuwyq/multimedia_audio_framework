@@ -243,6 +243,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
 #ifdef BLUETOOTH_ENABLE
         if (result == SUCCESS) {
             // set to avrcp device
+            SetOffloadVolume(volumeLevel);
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
         } else {
             AUDIO_ERR_LOG("AudioPolicyService::SetSystemVolumeLevel set abs volume failed");
@@ -260,7 +261,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
 
     if (result == SUCCESS) {
-        SetOffloadVolume();
+        SetOffloadVolume(volumeLevel);
     }
     return result;
 }
@@ -284,10 +285,10 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
 
-void AudioPolicyService::SetOffloadVolume()
+void AudioPolicyService::SetOffloadVolume(int32_t volume)
 {
-    // set volume by the interface from hdi.
-    if (!CheckActiveOutputDeviceSupportOffload()) {
+    DeviceType dev = GetActiveOutputDevice();
+    if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP)) {
         return;
     }
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
@@ -295,9 +296,12 @@ void AudioPolicyService::SetOffloadVolume()
         AUDIO_ERR_LOG("gsp null");
         return;
     }
-    int32_t volumeLevel = GetSystemVolumeLevel(STREAM_MUSIC);
-    float volumeDb = GetSystemVolumeInDb(STREAM_MUSIC, volumeLevel, currentActiveDevice_.deviceType_);
-
+    float volumeDb;
+    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        volumeDb = static_cast<float>(volume) / static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_MUSIC));
+    } else {
+        volumeDb = GetSystemVolumeInDb(STREAM_MUSIC, volume, currentActiveDevice_.deviceType_);
+    }
     gsp->OffloadSetVolume(volumeDb);
 }
 
@@ -311,7 +315,16 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
-    SetOffloadVolume();
+    if (deviceType == DEVICE_TYPE_SPEAKER) {
+        SetOffloadVolume(GetSystemVolumeLevel(STREAM_MUSIC));
+    } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        int32_t volume;
+        if (GetA2dpDeviceVolume(activeBTDevice_, volume)) {
+            SetOffloadVolume(volume);
+        } else {
+            SetOffloadVolume(GetSystemVolumeLevel(STREAM_MUSIC));
+        }
+    }
 }
 
 std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
@@ -398,10 +411,14 @@ void AudioPolicyService::ResetOffloadMode()
         return;
     }
 
-    int32_t runningStreamId = streamCollector_.GetRunningStream();
+    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC);
     if (runningStreamId == -1) {
-        AUDIO_DEBUG_LOG("No running stream, wont restart");
-        return;
+        AUDIO_DEBUG_LOG("No running STREAM_MUSIC, wont restart offload");
+        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH);
+        if (runningStreamId == -1) {
+            AUDIO_DEBUG_LOG("No running STREAM_SPEECH, wont restart offload");
+            return;
+        }
     }
     OffloadStreamSetCheck(runningStreamId);
 }
@@ -1293,6 +1310,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
         }
         it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
     }
+    spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
     UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
     ResetOffloadMode();
@@ -2592,6 +2610,9 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
     sptr<AudioDeviceDescriptor> audioDescriptor = nullptr;
     if (IsOutputDevice(deviceDescriptor.deviceType_)) {
         UpdateConnectedDevicesWhenConnectingForOutputDevice(deviceDescriptor, desc, audioDescriptor);
+        if (deviceDescriptor.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            UpdateA2dpOffloadFlagForAllStream(deviceDescriptor.deviceType_);
+        }
     }
     if (IsInputDevice(deviceDescriptor.deviceType_)) {
         UpdateConnectedDevicesWhenConnectingForInputDevice(deviceDescriptor, desc, audioDescriptor);
@@ -2640,6 +2661,10 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
         = new (std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
     audioDeviceManager_.RemoveNewDevice(devDesc);
     RemoveMicrophoneDescriptor(devDesc);
+    if (deviceDescriptor.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
+        a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    }
 }
 
 void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected)
@@ -2679,6 +2704,7 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
             A2dpDeviceConfigInfo configInfo = {streamInfo, false};
             connectedA2dpDeviceMap_.insert(make_pair(macAddress, configInfo));
             activeBTDevice_ = macAddress;
+            sameDeviceSwitchFlag_ = true;
         }
     }
 
@@ -2838,9 +2864,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
         result = HandleLocalDeviceConnected(devType, macAddress, deviceName, streamInfo);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
-        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            UpdateA2dpOffloadFlagForAllStream(devType);
-        }
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
@@ -2849,10 +2872,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             isArmUsbDevice_ = false;
         }
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
-        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
-            a2dpOffloadFlag_ = NO_A2DP_DEVICE;
-        }
     }
 
     // fetch input&output device
@@ -2938,6 +2957,19 @@ std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
 }
 #endif
 
+void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress)
+{
+    auto it = spatialDeviceMap_.find(macAddress);
+    DeviceType spatialDevice;
+    if (it != spatialDeviceMap_.end()) {
+        spatialDevice = it->second;
+    } else {
+        AUDIO_DEBUG_LOG("we can't find the spatialDevice of hvs");
+        spatialDevice = DEVICE_TYPE_NONE;
+    }
+    UpdateA2dpOffloadFlagForAllStream(spatialDevice);
+}
+
 void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType)
 {
 #ifdef BLUETOOTH_ENABLE
@@ -2952,7 +2984,10 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType
         }
         a2dpStreamInfo.sessionId = changeInfo->sessionId;
         a2dpStreamInfo.streamType = GetStreamType(changeInfo->sessionId);
-        a2dpStreamInfo.isSpatialAudio = 0;
+        StreamUsage tempStreamUsage = changeInfo->rendererInfo.streamUsage;
+        AudioSpatializationState spatialState =
+                AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
+        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
         allSessionInfos.push_back(a2dpStreamInfo);
     }
 
@@ -2982,6 +3017,11 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         UpdateA2dpOffloadFlagForAllStream();
         if (!IsConfigurationUpdated(deviceType, streamInfo)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
+            if ((lastBTDevice_ != macAddress) && (preA2dpOffloadFlag_ == A2DP_OFFLOAD) &&
+                (a2dpOffloadFlag_ == A2DP_NOT_OFFLOAD)) {
+                HandleA2dpDeviceOutOffload();
+            }
+            lastBTDevice_ = macAddress;
             return;
         }
 
@@ -2991,10 +3031,14 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
         if ((preA2dpOffloadFlag_ == A2DP_OFFLOAD) && (a2dpOffloadFlag_ == A2DP_NOT_OFFLOAD)) {
             HandleA2dpDeviceOutOffload();
+            lastBTDevice_ = macAddress;
             return;
         }
-        ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
+        if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
+            ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
+        }
     }
+    lastBTDevice_ = macAddress;
 }
 
 void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
@@ -4325,11 +4369,24 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
         return ERROR;
     }
     configInfoPos->second.volumeLevel = volumeLevel;
+    SetOffloadVolume(volumeLevel);
     if (volumeLevel > 0) {
         configInfoPos->second.mute = false;
     }
     AUDIO_INFO_LOG("SetA2dpDeviceVolume success for macaddress:[%{public}s], volume value:[%{public}d]",
         macAddress.c_str(), volumeLevel);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::GetA2dpDeviceVolume(const std::string& macAddress, int32_t& volumeLevel)
+{
+    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+    auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
+    if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
+        AUDIO_ERR_LOG("SetA2dpDeviceVolume failed for macAddress:[%{public}s]", macAddress.c_str());
+        return ERROR;
+    }
+    volumeLevel = configInfoPos->second.volumeLevel;
     return SUCCESS;
 }
 
@@ -5244,7 +5301,10 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
         allRunningSessions.push_back(changeInfo->sessionId);
         a2dpStreamInfo.sessionId = changeInfo->sessionId;
         a2dpStreamInfo.streamType = GetStreamType(changeInfo->sessionId);
-        a2dpStreamInfo.isSpatialAudio = 0;
+        StreamUsage tempStreamUsage = changeInfo->rendererInfo.streamUsage;
+        AudioSpatializationState spatialState =
+                AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
+        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
         allSessionInfos.push_back(a2dpStreamInfo);
     }
 
@@ -5333,11 +5393,9 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
     if (a2dpOffloadFlag_ != preA2dpOffloadFlag_) {
         sameDeviceSwitchFlag_ = true;
     }
-    if ((preA2dpOffloadFlag_ == A2DP_NOT_OFFLOAD) && (a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
-        HandleA2dpDeviceInOffload();
-        return;
-    }
-    if ((preA2dpOffloadFlag_ == NO_A2DP_DEVICE) && (a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
+    AUDIO_DEBUG_LOG("a2dpOffloadFlag_ change from %d to %d", preA2dpOffloadFlag_, a2dpOffloadFlag_);
+    if (((preA2dpOffloadFlag_ == A2DP_NOT_OFFLOAD) || (preA2dpOffloadFlag_ == NO_A2DP_DEVICE))
+        && (a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
         HandleA2dpDeviceInOffload();
         return;
     }

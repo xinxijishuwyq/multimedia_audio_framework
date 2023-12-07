@@ -439,6 +439,7 @@ private:
     void UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void ProcessInterrupt(const InterruptHint& hint);
     AudioScene GetHighestPriorityAudioSceneFromAudioFocusInfoList() const;
+    int32_t DeactivateAudioInterruptEnable(const AudioInterrupt &audioInterrupt);
 
     // for audio volume and mute status
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
