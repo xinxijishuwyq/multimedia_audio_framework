@@ -24,15 +24,6 @@ ohos_shared_library("audio") {
     blocklist = "../../../cfi_blocklist.txt"
   }
   include_dirs = [
-    "audio_common/include",
-    "audio_renderer/include",
-    "audio_capturer/include",
-    "audio_manager/include",
-    "audio_stream_manager/include",
-    "../../../interfaces/kits/js/audio_manager/include",
-    "../../../interfaces/kits/js/audio_capturer/include",
-    "../../../interfaces/kits/js/audio_renderer/include",
-    "../../../interfaces/inner_api/native/audiocommon/include",
     "//third_party/libuv/include",
     "common",
     "audiorenderer",
@@ -43,43 +34,8 @@ ohos_shared_library("audio") {
     "audiomanager/callback",
   ]
 
-  sources = [
-    "audio_capturer/src/audio_capturer_callback_napi.cpp",
-    "audio_capturer/src/audio_capturer_device_change_callback_napi.cpp",
-    "audio_capturer/src/audio_capturer_info_change_callback_napi.cpp",
-    "audio_capturer/src/audio_capturer_napi.cpp",
-    "audio_capturer/src/audio_parameters_napi.cpp",
-    "audio_capturer/src/capturer_period_position_callback_napi.cpp",
-    "audio_capturer/src/capturer_position_callback_napi.cpp",
-    "audio_common/src/audio_common_napi.cpp",
-    "audio_manager/src/audio_capturer_state_callback_napi.cpp",
-    "audio_manager/src/audio_interrupt_manager_napi.cpp",
-    "audio_manager/src/audio_manager_callback_napi.cpp",
-    "audio_manager/src/audio_manager_interrupt_callback_napi.cpp",
-    "audio_manager/src/audio_manager_napi.cpp",
-    "audio_manager/src/audio_micstatechange_callback_napi.cpp",
-    "audio_manager/src/audio_renderer_state_callback_napi.cpp",
-    "audio_manager/src/audio_ringermode_callback_napi.cpp",
-    "audio_manager/src/audio_rounting_available_devicechange_callback.cpp",
-    "audio_manager/src/audio_routing_manager_callback_napi.cpp",
-    "audio_manager/src/audio_routing_manager_napi.cpp",
-    "audio_manager/src/audio_spatialization_manager_callback_napi.cpp",
-    "audio_manager/src/audio_spatialization_manager_napi.cpp",
-    "audio_manager/src/audio_stream_mgr_napi.cpp",
-    "audio_manager/src/audio_volume_group_manager_napi.cpp",
-    "audio_manager/src/audio_volume_key_event_napi.cpp",
-    "audio_manager/src/audio_volume_manager_napi.cpp",
-    "audio_renderer/src/audio_renderer_callback_napi.cpp",
-    "audio_renderer/src/audio_renderer_device_change_callback_napi.cpp",
-    "audio_renderer/src/audio_renderer_napi.cpp",
-    "audio_renderer/src/audio_renderer_policy_service_died_callback_napi.cpp",
-    "audio_renderer/src/renderer_data_request_callback_napi.cpp",
-    "audio_renderer/src/renderer_period_position_callback_napi.cpp",
-    "audio_renderer/src/renderer_position_callback_napi.cpp",
-  ]
-
   if (audio_framework_feature_new_napi) {
-    sources += [
+    sources = [
       "audiocapturer/callback/napi_audio_capturer_callbacks.cpp",
       "audiocapturer/callback/napi_audio_capturer_device_change_callback.cpp",
       "audiocapturer/callback/napi_audio_capturer_info_change_callback.cpp",
@@ -110,7 +66,6 @@ ohos_shared_library("audio") {
       "audiorenderer/callback/napi_renderer_period_position_callback.cpp",
       "audiorenderer/callback/napi_renderer_position_callback.cpp",
       "audiorenderer/napi_audio_renderer.cpp",
-      "audiorenderer/napi_toneplayer.cpp",
       "common/napi_async_work.cpp",
       "common/napi_audio_entry.cpp",
       "common/napi_audio_enum.cpp",
@@ -131,12 +86,7 @@ ohos_shared_library("audio") {
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
 
-    include_dirs += [
-      "../../../interfaces/kits/js/toneplayer/include",
-      "../../../interfaces/inner_api/native/toneplayer/include",
-    ]
-
-    sources += [ "toneplayer/src/toneplayer_napi.cpp" ]
+    sources += [ "audiorenderer/napi_toneplayer.cpp" ]
 
     deps += [ "../../native/toneplayer:audio_toneplayer" ]
   }
