@@ -248,7 +248,7 @@ bool LibLoader::AddAlgoHandle(Library library)
     AudioEffectDescriptor descriptor = {.libraryName = library.name, .effectName = library.name};
     libEntry_ = std::make_unique<AudioEffectLibEntry>();
     libEntry_->libraryName = library.name;
-    bool loadLibrarySuccess = LoadLibrary(library.path, libEntry_);
+    bool loadLibrarySuccess = LoadLibrary(library.path);
     if (!loadLibrarySuccess) {
         AUDIO_ERR_LOG("<log error> loadLibrary fail, please check logs!");
         return false;
