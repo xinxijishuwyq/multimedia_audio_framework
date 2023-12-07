@@ -40,13 +40,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioProcessInClientInner : public AudioProcessInClient, public ProcessCbStub {
+class ProcessCbImpl;
+class AudioProcessInClientInner : public AudioProcessInClient,
+    public std::enable_shared_from_this<AudioProcessInClientInner> {
 public:
     explicit AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy);
     ~AudioProcessInClientInner();
-
-    // ProcessCbStub
-    int32_t OnEndpointChange(int32_t status) override;
 
     int32_t SaveDataCallback(const std::shared_ptr<AudioDataCallback> &dataCallback) override;
 
@@ -176,7 +175,35 @@ private:
     std::atomic<uint32_t> underflowCount_ = 0;
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
+
+    sptr<ProcessCbImpl> processCbImpl_ = nullptr;
 };
+
+// ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
+class ProcessCbImpl : public ProcessCbStub {
+public:
+    explicit ProcessCbImpl(std::shared_ptr<AudioProcessInClientInner> processInClientInner);
+    virtual ~ProcessCbImpl() = default;
+
+    int32_t OnEndpointChange(int32_t status) override;
+
+private:
+    std::weak_ptr<AudioProcessInClientInner> processInClientInner_;
+};
+
+ProcessCbImpl::ProcessCbImpl(std::shared_ptr<AudioProcessInClientInner> processInClientInner)
+{
+    if (processInClientInner == nullptr) {
+        AUDIO_ERR_LOG("ProcessCbImpl() find null processInClientInner");
+    }
+    processInClientInner_ = processInClientInner;
+}
+
+int32_t ProcessCbImpl::OnEndpointChange(int32_t status)
+{
+    AUDIO_INFO_LOG("OnEndpointChange: %{public}d", status);
+    return SUCCESS;
+}
 
 std::mutex g_audioServerProxyMutex;
 sptr<IStandardAudioService> gAudioServerProxy = nullptr;
@@ -271,12 +298,6 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
         AudioProcessInClientInner::Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
-}
-
-int32_t AudioProcessInClientInner::OnEndpointChange(int32_t status)
-{
-    AUDIO_INFO_LOG("OnEndpointChange:%{public}d", status);
-    return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
@@ -415,8 +436,8 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
 bool AudioProcessInClientInner::InitAudioBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, false, "Init failed with null ipcProxy.");
-
-    CHECK_AND_RETURN_RET_LOG(processProxy_->RegisterProcessCb(this->AsObject()) == SUCCESS, false,
+    processCbImpl_ = sptr<ProcessCbImpl>::MakeSptr(shared_from_this());
+    CHECK_AND_RETURN_RET_LOG(processProxy_->RegisterProcessCb(processCbImpl_) == SUCCESS, false,
         "RegisterProcessCb failed.");
     int32_t ret = processProxy_->ResolveBuffer(audioBuffer_);
     if (ret != SUCCESS || audioBuffer_ == nullptr) {
