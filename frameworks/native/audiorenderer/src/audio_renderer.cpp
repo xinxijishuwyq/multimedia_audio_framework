@@ -551,7 +551,7 @@ bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
     RendererState state = GetStatus();
     if (state != RENDERER_RUNNING) {
         // If the stream is not running, there is no need to pause and deactive audio interrupt
-        AUDIO_ERR_LOG("AudioRenderer::PauseTransitent: State of stream is not running. Illegal state:%{public}u", state);
+        AUDIO_ERR_LOG("PauseTransitent: State of stream is not running. Illegal state:%{public}u", state);
         return false;
     }
     bool result = audioStream_->PauseAudioStream(cmdType);
