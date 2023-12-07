@@ -39,6 +39,7 @@ public:
     int32_t SensorSetConfig(int32_t spatializerEngineState);
     int32_t SensorActive();
     int32_t SensorDeactive();
+    int32_t SensorUnsubscribe();
     HeadPostureData GetHeadPostureData();
     void SetHeadPostureData(HeadPostureData headPostureData);
 private:

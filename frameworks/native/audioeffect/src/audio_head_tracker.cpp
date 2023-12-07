@@ -51,12 +51,12 @@ void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
 
 HeadTracker::HeadTracker()
 {
-    AUDIO_INFO_LOG("HeadTracker ctor!");
+    AUDIO_INFO_LOG("HeadTracker created!");
 }
 
 HeadTracker::~HeadTracker()
 {
-    UnsubscribeSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+    AUDIO_INFO_LOG("HeadTracker destroyed!");
 }
 
 int32_t HeadTracker::SensorInit()
@@ -99,6 +99,11 @@ int32_t HeadTracker::SensorActive()
 int32_t HeadTracker::SensorDeactive()
 {
     return DeactivateSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
+}
+
+int32_t HeadTracker::SensorUnsubscribe()
+{
+    return UnsubscribeSensor(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_);
 }
 
 HeadPostureData HeadTracker::GetHeadPostureData()
