@@ -1691,6 +1691,12 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         return SUCCESS;
     }
 
+    return DeactivateAudioInterruptEnable(audioInterrupt);
+}
+
+int32_t AudioPolicyServer::DeactivateAudioInterruptEnable(const AudioInterrupt &audioInterrupt)
+{
+    AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
     bool isInterruptActive = false;
 
     for (auto it = audioFocusInfoList_.begin(); it != audioFocusInfoList_.end();) {
@@ -1709,15 +1715,17 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     // If it was not in the audioFocusInfoList_, no need to take any action on other sessions, just return.
     if (!isInterruptActive) {
-        AUDIO_DEBUG_LOG("the stream (sessionID %{public}d) is not active, return success", audioInterrupt.sessionID);
+        AUDIO_DEBUG_LOG("DeactivateAudioInterrupt: the stream (sessionID %{public}d) is not active now, return success",
+            audioInterrupt.sessionID);
         return SUCCESS;
     }
 
     UpdateAudioScene(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
-    
+
     OffloadStopPlaying(audioInterrupt);
 
-    ResumeAudioFocusList(); // resume if other session was forced paused or ducked
+    // resume if other session was forced paused or ducked
+    ResumeAudioFocusList();
 
     return SUCCESS;
 }

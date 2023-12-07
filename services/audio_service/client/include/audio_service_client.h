@@ -259,6 +259,8 @@ public:
     */
     int32_t GetCurrentTimeStamp(uint64_t &timeStamp);
 
+    void GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool beforeLocked);
+
     /**
     * Provides the current latency for playback/record stream created using CreateStream
     *
@@ -701,6 +703,9 @@ private:
     ASClientType eAudioClientType;
 
     uint32_t underFlowCount;
+    int64_t offloadTsOffset_ = 0;
+    uint64_t offloadTsLast_ = 0;
+    std::timed_mutex offloadWaitWriteableMutex_;
     AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
