@@ -1287,7 +1287,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
         }
         it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
     }
-    spatialDeviceMap.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
+    spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
     UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
     ResetOffloadMode();
@@ -2927,9 +2927,9 @@ std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
 
 void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress)
 {
-    auto it = spatialDeviceMap.find(macAddress);
+    auto it = spatialDeviceMap_.find(macAddress);
     DeviceType spatialDevice;
-    if (it != spatialDeviceMap.end()) {
+    if (it != spatialDeviceMap_.end()) {
         spatialDevice = it->second;
     } else {
         AUDIO_DEBUG_LOG("we can't find the spatialDevice of hvs");
@@ -4337,8 +4337,6 @@ int32_t AudioPolicyService::GetA2dpDeviceVolume(const std::string& macAddress, i
         return ERROR;
     }
     volumeLevel = configInfoPos->second.volumeLevel;
-    AUDIO_INFO_LOG("GetA2dpDeviceVolume success for macaddress:[%{public}s], volume value:[%{public}d]",
-        macAddress.c_str(), volumeLevel);
     return SUCCESS;
 }
 

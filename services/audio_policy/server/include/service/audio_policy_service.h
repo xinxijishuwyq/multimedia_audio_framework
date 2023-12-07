@@ -660,7 +660,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     bool isOffloadAvailable_ = false;
 
-    std::unordered_map<std::string, DeviceType> spatialDeviceMap;
+    std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
     BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     BluetoothOffloadState preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
