@@ -411,10 +411,14 @@ void AudioPolicyService::ResetOffloadMode()
         return;
     }
 
-    int32_t runningStreamId = streamCollector_.GetRunningStream();
+    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC);
     if (runningStreamId == -1) {
-        AUDIO_DEBUG_LOG("No running stream, wont restart");
-        return;
+        AUDIO_DEBUG_LOG("No running STREAM_MUSIC, wont restart offload");
+        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH);
+        if (runningStreamId == -1) {
+            AUDIO_DEBUG_LOG("No running STREAM_SPEECH, wont restart offload");
+            return;
+        }
     }
     OffloadStreamSetCheck(runningStreamId);
 }
@@ -2579,6 +2583,9 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceD
     sptr<AudioDeviceDescriptor> audioDescriptor = nullptr;
     if (IsOutputDevice(deviceDescriptor.deviceType_)) {
         UpdateConnectedDevicesWhenConnectingForOutputDevice(deviceDescriptor, desc, audioDescriptor);
+        if (deviceDescriptor.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            UpdateA2dpOffloadFlagForAllStream(deviceDescriptor.deviceType_);
+        }
     }
     if (IsInputDevice(deviceDescriptor.deviceType_)) {
         UpdateConnectedDevicesWhenConnectingForInputDevice(deviceDescriptor, desc, audioDescriptor);
@@ -2621,6 +2628,10 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
         = new (std::nothrow) AudioDeviceDescriptor(deviceDescriptor);
     audioDeviceManager_.RemoveNewDevice(devDesc);
     RemoveMicrophoneDescriptor(devDesc);
+    if (deviceDescriptor.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
+        a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+    }
 }
 
 void AudioPolicyService::OnPnpDeviceStatusUpdated(DeviceType devType, bool isConnected)
@@ -2820,9 +2831,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
         result = HandleLocalDeviceConnected(devType, macAddress, deviceName, streamInfo);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
-        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            UpdateA2dpOffloadFlagForAllStream(devType);
-        }
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
@@ -2831,10 +2839,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             isArmUsbDevice_ = false;
         }
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
-        if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
-            a2dpOffloadFlag_ = NO_A2DP_DEVICE;
-        }
     }
 
     // fetch input&output device
@@ -2964,6 +2968,11 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         UpdateA2dpOffloadFlagForAllStream();
         if (!IsConfigurationUpdated(deviceType, streamInfo)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
+            if ((lastBTDevice_ != macAddress) && (preA2dpOffloadFlag_ == A2DP_OFFLOAD) &&
+                (a2dpOffloadFlag_ == A2DP_NOT_OFFLOAD)) {
+                HandleA2dpDeviceOutOffload();
+            }
+            lastBTDevice_ = macAddress;
             return;
         }
 
@@ -2973,12 +2982,14 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
         if ((preA2dpOffloadFlag_ == A2DP_OFFLOAD) && (a2dpOffloadFlag_ == A2DP_NOT_OFFLOAD)) {
             HandleA2dpDeviceOutOffload();
+            lastBTDevice_ = macAddress;
             return;
         }
         if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
             ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
         }
     }
+    lastBTDevice_ = macAddress;
 }
 
 void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
@@ -5314,11 +5325,9 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
     if (a2dpOffloadFlag_ != preA2dpOffloadFlag_) {
         sameDeviceSwitchFlag_ = true;
     }
-    if ((preA2dpOffloadFlag_ == A2DP_NOT_OFFLOAD) && (a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
-        HandleA2dpDeviceInOffload();
-        return;
-    }
-    if ((preA2dpOffloadFlag_ == NO_A2DP_DEVICE) && (a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
+    AUDIO_DEBUG_LOG("a2dpOffloadFlag_ change from %d to %d", preA2dpOffloadFlag_, a2dpOffloadFlag_);
+    if (((preA2dpOffloadFlag_ == A2DP_NOT_OFFLOAD) || (preA2dpOffloadFlag_ == NO_A2DP_DEVICE))
+        && (a2dpOffloadFlag_ == A2DP_OFFLOAD)) {
         HandleA2dpDeviceInOffload();
         return;
     }
