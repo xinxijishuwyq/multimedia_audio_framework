@@ -52,7 +52,17 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    unique_ptr<AudioDeviceDescriptor> perDev_ =
+        AudioStateManager::GetAudioStateManager().GetPerferredCallCaptureDevice();
+    vector<unique_ptr<AudioDeviceDescriptor>> callDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_INPUT_DEVICES);
+    if (perDev_->deviceId_ == 0) {
+        AUDIO_INFO_LOG(" PerferredCallCaptureDevice is null");
+        return make_unique<AudioDeviceDescriptor>();
+    } else {
+        AUDIO_INFO_LOG(" PerferredCallCaptureDevice deviceId is %{public}d", perDev_->deviceId_);
+        return RouterBase::GetPairCaptureDevice(perDev_, callDevices);
+    }
 }
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID)
@@ -62,7 +72,17 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRingRenderDevice(StreamUs
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    unique_ptr<AudioDeviceDescriptor> perDev_ =
+        AudioStateManager::GetAudioStateManager().GetPerferredRecordCaptureDevice();
+    vector<unique_ptr<AudioDeviceDescriptor>> recordDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_INPUT_DEVICES);
+    if (perDev_->deviceId_ == 0) {
+        AUDIO_INFO_LOG(" PerferredRecordCaptureDevice is null");
+        return make_unique<AudioDeviceDescriptor>();
+    } else {
+        AUDIO_INFO_LOG(" PerferredRecordCaptureDevice deviceId is %{public}d", perDev_->deviceId_);
+        return RouterBase::GetPairCaptureDevice(perDev_, recordDevices);
+    }
 }
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
