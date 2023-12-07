@@ -379,6 +379,8 @@ public:
 
     void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
 
+    void UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -657,6 +659,8 @@ private:
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
     bool isOffloadAvailable_ = false;
+
+    std::unordered_map<std::string, DeviceType> spatialDeviceMap;
 
     BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     BluetoothOffloadState preA2dpOffloadFlag_ = NO_A2DP_DEVICE;

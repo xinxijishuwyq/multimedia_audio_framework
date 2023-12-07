@@ -1287,6 +1287,7 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
         }
         it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
     }
+    spatialDeviceMap.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
     UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
     AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
     ResetOffloadMode();
@@ -2924,6 +2925,19 @@ std::shared_ptr<ToneInfo> AudioPolicyService::GetToneConfig(int32_t ltonetype)
 }
 #endif
 
+void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress)
+{
+    auto it = spatialDeviceMap.find(macAddress);
+    DeviceType spatialDevice;
+    if (it != spatialDeviceMap.end()){
+        spatialDevice = it->second;
+    } else {
+        AUDIO_DEBUG_LOG("we can't find the spatialDevice of hvs");
+        spatialDevice = DEVICE_TYPE_NONE;
+    }
+    UpdateA2dpOffloadFlagForAllStream(spatialDevice);
+}
+
 void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType)
 {
 #ifdef BLUETOOTH_ENABLE
@@ -2938,7 +2952,10 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType
         }
         a2dpStreamInfo.sessionId = changeInfo->sessionId;
         a2dpStreamInfo.streamType = GetStreamType(changeInfo->sessionId);
-        a2dpStreamInfo.isSpatialAudio = 0;
+        StreamUsage tempStreamUsage = changeInfo->rendererInfo.streamUsage;
+        AudioSpatializationState spatialState =
+                AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
+        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
         allSessionInfos.push_back(a2dpStreamInfo);
     }
 
@@ -5236,7 +5253,10 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
         allRunningSessions.push_back(changeInfo->sessionId);
         a2dpStreamInfo.sessionId = changeInfo->sessionId;
         a2dpStreamInfo.streamType = GetStreamType(changeInfo->sessionId);
-        a2dpStreamInfo.isSpatialAudio = 0;
+        StreamUsage tempStreamUsage = changeInfo->rendererInfo.streamUsage;
+        AudioSpatializationState spatialState =
+                AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
+        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
         allSessionInfos.push_back(a2dpStreamInfo);
     }
 
