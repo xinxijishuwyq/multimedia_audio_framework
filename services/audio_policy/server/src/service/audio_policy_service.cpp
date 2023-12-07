@@ -2929,7 +2929,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(const std::string
 {
     auto it = spatialDeviceMap.find(macAddress);
     DeviceType spatialDevice;
-    if (it != spatialDeviceMap.end()){
+    if (it != spatialDeviceMap.end()) {
         spatialDevice = it->second;
     } else {
         AUDIO_DEBUG_LOG("we can't find the spatialDevice of hvs");

@@ -2120,10 +2120,10 @@ void AudioServiceClient::GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool be
     uint64_t frames;
     int64_t timeSec, timeNanoSec;
     audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
-    if (!beforeLocked &&
-        ((int64_t)frames + offloadTsOffset_ <
-         (int64_t)timeStamp - (OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BIG_BUFFER) * AUDIO_US_PER_MS ||
-         (int64_t)frames + offloadTsOffset_ > (int64_t)timeStamp)) {
+    if (!beforeLocked && (
+        (int64_t)frames + offloadTsOffset_ <
+        (int64_t)timeStamp - (OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BIG_BUFFER) * AUDIO_US_PER_MS ||
+        (int64_t)frames + offloadTsOffset_ > (int64_t)timeStamp)) {
         offloadTsOffset_ = (int64_t)timeStamp - (int64_t)frames;
     }
     timeStamp = (uint64_t)((int64_t)frames + offloadTsOffset_);
