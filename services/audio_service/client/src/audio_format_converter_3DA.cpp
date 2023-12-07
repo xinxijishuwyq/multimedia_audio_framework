@@ -185,7 +185,18 @@ static bool ResolveLibrary(const std::string &path, std::string &resovledPath)
     return false;
 }
 
-static bool ClientLoadLibrary(const std::string &relativePath, std::unique_ptr<AudioEffectLibEntry>& libEntry) noexcept
+LibLoader::~LibLoader()
+{
+    if (libEntry_ != nullptr && libEntry_->audioEffectLibHandle != nullptr) {
+        libEntry_->audioEffectLibHandle->releaseEffect(handle_);
+    }
+    if (libHandle_ != nullptr) {
+        dlclose(libHandle_);
+        libHandle_ = nullptr;
+    }
+}
+
+bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
 {
     std::string absolutePath;
     // find library in adsolutePath
@@ -195,33 +206,26 @@ static bool ClientLoadLibrary(const std::string &relativePath, std::unique_ptr<A
         return false;
     }
 
-    void* handle = dlopen(absolutePath.c_str(), 1);
-    if (!handle) {
+    libHandle_ = dlopen(absolutePath.c_str(), 1);
+    if (!libHandle_) {
         AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", relativePath.c_str());
         return false;
     }
     AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
 
-    AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(handle,
+    AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(libHandle_,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
     const char* error = dlerror();
     if (error) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, audioEffectLibHandle);
-        dlclose(handle);
+        dlclose(libHandle_);
         return false;
     }
     AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful, error: %{public}s", relativePath.c_str(), error);
 
-    libEntry->audioEffectLibHandle = audioEffectLibHandle;
+    libEntry_->audioEffectLibHandle = audioEffectLibHandle;
 
     return true;
-}
-
-LibLoader::~LibLoader()
-{
-    if (libEntry_ != nullptr && libEntry_->audioEffectLibHandle != nullptr) {
-        libEntry_->audioEffectLibHandle->releaseEffect(handle_);
-    }
 }
 
 void LibLoader::SetIOBufferConfig(bool isInput, uint8_t format, uint32_t channels, uint64_t channelLayout)
@@ -244,7 +248,7 @@ bool LibLoader::AddAlgoHandle(Library library)
     AudioEffectDescriptor descriptor = {.libraryName = library.name, .effectName = library.name};
     libEntry_ = std::make_unique<AudioEffectLibEntry>();
     libEntry_->libraryName = library.name;
-    bool loadLibrarySuccess = ClientLoadLibrary(library.path, libEntry_);
+    bool loadLibrarySuccess = LoadLibrary(library.path);
     if (!loadLibrarySuccess) {
         AUDIO_ERR_LOG("<log error> loadLibrary fail, please check logs!");
         return false;

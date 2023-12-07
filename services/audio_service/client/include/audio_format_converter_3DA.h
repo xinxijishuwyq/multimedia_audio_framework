@@ -36,9 +36,11 @@ public:
     void SetIOBufferConfig(bool isInput, uint8_t format, uint32_t channels, uint64_t channelLayout);
     int32_t ApplyAlgo(AudioBuffer &inputBuffer, AudioBuffer &outputBuffer);
 private:
+    bool LoadLibrary(const std::string &relativePath) noexcept;
     std::unique_ptr<AudioEffectLibEntry> libEntry_;
     AudioEffectHandle handle_;
     AudioEffectConfig ioBufferConfig_;
+    void* libHandle_;
 };
 
 class AudioFormatConverter3DA {

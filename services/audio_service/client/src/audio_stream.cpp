@@ -580,6 +580,9 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
     ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
 
     size_t bytesWritten = WriteStream(stream, writeError);
+    stream.buffer += bytesWritten;
+    stream.bufferLen -= bytesWritten;
+    bytesWritten += WriteStream(stream, writeError);
     if (writeError != 0) {
         AUDIO_ERR_LOG("WriteStream fail,writeError:%{public}d", writeError);
         return ERR_WRITE_FAILED;
