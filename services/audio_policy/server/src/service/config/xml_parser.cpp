@@ -229,7 +229,7 @@ void XMLParser::ParsePort(xmlNode &node, AudioModuleInfo &moduleInfo)
             }
 
             if (!((value = ExtractPropertyValue("offload_enable", *portNode)).empty())) {
-                moduleInfo.offloadEnable = "0";
+                moduleInfo.offloadEnable = value;
             }
 
             portInfoList.push_back(moduleInfo);
