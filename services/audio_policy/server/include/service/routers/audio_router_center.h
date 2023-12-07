@@ -104,8 +104,8 @@ private:
     std::vector<std::unique_ptr<RouterBase>> toneRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> recordCaptureRouters_;
 
-    static unordered_map<StreamUsage, string> renderConfigMap_;
-    static unordered_map<SourceType, string> capturerConfigMap_;
+    unordered_map<StreamUsage, string> renderConfigMap_;
+    unordered_map<SourceType, string> capturerConfigMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
