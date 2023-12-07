@@ -250,10 +250,15 @@ void MediaBluetoothDeviceManager::HandleEnableDevice(const BluetoothRemoteDevice
         bluetoothCategory = pos->second;
     }
     if (bluetoothCategory == BT_HEADPHONE) {
+        bool isWearSupported = false;
+        int32_t wearEnabledAbility = 0;
+        BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
+        BluetoothAudioManager::GetInstance().IsWearDetectionEnabled(device.GetDeviceAddr(), wearEnabledAbility);
         std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
         auto wearStateIter = wearDetectionStateMap_.find(device.GetDeviceAddr());
-        if (wearStateIter != wearDetectionStateMap_.end() &&
-            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION) {
+        if (!isWearSupported || wearEnabledAbility != WEAR_ENABLED ||
+            (wearStateIter != wearDetectionStateMap_.end() &&
+            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION)) {
             desc.deviceCategory_ = BT_HEADPHONE;
         } else {
             desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
@@ -282,10 +287,15 @@ void MediaBluetoothDeviceManager::HandleDisableDevice(const BluetoothRemoteDevic
         bluetoothCategory = pos->second;
     }
     if (bluetoothCategory == BT_HEADPHONE) {
+        bool isWearSupported = false;
+        int32_t wearEnabledAbility = 0;
+        BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
+        BluetoothAudioManager::GetInstance().IsWearDetectionEnabled(device.GetDeviceAddr(), wearEnabledAbility);
         std::lock_guard<std::mutex> wearStateMapLock(g_a2dpWearStateMapLock);
         auto wearStateIter = wearDetectionStateMap_.find(device.GetDeviceAddr());
-        if (wearStateIter != wearDetectionStateMap_.end() &&
-            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION) {
+        if (!isWearSupported || wearEnabledAbility != WEAR_ENABLED ||
+            (wearStateIter != wearDetectionStateMap_.end() &&
+            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION)) {
             desc.deviceCategory_ = BT_HEADPHONE;
         } else {
             desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
@@ -602,10 +612,15 @@ void HfpBluetoothDeviceManager::HandleEnableDevice(const BluetoothRemoteDevice &
         bluetoothCategory = pos->second;
     }
     if (bluetoothCategory == BT_HEADPHONE) {
+        bool isWearSupported = false;
+        int32_t wearEnabledAbility = 0;
+        BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
+        BluetoothAudioManager::GetInstance().IsWearDetectionEnabled(device.GetDeviceAddr(), wearEnabledAbility);
         std::lock_guard<std::mutex> wearStateMapLock(g_hfpWearStateMapLock);
         auto wearStateIter = wearDetectionStateMap_.find(device.GetDeviceAddr());
-        if (wearStateIter != wearDetectionStateMap_.end() &&
-            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION) {
+        if (!isWearSupported || wearEnabledAbility != WEAR_ENABLED ||
+            (wearStateIter != wearDetectionStateMap_.end() &&
+            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION)) {
             desc.deviceCategory_ = BT_HEADPHONE;
         } else {
             desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
@@ -634,10 +649,15 @@ void HfpBluetoothDeviceManager::HandleDisableDevice(const BluetoothRemoteDevice 
         bluetoothCategory = pos->second;
     }
     if (bluetoothCategory == BT_HEADPHONE) {
+        bool isWearSupported = false;
+        int32_t wearEnabledAbility = 0;
+        BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
+        BluetoothAudioManager::GetInstance().IsWearDetectionEnabled(device.GetDeviceAddr(), wearEnabledAbility);
         std::lock_guard<std::mutex> wearStateMapLock(g_hfpWearStateMapLock);
         auto wearStateIter = wearDetectionStateMap_.find(device.GetDeviceAddr());
-        if (wearStateIter != wearDetectionStateMap_.end() &&
-            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION) {
+        if (!isWearSupported || wearEnabledAbility != WEAR_ENABLED ||
+            (wearStateIter != wearDetectionStateMap_.end() &&
+            wearStateIter->second == BluetoothDeviceAction::WEAR_ACTION)) {
             desc.deviceCategory_ = BT_HEADPHONE;
         } else {
             desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
