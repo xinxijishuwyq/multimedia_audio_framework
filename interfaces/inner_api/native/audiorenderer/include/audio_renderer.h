@@ -372,6 +372,14 @@ public:
     virtual bool Flush() const = 0;
 
     /**
+     * @brief Pauses audio rendering transitent.
+     *
+     * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
+     * @since 10
+     */
+    virtual bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const = 0;
+
+    /**
      * @brief Pauses audio rendering.
      *
      * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
