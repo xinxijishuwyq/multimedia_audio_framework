@@ -535,6 +535,29 @@ bool AudioRendererPrivate::Flush() const
     return audioStream_->FlushAudioStream();
 }
 
+bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
+{
+    Trace trace("AudioRenderer::PauseTransitent");
+    AUDIO_INFO_LOG("AudioRenderer::PauseTransitent");
+    if (isSwitching_) {
+        AUDIO_ERR_LOG("AudioRenderer::PauseTransitent failed. Switching state: %{public}d", isSwitching_);
+        return false;
+    }
+
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        return true;
+    }
+
+    RendererState state = GetStatus();
+    if (state != RENDERER_RUNNING) {
+        // If the stream is not running, there is no need to pause and deactive audio interrupt
+        AUDIO_ERR_LOG("PauseTransitent: State of stream is not running. Illegal state:%{public}u", state);
+        return false;
+    }
+    bool result = audioStream_->PauseAudioStream(cmdType);
+    return result;
+}
+
 bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Pause");

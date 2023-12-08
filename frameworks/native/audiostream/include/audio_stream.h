@@ -143,8 +143,6 @@ private:
     bool isFirstRead_;
     bool isFirstWrite_;
     bool isPausing_;
-    uint64_t offloadTsLast_ = 0;
-    uint64_t offloadTsOffset_ = 0;
 
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;

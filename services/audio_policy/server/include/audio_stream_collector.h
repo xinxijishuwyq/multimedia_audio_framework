@@ -52,7 +52,7 @@ public:
     void RegisteredStreamListenerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
-    int32_t GetRunningStream();
+    int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT);
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
     int32_t SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack);

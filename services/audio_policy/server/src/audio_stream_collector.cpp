@@ -689,14 +689,25 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
     return result;
 }
 
-int32_t AudioStreamCollector::GetRunningStream()
+int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     int32_t runningStream = -1;
-    for (auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->rendererState == RENDERER_RUNNING) {
-            runningStream = changeInfo->sessionId;
-            break;
+    if (certainType == STREAM_DEFAULT) {
+        for (auto &changeInfo : audioRendererChangeInfos_) {
+            if (changeInfo->rendererState == RENDERER_RUNNING) {
+                runningStream = changeInfo->sessionId;
+                break;
+            }
+        }
+    } else {
+        for (auto &changeInfo : audioRendererChangeInfos_) {
+            if ((changeInfo->rendererState == RENDERER_RUNNING) &&
+                    (certainType == GetStreamType(changeInfo->rendererInfo.contentType,
+                    changeInfo->rendererInfo.streamUsage))) {
+                runningStream = changeInfo->sessionId;
+                break;
+            }
         }
     }
     return runningStream;

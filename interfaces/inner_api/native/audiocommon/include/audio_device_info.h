@@ -209,6 +209,12 @@ enum DeviceUsage {
     ALL_USAGE,
 };
 
+enum DeviceInfoUpdateCommand {
+    CATEGORY_UPDATE = 1,
+    CONNECTSTATE_UPDATE,
+    ENABLE_UPDATE,
+};
+
 struct DevicePrivacyInfo {
     std::string deviceName;
     DeviceType deviceType;

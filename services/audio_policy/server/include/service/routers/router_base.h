@@ -44,7 +44,7 @@ public:
     {
         // remove abnormal device
         for (size_t i = 0; i < descs.size(); i++) {
-            if (descs[i]->exceptionFlag_) {
+            if (descs[i]->exceptionFlag_ || descs[i]->connectState_ == SUSPEND_CONNECTED) {
                 descs.erase(descs.begin() + i);
                 i--;
             }
@@ -64,7 +64,7 @@ public:
         std::vector<std::unique_ptr<AudioDeviceDescriptor>> &captureDescs)
     {
         for (auto &captureDesc : captureDescs) {
-            if (captureDesc->deviceId_ == desc->deviceId_) {
+            if (captureDesc->deviceId_ == desc->deviceId_ && captureDesc->connectState_ != SUSPEND_CONNECTED) {
                 return std::move(captureDesc);
             }
         }

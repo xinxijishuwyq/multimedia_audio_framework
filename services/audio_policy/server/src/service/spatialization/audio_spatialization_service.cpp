@@ -29,6 +29,8 @@
 #include "audio_spatialization_state_change_listener_proxy.h"
 #include "i_standard_spatialization_state_change_listener.h"
 
+#include "audio_policy_service.h"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -337,6 +339,8 @@ void AudioSpatializationService::HandleSpatializationStateChange()
 
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_};
     AudioSpatializationState spatializationNotSupported = {false, false};
+
+    AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(currentDeviceAddress_);
 
     for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end(); ++it) {
         std::shared_ptr<AudioSpatializationStateChangeCallback> spatializationStateChangeCb = (it->second).first;

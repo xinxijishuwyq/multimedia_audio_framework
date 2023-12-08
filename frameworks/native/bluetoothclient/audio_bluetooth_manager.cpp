@@ -125,6 +125,15 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
     return SUCCESS;
 }
 
+std::string AudioA2dpManager::GetActiveA2dpDevice()
+{
+    std::lock_guard<std::mutex> a2dpLock(g_a2dpInstanceLock);
+    a2dpInstance_ = A2dpSource::GetProfile();
+    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, "", "Failed to obtain A2DP profile instance");
+    BluetoothRemoteDevice device = a2dpInstance_->GetActiveSinkDevice();
+    return device.GetDeviceAddr();
+}
+
 int32_t AudioA2dpManager::SetDeviceAbsVolume(const std::string& macAddress, int32_t volume)
 {
     BluetoothRemoteDevice device;
@@ -260,6 +269,14 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
     return SUCCESS;
 }
 
+std::string AudioHfpManager::GetActiveHfpDevice()
+{
+    std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
+    CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, "", "HFP AG profile instance unavailable");
+    BluetoothRemoteDevice device = hfpInstance_->GetActiveDevice();
+    return device.GetDeviceAddr();
+}
+
 int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
 {
     AUDIO_INFO_LOG("Entered %{public}s,\
@@ -284,6 +301,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     }
     int8_t newScoCategory = GetScoCategoryFromScene(scene);
     if (newScoCategory != ScoCategory::SCO_DEFAULT) {
+        AUDIO_INFO_LOG("Entered to connectSco.");
         ret = hfpInstance_->ConnectSco(static_cast<uint8_t>(newScoCategory));
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectScoWithAudioScene failed, result: %{public}d", ret);
     }
@@ -314,6 +332,7 @@ int8_t AudioHfpManager::GetScoCategoryFromScene(AudioScene scene)
         case AUDIO_SCENE_PHONE_CALL:
             return ScoCategory::SCO_CALLULAR;
         case AUDIO_SCENE_PHONE_CHAT:
+        case AUDIO_SCENE_RINGING:
             return ScoCategory::SCO_VIRTUAL;
         default:
             return ScoCategory::SCO_DEFAULT;

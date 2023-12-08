@@ -42,6 +42,7 @@ public:
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Drain() const override;
+    bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     bool Stop() const override;
     bool Flush() const override;
