@@ -210,9 +210,8 @@ enum DeviceUsage {
 };
 
 enum DeviceInfoUpdateCommand {
-    CATEGORY_UPDATE,
+    CATEGORY_UPDATE = 1,
     CONNECTSTATE_UPDATE,
-    SCO_REAL_CONNECT_UPDATE,
     ENABLE_UPDATE,
 };
 

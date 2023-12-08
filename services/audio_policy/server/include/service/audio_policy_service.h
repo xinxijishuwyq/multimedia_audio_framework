@@ -201,6 +201,9 @@ public:
 
     void HandleOfflineDistributedDevice();
 
+    int32_t HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
+        std::vector<sptr<AudioDeviceDescriptor>> &deviceChangeDescriptor);
+
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
@@ -387,6 +390,8 @@ public:
         sptr<AudioDeviceDescriptor> incomingDevice);
 
     void OnScoStateChanged(const std::string &macAddress, bool isConnnected);
+
+    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
 
     void UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress);
 

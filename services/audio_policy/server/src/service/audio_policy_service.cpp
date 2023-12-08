@@ -777,9 +777,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return SelectFastOutputDevice(audioRendererFilter, audioDeviceDescriptors[0]);
     }
     if (audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-       audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         audioDeviceDescriptors[0]->isEnable_ = true;
-        audioDeviceManager_.AddNewDevice(audioDeviceDescriptors[0]);
+        audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
     }
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -1661,7 +1661,7 @@ int32_t AudioPolicyService::HandleScoDeviceFetched(unique_ptr<AudioDeviceDescrip
             FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
             return ERROR;
         }
-        if (!desc->isScoRealConnected_) {
+        if (desc->connectState_ == DEACTIVE_CONNECTED) {
             Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioScene_);
             return ERROR;
         }
@@ -1779,7 +1779,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
                 FetchInputDevice(capturerChangeInfos, isStreamStatusUpdated);
                 return;
             }
-            if (!desc->isScoRealConnected_) {
+            if (desc->connectState_ == DEACTIVE_CONNECTED) {
                 Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioScene_);
                 return;
             }
@@ -1994,6 +1994,10 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
         "SelectNewDevice: the target A2DP device doesn't exist.");
     int32_t result = ERROR;
 #ifdef BLUETOOTH_ENABLE
+    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_) {
+        AUDIO_INFO_LOG("a2dp device [%{public}s] is already active", deviceDescriptor->macAddress_.c_str());
+        return SUCCESS;
+    }
     AUDIO_INFO_LOG("SelectNewDevice::a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "SetActiveA2dpDevice failed %{public}d", result);
@@ -3240,18 +3244,15 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
             }
         }
     }
+    FetchDevice(true);
+    FetchDevice(false);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, false);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
 }
 
-void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
+int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
+    std::vector<sptr<AudioDeviceDescriptor>> &deviceChangeDescriptor)
 {
-    AUDIO_INFO_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
-        statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
-    if (isStop) {
-        HandleOfflineDistributedDevice();
-        return;
-    }
     std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
@@ -3263,16 +3264,15 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
         statusInfo.mappingVolumeId);
     UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
-    std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
     if (statusInfo.isConnected) {
         for (auto devDes : connectedDevices_) {
             if (devDes->deviceType_ == devType && devDes->networkId_ == networkId) {
-                return;
+                return ERROR;
             }
         }
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
             statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEVICE online but open audio device failed.");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DEVICE online but open audio device failed.");
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
 
         const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -3289,8 +3289,25 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
         RemoveDeviceInRouterMap(moduleName);
         RemoveDeviceInFastRouterMap(networkId);
     }
+    return SUCCESS;
+}
+
+void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
+{
+    AUDIO_INFO_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
+        statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
+    if (isStop) {
+        HandleOfflineDistributedDevice();
+        return;
+    }
+    std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
+    int32_t ret = HandleDistributedDeviceUpdate(statusInfo, deviceChangeDescriptor);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "HandleDistributedDeviceUpdate return directly.");
+    FetchDevice(true);
+    FetchDevice(false);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
+    DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     if (GetDeviceRole(devType) == DeviceRole::INPUT_DEVICE) {
         remoteCapturerSwitch_ = true;
     }
@@ -5501,6 +5518,28 @@ void AudioPolicyService::OnScoStateChanged(const std::string &macAddress, bool i
     AUDIO_INFO_LOG("[OnScoStateChanged] macAddress: %{public}s, isConnnected: %{public}d", macAddress.c_str(),
         isConnnected);
     audioDeviceManager_.UpdateScoState(macAddress, isConnnected);
+    FetchDevice(true);
+    FetchDevice(false);
+}
+
+void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand)
+{
+    AUDIO_INFO_LOG("[OnDeviceInfoUpdated]  updateCommand: %{public}d", updateCommand);
+    if (updateCommand == ENABLE_UPDATE && desc.isEnable_ == true) {
+        unique_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
+            AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
+        unique_ptr<AudioDeviceDescriptor> userSelectCallDevice =
+            AudioStateManager::GetAudioStateManager().GetPerferredCallRenderDevice();
+        if ((userSelectMediaDevice->deviceType_ == desc.deviceType_ &&
+            userSelectMediaDevice->macAddress_ == desc.macAddress_) ||
+            (userSelectCallDevice->deviceType_ == desc.deviceType_ &&
+            userSelectCallDevice->macAddress_ == desc.macAddress_)) {
+            AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
+            return;
+        }
+    }
+    sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
+    audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, updateCommand);
     FetchDevice(true);
     FetchDevice(false);
 }

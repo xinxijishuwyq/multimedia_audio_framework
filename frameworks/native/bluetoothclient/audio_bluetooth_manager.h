@@ -48,6 +48,7 @@ public:
     static void UnregisterBluetoothA2dpListener();
     static void DisconnectBluetoothA2dpSink();
     static int32_t SetActiveA2dpDevice(const std::string& macAddress);
+    static std::string GetActiveA2dpDevice();
     static int32_t SetDeviceAbsVolume(const std::string& macAddress, int32_t volume);
     static int32_t GetA2dpDeviceStreamInfo(const std::string& macAddress,
         AudioStandard::AudioStreamInfo &streamInfo);
@@ -99,6 +100,7 @@ public:
     static void RegisterBluetoothScoListener();
     static void UnregisterBluetoothScoListener();
     static int32_t SetActiveHfpDevice(const std::string &macAddress);
+    static std::string GetActiveHfpDevice();
     static int32_t ConnectScoWithAudioScene(AudioStandard::AudioScene scene);
     static int32_t DisconnectSco();
     static int8_t GetScoCategoryFromScene(AudioStandard::AudioScene scene);

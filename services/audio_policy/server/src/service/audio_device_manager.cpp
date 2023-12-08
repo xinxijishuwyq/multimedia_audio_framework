@@ -646,13 +646,21 @@ void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isCo
 }
 
 void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
-    const DeviceInfoUpdateCommand &updateCommand)
+    const DeviceInfoUpdateCommand updateCommand)
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
-    if (updateCommand == CATEGORY_UPDATE) {
-        UpdateDeviceCategory(deviceDescriptor);
-    } else if (updateCommand == CONNECTSTATE_UPDATE) {
-        UpdateConnectState(devDesc);
+    switch (updateCommand) {
+        case CATEGORY_UPDATE:
+            UpdateDeviceCategory(deviceDescriptor);
+            break;
+        case CONNECTSTATE_UPDATE:
+            UpdateConnectState(devDesc);
+            break;
+        case ENABLE_UPDATE:
+            UpdateEnableState(devDesc);
+            break;
+        default:
+            break;
     }
 }
 
@@ -680,20 +688,43 @@ void AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
 {
     bool isScoDevice = devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
     for (auto &desc : connectedDevices_) {
-        if (desc->networkId_ == devDesc->networkId_ &&
-            desc->macAddress_ == devDesc->macAddress_) {
-            if (desc->deviceType_ == devDesc->deviceType_) {
-                desc->connectState_ = devDesc->connectState_;
-            } else if (isScoDevice && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        if (desc->networkId_ != devDesc->networkId_ ||
+            desc->macAddress_ != devDesc->macAddress_) {
+            continue;
+        }
+        if (desc->deviceType_ == devDesc->deviceType_) {
+            desc->connectState_ = devDesc->connectState_;
+            continue;
+        }
+        // a2dp connectState needs to be updated simultaneously when connectState of sco is updated
+        if (isScoDevice) {
+            if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 devDesc->connectState_ == CONNECTED) {
-                // sco connected,a2dp suspend
+                // sco connected, suspend a2dp
                 desc->connectState_ = SUSPEND_CONNECTED;
-            } else if (isScoDevice && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-                devDesc->connectState_ == DEACTIVE_CONNECTED &&
-                desc->connectState_ == SUSPEND_CONNECTED) {
-                // sco deactive,a2dp CONNECTED
+            } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                desc->connectState_ == SUSPEND_CONNECTED &&
+                devDesc->connectState_ == DEACTIVE_CONNECTED) {
+                // sco deactive, a2dp CONNECTED
                 desc->connectState_ = CONNECTED;
             }
+        }
+    }
+}
+
+void AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    for (auto &desc : connectedDevices_) {
+        if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            if (desc->macAddress_ == devDesc->macAddress_ &&
+                desc->isEnable_ != devDesc->isEnable_) {
+                desc->isEnable_ = devDesc->isEnable_;
+            }
+        } else if (desc->deviceType_ == devDesc->deviceType_ &&
+            desc->networkId_ == devDesc->networkId_ &&
+            desc->isEnable_ != devDesc->isEnable_) {
+                desc->isEnable_ = devDesc->isEnable_;
         }
     }
 }

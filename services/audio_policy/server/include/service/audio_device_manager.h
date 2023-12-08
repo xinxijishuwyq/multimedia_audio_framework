@@ -43,7 +43,7 @@ public:
     int32_t GetDeviceUsageFromType(const DeviceType devType) const;
     void ParseDeviceXml();
     void UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const DeviceInfoUpdateCommand &updateCommand);
+        const DeviceInfoUpdateCommand updateCommand);
 
     vector<unique_ptr<AudioDeviceDescriptor>> GetRemoteRenderDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetRemoteCaptureDevices();
@@ -114,6 +114,7 @@ private:
     void RemoveCaptureDevices(const AudioDeviceDescriptor &devDesc);
     void UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;
