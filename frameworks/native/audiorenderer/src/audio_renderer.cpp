@@ -96,15 +96,12 @@ AudioRendererPrivate::~AudioRendererPrivate()
         audioDeviceChangeCallback->UnSetAudioRendererObj();
     }
 
+    (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
         Release();
     }
 
-    if (isFastRenderer_) {
-        // Unregister the renderer event callaback in policy server
-        (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
-    }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 

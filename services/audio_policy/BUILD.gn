@@ -143,19 +143,16 @@ ohos_shared_library("audio_policy_service") {
   sources = [
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
-    "server/src/audio_capturer_state_change_listener_proxy.cpp",
     "server/src/audio_client_tracker_callback_proxy.cpp",
     "server/src/audio_group_handle.cpp",
+    "server/src/audio_policy_client_proxy.cpp",
     "server/src/audio_policy_manager_listener_proxy.cpp",
     "server/src/audio_policy_manager_stub.cpp",
     "server/src/audio_policy_server.cpp",
-    "server/src/audio_renderer_state_change_listener_proxy.cpp",
-    "server/src/audio_ringermode_update_listener_proxy.cpp",
     "server/src/audio_routing_manager_listener_proxy.cpp",
     "server/src/audio_spatialization_state_change_listener_proxy.cpp",
     "server/src/audio_stream_collector.cpp",
     "server/src/audio_stream_event_dispatcher.cpp",
-    "server/src/audio_volume_key_event_callback_proxy.cpp",
     "server/src/service/audio_device_manager.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/audio_state_manager.cpp",
@@ -382,26 +379,30 @@ ohos_shared_library("audio_policy_client") {
   sources = [
     "../audio_service/client/src/audio_device_descriptor.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
-    "client/src/audio_capturer_state_change_listener_stub.cpp",
     "client/src/audio_client_tracker_callback_stub.cpp",
     "client/src/audio_policy_callback_proxy.cpp",
+    "client/src/audio_policy_client_stub.cpp",
+    "client/src/audio_policy_client_stub_impl.cpp",
     "client/src/audio_policy_manager.cpp",
     "client/src/audio_policy_manager_listener_stub.cpp",
     "client/src/audio_policy_proxy.cpp",
-    "client/src/audio_renderer_state_change_listener_stub.cpp",
-    "client/src/audio_ringermode_update_listener_stub.cpp",
     "client/src/audio_routing_manager_listener_stub.cpp",
     "client/src/audio_spatialization_state_change_listener_stub.cpp",
     "client/src/audio_volume_group_info.cpp",
-    "client/src/audio_volume_key_event_callback_stub.cpp",
   ]
+
+  deps = [ "../../frameworks/native/audioutils:audio_utils" ]
 
   public_configs = [ ":audio_policy_client_config" ]
 
-  include_dirs = [ "//third_party/bounds_checking_function/include" ]
+  include_dirs = [
+    "//third_party/bounds_checking_function/include",
+    "../../frameworks/native/audioutils/include",
+  ]
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",

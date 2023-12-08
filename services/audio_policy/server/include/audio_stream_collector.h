@@ -18,7 +18,7 @@
 
 #include "audio_info.h"
 #include "audio_stream_event_dispatcher.h"
-
+#include "audio_policy_client.h"
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -33,12 +33,9 @@ public:
 
     AudioStreamCollector();
     ~AudioStreamCollector();
-    int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
-        bool hasBTPermission, bool hasSystemPermission = true);
-    int32_t UnregisterAudioRendererEventListener(int32_t clientPid);
-    int32_t RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
-        bool hasBTPermission, bool hasSystemPermission = true);
-    int32_t UnregisterAudioCapturerEventListener(int32_t clientPid);
+
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
+    void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
@@ -49,7 +46,6 @@ public:
     int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
-    void RegisteredStreamListenerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
     int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT);

@@ -31,68 +31,6 @@ AudioRoutingManagerListenerProxy::~AudioRoutingManagerListenerProxy()
     AUDIO_DEBUG_LOG("~AudioRoutingManagerListenerProxy: Instance destroy");
 }
 
-void AudioRoutingManagerListenerProxy::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
-
-    data.WriteBool(micStateChangeEvent.mute);
-    int error = Remote()->SendRequest(ON_MIC_STATE_UPDATED, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnMicStateUpdated failed, error: %{public}d", error);
-    }
-}
-
-
-void AudioRoutingManagerListenerProxy::OnPreferredOutputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
-
-    int32_t size = static_cast<int32_t>(desc.size());
-    data.WriteInt32(size);
-    for (int i = 0; i < size; i++) {
-        desc[i]->Marshalling(data);
-    }
-    int error = Remote()->SendRequest(ON_ACTIVE_OUTPUT_DEVICE_UPDATED, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnPreferredOutputDeviceUpdated failed, error: %{public}d", error);
-    }
-}
-
-void AudioRoutingManagerListenerProxy::OnPreferredInputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("OnPreferredInputDeviceUpdated: WriteInterfaceToken failed");
-        return;
-    }
-
-    size_t size = desc.size();
-    data.WriteInt32(static_cast<int32_t>(size));
-    for (size_t i = 0; i < size; i++) {
-        desc[i]->Marshalling(data);
-    }
-    int error = Remote()->SendRequest(ON_ACTIVE_INPUT_DEVICE_UPDATED, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnPreferredInputDeviceUpdated failed, error: %{public}d", error);
-    }
-}
-
 void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> desciptor,
     const CastType type)
 {
@@ -109,24 +47,6 @@ void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(const sptr
 
     int error = Remote()->SendRequest(ON_DISTRIBUTED_ROUTING_ROLE_CHANGE, data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnDistributedRoutingRoleChangefailed, error: %{public}d", error);
-}
-
-AudioRoutingManagerListenerCallback::AudioRoutingManagerListenerCallback(
-    const sptr<IStandardAudioRoutingManagerListener> &listener) : listener_(listener)
-{
-        AUDIO_DEBUG_LOG("AudioRoutingManagerListenerCallback: Instance create");
-}
-
-AudioRoutingManagerListenerCallback::~AudioRoutingManagerListenerCallback()
-{
-    AUDIO_DEBUG_LOG("AudioRoutingManagerListenerCallback: Instance destroy");
-}
-
-void AudioRoutingManagerListenerCallback::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
-{
-    if (listener_ != nullptr) {
-        listener_->OnMicStateUpdated(micStateChangeEvent);
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

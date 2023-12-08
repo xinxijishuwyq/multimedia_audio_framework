@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <vector>
 #include "audio_log.h"
+#include "audio_policy_client.h"
 #include "audio_stream_manager.h"
 #include "iremote_proxy.h"
 
@@ -60,8 +61,11 @@ public:
     void HandleCapturerStreamStateChange(const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest);
     void HandleRendererStreamStateChange(const unique_ptr<StreamStateChangeRequest> &streamStateChangeRequest);
     void DispatcherEvent();
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
+    void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
 
 private:
+    std::mutex updatePolicyPorxyMapMutex_;
     std::mutex rendererStateChangeListnerMutex_;
     std::mutex capturerStateChangeListnerMutex_;
     std::mutex streamStateChangeQueueMutex_;
@@ -69,6 +73,7 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioCapturerStateChangeCallback>> capturerCBMap_;
     std::queue<unique_ptr<StreamStateChangeRequest>> streamStateChangeQueue_;
     std::unique_ptr<StreamStateChangeRequest> request;
+    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientRCProxyCBMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
