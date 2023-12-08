@@ -42,6 +42,8 @@ public:
     void OnXmlParsingCompleted(const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData);
     int32_t GetDeviceUsageFromType(const DeviceType devType) const;
     void ParseDeviceXml();
+    void UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+        const DeviceInfoUpdateCommand &updateCommand);
 
     vector<unique_ptr<AudioDeviceDescriptor>> GetRemoteRenderDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetRemoteCaptureDevices();
@@ -82,6 +84,7 @@ private:
 
     void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
+    void MakePairedDefaultDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
     void UpdateConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
     void AddConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void RemoveConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
@@ -102,6 +105,15 @@ private:
     void GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
         vector<unique_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     bool UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+
+    void AddBtToOtherList(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void RemoveBtFromOtherList(const AudioDeviceDescriptor &devDesc);
+    void RemoveRemoteDevices(const AudioDeviceDescriptor &devDesc);
+    void RemoveCommunicationDevices(const AudioDeviceDescriptor &devDesc);
+    void RemoveMediaDevices(const AudioDeviceDescriptor &devDesc);
+    void RemoveCaptureDevices(const AudioDeviceDescriptor &devDesc);
+    void UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;

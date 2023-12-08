@@ -135,6 +135,8 @@ void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDevice
         devDesc->pairDeviceDescriptor_ = *it;
         (*it)->pairDeviceDescriptor_ = devDesc;
     }
+
+    MakePairedDefaultDeviceDescriptor(devDesc, devRole);
 }
 
 void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -143,6 +145,31 @@ void AudioDeviceManager::MakePairedDeviceDescriptor(const shared_ptr<AudioDevice
         MakePairedDeviceDescriptor(devDesc, OUTPUT_DEVICE);
     } else if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
         MakePairedDeviceDescriptor(devDesc, INPUT_DEVICE);
+    }
+}
+
+void AudioDeviceManager::MakePairedDefaultDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    DeviceRole devRole)
+{
+    // EARPIECE -> MIC ; SPEAKER -> MIC ; MIC -> SPEAKER
+    auto isPresent = [&devDesc, &devRole] (const shared_ptr<AudioDeviceDescriptor> &desc) {
+        if ((devDesc->deviceType_ == DEVICE_TYPE_EARPIECE || devDesc->deviceType_ == DEVICE_TYPE_SPEAKER) &&
+            devRole == INPUT_DEVICE && desc->deviceType_ == DEVICE_TYPE_MIC &&
+            desc->networkId_ == devDesc->networkId_) {
+            return true;
+        } else if (devDesc->deviceType_ == DEVICE_TYPE_MIC && devRole == OUTPUT_DEVICE &&
+            desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ == devDesc->networkId_) {
+            return true;
+        }
+        return false;
+    };
+
+    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (it != connectedDevices_.end()) {
+        devDesc->pairDeviceDescriptor_ = *it;
+        if (devDesc->deviceType_ != DEVICE_TYPE_EARPIECE) {
+            (*it)->pairDeviceDescriptor_ = devDesc;
+        }
     }
 }
 
@@ -319,21 +346,10 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
 void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devDesc)
 {
     RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(devDesc));
-    RemoveMatchDeviceInArray(devDesc, "remote render device", remoteRenderDevices_);
-    RemoveMatchDeviceInArray(devDesc, "remote capture device", remoteCaptureDevices_);
-
-    RemoveMatchDeviceInArray(devDesc, "communication render privacy device", commRenderPrivacyDevices_);
-    RemoveMatchDeviceInArray(devDesc, "communication render public device", commRenderPublicDevices_);
-    RemoveMatchDeviceInArray(devDesc, "communication capture privacy device", commCapturePrivacyDevices_);
-    RemoveMatchDeviceInArray(devDesc, "communication capture public device", commCapturePublicDevices_);
-
-    RemoveMatchDeviceInArray(devDesc, "media render privacy device", mediaRenderPrivacyDevices_);
-    RemoveMatchDeviceInArray(devDesc, "media render public device", mediaRenderPublicDevices_);
-    RemoveMatchDeviceInArray(devDesc, "media capture privacy device", mediaCapturePrivacyDevices_);
-    RemoveMatchDeviceInArray(devDesc, "media capture public device", mediaCapturePublicDevices_);
-
-    RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
-    RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
+    RemoveRemoteDevices(devDesc);
+    RemoveCommunicationDevices(devDesc);
+    RemoveMediaDevices(devDesc);
+    RemoveCaptureDevices(devDesc);
 }
 
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
@@ -627,6 +643,111 @@ void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isCo
             desc->isScoRealConnected_ = isConnnected;
         }
     }
+}
+
+void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    const DeviceInfoUpdateCommand &updateCommand)
+{
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+    if (updateCommand == CATEGORY_UPDATE) {
+        UpdateDeviceCategory(deviceDescriptor);
+    } else if (updateCommand == CONNECTSTATE_UPDATE) {
+        UpdateConnectState(devDesc);
+    }
+}
+
+void AudioDeviceManager::UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+    for (auto &desc : connectedDevices_) {
+        if ((devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) &&
+            desc->deviceType_ == devDesc->deviceType_ &&
+            desc->networkId_ == devDesc->networkId_ &&
+            desc->macAddress_ == devDesc->macAddress_ &&
+            desc->deviceCategory_ != devDesc->deviceCategory_) {
+            desc->deviceCategory_ = devDesc->deviceCategory_;
+            if (devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE) {
+                RemoveBtFromOtherList(deviceDescriptor);
+            } else {
+                AddBtToOtherList(desc);
+            }
+        }
+    }
+}
+
+void AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    bool isScoDevice = devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+    for (auto &desc : connectedDevices_) {
+        if (desc->networkId_ == devDesc->networkId_ &&
+            desc->macAddress_ == devDesc->macAddress_) {
+            if (desc->deviceType_ == devDesc->deviceType_) {
+                desc->connectState_ = devDesc->connectState_;
+            } else if (isScoDevice && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                devDesc->connectState_ == CONNECTED) {
+                // sco connected,a2dp suspend
+                desc->connectState_ = SUSPEND_CONNECTED;
+            } else if (isScoDevice && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                devDesc->connectState_ == DEACTIVE_CONNECTED &&
+                desc->connectState_ == SUSPEND_CONNECTED) {
+                // sco deactive,a2dp CONNECTED
+                desc->connectState_ = CONNECTED;
+            }
+        }
+    }
+}
+
+void AudioDeviceManager::AddBtToOtherList(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    if (devDesc->networkId_ != LOCAL_NETWORK_ID) {
+        AddRemoteRenderDev(devDesc);
+        AddRemoteCaptureDev(devDesc);
+    } else {
+        HandleScoWithDefaultCategory(devDesc);
+        AddCommunicationDevices(devDesc);
+        AddMediaDevices(devDesc);
+        AddCaptureDevices(devDesc);
+    }
+}
+
+void AudioDeviceManager::RemoveBtFromOtherList(const AudioDeviceDescriptor &devDesc)
+{
+    if (devDesc.networkId_ != LOCAL_NETWORK_ID) {
+        RemoveRemoteDevices(devDesc);
+    } else {
+        RemoveCommunicationDevices(devDesc);
+        RemoveMediaDevices(devDesc);
+        RemoveCaptureDevices(devDesc);
+    }
+}
+
+void AudioDeviceManager::RemoveRemoteDevices(const AudioDeviceDescriptor &devDesc)
+{
+    RemoveMatchDeviceInArray(devDesc, "remote render device", remoteRenderDevices_);
+    RemoveMatchDeviceInArray(devDesc, "remote capture device", remoteCaptureDevices_);
+}
+
+void AudioDeviceManager::RemoveCommunicationDevices(const AudioDeviceDescriptor &devDesc)
+{
+    RemoveMatchDeviceInArray(devDesc, "communication render privacy device", commRenderPrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "communication render public device", commRenderPublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "communication capture privacy device", commCapturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "communication capture public device", commCapturePublicDevices_);
+}
+
+void AudioDeviceManager::RemoveMediaDevices(const AudioDeviceDescriptor &devDesc)
+{
+    RemoveMatchDeviceInArray(devDesc, "media render privacy device", mediaRenderPrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "media render public device", mediaRenderPublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "media capture privacy device", mediaCapturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "media capture public device", mediaCapturePublicDevices_);
+}
+
+void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDesc)
+{
+    RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
+    RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
 }
 }
 }
