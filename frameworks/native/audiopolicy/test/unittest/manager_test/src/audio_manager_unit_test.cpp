@@ -129,8 +129,8 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
     EXPECT_EQ(inputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
     EXPECT_EQ(true, (*inputDevice->audioStreamInfo_.channels.rbegin() >= MONO)
         && ((*inputDevice->audioStreamInfo_.channels.begin() <= CHANNEL_8)));
-    EXPECT_EQ(true, (inputDevice->audioStreamInfo_.format >= SAMPLE_U8)
-        && ((inputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
+    EXPECT_GE(inputDevice->audioStreamInfo_.format, SAMPLE_U8);
+    EXPECT_LE(inputDevice->audioStreamInfo_.format, SAMPLE_F32LE);
 }
 
 /**

@@ -405,7 +405,7 @@ private:
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
     static std::map<InterruptHint, AudioFocuState> CreateStateMap();
 
-    int32_t VerifyVoiceCallPermission();
+    int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:
