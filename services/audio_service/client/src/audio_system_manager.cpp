@@ -1366,26 +1366,18 @@ int32_t AudioSystemManager::SetDistributedRoutingRoleCallback(
         return ERR_INVALID_PARAM;
     }
 
-    if (audioDistributedRoutingRoleCallback_ != nullptr) {
-        callback->cbMutex_.lock();
-        AUDIO_DEBUG_LOG("AudioSystemManger reset existing callback project");
-        AudioPolicyManager::GetInstance().UnsetDistributedRoutingRoleCallback();
-        audioDistributedRoutingRoleCallback_.reset();
-        audioDistributedRoutingRoleCallback_ = nullptr;
-        callback->cbMutex_.unlock();
-    }
-
-    audioDistributedRoutingRoleCallback_ = std::make_shared<AudioDistributedRoutingRoleCallbackImpl>();
     if (audioDistributedRoutingRoleCallback_ == nullptr) {
-        AUDIO_ERR_LOG("AudioSystemManger failed to allocate memory for distributedRoutingRole callback");
-        return ERROR;
-    }
-
-    int32_t ret = AudioPolicyManager::GetInstance().
-        SetDistributedRoutingRoleCallback(audioDistributedRoutingRoleCallback_);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioSystemManger failed to set distributedRoutingRole callback");
-        return ERROR;
+        audioDistributedRoutingRoleCallback_ = std::make_shared<AudioDistributedRoutingRoleCallbackImpl>();
+        if (audioDistributedRoutingRoleCallback_ == nullptr) {
+            AUDIO_ERR_LOG("AudioSystemManger failed to allocate memory for distributedRoutingRole callback");
+            return ERROR;
+        }
+        int32_t ret = AudioPolicyManager::GetInstance().
+            SetDistributedRoutingRoleCallback(audioDistributedRoutingRoleCallback_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("AudioSystemManger failed to set distributedRoutingRole callback");
+            return ERROR;
+        }
     }
 
     std::shared_ptr<AudioDistributedRoutingRoleCallbackImpl> cbImpl =
@@ -1406,32 +1398,53 @@ int32_t AudioSystemManager::UnsetDistributedRoutingRoleCallback(
         audioDistributedRoutingRoleCallback_.reset();
         audioDistributedRoutingRoleCallback_ = nullptr;
     }
+
+    std::shared_ptr<AudioDistributedRoutingRoleCallbackImpl> cbImpl =
+        std::static_pointer_cast<AudioDistributedRoutingRoleCallbackImpl>(audioDistributedRoutingRoleCallback_);
+    if (cbImpl == nullptr) {
+        AUDIO_ERR_LOG("AudioSystemManger cbImpl is nullptr");
+        return ERROR;
+    }
+    cbImpl->RemoveCallback(callback);
     return ret;
 }
 
 void AudioDistributedRoutingRoleCallbackImpl::SaveCallback(
-    const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback)
+    const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback)
 {
-    auto wp = callback.lock();
-    if (wp != nullptr) {
-        callback_ = callback;
-    } else {
-        AUDIO_ERR_LOG("AudioDistributedRoutingRoleCallbackImpl: SaveCallback is nullptr");
+    bool hasCallback = false;
+    for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
+        if ((*it) == callback) {
+            hasCallback = true;
+        }
     }
+    if (!hasCallback) {
+        callbackList_.push_back(callback);
+    }
+}
+
+void AudioDistributedRoutingRoleCallbackImpl::RemoveCallback(
+    const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    callbackList_.remove_if([&callback](std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback_) {
+        return callback_ == callback;
+    });
 }
 
 void AudioDistributedRoutingRoleCallbackImpl::OnDistributedRoutingRoleChange(
     const AudioDeviceDescriptor *descriptor, const CastType type)
 {
-    cb_ = callback_.lock();
-    if (cb_ != nullptr) {
-        cb_->cbMutex_.lock();
-        cb_->OnDistributedRoutingRoleChange(descriptor, type);
-        AUDIO_DEBUG_LOG("AudioDistributedRoutingRoleCallbackImpl: OnDistributedRoutingRoleChange");
-        cb_->cbMutex_.unlock();
-    } else {
-        AUDIO_ERR_LOG("AudioDistributedRoutingRoleCallbackImpl: callback is null");
+    for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
+        cb_ = (*callback);
+        if (cb_ != nullptr) {
+            AUDIO_DEBUG_LOG("OnDistributedRoutingRoleChange : Notify event to app complete");
+            cb_->OnDistributedRoutingRoleChange(descriptor, type);
+        } else {
+            AUDIO_ERR_LOG("OnDistributedRoutingRoleChange: callback is null");
+        }
     }
+    return;
 }
 
 AudioDistributedRoutingRoleCallbackImpl::AudioDistributedRoutingRoleCallbackImpl()

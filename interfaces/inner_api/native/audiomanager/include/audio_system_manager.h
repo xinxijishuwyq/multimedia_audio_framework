@@ -378,9 +378,10 @@ public:
      * @since 9
      */
     void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor, const CastType type) override;
-    void SaveCallback(const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback);
+    void SaveCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
+    void RemoveCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
 private:
-    std::weak_ptr<AudioDistributedRoutingRoleCallback> callback_;
+    std::list<std::shared_ptr<AudioDistributedRoutingRoleCallback>> callbackList_;
     std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
 };
 
