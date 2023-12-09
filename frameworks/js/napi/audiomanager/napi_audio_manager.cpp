@@ -805,14 +805,10 @@ napi_value NapiAudioManager::IsDeviceActive(napi_env env, napi_callback_info inf
             "audio manager state is error.");
         context->isActive = napiAudioManager->audioMngr_->IsDeviceActive(
             static_cast<ActiveDeviceType>(context->deviceType));
-        context->isTrue = context->isActive;
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
-        }
     };
 
     auto complete = [env, context](napi_value &output) {
-        NapiParamUtils::SetValueBoolean(env, context->isTrue, output);
+        NapiParamUtils::SetValueBoolean(env, context->isActive, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "IsDeviceActive", executor, complete);
 }
