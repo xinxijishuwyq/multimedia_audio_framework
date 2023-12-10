@@ -204,16 +204,13 @@ napi_value AudioSpatializationManagerNapi::Init(napi_env env, napi_value exports
 }
 
 napi_status AudioSpatializationManagerNapi::AddNamedProperty(napi_env env, napi_value object,
-                                                  const std::string name, int32_t enumValue)
+    const std::string name, int32_t enumValue)
 {
-    napi_status status;
     napi_value enumNapiValue;
-
-    status = napi_create_int32(env, enumValue, &enumNapiValue);
+    napi_status status = napi_create_int32(env, enumValue, &enumNapiValue);
     if (status == napi_ok) {
         status = napi_set_named_property(env, object, name.c_str(), enumNapiValue);
     }
-
     return status;
 }
 
