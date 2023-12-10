@@ -200,6 +200,7 @@ private:
     static napi_value CreateAudioSampleFormatObject(napi_env env);
     static napi_value CreateAudioEffectModeObject(napi_env env);
     static napi_value CreateAudioPrivacyTypeObject(napi_env env);
+    static napi_value CreateAudioChannelLayoutObject(napi_env env);
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value* args, AudioRendererNapi *rendererNapi);
     static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value* args,
         AudioRendererNapi *rendererNapi);
@@ -213,6 +214,7 @@ private:
     static napi_ref sampleFormat_;
     static napi_ref audioEffectMode_;
     static napi_ref audioPrivacyType_;
+    static napi_ref audioChannelLayout_;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
     static std::unique_ptr<AudioRendererOptions> sRendererOptions_;
     static std::mutex createMutex_;
@@ -270,6 +272,58 @@ static const std::map<std::string, RendererState> audioStateMap = {
 static const std::map<std::string, AudioPrivacyType> audioPrivacyTypeMap = {
     {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
     {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE}
+};
+
+static const std::map<std::string, uint64_t> audioChannelLayoutMap = {
+    {"CH_LAYOUT_UNKNOWN", CH_LAYOUT_UNKNOWN},
+    {"CH_LAYOUT_MONO", CH_LAYOUT_MONO},
+    {"CH_LAYOUT_STEREO", CH_LAYOUT_STEREO},
+    {"CH_LAYOUT_STEREO_DOWNMIX", CH_LAYOUT_STEREO_DOWNMIX},
+    {"CH_LAYOUT_2POINT1", CH_LAYOUT_2POINT1},
+    {"CH_LAYOUT_3POINT0", CH_LAYOUT_3POINT0},
+    {"CH_LAYOUT_SURROUND", CH_LAYOUT_SURROUND},
+    {"CH_LAYOUT_3POINT1", CH_LAYOUT_3POINT1},
+    {"CH_LAYOUT_4POINT0", CH_LAYOUT_4POINT0},
+    {"CH_LAYOUT_QUAD_SIDE", CH_LAYOUT_QUAD_SIDE},
+    {"CH_LAYOUT_QUAD", CH_LAYOUT_QUAD},
+    {"CH_LAYOUT_2POINT0POINT2", CH_LAYOUT_2POINT0POINT2},
+    {"CH_LAYOUT_4POINT1", CH_LAYOUT_4POINT1},
+    {"CH_LAYOUT_5POINT0", CH_LAYOUT_5POINT0},
+    {"CH_LAYOUT_5POINT0_BACK", CH_LAYOUT_5POINT0_BACK},
+    {"CH_LAYOUT_2POINT1POINT2", CH_LAYOUT_2POINT1POINT2},
+    {"CH_LAYOUT_3POINT0POINT2", CH_LAYOUT_3POINT0POINT2},
+    {"CH_LAYOUT_5POINT1", CH_LAYOUT_5POINT1},
+    {"CH_LAYOUT_5POINT1_BACK", CH_LAYOUT_5POINT1_BACK},
+    {"CH_LAYOUT_6POINT0", CH_LAYOUT_6POINT0},
+    {"CH_LAYOUT_HEXAGONAL", CH_LAYOUT_HEXAGONAL},
+    {"CH_LAYOUT_3POINT1POINT2", CH_LAYOUT_3POINT1POINT2},
+    {"CH_LAYOUT_6POINT0_FRONT", CH_LAYOUT_6POINT0_FRONT},
+    {"CH_LAYOUT_6POINT1", CH_LAYOUT_6POINT1},
+    {"CH_LAYOUT_6POINT1_BACK", CH_LAYOUT_6POINT1_BACK},
+    {"CH_LAYOUT_6POINT1_FRONT", CH_LAYOUT_6POINT1_FRONT},
+    {"CH_LAYOUT_7POINT0", CH_LAYOUT_7POINT0},
+    {"CH_LAYOUT_7POINT0_FRONT", CH_LAYOUT_7POINT0_FRONT},
+    {"CH_LAYOUT_7POINT1", CH_LAYOUT_7POINT1},
+    {"CH_LAYOUT_OCTAGONAL", CH_LAYOUT_OCTAGONAL},
+    {"CH_LAYOUT_5POINT1POINT2", CH_LAYOUT_5POINT1POINT2},
+    {"CH_LAYOUT_7POINT1_WIDE", CH_LAYOUT_7POINT1_WIDE},
+    {"CH_LAYOUT_7POINT1_WIDE_BACK", CH_LAYOUT_7POINT1_WIDE_BACK},
+    {"CH_LAYOUT_5POINT1POINT4", CH_LAYOUT_5POINT1POINT4},
+    {"CH_LAYOUT_7POINT1POINT2", CH_LAYOUT_7POINT1POINT2},
+    {"CH_LAYOUT_7POINT1POINT4", CH_LAYOUT_7POINT1POINT4},
+    {"CH_LAYOUT_10POINT2", CH_LAYOUT_10POINT2},
+    {"CH_LAYOUT_9POINT1POINT4", CH_LAYOUT_9POINT1POINT4},
+    {"CH_LAYOUT_9POINT1POINT6", CH_LAYOUT_9POINT1POINT6},
+    {"CH_LAYOUT_HEXADECAGONAL", CH_LAYOUT_HEXADECAGONAL},
+    {"CH_LAYOUT_AMB_ORDER1_ACN_N3D", CH_LAYOUT_HOA_ORDER1_ACN_N3D},
+    {"CH_LAYOUT_AMB_ORDER1_ACN_SN3D", CH_LAYOUT_HOA_ORDER1_ACN_SN3D},
+    {"CH_LAYOUT_AMB_ORDER1_FUMA", CH_LAYOUT_HOA_ORDER1_FUMA},
+    {"CH_LAYOUT_AMB_ORDER2_ACN_N3D", CH_LAYOUT_HOA_ORDER2_ACN_N3D},
+    {"CH_LAYOUT_AMB_ORDER2_ACN_SN3D", CH_LAYOUT_HOA_ORDER2_ACN_SN3D},
+    {"CH_LAYOUT_AMB_ORDER2_FUMA", CH_LAYOUT_HOA_ORDER2_FUMA},
+    {"CH_LAYOUT_AMB_ORDER3_ACN_N3D", CH_LAYOUT_HOA_ORDER3_ACN_N3D},
+    {"CH_LAYOUT_AMB_ORDER3_ACN_SN3D", CH_LAYOUT_HOA_ORDER3_ACN_SN3D},
+    {"CH_LAYOUT_AMB_ORDER3_FUMA", CH_LAYOUT_HOA_ORDER3_FUMA},
 };
 } // namespace AudioStandard
 } // namespace OHOS

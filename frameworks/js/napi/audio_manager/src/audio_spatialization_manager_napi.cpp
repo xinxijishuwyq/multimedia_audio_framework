@@ -33,6 +33,8 @@ namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_spatializationManagerConstructor = nullptr;
 
+napi_ref AudioSpatializationManagerNapi::audioSpatialDeivceType_ = nullptr;
+
 #define GET_PARAMS(env, info, num) \
     size_t argc = num;             \
     napi_value argv[num] = {0};    \
@@ -173,6 +175,10 @@ napi_value AudioSpatializationManagerNapi::Init(napi_env env, napi_value exports
         DECLARE_NAPI_FUNCTION("updateSpatialDeviceState", UpdateSpatialDeviceState),
     };
 
+    napi_property_descriptor static_prop[] = {
+        DECLARE_NAPI_PROPERTY("AudioSpatialDeviceType", CreateAudioSpatialDeviceTypeObject(env)),
+    };
+
     status = napi_define_class(env, AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct,
         nullptr,
         sizeof(audio_spatialization_manager_properties) / sizeof(audio_spatialization_manager_properties[PARAM0]),
@@ -185,12 +191,27 @@ napi_value AudioSpatializationManagerNapi::Init(napi_env env, napi_value exports
         status = napi_set_named_property(env, exports, AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME.c_str(),
             constructor);
         if (status == napi_ok) {
-            return exports;
+            status = napi_define_properties(env, exports,
+                                            sizeof(static_prop) / sizeof(static_prop[PARAM0]), static_prop);
+            if (status == napi_ok) {
+                return exports;
+            }
         }
     }
 
     HiLog::Error(LABEL, "Failure in AudioSpatializationManagerNapi::Init()");
     return result;
+}
+
+napi_status AudioSpatializationManagerNapi::AddNamedProperty(napi_env env, napi_value object,
+    const std::string name, int32_t enumValue)
+{
+    napi_value enumNapiValue;
+    napi_status status = napi_create_int32(env, enumValue, &enumNapiValue);
+    if (status == napi_ok) {
+        status = napi_set_named_property(env, object, name.c_str(), enumNapiValue);
+    }
+    return status;
 }
 
 static void CommonCallbackRoutine(napi_env env, AudioSpatializationManagerAsyncContext* &asyncContext,
@@ -343,6 +364,34 @@ static bool ParseSpatialDeviceAttribute(napi_env env, napi_value root, AudioSpat
     }
 
     return true;
+}
+
+napi_value AudioSpatializationManagerNapi::CreateAudioSpatialDeviceTypeObject(napi_env env)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    int32_t refCount = 1;
+
+    status = napi_create_object(env, &result);
+    if (status == napi_ok) {
+        for (auto &iter: audioSpatialDeivceTypeMap) {
+            status = AddNamedProperty(env, result, iter.first, iter.second);
+            if (status != napi_ok) {
+                HiLog::Error(LABEL, "Failed to AddNamedProperty for SpatialDeviceTypeObject %{public}d!", iter.second);
+                break;
+            }
+        }
+        if (status == napi_ok) {
+            status = napi_create_reference(env, result, refCount, &audioSpatialDeivceType_);
+            if (status == napi_ok) {
+                return result;
+            }
+        }
+    }
+    HiLog::Error(LABEL, "CreateAudioSpatialDeviceTypeObject is Failed!");
+    napi_get_undefined(env, &result);
+
+    return result;
 }
 
 bool AudioSpatializationManagerNapi::ParseSpatialDeviceState(napi_env env, napi_value root,

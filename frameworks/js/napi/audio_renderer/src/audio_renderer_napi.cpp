@@ -50,6 +50,7 @@ napi_ref AudioRendererNapi::audioState_ = nullptr;
 napi_ref AudioRendererNapi::sampleFormat_ = nullptr;
 napi_ref AudioRendererNapi::audioEffectMode_ = nullptr;
 napi_ref AudioRendererNapi::audioPrivacyType_ = nullptr;
+napi_ref AudioRendererNapi::audioChannelLayout_ = nullptr;
 mutex AudioRendererNapi::createMutex_;
 int32_t AudioRendererNapi::isConstructSuccess_ = SUCCESS;
 
@@ -414,6 +415,39 @@ napi_value AudioRendererNapi::CreateAudioPrivacyTypeObject(napi_env env)
     return result;
 }
 
+napi_value AudioRendererNapi::CreateAudioChannelLayoutObject(napi_env env)
+{
+    napi_value result = nullptr;
+    napi_status status;
+    std::string propName;
+
+    status = napi_create_object(env, &result);
+    if (status == napi_ok) {
+        for (auto &iter: audioChannelLayoutMap) {
+            propName = iter.first;
+            napi_value enumNapiValue;
+            napi_status status = napi_create_int64(env, iter.second, &enumNapiValue);
+            if (status == napi_ok) {
+                status = napi_set_named_property(env, result, propName.c_str(), enumNapiValue);
+            } else {
+                HiLog::Error(LABEL, "Failed to add named prop in CreateAudioChannelLayoutObject!");
+                break;
+            }
+            propName.clear();
+        }
+        if (status == napi_ok) {
+            status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &audioChannelLayout_);
+            if (status == napi_ok) {
+                return result;
+            }
+        }
+    }
+    HiLog::Error(LABEL, "CreateAudioChannelLayoutObject is Failed!");
+    napi_get_undefined(env, &result);
+
+    return result;
+}
+
 static void SetDeviceDescriptors(const napi_env& env, napi_value &valueParam, const DeviceInfo &deviceInfo)
 {
     (void)napi_create_object(env, &valueParam);
@@ -530,6 +564,7 @@ napi_value AudioRendererNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioSampleFormat", CreateAudioSampleFormatObject(env)),
         DECLARE_NAPI_PROPERTY("AudioEffectMode", CreateAudioEffectModeObject(env)),
         DECLARE_NAPI_PROPERTY("AudioPrivacyType", CreateAudioPrivacyTypeObject(env)),
+        DECLARE_NAPI_PROPERTY("AudioChannelLayout", CreateAudioChannelLayoutObject(env))
     };
 
     status = napi_define_class(env, AUDIO_RENDERER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
