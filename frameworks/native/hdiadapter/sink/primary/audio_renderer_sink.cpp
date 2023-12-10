@@ -481,6 +481,10 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         return ERR_INVALID_HANDLE;
     }
 
+    if (!started_) {
+        AUDIO_WARNING_LOG("AudioRendererSinkInner::RenderFrame invalid state! not started");
+    }
+
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
