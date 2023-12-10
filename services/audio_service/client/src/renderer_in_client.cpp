@@ -183,7 +183,7 @@ private:
     bool needSetThreadPriority_ = true;
     uint32_t writeThreadId_ = 0; // 0 is invalid
 
-    AudioStreamParams streamParams_;
+    AudioStreamParams streamParams_; // in plan: replace it with AudioRendererParams
 
     // for data process
     bool isBlendSet_ = false;
@@ -332,10 +332,11 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         streamTrackerRegistered_ = true;
     }
 }
+
 void RendererInClientInner::UpdateTracker(const std::string &updateCase)
 {
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for %{public}s", updateCase.c_str());
+        AUDIO_DEBUG_LOG("Renderer:Calling Update tracker for %{public}s", updateCase.c_str());
         audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
     }
 }
@@ -444,6 +445,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.rendererInfo = rendererInfo_;
     if (rendererInfo_.rendererFlags != 0) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
+        rendererInfo_.rendererFlags = 0;
     }
 
     config.capturerInfo = {};

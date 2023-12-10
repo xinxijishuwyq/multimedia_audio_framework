@@ -257,9 +257,9 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
         AUDIO_INFO_LOG("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
     }
-    int32_t mediaUid = 1013;
+
     int32_t ipcFlag = 0;
-    if (getuid() != mediaUid && GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
+    if (GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
         AUDIO_INFO_LOG("Create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
     }
@@ -280,10 +280,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
     }
 
-    // in plan
-    int32_t mediaUid = 1013;
     int32_t ipcFlag = 0;
-    if (getuid() != mediaUid && GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
+    if (GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
         AUDIO_INFO_LOG("Create ipc record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
