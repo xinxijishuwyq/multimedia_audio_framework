@@ -76,14 +76,14 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     if (context_ == nullptr) {
         AUDIO_INFO_LOG("Context is null, start to create context");
         int32_t ret = InitPaContext();
-        CHECK_AND_RETURN_RET_LOG(ret == PA_ADAPTER_SUCCESS, ret, "Failed to init pa context");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     }
 
     pa_stream *paStream = InitPaStream(processConfig);
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
-    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, PA_ADAPTER_INIT_ERR, "Failed to init pa stream");
+    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
     stream = rendererStream;
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
@@ -92,12 +92,12 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     auto it = rendererStreamMap_.find(streamIndex);
     if (it == rendererStreamMap_.end()) {
         AUDIO_WARNING_LOG("No matching stream");
-        return PA_ADAPTER_SUCCESS;
+        return SUCCESS;
     }
 
     if (rendererStreamMap_[streamIndex]->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
-        return PA_ADAPTER_ERR;
+        return ERR_OPERATION_FAILED;
     }
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
@@ -106,10 +106,10 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
         AUDIO_INFO_LOG("Release the last stream");
         if (ResetPaContext() < 0) {
             AUDIO_ERR_LOG("Release pa context falied");
-            return PA_ADAPTER_ERR;
+            return ERR_OPERATION_FAILED;
         }
     }
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream)
@@ -118,13 +118,13 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     if (context_ == nullptr) {
         AUDIO_INFO_LOG("Context is null, start to create context");
         int32_t ret = InitPaContext();
-        CHECK_AND_RETURN_RET_LOG(ret == PA_ADAPTER_SUCCESS, ret, "Failed to init pa context");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     }
     pa_stream *paStream = InitPaStream(processConfig);
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
-    CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, PA_ADAPTER_INIT_ERR, "Failed to init pa stream");
+    CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
     stream = capturerStream;
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaAdapterManager::ReleaseCapturer(uint32_t streamIndex)
@@ -133,12 +133,12 @@ int32_t PaAdapterManager::ReleaseCapturer(uint32_t streamIndex)
     auto it = capturerStreamMap_.find(streamIndex);
     if (it == capturerStreamMap_.end()) {
         AUDIO_WARNING_LOG("No matching stream");
-        return PA_ADAPTER_SUCCESS;
+        return SUCCESS;
     }
 
     if (capturerStreamMap_[streamIndex]->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
-        return PA_ADAPTER_ERR;
+        return ERR_OPERATION_FAILED;
     }
 
     capturerStreamMap_[streamIndex] = nullptr;
@@ -147,10 +147,10 @@ int32_t PaAdapterManager::ReleaseCapturer(uint32_t streamIndex)
         AUDIO_INFO_LOG("Release the last stream");
         if (ResetPaContext() < 0) {
             AUDIO_ERR_LOG("Release pa context falied");
-            return PA_ADAPTER_ERR;
+            return ERR_OPERATION_FAILED;
         }
     }
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaAdapterManager::ResetPaContext()
@@ -175,20 +175,20 @@ int32_t PaAdapterManager::ResetPaContext()
     }
 
     api_ = nullptr;
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaAdapterManager::InitPaContext()
 {
     AUDIO_DEBUG_LOG("Enter InitPaContext");
-    int error = PA_ADAPTER_ERR;
+    int error = ERROR;
     mainLoop_ = pa_threaded_mainloop_new();
-    CHECK_AND_RETURN_RET_LOG(mainLoop_ != nullptr, PA_ADAPTER_INIT_ERR, "Failed to init pa mainLoop");
+    CHECK_AND_RETURN_RET_LOG(mainLoop_ != nullptr, ERR_DEVICE_INIT, "Failed to init pa mainLoop");
     api_ = pa_threaded_mainloop_get_api(mainLoop_);
     if (api_ == nullptr) {
         pa_threaded_mainloop_free(mainLoop_);
         AUDIO_ERR_LOG("Get api from mainLoop failed");
-        return PA_ADAPTER_INIT_ERR;
+        return ERR_DEVICE_INIT;
     }
 
     std::stringstream ss;
@@ -200,29 +200,29 @@ int32_t PaAdapterManager::InitPaContext()
     if (context_ == nullptr) {
         pa_threaded_mainloop_free(mainLoop_);
         AUDIO_ERR_LOG("New context failed");
-        return PA_ADAPTER_INIT_ERR;
+        return ERR_DEVICE_INIT;
     }
 
     pa_context_set_state_callback(context_, PAContextStateCb, mainLoop_);
     if (pa_context_connect(context_, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
         error = pa_context_errno(context_);
         AUDIO_ERR_LOG("Context connect error: %{public}s", pa_strerror(error));
-        return PA_ADAPTER_INIT_ERR;
+        return ERR_DEVICE_INIT;
     }
     isContextConnected_ = true;
     HandleMainLoopStart();
 
     pa_threaded_mainloop_unlock(mainLoop_);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaAdapterManager::HandleMainLoopStart()
 {
-    int error = PA_ADAPTER_ERR;
+    int error = ERROR;
     pa_threaded_mainloop_lock(mainLoop_);
     if (pa_threaded_mainloop_start(mainLoop_) < 0) {
         pa_threaded_mainloop_unlock(mainLoop_);
-        return PA_ADAPTER_INIT_ERR;
+        return ERR_DEVICE_INIT;
     }
     isMainLoopStarted_ = true;
 
@@ -238,18 +238,18 @@ int32_t PaAdapterManager::HandleMainLoopStart()
             AUDIO_ERR_LOG("Context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop_);
             ResetPaContext();
-            return PA_ADAPTER_INIT_ERR;
+            return ERR_DEVICE_INIT;
         }
         pa_threaded_mainloop_wait(mainLoop_);
     }
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig)
 {
     AUDIO_DEBUG_LOG("Enter InitPaStream");
-    int32_t error = PA_ADAPTER_ERR;
-    if (CheckReturnIfinvalid(mainLoop_ && context_, PA_ADAPTER_ERR) < 0) {
+    int32_t error = ERROR;
+    if (CheckReturnIfinvalid(mainLoop_ && context_, ERR_ILLEGAL_STATE) < 0) {
         return nullptr;
     }
     pa_threaded_mainloop_lock(mainLoop_);
@@ -326,9 +326,9 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     uint32_t channelsInLayout = ConvertChLayoutToPaChMap(processConfig.streamInfo.channelLayout, map);
     if (channelsInLayout != processConfig.streamInfo.channels || channelsInLayout == 0) {
         AUDIO_ERR_LOG("Invalid channel Layout");
-        return -1;
+        return ERR_INVALID_PARAM;
     }
-    return 0;
+    return SUCCESS;
 }
 
 std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream)
@@ -362,8 +362,8 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     AUDIO_DEBUG_LOG("Enter PaAdapterManager::ConnectStreamToPA");
     int error, result;
 
-    if (CheckReturnIfinvalid(mainLoop_ && context_ && paStream, PA_ADAPTER_ERR) < 0) {
-        return PA_ADAPTER_ERR;
+    if (CheckReturnIfinvalid(mainLoop_ && context_ && paStream, ERROR) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
 
     pa_threaded_mainloop_lock(mainLoop_);
@@ -391,7 +391,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
             error = pa_context_errno(context_);
             AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
             pa_threaded_mainloop_unlock(mainLoop_);
-            return PA_ADAPTER_CREATE_STREAM_ERR;
+            return ERR_INVALID_OPERATION;
         }
     } else {
         uint32_t fragsize = 0;
@@ -414,7 +414,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
             error = pa_context_errno(context_);
             AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
             pa_threaded_mainloop_unlock(mainLoop_);
-            return PA_ADAPTER_CREATE_STREAM_ERR;
+            return ERR_INVALID_OPERATION;
         }
     }
 
@@ -428,13 +428,13 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
             error = pa_context_errno(context_);
             pa_threaded_mainloop_unlock(mainLoop_);
             AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
-            return PA_ADAPTER_CREATE_STREAM_ERR;
+            return ERR_INVALID_OPERATION;
         }
         pa_threaded_mainloop_wait(mainLoop_);
     }
     UpdateStreamIndexToPropList(paStream);
     pa_threaded_mainloop_unlock(mainLoop_);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 void PaAdapterManager::UpdateStreamIndexToPropList(pa_stream *paStream)
@@ -601,7 +601,7 @@ const std::string PaAdapterManager::GetEffectSceneName(AudioStreamType audioType
 int32_t PaAdapterManager::GetInfo()
 {
     AUDIO_INFO_LOG("pa_context_get_state(),: %{public}d, pa_context_errno(): %{public}d", pa_context_get_state(context_), pa_context_errno(context_));
-    return 0;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

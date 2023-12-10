@@ -39,6 +39,7 @@
 #include "audio_utils.h"
 #include "ipc_stream_listener_stub.h"
 #include "volume_ramp.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,7 +49,7 @@ static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
 }
 class RendererStreamListener;
-class RendererInClientInner : public RendererInClient, public IStreamListener,
+class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
 public:
     RendererInClientInner(AudioStreamType eStreamType, int32_t appUid);
@@ -149,6 +150,21 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid);
+
+    void OnHandle(uint32_t code, int64_t data) override;
+    void InitCallbackHandler();
+
+    int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
+    int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
+
+    void SendRenderMarkReachedEvent(int64_t rendererMarkPosition_);
+    void SendRenderPeriodReachedEvent(int64_t rendererPeriodSize_);
+
+    void HandleRendererPositionChanges(size_t bytesWritten);
+    void HandleStateChangeEvent(int64_t data);
+    void HandleRenderMarkReachedEvent(int64_t data);
+    void HandleRenderPeriodReachedEvent(int64_t data);
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -230,6 +246,44 @@ private:
     // buffer handle
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     std::mutex writeMutex_; // used for prevent multi thread call write
+
+    // Mark reach and period reach callback
+    int64_t totalBytesWritten_ = 0;
+    std::mutex markReachMutex_;
+    bool rendererMarkReached_ = false;
+    int64_t rendererMarkPosition_ = 0;
+    std::shared_ptr<RendererPositionCallback> rendererPositionCallback_ = nullptr;
+
+    std::mutex periodReachMutex_;
+    int64_t rendererPeriodSize_ = 0;
+    int64_t rendererPeriodWritten_ = 0;
+    std::shared_ptr<RendererPeriodPositionCallback> rendererPeriodPositionCallback_ = nullptr;
+
+    // Event handler
+    bool runnerReleased_ = false;
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+
+    enum {
+        STATE_CHANGE_EVENT = 0,
+        RENDERER_MARK_REACHED_EVENT,
+        RENDERER_PERIOD_REACHED_EVENT,
+        CAPTURER_PERIOD_REACHED_EVENT,
+        CAPTURER_MARK_REACHED_EVENT,
+    };
+
+    enum : int64_t {
+        HANDLER_PARAM_INVALID = -1,
+        HANDLER_PARAM_NEW = 0,
+        HANDLER_PARAM_PREPARED,
+        HANDLER_PARAM_RUNNING,
+        HANDLER_PARAM_STOPPED,
+        HANDLER_PARAM_RELEASED,
+        HANDLER_PARAM_PAUSED,
+        HANDLER_PARAM_STOPPING,
+        HANDLER_PARAM_RUNNING_FROM_SYSTEM,
+        HANDLER_PARAM_PAUSED_FROM_SYSTEM,
+    };
 };
 
 // RendererStreamListener --> sptr | RendererInClientInner --> shared_ptr
@@ -419,6 +473,62 @@ void RendererInClientInner::AudioServerDied(pid_t pid)
     gServerProxy_ = nullptr;
 }
 
+void RendererInClientInner::OnHandle(uint32_t code, int64_t data)
+{
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}d, data: %{public}llu", code, data);
+    switch (code) {
+        case STATE_CHANGE_EVENT:
+            HandleStateChangeEvent(data);
+            break;
+        case RENDERER_MARK_REACHED_EVENT:
+            HandleRenderMarkReachedEvent(data);
+            break;
+        case RENDERER_PERIOD_REACHED_EVENT:
+            HandleRenderPeriodReachedEvent(data);
+            break;
+        default:
+            break;
+    }
+}
+
+void RendererInClientInner::HandleStateChangeEvent(int64_t data)
+{
+    State state = INVALID;
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    ParamsToStateCmdType(data, state, cmdType);
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        lock.unlock();
+        streamCb->OnStateChange(state, cmdType); // waiting for review: put is in eventrunner for async call
+    }
+}
+
+void RendererInClientInner::HandleRenderMarkReachedEvent(int64_t rendererMarkPosition)
+{
+    AUDIO_DEBUG_LOG("Start HandleRenderMarkReachedEvent");
+    std::unique_lock<std::mutex> lock(markReachMutex_); // 这里是否需要提前解锁
+    if (rendererPositionCallback_) {
+        rendererPositionCallback_->OnMarkReached(rendererMarkPosition);
+    }
+}
+
+void RendererInClientInner::HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber)
+{
+    AUDIO_DEBUG_LOG("Start HandleRenderPeriodReachedEvent");
+    std::unique_lock<std::mutex> lock(periodReachMutex_); // 这里是否需要提前解锁
+    if (rendererPeriodPositionCallback_) {
+        rendererPeriodPositionCallback_->OnPeriodReached(rendererPeriodNumber);
+    }
+}
+
+void RendererInClientInner::InitCallbackHandler()
+{
+    if (callbackHandler_ == nullptr) {
+        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
+    }
+}
+
 // call this without lock, we should be able to call deinit in any case.
 int32_t RendererInClientInner::DeinitIpcStream()
 {
@@ -527,6 +637,7 @@ int32_t RendererInClientInner::InitIpcStream()
     ret = ipcStream_->GetAudioSessionID(sessionId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
 
+    InitCallbackHandler();
     return SUCCESS;
 }
 
@@ -637,15 +748,18 @@ int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStre
 
     std::unique_lock<std::mutex> lock(streamCbMutex_);
     streamCallback_ = callback;
+    lock.unlock();
 
     if (state_ != PREPARED) {
         return SUCCESS;
     }
-    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
-    if (streamCb != nullptr) {
-        lock.unlock();
-        streamCb->OnStateChange(PREPARED); // in plan: put is in eventrunner for async call
-    }
+
+    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, PREPARED);
+    // std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    // if (streamCb != nullptr) {
+    //     lock.unlock();
+    //     streamCb->OnStateChange(PREPARED); // in plan: put is in eventrunner for async call
+    // }
     return SUCCESS;
 }
 
@@ -823,8 +937,10 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     }
     state_ = RUNNING;
     statusLock.unlock();
-    // in plan: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
-    (void)cmdType;
+    // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    int64_t param = -1;
+    StateCmdTypeToParams(param, state_, cmdType);
+    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, param);
 
     AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
@@ -866,8 +982,10 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     state_ = PAUSED;
     statusLock.unlock();
 
-    // in plan: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
-    (void)cmdType;
+    // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    int64_t param = -1;
+    StateCmdTypeToParams(param, state_, cmdType);
+    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, param);
 
     AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("PAUSED");
@@ -910,7 +1028,8 @@ bool RendererInClientInner::StopAudioStream()
     state_ = STOPPED;
     statusLock.unlock();
 
-    // in plan: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
     AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
@@ -921,6 +1040,14 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     // lock_guard<mutex> lock(statusMutex_) // no lock, call release in any case, include blocked case.
+    {
+        std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+        if (releaseRunner) {
+            AUDIO_INFO_LOG("runner remove");
+            callbackHandler_->ReleaseEventRunner();
+            runnerReleased_ = true;
+        }
+    }
     return false;
 }
 
@@ -1076,9 +1203,128 @@ int32_t RendererInClientInner::WritCacheData()
     int32_t ret = clientBuffer_->GetWriteBuffer(clientBuffer_->GetCurWriteFrame(), desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
     OptResult result = ringCache_->Dequeue({desc.buffer, desc.bufLength});
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d",
-                             result.ret);
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
     ipcStream_->UpdatePosition(); // notiify server update position
+    HandleRendererPositionChanges(desc.bufLength);
+    return SUCCESS;
+}
+
+void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
+{
+    totalBytesWritten_ += bytesWritten;
+    if (sizePerFrameInByte_ == 0) {
+        AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
+        return;
+    }
+    int64_t writtenFrameNumber = totalBytesWritten_ / sizePerFrameInByte_;
+    AUDIO_DEBUG_LOG("frame size: %{public}d", sizePerFrameInByte_);
+
+    {
+        std::lock_guard<std::mutex> lock(markReachMutex_);
+        if (!rendererMarkReached_) {
+            AUDIO_DEBUG_LOG("Frame mark position: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
+                static_cast<int64_t>(rendererMarkPosition_), static_cast<int64_t>(writtenFrameNumber));
+            if (writtenFrameNumber >= rendererMarkPosition_) {
+                AUDIO_DEBUG_LOG("RendererInClient OnMarkReached");
+                SendRenderMarkReachedEvent(rendererMarkPosition_);
+                rendererMarkReached_ = true;
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(periodReachMutex_);
+        rendererPeriodWritten_ += (totalBytesWritten_ / sizePerFrameInByte_);
+        AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
+            static_cast<int64_t>(rendererPeriodSize_), static_cast<int64_t>(rendererPeriodWritten_));
+        if (rendererPeriodWritten_ >= rendererPeriodSize_) {
+            rendererPeriodWritten_ %= rendererPeriodSize_;
+            AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRId64,
+                static_cast<int64_t>(rendererPeriodWritten_));
+            SendRenderPeriodReachedEvent(rendererPeriodSize_);
+        }
+    }
+}
+
+// OnRenderMarkReach by eventHandler
+void RendererInClientInner::SendRenderMarkReachedEvent(int64_t rendererMarkPosition_)
+{
+    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("SendRenderMarkReachedEvent runner released");
+        return;
+    }
+    callbackHandler_->SendCallbackEvent(RENDERER_MARK_REACHED_EVENT, rendererMarkPosition_);
+}
+
+// OnRenderPeriodReach by eventHandler
+void RendererInClientInner::SendRenderPeriodReachedEvent(int64_t rendererPeriodSize_)
+{
+    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("SendRenderPeriodReachedEvent runner released");
+        return;
+    }
+    callbackHandler_->SendCallbackEvent(RENDERER_PERIOD_REACHED_EVENT, rendererPeriodSize_);
+}
+
+int32_t RendererInClientInner::ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType)
+{
+    cmdType = CMD_FROM_CLIENT;
+    switch (params) {
+        case HANDLER_PARAM_NEW:
+            state = NEW;
+            break;
+        case HANDLER_PARAM_PREPARED:
+            state = PREPARED;
+            break;
+        case HANDLER_PARAM_RUNNING://
+            state = RUNNING;
+            break;
+        case HANDLER_PARAM_STOPPED:
+            state = STOPPED;
+            break;
+        case HANDLER_PARAM_RELEASED:
+            state = RELEASED;
+            break;
+        case HANDLER_PARAM_PAUSED:
+            state = PAUSED;
+            break;
+        case HANDLER_PARAM_STOPPING:
+            state = STOPPING;
+            break;
+        case HANDLER_PARAM_RUNNING_FROM_SYSTEM:
+            state = RUNNING;
+            cmdType = CMD_FROM_SYSTEM;
+            break;
+        case HANDLER_PARAM_PAUSED_FROM_SYSTEM:
+            state = PAUSED;
+            cmdType = CMD_FROM_SYSTEM;
+            break;
+        default:
+            state = INVALID;
+            break;
+    }
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType)
+{
+    if (cmdType == CMD_FROM_CLIENT) {
+        params = static_cast<int64_t>(state);
+        return SUCCESS;
+    }
+    switch (state) {
+        case RUNNING:
+            params = HANDLER_PARAM_RUNNING_FROM_SYSTEM;
+            break;
+        case PAUSED:
+            params = HANDLER_PARAM_PAUSED_FROM_SYSTEM;
+            break;
+        default:
+            params = HANDLER_PARAM_INVALID;
+            break;
+    }
     return SUCCESS;
 }
 
@@ -1098,23 +1344,43 @@ uint32_t RendererInClientInner::GetUnderflowCount()
 void RendererInClientInner::SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
        
 {
-    // in plan
+    // waiting for review
+    std::lock_guard<std::mutex> lock(markReachMutex_);
+    CHECK_AND_RETURN_LOG(callback != nullptr, "RendererPositionCallback is nullptr");
+    rendererPositionCallback_ = callback;
+    rendererMarkPosition_ = markPosition;
+    rendererMarkReached_ = false;
 }
 
 void RendererInClientInner::UnsetRendererPositionCallback()
 {
-    // in plan
+    // waiting for review
+    std::lock_guard<std::mutex> lock(markReachMutex_);
+    rendererPositionCallback_ = nullptr;
+    rendererMarkPosition_ = 0;
+    rendererMarkReached_ = false;
 }
 
 void RendererInClientInner::SetRendererPeriodPositionCallback(int64_t markPosition,
         const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
-    // in plan
+    // waiting for review
+    std::lock_guard<std::mutex> lock(periodReachMutex_);
+    CHECK_AND_RETURN_LOG(callback != nullptr, "RendererPeriodPositionCallback is nullptr");
+    rendererPeriodPositionCallback_ = callback;
+    rendererPeriodSize_ = 0;
+    totalBytesWritten_ = 0;
+    rendererPeriodWritten_ = 0;
 }
 
 void RendererInClientInner::UnsetRendererPeriodPositionCallback()
 {
-    // in plan
+    // waiting for review
+    std::lock_guard<std::mutex> lock(periodReachMutex_);
+    rendererPeriodPositionCallback_ = nullptr;
+    rendererPeriodSize_ = 0;
+    totalBytesWritten_ = 0;
+    rendererPeriodWritten_ = 0;
 }
 
 void RendererInClientInner::SetCapturerPositionCallback(int64_t markPosition, const std::shared_ptr<CapturerPositionCallback> &callback)

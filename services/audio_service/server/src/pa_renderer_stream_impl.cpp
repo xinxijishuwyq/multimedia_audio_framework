@@ -29,7 +29,7 @@ static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t ret
             return retVal;
         }
     } while (false);
-    return 0;
+    return SUCCESS;
 }
 
 PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop)
@@ -66,7 +66,7 @@ inline uint32_t PcmFormatToBits(uint8_t format)
 
 void PaRendererStreamImpl::InitParams()
 {
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return;
     }
 
@@ -106,20 +106,20 @@ void PaRendererStreamImpl::InitParams()
 int32_t PaRendererStreamImpl::Start()
 {
     AUDIO_DEBUG_LOG("Enter PaRendererStreamImpl::Start");
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     pa_operation *operation = nullptr;
 
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        return PA_ADAPTER_START_STREAM_ERR;
+        return ERR_OPERATION_FAILED;
     }
 
     streamCmdStatus_ = 0;
     operation = pa_stream_cork(paStream_, 0, PAStreamStartSuccessCb, (void *)this);
     pa_operation_unref(operation);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::Pause()
@@ -131,50 +131,50 @@ int32_t PaRendererStreamImpl::Pause()
 
 int32_t PaRendererStreamImpl::CorkStream()
 {
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
 
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Stop Failed");
-        return PA_ADAPTER_ERR;
+        return ERR_OPERATION_FAILED;
     }
     operation = pa_stream_cork(paStream_, 1, PAStreamCorkSuccessCb, (void *)this);
     pa_operation_unref(operation);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Flush");
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
 
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Flush Failed");
-        return PA_ADAPTER_ERR;
+        return ERR_OPERATION_FAILED;
     }
 
     streamFlushStatus_ = 0;
     operation = pa_stream_flush(paStream_, PAStreamFlushSuccessCb, (void *)this);
     if (operation == nullptr) {
         AUDIO_ERR_LOG("Stream Flush Operation Failed");
-        return PA_ADAPTER_ERR;
+        return ERR_OPERATION_FAILED;
     }
     pa_operation_unref(operation);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::Drain()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Drain");
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     isDrain_ = true;
 
@@ -182,12 +182,12 @@ int32_t PaRendererStreamImpl::Drain()
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream drain failed, state is not ready");
-        return PA_ADAPTER_ERR;
+        return ERR_OPERATION_FAILED;
     }
     streamDrainStatus_ = 0;
     operation = pa_stream_drain(paStream_, PAStreamDrainSuccessCb, (void *)this);
     pa_operation_unref(operation);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::Stop()
@@ -195,8 +195,8 @@ int32_t PaRendererStreamImpl::Stop()
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Stop");
     state_ = STOPPING;
 
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
 
     streamDrainStatus_ = 0;
@@ -204,11 +204,11 @@ int32_t PaRendererStreamImpl::Stop()
     pa_operation *operation = pa_stream_drain(paStream_, PAStreamDrainInStopCb, (void *)this);
     if (operation == nullptr) {
         AUDIO_ERR_LOG("pa_stream_drain operation is null");
-        return PA_ADAPTER_ERR;
+        return ERR_OPERATION_FAILED;
     }
 
     pa_operation_unref(operation);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::Release()
@@ -229,23 +229,20 @@ int32_t PaRendererStreamImpl::Release()
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
     }
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::GetStreamFramesWritten(uint64_t &framesWritten)
 {
-    if (byteSizePerFrame_ == 0) {
-        AUDIO_ERR_LOG("Error frame size");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame_ != 0, ERR_ILLEGAL_STATE, "Error frame size");
     framesWritten = totalBytesWritten_ / byteSizePerFrame_;
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     pa_threaded_mainloop_lock(mainloop_);
 
@@ -263,19 +260,19 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
     if (info == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
         pa_threaded_mainloop_unlock(mainloop_);
-        return -1;
+        return ERR_OPERATION_FAILED;
     }
 
     timeStamp = pa_bytes_to_usec(info->write_index, sampleSpec_);
     pa_threaded_mainloop_unlock(mainloop_);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     // LYH in plan, 增加dataMutex的锁
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     pa_usec_t paLatency {0};
     pa_usec_t cacheLatency {0};
@@ -294,7 +291,7 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
             if (negative) {
                 latency = 0;
                 pa_threaded_mainloop_unlock(mainloop_);
-                return -1;
+                return ERR_OPERATION_FAILED;
             }
             break;
         }
@@ -317,14 +314,14 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}"
         PRIu64 ", cache latency: %{public}" PRIu64, latency, paLatency, cacheLatency);
 
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::SetRate(int32_t rate)
 {
     AUDIO_INFO_LOG("SetRate in");
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     uint32_t currentRate = sampleSpec_->rate;
     switch (rate) {
@@ -337,7 +334,7 @@ int32_t PaRendererStreamImpl::SetRate(int32_t rate)
             currentRate /= DOUBLE_VALUE;
             break;
         default:
-            return -1;
+            return ERR_INVALID_PARAM;
     }
     renderRate_ = rate;
 
@@ -349,15 +346,15 @@ int32_t PaRendererStreamImpl::SetRate(int32_t rate)
         AUDIO_ERR_LOG("SetRate: operation is nullptr");
     }
     pa_threaded_mainloop_unlock(mainloop_);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::SetLowPowerVolume(float powerVolume)
 {
     AUDIO_INFO_LOG("SetLowPowerVolume: %{public}f", powerVolume);
 
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
 
     /* Validate and return INVALID_PARAMS error */
@@ -373,7 +370,7 @@ int32_t PaRendererStreamImpl::SetLowPowerVolume(float powerVolume)
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
         pa_threaded_mainloop_unlock(mainloop_);
-        return -1;
+        return ERR_OPERATION_FAILED;
     }
 
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(powerVolumeFactor_).c_str());
@@ -385,20 +382,20 @@ int32_t PaRendererStreamImpl::SetLowPowerVolume(float powerVolume)
     // In plan: Call reset volume
     pa_threaded_mainloop_unlock(mainloop_);
 
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::GetLowPowerVolume(float &powerVolume)
 {
     powerVolume = powerVolumeFactor_;
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
     AUDIO_INFO_LOG("SetAudioEffectMode: %{public}d", effectMode);
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     pa_threaded_mainloop_lock(mainloop_);
 
@@ -409,7 +406,7 @@ int32_t PaRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
         pa_threaded_mainloop_unlock(mainloop_);
-        return -1;
+        return ERR_OPERATION_FAILED;
     }
 
     pa_proplist_sets(propList, "scene.mode", effectModeName.c_str());
@@ -420,7 +417,7 @@ int32_t PaRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 
     pa_threaded_mainloop_unlock(mainloop_);
 
-    return 0;
+    return SUCCESS;
 }
 
 const std::string PaRendererStreamImpl::GetEffectModeName(int32_t effectMode)
@@ -441,20 +438,20 @@ const std::string PaRendererStreamImpl::GetEffectModeName(int32_t effectMode)
 int32_t PaRendererStreamImpl::GetAudioEffectMode(int32_t &effectMode)
 {
     effectMode = effectMode_;
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::SetPrivacyType(int32_t privacyType)
 {
     AUDIO_DEBUG_LOG("SetInnerCapturerState: %{public}d", privacyType);
     privacyType_ = privacyType;
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
 {
     privacyType_ = privacyType;
-    return 0;
+    return SUCCESS;
 }
 
 
@@ -487,16 +484,13 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     }
     totalBytesWritten_ += bufferDesc.bufLength;
     pa_threaded_mainloop_unlock(mainloop_);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
 {
     AUDIO_INFO_LOG("PAStreamWriteCb, length: %{public}zu, pa_stream_writeable_size: %{public}zu", length, pa_stream_writable_size(stream));
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamWriteCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamWriteCb: userdata is null");
 
     auto streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     if (streamImpl->abortFlag_ != 0) {
@@ -514,10 +508,7 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
 
 void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 {
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamMovedCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamMovedCb: userdata is null");
 
     // get stream informations.
     uint32_t deviceIndex = pa_stream_get_device_index(stream); // pa_context_get_sink_info_by_index
@@ -531,10 +522,7 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 
 void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 {
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamUnderFlowCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamUnderFlowCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->underFlowCount_++;
@@ -548,19 +536,13 @@ void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata
 
 void PaRendererStreamImpl::PAStreamSetStartedCb(pa_stream *stream, void *userdata)
 {
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamSetStartedCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamSetStartedCb: userdata is null");
     AUDIO_WARNING_LOG("PAStreamSetStartedCb");
 }
 
 void PaRendererStreamImpl::PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamStartSuccessCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamStartSuccessCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->state_ = RUNNING;
@@ -573,10 +555,7 @@ void PaRendererStreamImpl::PAStreamStartSuccessCb(pa_stream *stream, int32_t suc
 
 void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamPauseSuccessCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamPauseSuccessCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->state_ = PAUSED;
@@ -589,10 +568,8 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
 
 void PaRendererStreamImpl::PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamFlushSuccessCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamFlushSuccessCb: userdata is null");
+
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
@@ -603,10 +580,7 @@ void PaRendererStreamImpl::PAStreamFlushSuccessCb(pa_stream *stream, int32_t suc
 
 void PaRendererStreamImpl::PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamDrainSuccessCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamDrainSuccessCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
@@ -619,12 +593,9 @@ void PaRendererStreamImpl::PAStreamDrainSuccessCb(pa_stream *stream, int32_t suc
 
 void PaRendererStreamImpl::PAStreamDrainInStopCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamDrainInStopCb: userdata is null");
-        return;
-    }
-    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamDrainInStopCb: userdata is null");
 
+    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     pa_operation *operation = pa_stream_cork(streamImpl->paStream_, 1,
         PaRendererStreamImpl::PAStreamAsyncStopSuccessCb, userdata);
 
@@ -635,10 +606,7 @@ void PaRendererStreamImpl::PAStreamDrainInStopCb(pa_stream *stream, int32_t succ
 void PaRendererStreamImpl::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     AUDIO_DEBUG_LOG("PAStreamAsyncStopSuccessCb in");
-    if (!userdata) {
-        AUDIO_ERR_LOG("PAStreamAsyncStopSuccessCb: userdata is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamAsyncStopSuccessCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->state_ = STOPPED;
@@ -654,7 +622,7 @@ void PaRendererStreamImpl::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t
 int32_t PaRendererStreamImpl::GetMinimumBufferSize(size_t &minBufferSize) const
 {
     minBufferSize = minBufferSize_;
-    return 0;
+    return SUCCESS;
 }
 
 void PaRendererStreamImpl::GetByteSizePerFrame(size_t &byteSizePerFrame) const

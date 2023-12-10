@@ -147,6 +147,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_stream_manager.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
+    "client/src/callback_handler.cpp",
     "client/src/capturer_in_client.cpp",
     "client/src/fast_audio_stream.cpp",
     "client/src/i_audio_stream.cpp",

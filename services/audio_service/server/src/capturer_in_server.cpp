@@ -183,7 +183,7 @@ void CapturerInServer::ReadData(size_t length)
         int32_t ret = audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer);
         if (ret < 0) {
             callback->OnReadEvent();
-            return ;
+            return;
         }
         memcpy_s(dstBuffer.buffer, totalSizeInFrame_, srcBuffer.buffer, totalSizeInFrame_);
 
@@ -202,24 +202,24 @@ int32_t CapturerInServer::OnReadData(size_t length)
     std::shared_ptr<CapturerListener> callback = testCallback_.lock();
     if (callback == nullptr) {
         AUDIO_ERR_LOG("Callback from test is nullptr");
-        return -1;
+        return ERR_UNKNOWN;
     }
 
     ReadData(length);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::UpdateReadIndex()
 {
     AUDIO_INFO_LOG("UpdateReadIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d",
         audioServerBuffer_->GetAvailableDataFrames(), needStart);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
     buffer = audioServerBuffer_;
-    return 0;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
@@ -239,18 +239,13 @@ int32_t CapturerInServer::Start()
 
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
         AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
     int ret = stream_->Start();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Start stream failed, reason: %{public}d", ret);
-        IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::Pause()
@@ -258,17 +253,12 @@ int32_t CapturerInServer::Pause()
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Pause stream failed, reason: %{public}d", ret);
-        IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
-    return PA_ADAPTER_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::Flush()
@@ -280,7 +270,7 @@ int32_t CapturerInServer::Flush()
         status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
     } else {
         AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
 
     // Flush buffer of audio server
@@ -291,7 +281,7 @@ int32_t CapturerInServer::Flush()
         BufferDesc bufferDesc = {nullptr, 0, 0};
         int32_t readResult = audioServerBuffer_->GetReadbuffer(readFrame, bufferDesc);
         if (readResult != 0) {
-            return -1;
+            return ERR_OPERATION_FAILED;
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
         readFrame += spanSizeInFrame_;
@@ -300,18 +290,13 @@ int32_t CapturerInServer::Flush()
     }
 
     int ret = stream_->Flush();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Flush stream failed, reason: %{public}d", ret);
-        IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
-    return PA_ADAPTER_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::DrainAudioBuffer()
 {
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::Stop()
@@ -319,17 +304,12 @@ int32_t CapturerInServer::Stop()
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
         AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;
     int ret = stream_->Stop();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Stop stream failed, reason: %{public}d", ret);
-        IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
-    return PA_ADAPTER_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::Release()
@@ -344,14 +324,14 @@ int32_t CapturerInServer::Release()
         status_ = I_STATUS_INVALID;
         return ret;
     }
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_WARNING_LOG("Current status is stopped");
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     stream_->GetStreamFramesRead(framePos);
     stream_->GetCurrentTimeStamp(timeStamp);
@@ -359,7 +339,7 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
         resetTime_ = false;
         resetTimestamp_ = timeStamp;
     }
-    return 0;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::GetLatency(uint64_t &latency)
@@ -379,25 +359,25 @@ int32_t CapturerInServer::ReadOneFrame()
     size_t minBufferSize = 0;
     if (stream_->GetMinimumBufferSize(minBufferSize) < 0) {
         AUDIO_ERR_LOG("Get min buffer size err");
-        return -1;
+        return ERR_OPERATION_FAILED;
     }
     BufferDesc bufferDesc = stream_->DequeueBuffer(minBufferSize);
     stream_->EnqueueBuffer(bufferDesc);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::AbortOneCallback()
 {
     std::lock_guard<std::mutex> lock(statusLock_);
     stream_->AbortCallback(1);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::AbortAllCallback()
 {
     std::lock_guard<std::mutex> lock(statusLock_);
     stream_->AbortCallback(5);
-    return 0;
+    return SUCCESS;
 }
 
 std::shared_ptr<OHAudioBuffer> CapturerInServer::GetOHSharedBuffer()

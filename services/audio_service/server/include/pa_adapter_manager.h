@@ -79,18 +79,6 @@ private:
     static const uint8_t CHANNEL7_IDX = 6;
     static const uint8_t CHANNEL8_IDX = 7;
 
-    // Error code used
-    static const int32_t PA_ADAPTER_SUCCESS = 0;
-    static const int32_t PA_ADAPTER_ERR = -1;
-    static const int32_t PA_ADAPTER_INVALID_PARAMS_ERR = -2;
-    static const int32_t PA_ADAPTER_INIT_ERR = -3;
-    static const int32_t PA_ADAPTER_CREATE_STREAM_ERR = -4;
-    static const int32_t PA_ADAPTER_START_STREAM_ERR = -5;
-    static const int32_t PA_ADAPTER_READ_STREAM_ERR = -6;
-    static const int32_t PA_ADAPTER_WRITE_STREAM_ERR = -7;
-    static const int32_t PA_ADAPTER_PA_ERR = -8;
-    static const int32_t PA_ADAPTER_PERMISSION_ERR = -9;
-
     int32_t ResetPaContext();
     int32_t InitPaContext();
     int32_t HandleMainLoopStart();

@@ -26,7 +26,7 @@ static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t ret
             return retVal;
         }
     } while (false);
-    return 0;
+    return SUCCESS;
 }
 
 PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop)
@@ -63,7 +63,7 @@ inline uint32_t PcmFormatToBits(uint8_t format)
 
 void PaCapturerStreamImpl::InitParams()
 {
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
+    if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return;
     }
 
@@ -96,19 +96,19 @@ void PaCapturerStreamImpl::InitParams()
 int32_t PaCapturerStreamImpl::Start()
 {
     AUDIO_DEBUG_LOG("Enter PaCapturerStreamImpl::Start");
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        return PA_ADAPTER_START_STREAM_ERR;
+        return ERR_ILLEGAL_STATE;
     }
 
     streamCmdStatus_ = 0;
     operation = pa_stream_cork(paStream_, 0, PAStreamStartSuccessCb, (void *)this);
     pa_operation_unref(operation);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::Pause()
@@ -120,35 +120,35 @@ int32_t PaCapturerStreamImpl::Pause()
 
 int32_t PaCapturerStreamImpl::CorkStream()
 {
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     pa_operation *operation = nullptr;
 
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Stop Failed");
-        return PA_ADAPTER_ERR;
+        return ERR_ILLEGAL_STATE;
     }
     operation = pa_stream_cork(paStream_, 1, PAStreamCorkSuccessCb, (void *)this);
     pa_operation_unref(operation);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::GetStreamFramesRead(uint64_t &framesRead)
 {
     if (byteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("Error frame size");
-        return -1;
+        return ERR_OPERATION_FAILED;
     }
     framesRead = totalBytesRead_ / byteSizePerFrame_;
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     pa_threaded_mainloop_lock(mainloop_);
 
@@ -166,13 +166,13 @@ int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
     if (info == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
         pa_threaded_mainloop_unlock(mainloop_);
-        return -1;
+        return ERR_OPERATION_FAILED;
     }
 
     if (pa_stream_get_time(paStream_, &timeStamp)) {
         AUDIO_ERR_LOG("GetCurrentTimeStamp failed for AUDIO_SERVICE_CLIENT_RECORD");
         pa_threaded_mainloop_unlock(mainloop_);
-        return -1;
+        return ERR_OPERATION_FAILED;
     }
     int32_t uid = static_cast<int32_t>(getuid());
 
@@ -182,14 +182,14 @@ int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
         timeStamp = pa_bytes_to_usec(totalBytesRead_, sampleSpec_);
     }
     pa_threaded_mainloop_unlock(mainloop_);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 {
     // LYH in plan, 增加dataMutex的锁
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
     pa_usec_t paLatency {0};
     pa_usec_t cacheLatency {0};
@@ -208,7 +208,7 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
             if (negative) {
                 latency = 0;
                 pa_threaded_mainloop_unlock(mainloop_);
-                return -1;
+                return ERR_OPERATION_FAILED;
             }
             break;
         }
@@ -224,30 +224,30 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
     // Total latency will be sum of audio read cache latency + PA latency
     latency = paLatency + cacheLatency;
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64, latency, paLatency);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Flush");
-    if (CheckReturnIfStreamInvalid(paStream_, PA_ADAPTER_PA_ERR) < 0) {
-        return PA_ADAPTER_PA_ERR;
+    if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
+        return ERR_ILLEGAL_STATE;
     }
 
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Flush Failed");
-        return PA_ADAPTER_ERR;
+        return ERR_ILLEGAL_STATE;
     }
     streamFlushStatus_ = 0;
     operation = pa_stream_flush(paStream_, PAStreamFlushSuccessCb, (void *)this);
     if (operation == nullptr) {
         AUDIO_ERR_LOG("Stream Flush Operation Failed");
-        return PA_ADAPTER_ERR;
+        return ERR_OPERATION_FAILED;
     }
     pa_operation_unref(operation);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::Stop()
@@ -275,7 +275,7 @@ int32_t PaCapturerStreamImpl::Release()
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
     }
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 void PaCapturerStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
@@ -304,7 +304,7 @@ int32_t PaCapturerStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     AUDIO_INFO_LOG("Capturer enqueue buffer");
     pa_stream_drop(paStream_);
     AUDIO_INFO_LOG("After enqueue capturere buffer, readable size is %{public}zu", pa_stream_readable_size(paStream_));
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::DropBuffer()
@@ -312,7 +312,7 @@ int32_t PaCapturerStreamImpl::DropBuffer()
     AUDIO_INFO_LOG("Capturer DropBuffer");
     pa_stream_drop(paStream_);
     AUDIO_INFO_LOG("After capturere DropBuffer, readable size is %{public}zu", pa_stream_readable_size(paStream_));
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
@@ -445,7 +445,7 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
 int32_t PaCapturerStreamImpl::GetMinimumBufferSize(size_t &minBufferSize) const
 {
     minBufferSize = minBufferSize_;
-    return 0;
+    return SUCCESS;
 }
 
 void PaCapturerStreamImpl::GetByteSizePerFrame(size_t &byteSizePerFrame) const

@@ -213,10 +213,9 @@ int32_t RendererInServer::OnWriteData(size_t length)
     }
     for (int32_t i = 0; i < length / totalSizeInFrame_; i++) {
         WriteData();
-
     }
     callback->CancelBufferFromBlock();
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::UpdateWriteIndex()
@@ -232,13 +231,13 @@ int32_t RendererInServer::UpdateWriteIndex()
         AUDIO_WARNING_LOG("After drain, start write data");
         WriteData();
     }
-    return 0;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
     buffer = audioServerBuffer_;
-    return 0;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
@@ -257,18 +256,13 @@ int32_t RendererInServer::Start()
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
         AUDIO_ERR_LOG("RendererInServer::Start failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
     int ret = stream_->Start();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Start stream failed, reason: %{public}d", ret);
-        IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::Pause()
@@ -276,17 +270,12 @@ int32_t RendererInServer::Pause()
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Pause stream failed, reason: %{public}d", ret);
-        IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
-    return PA_ADAPTER_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::Flush()
@@ -298,7 +287,7 @@ int32_t RendererInServer::Flush()
         status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
     } else {
         AUDIO_ERR_LOG("RendererInServer::Flush failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
 
     // Flush buffer of audio server
@@ -309,7 +298,7 @@ int32_t RendererInServer::Flush()
         BufferDesc bufferDesc = {nullptr, 0, 0};
         int32_t readResult = audioServerBuffer_->GetReadbuffer(readFrame, bufferDesc);
         if (readResult != 0) {
-            return -1;
+            return ERR_OPERATION_FAILED;
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
         readFrame += spanSizeInFrame_;
@@ -318,30 +307,25 @@ int32_t RendererInServer::Flush()
     }
 
     int ret = stream_->Flush();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Flush stream failed, reason: %{public}d", ret);
-        IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
-    return PA_ADAPTER_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::DrainAudioBuffer()
 {
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::SendOneFrame()
 {
     OnWriteData(100000);
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::GetInfo()
 {
     IStreamManager::GetPlaybackManager().GetInfo();
-    return 0;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::Drain()
@@ -349,19 +333,14 @@ int32_t RendererInServer::Drain()
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("RendererInServer::Drain failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_DRAINING;
     AUDIO_INFO_LOG("Start drain");
     DrainAudioBuffer();
     int ret = stream_->Drain();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Drain stream failed, reason: %{public}d", ret);
-        IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
-    return PA_ADAPTER_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::Stop()
@@ -369,17 +348,12 @@ int32_t RendererInServer::Stop()
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
         AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_);
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;
     int ret = stream_->Stop();
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Stop stream failed, reason: %{public}d", ret);
-        IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);
-        status_ = I_STATUS_INVALID;
-        return ret;
-    }
-    return PA_ADAPTER_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::Release()
@@ -395,14 +369,14 @@ int32_t RendererInServer::Release()
         return ret;
     }
 
-    return PA_ADAPTER_SUCCESS;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_WARNING_LOG("Current status is stopped");
-        return -1;
+        return ERR_ILLEGAL_STATE;
     }
     stream_->GetStreamFramesWritten(framePos);
     stream_->GetCurrentTimeStamp(timeStamp);
@@ -410,7 +384,7 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
         resetTime_ = false;
         resetTimestamp_ = timeStamp;
     }
-    return 0;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::GetLatency(uint64_t &latency)
@@ -464,25 +438,25 @@ int32_t RendererInServer::WriteOneFrame()
     size_t minBufferSize = 0;
     if (stream_->GetMinimumBufferSize(minBufferSize) < 0) {
         AUDIO_ERR_LOG("Get min buffer size err");
-        return -1;
+        return ERR_OPERATION_FAILED;
     }
     BufferDesc bufferDesc = stream_->DequeueBuffer(minBufferSize);
     stream_->EnqueueBuffer(bufferDesc);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::AbortOneCallback()
 {
     std::lock_guard<std::mutex> lock(statusLock_);
     stream_->AbortCallback(1);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::AbortAllCallback()
 {
     std::lock_guard<std::mutex> lock(statusLock_);
     stream_->AbortCallback(5);
-    return 0;
+    return SUCCESS;
 }
 
 std::shared_ptr<OHAudioBuffer> RendererInServer::GetOHSharedBuffer()

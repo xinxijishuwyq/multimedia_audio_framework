@@ -21,18 +21,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-// Error code used
-static const int32_t PA_ADAPTER_SUCCESS = 0;
-static const int32_t PA_ADAPTER_ERR = -1;
-static const int32_t PA_ADAPTER_INVALID_PARAMS_ERR = -2;
-static const int32_t PA_ADAPTER_INIT_ERR = -3;
-static const int32_t PA_ADAPTER_CREATE_STREAM_ERR = -4;
-static const int32_t PA_ADAPTER_START_STREAM_ERR = -5;
-static const int32_t PA_ADAPTER_READ_STREAM_ERR = -6;
-static const int32_t PA_ADAPTER_WRITE_STREAM_ERR = -7;
-static const int32_t PA_ADAPTER_PA_ERR = -8;
-static const int32_t PA_ADAPTER_PERMISSION_ERR = -9;
-
 enum IOperation {
     OPERATION_INVALID = -1,
     OPERATION_STARTED,
