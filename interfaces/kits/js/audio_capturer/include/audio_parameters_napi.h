@@ -31,7 +31,18 @@ static const std::int32_t REFERENCE_CREATION_COUNT = 1;
 
 static const std::map<std::string, AudioChannel> audioChannelMap = {
     {"CHANNEL_1", MONO},
-    {"CHANNEL_2", STEREO}
+    {"CHANNEL_2", STEREO},
+    {"CHANNEL_3", CHANNEL_3},
+    {"CHANNEL_4", CHANNEL_4},
+    {"CHANNEL_5", CHANNEL_5},
+    {"CHANNEL_6", CHANNEL_6},
+    {"CHANNEL_7", CHANNEL_7},
+    {"CHANNEL_8", CHANNEL_8},
+    {"CHANNEL_9", CHANNEL_9},
+    {"CHANNEL_10", CHANNEL_10},
+    {"CHANNEL_12", CHANNEL_12},
+    {"CHANNEL_14", CHANNEL_14},
+    {"CHANNEL_16", CHANNEL_16},
 };
 
 static const std::map<std::string, AudioSamplingRate> samplingRateMap = {

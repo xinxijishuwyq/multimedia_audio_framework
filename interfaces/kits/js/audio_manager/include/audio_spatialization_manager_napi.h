@@ -56,12 +56,24 @@ private:
     static napi_value IsHeadTrackingSupported(napi_env env, napi_callback_info info);
     static napi_value IsHeadTrackingSupportedForDevice(napi_env env, napi_callback_info info);
     static napi_value UpdateSpatialDeviceState(napi_env env, napi_callback_info info);
+    static napi_value CreateAudioSpatialDeviceTypeObject(napi_env env);
+    static napi_status AddNamedProperty(napi_env env, napi_value object, const std::string name, int32_t enumValue);
 
     AudioSpatializationManager *audioSpatializationMngr_;
+    static napi_ref audioSpatialDeivceType_;
     std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> headTrackingEnabledChangeCallbackNapi_ = nullptr;
 
     napi_env env_;
+};
+
+static const std::map<std::string, AudioSpatialDeviceType> audioSpatialDeivceTypeMap = {
+    {"SPATIAL_DEVICE_TYPE_NONE", EARPHONE_TYPE_NONE },
+    {"SPATIAL_DEVICE_TYPE_IN_EAR_HEADPHONE", EARPHONE_TYPE_INEAR},
+    {"SPATIAL_DEVICE_TYPE_HALF_IN_EAR_HEADPHONE", EARPHONE_TYPE_HALF_INEAR},
+    {"SPATIAL_DEVICE_TYPE_OVER_EAR_HEADPHONE", EARPHONE_TYPE_HEADPHONE},
+    {"SPATIAL_DEVICE_TYPE_GLASSES", EARPHONE_TYPE_GLASSES},
+    {"SPATIAL_DEVICE_TYPE_OTHERS", EARPHONE_TYPE_OTHERS},
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -39,6 +39,12 @@ static const int32_t SPATIALIZATION_SERVICE_OK = 0;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 mutex g_adSpatializationProxyMutex;
 
+static bool IsAudioSpatialDeviceStateEqual(const AudioSpatialDeviceState &a, const AudioSpatialDeviceState &b)
+{
+    return ((a.address == b.address) && (a.isSpatializationSupported == b.isSpatializationSupported) &&
+        (a.isHeadTrackingSupported == b.isHeadTrackingSupported) && (a.spatialDeviceType == b.spatialDeviceType));
+}
+
 AudioSpatializationService::~AudioSpatializationService()
 {
     AUDIO_ERR_LOG("~AudioSpatializationService()");
@@ -251,14 +257,17 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::str
 
 int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
 {
-    std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
-    if (!addressToSpatialDeviceStateMap_.count(audioSpatialDeviceState.address)) {
-        addressToSpatialDeviceStateMap_.insert(std::make_pair(audioSpatialDeviceState.address,
-            audioSpatialDeviceState));
-            AudioSpatialDeviceState res = addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address];
-        return SPATIALIZATION_SERVICE_OK;
+    {
+        std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
+        if (addressToSpatialDeviceStateMap_.count(audioSpatialDeviceState.address) > 0 &&
+            IsAudioSpatialDeviceStateEqual(addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address],
+            audioSpatialDeviceState)) {
+            return SPATIALIZATION_SERVICE_OK;
+        }
+        addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address] = audioSpatialDeviceState;
     }
-    addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address] = audioSpatialDeviceState;
+
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (UpdateSpatializationStateReal() != 0) {
         return ERROR;
     }
