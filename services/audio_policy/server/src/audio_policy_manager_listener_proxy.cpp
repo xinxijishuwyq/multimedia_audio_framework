@@ -56,100 +56,6 @@ void AudioPolicyManagerListenerProxy::OnInterrupt(const InterruptEventInternal &
     }
 }
 
-void AudioPolicyManagerListenerProxy::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
-{
-    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerProxy: OnDeviceChange at listener proxy");
-
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
-
-    auto devices = deviceChangeAction.deviceDescriptors;
-    size_t size = deviceChangeAction.deviceDescriptors.size();
-
-    data.WriteInt32(deviceChangeAction.type);
-    data.WriteInt32(deviceChangeAction.flag);
-    data.WriteInt32(static_cast<int32_t>(size));
-
-    for (size_t i = 0; i < size; i++) {
-        devices[i]->Marshalling(data);
-    }
-
-    int error = Remote()->SendRequest(ON_DEVICE_CHANGED, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnDeviceChange failed, error: %{public}d", error);
-    }
-}
-
-void AudioPolicyManagerListenerProxy::WriteAudioFocusInfo(MessageParcel &data,
-    const std::pair<AudioInterrupt, AudioFocuState> &focusInfo)
-{
-    focusInfo.first.Marshalling(data);
-    data.WriteInt32(focusInfo.second);
-}
-
-void AudioPolicyManagerListenerProxy::OnAudioFocusInfoChange(
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
-{
-    AUDIO_DEBUG_LOG("OnAudioFocusInfoChange at listener proxy");
-
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
-
-    size_t size = focusInfoList.size();
-    data.WriteInt32(static_cast<int32_t>(size));
-    for (auto focusInfo : focusInfoList) {
-        WriteAudioFocusInfo(data, focusInfo);
-    }
-
-    int error = Remote()->SendRequest(ON_FOCUS_INFO_CHANGED, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnAudioFocusInfoChange failed, error: %{public}d", error);
-    }
-}
-
-void AudioPolicyManagerListenerProxy::OnAudioFocusRequested(const AudioInterrupt &requestFocus)
-{
-    AUDIO_DEBUG_LOG("OnAudioFocusRequested in listener proxy.");
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
-    requestFocus.Marshalling(data);
-    int error = Remote()->SendRequest(ON_FOCUS_REQUEST_CHANGED, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnAudioFocusRequested failed, error: %{public}d", error);
-    }
-}
-
-void AudioPolicyManagerListenerProxy::OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus)
-{
-    AUDIO_DEBUG_LOG("OnAudioFocusRequested in listener proxy.");
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
-        return;
-    }
-    abandonFocus.Marshalling(data);
-    int error = Remote()->SendRequest(ON_FOCUS_ABANDON_CHANGED, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OnAudioFocusAbandoned failed, error: %{public}d", error);
-    }
-}
 AudioPolicyManagerListenerCallback::AudioPolicyManagerListenerCallback(
     const sptr<IStandardAudioPolicyManagerListener> &listener) : listener_(listener)
 {
@@ -192,7 +98,7 @@ void AudioPolicyManagerListenerProxy::OnAvailableDeviceChange(const AudioDeviceU
     }
 
     int error = Remote()->SendRequest(ON_AVAILABLE_DEVICE_CAHNGE, data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnDeviceChange failed, error: %{public}d", error);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnAvailableDeviceChange failed, error: %{public}d", error);
 }
 } // namespace AudioStandard
 } // namespace OHOS

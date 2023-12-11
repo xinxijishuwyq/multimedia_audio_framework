@@ -28,20 +28,10 @@ public:
 
     int OnRemoteRequest(uint32_t code, MessageParcel &data,
                                 MessageParcel &reply, MessageOption &option) override;
-    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
-    void SetMicStateChangeCallback(const std::weak_ptr<AudioManagerMicStateChangeCallback> &callback);
-
-    void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type) override;
-    void SetPreferredOutputDeviceChangeCallback(
-        const std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
-    void SetPreferredInputDeviceChangeCallback(const std::weak_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
     void SetDistributedRoutingRoleCallback(const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback);
+
 private:
-    std::weak_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallback_;
-    std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> activeOutputDeviceChangeCallback_;
-    std::weak_ptr<AudioPreferredInputDeviceChangeCallback> activeInputDeviceChangeCallback_;
     std::weak_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_;
 };
 } // namespace AudioStandard

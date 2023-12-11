@@ -1052,55 +1052,6 @@ int32_t AudioPolicyProxy::ReconfigureAudioChannel(const uint32_t &count, DeviceT
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RegisterAudioRendererEventListener(const int32_t clientPid, const sptr<IRemoteObject> &object)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("RegisterAudioRendererEventListener: WriteInterfaceToken failed");
-        return ERROR;
-    }
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("RegisterAudioRendererEventListener Event object is null");
-        return ERR_NULL_OBJECT;
-    }
-
-    data.WriteInt32(clientPid);
-    data.WriteRemoteObject(object);
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_PLAYBACK_EVENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RegisterAudioRendererEventListener register playback event failed , error: %d", error);
-        return ERROR;
-    }
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::UnregisterAudioRendererEventListener(const int32_t clientPid)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("UnregisterAudioRendererEventListener WriteInterfaceToken failed");
-        return ERROR;
-    }
-
-    data.WriteInt32(clientPid);
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_PLAYBACK_EVENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UnregisterAudioRendererEventListener unregister playback event failed , error: %d", error);
-        return ERROR;
-    }
-
-    return reply.ReadInt32();
-}
-
 int32_t AudioPolicyProxy::GetAudioLatencyFromXml()
 {
     MessageParcel data;
@@ -1229,55 +1180,6 @@ uint32_t AudioPolicyProxy::GetSinkLatencyFromXml()
     }
 
     return reply.ReadUint32();
-}
-
-int32_t AudioPolicyProxy::RegisterAudioCapturerEventListener(const int32_t clientPid, const sptr<IRemoteObject> &object)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("RegisterAudioCapturerEventListener:: WriteInterfaceToken failed");
-        return ERROR;
-    }
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("RegisterAudioCapturerEventListener Event object is null");
-        return ERR_NULL_OBJECT;
-    }
-
-    data.WriteInt32(clientPid);
-    data.WriteRemoteObject(object);
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_RECORDING_EVENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RegisterAudioCapturerEventListener recording event failed , error: %d", error);
-        return ERROR;
-    }
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::UnregisterAudioCapturerEventListener(const int32_t clientPid)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy:: WriteInterfaceToken failed");
-        return ERROR;
-    }
-
-    data.WriteInt32(clientPid);
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_RECORDING_EVENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UnregisterAudioCapturerEventListener recording event failed , error: %d", error);
-        return ERROR;
-    }
-
-    return reply.ReadInt32();
 }
 
 int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -2276,6 +2178,31 @@ int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint3
         return ERROR;
     }
 
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClient object is null");
+        return ERR_NULL_OBJECT;
+    }
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
+        return ERROR;
+    }
     return reply.ReadInt32();
 }
 } // namespace AudioStandard

@@ -20,6 +20,7 @@
 #include "audio_policy_server.h"
 #include "audio_manager_listener_stub.h"
 #include "message_parcel.h"
+#include "audio_policy_client.h"
 
 using namespace std;
 
@@ -84,17 +85,9 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     bool mute = *reinterpret_cast<const bool *>(rawData);
     AudioPolicyServerPtr->SetMicrophoneMute(mute);
 
-    int32_t clientId = *reinterpret_cast<const int32_t *>(rawData);
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    AudioPolicyServerPtr->SetRingerModeCallback(clientId, object);
-    AudioPolicyServerPtr->UnsetRingerModeCallback(clientId);
-
-    DeviceFlag flag = *reinterpret_cast<const DeviceFlag *>(rawData);
-    AudioPolicyServerPtr->SetDeviceChangeCallback(clientId, flag, object);
-    AudioPolicyServerPtr->UnsetDeviceChangeCallback(clientId, flag);
-
     const sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
     CastType type = *reinterpret_cast<const CastType *>(rawData);
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
     AudioPolicyServerPtr->ConfigDistributedRoutingRole(deviceDescriptor, type);
     AudioPolicyServerPtr->SetDistributedRoutingRoleCallback(object);
     AudioPolicyServerPtr->UnsetDistributedRoutingRoleCallback();
@@ -142,9 +135,6 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     focusInfo.second = *reinterpret_cast<const AudioFocuState *>(rawData);
     focusInfoList.push_back(focusInfo);
     AudioPolicyServerPtr->GetAudioFocusInfoList(focusInfoList);
-
-    AudioPolicyServerPtr->RegisterFocusInfoChangeCallback(clientId, object);
-    AudioPolicyServerPtr->UnregisterFocusInfoChangeCallback(clientId);
 }
 
 void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
@@ -161,21 +151,23 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     data.RewindRead(0);
 
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    int32_t clientPid = *reinterpret_cast<const int32_t *>(rawData);
-    AudioPolicyServerPtr->SetVolumeKeyEventCallback(clientPid, object);
-    AudioPolicyServerPtr->UnsetVolumeKeyEventCallback(clientPid);
+    AudioPolicyServerPtr->RegisterPolicyCallbackClient(object);
 
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
     AudioPolicyServerPtr->OnSessionRemoved(sessionID);
 
-    AudioPolicyServerPtr->RegisterAudioRendererEventListener(clientPid, object);
-    AudioPolicyServerPtr->UnregisterAudioRendererEventListener(clientPid);
-    AudioPolicyServerPtr->RegisterAudioCapturerEventListener(clientPid, object);
-    AudioPolicyServerPtr->UnregisterAudioCapturerEventListener(clientPid);
-
     AudioPolicyServer::DeathRecipientId id =
         *reinterpret_cast<const AudioPolicyServer::DeathRecipientId *>(rawData);
     AudioPolicyServerPtr->RegisterClientDeathRecipient(object, id);
+}
+
+void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
+        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
     int pid = *reinterpret_cast<const int *>(rawData);
     AudioPolicyServerPtr->RegisteredTrackerClientDied(pid);
@@ -215,8 +207,8 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    sptr<AudioVolumeKeyEventCallbackStub> listener =
-        new(std::nothrow) AudioVolumeKeyEventCallbackStub();
+    sptr<AudioPolicyClientStub> listener =
+        static_cast<sptr<AudioPolicyClientStub>>(new(std::nothrow) AudioPolicyClientStubImpl());
     VolumeEvent volumeEvent = {};
     volumeEvent.volumeType =  *reinterpret_cast<const AudioStreamType *>(rawData);
     volumeEvent.volume = *reinterpret_cast<const int32_t *>(rawData);
@@ -226,6 +218,7 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     volumeEvent.networkId = id;
 
     MessageParcel data;
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT));
     data.WriteInt32(static_cast<int32_t>(volumeEvent.volumeType));
     data.WriteInt32(volumeEvent.volume);
     data.WriteBool(volumeEvent.updateUi);
@@ -233,7 +226,7 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     data.WriteString(volumeEvent.networkId);
     MessageParcel reply;
     MessageOption option;
-    listener->OnRemoteRequest(AudioVolumeKeyEventCallbackStub::ON_VOLUME_KEY_EVENT, data, reply, option);
+    listener->OnRemoteRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -246,6 +239,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioDeviceFuzzTest(data, size);
     OHOS::AudioStandard::AudioInterruptFuzzTest(data, size);
     OHOS::AudioStandard::AudioPolicyFuzzTest(data, size);
+    OHOS::AudioStandard::AudioPolicyOtherFuzzTest(data, size);
     OHOS::AudioStandard::AudioVolumeKeyCallbackStub(data, size);
     return 0;
 }

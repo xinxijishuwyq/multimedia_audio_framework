@@ -27,12 +27,8 @@ class IStandardAudioPolicyManagerListener : public IRemoteBroker {
 public:
     virtual ~IStandardAudioPolicyManagerListener() = default;
     virtual void OnInterrupt(const InterruptEventInternal &interruptEvent) = 0;
-    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
     virtual void OnAvailableDeviceChange(const AudioDeviceUsage usage,
         const DeviceChangeAction &deviceChangeAction) = 0;
-    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
-    virtual void OnAudioFocusRequested(const AudioInterrupt &requestFocus) = 0;
-    virtual void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
@@ -40,10 +36,6 @@ public:
     enum AudioPolicyManagerListenerMsg {
         ON_ERROR = 0,
         ON_INTERRUPT,
-        ON_DEVICE_CHANGED,
-        ON_FOCUS_INFO_CHANGED,
-        ON_FOCUS_REQUEST_CHANGED,
-        ON_FOCUS_ABANDON_CHANGED,
         ON_AVAILABLE_DEVICE_CAHNGE,
     };
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioManagerListener");

@@ -44,8 +44,6 @@ private:
     void SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply);
     void IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
-    void SetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetRingerModeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply);
@@ -56,13 +54,9 @@ private:
     void AbandonAudioFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply);
     void GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply);
-    void SetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetVolumeKeyEventCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetDevicesInternal(MessageParcel &data, MessageParcel &reply);
     void SetWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
     void CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply);
-    void SetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void CheckRecordingCreateInternal(MessageParcel &data, MessageParcel &reply);
     void SelectOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void GetSelectedDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
@@ -70,10 +64,6 @@ private:
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterAudioRendererEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterAudioCapturerEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
@@ -89,17 +79,10 @@ private:
     void GetSupportedTonesInternal(MessageParcel &data, MessageParcel &reply);
 #endif
     void IsAudioRendererLowLatencySupportedInternal(MessageParcel &data, MessageParcel &reply);
-    void SetMicStateChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
-    void SetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void SetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetPreferredOutputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnsetPreferredInputDeviceChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterFocusInfoChangeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
@@ -142,6 +125,7 @@ private:
     void SetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
+    void RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -163,8 +147,6 @@ private:
         &AudioPolicyManagerStub::SetMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal,
         &AudioPolicyManagerStub::IsMicrophoneMuteInternal,
-        &AudioPolicyManagerStub::SetRingerModeCallbackInternal,
-        &AudioPolicyManagerStub::UnsetRingerModeCallbackInternal,
         &AudioPolicyManagerStub::SetInterruptCallbackInternal,
         &AudioPolicyManagerStub::UnsetInterruptCallbackInternal,
         &AudioPolicyManagerStub::ActivateInterruptInternal,
@@ -175,13 +157,9 @@ private:
         &AudioPolicyManagerStub::AbandonAudioFocusInternal,
         &AudioPolicyManagerStub::GetStreamInFocusInternal,
         &AudioPolicyManagerStub::GetSessionInfoInFocusInternal,
-        &AudioPolicyManagerStub::SetVolumeKeyEventCallbackInternal,
-        &AudioPolicyManagerStub::UnsetVolumeKeyEventCallbackInternal,
         &AudioPolicyManagerStub::GetDevicesInternal,
         &AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal,
         &AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal,
-        &AudioPolicyManagerStub::SetDeviceChangeCallbackInternal,
-        &AudioPolicyManagerStub::UnsetDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::CheckRecordingCreateInternal,
         &AudioPolicyManagerStub::SelectOutputDeviceInternal,
         &AudioPolicyManagerStub::GetSelectedDeviceInfoInternal,
@@ -189,10 +167,6 @@ private:
         &AudioPolicyManagerStub::ReconfigureAudioChannelInternal,
         &AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal,
         &AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal,
-        &AudioPolicyManagerStub::RegisterAudioRendererEventListenerInternal,
-        &AudioPolicyManagerStub::UnregisterAudioRendererEventListenerInternal,
-        &AudioPolicyManagerStub::RegisterAudioCapturerEventListenerInternal,
-        &AudioPolicyManagerStub::UnregisterAudioCapturerEventListenerInternal,
         &AudioPolicyManagerStub::RegisterTrackerInternal,
         &AudioPolicyManagerStub::UpdateTrackerInternal,
         &AudioPolicyManagerStub::GetRendererChangeInfosInternal,
@@ -208,17 +182,10 @@ private:
         &AudioPolicyManagerStub::GetSupportedTonesInternal,
 #endif
         &AudioPolicyManagerStub::IsAudioRendererLowLatencySupportedInternal,
-        &AudioPolicyManagerStub::SetMicStateChangeCallbackInternal,
         &AudioPolicyManagerStub::CheckRecordingStateChangeInternal,
         &AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal,
         &AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal,
-        &AudioPolicyManagerStub::SetPreferredOutputDeviceChangeCallbackInternal,
-        &AudioPolicyManagerStub::SetPreferredInputDeviceChangeCallbackInternal,
-        &AudioPolicyManagerStub::UnsetPreferredOutputDeviceChangeCallbackInternal,
-        &AudioPolicyManagerStub::UnsetPreferredInputDeviceChangeCallbackInternal,
         &AudioPolicyManagerStub::GetAudioFocusInfoListInternal,
-        &AudioPolicyManagerStub::RegisterFocusInfoChangeCallbackInternal,
-        &AudioPolicyManagerStub::UnregisterFocusInfoChangeCallbackInternal,
         &AudioPolicyManagerStub::SetSystemSoundUriInternal,
         &AudioPolicyManagerStub::GetSystemSoundUriInternal,
         &AudioPolicyManagerStub::GetMinStreamVolumeInternal,
@@ -258,6 +225,7 @@ private:
         &AudioPolicyManagerStub::SetDistributedRoutingRoleCallbackInternal,
         &AudioPolicyManagerStub::UnsetDistributedRoutingRoleCallbackInternal,
         &AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal,
+        &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
     };
 };
 } // namespace AudioStandard

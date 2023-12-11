@@ -98,18 +98,6 @@ public:
 
     AudioScene GetAudioScene() override;
 
-    int32_t SetRingerModeCallback(const int32_t clientId,
-        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
-
-    int32_t UnsetRingerModeCallback(const int32_t clientId) override;
-
-    int32_t SetMicStateChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
-
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
-        const sptr<IRemoteObject>& object) override;
-
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag) override;
-
     int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) override;
@@ -126,11 +114,6 @@ public:
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
-    int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
-        const sptr<IRemoteObject> &object, API_VERSION api_v) override;
-
-    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid) override;
-
     AudioStreamType GetStreamInFocus() override;
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
@@ -146,14 +129,6 @@ public:
     int32_t GetAudioLatencyFromXml() override;
 
     uint32_t GetSinkLatencyFromXml() override;
-
-    int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object) override;
-
-    int32_t UnregisterAudioRendererEventListener(int32_t clientPid) override;
-
-    int32_t RegisterAudioCapturerEventListener(int32_t clientPid, const sptr<IRemoteObject> &object) override;
-
-    int32_t UnregisterAudioCapturerEventListener(int32_t clientPid) override;
 
     int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) override;
@@ -178,23 +153,10 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescriptors(
         AudioRendererInfo &rendererInfo) override;
 
-    int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId,
-        const sptr<IRemoteObject>& object) override;
-
-    int32_t UnsetPreferredOutputDeviceChangeCallback(const int32_t clientId) override;
-
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
 
-    int32_t SetPreferredInputDeviceChangeCallback(const sptr<IRemoteObject> &object) override;
-
-    int32_t UnsetPreferredInputDeviceChangeCallback() override;
-
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-
-    int32_t RegisterFocusInfoChangeCallback(const int32_t clientId, const sptr<IRemoteObject>& object) override;
-
-    int32_t UnregisterFocusInfoChangeCallback(const int32_t clientId) override;
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
 
@@ -269,6 +231,9 @@ public:
         const sptr<IRemoteObject> &object) override;
 
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
+
+    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

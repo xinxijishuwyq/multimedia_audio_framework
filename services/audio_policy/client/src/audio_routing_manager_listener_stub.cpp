@@ -39,35 +39,6 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
         return -1;
     }
     switch (code) {
-        case ON_MIC_STATE_UPDATED: {
-            MicStateChangeEvent micStateChangeEvent = {};
-
-            micStateChangeEvent.mute = data.ReadBool();
-            OnMicStateUpdated(micStateChangeEvent);
-
-            return AUDIO_OK;
-        }
-        case ON_ACTIVE_OUTPUT_DEVICE_UPDATED: {
-            std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-            int32_t size = data.ReadInt32();
-            AUDIO_INFO_LOG("Entered %{public}s ,desc size:%{public}d", __func__, size);
-            for (int32_t i = 0; i < size; i++) {
-                deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(data));
-            }
-            OnPreferredOutputDeviceUpdated(deviceInfo);
-
-            return AUDIO_OK;
-        }
-        case ON_ACTIVE_INPUT_DEVICE_UPDATED: {
-            std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-            int32_t size = data.ReadInt32();
-            for (int32_t i = 0; i < size; i++) {
-                deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(data));
-            }
-            OnPreferredInputDeviceUpdated(deviceInfo);
-
-            return AUDIO_OK;
-        }
         case ON_DISTRIBUTED_ROUTING_ROLE_CHANGE: {
             sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
             CastType type = static_cast<CastType>(data.ReadInt32());
@@ -79,53 +50,6 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
     }
-}
-
-void AudioRoutingManagerListenerStub::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
-{
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnMicStateChange start");
-    std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangedCallback = micStateChangeCallback_.lock();
-
-    if (micStateChangedCallback == nullptr) {
-        AUDIO_ERR_LOG("OnMicStateUpdated: micStateChangeCallback_ or micStateChangeEvent is nullptr");
-        return;
-    }
-
-    micStateChangedCallback->OnMicStateUpdated(micStateChangeEvent);
-}
-
-void AudioRoutingManagerListenerStub::SetMicStateChangeCallback(
-    const std::weak_ptr<AudioManagerMicStateChangeCallback> &cb)
-{
-    micStateChangeCallback_ = cb;
-}
-
-void AudioRoutingManagerListenerStub::OnPreferredOutputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
-{
-    std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> activeOutputDeviceChangeCallback =
-        activeOutputDeviceChangeCallback_.lock();
-
-    if (activeOutputDeviceChangeCallback == nullptr) {
-        AUDIO_ERR_LOG("OnPreferredOutputDeviceUpdated: activeOutputDeviceChangeCallback_ is nullptr");
-        return;
-    }
-
-    activeOutputDeviceChangeCallback->OnPreferredOutputDeviceUpdated(desc);
-}
-
-void AudioRoutingManagerListenerStub::OnPreferredInputDeviceUpdated(
-    const std::vector<sptr<AudioDeviceDescriptor>> &desc)
-{
-    std::shared_ptr<AudioPreferredInputDeviceChangeCallback> activeInputDeviceChangeCallback =
-        activeInputDeviceChangeCallback_.lock();
-
-    if (activeInputDeviceChangeCallback == nullptr) {
-        AUDIO_ERR_LOG("OnPreferredInputDeviceUpdated: activeInputDeviceChangeCallback_ is nullptr");
-        return;
-    }
-
-    activeInputDeviceChangeCallback->OnPreferredInputDeviceUpdated(desc);
 }
 
 void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
@@ -140,18 +64,6 @@ void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(const sptr<
     }
 
     audioDistributedRoutingRoleCallback->OnDistributedRoutingRoleChange(descriptor, type);
-}
-
-void AudioRoutingManagerListenerStub::SetPreferredOutputDeviceChangeCallback(
-    const std::weak_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
-{
-    activeOutputDeviceChangeCallback_ = cb;
-}
-
-void AudioRoutingManagerListenerStub::SetPreferredInputDeviceChangeCallback(
-    const std::weak_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
-{
-    activeInputDeviceChangeCallback_ = callback;
 }
 
 void AudioRoutingManagerListenerStub::SetDistributedRoutingRoleCallback(

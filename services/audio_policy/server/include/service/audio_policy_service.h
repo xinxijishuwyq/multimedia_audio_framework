@@ -26,6 +26,7 @@
 #include "audio_group_handle.h"
 #include "audio_info.h"
 #include "audio_manager_base.h"
+#include "audio_policy_client_proxy.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 #include "audio_router_center.h"
@@ -218,10 +219,9 @@ public:
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);
 
-    int32_t SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag, const sptr<IRemoteObject> &object,
-        bool hasBTPermission);
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
 
-    int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag);
+    void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
 
     int32_t SetPreferredOutputDeviceChangeCallback(const int32_t clientId, const sptr<IRemoteObject> &object,
         bool hasBTPermission);
@@ -260,8 +260,6 @@ public:
         bool hasBTPermission, bool hasSystemPermission);
 
     void RegisteredTrackerClientDied(pid_t uid);
-
-    void RegisteredStreamListenerClientDied(pid_t pid);
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
@@ -525,9 +523,6 @@ private:
         std::vector<sptr<AudioDeviceDescriptor>> &desc);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
- 
-    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
-        const std::vector<sptr<AudioDeviceDescriptor>>& desc);
 
     void GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, std::vector<int32_t> &streamTypes,
         bool doStop = false);
@@ -693,7 +688,6 @@ private:
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     mutable std::mutex a2dpDeviceMapMutex_;
-    std::mutex preferredInputMapMutex_;
     std::unordered_map<int32_t, std::pair<std::string, int32_t>> routerMap_;
     std::unordered_map<int32_t, std::pair<std::string, DeviceRole>> fastRouterMap_; // key:uid value:<netWorkId, Role>
     IAudioPolicyInterface& audioPolicyManager_;
@@ -714,9 +708,6 @@ private:
     std::string activeBTDevice_;
     std::string lastBTDevice_;
 
-    std::map<std::pair<int32_t, DeviceFlag>, sptr<IStandardAudioPolicyManagerListener>> deviceChangeCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredOutputDeviceCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> preferredInputDeviceCbsMap_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
 
@@ -793,6 +784,12 @@ private:
 
     SourceType currentSourceType = SOURCE_TYPE_MIC;
     uint32_t currentRate = 0;
+
+    std::mutex updatePolicyPorxyMapMutex_;
+    std::mutex preferredOutputMapMutex_;
+    std::mutex preferredInputMapMutex_;
+    std::mutex deviceChangedMpaMutex_;
+    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
