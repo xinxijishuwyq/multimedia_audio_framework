@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <uv.h>
 
 #include "napi/native_api.h"
 #include "napi/native_common.h"
@@ -62,6 +63,11 @@ private:
     friend class NapiAsyncWork;
 };
 
+struct NapiWorkData {
+    napi_env env_;
+    napi_ref cb_;
+};
+
 struct AutoRef {
     AutoRef(napi_env env, napi_ref cb)
         : env_(env), cb_(cb)
@@ -69,8 +75,43 @@ struct AutoRef {
     }
     ~AutoRef()
     {
-        if (env_ != nullptr && cb_ != nullptr) {
-            (void)napi_delete_reference(env_, cb_);
+        uv_loop_s *loop = nullptr;
+        napi_get_uv_event_loop(env_, &loop);
+        if (loop == nullptr) {
+            return;
+        }
+
+        NapiWorkData *workData = new (std::nothrow) NapiWorkData();
+        if (workData == nullptr) {
+            return;
+        }
+        workData->env_ = env_;
+        workData->cb_ = cb_;
+
+        uv_work_t *work = new(std::nothrow) uv_work_t;
+        if (work == nullptr) {
+            delete workData;
+            workData = nullptr;
+            return;
+        }
+        work->data = (void *)workData;
+
+        int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, [] (uv_work_t *work, int status) {
+            // Js thread
+            NapiWorkData *workData = reinterpret_cast<NapiWorkData *>(work->data);
+            napi_env env = workData->env_;
+            napi_ref cb = workData->cb_;
+            if (env != nullptr && cb != nullptr) {
+                (void)napi_delete_reference(env, cb);
+            }
+            delete workData;
+            delete work;
+        }, uv_qos_default);
+        if (ret != 0) {
+            delete work;
+            work = nullptr;
+            delete workData;
+            workData = nullptr;
         }
     }
     napi_env env_;
