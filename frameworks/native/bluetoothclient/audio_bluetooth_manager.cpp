@@ -282,8 +282,10 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     AUDIO_INFO_LOG("Entered %{public}s,\
         new audioScene is %{public}d, last audioScene is %{public}d", __func__, scene, scene_);
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
-    if (scene_ == scene) {
-        AUDIO_DEBUG_LOG("Current scene is not changed, ignore connectSco operation.");
+    int8_t lastScoCategory = GetScoCategoryFromScene(scene_);
+    int8_t newScoCategory = GetScoCategoryFromScene(scene);
+    if (lastScoCategory == newScoCategory) {
+        AUDIO_DEBUG_LOG("AudioScene category is not changed, ignore ConnectScoWithAudioScene operation.");
         return SUCCESS;
     }
     std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
@@ -293,15 +295,14 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
         return SUCCESS;
     }
     int32_t ret;
-    int8_t lastScoCategory = GetScoCategoryFromScene(scene_);
     if (lastScoCategory != ScoCategory::SCO_DEFAULT) {
+        AUDIO_INFO_LOG("Entered to disConnectSco for last audioScene category.");
         ret = hfpInstance_->DisconnectSco(static_cast<uint8_t>(lastScoCategory));
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
             "ConnectScoWithAudioScene failed as the last SCO failed to be disconnected, result: %{public}d", ret);
     }
-    int8_t newScoCategory = GetScoCategoryFromScene(scene);
     if (newScoCategory != ScoCategory::SCO_DEFAULT) {
-        AUDIO_INFO_LOG("Entered to connectSco.");
+        AUDIO_INFO_LOG("Entered to connectSco for new audioScene category.");
         ret = hfpInstance_->ConnectSco(static_cast<uint8_t>(newScoCategory));
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectScoWithAudioScene failed, result: %{public}d", ret);
     }
