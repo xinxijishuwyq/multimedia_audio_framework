@@ -69,8 +69,9 @@
 #define HDI_MIN_MS_MAINTAIN 30
 #define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in audio_service_client.cpp
 #define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in audio_service_client.cpp
-#define OFFLOAD_HDI_CACHE1_PLUS (OFFLOAD_HDI_CACHE1 + 20 + 5)   // ms, add 1 frame and 5ms to make sure get full
-#define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + 100 + 5) // ms, add 1 frame and 5ms to make sure get full
+#define OFFLOAD_FRAME_SIZE 50
+#define OFFLOAD_HDI_CACHE1_PLUS (OFFLOAD_HDI_CACHE1 + OFFLOAD_FRAME_SIZE + 5)   // ms, add 1 frame and 5ms
+#define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + OFFLOAD_FRAME_SIZE + 5)   // to make sure get full
 #define SPRINTF_STR_LEN 100
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
@@ -372,6 +373,11 @@ static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk 
     return count;
 }
 
+static enum AudioOffloadType GetInputPolicyState(pa_sink_input *i)
+{
+    return atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
+}
+
 static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memchunk* pchunk)
 {
     size_t index, length;
@@ -405,8 +411,8 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memch
         float left, right;
         u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
         u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
-        const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
-        const uint32_t bufSize = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
+        const uint32_t bufSize = (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ?
+                                  OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
         u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
     }
     if (ret == 0 && writeLen == 0) { // is full
@@ -1209,17 +1215,12 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     const bool b = (bool)ps->sink_input->thread_info.resampler;
     const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
     const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
-    const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
+    const int statePolicy = GetInputPolicyState(i);
     u->offload.prewrite = (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ?
                            OFFLOAD_HDI_CACHE2_PLUS : OFFLOAD_HDI_CACHE1_PLUS) * PA_USEC_PER_MSEC;
-    const size_t blockSizeMax = pa_frame_align(pa_mempool_block_size_max(u->sink->core->mempool), &sampleSpecOut);
-    // 100ms 50ms 20ms for frame size
-    size_t size100 = pa_frame_align(pa_usec_to_bytes(100 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 100
-    size_t size50 = pa_frame_align(pa_usec_to_bytes(50 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut); // 50
-    const size_t sizeFirst = size50;
-    size_t sizeMin = pa_frame_align(pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, &sampleSpecOut), &sampleSpecOut);  // 20
-    size_t sizeTgt = PA_MIN(blockSizeMax, u->offload.firstWrite ? sizeFirst :
-        (statePolicy == OFFLOAD_INACTIVE_BACKGROUND ? size100 : sizeMin));
+    size_t sizeFrame = pa_frame_align(pa_usec_to_bytes(OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC, &sampleSpecOut),
+        &sampleSpecOut);
+    size_t sizeTgt = sizeFrame;
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
     const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
     const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
@@ -1231,7 +1232,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
         }
         const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
         *wait = u->offload.pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ? true : false;
-        length = u->offload.pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ? 0 : sizeMin;
+        length = u->offload.pos > hdiPos + HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC ? 0 : sizeFrame;
     } else {
         bool waitable = false;
         const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
@@ -1246,7 +1247,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
             length = 0;
         } else if (length < sizeTgt) {
             *wait = waitable || length == 0;
-            length = waitable ? 0 : (length == 0 ? sizeMin : length);
+            length = waitable ? 0 : (length == 0 ? sizeFrame : length);
             if (ps->memblockq->missing > 0) {
                 playback_stream_request_bytes(ps);
             } else if (ps->memblockq->missing < 0 && ps->memblockq->requested > (int64_t)ps->memblockq->minreq) {
@@ -1416,13 +1417,13 @@ int32_t RenderWriteOffloadFunc(struct Userdata* u, size_t length, pa_mix_info* i
     chunk->length = length;
     int64_t l, d;
     l = chunk->length;
-    size_t blockSizeMax = pa_mempool_block_size_max(u->sink->core->mempool);
+    size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
     d = 0;
     while (l > 0) {
         pa_memchunk tchunk;
         tchunk = *chunk;
         tchunk.index += d;
-        tchunk.length = PA_MIN(length, blockSizeMax - tchunk.index);
+        tchunk.length = PA_MIN(length, blockSize - tchunk.index);
 
         PaSinkRenderIntoOffload(i->sink, infoInputs, nInputs, &tchunk);
         d += tchunk.length;
@@ -1439,8 +1440,7 @@ int32_t RenderWriteOffloadFunc(struct Userdata* u, size_t length, pa_mix_info* i
         if (hdistate == 0) {
             pa_atomic_store(&u->offload.hdistate, 1);
         }
-        const int statePolicy = atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
-        if (statePolicy == OFFLOAD_INACTIVE_BACKGROUND) {
+        if (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND) {
             u->offload.fullTs = pa_rtclock_now();
         }
         pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
@@ -1589,6 +1589,13 @@ static void OffloadUnlock(struct Userdata *u)
 static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
 {
     pa_sink_input_update_max_rewind(i, pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec));
+    pa_sink_input *it;
+    void *state = NULL;
+    while ((it = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+        if (it != i) {
+            pa_sink_input_update_max_rewind(it, 0);
+        }
+    }
     int32_t sessionID = getSinkInputSessionID(i);
     if (u->offload.isHDISinkStarted) {
         if (sessionID != u->offload.sessionID) {
@@ -1743,7 +1750,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata* u, pa_usec_t 
     } else if (hdistate == 1) {
         blockTime = (int64_t)(pos - hdiPos - HDI_MIN_MS_MAINTAIN * PA_USEC_PER_MSEC);
         if (blockTime < 0) {
-            blockTime = 20 * PA_USEC_PER_MSEC; //20ms for one frame
+            blockTime = OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC; // block for one frame
         }
         u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
     }
@@ -1901,6 +1908,39 @@ static void SetHdiParam(struct Userdata *userdata)
         }
 }
 
+static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUsec)
+{
+    pa_usec_t now = 0;
+
+    SetHdiParam(u);
+
+    bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
+                (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
+                (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
+    unsigned nPrimary, nOffload, nHd;
+    int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+    if (n != 0 && !monitorLinked(u->sink, true)) {
+        flag &= nPrimary > 0;
+    }
+    if (flag) {
+        now = pa_rtclock_now();
+    }
+
+    if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
+        pa_sink_process_rewind(u->sink, 0);
+    }
+
+    if (flag) {
+        if (u->primary.timestamp <= now + u->primary.prewrite && pa_atomic_load(&u->primary.dflag) == 0) {
+            pa_atomic_add(&u->primary.dflag, 1);
+            ProcessRenderUseTiming(u, now);
+        }
+        pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+        *sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->primary.writeTime);
+        *sleepForUsec = PA_MAX(*sleepForUsec, 0);
+    }
+}
+
 static void ThreadFuncRendererTimer(void *userdata)
 {
     ScheduleReportData(getpid(), gettid(), "pulseaudio"); // set audio thread priority
@@ -1914,7 +1954,6 @@ static void ThreadFuncRendererTimer(void *userdata)
     pa_thread_mq_install(&u->thread_mq);
 
     u->primary.timestamp = pa_rtclock_now();
-    const uint64_t pw = u->primary.prewrite;
     int32_t ret;
     pthread_rwlock_rdlock(&u->rwlockSleep);
 
@@ -1929,36 +1968,9 @@ static void ThreadFuncRendererTimer(void *userdata)
             AUDIO_WARNING_LOG("ThreadFuncRendererTimer pthread_mutex_lock ret %d", ret);
         }
 
-        pa_usec_t now = 0;
-
-        SetHdiParam(u);
         int64_t sleepForUsec = -1;
 
-        bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
-            (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
-            (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
-        unsigned nPrimary, nOffload, nHd;
-        int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        if (n != 0 && !monitorLinked(u->sink, true)) {
-            flag &= nPrimary > 0;
-        }
-        if (flag) {
-            now = pa_rtclock_now();
-        }
-
-        if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
-            pa_sink_process_rewind(u->sink, 0);
-        }
-
-        if (flag) {
-            if (u->primary.timestamp <= now + pw && pa_atomic_load(&u->primary.dflag) == 0) {
-                pa_atomic_add(&u->primary.dflag, 1);
-                ProcessRenderUseTiming(u, now);
-            }
-            pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-            sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->primary.writeTime);
-            sleepForUsec = PA_MAX(sleepForUsec, 0);
-        }
+        ThreadFuncRendererTimerLoop(u, &sleepForUsec);
 
         if (sleepForUsec != -1) {
             if (u->timestampSleep == -1) {
@@ -2057,7 +2069,8 @@ static void ThreadFuncWriteHDI(void *userdata)
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
                 if (!u->primary.isHDISinkStarted) {
-                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite");
+                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite wait sink suspend");
+                    pa_memblock_unref(chunk.memblock);
                 } else if (RenderWrite(u->primary.sinkAdapter, &chunk) < 0) {
                     u->bytes_dropped += chunk.length;
                     AUDIO_ERR_LOG("RenderWrite failed");
@@ -2554,7 +2567,8 @@ int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
 
         u->offload.msgq = pa_asyncmsgq_new(0);
         pa_atomic_store(&u->offload.hdistate, 0);
-        u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
+        u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool,
+            pa_usec_to_bytes(300 * PA_USEC_PER_MSEC, &u->sink->sample_spec)); // 300ms for max len once offload render
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_START], PA_HOOK_LATE,
             (pa_hook_cb_t)SinkInputMoveStartCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
