@@ -1353,15 +1353,19 @@ int32_t AudioServiceClient::FlushStream()
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
-    pa_proplist *propList = pa_proplist_new();
-    pa_proplist_sets(propList, "stream.flush", "true");
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+    pa_proplist *propListFlushTrue = pa_proplist_new();
+    pa_proplist_sets(propListFlushTrue, "stream.flush", "true");
+    pa_operation *updatePropOperationTrue = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propListFlushTrue,
         nullptr, nullptr);
-    pa_proplist_sets(propList, "stream.flush", "false");
-    updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
-        nullptr, nullptr);
-    pa_proplist_free(propList);
-    pa_operation_unref(updatePropOperation);
+    pa_proplist_free(propListFlushTrue);
+    pa_operation_unref(updatePropOperationTrue);
+
+    pa_proplist *propListFlushFalse = pa_proplist_new();
+    pa_proplist_sets(propListFlushFalse, "stream.flush", "false");
+    pa_operation *updatePropOperationFalse = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE,
+        propListFlushFalse, nullptr, nullptr);
+    pa_proplist_free(propListFlushFalse);
+    pa_operation_unref(updatePropOperationFalse);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
