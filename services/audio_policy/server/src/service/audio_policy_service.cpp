@@ -75,6 +75,7 @@ mutex g_dataShareHelperMutex;
 #ifdef BLUETOOTH_ENABLE
 mutex g_btProxyMutex;
 #endif
+bool AudioPolicyService::isBtListenerRegistered = false;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -4700,6 +4701,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid)
     AUDIO_INFO_LOG("Bluetooth sa crashed, will restore proxy in next call");
     lock_guard<mutex> lock(g_btProxyMutex);
     g_btProxy = nullptr;
+    isBtListenerRegistered = false;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
 }
 #endif
@@ -4709,6 +4711,10 @@ void AudioPolicyService::RegisterBluetoothListener()
 #ifdef BLUETOOTH_ENABLE
     AUDIO_INFO_LOG("Enter AudioPolicyService::RegisterBluetoothListener");
     Bluetooth::RegisterDeviceObserver(deviceStatusListener_->deviceObserver_);
+    if (isBtListenerRegistered) {
+        AUDIO_INFO_LOG("audio policy service already register bt listerer, return");
+        return;
+    }
     Bluetooth::AudioA2dpManager::RegisterBluetoothA2dpListener();
     Bluetooth::AudioHfpManager::RegisterBluetoothScoListener();
     isBtListenerRegistered = true;

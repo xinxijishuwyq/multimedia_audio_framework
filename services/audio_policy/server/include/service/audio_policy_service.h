@@ -661,7 +661,7 @@ private:
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
     bool isOpenRemoteDevice = false;
-    bool isBtListenerRegistered = false;
+    static bool isBtListenerRegistered;
     bool isPnpDeviceConnected = false;
     bool hasModulesLoaded = false;
     const int32_t G_UNKNOWN_PID = -1;
