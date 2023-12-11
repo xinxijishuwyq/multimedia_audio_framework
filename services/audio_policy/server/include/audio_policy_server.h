@@ -19,6 +19,7 @@
 #include <mutex>
 #include <pthread.h>
 
+#include "singleton.h"
 #include "system_ability_definition.h"
 #include "ipc_skeleton.h"
 #include "system_ability.h"
@@ -42,7 +43,7 @@
 #include "audio_service_dump.h"
 #include "session_processor.h"
 #include "audio_spatialization_service.h"
-#include "i_standard_audio_routing_manager_listener.h"
+#include "audio_policy_server_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -469,21 +470,10 @@ private:
     std::vector<pid_t> clientDiedListenerState_;
     sptr<PowerStateListener> powerStateListener_;
 
-    std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
-    std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
-    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyCBMap_;
- 
-    std::mutex policyCallbackMutex_;
     std::mutex keyEventMutex_;
-    std::mutex volumeKeyEventMutex_;
     std::mutex interruptMutex_;
-    std::mutex amInterruptMutex_;
-    std::mutex focusInfoChangeMutex_;
-    std::mutex ringerModeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
-    std::mutex configDistributedRoutingMutex_;
 
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1),
@@ -492,6 +482,7 @@ private:
         std::bind(&AudioPolicyServer::ProcessorCloseWakeupSource, this, std::placeholders::_1)};
 
     AudioSpatializationService& audioSpatializationService_;
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

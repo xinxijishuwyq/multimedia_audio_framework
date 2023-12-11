@@ -1300,14 +1300,9 @@ void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescrip
 {
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    std::lock_guard<std::mutex> lock(preferredOutputMapMutex_);
-    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        AudioRendererInfo rendererInfo;
-        auto deviceDescs = GetPreferredOutputDeviceDescriptors(rendererInfo);
-        if (!(it->second->hasBTPermission_)) {
-            UpdateDescWhenNoBTPermission(deviceDescs);
-        }
-        it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
+
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
     }
     spatialDeviceMap_.insert(make_pair(deviceDescriptor.macAddress_, deviceDescriptor.deviceType_));
     UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
@@ -1319,14 +1314,8 @@ void AudioPolicyService::OnPreferredInputDeviceUpdated(DeviceType deviceType, st
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    std::lock_guard<std::mutex> lock(preferredInputMapMutex_);
-    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        AudioCapturerInfo captureInfo;
-        auto deviceDescs = GetPreferredInputDeviceDescriptors(captureInfo);
-        if (!(it->second->hasBTPermission_)) {
-            UpdateDescWhenNoBTPermission(deviceDescs);
-        }
-        it->second->OnPreferredInputDeviceUpdated(deviceDescs);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPreferredInputDeviceUpdated();
     }
 }
 
@@ -3673,15 +3662,17 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
 
 void AudioPolicyService::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
 {
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
-    audioPolicyClientProxyAPSCbsMap_.emplace(clientPid, cb);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    }
     streamCollector_.AddAudioPolicyClientProxyMap(clientPid, cb);
 }
 
 void AudioPolicyService::ReduceAudioPolicyClientProxyMap(pid_t clientPid)
 {
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
-    audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->ReduceAudioPolicyClientProxyMap(clientPid);
+    }
     streamCollector_.ReduceAudioPolicyClientProxyMap(clientPid);
 }
 
@@ -3692,10 +3683,12 @@ int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clien
 
     if (callback != nullptr) {
         callback->hasBTPermission_ = hasBTPermission;
-        availableDeviceChangeCbsMap_[{clientId, usage}] = callback;
+
+        if (audioPolicyServerHandler_ != nullptr) {
+            audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, callback);
+        }
     }
-    AUDIO_DEBUG_LOG("SetAvailableDeviceChangeCallback:: availableDeviceChangeCbsMap_ size: %{public}zu",
-        availableDeviceChangeCbsMap_.size());
+
     return SUCCESS;
 }
 
@@ -3703,21 +3696,9 @@ int32_t AudioPolicyService::UnsetAvailableDeviceChangeCallback(const int32_t cli
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
-    if (availableDeviceChangeCbsMap_.erase({clientId, usage}) == 0) {
-        AUDIO_INFO_LOG("client not present in %{public}s", __func__);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->ReduceAvailableDeviceChangeMap(clientId, usage);
     }
-        // for routing manager napi remove all device change callback
-    if (usage == AudioDeviceUsage::D_ALL_DEVICES) {
-        for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end();) {
-            if ((*it).first.first == clientId) {
-                it = availableDeviceChangeCbsMap_.erase(it);
-            } else {
-                it++;
-            }
-        }
-    }
-
-    AUDIO_DEBUG_LOG("UnsetAvailableDeviceChangeCallback:: map size: %{public}zu", availableDeviceChangeCbsMap_.size());
     return SUCCESS;
 }
 
@@ -4301,19 +4282,10 @@ int32_t AudioPolicyService::GetA2dpDeviceVolume(const std::string& macAddress, i
 void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
     Trace trace("AudioPolicyService::TriggerDeviceChangedCallback");
-    DeviceChangeAction deviceChangeAction;
-    deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;
-    deviceChangeAction.deviceDescriptors = desc;
 
     WriteDeviceChangedSysEvents(desc, isConnected);
-    std::lock_guard<std::mutex> lock(deviceChangedMpaMutex_);
-    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
-            if (!(it->second->hasBTPermission_)) {
-                UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
-            }
-            it->second->OnDeviceChange(deviceChangeAction);
-        }
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendDeviceChangedCallback(desc, isConnected);
     }
 }
 
@@ -5113,20 +5085,11 @@ void AudioPolicyService::TriggerAvailableDeviceChangedCallback(
     const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
     Trace trace("AudioPolicyService::TriggerAvailableDeviceChangedCallback");
-    DeviceChangeAction deviceChangeAction;
-    deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;
 
     WriteDeviceChangedSysEvents(desc, isConnected);
 
-    for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
-        AudioDeviceUsage usage = it->first.second;
-        deviceChangeAction.deviceDescriptors = DeviceFilterByUsage(it->first.second, desc);
-        if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
-            if (!(it->second->hasBTPermission_)) {
-                UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
-            }
-            it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
-        }
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendAvailableDeviceChange(desc, isConnected);
     }
 }
 

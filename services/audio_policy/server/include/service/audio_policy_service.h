@@ -23,6 +23,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <shared_mutex>
+#include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_info.h"
 #include "audio_manager_base.h"
@@ -51,6 +52,7 @@
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
 #include "audio_state_manager.h"
+#include "audio_policy_server_handler.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"
@@ -393,6 +395,9 @@ public:
 
     void UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress);
 
+    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
+        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -401,7 +406,8 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioStateManager_(AudioStateManager::GetAudioStateManager())
+        audioStateManager_(AudioStateManager::GetAudioStateManager()),
+        audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
     {
 #ifdef ACCESSIBILITY_ENABLE
         accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
@@ -629,9 +635,6 @@ private:
     std::tuple<SourceType, uint32_t, uint32_t> FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo);
 
     void StoreDistributedRoutingRoleInfo(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
-    
-    std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
-        const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
     void AddEarpiece();
 
@@ -708,9 +711,6 @@ private:
     std::string activeBTDevice_;
     std::string lastBTDevice_;
 
-    std::map<std::pair<int32_t, AudioDeviceUsage>,
-        sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
-
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
@@ -760,6 +760,7 @@ private:
 
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
 
     std::optional<uint32_t> offloadSessionID_;
     PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
@@ -784,12 +785,6 @@ private:
 
     SourceType currentSourceType = SOURCE_TYPE_MIC;
     uint32_t currentRate = 0;
-
-    std::mutex updatePolicyPorxyMapMutex_;
-    std::mutex preferredOutputMapMutex_;
-    std::mutex preferredInputMapMutex_;
-    std::mutex deviceChangedMpaMutex_;
-    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
