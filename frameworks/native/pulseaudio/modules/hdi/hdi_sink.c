@@ -640,43 +640,6 @@ static void SinkRenderPrimaryMix(pa_sink *si, size_t length, pa_mix_info *infoIn
     EndCTrace(trace);
 }
 
-static void SinkRenderPrimaryMixCap(pa_sink *si, size_t length, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
-{
-    if (n == 0) {
-        if (chunkIn->length > length)
-            chunkIn->length = length;
-
-        pa_silence_memchunk(chunkIn, &si->sample_spec);
-    } else if (n == 1) {
-        pa_memchunk tmpChunk;
-
-        tmpChunk = infoIn[0].chunk;
-        pa_memblock_ref(tmpChunk.memblock);
-
-        if (tmpChunk.length > length)
-            tmpChunk.length = length;
-
-        pa_memchunk_memcpy(chunkIn, &tmpChunk);
-        pa_memblock_unref(tmpChunk.memblock);
-    } else {
-        void *ptr;
-
-        ptr = pa_memblock_acquire(chunkIn->memblock);
-
-        for (unsigned j = 0; j < n; j++) {
-            for (unsigned k = 0; k < si->sample_spec.channels; k++) {
-                infoIn[j].volume.values[k] = PA_VOLUME_NORM;
-            }
-        }
-
-        chunkIn->length = pa_mix(infoIn, n,
-                                (uint8_t*) ptr + chunkIn->index, length,
-                                &si->sample_spec, NULL, false);
-
-        pa_memblock_release(chunkIn->memblock);
-    }
-}
-
 static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
     pa_sink_assert_ref(si);
@@ -745,7 +708,7 @@ int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
     pa_assert(length > 0);
 
     n = SinkRenderPrimaryClusterCap(si, &length, infoIn, MAX_MIX_CHANNELS);
-    SinkRenderPrimaryMixCap(si, length, infoIn, n, chunkIn);
+    SinkRenderPrimaryMix(si, length, infoIn, n, chunkIn);
 
     SinkRenderPrimaryInputsDropCap(si, infoIn, n, chunkIn);
     pa_sink_unref(si);
@@ -1030,11 +993,8 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
 
 static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
-    if (GetInnerCapturerState()) {
-        pa_memchunk capResult;
-        SinkRenderCapProcess(si, length, &capResult);
-        pa_memblock_unref(capResult.memblock);
-    }
+    pa_memchunk capResult;
+    SinkRenderCapProcess(si, length, &capResult);
 
     char *sceneTypeSet[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
         "SCENE_SPEECH", "SCENE_RING", "SCENE_OTHERS", "EFFECT_NONE"};
@@ -1082,6 +1042,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     chunkIn->index = 0;
     chunkIn->length = length;
     pa_memblock_release(chunkIn->memblock);
+    pa_memblock_unref(capResult.memblock);
 }
 
 void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
