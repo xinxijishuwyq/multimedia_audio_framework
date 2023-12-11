@@ -2056,7 +2056,9 @@ static void ThreadFuncWriteHDI(void *userdata)
         switch (code) {
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
-                if (RenderWrite(u->primary.sinkAdapter, &chunk) < 0) {
+                if (!u->primary.isHDISinkStarted) {
+                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite");
+                } else if (RenderWrite(u->primary.sinkAdapter, &chunk) < 0) {
                     u->bytes_dropped += chunk.length;
                     AUDIO_ERR_LOG("RenderWrite failed");
                 }
