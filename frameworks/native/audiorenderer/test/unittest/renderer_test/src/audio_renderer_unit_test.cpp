@@ -3256,6 +3256,154 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Pause_006, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test PauseTransitent API.
+ * @tc.number: Audio_Renderer_PauseTransitent_001
+ * @tc.desc  : Test Pause interface. Returns true, if the pause is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+    int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
+    EXPECT_GE(bytesWritten, VALUE_ZERO);
+
+    audioRenderer->Drain();
+
+    bool isPaused = audioRenderer->PauseTransitent();
+    EXPECT_EQ(true, isPaused);
+
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
+ * @tc.name  : Test PauseTransitent API via illegal state, RENDERER_NEW: call Pause without Initializing the renderer.
+ * @tc.number: Audio_Renderer_PauseTransitent_002
+ * @tc.desc  : Test Pause interface. Returns false, if the renderer state is not RENDERER_RUNNING.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_002, TestSize.Level1)
+{
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isPaused = audioRenderer->Pause();
+    EXPECT_EQ(false, isPaused);
+}
+
+/**
+ * @tc.name  : Test PauseTransitent API via illegal state, RENDERER_PREPARED: call Pause without Start.
+ * @tc.number: Audio_Renderer_PauseTransitent_003
+ * @tc.desc  : Test Pause interface. Returns false, if the renderer state is not RENDERER_RUNNING.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_003, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isPaused = audioRenderer->PauseTransitent();
+    EXPECT_EQ(false, isPaused);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test PauseTransitent API via illegal state, RENDERER_RELEASED: call Pause after Release.
+ * @tc.number: Audio_Renderer_PauseTransitent_004
+ * @tc.desc  : Test Pause interface. Returns false, if the renderer state is not RENDERER_RUNNING.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_004, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    bool isPaused = audioRenderer->PauseTransitent();
+    EXPECT_EQ(false, isPaused);
+}
+
+/**
+ * @tc.name  : Test Pause and resume
+ * @tc.number: Audio_Renderer_PauseTransitent_005
+ * @tc.desc  : Test Pause interface. Returns true , if the pause is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_005, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isPaused = audioRenderer->PauseTransitent();
+    EXPECT_EQ(true, isPaused);
+
+    isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test PauseTransitent API via illegal state, RENDERER_STOPPED: call Pause after Stop.
+ * @tc.number: Audio_Renderer_Pause_006
+ * @tc.desc  : Test Pause interface. Returns false, if the renderer state is not RENDERER_RUNNING.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_PauseTransitent_006, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+
+    bool isPaused = audioRenderer->PauseTransitent();
+    EXPECT_EQ(false, isPaused);
+    audioRenderer->Release();
+}
+
+/**
  * @tc.name  : Test Pause and resume
  * @tc.number: Audio_Renderer_Pause_Stability_001
  * @tc.desc  : Test Pause interface for stability.
