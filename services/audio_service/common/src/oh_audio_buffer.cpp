@@ -154,7 +154,7 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromRemote(int fd, s
         AUDIO_ERR_LOG("CreateFromRemote failed");
         return nullptr;
     }
-    close(fd);
+
     return sharedMemory;
 }
 
@@ -194,6 +194,7 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParc
         AUDIO_ERR_LOG("ReadFromParcel failed");
         memory = nullptr;
     }
+    close(fd);
     return memory;
 }
 
