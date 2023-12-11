@@ -64,7 +64,8 @@ public:
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj) override;
-    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid) override;
+    bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid, SourceType sourceType =
+        SOURCE_TYPE_MIC) override;
     bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) override;
     State GetState() override;
@@ -117,6 +118,8 @@ public:
     // Playback related APIs
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
+    int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
+    void SetPreferredFrameSize(int32_t frameSize) override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
@@ -301,7 +304,15 @@ void CapturerInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
     if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
         // make sure sessionId_ is set before.
         AUDIO_INFO_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
-        audioStreamTracker_->RegisterTracker(sessionId_, state_, rendererInfo_, capturerInfo_, proxyObj);
+        AudioRegisterTrackerInfo registerTrackerInfo;
+
+        registerTrackerInfo.sessionId = sessionId_;
+        registerTrackerInfo.clientPid = clientPid_;
+        registerTrackerInfo.state = state_;
+        registerTrackerInfo.rendererInfo = rendererInfo_;
+        registerTrackerInfo.capturerInfo = capturerInfo_;
+
+        audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
     }
 }
@@ -310,7 +321,7 @@ void CapturerInClientInner::UpdateTracker(const std::string &updateCase)
 {
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("Capturer:Calling Update tracker for %{public}s", updateCase.c_str());
-        audioStreamTracker_->UpdateTracker(sessionId_, state_, rendererInfo_, capturerInfo_);
+        audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
 }
 
@@ -506,9 +517,10 @@ int32_t CapturerInClientInner::GetAudioStreamInfo(AudioStreamParams &info)
     return SUCCESS;
 }
 
-bool CapturerInClientInner::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid)
+bool CapturerInClientInner::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
+    SourceType sourceType)
 {
-    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
+    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
 }
 
 bool CapturerInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
@@ -767,6 +779,17 @@ bool CapturerInClientInner::DrainAudioStream()
 {
     // in plan
     return false;
+}
+
+void CapturerInClientInner::SetPreferredFrameSize(int32_t frameSize)
+{
+    AUDIO_WARNING_LOG("Not Supported Yet");
+}
+
+int32_t CapturerInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
+{
+     AUDIO_ERR_LOG("Write is not supported");
+    return ERR_INVALID_OPERATION;
 }
 
 int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t buffer_size)
