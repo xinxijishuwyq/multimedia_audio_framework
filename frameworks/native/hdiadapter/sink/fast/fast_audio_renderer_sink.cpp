@@ -144,7 +144,7 @@ private:
 
     int privFd_ = INVALID_FD; // invalid fd
 #endif
-};
+};  // FastAudioRendererSinkInner
 
 FastAudioRendererSinkInner::FastAudioRendererSinkInner()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
@@ -164,6 +164,13 @@ IMmapAudioRendererSink *FastAudioRendererSink::GetInstance()
     static FastAudioRendererSinkInner audioRenderer;
 
     return &audioRenderer;
+}
+
+std::shared_ptr<IMmapAudioRendererSink> FastAudioRendererSink::CreateFastRendererSink()
+{
+    std::shared_ptr<IMmapAudioRendererSink> audioRenderer = std::make_shared<FastAudioRendererSinkInner>();
+
+    return audioRenderer;
 }
 
 bool FastAudioRendererSinkInner::IsInited()
@@ -445,7 +452,7 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     deviceDesc.desc = desc;
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("AudioDeviceCreateRender failed");
+        AUDIO_ERR_LOG("AudioDeviceCreateRender failed, ret is :%{public}d", ret);
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
         return ERR_NOT_STARTED;
     }
@@ -688,6 +695,7 @@ int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
+    AUDIO_INFO_LOG("Set hdi volume to %{public}f", volume);
     ret = audioRender_->SetVolume(audioRender_, volume);
     if (ret) {
         AUDIO_ERR_LOG("FastAudioRendererSink::Set volume failed!");

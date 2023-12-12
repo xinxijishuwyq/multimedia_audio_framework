@@ -254,6 +254,7 @@ ohos_shared_library("audio_process_service") {
 
   sources = [
     "server/src/audio_endpoint.cpp",
+    "server/src/audio_endpoint_separate.cpp",
     "server/src/audio_process_in_server.cpp",
     "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",

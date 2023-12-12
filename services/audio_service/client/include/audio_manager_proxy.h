@@ -62,6 +62,7 @@ public:
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
     int32_t SetCaptureSilentState(bool state) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
+    int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

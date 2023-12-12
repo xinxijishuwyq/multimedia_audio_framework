@@ -29,9 +29,14 @@ namespace AudioStandard {
 
 // client or server.
 enum AudioBufferHolder : uint32_t {
+    // normal stream, Client buffer created when readFromParcel
     AUDIO_CLIENT = 0,
+    // normal stream, Server buffer shared with Client
     AUDIO_SERVER_SHARED,
-    AUDIO_SERVER_ONLY
+    // normal stream, Server buffer shared with hdi
+    AUDIO_SERVER_ONLY,
+    // Independent stream
+    AUDIO_SERVER_INDEPENDENT
 };
 
 enum StreamStatus : uint32_t {
@@ -103,10 +108,10 @@ public:
     ~OHAudioBuffer();
 
     // create OHAudioBuffer locally or remotely
-    static std::shared_ptr<OHAudioBuffer> CreateFormLocal(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
+    static std::shared_ptr<OHAudioBuffer> CreateFromLocal(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
         uint32_t byteSizePerFrame);
     static std::shared_ptr<OHAudioBuffer> CreateFromRemote(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
-        uint32_t byteSizePerFrame, int dataFd, int infoFd = INVALID_BUFFER_FD);
+        uint32_t byteSizePerFrame, AudioBufferHolder holder, int dataFd, int infoFd = INVALID_BUFFER_FD);
 
     // for ipc.
     static int32_t WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffer, MessageParcel &parcel);

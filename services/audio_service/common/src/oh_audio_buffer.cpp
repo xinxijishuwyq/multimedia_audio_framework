@@ -243,7 +243,7 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
 
     // init for statusInfoBuffer
     size_t statusInfoSize = sizeof(BasicBufferInfo) + spanConut_ * sizeof(SpanInfo);
-    if (infoFd != INVALID_FD && bufferHolder_ == AUDIO_CLIENT) {
+    if (infoFd != INVALID_FD && (bufferHolder_ == AUDIO_CLIENT || bufferHolder_ == AUDIO_SERVER_INDEPENDENT)) {
         statusInfoMem_ = AudioSharedMemory::CreateFromRemote(infoFd, statusInfoSize, STATUS_INFO_BUFFER);
     } else {
         statusInfoMem_ = AudioSharedMemory::CreateFormLocal(statusInfoSize, STATUS_INFO_BUFFER);
@@ -286,7 +286,7 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
     return SUCCESS;
 }
 
-std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFormLocal(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
+std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromLocal(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
     uint32_t byteSizePerFrame)
 {
     AUDIO_INFO_LOG("CreateFormLocal:totalSizeInFrame %{public}d, spanSizeInFrame %{public}d, byteSizePerFrame"
@@ -303,17 +303,15 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFormLocal(uint32_t totalSize
 }
 
 std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromRemote(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
-    uint32_t byteSizePerFrame, int dataFd, int infoFd)
+    uint32_t byteSizePerFrame, AudioBufferHolder bufferHolder, int dataFd, int infoFd)
 {
     AUDIO_INFO_LOG("CreateFromRemote: dataFd %{public}d, infoFd %{public}d", dataFd, infoFd);
 
     int minfd = 2; // ignore stdout, stdin and stderr.
     CHECK_AND_RETURN_RET_LOG(dataFd > minfd, nullptr, "CreateFromRemote invalid dataFd: %{public}d", dataFd);
 
-    AudioBufferHolder bufferHolder = AUDIO_SERVER_ONLY;
     if (infoFd != INVALID_FD) {
         CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "CreateFromRemote invalid infoFd: %{public}d", infoFd);
-        bufferHolder = AUDIO_CLIENT;
     }
     std::shared_ptr<OHAudioBuffer> buffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
@@ -328,8 +326,9 @@ int32_t OHAudioBuffer::WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffe
 {
     AUDIO_INFO_LOG("WriteToParcel start.");
     AudioBufferHolder bufferHolder = buffer->GetBufferHolder();
-    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED) {
-        AUDIO_ERR_LOG("buffer holder error:%{public}d", bufferHolder);
+    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
+        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
+        AUDIO_ERR_LOG("WriteToParcel buffer holder error:%{public}d", bufferHolder);
         return ERROR_INVALID_PARAM;
     }
 
@@ -350,10 +349,13 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parc
     AUDIO_INFO_LOG("ReadFromParcel start.");
     uint32_t holder = parcel.ReadUint32();
     AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
-    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED) {
-        AUDIO_ERR_LOG("buffer holder error:%{public}d", bufferHolder);
+    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
+        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
+        AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
         return nullptr;
     }
+    bufferHolder = bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ?
+         AudioBufferHolder::AUDIO_CLIENT : bufferHolder;
     uint32_t totalSizeInFrame = parcel.ReadUint32();
     uint32_t spanSizeInFrame = parcel.ReadUint32();
     uint32_t byteSizePerFrame = parcel.ReadUint32();
@@ -362,7 +364,7 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parc
     int infoFd = parcel.ReadFileDescriptor();
 
     std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::CreateFromRemote(totalSizeInFrame, spanSizeInFrame,
-        byteSizePerFrame, dataFd, infoFd);
+        byteSizePerFrame, bufferHolder, dataFd, infoFd);
     if (buffer == nullptr) {
         AUDIO_ERR_LOG("ReadFromParcel failed.");
     } else if (totalSizeInFrame != buffer->basicBufferInfo_->totalSizeInFrame ||

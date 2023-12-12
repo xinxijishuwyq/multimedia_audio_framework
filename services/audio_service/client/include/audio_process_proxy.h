@@ -38,7 +38,7 @@ public:
 
     int32_t Stop() override;
 
-    int32_t RequestHandleInfo() override;
+    int32_t RequestHandleInfo(bool isAsync = true) override;
 
     int32_t Release() override;
 

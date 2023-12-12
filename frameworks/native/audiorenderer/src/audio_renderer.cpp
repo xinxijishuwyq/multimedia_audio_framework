@@ -269,6 +269,27 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
     return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
 }
 
+int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParams)
+{
+    AudioRenderer *renderer = this;
+    rendererProxyObj_->SaveRendererObj(renderer);
+    audioStream_->SetRendererInfo(rendererInfo_);
+    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
+
+    SetAudioPrivacyType(privacyType_);
+    audioStream_->SetStreamTrackerState(false);
+
+    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
+    if (ret) {
+        return ret;
+    }
+
+    if (isFastRenderer_) {
+        SetSelfRendererStateCallback();
+    }
+    return SUCCESS;
+}
+
 int32_t AudioRendererPrivate::GetFrameCount(uint32_t &frameCount) const
 {
     return audioStream_->GetFrameCount(frameCount);
@@ -321,26 +342,23 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    AudioRenderer *renderer = this;
-    rendererProxyObj_->SaveRendererObj(renderer);
-    audioStream_->SetRendererInfo(rendererInfo_);
-
-    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
-
-    SetAudioPrivacyType(privacyType_);
-
-    audioStream_->SetStreamTrackerState(false);
-
-    int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
-    if (ret) {
-        AUDIO_ERR_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Failed");
-        return ret;
+    int32_t ret = InitAudioStream(audioStreamParams);
+    // When the fast stream creation fails, a normal stream is created
+    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
+        AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
+        streamClass = IAudioStream::PA_STREAM;
+        isFastRenderer_ = false;
+        audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
+            appInfo_.appUid);
+        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr,
+            ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed when create normal stream.");
+        ret = InitAudioStream(audioStreamParams);
+        audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
     }
+
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioRendererPrivate::SetParams SetAudioStreamInfo Failed");
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
 
-    if (isFastRenderer_) {
-        SetSelfRendererStateCallback();
-    }
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
 
     return InitAudioInterruptCallback();

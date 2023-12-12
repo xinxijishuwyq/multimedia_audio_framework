@@ -85,7 +85,7 @@ HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame - 1;
     uint32_t byteSizePerFrame = 1000;
-    buffer = OHAudioBuffer::CreateFormLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    buffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
     ret=audioProcessProxy->ResolveBuffer(buffer);
     EXPECT_LT(ret, TEST_RET_NUM);
