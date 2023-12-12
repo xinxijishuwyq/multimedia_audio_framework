@@ -700,7 +700,7 @@ void HfpBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemoteD
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
-    desc.connectState_ = ConnectState::CONNECTED;
+    desc.connectState_ = ConnectState::DEACTIVE_CONNECTED;
     AUDIO_INFO_LOG("hfpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d", deviceStatus, device.GetDeviceAddr().c_str(), desc.deviceCategory_);
     {
