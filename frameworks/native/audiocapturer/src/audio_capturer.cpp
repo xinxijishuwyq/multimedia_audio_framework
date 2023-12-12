@@ -183,7 +183,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    if ((audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE) &&
+    if ((capturerInfo_.sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE) &&
         (!audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId, appInfo_.appUid,
             capturerInfo_.sourceType))) {
         AUDIO_ERR_LOG("recording create check failed");
