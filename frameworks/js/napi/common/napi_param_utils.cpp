@@ -527,7 +527,7 @@ napi_status NapiParamUtils::GetCapturerInfo(const napi_env &env, AudioCapturerIn
     capturerInfo->sourceType = static_cast<SourceType>(intValue);
 
     status = NapiParamUtils::GetValueInt32(env, "capturerFlags", capturerInfo->capturerFlags, in);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetCapturerInfo GetValueInt32 source failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetCapturerInfo GetValueInt32 capturerFlags failed");
     return status;
 }
 
@@ -789,12 +789,21 @@ napi_status NapiParamUtils::GetAudioCapturerFilter(const napi_env &env, sptr<Aud
 
 napi_status NapiParamUtils::GetAudioCapturerInfo(const napi_env &env, AudioCapturerInfo *capturerInfo, napi_value in)
 {
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, in, &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, napi_invalid_arg,
+        "GetRendererInfo failed, vauleType is not object");
+
     int32_t intValue = {0};
-    napi_status status = GetValueInt32(env, "source", intValue, in);
-    if (status == napi_ok && NapiAudioEnum::IsValidSourceType(intValue)) {
-        capturerInfo->sourceType = static_cast<SourceType>(intValue);
-    } else {
-        capturerInfo->sourceType = SourceType::SOURCE_TYPE_INVALID;
+    napi_value tempValue = nullptr;
+    napi_status status = napi_get_named_property(env, in, "source", &tempValue);
+    if (status == napi_ok) {
+        GetValueInt32(env, intValue, tempValue);
+        if (NapiAudioEnum::IsValidSourceType(intValue)) {
+            capturerInfo->sourceType = static_cast<SourceType>(intValue);
+        } else {
+            capturerInfo->sourceType = SourceType::SOURCE_TYPE_INVALID;
+        }
     }
 
     status = GetValueInt32(env, "capturerFlags", intValue, in);

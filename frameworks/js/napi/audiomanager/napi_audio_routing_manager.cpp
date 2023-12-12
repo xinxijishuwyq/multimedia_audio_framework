@@ -624,7 +624,7 @@ napi_value NapiAudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(napi_
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
-        context->status = NapiParamUtils::GetCapturerInfo(env, &context->captureInfo, argv[PARAM0]);
+        context->status = NapiParamUtils::GetAudioCapturerInfo(env, &context->captureInfo, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
             "get preferred input device for capturerInfo failed", NAPI_ERR_INPUT_INVALID);
     };
@@ -672,7 +672,7 @@ napi_value NapiAudioRoutingManager::GetPreferredInputDeviceForCapturerInfoSync(n
         ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "valueType invaild");
 
     AudioCapturerInfo capturerInfo;
-    napi_status status = NapiParamUtils::GetCapturerInfo(env, &capturerInfo, argv[PARAM0]);
+    napi_status status = NapiParamUtils::GetAudioCapturerInfo(env, &capturerInfo, argv[PARAM0]);
     CHECK_AND_RETURN_RET_LOG((capturerInfo.sourceType != SourceType::SOURCE_TYPE_INVALID) && (status == napi_ok),
         ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "sourceType invaild");
 
@@ -854,7 +854,7 @@ void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_en
     }
 
     AudioCapturerInfo captureInfo;
-    NapiParamUtils::GetCapturerInfo(env, &captureInfo, args[PARAM1]);
+    NapiParamUtils::GetAudioCapturerInfo(env, &captureInfo, args[PARAM1]);
 
     CHECK_AND_RETURN_RET_LOG(captureInfo.sourceType != SourceType::SOURCE_TYPE_INVALID,
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM), "invaild sourceType");
