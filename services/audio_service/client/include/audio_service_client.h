@@ -727,6 +727,7 @@ private:
     int32_t PaWriteStream(const uint8_t *buffer, size_t &length);
     int32_t WaitWriteable(size_t length, size_t &writableSize);
     int32_t AdjustAcache(const StreamBuffer &stream, size_t &cachedLen);
+    int32_t SetStreamVolumeInML(float volume);
     void HandleRenderPositionCallbacks(size_t bytesWritten);
     void HandleCapturePositionCallbacks(size_t bytesRead);
 

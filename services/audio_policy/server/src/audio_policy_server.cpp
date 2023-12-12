@@ -1542,7 +1542,6 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
 
-    OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, audioInterrupt.sessionID);
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
         AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
         uint32_t exitSessionID = audioInterrupt.sessionID;
@@ -1601,6 +1600,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterruptEnable(const AudioInterrupt &
 
     UpdateAudioScene(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
 
+    OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, audioInterrupt.sessionID);
     OffloadStopPlaying(audioInterrupt);
 
     // resume if other session was forced paused or ducked

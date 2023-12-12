@@ -51,8 +51,7 @@ const uint32_t LATENCY_THRESHOLD = 35;
 const int32_t NO_OF_PREBUF_TIMES = 6;
 const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
-const uint32_t OFFLOAD_SMALL_BUFFER = 20;
-const uint32_t OFFLOAD_BIG_BUFFER = 100;
+const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_US_PER_MS = 1000;
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
@@ -1505,7 +1504,20 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
 int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
 {
     Trace trace1("PaWriteStream WaitWriteable");
-    while (!(writableSize = pa_stream_writable_size(paStream))) {
+    while (true) {
+        writableSize = pa_stream_writable_size(paStream);
+        if (writableSize != 0) {
+            if (!offloadEnable_) {
+                break;
+            }
+            if (writableSize < acache_.totalCacheSizeTgt) {
+                AUDIO_DEBUG_LOG("PaWriteStream: WaitWriteable writableSize %zu < %u wait for more",
+                    writableSize, acache_.totalCacheSizeTgt);
+            } else {
+                writableSize = writableSize / acache_.totalCacheSizeTgt * acache_.totalCacheSizeTgt;
+                break;
+            }
+        }
         AUDIO_DEBUG_LOG("PaWriteStream: WaitWriteable");
         StartTimer(WRITE_TIMEOUT_IN_SEC);
         if (!breakingWritePa_ && state_ == RUNNING) {
@@ -2124,18 +2136,21 @@ void AudioServiceClient::GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool be
     uint64_t frames;
     int64_t timeSec, timeNanoSec;
     audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
+    int64_t framesInt = static_cast<int64_t>(frames);
+    int64_t timeStampInt = static_cast<int64_t>(timeStamp);
     if (!beforeLocked && (
-        (int64_t)frames + offloadTsOffset_ <
-        (int64_t)timeStamp - (OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BIG_BUFFER) * AUDIO_US_PER_MS ||
-        (int64_t)frames + offloadTsOffset_ > (int64_t)timeStamp)) {
-        offloadTsOffset_ = (int64_t)timeStamp - (int64_t)frames;
+        framesInt + offloadTsOffset_ <
+        timeStampInt - static_cast<int64_t>(OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BUFFER) *
+                       static_cast<int64_t>(AUDIO_US_PER_MS) ||
+        framesInt + offloadTsOffset_ > timeStampInt)) {
+        offloadTsOffset_ = timeStampInt - framesInt;
     }
-    timeStamp = (uint64_t)((int64_t)frames + offloadTsOffset_);
+    timeStamp = static_cast<uint64_t>(framesInt + offloadTsOffset_);
 }
 
 int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
-    if (offloadWaitWriteableMutex_.try_lock_for(chrono::milliseconds(OFFLOAD_BIG_BUFFER))) {
+    if (offloadWaitWriteableMutex_.try_lock_for(chrono::milliseconds(OFFLOAD_BUFFER))) {
         lock_guard<timed_mutex> lockoffload(offloadWaitWriteableMutex_, adopt_lock);
     } else if (offloadEnable_ && eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         GetOffloadCurrentTimeStamp(timeStamp, true);
@@ -2394,12 +2409,18 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     }
 
     pa_threaded_mainloop_lock(mainLoop);
+    int32_t ret = SetStreamVolumeInML(volume);
+    pa_threaded_mainloop_unlock(mainLoop);
 
+    return ret;
+}
+
+int32_t AudioServiceClient::SetStreamVolumeInML(float volume)
+{
     volumeFactor_ = volume;
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
-        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
@@ -2409,7 +2430,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     if (updatePropOperation == nullptr) {
         AUDIO_ERR_LOG("pa_stream_proplist_update returned null");
         pa_proplist_free(propList);
-        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
@@ -2418,7 +2438,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
 
     if (audioSystemManager_ == nullptr) {
         AUDIO_ERR_LOG("System manager instance is null");
-        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
 
@@ -2428,7 +2447,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
             reinterpret_cast<void *>(this));
         if (operation == nullptr) {
             AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned null");
-            pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_ERR;
         }
 
@@ -2440,8 +2458,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     } else {
         SetPaVolume(*this);
     }
-
-    pa_threaded_mainloop_unlock(mainLoop);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -2588,21 +2604,21 @@ int32_t AudioServiceClient::InitializebufferAttrOffload()
 
     // perbuf tlength maxlength minreq should same to hdi_sink.c
     bufferAttrOffloadActiveForeground.fragsize = static_cast<uint32_t>(-1);
-    bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
-    // 4 for reservation factor
-    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * 4, sampleSpec);
-    bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(OFFLOAD_SMALL_BUFFER * MAX_LENGTH_FACTOR, sampleSpec);
-    bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
+    bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(0, sampleSpec);
+    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(
+        OFFLOAD_BUFFER * 2 + 20 * 2, sampleSpec); // 2 for reservation factor, 20ms * 2 for max_req
+    bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
+    bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(OFFLOAD_BUFFER, sampleSpec);
 
     bufferAttrOffloadActiveBackground = bufferAttrOffloadActiveForeground;
 
     bufferAttrOffloadInactiveBackground.fragsize = static_cast<uint32_t>(-1);
-    bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(OFFLOAD_SMALL_BUFFER, sampleSpec);
+    bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(0, sampleSpec);
     // +20 for requested_latency, otherwise requested_latency will set to 500us, that may cause problem
     bufferAttrOffloadInactiveBackground.tlength = MsToAlignedSize(
-        OFFLOAD_BIG_BUFFER * 3 + OFFLOAD_SMALL_BUFFER, sampleSpec); // 3 for reservation factor
+        OFFLOAD_BUFFER * 3, sampleSpec); // 3 for reservation factor
     bufferAttrOffloadInactiveBackground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
-    bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(OFFLOAD_BIG_BUFFER, sampleSpec);
+    bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(OFFLOAD_BUFFER, sampleSpec);
 
     if (bufferAttrStateMap_.count(OFFLOAD_ACTIVE_FOREGROUND)) {
         bufferAttrStateMap_[OFFLOAD_ACTIVE_FOREGROUND] = bufferAttrOffloadActiveForeground;
