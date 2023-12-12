@@ -348,8 +348,7 @@ void AudioSpatializationService::HandleSpatializationStateChange()
 
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_};
     AudioSpatializationState spatializationNotSupported = {false, false};
-
-    AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(currentDeviceAddress_);
+    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnabledMap;
 
     for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end(); ++it) {
         std::shared_ptr<AudioSpatializationStateChangeCallback> spatializationStateChangeCb = (it->second).first;
@@ -360,11 +359,15 @@ void AudioSpatializationService::HandleSpatializationStateChange()
             continue;
         }
         if ((it->second).second == STREAM_USAGE_GAME) {
+            sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, false));
             spatializationStateChangeCb->OnSpatializationStateChange(spatializationNotSupported);
         } else {
+            sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, spatializationEnabledReal_));
             spatializationStateChangeCb->OnSpatializationStateChange(spatializationState);
         }
     }
+    AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(
+        currentDeviceAddress_, sessionIDToSpatializationEnabledMap);
 }
 } // namespace AudioStandard
 } // namespace OHOS
