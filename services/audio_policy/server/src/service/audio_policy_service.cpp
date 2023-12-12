@@ -2341,13 +2341,20 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     // Activate new device if its already connected
-    auto isPresent = [&deviceType] (const unique_ptr<AudioDeviceDescriptor> &desc) {
+    auto isPresent = [&deviceType] (const sptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "SetDeviceActive::Invalid device descriptor");
         return ((deviceType == desc->deviceType_) || (deviceType == DEVICE_TYPE_FILE_SINK));
     };
+
     vector<unique_ptr<AudioDeviceDescriptor>> callDevices = GetAvailableDevices(CALL_OUTPUT_DEVICES);
-    auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
-    CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
+    std::vector<sptr<AudioDeviceDescriptor>> deviceList = {};
+    for (auto &desc : callDevices) {
+        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
+        deviceList.push_back(devDesc);
+    }
+
+    auto itr = std::find_if(deviceList.begin(), deviceList.end(), isPresent);
+    CHECK_AND_RETURN_RET_LOG(itr != deviceList.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
 
     if (!active) {
@@ -2358,7 +2365,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
         }
     } else {
-        audioStateManager_.SetPerferredCallRenderDevice(itr->get());
+        audioStateManager_.SetPerferredCallRenderDevice(*itr);
         if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
             deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
