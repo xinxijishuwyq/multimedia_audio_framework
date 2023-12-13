@@ -216,6 +216,7 @@ enum DeviceInfoUpdateCommand {
     CATEGORY_UPDATE = 1,
     CONNECTSTATE_UPDATE,
     ENABLE_UPDATE,
+    EXCEPTION_FLAG_UPDATE,
 };
 
 struct DevicePrivacyInfo {

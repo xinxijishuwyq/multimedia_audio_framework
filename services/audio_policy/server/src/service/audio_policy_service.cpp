@@ -1648,10 +1648,12 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
     vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated)
 {
-    int32_t ret = SwitchActiveA2dpDevice(new AudioDeviceDescriptor(*desc));
+    sptr<AudioDeviceDescriptor> deviceDesc = new AudioDeviceDescriptor(*desc);
+    int32_t ret = SwitchActiveA2dpDevice(deviceDesc);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
-        desc->exceptionFlag_ = true;
+        deviceDesc->exceptionFlag_ = true;
+        UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
         FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
         return ERROR;
     }
@@ -1666,6 +1668,7 @@ int32_t AudioPolicyService::HandleScoDeviceFetched(unique_ptr<AudioDeviceDescrip
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
             desc->exceptionFlag_ = true;
+            UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
             FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
             return ERROR;
         }
@@ -1784,6 +1787,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device");
                 desc->exceptionFlag_ = true;
+                UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
                 FetchInputDevice(capturerChangeInfos, isStreamStatusUpdated);
                 return;
             }

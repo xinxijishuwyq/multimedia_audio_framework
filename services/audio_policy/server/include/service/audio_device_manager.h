@@ -115,6 +115,7 @@ private:
     void UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
     void UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;
