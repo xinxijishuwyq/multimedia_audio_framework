@@ -717,6 +717,7 @@ private:
     int32_t InitializePAProbListOffload();
     int32_t InitializebufferAttrOffload();
     int32_t CheckOffloadPolicyChanged();
+    int32_t GetAudioLatencyOffload(uint64_t &latency);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();
