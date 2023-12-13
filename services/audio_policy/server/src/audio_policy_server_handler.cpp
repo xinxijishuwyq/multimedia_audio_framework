@@ -18,7 +18,7 @@
 namespace OHOS {
 namespace AudioStandard {
 AudioPolicyServerHandler::AudioPolicyServerHandler() : AppExecFwk::EventHandler(
-    AppExecFwk::EventRunner::Create("AudioPolicyAsyncRunner"))
+    AppExecFwk::EventRunner::Create("OS_APAsyncRunner"))
 {
     AUDIO_DEBUG_LOG("AudioPolicyServerHandler created");
 }
@@ -30,34 +30,33 @@ AudioPolicyServerHandler::~AudioPolicyServerHandler()
 
 void AudioPolicyServerHandler::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
 {
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     audioPolicyClientProxyAPSCbsMap_.emplace(clientPid, cb);
-    AUDIO_INFO_LOG("AudioPolicyServerHandler::AddAudioPolicyClientProxyMap, group data num [%{public}zu]",
+    AUDIO_INFO_LOG("AddAudioPolicyClientProxyMap, group data num [%{public}zu]",
         audioPolicyClientProxyAPSCbsMap_.size());
 }
 
-void AudioPolicyServerHandler::ReduceAudioPolicyClientProxyMap(pid_t clientPid)
+void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
 {
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
-    AUDIO_INFO_LOG("AudioPolicyServerHandler::ReduceAudioPolicyClientProxyMap, group data num [%{public}zu]",
+    AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu]",
         audioPolicyClientProxyAPSCbsMap_.size());
 }
 
 void AudioPolicyServerHandler::AddInterruptCbsMap(uint32_t sessionID,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {
-    std::lock_guard<std::mutex> lock(interruptMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     interruptCbsMap_[sessionID] = callback;
-    AUDIO_INFO_LOG("AudioPolicyServerHandler::AddInterruptCbsMap, group data num [%{public}zu]",
-        interruptCbsMap_.size());
+    AUDIO_INFO_LOG("AddInterruptCbsMap, group data num [%{public}zu]", interruptCbsMap_.size());
 }
 
-int32_t AudioPolicyServerHandler::ReduceInterruptCbsMap(uint32_t sessionID)
+int32_t AudioPolicyServerHandler::RemoveInterruptCbsMap(uint32_t sessionID)
 {
-    std::lock_guard<std::mutex> lock(interruptMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     if (interruptCbsMap_.erase(sessionID) == 0) {
-        AUDIO_ERR_LOG("ReduceInterruptCbsMap session %{public}d not present", sessionID);
+        AUDIO_ERR_LOG("RemoveInterruptCbsMap session %{public}d not present", sessionID);
         return ERR_INVALID_OPERATION;
     }
     return SUCCESS;
@@ -66,17 +65,17 @@ int32_t AudioPolicyServerHandler::ReduceInterruptCbsMap(uint32_t sessionID)
 void AudioPolicyServerHandler::AddExternInterruptCbsMap(int32_t clientId,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {
-    std::lock_guard<std::mutex> lock(amInterruptMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     amInterruptCbsMap_[clientId] = callback;
-    AUDIO_INFO_LOG("AudioPolicyServerHandler::AddExternInterruptCbsMap, group data num [%{public}zu]",
+    AUDIO_INFO_LOG("AddExternInterruptCbsMap, group data num [%{public}zu]",
         amInterruptCbsMap_.size());
 }
 
-int32_t AudioPolicyServerHandler::ReduceExternInterruptCbsMap(int32_t clientId)
+int32_t AudioPolicyServerHandler::RemoveExternInterruptCbsMap(int32_t clientId)
 {
-    std::lock_guard<std::mutex> lock(amInterruptMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     if (amInterruptCbsMap_.erase(clientId) == 0) {
-        AUDIO_ERR_LOG("ReduceExternInterruptCbsMap client %{public}d not present", clientId);
+        AUDIO_ERR_LOG("RemoveExternInterruptCbsMap client %{public}d not present", clientId);
         return ERR_INVALID_OPERATION;
     }
     return SUCCESS;
@@ -85,15 +84,14 @@ int32_t AudioPolicyServerHandler::ReduceExternInterruptCbsMap(int32_t clientId)
 void AudioPolicyServerHandler::AddAvailableDeviceChangeMap(int32_t clientId, const AudioDeviceUsage usage,
     const sptr<IStandardAudioPolicyManagerListener> &callback)
 {
-    std::lock_guard<std::mutex> lock(updateAvailableDeviceChangeMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     availableDeviceChangeCbsMap_[{clientId, usage}] = callback;
-    AUDIO_INFO_LOG("AudioPolicyServerHandler::AddAvailableDeviceChangeMap, group data num [%{public}zu]",
-        availableDeviceChangeCbsMap_.size());
+    AUDIO_INFO_LOG("AddAvailableDeviceChangeMap, group data num [%{public}zu]", availableDeviceChangeCbsMap_.size());
 }
 
-void AudioPolicyServerHandler::ReduceAvailableDeviceChangeMap(const int32_t clientId, AudioDeviceUsage usage)
+void AudioPolicyServerHandler::RemoveAvailableDeviceChangeMap(const int32_t clientId, AudioDeviceUsage usage)
 {
-    std::lock_guard<std::mutex> lock(updateAvailableDeviceChangeMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     if (availableDeviceChangeCbsMap_.erase({clientId, usage}) == 0) {
         AUDIO_INFO_LOG("client not present in %{public}s", __func__);
     }
@@ -107,14 +105,14 @@ void AudioPolicyServerHandler::ReduceAvailableDeviceChangeMap(const int32_t clie
             }
         }
     }
-    AUDIO_INFO_LOG("AudioPolicyServerHandler::ReduceAvailableDeviceChangeMap, group data num [%{public}zu]",
+    AUDIO_INFO_LOG("RemoveAvailableDeviceChangeMap, group data num [%{public}zu]",
         availableDeviceChangeCbsMap_.size());
 }
 
 void AudioPolicyServerHandler::AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
     const sptr<IStandardAudioRoutingManagerListener> &callback)
 {
-    std::lock_guard<std::mutex> lock(updateAvailableDeviceChangeMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     if (callback != nullptr) {
         distributedRoutingRoleChangeCbsMap_[clientId] = callback;
     }
@@ -124,7 +122,7 @@ void AudioPolicyServerHandler::AddDistributedRoutingRoleChangeCbsMap(int32_t cli
 
 int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId)
 {
-    std::lock_guard<std::mutex> lock(updateAvailableDeviceChangeMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     if (distributedRoutingRoleChangeCbsMap_.erase(clientId) == 0) {
         AUDIO_ERR_LOG("RemoveDistributedRoutingRoleChangeCbsMap clientPid %{public}d not present", clientId);
         return ERR_INVALID_OPERATION;
@@ -289,11 +287,49 @@ bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const sptr<Audio
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendRendererInfoEvent(
+    const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    std::vector<std::unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    for (const auto &changeInfo : audioRendererChangeInfos) {
+        rendererChangeInfos.push_back(std::make_unique<AudioRendererChangeInfo>(*changeInfo));
+    }
+
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->audioRendererChangeInfos = move(rendererChangeInfos);
+
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RENDERER_INFO_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendRendererInfoEvent event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendCapturerInfoEvent(
+    const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
+{
+    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    for (const auto &changeInfo : audioCapturerChangeInfos) {
+        capturerChangeInfos.push_back(std::make_unique<AudioCapturerChangeInfo>(*changeInfo));
+    }
+
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->audioCapturerChangeInfos = move(capturerChangeInfos);
+
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::CAPTURER_INFO_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendRendererInfoEvent event failed");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {
@@ -309,7 +345,7 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(updateAvailableDeviceChangeMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
         AudioDeviceUsage usage = it->first.second;
         eventContextObj->deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
@@ -328,7 +364,7 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         sptr<IAudioPolicyClient> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -345,7 +381,7 @@ void AudioPolicyServerHandler::HandleRequestCateGoryEvent(const AppExecFwk::Inne
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         it->second->OnAudioFocusRequested(eventContextObj->audioInterrupt);
     }
@@ -355,7 +391,7 @@ void AudioPolicyServerHandler::HandleAbandonCateGoryEvent(const AppExecFwk::Inne
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         it->second->OnAudioFocusAbandoned(eventContextObj->audioInterrupt);
     }
@@ -366,7 +402,7 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     AUDIO_INFO_LOG("HandleFocusInfoChangeEvent focusInfoList :%{public}zu", eventContextObj->focusInfoList.size());
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
     }
@@ -376,7 +412,7 @@ void AudioPolicyServerHandler::HandleRingerModeUpdatedEvent(const AppExecFwk::In
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         sptr<IAudioPolicyClient> ringerModeListenerCb = it->second;
         if (ringerModeListenerCb == nullptr) {
@@ -393,7 +429,7 @@ void AudioPolicyServerHandler::HandleMicStateUpdatedEvent(const AppExecFwk::Inne
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         sptr<IAudioPolicyClient> micStateChangeListenerCb = it->second;
         if (micStateChangeListenerCb == nullptr) {
@@ -408,7 +444,7 @@ void AudioPolicyServerHandler::HandleInterruptEvent(const AppExecFwk::InnerEvent
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(interruptMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it : interruptCbsMap_) {
         if (it.second != nullptr) {
             it.second->OnInterrupt(eventContextObj->interruptEvent);
@@ -421,7 +457,7 @@ void AudioPolicyServerHandler::HandleInterruptEventWithSessionId(const AppExecFw
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
-    std::lock_guard<std::mutex> lock(interruptMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[eventContextObj->sessionID];
     CHECK_AND_RETURN_LOG(policyListenerCb != nullptr, "policyListenerCb get nullptr");
     policyListenerCb->OnInterrupt(eventContextObj->interruptEvent);
@@ -432,7 +468,7 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
-    std::lock_guard<std::mutex> lock(amInterruptMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     std::shared_ptr<AudioInterruptCallback> policyListenerCb = amInterruptCbsMap_[eventContextObj->clientId];
     CHECK_AND_RETURN_LOG(policyListenerCb != nullptr, "policyListenerCb get nullptr");
     policyListenerCb->OnInterrupt(eventContextObj->interruptEvent);
@@ -440,14 +476,13 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
 
 void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 {
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioRendererInfo rendererInfo;
         auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
             GetPreferredOutputDeviceDescriptors(rendererInfo);
         if (!(it->second->hasBTPermission_)) {
-            AudioPolicyService::GetAudioPolicyService().
-                UpdateDescWhenNoBTPermission(deviceDescs);
+            AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }
         it->second->OnPreferredOutputDeviceUpdated(deviceDescs);
     }
@@ -455,7 +490,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 
 void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
 {
-    std::lock_guard<std::mutex> lock(updatePolicyPorxyMapMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioCapturerInfo captureInfo;
         auto deviceDescs = AudioPolicyService::GetAudioPolicyService().GetPreferredInputDeviceDescriptors(captureInfo);
@@ -470,21 +505,77 @@ void AudioPolicyServerHandler::HandleDistributedRoutingRoleChangeEvent(const App
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(configDistributedRoutingMutex_);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = distributedRoutingRoleChangeCbsMap_.begin(); it != distributedRoutingRoleChangeCbsMap_.end(); it++) {
         it->second->OnDistributedRoutingRoleChange(eventContextObj->descriptor, eventContextObj->type);
+    }
+}
+
+void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> rendererStateChangeCb = it->second;
+        if (rendererStateChangeCb == nullptr) {
+            AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
+    }
+}
+
+void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> capturerStateChangeCb = it->second;
+        if (capturerStateChangeCb == nullptr) {
+            AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
+    }
+}
+
+void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    switch (eventId) {
+        case EventAudioServerCmd::AUDIO_DEVICE_CHANGE:
+            HandleDeviceChangedCallback(event);
+            break;
+        case EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED:
+            HandlePreferredOutputDeviceUpdated();
+            break;
+        case EventAudioServerCmd::PREFERRED_INPUT_DEVICE_UPDATED:
+            HandlePreferredInputDeviceUpdated();
+            break;
+        case EventAudioServerCmd::AVAILABLE_AUDIO_DEVICE_CHANGE:
+            HandleAvailableDeviceChange(event);
+            break;
+        case EventAudioServerCmd::RENDERER_INFO_EVENT:
+            HandleRendererInfoEvent(event);
+            break;
+        case EventAudioServerCmd::CAPTURER_INFO_EVENT:
+            HandleCapturerInfoEvent(event);
+            break;
+        default:
+            break;
     }
 }
 
 void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventId = event->GetInnerEventId();
-    AUDIO_INFO_LOG("eventId:%{public}zu", eventId);
+    AUDIO_DEBUG_LOG("handler process eventId:%{public}u", eventId);
+
+    HandleServiceEvent(eventId, event);
 
     switch (eventId) {
-        case EventAudioServerCmd::AUDIO_DEVICE_CHANGE:
-            HandleDeviceChangedCallback(event);
-            break;
         case EventAudioServerCmd::VOLUME_KEY_EVENT:
             HandleVolumeKeyEvent(event);
             break;
@@ -511,15 +602,6 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::INTERRUPT_EVENT_WITH_CLIENTID:
             HandleInterruptEventWithClientId(event);
-            break;
-        case EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED:
-            HandlePreferredOutputDeviceUpdated();
-            break;
-        case EventAudioServerCmd::PREFERRED_INPUT_DEVICE_UPDATED:
-            HandlePreferredInputDeviceUpdated();
-            break;
-        case EventAudioServerCmd::AVAILABLE_AUDIO_DEVICE_CHANGE:
-            HandleAvailableDeviceChange(event);
             break;
         case EventAudioServerCmd::DISTRIBUTED_ROUTING_ROLE_CHANGE:
             HandleDistributedRoutingRoleChangeEvent(event);

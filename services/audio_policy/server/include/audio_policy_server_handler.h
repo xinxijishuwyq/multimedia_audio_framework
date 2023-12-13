@@ -49,6 +49,8 @@ public:
         PREFERRED_OUTPUT_DEVICE_UPDATED,
         PREFERRED_INPUT_DEVICE_UPDATED,
         DISTRIBUTED_ROUTING_ROLE_CHANGE,
+        RENDERER_INFO_EVENT,
+        CAPTURER_INFO_EVENT,
     };
     /* event data */
     class EventContextObj {
@@ -64,17 +66,19 @@ public:
         int32_t clientId;
         sptr<AudioDeviceDescriptor> descriptor;
         CastType type;
+        std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+        std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     };
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
-    void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
+    void RemoveAudioPolicyClientProxyMap(pid_t clientPid);
     void AddInterruptCbsMap(uint32_t sessionID, const std::shared_ptr<AudioInterruptCallback> &callback);
-    int32_t ReduceInterruptCbsMap(uint32_t sessionID);
+    int32_t RemoveInterruptCbsMap(uint32_t sessionID);
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);
-    int32_t ReduceExternInterruptCbsMap(int32_t clientId);
+    int32_t RemoveExternInterruptCbsMap(int32_t clientId);
     void AddAvailableDeviceChangeMap(int32_t clientId, const AudioDeviceUsage usage,
         const sptr<IStandardAudioPolicyManagerListener> &callback);
-    void ReduceAvailableDeviceChangeMap(const int32_t clientId, AudioDeviceUsage usage);
+    void RemoveAvailableDeviceChangeMap(const int32_t clientId, AudioDeviceUsage usage);
     void AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
@@ -94,6 +98,8 @@ public:
     bool SendPreferredInputDeviceUpdated();
     bool SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> &descriptor,
         const CastType &type);
+    bool SendRendererInfoEvent(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
+    bool SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -114,13 +120,12 @@ private:
     void HandlePreferredOutputDeviceUpdated();
     void HandlePreferredInputDeviceUpdated();
     void HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
+
+    void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     std::mutex runnerMutex_;
-    std::mutex updatePolicyPorxyMapMutex_;
-    std::mutex interruptMapMutex_;
-    std::mutex amInterruptMapMutex_;
-    std::mutex updateAvailableDeviceChangeMapMutex_;
-    std::mutex configDistributedRoutingMutex_;
     std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;

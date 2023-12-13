@@ -3665,15 +3665,13 @@ void AudioPolicyService::AddAudioPolicyClientProxyMap(int32_t clientPid, const s
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     }
-    streamCollector_.AddAudioPolicyClientProxyMap(clientPid, cb);
 }
 
 void AudioPolicyService::ReduceAudioPolicyClientProxyMap(pid_t clientPid)
 {
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->ReduceAudioPolicyClientProxyMap(clientPid);
+        audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
     }
-    streamCollector_.ReduceAudioPolicyClientProxyMap(clientPid);
 }
 
 int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
@@ -3697,7 +3695,7 @@ int32_t AudioPolicyService::UnsetAvailableDeviceChangeCallback(const int32_t cli
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->ReduceAvailableDeviceChangeMap(clientId, usage);
+        audioPolicyServerHandler_->RemoveAvailableDeviceChangeMap(clientId, usage);
     }
     return SUCCESS;
 }

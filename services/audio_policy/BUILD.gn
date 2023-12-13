@@ -153,7 +153,6 @@ ohos_shared_library("audio_policy_service") {
     "server/src/audio_routing_manager_listener_proxy.cpp",
     "server/src/audio_spatialization_state_change_listener_proxy.cpp",
     "server/src/audio_stream_collector.cpp",
-    "server/src/audio_stream_event_dispatcher.cpp",
     "server/src/service/audio_device_manager.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/audio_state_manager.cpp",

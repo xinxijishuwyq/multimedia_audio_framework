@@ -1038,7 +1038,7 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
 int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID)
 {
     if (audioPolicyServerHandler_ != nullptr) {
-        return audioPolicyServerHandler_->ReduceInterruptCbsMap(sessionID);
+        return audioPolicyServerHandler_->RemoveInterruptCbsMap(sessionID);
     }
     return SUCCESS;
 }
@@ -1072,7 +1072,7 @@ int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* c
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     if (audioPolicyServerHandler_ != nullptr) {
-        return audioPolicyServerHandler_->ReduceExternInterruptCbsMap(clientPid);
+        return audioPolicyServerHandler_->RemoveExternInterruptCbsMap(clientPid);
     }
 
     return SUCCESS;
