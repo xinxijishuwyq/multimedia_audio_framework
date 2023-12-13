@@ -659,7 +659,7 @@ void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor>
         case ENABLE_UPDATE:
             UpdateEnableState(devDesc);
             break;
-        case EXCEPTION_FLAG_UPDATE;
+        case EXCEPTION_FLAG_UPDATE:
             UpdateExceptionFlag(devDesc);
             break;
         default:
