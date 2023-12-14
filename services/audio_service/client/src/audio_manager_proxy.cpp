@@ -198,34 +198,6 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activ
     return result;
 }
 
-std::vector<sptr<AudioDeviceDescriptor>> AudioManagerProxy::GetDevices(DeviceFlag deviceFlag)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return deviceInfo;
-    }
-    data.WriteInt32(static_cast<int32_t>(deviceFlag));
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::GET_DEVICES), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get devices failed, error: %d", error);
-        return deviceInfo;
-    }
-
-    int32_t size = reply.ReadInt32();
-    for (int32_t i = 0; i < size; i++) {
-        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
-    }
-
-    return deviceInfo;
-}
-
 const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
 {
     MessageParcel data;
@@ -316,33 +288,6 @@ void AudioManagerProxy::SetAudioParameter(const std::string& networkId, const Au
         AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
         return;
     }
-}
-
-const char *AudioManagerProxy::RetrieveCookie(int32_t &size)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    const char *cookieInfo = nullptr;
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return nullptr;
-    }
-
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::RETRIEVE_COOKIE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("retrieve cookie failed, error: %d", error);
-        return nullptr;
-    }
-
-    size = reply.ReadInt32();
-    if (size > 0) {
-        cookieInfo = reinterpret_cast<const char *>(reply.ReadRawData(size));
-    }
-
-    return cookieInfo;
 }
 
 uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)

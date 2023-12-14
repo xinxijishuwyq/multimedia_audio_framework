@@ -180,41 +180,6 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_002, TestSize.Level1)
 /**
  * @tc.name  : Test AudioManagerProxy API
  * @tc.type  : FUNC
- * @tc.number: AudioManagerProxy_003
- * @tc.desc  : Test AudioManagerProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_003, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    AudioScene audioScene = AudioScene::AUDIO_SCENE_DEFAULT;
-    DeviceType activeDevice = DeviceType::DEVICE_TYPE_SPEAKER;
-    ret = audioManagerProxy->SetAudioScene(audioScene, activeDevice);
-    EXPECT_EQ(AUDIO_OK, ret);
-
-    DeviceFlag deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    audioDeviceDescriptors = audioManagerProxy->GetDevices(deviceFlag);
-    EXPECT_EQ(audioDeviceDescriptors.size() > 0, false);
-
-    ret = audioManagerProxy->UpdateActiveDeviceRoute(DeviceType::DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
-    EXPECT_EQ(AUDIO_OK, ret);
-
-    sptr<IRemoteObject> object = nullptr;
-    ret = audioManagerProxy->SetParameterCallback(object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
-
-    auto parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStub();
-    EXPECT_NE(parameterChangeCbStub, nullptr);
-    object = parameterChangeCbStub->AsObject();
-    EXPECT_NE(object, nullptr);
-    ret = audioManagerProxy->SetParameterCallback(object);
-    EXPECT_EQ(AUDIO_OK, ret);
-}
-
-/**
- * @tc.name  : Test AudioManagerProxy API
- * @tc.type  : FUNC
  * @tc.number: AudioManagerProxy_004
  * @tc.desc  : Test AudioManagerProxy interface.
  */

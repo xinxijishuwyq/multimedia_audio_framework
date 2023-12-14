@@ -268,33 +268,6 @@ const std::string AudioServer::GetAudioParameter(const std::string& networkId, c
     return audioRendererSinkInstance->GetAudioParameter(key, condition);
 }
 
-const char *AudioServer::RetrieveCookie(int32_t &size)
-{
-    char *cookieInfo = nullptr;
-    size = 0;
-    std::ifstream cookieFile(DEFAULT_COOKIE_PATH, std::ifstream::binary);
-    if (!cookieFile) {
-        return cookieInfo;
-    }
-
-    cookieFile.seekg (0, cookieFile.end);
-    size = cookieFile.tellg();
-    cookieFile.seekg (0, cookieFile.beg);
-
-    if ((size > 0) && (size < PATH_MAX)) {
-        cookieInfo = (char *)malloc(size * sizeof(char));
-        if (cookieInfo == nullptr) {
-            AUDIO_ERR_LOG("AudioServer::RetrieveCookie: No memory");
-            cookieFile.close();
-            return cookieInfo;
-        }
-        AUDIO_DEBUG_LOG("Reading: %{public}d characters...", size);
-        cookieFile.read(cookieInfo, size);
-    }
-    cookieFile.close();
-    return cookieInfo;
-}
-
 uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
 {
     uint64_t transactionId = 0;
@@ -871,12 +844,6 @@ int32_t AudioServer::OffloadSetBufferSize(uint32_t sizeMs)
         return ERROR;
     }
     return audioRendererSinkInstance->SetBufferSize(sizeMs);
-}
-
-std::vector<sptr<AudioDeviceDescriptor>> AudioServer::GetDevices(DeviceFlag deviceFlag)
-{
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptor = {};
-    return audioDeviceDescriptor;
 }
 
 void AudioServer::AudioServerDied(pid_t pid)

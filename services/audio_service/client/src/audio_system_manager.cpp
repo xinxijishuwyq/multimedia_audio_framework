@@ -297,15 +297,6 @@ void AudioSystemManager::SetAudioParameter(const std::string &key, const std::st
     gasp->SetAudioParameter(key, value);
 }
 
-const char *AudioSystemManager::RetrieveCookie(int32_t &size)
-{
-    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    if (gasp == nullptr) {
-        AUDIO_ERR_LOG("RetrieveCookie::Audio service unavailable.");
-        return nullptr;
-    }
-    return gasp->RetrieveCookie(size);
-}
 
 uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
 {

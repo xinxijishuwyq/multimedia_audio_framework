@@ -34,7 +34,6 @@ public:
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) override;
     const std::string GetAudioParameter(const std::string &key) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
@@ -42,7 +41,6 @@ public:
     void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
-    const char *RetrieveCookie(int32_t &size) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;

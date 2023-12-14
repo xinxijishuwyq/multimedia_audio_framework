@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_POLICY_INTERFACE_H
-#define ST_AUDIO_POLICY_INTERFACE_H
+#ifndef I_AUDIO_POLICY_INTERFACE_H
+#define I_AUDIO_POLICY_INTERFACE_H
 
 #include "audio_module_info.h"
 #include "audio_info.h"
@@ -113,4 +113,4 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // ST_AUDIO_POLICY_INTERFACE_H
+#endif // I_AUDIO_POLICY_INTERFACE_H
