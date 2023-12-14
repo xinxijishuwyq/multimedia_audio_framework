@@ -35,8 +35,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
-    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/test_48k_5.1.2+2_32bit.pcm";  // need manually push
-    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/test_48k_5.1.2+2.metadata";  // need manually push
+    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/test_44100_2.pcm";
+    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/test_null.metadata";  // null data
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_INVALID = -2;
@@ -97,10 +97,10 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
 
 void AudioRendererUnitTest::Initialize3DRendererOptions(AudioRendererOptions &rendererOptions)
 {
-    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    rendererOptions.streamInfo.channels = AudioChannel::CHANNEL_10;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
