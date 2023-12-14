@@ -81,26 +81,16 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     return streamMap;
 }
 
-AudioStreamCollector::AudioStreamCollector() : mDispatcherService
-    (AudioStreamEventDispatcher::GetAudioStreamEventDispatcher()),
-    audioSystemMgr_(AudioSystemManager::GetInstance())
+AudioStreamCollector::AudioStreamCollector() : audioSystemMgr_
+    (AudioSystemManager::GetInstance())
 {
+    audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
     AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
 AudioStreamCollector::~AudioStreamCollector()
 {
     AUDIO_INFO_LOG("~AudioStreamCollector()");
-}
-
-void AudioStreamCollector::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
-{
-    mDispatcherService.AddAudioPolicyClientProxyMap(clientPid, cb);
-}
-
-void AudioStreamCollector::ReduceAudioPolicyClientProxyMap(pid_t clientPid)
-{
-    mDispatcherService.ReduceAudioPolicyClientProxyMap(clientPid);
 }
 
 int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamChangeInfo)
@@ -129,7 +119,9 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     AUDIO_DEBUG_LOG("audioRendererChangeInfos_: Added for client %{public}d session %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.sessionId);
 
-    mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK, audioRendererChangeInfos_);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
+        "audioPolicyServerHandler_ is nullptr, callback error");
+    audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
     return SUCCESS;
 }
 
@@ -184,7 +176,9 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     AUDIO_DEBUG_LOG("audioCapturerChangeInfos_: Added for client %{public}d session %{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
-    mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD, audioCapturerChangeInfos_);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
+        "audioPolicyServerHandler_ is nullptr, callback error");
+    audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
     return SUCCESS;
 }
 
@@ -246,7 +240,6 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
     AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.rendererState,
         streamChangeInfo.audioRendererChangeInfo.sessionId);
-
     if (rendererStatequeue_.find(make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,
         streamChangeInfo.audioRendererChangeInfo.sessionId)) != rendererStatequeue_.end()) {
         if (streamChangeInfo.audioRendererChangeInfo.rendererState ==
@@ -279,8 +272,9 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             }
             *it = move(rendererChangeInfo);
 
-            mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
-                audioRendererChangeInfos_);
+            if (audioPolicyServerHandler_ != nullptr) {
+                audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
+            }
 
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
@@ -332,9 +326,9 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
                 capturerChangeInfo->inputDeviceInfo = (*it)->inputDeviceInfo;
             }
             *it = move(capturerChangeInfo);
-
-            mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
-                audioCapturerChangeInfos_);
+            if (audioPolicyServerHandler_ != nullptr) {
+                audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+            }
             if (streamChangeInfo.audioCapturerChangeInfo.capturerState ==  CAPTURER_RELEASED) {
                 audioCapturerChangeInfos_.erase(it);
                 capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo.clientUID,
@@ -362,9 +356,8 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(DeviceInfo &outputDeviceI
         }
     }
 
-    if (deviceInfoUpdated) {
-        mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
-            audioRendererChangeInfos_);
+    if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
     }
 
     return SUCCESS;
@@ -383,9 +376,8 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(DeviceInfo &inputDeviceIn
         }
     }
 
-    if (deviceInfoUpdated) {
-        mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
-            audioCapturerChangeInfos_);
+    if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
     }
 
     return SUCCESS;
@@ -406,9 +398,8 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
         }
     }
 
-    if (deviceInfoUpdated) {
-        mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
-            audioRendererChangeInfos_);
+    if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
     }
     return SUCCESS;
 }
@@ -428,9 +419,8 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_
         }
     }
 
-    if (deviceInfoUpdated) {
-        mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
-            audioCapturerChangeInfos_);
+    if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
     }
 
     return SUCCESS;
@@ -532,8 +522,9 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         sessionID = audioRendererChangeInfo->sessionId;
         audioRendererChangeInfo->rendererState = RENDERER_RELEASED;
         WriteRenderStreamReleaseSysEvent(audioRendererChangeInfo);
-        mDispatcherService.SendRendererInfoEventToDispatcher(AudioMode::AUDIO_MODE_PLAYBACK,
-            audioRendererChangeInfos_);
+        if (audioPolicyServerHandler_ != nullptr) {
+            audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
+        }
         rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID,
             audioRendererChangeInfo->sessionId));
         vector<std::unique_ptr<AudioRendererChangeInfo>>::iterator temp = audioRendererBegin;
@@ -554,8 +545,9 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         sessionID = audioCapturerChangeInfo->sessionId;
         audioCapturerChangeInfo->capturerState = CAPTURER_RELEASED;
         WriteCaptureStreamReleaseSysEvent(audioCapturerChangeInfo);
-        mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
-            audioCapturerChangeInfos_);
+        if (audioPolicyServerHandler_ != nullptr) {
+            audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+        }
         capturerStatequeue_.erase(make_pair(audioCapturerChangeInfo->clientUID,
             audioCapturerChangeInfo->sessionId));
         vector<std::unique_ptr<AudioCapturerChangeInfo>>::iterator temp = audioCapturerBegin;
@@ -785,9 +777,8 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
         }
     }
 
-    if (capturerInfoUpdated) {
-        mDispatcherService.SendCapturerInfoEventToDispatcher(AudioMode::AUDIO_MODE_RECORD,
-            audioCapturerChangeInfos_);
+    if (capturerInfoUpdated && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
     }
 
     return SUCCESS;

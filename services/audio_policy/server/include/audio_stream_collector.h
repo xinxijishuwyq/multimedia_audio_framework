@@ -17,9 +17,9 @@
 #define AUDIO_STREAM_COLLECTOR_H
 
 #include "audio_info.h"
-#include "audio_stream_event_dispatcher.h"
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
+#include "audio_policy_server_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,7 +61,6 @@ public:
     void GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioRendererChangeInfo &rendererInfo);
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
 private:
-    AudioStreamEventDispatcher &mDispatcherService;
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
     std::map<std::pair<int32_t, int32_t>, int32_t> capturerStatequeue_;
@@ -86,6 +85,7 @@ private:
     void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
         unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     AudioSystemManager *audioSystemMgr_;
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
