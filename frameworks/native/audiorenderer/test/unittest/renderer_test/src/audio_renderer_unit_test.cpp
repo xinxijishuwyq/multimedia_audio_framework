@@ -35,8 +35,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
-    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/test_44100_2.wav";  // temp use
-    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/test_44100_2.wav";  // null data
+    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/test_48k_5.1.2+2_32bit.pcm";  // need manually push
+    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/test_48k_5.1.2+2.metadata";  // need manually push
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_INVALID = -2;
@@ -92,6 +92,18 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
 
+    return;
+}
+
+void AudioRendererUnitTest::Initialize3DRendererOptions(AudioRendererOptions &rendererOptions)
+{
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    rendererOptions.streamInfo.channels = AudioChannel::CHANNEL_10;
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
     return;
 }
 
@@ -2082,8 +2094,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
         ASSERT_NE(nullptr, metaFile);
 
         AudioRendererOptions rendererOptions;
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2102,7 +2113,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
 
         while (numBuffersToRender) {
             bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
-            // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+            fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
             std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
             bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
             EXPECT_GE(bytesWritten, VALUE_ZERO);
@@ -2150,7 +2161,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
         ASSERT_NE(nullptr, metaBuffer);
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
         EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
@@ -2173,8 +2184,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2185,7 +2195,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
         AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
         EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
@@ -2210,8 +2220,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2226,7 +2235,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
         ASSERT_NE(nullptr, metaBuffer);
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
 
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
         EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
@@ -2253,8 +2262,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2271,7 +2279,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
         ASSERT_NE(nullptr, metaBuffer);
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, 0, metaFile);
+        fread(metaBuffer, 1, 0, metaFile);
 
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, 0);
         EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
@@ -2298,8 +2306,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2313,7 +2320,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
         AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         uint8_t *buffer_null = nullptr;
         int32_t bytesWritten = audioRenderer->Write(buffer_null, bufferLen, metaBuffer, AVS3METADATA_SIZE);
         EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
@@ -2340,8 +2347,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2355,7 +2361,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
         AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         uint8_t *buffer_null = nullptr;
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, buffer_null, AVS3METADATA_SIZE);
         EXPECT_EQ(ERR_INVALID_PARAM, bytesWritten);
@@ -2382,8 +2388,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2400,7 +2405,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
         EXPECT_EQ(true, isStopped);
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
         EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
@@ -2425,8 +2430,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2444,7 +2448,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
 
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
         EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
@@ -2468,8 +2472,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2489,7 +2492,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
 
         while (numBuffersToRender) {
             bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
-            // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+            fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
 
             std::fill(buffer + bytesToWrite, buffer + bufferLen, 0);
 
@@ -2537,8 +2540,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_011, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-        rendererOptions.streamInfo.encoding = ENCODING_AUDIOVIVID;
+        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2555,7 +2557,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_011, TestSize.Level1)
         EXPECT_EQ(true, isStarted);
 
         fread(buffer, 1, bufferLen, wavFile);
-        // fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
         EXPECT_EQ(ERR_INCORRECT_MODE, bytesWritten);
 
