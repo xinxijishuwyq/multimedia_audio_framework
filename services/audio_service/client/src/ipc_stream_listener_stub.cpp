@@ -30,7 +30,8 @@ bool IpcStreamListenerStub::CheckInterfaceToken(MessageParcel &data)
     return true;
 }
 
-int IpcStreamListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+int IpcStreamListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
 {
     if (!CheckInterfaceToken(data)) {
         return AUDIO_ERR;

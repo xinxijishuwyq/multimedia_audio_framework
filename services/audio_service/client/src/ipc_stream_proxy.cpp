@@ -45,7 +45,8 @@ int32_t IpcStreamProxy::RegisterStreamListener(sptr<IRemoteObject> object)
     data.WriteRemoteObject(object);
 
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_REGISTER_STREAM_LISTENER, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "RegisterStreamListener failed, error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "RegisterStreamListener failed,"
+        "error: %{public}d", ret);
 
     return reply.ReadInt32();
 }

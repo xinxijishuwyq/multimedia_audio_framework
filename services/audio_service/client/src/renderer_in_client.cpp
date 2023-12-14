@@ -119,7 +119,7 @@ public:
 
     // Playback related APIs
     bool DrainAudioStream() override;
-    int32_t Write(uint8_t *buffer, size_t buffer_size) override;
+    int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
 
@@ -160,8 +160,8 @@ public:
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 
-    void SendRenderMarkReachedEvent(int64_t rendererMarkPosition_);
-    void SendRenderPeriodReachedEvent(int64_t rendererPeriodSize_);
+    void SendRenderMarkReachedEvent(int64_t rendererMarkPosition);
+    void SendRenderPeriodReachedEvent(int64_t rendererPeriodSize);
 
     void HandleRendererPositionChanges(size_t bytesWritten);
     void HandleStateChangeEvent(int64_t data);
@@ -313,7 +313,7 @@ RendererStreamListener::RendererStreamListener(std::shared_ptr<RendererInClientI
 int32_t RendererStreamListener::OnOperationHandled(Operation operation, int64_t result)
 {
     std::shared_ptr<RendererInClientInner> render = rendererInClinet_.lock();
-    if(render == nullptr) {
+    if (render == nullptr) {
         AUDIO_WARNING_LOG("OnOperationHandled() find rendererInClinet is null, operation:%{public}d result:"
             "%{public}" PRId64".", operation, result);
         return ERR_ILLEGAL_STATE;
@@ -408,7 +408,7 @@ void RendererInClientInner::UpdateTracker(const std::string &updateCase)
 }
 
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
@@ -669,7 +669,7 @@ bool RendererInClientInner::CheckRecordingCreate(uint32_t appTokenId, uint64_t a
 }
 
 bool RendererInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
-        AudioPermissionState state)
+    AudioPermissionState state)
 {
     AUDIO_WARNING_LOG("CheckRecordingCreate is not supported");
     return false;
@@ -714,7 +714,7 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 int32_t RendererInClientInner::GetLatency(uint64_t &latency)
 {
     // in plan:
-    latency = 150000000; // for debug
+    latency = 150000000; // 150000000, only for debug
     return ERROR;
 }
 
@@ -1092,7 +1092,8 @@ bool RendererInClientInner::FlushAudioStream()
 
 int32_t RendererInClientInner::DrainAudioCache()
 {
-    // in plan: send all data in ringCache_ to server even if GetReadableSize() < clientSpanSizeInByte_. GetReadableSize() should be 0
+    // in plan: send all data in ringCache_ to server even if GetReadableSize() < clientSpanSizeInByte_.
+    // GetReadableSize() should be 0
     return SUCCESS;
 }
 
@@ -1133,17 +1134,18 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
     AUDIO_WARNING_LOG("Not Supported Yet");
 }
 
-int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
+int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
+    size_t metaBufferSize)
 {
      AUDIO_ERR_LOG("Write with metaBuffer is not supported");
     return ERR_INVALID_OPERATION;
 }
 
-int32_t RendererInClientInner::Write(uint8_t *buffer, size_t buffer_size)
+int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
-    Trace trace("RendererInClient::Write " + std::to_string(buffer_size));
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && buffer_size > 0 && buffer_size < MAX_CLIENT_WRITE_SIZE,
-        ERR_INVALID_PARAM, "Write with invalid params, size is %{public}zu", buffer_size);
+    Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize > 0 && bufferSize < MAX_CLIENT_WRITE_SIZE,
+        ERR_INVALID_PARAM, "Write with invalid params, size is %{public}zu", bufferSize);
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
@@ -1160,10 +1162,10 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t buffer_size)
 
     // hold lock
     if (isBlendSet_) {
-        audioBlend_.Process(buffer, buffer_size);
+        audioBlend_.Process(buffer, bufferSize);
     }
 
-    size_t targetSize = buffer_size;
+    size_t targetSize = bufferSize;
     size_t offset = 0;
     while (targetSize > sizePerFrameInByte_) {
         // 1. write data into ring cache
@@ -1207,7 +1209,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t buffer_size)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
 
-    return buffer_size - targetSize;
+    return bufferSize - targetSize;
 }
 
 int32_t RendererInClientInner::WriteCacheData()
@@ -1272,25 +1274,25 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 }
 
 // OnRenderMarkReach by eventHandler
-void RendererInClientInner::SendRenderMarkReachedEvent(int64_t rendererMarkPosition_)
+void RendererInClientInner::SendRenderMarkReachedEvent(int64_t rendererMarkPosition)
 {
     std::lock_guard<std::mutex> runnerlock(runnerMutex_);
     if (runnerReleased_) {
         AUDIO_WARNING_LOG("SendRenderMarkReachedEvent runner released");
         return;
     }
-    callbackHandler_->SendCallbackEvent(RENDERER_MARK_REACHED_EVENT, rendererMarkPosition_);
+    callbackHandler_->SendCallbackEvent(RENDERER_MARK_REACHED_EVENT, rendererMarkPosition);
 }
 
 // OnRenderPeriodReach by eventHandler
-void RendererInClientInner::SendRenderPeriodReachedEvent(int64_t rendererPeriodSize_)
+void RendererInClientInner::SendRenderPeriodReachedEvent(int64_t rendererPeriodSize)
 {
     std::lock_guard<std::mutex> runnerlock(runnerMutex_);
     if (runnerReleased_) {
         AUDIO_WARNING_LOG("SendRenderPeriodReachedEvent runner released");
         return;
     }
-    callbackHandler_->SendCallbackEvent(RENDERER_PERIOD_REACHED_EVENT, rendererPeriodSize_);
+    callbackHandler_->SendCallbackEvent(RENDERER_PERIOD_REACHED_EVENT, rendererPeriodSize);
 }
 
 int32_t RendererInClientInner::ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType)
@@ -1366,8 +1368,8 @@ uint32_t RendererInClientInner::GetUnderflowCount()
     return 0;
 }
 
-void RendererInClientInner::SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
-       
+void RendererInClientInner::SetRendererPositionCallback(int64_t markPosition,
+    const std::shared_ptr<RendererPositionCallback> &callback)
 {
     // waiting for review
     std::lock_guard<std::mutex> lock(markReachMutex_);
@@ -1387,7 +1389,7 @@ void RendererInClientInner::UnsetRendererPositionCallback()
 }
 
 void RendererInClientInner::SetRendererPeriodPositionCallback(int64_t markPosition,
-        const std::shared_ptr<RendererPeriodPositionCallback> &callback)
+    const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
     // waiting for review
     std::lock_guard<std::mutex> lock(periodReachMutex_);
@@ -1408,8 +1410,8 @@ void RendererInClientInner::UnsetRendererPeriodPositionCallback()
     rendererPeriodWritten_ = 0;
 }
 
-void RendererInClientInner::SetCapturerPositionCallback(int64_t markPosition, const std::shared_ptr<CapturerPositionCallback> &callback)
-       
+void RendererInClientInner::SetCapturerPositionCallback(int64_t markPosition,
+    const std::shared_ptr<CapturerPositionCallback> &callback)  
 {
     AUDIO_ERR_LOG("SetCapturerPositionCallback is not supported");
     return;
@@ -1422,7 +1424,7 @@ void RendererInClientInner::UnsetCapturerPositionCallback()
 }
 
 void RendererInClientInner::SetCapturerPeriodPositionCallback(int64_t markPosition,
-        const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
+    const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
     AUDIO_ERR_LOG("SetCapturerPositionCallback is not supported");
     return;

@@ -16,12 +16,8 @@
 #include <memory>
 
 #include "ipc_stream_in_server.h"
-
 #include "audio_log.h"
 #include "audio_errors.h"
-
-// #include "audio_renderer_in_server.h"
-// #include "audio_capturer_in_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -60,7 +56,8 @@ sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &conf
     sptr<IpcStreamInServer> streamInServer = new(std::nothrow) IpcStreamInServer(config, mode);
     ret = streamInServer->Config();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("IpcStreamInServer Config failed: %{public}d, uid: %{public}d", ret, config.appInfo.appUid); // waiting for review: add uid.
+        AUDIO_ERR_LOG("IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
+            ret, config.appInfo.appUid); // waiting for review: add uid.
         streamInServer = nullptr;
     }
     return streamInServer;
@@ -264,10 +261,7 @@ int32_t IpcStreamInServer::SetRate(int32_t rate)
 
 int32_t IpcStreamInServer::GetRate(int32_t &rate)
 {
-    // if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-    //     return rendererInServer_->GetRate(rate);
-    // }
-    // AUDIO_ERR_LOG("GetRate failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    // In plan
     return ERR_OPERATION_FAILED;
 }
 

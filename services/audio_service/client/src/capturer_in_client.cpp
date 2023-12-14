@@ -117,7 +117,7 @@ public:
 
     // Playback related APIs
     bool DrainAudioStream() override;
-    int32_t Write(uint8_t *buffer, size_t buffer_size) override;
+    int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
 
@@ -326,7 +326,7 @@ void CapturerInClientInner::UpdateTracker(const std::string &updateCase)
 }
 
 int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj)
+    const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
         " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
@@ -792,7 +792,7 @@ int32_t CapturerInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     return ERR_INVALID_OPERATION;
 }
 
-int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t buffer_size)
+int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
     // in plan
     return ERROR;
@@ -826,7 +826,7 @@ void CapturerInClientInner::UnsetRendererPositionCallback()
 }
 
 void CapturerInClientInner::SetRendererPeriodPositionCallback(int64_t markPosition,
-        const std::shared_ptr<RendererPeriodPositionCallback> &callback)
+    const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
     // in plan
 }

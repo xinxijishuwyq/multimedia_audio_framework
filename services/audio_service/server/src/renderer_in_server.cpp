@@ -52,15 +52,16 @@ int32_t RendererInServer::ConfigServerBuffer()
     }
 
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
-    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}u, spanSizeInFrame_: %{public}u, byteSizePerFrame_:%{public}u",
-        totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
+    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}u, spanSizeInFrame_: %{public}u,"
+        "byteSizePerFrame_:%{public}u", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     
     // create OHAudioBuffer in server
-    audioServerBuffer_ = OHAudioBuffer::CreateFormLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_); // Waiting for review, 后两个参数都从impl获取
+    audioServerBuffer_ = OHAudioBuffer::CreateFormLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
 
     // we need to clear data buffer to avoid dirty data.
-    memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0, audioServerBuffer_->GetDataSize());
+    memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
+        audioServerBuffer_->GetDataSize());
     int32_t ret = InitBufferStatus();
     AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
 
@@ -111,24 +112,20 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     AUDIO_INFO_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
     operation_ = operation;
-    if (operation == OPERATION_RELEASED) {
-        AUDIO_WARNING_LOG("Stream already released");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released");
     std::lock_guard<std::mutex> lock(statusLock_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     switch (operation) {
         case OPERATION_UNDERRUN:
-            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",audioServerBuffer_->GetAvailableDataFrames());
-            if (audioServerBuffer_->GetAvailableDataFrames() == 4 * spanSizeInFrame_) {
+            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
+                audioServerBuffer_->GetAvailableDataFrames());
+            if (audioServerBuffer_->GetAvailableDataFrames() == 4 * spanSizeInFrame_) { //In plan, maxlength is 4
                 AUDIO_INFO_LOG("Buffer is empty");
                 needStart = 0;
-
             } else {
                 AUDIO_INFO_LOG("Buffer is not empty");
                 WriteData();
             }
-            // callback->CancelBufferFromBlock();
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
@@ -186,7 +183,8 @@ void RendererInServer::WriteData()
         AUDIO_INFO_LOG("Buffer length: %{public}zu", bufferDesc.bufLength);
         stream_->EnqueueBuffer(bufferDesc);
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
-        AUDIO_INFO_LOG("RendererInServer::WriteData: CurrentReadFrame: %{public}" PRIu64 ", nextReadFrame:%{public}" PRIu64 "", currentReadFrame, nextReadFrame);
+        AUDIO_INFO_LOG("RendererInServer::WriteData: CurrentReadFrame: %{public}" PRIu64 ","
+            "nextReadFrame:%{public}" PRIu64 "", currentReadFrame, nextReadFrame);
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
@@ -215,8 +213,9 @@ int32_t RendererInServer::OnWriteData(size_t length)
 int32_t RendererInServer::UpdateWriteIndex()
 {
     AUDIO_INFO_LOG("UpdateWriteIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, "
-        "spanSizeInFrame_:%{public}d, needStart: %{public}d", audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_, needStart);
-    if (audioServerBuffer_->GetAvailableDataFrames() == spanSizeInFrame_ && needStart < 3) {
+        "spanSizeInFrame_:%{public}d, needStart: %{public}d", audioServerBuffer_->GetAvailableDataFrames(),
+        spanSizeInFrame_, needStart);
+    if (audioServerBuffer_->GetAvailableDataFrames() == spanSizeInFrame_ && needStart < 3) { // 3 is maxlength - 1
         AUDIO_WARNING_LOG("Start write data");
         WriteData();
         needStart++;
@@ -297,7 +296,8 @@ int32_t RendererInServer::Flush()
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
         readFrame += spanSizeInFrame_;
-        AUDIO_INFO_LOG("On flush, read frame: %{public}" PRIu64 ", nextReadFrame: %{public}u, writeFrame: %{public}" PRIu64 "", readFrame, spanSizeInFrame_, writeFrame);
+        AUDIO_INFO_LOG("On flush, read frame: %{public}" PRIu64 ", nextReadFrame: %{public}u,"
+            "writeFrame: %{public}" PRIu64 "", readFrame, spanSizeInFrame_, writeFrame);
         audioServerBuffer_->SetCurReadFrame(readFrame);
     }
 

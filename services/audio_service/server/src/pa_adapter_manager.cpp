@@ -24,6 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 const uint32_t CHECK_UTIL_SUCCESS = 0;
+const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -265,7 +266,8 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig)
     }
     const std::string streamName = GetStreamName(processConfig.streamType);
     pa_channel_map map;
-    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName) == 0, nullptr, "set pa proplist failed");
+    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName) == 0, nullptr,
+        "set pa proplist failed");
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec, nullptr, propList);
     if (!paStream) {
@@ -310,10 +312,11 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
-    } else if (processConfig.audioMode == AUDIO_MODE_RECORD){
+    } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
-        pa_proplist_sets(propList, "stream.capturerSource", std::to_string(processConfig.capturerInfo.sourceType).c_str());
+        pa_proplist_sets(propList, "stream.capturerSource",
+            std::to_string(processConfig.capturerInfo.sourceType).c_str());
     }
 
     AUDIO_INFO_LOG("Creating stream of channels %{public}d", processConfig.streamInfo.channels);
@@ -332,9 +335,11 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     return SUCCESS;
 }
 
-std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream)
+std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioProcessConfig processConfig,
+    pa_stream *paStream)
 {
-    std::shared_ptr<PaRendererStreamImpl> rendererStream = std::make_shared<PaRendererStreamImpl>(paStream, processConfig, mainLoop_);
+    std::shared_ptr<PaRendererStreamImpl> rendererStream =
+        std::make_shared<PaRendererStreamImpl>(paStream, processConfig, mainLoop_);
     if (rendererStream == nullptr) {
         AUDIO_ERR_LOG("Create rendererStream Failed");
         return nullptr;
@@ -345,9 +350,11 @@ std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioPro
     return rendererStream;
 }
 
-std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioProcessConfig processConfig, pa_stream *paStream)
+std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioProcessConfig processConfig,
+    pa_stream *paStream)
 {
-    std::shared_ptr<PaCapturerStreamImpl> capturerStream = std::make_shared<PaCapturerStreamImpl>(paStream, processConfig, mainLoop_);
+    std::shared_ptr<PaCapturerStreamImpl> capturerStream =
+        std::make_shared<PaCapturerStreamImpl>(paStream,processConfig, mainLoop_);
     if (capturerStream == nullptr) {
         AUDIO_ERR_LOG("Create capturerStream Failed");
         return nullptr;
@@ -377,10 +384,10 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         // GetSysPara("multimedia.audio.prebuf", prebuf);
         pa_buffer_attr bufferAttr;
         bufferAttr.fragsize = static_cast<uint32_t>(-1);
-        bufferAttr.prebuf = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * prebuf, &sampleSpec);
-        bufferAttr.maxlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
-        bufferAttr.tlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * tlength, &sampleSpec);
-        bufferAttr.minreq = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, &sampleSpec);
+        bufferAttr.prebuf = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * prebuf, &sampleSpec);
+        bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
+        bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
+        bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
         AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}u, tlength: %{public}u, prebuf: %{public}u",
             maxlength, tlength, prebuf);
 
@@ -401,8 +408,8 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         GetSysPara("multimedia.audio.maxlength", maxlength);
 
         pa_buffer_attr bufferAttr;
-        bufferAttr.maxlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
-        bufferAttr.fragsize = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * fragsize, &sampleSpec);
+        bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
+        bufferAttr.fragsize = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * fragsize, &sampleSpec);
         AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}u, fragsize: %{public}u",
             maxlength, fragsize);
 
@@ -601,7 +608,8 @@ const std::string PaAdapterManager::GetEffectSceneName(AudioStreamType audioType
 
 int32_t PaAdapterManager::GetInfo()
 {
-    AUDIO_INFO_LOG("pa_context_get_state(),: %{public}d, pa_context_errno(): %{public}d", pa_context_get_state(context_), pa_context_errno(context_));
+    AUDIO_INFO_LOG("pa_context_get_state(),: %{public}d, pa_context_errno(): %{public}d",
+        pa_context_get_state(context_), pa_context_errno(context_));
     return SUCCESS;
 }
 } // namespace AudioStandard

@@ -51,8 +51,8 @@ int32_t CapturerInServer::ConfigServerBuffer()
         return ERR_INVALID_PARAM;
     }
 
-    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}u, spanSizeInFrame_: %{public}u, byteSizePerFrame_: %{public}u",
-        totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
+    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}u, spanSizeInFrame_: %{public}u,"
+        "byteSizePerFrame_: %{public}u", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
 
     // create OHAudioBuffer in server
     audioServerBuffer_ = OHAudioBuffer::CreateFormLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
@@ -168,7 +168,8 @@ void CapturerInServer::ReadData(size_t length)
     }
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    AUDIO_INFO_LOG("Current write frame: %{public}" PRIu64 ", read frame: %{public}" PRIu64 ", avaliable frame:%{public}d, spanSizeInFrame:%{public}u", currentWriteFrame, currentReadFrame,
+    AUDIO_INFO_LOG("Current write frame: %{public}" PRIu64 ", read frame: %{public}" PRIu64 ","
+        "avaliable frame:%{public}d, spanSizeInFrame:%{public}u", currentWriteFrame, currentReadFrame,
         audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_);
     if (audioServerBuffer_->GetAvailableDataFrames() <= spanSizeInFrame_) {
         AUDIO_INFO_LOG("OverFlow!!!");
@@ -285,7 +286,8 @@ int32_t CapturerInServer::Flush()
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
         readFrame += spanSizeInFrame_;
-        AUDIO_INFO_LOG("On flush, write frame: %{public}" PRIu64 ", nextReadFrame: %{public}u, readFrame: %{public}" PRIu64 "", writeFrame, spanSizeInFrame_, readFrame);
+        AUDIO_INFO_LOG("On flush, write frame: %{public}" PRIu64 ", nextReadFrame: %{public}u,"
+            "readFrame: %{public}" PRIu64 "", writeFrame, spanSizeInFrame_, readFrame);
         audioServerBuffer_->SetCurReadFrame(readFrame);
     }
 
@@ -376,7 +378,7 @@ int32_t CapturerInServer::AbortOneCallback()
 int32_t CapturerInServer::AbortAllCallback()
 {
     std::lock_guard<std::mutex> lock(statusLock_);
-    stream_->AbortCallback(5);
+    stream_->AbortCallback(5); // In plan: 5 is only for debug, will be removed before merge
     return SUCCESS;
 }
 

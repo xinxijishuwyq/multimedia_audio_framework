@@ -29,7 +29,8 @@ static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t ret
     return SUCCESS;
 }
 
-PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop)
+PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig,
+    pa_threaded_mainloop *mainloop)
 {
     mainloop_ = mainloop;
     paStream_ = paStream;

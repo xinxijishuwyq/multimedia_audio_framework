@@ -100,7 +100,8 @@ OptResult AudioRingCache::ReConfig(size_t cacheSize, bool copyRemained)
     }
     std::unique_ptr<uint8_t[]> temp = std::make_unique<uint8_t[]>(result.size);
     result = Dequeue({temp.get(), result.size});
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, result, "ReConfig dequeue failed ret:%{public}d", result.ret);
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, result,
+        "ReConfig dequeue failed ret:%{public}d", result.ret);
     std::unique_lock<std::mutex> uniqueLock(cacheMutex_);
     cacheTotalSize_ = cacheSize;
     if (Init() != true) {
@@ -205,7 +206,7 @@ OptResult AudioRingCache::Enqueue(const BufferWrap &buffer)
         void *headPtr = static_cast<void *>(basePtr_.get() + (writeIndex_ - baseIndex_));
         void *tailPtr = static_cast<void *>(basePtr_.get());
         if ((memcpy_s(headPtr, headSize, static_cast<void *>(buffer.dataPtr), headSize)) == EOK &&
-            memcpy_s(tailPtr, tailSize, static_cast<void *>(buffer.dataPtr + headSize),tailSize) == EOK) {
+            memcpy_s(tailPtr, tailSize, static_cast<void *>(buffer.dataPtr + headSize), tailSize) == EOK) {
             writeIndex_ = tempWriteIndex; // move write index
             result = {OPERATION_SUCCESS, buffer.dataSize};
             return result;

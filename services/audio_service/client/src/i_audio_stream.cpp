@@ -156,61 +156,10 @@ int32_t IAudioStream::GetByteSizePerFrame(const AudioStreamParams &params, size_
             break;
     }
 
-    size_t channelSize = 0;
-    switch (params.channels) {
-        case MONO:
-            channelSize = 1;
-            break;
-        case STEREO:
-            channelSize = 2;
-            break;
-        case CHANNEL_3:
-            channelSize = 3;
-            break;
-        case CHANNEL_4:
-            channelSize = 4;
-            break;
-        case CHANNEL_5:
-            channelSize = 5;
-            break;
-        case CHANNEL_6:
-            channelSize = 6;
-            break;
-        case CHANNEL_7:
-            channelSize = 7;
-            break;
-        case CHANNEL_8:
-            channelSize = 8;
-            break;
-        case CHANNEL_9:
-            channelSize = 9;
-            break;
-        case CHANNEL_10:
-            channelSize = 10;
-            break;
-        case CHANNEL_11:
-            channelSize = 11;
-            break;
-        case CHANNEL_12:
-            channelSize = 12;
-            break;
-        case CHANNEL_13:
-            channelSize = 13;
-            break;
-        case CHANNEL_14:
-            channelSize = 14;
-            break;
-        case CHANNEL_15:
-            channelSize = 15;
-            break;
-        case CHANNEL_16:
-            channelSize = 16;
-            break;
-        default:
-            return ERR_INVALID_PARAM;
-            break;
+    if (params.channels < 1 || params.channels > 16) { // 1 is min channel size, 16 is max channel size
+        return ERR_INVALID_PARAM;
     }
-    result = bitWidthSize * channelSize;
+    result = bitWidthSize * static_cast<size_t>(params.channels);
     return SUCCESS;
 }
 

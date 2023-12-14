@@ -309,8 +309,8 @@ int32_t PaRendererTest::ReleasePlay()
 int32_t PaRendererTest::WriteData()
 {
     enableWrite_ = true;
-    std::thread writeDataThread_ = std::thread(&PaRendererTest::WriteDataWorker, this);
-    writeDataThread_.detach();
+    std::thread writeDataThread = std::thread(&PaRendererTest::WriteDataWorker, this);
+    writeDataThread.detach();
     return 0;
 }
 
@@ -326,9 +326,9 @@ void PaRendererTest::WriteDataWorker()
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis(fast_, slow_);
-        int32_t random_num = dis(gen);
-        AUDIO_INFO_LOG("recorder sleepTime %{public}d", random_num);
-        usleep(random_num);
+        int32_t randomNum = dis(gen);
+        AUDIO_INFO_LOG("recorder sleepTime %{public}d", randomNum);
+        usleep(randomNum);
         if (audioRenderer_ == nullptr) {
             AUDIO_ERR_LOG("Audiorenderer init failed.");
             enableWrite_ = false;
@@ -374,7 +374,7 @@ void PaRendererTest::OnWriteData(size_t length)
         bytesAlreadyWrite_, length);
 }
 
-class PaCapturerTest : public AudioCapturerReadCallback, public enable_shared_from_this<PaCapturerTest>{
+class PaCapturerTest : public AudioCapturerReadCallback, public enable_shared_from_this<PaCapturerTest> {
 public:
     virtual ~PaCapturerTest() {};
 
@@ -395,8 +395,8 @@ private:
     std::condition_variable enableReadCv_;
     std::mutex enableReadThreadLock_;
     bool enableRead_ = false;
-    int32_t fast_ = 1;
-    int32_t slow_ = 2;
+    int32_t fast_ = 1; // min sleep time
+    int32_t slow_ = 2; // max sleep time
     FILE *pfd_ = nullptr;
     CapturerMode capturerMode_;
 };
@@ -428,7 +428,7 @@ int32_t PaCapturerTest::InitCapturer(bool isBlocking, CapturerMode capturerMode)
         AUDIO_ERR_LOG("Create audioCapturer failed");
         return -1;
     }
-    if(capturerMode_ == READ_AFTER_CALLBACK) {
+    if (capturerMode_ == READ_AFTER_CALLBACK) {
         if (audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK)) {
             AUDIO_ERR_LOG("SetCaptureMode failed");
             return -1;
@@ -517,8 +517,8 @@ int32_t PaCapturerTest::ReleaseRecorder()
 int32_t PaCapturerTest::ReadData()
 {
     enableRead_ = true;
-    std::thread readDataThread_ = std::thread(&PaCapturerTest::ReadDataWorker, this);
-    readDataThread_.detach();
+    std::thread readDataThread = std::thread(&PaCapturerTest::ReadDataWorker, this);
+    readDataThread.detach();
     return 0;
 }
 
@@ -539,7 +539,8 @@ void PaCapturerTest::ReadDataWorker()
         memset_s(buffer, ONE_READ_FRAME, 0, ONE_READ_FRAME);
         int32_t currentReadIndex = 0;
         while (currentReadIndex < ONE_READ_FRAME) {
-            int32_t len = audioCapturer_->Read(*(buffer + currentReadIndex), ONE_READ_FRAME - currentReadIndex, isBlocking_);
+            int32_t len = audioCapturer_->Read(*(buffer + currentReadIndex),
+                ONE_READ_FRAME - currentReadIndex, isBlocking_);
             currentReadIndex += len;
         }
         fwrite(reinterpret_cast<void *>(buffer), 1, ONE_READ_FRAME, pfd_);
@@ -820,59 +821,67 @@ void Loop(std::shared_ptr<PaRendererTest> streamTest, std::shared_ptr<PaCapturer
                 fileIndex = GetUserInput();
                 InitPlayback(streamTest, static_cast<RendererMode>(rendererMode), fileIndex);
                 break;
-            case RENDERER_CODE_START:
-                StartPlay(streamTest);
-                break;
-            case RENDERER_CODE_PAUSE:
-                PausePlay(streamTest);
-                break;
-            case RENDERER_CODE_FLUSH:
-                FlushPlay(streamTest);
-                break;
-            case RENDERER_CODE_DRAIN:
-                DrainPlay(streamTest);
-                break;
-            case RENDERER_CODE_STOP:
-                StopPlay(streamTest);
-                break;
-            case RENDERER_CODE_RELEASE:
-                ReleasePlay(streamTest);
-                break;
-            case RENDERER_CODE_WRITE:
-                WriteData(streamTest);
-                break;
-
             // Capturer
             case CAPTURER_CODE_INIT:
                 isBlocking = GetUserInput();
                 capturerMode = GetUserInput();
                 InitRecorder(capturerTest, isBlocking, static_cast<CapturerMode>(capturerMode));
                 break;
-            case CAPTURER_CODE_START:
-                StartRecorder(capturerTest);
-                break;
-            case CAPTURER_CODE_PAUSE:
-                PauseRecorder(capturerTest);
-                break;
-            case CAPTURER_CODE_FLUSH:
-                FlushRecorder(capturerTest);
-                break;
-            case CAPTURER_CODE_STOP:
-                StopRecorder(capturerTest);
-                break;
-            case CAPTURER_CODE_RELEASE:
-                ReleaseRecorder(capturerTest);
-                break;
-            case CAPTURER_CODE_READ:
-                ReadData(capturerTest);
-                break;
             case EXIT_DEMO:
                 isProcTestRun = false;
                 break;
             default:
-                cout << "Invalid input: " << res << endl;
+                HandleCapturerCode(optCode, capturerTest);
                 break;
         }
+    }
+}
+
+void HandleCapturerCode(OperationCode optCode, std::shared_ptr<PaCapturerTest> capturerTest)
+{
+    switch (optCode) {
+        case RENDERER_CODE_START:
+            StartPlay(streamTest);
+            break;
+        case RENDERER_CODE_PAUSE:
+            PausePlay(streamTest);
+            break;
+        case RENDERER_CODE_FLUSH:
+            FlushPlay(streamTest);
+            break;
+        case RENDERER_CODE_DRAIN:
+            DrainPlay(streamTest);
+            break;
+        case RENDERER_CODE_STOP:
+            StopPlay(streamTest);
+            break;
+        case RENDERER_CODE_RELEASE:
+            ReleasePlay(streamTest);
+            break;
+        case RENDERER_CODE_WRITE:
+            WriteData(streamTest);
+            break;
+        case CAPTURER_CODE_START:
+            StartRecorder(capturerTest);
+            break;
+        case CAPTURER_CODE_PAUSE:
+            PauseRecorder(capturerTest);
+            break;
+        case CAPTURER_CODE_FLUSH:
+            FlushRecorder(capturerTest);
+            break;
+        case CAPTURER_CODE_STOP:
+            StopRecorder(capturerTest);
+            break;
+        case CAPTURER_CODE_RELEASE:
+            ReleaseRecorder(capturerTest);
+            break;
+        case CAPTURER_CODE_READ:
+            ReadData(capturerTest);
+            break;
+        default:
+            cout << "Invalid input: " << res << endl;
+            break;
     }
 }
 }

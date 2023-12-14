@@ -32,7 +32,8 @@ static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t ret
     return SUCCESS;
 }
 
-PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop)
+PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig,
+    pa_threaded_mainloop *mainloop)
 {
     mainloop_ = mainloop;
     paStream_ = paStream;
@@ -641,7 +642,6 @@ void PaRendererStreamImpl::GetSpanSizePerFrame(size_t &spanSizeInFrame) const
 }
 
 // Waiting for review, 开个方法GetByteSizePerFrame，让renderer in server 调用 结果 4 // 能不能从pulseAudio获取 
-
 uint32_t PaRendererStreamImpl::GetStreamIndex()
 {
     return pa_stream_get_index(paStream_);

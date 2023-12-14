@@ -66,7 +66,7 @@ ChannelVolumes VolumeTools::GetChannelVolumes(AudioChannel channel, int32_t volS
             volEnd, channel);
         return vols;
     }
-    for (size_t i = 0;i < channel;i++) {
+    for (size_t i = 0; i < channel; i++) {
         vols.volStart[i] = volStart;
         vols.volEnd[i] = volEnd;
     }
@@ -82,7 +82,7 @@ ChannelVolumes VolumeTools::GetChannelVolumes(AudioChannel channel, float volSta
             volEnd, channel);
         return vols;
     }
-    for (size_t i = 0;i < channel;i++) {
+    for (size_t i = 0; i < channel; i++) {
         vols.volStart[i] = GetInt32Vol(volStart);
         vols.volEnd[i] = GetInt32Vol(volEnd);
     }
@@ -109,7 +109,7 @@ inline size_t GetByteSize(AudioSampleFormat format) {
             bitWidthSize = 4; // size is 4
             break;
         default:
-            bitWidthSize = 2;
+            bitWidthSize = 2; // default size is 2
             break;
     }
     return bitWidthSize;
