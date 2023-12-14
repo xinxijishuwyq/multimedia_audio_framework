@@ -969,9 +969,10 @@ int32_t AudioProcessInClientInner::Release()
 {
     Trace traceWithLog("AudioProcessInClient::Release", true);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
-
+    AUDIO_INFO_LOG("AudioProcessInClientInner::Release()");
     // not lock as status is already released
     if (streamStatus_->load() == StreamStatus::STREAM_RELEASED) {
+        AUDIO_INFO_LOG("Stream status is already released");
         return SUCCESS;
     }
     Stop();

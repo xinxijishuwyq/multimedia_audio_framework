@@ -17,7 +17,11 @@ import("../../../config.gni")
 
 ohos_executable("pa_stream_test") {
   install_enable = false
-
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   cflags = [
     "-Wall",
     "-Werror",

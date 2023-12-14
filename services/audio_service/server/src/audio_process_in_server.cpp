@@ -47,11 +47,15 @@ AudioProcessInServer::~AudioProcessInServer()
 
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
+    AUDIO_INFO_LOG("ResolveBuffer start");
     if (!isBufferConfiged_) {
         AUDIO_ERR_LOG("ResolveBuffer failed, buffer is not configed.");
         return ERR_ILLEGAL_STATE;
     }
 
+    if (processBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("ResolveBuffer failed, buffer is nullptr.");
+    }
     buffer = processBuffer_;
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is null.");
 

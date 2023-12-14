@@ -102,7 +102,7 @@ public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IpcStream");
 };
 
-class IpcStreamListener : public IRemoteBroker ,public IStreamListener {
+class IpcStreamListener : public IRemoteBroker, public IStreamListener {
 public:
     virtual ~IpcStreamListener() = default;
 

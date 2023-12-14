@@ -89,7 +89,7 @@ int32_t IpcStreamProxy::GetAudioSessionID(uint32_t &sessionId)
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_GET_AUDIO_SESSIONID, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "UpdatePosition failed, error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "GetAudioSessionID failed, error: %{public}d", ret);
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed, error: %{public}d", ret);
     sessionId = reply.ReadUint32();

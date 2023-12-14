@@ -23,14 +23,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class RendererListener {
-public:
-    virtual void OnWriteEvent(BufferDesc& bufferesc) = 0;
-    virtual void CancelBufferFromBlock() = 0;
-    virtual void CallForImmediatelyWrite() = 0;
-    virtual void OnDrainDone() = 0;
-};
-
 class RendererInServer : public IStatusCallback, public IWriteCallback,
     public std::enable_shared_from_this<RendererInServer> {
 public:
@@ -59,14 +51,7 @@ public:
     int32_t SetPrivacyType(int32_t privacyType);
     int32_t GetPrivacyType(int32_t &privacyType);
 
-
-
-
-
-
-    void RegisterStatusCallback();
-    void RegisterWriteCallback();
-    void RegisterTestCallback(const std::weak_ptr<RendererListener> &callback);
+    void Init();
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
     int32_t UpdateWriteIndex();
@@ -91,7 +76,6 @@ private:
 
     // LYH waiting for review
     std::weak_ptr<IStreamListener> streamListener_;
-    std::weak_ptr<RendererListener> testCallback_;
     AudioProcessConfig processConfig_;
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;

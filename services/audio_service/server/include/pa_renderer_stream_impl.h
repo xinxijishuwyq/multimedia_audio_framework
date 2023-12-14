@@ -88,7 +88,6 @@ private:
     uint32_t minBufferSize_ = 0;
 
     size_t totalBytesWritten_ = 0;
-    pa_sample_spec *sampleSpec_ = nullptr;
     uint32_t sinkLatencyInMsec_ {0};
     int32_t renderRate_;
     int32_t effectMode_ = -1;

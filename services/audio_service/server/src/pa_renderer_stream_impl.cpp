@@ -72,20 +72,18 @@ void PaRendererStreamImpl::InitParams()
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
-    sampleSpec_->channels = sampleSpec->channels;
-    sampleSpec_->format = sampleSpec->format;
-    sampleSpec_->rate = sampleSpec->rate;
+    AUDIO_INFO_LOG("sampleSpec: channels: %{public}u, formats: %{public}d, rate: %{public}d", sampleSpec->channels,
+        sampleSpec->format, sampleSpec->rate);
 
     if (sampleSpec->channels != processConfig_.streamInfo.channels) {
         AUDIO_WARNING_LOG("Unequal channels, in server: %{public}d, in client: %{public}d", sampleSpec->channels,
             processConfig_.streamInfo.channels);
     }
-    if (static_cast<uint8_t>(sampleSpec->format) != processConfig_.streamInfo.format) {
+    if (static_cast<uint8_t>(sampleSpec->format) != processConfig_.streamInfo.format) { // In plan
         AUDIO_WARNING_LOG("Unequal format, in server: %{public}d, in client: %{public}d", sampleSpec->format,
             processConfig_.streamInfo.format);
     }
-    uint32_t formatbyte = PcmFormatToBits(sampleSpec->format);
-    byteSizePerFrame_ = sampleSpec->channels * formatbyte;
+    byteSizePerFrame_ = pa_frame_size(sampleSpec);
 
     // Get min buffer size in frame
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
@@ -263,7 +261,9 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
         return ERR_OPERATION_FAILED;
     }
 
-    timeStamp = pa_bytes_to_usec(info->write_index, sampleSpec_);
+    // In plan: sampleSpec需要释放吗
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    timeStamp = pa_bytes_to_usec(info->write_index, sampleSpec);
     pa_threaded_mainloop_unlock(mainloop_);
     return SUCCESS;
 }
@@ -323,7 +323,7 @@ int32_t PaRendererStreamImpl::SetRate(int32_t rate)
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    uint32_t currentRate = sampleSpec_->rate;
+    uint32_t currentRate = processConfig_.streamInfo.samplingRate;
     switch (rate) {
         case RENDER_RATE_NORMAL:
             break;
@@ -457,11 +457,13 @@ int32_t PaRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
 
 void PaRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
+    AUDIO_DEBUG_LOG("RegisterStatusCallback in");
     statusCallback_ = callback;
 }
 
 void PaRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback)
 {
+    AUDIO_DEBUG_LOG("RegisterWriteCallback in");
     writeCallback_ = callback;
 }
 
@@ -477,7 +479,8 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
     pa_threaded_mainloop_lock(mainloop_);
     int32_t error = 0;
-    error = pa_stream_write(paStream_, static_cast<void*>(bufferDesc.buffer), bufferDesc.bufLength, nullptr, 0LL, PA_SEEK_RELATIVE);
+    error = pa_stream_write(paStream_, static_cast<void*>(bufferDesc.buffer), bufferDesc.bufLength, nullptr,
+        0LL, PA_SEEK_RELATIVE);
     if (error < 0) {
         AUDIO_ERR_LOG("Write stream failed");
         pa_stream_cancel_write(paStream_);
@@ -489,7 +492,8 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 
 void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_INFO_LOG("PAStreamWriteCb, length: %{public}zu, pa_stream_writeable_size: %{public}zu", length, pa_stream_writable_size(stream));
+    AUDIO_INFO_LOG("PAStreamWriteCb, length: %{public}zu, pa_stream_writeable_size: %{public}zu",
+        length, pa_stream_writable_size(stream));
     CHECK_AND_RETURN_LOG(userdata, "PAStreamWriteCb: userdata is null");
 
     auto streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
@@ -542,6 +546,7 @@ void PaRendererStreamImpl::PAStreamSetStartedCb(pa_stream *stream, void *userdat
 
 void PaRendererStreamImpl::PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
+    AUDIO_INFO_LOG("PAStreamStartSuccessCb in");
     CHECK_AND_RETURN_LOG(userdata, "PAStreamStartSuccessCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);

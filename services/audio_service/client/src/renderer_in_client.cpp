@@ -183,7 +183,7 @@ private:
 
     int32_t DrainAudioCache();
 
-    int32_t WritCacheData();
+    int32_t WriteCacheData();
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -214,6 +214,7 @@ private:
     std::weak_ptr<AudioStreamCallback> streamCallback_;
 
     size_t cacheSizeInByte_ = 0;
+    uint32_t spanSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
@@ -426,7 +427,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
 
     if (state_ != NEW) {
-        AUDIO_INFO_LOG("RendererInClient: State is not new, release existing stream and recreate.");
+        AUDIO_ERR_LOG("State is not new, release existing stream and recreate, state %{public}d", state_.load());
         int32_t ret = DeinitIpcStream();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
     }
@@ -543,6 +544,7 @@ void RendererInClientInner::InitCallbackHandler()
 // call this without lock, we should be able to call deinit in any case.
 int32_t RendererInClientInner::DeinitIpcStream()
 {
+    ipcStream_->Release();
     // in plan:
     ipcStream_ = nullptr;
     ringCache_->ResetBuffer();
@@ -582,20 +584,23 @@ int32_t RendererInClientInner::InitSharedBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitSharedBuffer failed, null ipcStream_.");
     int32_t ret = ipcStream_->ResolveBuffer(clientBuffer_);
+    if (clientBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("clientBuffer_ is nullptr");
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
 
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame_, byteSizePerFrame);
 
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret, "ResolveBuffer failed"
-        ":%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret, "GetSizeParameter failed"
+        ":%{public}d, byteSizePerFrame:%{public}d, sizePerFrameInByte_:%{public}d",
+            ret, byteSizePerFrame, sizePerFrameInByte_);
 
-    clientSpanSizeInByte_ = spanSizeInFrame * byteSizePerFrame;
+    clientSpanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame;
 
-    AUDIO_INFO_LOG("InitSharedBuffer totalSizeInFrame_[%{public}d] spanSizeInFrame_[%{public}d] sizePerFrameInByte_["
-        "%{public}d] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame, sizePerFrameInByte_,
+    AUDIO_INFO_LOG("InitSharedBuffer totalSizeInFrame_[%{public}d] spanSizeInFrame[%{public}d] sizePerFrameInByte_["
+        "%{public}d] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
 
     return SUCCESS;
@@ -626,7 +631,6 @@ int32_t RendererInClientInner::InitCacheBuffer(size_t targetSize)
 int32_t RendererInClientInner::InitIpcStream()
 {
     AudioProcessConfig config = ConstructConfig();
-
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config); // in plan: add ret
@@ -647,7 +651,6 @@ int32_t RendererInClientInner::InitIpcStream()
 
     ret = ipcStream_->GetAudioSessionID(sessionId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
-
     InitCallbackHandler();
     return SUCCESS;
 }
@@ -765,13 +768,7 @@ int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStre
     if (state_ != PREPARED) {
         return SUCCESS;
     }
-
     callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, PREPARED);
-    // std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
-    // if (streamCb != nullptr) {
-    //     lock.unlock();
-    //     streamCb->OnStateChange(PREPARED); // in plan: put is in eventrunner for async call
-    // }
     return SUCCESS;
 }
 
@@ -1051,6 +1048,7 @@ bool RendererInClientInner::StopAudioStream()
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
+    ipcStream_->Release();
     // lock_guard<mutex> lock(statusMutex_) // no lock, call release in any case, include blocked case.
     {
         std::lock_guard<std::mutex> runnerlock(runnerMutex_);
@@ -1205,14 +1203,14 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t buffer_size)
             continue;
         }
         // if readable size is enough, we will call write data to server
-        int32_t ret = WritCacheData();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WritCacheData failed %{public}d", ret);
+        int32_t ret = WriteCacheData();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
 
     return buffer_size - targetSize;
 }
 
-int32_t RendererInClientInner::WritCacheData()
+int32_t RendererInClientInner::WriteCacheData()
 {
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
@@ -1223,10 +1221,14 @@ int32_t RendererInClientInner::WritCacheData()
         CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
     }
     BufferDesc desc = {};
-    int32_t ret = clientBuffer_->GetWriteBuffer(clientBuffer_->GetCurWriteFrame(), desc);
+    uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
+    int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
     OptResult result = ringCache_->Dequeue({desc.buffer, desc.bufLength});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
+    AUDIO_INFO_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}llu], spanSizeInFrame_%{public}d",
+        curWriteIndex, spanSizeInFrame_);
+    clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;

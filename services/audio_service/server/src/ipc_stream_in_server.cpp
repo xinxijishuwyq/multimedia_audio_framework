@@ -48,6 +48,7 @@ int32_t StreamListenerHolder::RegisterStreamListener(sptr<IpcStreamListener> lis
 
 int32_t StreamListenerHolder::OnOperationHandled(Operation operation, int64_t result)
 {
+    AUDIO_INFO_LOG("OnOperationHandled: operation: %{public}d, result: %{public}lld", operation, result);
     std::lock_guard<std::mutex> lock(listenerMutex_);
     CHECK_AND_RETURN_RET_LOG(streamListener_ != nullptr, ERR_OPERATION_FAILED, "stream listrener not set");
     return streamListener_->OnOperationHandled(operation, result);
@@ -94,6 +95,7 @@ int32_t IpcStreamInServer::ConfigRenderer()
 {
     // LYH waiting for review: use config_.streamInfo instead of AudioStreamParams
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
+    rendererInServer_->Init();
     CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "create RendererInServer failed");
     return SUCCESS;
 }
@@ -121,6 +123,7 @@ int32_t IpcStreamInServer::RegisterStreamListener(sptr<IRemoteObject> object)
 
 int32_t IpcStreamInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
+    AUDIO_INFO_LOG("Resolve buffer, mode: %{public}d", mode_);
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->ResolveBuffer(buffer);
     }
@@ -157,6 +160,8 @@ int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
 
 int32_t IpcStreamInServer::Start()
 {
+    AUDIO_INFO_LOG("IpcStreamInServer::Start()");
+    
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Start();
     }

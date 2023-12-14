@@ -287,6 +287,7 @@ ohos_shared_library("audio_process_service") {
     "server/src/audio_process_in_server.cpp",
     "server/src/audio_process_stub.cpp",
     "server/src/ipc_stream_in_server.cpp",
+    "server/src/ipc_stream_listener_proxy.cpp",
     "server/src/ipc_stream_stub.cpp",
     "server/src/audio_service.cpp",
     "server/src/policy_handler.cpp",

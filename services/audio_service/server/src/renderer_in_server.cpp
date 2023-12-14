@@ -100,28 +100,23 @@ int32_t RendererInServer::InitBufferStatus()
     return SUCCESS;
 }
 
-void RendererInServer::RegisterStatusCallback()
+void RendererInServer::Init()
 {
-    AUDIO_INFO_LOG("RendererInServer::RegisterStatusCallback");
+    AUDIO_INFO_LOG("Init, register status and write callback");
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "Renderer stream is nullptr");
     stream_->RegisterStatusCallback(shared_from_this());
-}
-
-void RendererInServer::RegisterWriteCallback()
-{
-    AUDIO_INFO_LOG("RendererInServer::RegisterWriteCallback");
     stream_->RegisterWriteCallback(shared_from_this());
 }
-
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     AUDIO_INFO_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
     operation_ = operation;
-    std::lock_guard<std::mutex> lock(statusLock_);
-    if (status_ == I_STATUS_RELEASED) {
+    if (operation == OPERATION_RELEASED) {
         AUDIO_WARNING_LOG("Stream already released");
         return;
     }
-    std::shared_ptr<RendererListener> callback = testCallback_.lock();
+    std::lock_guard<std::mutex> lock(statusLock_);
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     switch (operation) {
         case OPERATION_UNDERRUN:
             AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",audioServerBuffer_->GetAvailableDataFrames());
@@ -133,18 +128,22 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 AUDIO_INFO_LOG("Buffer is not empty");
                 WriteData();
             }
-            callback->CancelBufferFromBlock();
+            // callback->CancelBufferFromBlock();
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
+            stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
+            stateListener->OnOperationHandled(PAUSE_STREAM, 0);
             break;
         case OPERATION_STOPPED:
+            stateListener->OnOperationHandled(STOP_STREAM, 0);
             status_ = I_STATUS_STOPPED;
             break;
         case OPERATION_FLUSHED:
+            stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             if (status_ == I_STATUS_FLUSHING_WHEN_STARTED) {
                 status_ = I_STATUS_STARTED;
             } else if (status_ == I_STATUS_FLUSHING_WHEN_PAUSED) {
@@ -154,13 +153,12 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             }
             break;
         case OPERATION_DRAINED:
+            stateListener->OnOperationHandled(DRAIN_STREAM, 0);
             status_ = I_STATUS_DRAINED;
             afterDrain = true;
-            if (callback != nullptr) {
-                callback->OnDrainDone();
-            }
             break;
         case OPERATION_RELEASED:
+            stateListener->OnOperationHandled(RELEASE_STREAM, 0);
             status_ = I_STATUS_RELEASED;
             break;
         default:
@@ -191,6 +189,9 @@ void RendererInServer::WriteData()
         AUDIO_INFO_LOG("RendererInServer::WriteData: CurrentReadFrame: %{public}" PRIu64 ", nextReadFrame:%{public}" PRIu64 "", currentReadFrame, nextReadFrame);
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     }
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
 }
 
 void RendererInServer::WriteEmptyData()
@@ -202,25 +203,19 @@ void RendererInServer::WriteEmptyData()
     return;
 }
 
-
 int32_t RendererInServer::OnWriteData(size_t length)
 {
     AUDIO_INFO_LOG("RendererInServer::OnWriteData");
-    std::shared_ptr<RendererListener> callback = testCallback_.lock();
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("Callback from test is nullptr");
-        return -1;
-    }
     for (int32_t i = 0; i < length / totalSizeInFrame_; i++) {
         WriteData();
     }
-    callback->CancelBufferFromBlock();
     return SUCCESS;
 }
 
 int32_t RendererInServer::UpdateWriteIndex()
 {
-    AUDIO_INFO_LOG("UpdateWriteIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d", audioServerBuffer_->GetAvailableDataFrames(), needStart);
+    AUDIO_INFO_LOG("UpdateWriteIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, "
+        "spanSizeInFrame_:%{public}d, needStart: %{public}d", audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_, needStart);
     if (audioServerBuffer_->GetAvailableDataFrames() == spanSizeInFrame_ && needStart < 3) {
         AUDIO_WARNING_LOG("Start write data");
         WriteData();
@@ -330,12 +325,14 @@ int32_t RendererInServer::GetInfo()
 
 int32_t RendererInServer::Drain()
 {
-    std::unique_lock<std::mutex> lock(statusLock_);
-    if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("RendererInServer::Drain failed, Illegal state: %{public}u", status_);
-        return ERR_ILLEGAL_STATE;
+    {
+        std::unique_lock<std::mutex> lock(statusLock_);
+        if (status_ != I_STATUS_STARTED) {
+            AUDIO_ERR_LOG("RendererInServer::Drain failed, Illegal state: %{public}u", status_);
+            return ERR_ILLEGAL_STATE;
+        }
+        status_ = I_STATUS_DRAINING;
     }
-    status_ = I_STATUS_DRAINING;
     AUDIO_INFO_LOG("Start drain");
     DrainAudioBuffer();
     int ret = stream_->Drain();
@@ -345,12 +342,14 @@ int32_t RendererInServer::Drain()
 
 int32_t RendererInServer::Stop()
 {
-    std::unique_lock<std::mutex> lock(statusLock_);
-    if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
-        AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_);
-        return ERR_ILLEGAL_STATE;
+    {
+        std::unique_lock<std::mutex> lock(statusLock_);
+        if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
+            AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_);
+            return ERR_ILLEGAL_STATE;
+        }
+        status_ = I_STATUS_STOPPING;
     }
-    status_ = I_STATUS_STOPPING;
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     return SUCCESS;
@@ -358,8 +357,10 @@ int32_t RendererInServer::Stop()
 
 int32_t RendererInServer::Release()
 {
-    std::unique_lock<std::mutex> lock(statusLock_);
-    status_ = I_STATUS_RELEASED;
+    {
+        std::unique_lock<std::mutex> lock(statusLock_);
+        status_ = I_STATUS_RELEASED;
+    }
     int32_t ret = IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);
     
     stream_ = nullptr;
@@ -425,11 +426,6 @@ int32_t RendererInServer::SetPrivacyType(int32_t privacyType)
 int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 {
     return stream_->GetPrivacyType(privacyType);
-}
-
-void RendererInServer::RegisterTestCallback(const std::weak_ptr<RendererListener> &callback)
-{
-    testCallback_ = callback;
 }
 
 int32_t RendererInServer::WriteOneFrame()

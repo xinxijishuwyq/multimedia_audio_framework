@@ -102,6 +102,7 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
+    AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
         if (ResetPaContext() < 0) {
@@ -368,12 +369,12 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
 
     pa_threaded_mainloop_lock(mainLoop_);
     if (managerType_ == PLAYBACK) {
-        uint32_t tlength = 0;
-        GetSysPara("multimedia.audio.tlength", tlength);
-        uint32_t maxlength = 0;
-        GetSysPara("multimedia.audio.maxlength", maxlength);
-        uint32_t prebuf = 0;
-        GetSysPara("multimedia.audio.prebuf", prebuf);
+        uint32_t tlength = 3;
+        // GetSysPara("multimedia.audio.tlength", tlength);
+        uint32_t maxlength = 4;
+        // GetSysPara("multimedia.audio.maxlength", maxlength);
+        uint32_t prebuf = 1;
+        // GetSysPara("multimedia.audio.prebuf", prebuf);
         pa_buffer_attr bufferAttr;
         bufferAttr.fragsize = static_cast<uint32_t>(-1);
         bufferAttr.prebuf = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * prebuf, &sampleSpec);
