@@ -145,10 +145,13 @@ static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output 
         pa_atoi(flag, &innerCapturerFlag);
     }
 
-    if (innerCapturerFlag == 1 && so->state == PA_SOURCE_OUTPUT_RUNNING) {
-        SetInnerCapturerState(true);
-    } else {
-        SetInnerCapturerState(false);
+    if (innerCapturerFlag == 1) {
+        if (so->state == PA_SOURCE_OUTPUT_RUNNING) {
+            SetInnerCapturerState(true);
+            so->destination_source = so->source;
+        } else {
+            SetInnerCapturerState(false);
+        }
     }
 
     return PA_HOOK_OK;
