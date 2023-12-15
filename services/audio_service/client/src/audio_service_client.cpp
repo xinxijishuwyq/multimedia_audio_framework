@@ -2730,8 +2730,7 @@ int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)
         return AUDIO_CLIENT_ERR;
     }
 
-    AUDIO_INFO_LOG("calling set stream "
-                   "offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
+    AUDIO_INFO_LOG("calling set stream offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
 
     if (offloadNextStateTargetPolicy_ == statePolicy) {
         return AUDIO_CLIENT_SUCCESS;
@@ -2805,28 +2804,6 @@ void AudioServiceClient::GetSinkInputInfoCb(pa_context *context, const pa_sink_i
 
     SetPaVolume(*thiz);
 
-    return;
-}
-
-void AudioServiceClient::GetSinkInputInfoOffloadCb(pa_context* context, const pa_sink_input_info* info, int eol,
-    void* userdata)
-{
-    AudioServiceClient* thiz = reinterpret_cast<AudioServiceClient*>(userdata);
-
-    if (eol < 0) {
-        AUDIO_ERR_LOG("Failed to get sink input information: %{public}s", pa_strerror(pa_context_errno(context)));
-        return;
-    }
-
-    if (eol) {
-        pa_threaded_mainloop_signal(thiz->mainLoop, 1);
-        return;
-    }
-
-    if (info->proplist == nullptr) {
-        AUDIO_ERR_LOG("Invalid prop list for sink input (%{public}d).", info->index);
-        return;
-    }
     return;
 }
 
