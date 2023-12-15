@@ -146,6 +146,7 @@ void AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
 {
     std::lock_guard<std::mutex> lockCbMap(deviceChangeMutex_);
     DeviceChangeAction deviceChangeAction;
+    deviceChangeAction.type = dca.type;
     for (auto it = deviceChangeCallbackList_.begin(); it != deviceChangeCallbackList_.end(); ++it) {
         deviceChangeAction.flag = it->first;
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first, dca.deviceDescriptors);
