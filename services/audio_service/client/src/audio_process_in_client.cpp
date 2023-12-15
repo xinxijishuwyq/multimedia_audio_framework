@@ -135,7 +135,7 @@ private:
     void RecordProcessCallbackFuc();
     void CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     void ProcessVolume(const AudioStreamData &targetData) const;
-    bool ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
+    int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
 
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -756,7 +756,7 @@ void AudioProcessInClientInner::ProcessVolume(const AudioStreamData &targetData)
     }
 }
 
-bool AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const
+int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const
 {
     int32_t ret = 0;
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
@@ -781,7 +781,7 @@ bool AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const Buf
             ProcessVolume(dstData);
         }
     }
-    return true;
+    return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
