@@ -33,8 +33,9 @@ HandsFreeAudioGateway *AudioHfpManager::hfpInstance_ = nullptr;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 AudioScene AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
-std::mutex g_hfpInstanceLock;
+std::mutex g_activehfpDeviceLock;
 std::mutex g_audioSceneLock;
+std::mutex g_hfpInstanceLock;
 
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
@@ -256,6 +257,7 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         AUDIO_ERR_LOG("SetActiveHfpDevice failed for the HFP device does not exist.");
         return ERROR;
     }
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
         AUDIO_INFO_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
         int32_t ret = DisconnectSco();
@@ -347,6 +349,18 @@ void AudioHfpManager::DisconnectBluetoothHfpSink()
     HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice();
 }
 
+void AudioHfpManager::SetActiveHfpDevice(BluetoothRemoteDevice &device)
+{
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    activeHfpDevice_ = device;
+}
+
+void AudioHfpManager::SetAudioScene(AudioScene scene)
+{
+    std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
+    scene_ = scene;
+}
+
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
 {
     AUDIO_INFO_LOG("Entered %{public}s [%{public}d]", __func__, state);
@@ -364,6 +378,11 @@ void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &dev
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::CONNECT_ACTION);
     }
     if (state == static_cast<int>(BTConnectState::DISCONNECTED)) {
+        if (device.GetDeviceAddr() == AudioHfpManager::GetActiveHfpDevice()) {
+            BluetoothRemoteDevice defaultDevice;
+            AudioHfpManager::SetActiveHfpDevice(defaultDevice);
+            AudioHfpManager::SetAudioScene(AUDIO_SCENE_DEFAULT);
+        }
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::DISCONNECT_ACTION);
     }
 }
