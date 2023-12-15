@@ -24,7 +24,7 @@ namespace AudioStandard {
 class FastAudioRendererSink : public IMmapAudioRendererSink {
 public:
     static IMmapAudioRendererSink *GetInstance(void);
-
+    static std::shared_ptr<IMmapAudioRendererSink> CreateFastRendererSink(void);
     FastAudioRendererSink() = default;
     ~FastAudioRendererSink() = default;
 };

@@ -787,6 +787,29 @@ int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
     return reply.ReadInt32();
 }
 
+int32_t AudioManagerProxy::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("NotifyStreamVolumeChanged: WriteInterfaceToken failed");
+        return -1;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(streamType));
+    data.WriteFloat(volume);
+    error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED),
+        data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("NotifyStreamVolumeChanged failed, error: %{public}d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
+
 int32_t AudioManagerProxy::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
     int32_t error;

@@ -4641,6 +4641,7 @@ bool AudioPolicyService::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     volumeVector_[index].isMute = vol.isMute;
     volumeVector_[index].volumeFloat = vol.volumeFloat;
     volumeVector_[index].volumeInt = vol.volumeInt;
+    g_adProxy->NotifyStreamVolumeChanged(streamType, vol.volumeFloat);
     return true;
 }
 

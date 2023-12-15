@@ -419,6 +419,16 @@ int AudioManagerStub::HandleOffloadSetBufferSize(MessageParcel &data, MessagePar
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamType type = static_cast<AudioStreamType>(data.ReadInt32());
+    float volume = data.ReadFloat();
+    int32_t ret = NotifyStreamVolumeChanged(type, volume);
+    reply.WriteInt32(ret);
+
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);

@@ -253,6 +253,16 @@ public:
     */
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
 
+    /**
+     * Notify Stream volume changed.
+     *
+     * @param streamType specified streamType whose volume to be notified
+     * @param volume stream volume in float
+     *
+     * @return result of notify. 0 if success, error number else.
+    */
+    virtual int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -296,6 +306,7 @@ private:
     int HandleOffloadDrain(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
+    int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -332,6 +343,7 @@ private:
         &AudioManagerStub::HandleOffloadDrain,
         &AudioManagerStub::HandleOffloadGetPresentationPosition,
         &AudioManagerStub::HandleOffloadSetBufferSize,
+        &AudioManagerStub::HandleNotifyStreamVolumeChanged,
     };
 };
 } // namespace AudioStandard

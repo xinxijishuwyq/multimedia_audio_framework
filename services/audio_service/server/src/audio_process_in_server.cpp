@@ -58,7 +58,7 @@ int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buff
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RequestHandleInfo()
+int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
@@ -72,9 +72,10 @@ int32_t AudioProcessInServer::RequestHandleInfo()
 int32_t AudioProcessInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+
     std::lock_guard<std::mutex> lock(statusLock_);
     if (streamStatus_->load() != STREAM_STARTING) {
-        AUDIO_ERR_LOG("Start failed, invalid status.");
+        AUDIO_ERR_LOG("Start failed, invalid status. %{public}d", streamStatus_->load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -268,7 +269,8 @@ int32_t AudioProcessInServer::InitBufferStatus()
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe)
+int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
+    uint32_t &spanSizeInframe, const std::shared_ptr<OHAudioBuffer> &buffer)
 {
     if (processBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
@@ -286,21 +288,26 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe, ui
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
 
-    // create OHAudioBuffer in server.
-    processBuffer_ = OHAudioBuffer::CreateFormLocal(totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
-    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
+    if (buffer == nullptr) {
+        // create OHAudioBuffer in server.
+        processBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
+        CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
 
-    if (processBuffer_->GetBufferHolder() != AudioBufferHolder::AUDIO_SERVER_SHARED) {
-        AUDIO_ERR_LOG("CreateFormLocal in server failed.");
-        return ERR_ILLEGAL_STATE;
+        if (processBuffer_->GetBufferHolder() != AudioBufferHolder::AUDIO_SERVER_SHARED) {
+            AUDIO_ERR_LOG("CreateFormLocal in server failed.");
+            return ERR_ILLEGAL_STATE;
+        }
+        AUDIO_INFO_LOG("Config: totalSizeInframe:%{public}d spanSizeInframe:%{public}d byteSizePerFrame:%{public}d",
+            totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
+
+        // we need to clear data buffer to avoid dirty data.
+        memset_s(processBuffer_->GetDataBase(), processBuffer_->GetDataSize(), 0, processBuffer_->GetDataSize());
+        int32_t ret = InitBufferStatus();
+        AUDIO_DEBUG_LOG("clear data buffer, ret:%{public}d", ret);
+    } else {
+        processBuffer_ = buffer;
+        AUDIO_INFO_LOG("ConfigBuffer in server separate, base: %{public}d", *processBuffer_->GetDataBase());
     }
-    AUDIO_INFO_LOG("Config: totalSizeInframe:%{public}d spanSizeInframe:%{public}d byteSizePerFrame:%{public}d",
-        totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
-
-    // we need to clear data buffer to avoid dirty data.
-    memset_s(processBuffer_->GetDataBase(), processBuffer_->GetDataSize(), 0, processBuffer_->GetDataSize());
-    int32_t ret = InitBufferStatus();
-    AUDIO_DEBUG_LOG("clear data buffer, ret:%{public}d", ret);
 
     streamStatus_ = processBuffer_->GetStreamStatus();
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");

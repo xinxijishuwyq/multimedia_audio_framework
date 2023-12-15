@@ -18,8 +18,11 @@
 
 #include <sstream>
 #include <memory>
+#include <thread>
 
+#include "i_audio_renderer_sink.h"
 #include "i_process_status_listener.h"
+#include "linear_pos_time_model.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,7 +46,8 @@ public:
     static constexpr int32_t MAX_LINKED_PROCESS = 3; // 3
     enum EndpointType : uint32_t {
         TYPE_MMAP = 0,
-        TYPE_INVALID
+        TYPE_INVALID,
+        TYPE_INDEPENDENT
     };
 
     enum EndpointStatus : uint32_t {
@@ -56,9 +60,15 @@ public:
         STOPPED   // sink stoped
     };
 
-    static std::shared_ptr<AudioEndpoint> GetInstance(EndpointType type, const DeviceInfo &deviceInfo);
+    static std::shared_ptr<AudioEndpoint> CreateEndpoint(EndpointType type, uint64_t id,
+         AudioStreamType streamType, const DeviceInfo &deviceInfo);
 
     virtual std::string GetEndpointName() = 0;
+
+    virtual EndpointType GetEndpointType() = 0;
+    virtual int32_t SetVolume(AudioStreamType streamType, float volume) = 0;
+    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) = 0;
+    virtual std::shared_ptr<OHAudioBuffer> GetBuffer() = 0;
 
     virtual EndpointStatus GetStatus() = 0;
 
@@ -72,7 +82,96 @@ public:
     virtual void Dump(std::stringstream &dumpStringStream) = 0;
 
     virtual ~AudioEndpoint() = default;
+private:
+    virtual bool Config(const DeviceInfo &deviceInfo) = 0;
 };
+
+class AudioEndpointSeparate : public AudioEndpoint {
+public:
+    explicit AudioEndpointSeparate(EndpointType type, uint64_t id, AudioStreamType streamType);
+    ~AudioEndpointSeparate();
+
+    bool Config(const DeviceInfo &deviceInfo) override;
+    bool StartDevice();
+    bool StopDevice();
+
+    // when audio process start.
+    int32_t OnStart(IAudioProcessStream *processStream) override;
+    // when audio process pause.
+    int32_t OnPause(IAudioProcessStream *processStream) override;
+    // when audio process request update handle info.
+    int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
+    int32_t LinkProcessStream(IAudioProcessStream *processStream) override;
+    int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
+    int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
+
+    void Dump(std::stringstream &dumpStringStream) override;
+
+    std::string GetEndpointName() override;
+
+    inline EndpointType GetEndpointType() override
+    {
+        return endpointType_;
+    }
+
+    int32_t SetVolume(AudioStreamType streamType, float volume) override;
+
+    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
+
+    std::shared_ptr<OHAudioBuffer> GetBuffer() override;
+
+    EndpointStatus GetStatus() override;
+
+    void Release() override;
+
+private:
+    int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
+    int32_t GetAdapterBufferInfo(const DeviceInfo &deviceInfo);
+    void ResyncPosition();
+    void InitAudiobuffer(bool resetReadWritePos);
+    void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
+
+    bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
+    int32_t GetProcLastWriteDoneInfo(const std::shared_ptr<OHAudioBuffer> processBuffer, uint64_t curWriteFrame,
+        uint64_t &proHandleFrame, int64_t &proHandleTime);
+
+    bool IsAnyProcessRunning();
+
+    std::string GetStatusStr(EndpointStatus status);
+
+    int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBuffer> &procBuf, const BufferDesc &readBuf);
+    void WriteToProcessBuffers(const BufferDesc &readBuf);
+
+private:
+    static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
+    // SamplingRate EncodingType SampleFormat Channel
+    DeviceInfo deviceInfo_;
+    AudioStreamInfo dstStreamInfo_;
+    EndpointType endpointType_;
+    uint64_t id_ = 0;
+    AudioStreamType streamType_ = STREAM_DEFAULT;
+    std::mutex listLock_;
+    std::vector<IAudioProcessStream *> processList_;
+    std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
+
+    std::atomic<bool> isInited_ = false;
+    std::shared_ptr<IMmapAudioRendererSink> fastSink_ = nullptr;
+    int64_t spanDuration_ = 0; // nano second
+    int64_t serverAheadReadTime_ = 0;
+    int dstBufferFd_ = -1; // -1: invalid fd.
+    uint32_t dstTotalSizeInframe_ = 0;
+    uint32_t dstSpanSizeInframe_ = 0;
+    uint32_t dstByteSizePerFrame_ = 0;
+    std::shared_ptr<OHAudioBuffer> dstAudioBuffer_ = nullptr;
+    std::atomic<EndpointStatus> endpointStatus_ = INVALID;
+
+    std::mutex loopThreadLock_;
+    std::condition_variable workThreadCV_;
+
+    bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
+    bool needResyncPosition_ = true;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_ENDPOINT_H

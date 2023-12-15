@@ -978,5 +978,15 @@ int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatiali
     }
     return audioEffectChainManager->UpdateSpatializationState(spatializationState);
 }
+
+int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != audioUid_) {
+        AUDIO_ERR_LOG("NotifyStreamVolumeChanged refused for %{public}d", callingUid);
+        return ERR_NOT_SUPPORTED;
+    }
+    return AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
+}
 } // namespace AudioStandard
 } // namespace OHOS

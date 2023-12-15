@@ -41,7 +41,7 @@ public:
 
     virtual int32_t Stop() = 0;
 
-    virtual int32_t RequestHandleInfo() = 0;
+    virtual int32_t RequestHandleInfo(bool isAync = true) = 0;
 
     virtual int32_t Release() = 0;
 

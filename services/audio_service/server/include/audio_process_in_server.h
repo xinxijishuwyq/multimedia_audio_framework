@@ -60,7 +60,7 @@ public:
 
     int32_t Stop() override;
 
-    int32_t RequestHandleInfo() override;
+    int32_t RequestHandleInfo(bool isAsync) override;
 
     int32_t Release() override;
 
@@ -74,7 +74,8 @@ public:
     int Dump(int fd, const std::vector<std::u16string> &args) override;
     void Dump(std::stringstream &dumpStringStream);
 
-    int32_t ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe);
+    int32_t ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
+         const std::shared_ptr<OHAudioBuffer> &endpoint = nullptr);
 
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);

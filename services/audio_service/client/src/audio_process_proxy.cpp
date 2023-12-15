@@ -132,11 +132,11 @@ int32_t AudioProcessProxy::Stop()
     return reply.ReadInt32();
 }
 
-int32_t AudioProcessProxy::RequestHandleInfo()
+int32_t AudioProcessProxy::RequestHandleInfo(bool isAsync)
 {
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC); // MessageOption::TF_ASYNC for no delay
+    MessageOption option = isAsync ? MessageOption(MessageOption::TF_ASYNC) : MessageOption();
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 

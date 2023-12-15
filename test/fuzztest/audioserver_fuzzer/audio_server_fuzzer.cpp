@@ -176,6 +176,24 @@ void AudioServerOffloadSetBufferSizeFuzzTest(const uint8_t *rawData, size_t size
         data, reply, option);
 }
 
+void AudioServerNotifyStreamVolumeChangedFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    uint32_t sizeMs = *reinterpret_cast<const uint32_t*>(rawData);
+    data.WriteUint32(sizeMs);
+    MessageParcel reply;
+    MessageOption option;
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED),
+        data, reply, option);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -189,5 +207,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerOffloadDrainFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerOffloadGetPresentationPositionFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerOffloadSetBufferSizeFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest(data, size);
     return 0;
 }

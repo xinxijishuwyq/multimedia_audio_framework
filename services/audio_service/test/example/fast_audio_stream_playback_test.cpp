@@ -63,6 +63,7 @@ public:
     int32_t InitRenderer();
     int32_t StartPlay();
     int32_t StopPlay();
+    int32_t ReleasePlay();
     int32_t InitCapturer();
     int32_t StartCapture();
     int32_t StopCapture();
@@ -187,6 +188,19 @@ int32_t PlaybackTest::StopPlay()
     }
     if (!audioRenderer_->Stop()) {
         AUDIO_ERR_LOG("Audio renderer stop failed.");
+        return -1;
+    }
+    return 0;
+}
+
+int32_t PlaybackTest::ReleasePlay()
+{
+    if (audioRenderer_ == nullptr) {
+        AUDIO_ERR_LOG("Audiorenderer init failed.");
+        return -1;
+    }
+    if (!audioRenderer_->Release()) {
+        AUDIO_ERR_LOG("Audio renderer release failed.");
         return -1;
     }
     return 0;
@@ -446,6 +460,7 @@ void Loop(std::shared_ptr<PlaybackTest> playTest)
                 StopPlay(playTest);
                 break;
             case RELEASE_SPK:
+                ReleasePlay(playTest);
                 break;
             case INIT_LOCAL_MIC:
                 InitMic(playTest, false);

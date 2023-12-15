@@ -71,10 +71,10 @@ static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
 
 class AudioEndpointInner : public AudioEndpoint {
 public:
-    explicit AudioEndpointInner(EndpointType type);
+    explicit AudioEndpointInner(EndpointType type, uint64_t id);
     ~AudioEndpointInner();
 
-    bool Config(const DeviceInfo &deviceInfo);
+    bool Config(const DeviceInfo &deviceInfo) override;
     bool StartDevice();
     bool StopDevice();
 
@@ -102,6 +102,18 @@ public:
     void Dump(std::stringstream &dumpStringStream) override;
 
     std::string GetEndpointName() override;
+    EndpointType GetEndpointType() override
+    {
+        return endpointType_;
+    }
+    int32_t SetVolume(AudioStreamType streamType, float volume) override;
+
+    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
+
+    std::shared_ptr<OHAudioBuffer> GetBuffer() override
+    {
+        return dstAudioBuffer_;
+    }
 
     EndpointStatus GetStatus() override;
 
@@ -161,7 +173,7 @@ private:
     DeviceInfo deviceInfo_;
     AudioStreamInfo dstStreamInfo_;
     EndpointType endpointType_;
-
+    int32_t id_ = 0;
     std::mutex listLock_;
     std::vector<IAudioProcessStream *> processList_;
     std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
@@ -204,9 +216,16 @@ private:
     FILE *dumpHdi_ = nullptr;
 };
 
-std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, const DeviceInfo &deviceInfo)
+std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
+    AudioStreamType streamType, const DeviceInfo &deviceInfo)
 {
-    std::shared_ptr<AudioEndpointInner> audioEndpoint = std::make_shared<AudioEndpointInner>(type);
+    std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
+    if (type == EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole != INPUT_DEVICE &&
+         deviceInfo.networkId == LOCAL_NETWORK_ID) {
+        audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
+    } else {
+        audioEndpoint = std::make_shared<AudioEndpointInner>(type, id);
+    }
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
@@ -216,7 +235,7 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::GetInstance(EndpointType type, con
     return audioEndpoint;
 }
 
-AudioEndpointInner::AudioEndpointInner(EndpointType type) : endpointType_(type)
+AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id) : endpointType_(type), id_(id)
 {
     AUDIO_INFO_LOG("AudioEndpoint type:%{public}d", endpointType_);
 }
@@ -224,7 +243,18 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type) : endpointType_(type)
 std::string AudioEndpointInner::GetEndpointName()
 {
     // temp method to get device key, should be same with AudioService::GetAudioEndpointForDevice.
-    return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceId);
+    return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceId) + "_" + std::to_string(id_);
+}
+
+int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
+{
+    // No need set hdi volume in shared stream mode.
+    return SUCCESS;
+}
+
+int32_t AudioEndpointInner::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
+{
+    return SUCCESS;
 }
 
 AudioEndpoint::EndpointStatus AudioEndpointInner::GetStatus()
@@ -467,7 +497,7 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
         return ERR_INVALID_PARAM;
     }
     dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
-        dstBufferFd_);
+        AUDIO_SERVER_ONLY, dstBufferFd_, OHAudioBuffer::INVALID_BUFFER_FD);
     if (dstAudioBuffer_ == nullptr || dstAudioBuffer_->GetBufferHolder() != AudioBufferHolder::AUDIO_SERVER_ONLY) {
         AUDIO_ERR_LOG("%{public}s create buffer from remote fail.", __func__);
         return ERR_ILLEGAL_STATE;

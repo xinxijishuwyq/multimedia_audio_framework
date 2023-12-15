@@ -128,7 +128,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_001, TestSize.Level1)
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame - 1;
     uint32_t byteSizePerFrame = 1000;
-    oHAudioBuffer = OHAudioBuffer::CreateFormLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    oHAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
     EXPECT_EQ(nullptr, oHAudioBuffer);
 }
 
@@ -143,7 +143,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_002, TestSize.Level1)
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
     uint32_t byteSizePerFrame = 1000;
-    oHAudioBuffer = OHAudioBuffer::CreateFormLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    oHAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
     EXPECT_NE(nullptr, oHAudioBuffer);
 
     uint32_t totalSizeInFrameRet;

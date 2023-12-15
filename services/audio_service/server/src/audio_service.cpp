@@ -24,6 +24,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+static uint64_t g_id = 1;
+
 AudioService *AudioService::GetInstance()
 {
     static AudioService AudioService;
@@ -52,12 +55,12 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
-            linkedPairedList_.erase(paired);
-            isFind = true;
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
             }
+            linkedPairedList_.erase(paired);
+            isFind = true;
             break;
         } else {
             paired++;
@@ -84,9 +87,8 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
-
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
-    std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo);
+    std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
 
     uint32_t totalSizeInframe = 0;
@@ -97,7 +99,9 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
 
-    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe);
+    std::shared_ptr<OHAudioBuffer> buffer = audioEndpoint->GetEndpointType()
+         == AudioEndpoint::TYPE_INDEPENDENT ? audioEndpoint->GetBuffer() : nullptr;
+    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
@@ -105,6 +109,18 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
     return process;
+}
+
+int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
+{
+    int32_t ret = SUCCESS;
+    for (auto item : endpointList_) {
+        std::string endpointName = item.second->GetEndpointName();
+        if (endpointName == item.first) {
+            ret = ret != SUCCESS ? ret : item.second->SetVolume(streamType, volume);
+        }
+    }
+    return ret;
 }
 
 int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
@@ -206,22 +222,33 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
     return deviceInfo;
 }
 
-std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo deviceInfo)
+std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
+    AudioStreamType streamType)
 {
-    // temp method to get device key
-    std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId);
-    if (endpointList_.find(deviceKey) != endpointList_.end()) {
-        AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
-        return endpointList_[deviceKey];
+    if (deviceInfo.deviceRole == INPUT_DEVICE || deviceInfo.networkId == REMOTE_NETWORK_ID ||
+        deviceInfo.deviceRole == OUTPUT_DEVICE) {
+        // Create shared stream.
+        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId) + "_0";
+        if (endpointList_.find(deviceKey) != endpointList_.end()) {
+            AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
+            return endpointList_[deviceKey];
+        } else {
+            std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP,
+                0, streamType, deviceInfo);
+            CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
+            endpointList_[deviceKey] = endpoint;
+            return endpoint;
+        }
+    } else {
+        // Create Independent stream.
+        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId) + "_" + std::to_string(g_id);
+        std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT,
+            g_id, streamType, deviceInfo);
+        CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create independent AudioEndpoint failed.");
+        g_id++;
+        endpointList_[deviceKey] = endpoint;
+        return endpoint;
     }
-    std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::GetInstance(AudioEndpoint::EndpointType::TYPE_MMAP,
-        deviceInfo);
-    if (endpoint == nullptr) {
-        AUDIO_ERR_LOG("Find no endpoint for the process");
-        return nullptr;
-    }
-    endpointList_[deviceKey] = endpoint;
-    return endpoint;
 }
 
 void AudioService::Dump(std::stringstream &dumpStringStream)
