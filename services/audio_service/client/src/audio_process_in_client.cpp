@@ -123,7 +123,7 @@ private:
     void UpdateHandleInfo(bool isAysnc = true, bool resetReadWritePos = false);
     int64_t GetPredictNextHandleTime(uint64_t posInFrame, bool isIndependent = false);
     bool PrepareNext(uint64_t curHandPos, int64_t &wakeUpTime);
-    bool ClientPrepareNextLoop(uint64_t curHandPos, int64_t &wakeUpTime);
+    bool ClientPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
     bool PrepareNextIndependent(uint64_t curWritePos, int64_t &wakeUpTime);
 
     std::string GetStatusInfo(StreamStatus status);

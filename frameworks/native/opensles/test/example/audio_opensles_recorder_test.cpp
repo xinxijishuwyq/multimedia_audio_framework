@@ -157,7 +157,7 @@ static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContex
             fwrite(buffer, 1, bufferSize, wavFile);
             (*bufferQueueItf)->Enqueue(bufferQueueItf, buffer, size);
         } else {
-            AUDIO_ERR_LOG("buffer is null or pSize: %{public}lu, size: %{public}lu.", bufferSize, size);
+            AUDIO_ERR_LOG("buffer is null or bufferSize: %{public}lu, size: %{public}lu.", bufferSize, size);
         }
     }
 
