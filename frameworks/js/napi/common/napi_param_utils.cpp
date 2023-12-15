@@ -747,6 +747,14 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     if (status == napi_ok) {
         selectedAudioDevice->volumeGroupId_ = intValue;
     }
+
+    selectedAudioDevice->macAddress_ = GetPropertyString(env, in, "address");
+
+    status = GetValueInt32(env, "id", intValue, in);
+    if (status == napi_ok) {
+        selectedAudioDevice->deviceId_ = intValue;
+    }
+
     return napi_ok;
 }
 
