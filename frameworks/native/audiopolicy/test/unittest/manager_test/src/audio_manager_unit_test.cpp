@@ -23,9 +23,12 @@
 
 #include <chrono>
 #include <thread>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using namespace std;
 using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -124,8 +127,7 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
     EXPECT_EQ(inputDevice->deviceRole_, DeviceRole::INPUT_DEVICE);
     EXPECT_EQ(inputDevice->deviceType_, DeviceType::DEVICE_TYPE_MIC);
     EXPECT_GE(inputDevice->deviceId_, MIN_DEVICE_ID);
-    EXPECT_EQ(true, (*inputDevice->audioStreamInfo_.samplingRate.rbegin() >= SAMPLE_RATE_8000)
-        || ((*inputDevice->audioStreamInfo_.samplingRate.begin() <= SAMPLE_RATE_96000)));
+    EXPECT_THAT(inputDevice->audioStreamInfo_.samplingRate, Each(AllOf(Le(SAMPLE_RATE_96000), Ge(SAMPLE_RATE_8000))));
     EXPECT_EQ(inputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
     EXPECT_EQ(true, (*inputDevice->audioStreamInfo_.channels.rbegin() >= MONO)
         && ((*inputDevice->audioStreamInfo_.channels.begin() <= CHANNEL_8)));
