@@ -31,8 +31,10 @@ mutex g_apProxyMutex;
 constexpr int64_t SLEEP_TIME = 1;
 constexpr int32_t RETRY_TIMES = 3;
 std::mutex g_cBMapMutex;
+std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 sptr<AudioPolicyClientStubImpl> AudioPolicyManager::audioStaticPolicyClientStubCB_;
+std::vector<std::shared_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 
 inline const sptr<IAudioPolicy> GetAudioPolicyManagerProxy()
 {
@@ -144,6 +146,17 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
         g_apProxy = nullptr;
     }
     RecoverAudioPolicyCallbackClient();
+
+    {
+        std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
+        if (audioStreamCBMap_.size() != 0) {
+            for (auto it = audioStreamCBMap_.begin(); it != audioStreamCBMap_.end(); ++it) {
+                if (*it != nullptr) {
+                    (*it)->OnAudioPolicyServiceDied();
+                }
+            }
+        }
+    }
 }
 
 int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
@@ -1169,6 +1182,32 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
     for (auto it = rendererCBMap_.begin(); it != rendererCBMap_.end(); ++it) {
         rendererCBMap_.erase(getpid());
     }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::RegisterAudioStreamPolicyServerDiedCb(
+    const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
+    AUDIO_DEBUG_LOG("RegisterAudioStreamPolicyServerDiedCb");
+    auto iter = find(audioStreamCBMap_.begin(), audioStreamCBMap_.end(), callback);
+    if (iter == audioStreamCBMap_.end()) {
+        audioStreamCBMap_.emplace_back(callback);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterAudioStreamPolicyServerDiedCb(
+    const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
+    AUDIO_DEBUG_LOG("UnregisterAudioStreamPolicyServerDiedCb");
+    auto iter = find(audioStreamCBMap_.begin(), audioStreamCBMap_.end(), callback);
+    if (iter != audioStreamCBMap_.end()) {
+        audioStreamCBMap_.erase(iter);
+    }
+
     return SUCCESS;
 }
 

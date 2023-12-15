@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class AudioCapturerStateChangeCallbackImpl;
+class CapturerPolicyServiceDiedCallback;
 
 class AudioCapturerPrivate : public AudioCapturer {
 public:
@@ -73,13 +74,20 @@ public:
         const std::shared_ptr<AudioCapturerInfoChangeCallback> &callback) override;
     int32_t RegisterAudioCapturerEventListener() override;
     int32_t UnregisterAudioCapturerEventListener() override;
+
+    int32_t RegisterCapturerPolicyServiceDiedCallback();
+    int32_t RemoveCapturerPolicyServiceDiedCallback();
+
     bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
     std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const override;
+
+    void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
     AudioStreamType audioStreamType_;
     std::string cachePath_;
+    bool abortRestore_ = false;
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
@@ -99,6 +107,7 @@ public:
     }
 
 private:
+    int32_t InitAudioInterruptCallback();
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     AppInfo appInfo_ = {};
@@ -118,6 +127,7 @@ private:
     std::mutex lock_;
     bool isValid_ = true;
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
+    std::shared_ptr<CapturerPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
 };
 
@@ -170,6 +180,21 @@ private:
     std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist_;
     std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist_;
     AudioCapturerPrivate *capturer_;
+};
+
+class CapturerPolicyServiceDiedCallback : public RendererOrCapturerPolicyServiceDiedCallback {
+public:
+    CapturerPolicyServiceDiedCallback();
+    virtual ~CapturerPolicyServiceDiedCallback();
+    void SetAudioCapturerObj(AudioCapturerPrivate *capturerObj);
+    void SetAudioInterrupt(AudioInterrupt &audioInterrupt);
+    void OnAudioPolicyServiceDied() override;
+
+private:
+    AudioCapturerPrivate *capturer_ = nullptr;
+    AudioInterrupt audioInterrupt_;
+    void RestoreTheadLoop();
+    std::unique_ptr<std::thread> restoreThread_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

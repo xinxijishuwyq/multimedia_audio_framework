@@ -91,6 +91,7 @@ std::mutex AudioRenderer::createRendererMutex_;
 AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
+    abortRestore_ = true;
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback = audioDeviceChangeCallback_;
     if (audioDeviceChangeCallback != nullptr) {
         audioDeviceChangeCallback->UnSetAudioRendererObj();
@@ -101,6 +102,8 @@ AudioRendererPrivate::~AudioRendererPrivate()
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
         Release();
     }
+
+    RemoveRendererPolicyServiceDiedCallback();
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -358,6 +361,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioRendererPrivate::SetParams SetAudioStreamInfo Failed");
     AUDIO_INFO_LOG("AudioRendererPrivate::SetParams SetAudioStreamInfo Succeeded");
+
+    RegisterRendererPolicyServiceDiedCallback();
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
 
@@ -1338,6 +1343,101 @@ int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
 {
     audioStream_->SetPreferredFrameSize(frameSize);
+}
+
+void AudioRendererPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt = audioInterrupt_;
+}
+
+
+int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback");
+    if (!audioPolicyServiceDiedCallback_) {
+        audioPolicyServiceDiedCallback_ = std::make_shared<RendererPolicyServiceDiedCallback>();
+        if (!audioPolicyServiceDiedCallback_) {
+            AUDIO_ERR_LOG("Memory allocation failed!!");
+            return ERROR;
+        }
+        audioStream_->RegisterRendererOrCapturerPolicyServiceDiedCB(audioPolicyServiceDiedCallback_);
+        audioPolicyServiceDiedCallback_->SetAudioRendererObj(this);
+        audioPolicyServiceDiedCallback_->SetAudioInterrupt(audioInterrupt_);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback() const
+{
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback");
+    if (audioPolicyServiceDiedCallback_) {
+        int32_t ret = audioStream_->RemoveRendererOrCapturerPolicyServiceDiedCB();
+        if (ret != 0) {
+            AUDIO_ERR_LOG("RemoveRendererPolicyServiceDiedCallback failed");
+            return ERROR;
+        }
+    }
+    return SUCCESS;
+}
+
+RendererPolicyServiceDiedCallback::RendererPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("RendererPolicyServiceDiedCallback create");
+}
+
+RendererPolicyServiceDiedCallback::~RendererPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("RendererPolicyServiceDiedCallback destroy");
+}
+
+void RendererPolicyServiceDiedCallback::SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+{
+    renderer_ = rendererObj;
+}
+
+void RendererPolicyServiceDiedCallback::SetAudioInterrupt(AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt_ = audioInterrupt;
+}
+
+void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
+{
+    AUDIO_INFO_LOG("RendererPolicyServiceDiedCallback OnAudioPolicyServiceDied");
+    if (restoreThread_ != nullptr) {
+        restoreThread_->detach();
+    }
+    restoreThread_ = std::make_unique<std::thread>(&RendererPolicyServiceDiedCallback::RestoreTheadLoop, this);
+    pthread_setname_np(restoreThread_->native_handle(), "OS_ARPSRestore");
+}
+
+void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
+{
+    int32_t tryCounter = 5;
+    uint32_t sleepTime = 300000;
+    bool result = false;
+    int32_t ret = -1;
+    while (!result && tryCounter-- > 0) {
+        usleep(sleepTime);
+        if (renderer_ == nullptr && renderer_->audioStream_ == nullptr &&
+            renderer_->abortRestore_) {
+            AUDIO_INFO_LOG("RendererPolicyServiceDiedCallback RestoreTheadLoop abort restore");
+            break;
+        }
+        result = renderer_->audioStream_->RestoreAudioStream();
+        if (!result) {
+            AUDIO_ERR_LOG("RestoreAudioStream Failed, %{public}d attempts remaining", tryCounter);
+            continue;
+        } else {
+            renderer_->abortRestore_ = false;
+        }
+        if (renderer_->GetStatus() == RENDERER_RUNNING) {
+            renderer_->GetAudioInterrupt(audioInterrupt_);
+            ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("AudioRenderer::ActivateAudioInterrupt Failed");
+            }
+        }
+    }
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
