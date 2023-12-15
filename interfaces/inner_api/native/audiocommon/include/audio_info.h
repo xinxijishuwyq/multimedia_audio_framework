@@ -823,6 +823,12 @@ enum CastType {
     CAST_TYPE_PROJECTION,
     CAST_TYPE_COOPERATION,
 };
+
+class AudioPnpDeviceChangeCallback {
+public:
+    virtual ~AudioPnpDeviceChangeCallback() = default;
+    virtual void OnPnpDeviceStatusChanged(const std::string &info) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H
