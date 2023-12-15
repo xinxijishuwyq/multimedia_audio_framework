@@ -1697,6 +1697,7 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFu
         if (VerifyVoiceCallPermission(targetFullTokenId, targetTokenId) != SUCCESS) {
             return false;
         }
+        return true;
     }
 
     if (!VerifyPermission(MICROPHONE_PERMISSION, targetTokenId, true)) {
