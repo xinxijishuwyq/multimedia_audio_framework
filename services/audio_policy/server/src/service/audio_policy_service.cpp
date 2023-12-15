@@ -3452,18 +3452,23 @@ void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
 void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     if (macAddress.empty()) {
-        sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor();
-        audioStateManager_.SetPerferredMediaRenderDevice(audioDescriptor);
-    } else {
-        std::vector<unique_ptr<AudioDeviceDescriptor>> bluetoothDevices =
-            audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
-        std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-        for (auto &dec : bluetoothDevices) {
+        AUDIO_ERR_LOG("OnForcedDeviceSelected failed as the macAddress is empty!");
+        return;
+    }
+    std::vector<unique_ptr<AudioDeviceDescriptor>> bluetoothDevices =
+        audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    for (auto &dec : bluetoothDevices) {
+        if (dec->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
             sptr<AudioDeviceDescriptor> tempDec = new(std::nothrow) AudioDeviceDescriptor(*dec);
             audioDeviceDescriptors.push_back(move(tempDec));
         }
-        int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
-        CHECK_AND_RETURN_LOG(res == SUCCESS, "OnForcedDeviceSelected DeviceParamsCheck no success");
+    }
+    int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
+    CHECK_AND_RETURN_LOG(res == SUCCESS, "OnForcedDeviceSelected DeviceParamsCheck no success");
+    if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        audioStateManager_.SetPerferredCallRenderDevice(audioDeviceDescriptors[0]);
+    } else {
         audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
     }
     FetchDevice(true);
