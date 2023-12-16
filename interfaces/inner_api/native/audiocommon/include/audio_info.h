@@ -783,6 +783,17 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
+class AudioStreamPolicyServiceDiedCallback {
+public:
+    virtual ~AudioStreamPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 11
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 /**
  * Describes three-dimensional value.
  * @since 11

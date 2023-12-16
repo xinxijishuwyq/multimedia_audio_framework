@@ -225,6 +225,11 @@ public:
         const std::weak_ptr<AudioRendererPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 
+    int32_t RegisterAudioStreamPolicyServerDiedCb(
+        const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback);
+    int32_t UnregisterAudioStreamPolicyServerDiedCb(
+        const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback);
+
     bool IsVolumeUnadjustable();
 
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
@@ -317,6 +322,7 @@ private:
     sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static sptr<AudioPolicyClientStubImpl> audioStaticPolicyClientStubCB_;
+    static std::vector<std::shared_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
 
     bool isAudioRendererEventListenerRegistered = false;
     bool isAudioCapturerEventListenerRegistered = false;

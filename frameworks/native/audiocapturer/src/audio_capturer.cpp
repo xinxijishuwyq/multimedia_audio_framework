@@ -208,6 +208,13 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioCapturerPrivate::SetParams SetAudioStreamInfo Failed");
 
+    RegisterCapturerPolicyServiceDiedCallback();
+
+    return InitAudioInterruptCallback();
+}
+
+int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
+{
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("InitAudioInterruptCallback::GetAudioSessionID failed for INDEPENDENT_MODE");
         return ERR_INVALID_INDEX;
@@ -438,7 +445,7 @@ bool AudioCapturerPrivate::Flush() const
 bool AudioCapturerPrivate::Release()
 {
     AUDIO_INFO_LOG("AudioCapturer::Release");
-
+    abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
     if (!isValid_) {
         AUDIO_ERR_LOG("Release when capturer invalid");
@@ -454,6 +461,8 @@ bool AudioCapturerPrivate::Release()
 
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
+
+    RemoveCapturerPolicyServiceDiedCallback();
 
     return audioStream_->ReleaseAudioStream();
 }
@@ -777,6 +786,11 @@ bool AudioCapturerPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
     return deviceUpdated;
 }
 
+void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt = audioInterrupt_;
+}
+
 int32_t AudioCapturerPrivate::RegisterAudioCapturerEventListener()
 {
     if (!audioStateChangeCallback_) {
@@ -834,6 +848,35 @@ int32_t AudioCapturerPrivate::RemoveAudioCapturerInfoChangeCallback(
     audioStateChangeCallback_->RemoveCapturerInfoChangeCallback(callback);
     if (UnregisterAudioCapturerEventListener() != SUCCESS) {
         return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::RegisterCapturerPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("AudioCapturerPrivate::SetCapturerPolicyServiceDiedCallback");
+    if (!audioPolicyServiceDiedCallback_) {
+        audioPolicyServiceDiedCallback_ = std::make_shared<CapturerPolicyServiceDiedCallback>();
+        if (!audioPolicyServiceDiedCallback_) {
+            AUDIO_ERR_LOG("Memory allocation failed!!");
+            return ERROR;
+        }
+        audioStream_->RegisterRendererOrCapturerPolicyServiceDiedCB(audioPolicyServiceDiedCallback_);
+        audioPolicyServiceDiedCallback_->SetAudioCapturerObj(this);
+        audioPolicyServiceDiedCallback_->SetAudioInterrupt(audioInterrupt_);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback");
+    if (audioPolicyServiceDiedCallback_) {
+        int32_t ret = audioStream_->RemoveRendererOrCapturerPolicyServiceDiedCB();
+        if (ret != 0) {
+            AUDIO_ERR_LOG("RemoveCapturerPolicyServiceDiedCallback failed");
+            return ERROR;
+        }
     }
     return SUCCESS;
 }
@@ -961,6 +1004,67 @@ void AudioCapturerStateChangeCallbackImpl::OnCapturerStateChange(
 
     if (capturerInfoChangeCallbacklist_.size() != 0) {
         NotifyAudioCapturerInfoChange(audioCapturerChangeInfos);
+    }
+}
+
+CapturerPolicyServiceDiedCallback::CapturerPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("CapturerPolicyServiceDiedCallback create");
+}
+
+CapturerPolicyServiceDiedCallback::~CapturerPolicyServiceDiedCallback()
+{
+    AUDIO_DEBUG_LOG("CapturerPolicyServiceDiedCallback destroy");
+}
+
+void CapturerPolicyServiceDiedCallback::SetAudioCapturerObj(AudioCapturerPrivate *capturerObj)
+{
+    capturer_ = capturerObj;
+}
+
+void CapturerPolicyServiceDiedCallback::SetAudioInterrupt(AudioInterrupt &audioInterrupt)
+{
+    audioInterrupt_ = audioInterrupt;
+}
+
+void CapturerPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
+{
+    AUDIO_INFO_LOG("CapturerPolicyServiceDiedCallback OnAudioPolicyServiceDied");
+    if (restoreThread_ != nullptr) {
+        restoreThread_->detach();
+    }
+    restoreThread_ = std::make_unique<std::thread>(&CapturerPolicyServiceDiedCallback::RestoreTheadLoop, this);
+    pthread_setname_np(restoreThread_->native_handle(), "OS_ACPSRestore");
+}
+
+void CapturerPolicyServiceDiedCallback::RestoreTheadLoop()
+{
+    int32_t tryCounter = 5;
+    uint32_t sleepTime = 500000;
+    bool result = false;
+    int32_t ret = -1;
+    while (!result && tryCounter-- > 0) {
+        usleep(sleepTime);
+        if (capturer_== nullptr && capturer_->audioStream_== nullptr &&
+            capturer_->abortRestore_) {
+            AUDIO_INFO_LOG("CapturerPolicyServiceDiedCallback RestoreTheadLoop abort restore");
+            break;
+        }
+        result = capturer_->audioStream_->RestoreAudioStream();
+        if (!result) {
+            AUDIO_ERR_LOG("RestoreAudioStream Failed, %{public}d attempts remaining", tryCounter);
+            continue;
+        } else {
+            capturer_->abortRestore_ = false;
+        }
+
+        if (capturer_->GetStatus() == CAPTURER_RUNNING) {
+            capturer_->GetAudioInterrupt(audioInterrupt_);
+            ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("RestoreTheadLoop ActivateAudioInterrupt Failed");
+            }
+        }
     }
 }
 }  // namespace AudioStandard

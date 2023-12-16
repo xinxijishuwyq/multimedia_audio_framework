@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class AudioRendererStateChangeCallbackImpl;
+class RendererPolicyServiceDiedCallback;
 
 class AudioRendererPrivate : public AudioRenderer {
 public:
@@ -100,6 +101,11 @@ public:
     void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
+    int32_t RegisterRendererPolicyServiceDiedCallback();
+    int32_t RemoveRendererPolicyServiceDiedCallback() const;
+
+    void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
+
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
@@ -116,6 +122,8 @@ public:
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
     std::string cachePath_;
+    std::shared_ptr<IAudioStream> audioStream_;
+    bool abortRestore_ = false;
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -134,7 +142,6 @@ private:
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
     void SetSelfRendererStateCallback();
 
-    std::shared_ptr<IAudioStream> audioStream_;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     AppInfo appInfo_ = {};
@@ -145,6 +152,7 @@ private:
     FILE *dumpFile_ = nullptr;
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
+    mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
     bool isFastRenderer_ = false;
     bool isSwitching_ = false;
@@ -197,6 +205,21 @@ private:
     std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
     AudioRendererPrivate *renderer_;
     std::mutex mutex_;
+};
+
+class RendererPolicyServiceDiedCallback : public RendererOrCapturerPolicyServiceDiedCallback {
+public:
+    RendererPolicyServiceDiedCallback();
+    virtual ~RendererPolicyServiceDiedCallback();
+    void SetAudioRendererObj(AudioRendererPrivate *rendererObj);
+    void SetAudioInterrupt(AudioInterrupt &audioInterrupt);
+    void OnAudioPolicyServiceDied() override;
+
+private:
+    AudioRendererPrivate *renderer_ = nullptr;
+    AudioInterrupt audioInterrupt_;
+    void RestoreTheadLoop();
+    std::unique_ptr<std::thread> restoreThread_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

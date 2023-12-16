@@ -106,6 +106,7 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM,
         "Client test creat process client fail.");
     state_ = PREPARED;
+    proxyObj_ = proxyObj;
 
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         processClient_->GetSessionID(sessionId_);
@@ -418,6 +419,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+
     return true;
 }
 
@@ -694,6 +696,139 @@ void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &regist
     registerTrackerInfo.state = state_;
     registerTrackerInfo.rendererInfo = rendererInfo_;
     registerTrackerInfo.capturerInfo = capturerInfo_;
+}
+
+int32_t FastAudioStream::RegisterAudioStreamPolicyServerDiedCb()
+{
+    AUDIO_DEBUG_LOG("RegisterAudioStreamPolicyServerDiedCb enter");
+    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ == nullptr,
+        ERROR, "audioStreamPolicyServiceDiedCB_ existence, do not create duplicate");
+
+    audioStreamPolicyServiceDiedCB_ = std::make_shared<FastPolicyServiceDiedCallbackImpl>();
+    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ != nullptr,
+        ERROR, "create audioStreamPolicyServiceDiedCB_ failed");
+
+    return AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(audioStreamPolicyServiceDiedCB_);
+}
+
+int32_t FastAudioStream::UnregisterAudioStreamPolicyServerDiedCb()
+{
+    AUDIO_DEBUG_LOG("AudioRendererPrivate:: UnregisterAudioStreamPolicyServerDiedCb enter");
+    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ != nullptr,
+        ERROR, "audioStreamPolicyServiceDiedCB_ is null");
+    return AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(audioStreamPolicyServiceDiedCB_);
+}
+
+int32_t FastAudioStream::RegisterRendererOrCapturerPolicyServiceDiedCB(
+    const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "Callback is null");
+
+    if (RegisterAudioStreamPolicyServerDiedCb() != SUCCESS) {
+        return ERROR;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ != nullptr,
+        ERROR, "audioStreamPolicyServiceDiedCB_ is null");
+    audioStreamPolicyServiceDiedCB_->SaveRendererOrCapturerPolicyServiceDiedCB(callback);
+    return SUCCESS;
+}
+
+int32_t FastAudioStream::RemoveRendererOrCapturerPolicyServiceDiedCB()
+{
+    CHECK_AND_RETURN_RET_LOG(audioStreamPolicyServiceDiedCB_ != nullptr,
+        ERROR, "audioStreamPolicyServiceDiedCB_ is null");
+
+    audioStreamPolicyServiceDiedCB_->RemoveRendererOrCapturerPolicyServiceDiedCB();
+    if (UnregisterAudioStreamPolicyServerDiedCb() != SUCCESS) {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+bool FastAudioStream::RestoreAudioStream()
+{
+    CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
+    CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID, true,
+        "state_ is NEW/INVALID, no need for restore");
+    bool result = false;
+    State oldState = state_;
+    state_ = NEW;
+    SetStreamTrackerState(false);
+    if (processClient_ != nullptr) {
+        processClient_->Stop();
+        processClient_->Release();
+        processClient_ = nullptr;
+    }
+    int32_t ret = SetAudioStreamInfo(streamInfo_, proxyObj_);
+    if (ret != SUCCESS) {
+        goto error;
+    }
+    switch (oldState) {
+        case RUNNING:
+            ret = processClient_->SaveDataCallback(spkProcClientCb_);
+            if (ret != SUCCESS) {
+                goto error;
+            }
+            result = StartAudioStream();
+            break;
+        case PAUSED:
+            result = StartAudioStream();
+            result = PauseAudioStream();
+            break;
+        case STOPPED:
+        case STOPPING:
+            result = StartAudioStream();
+            result = StopAudioStream();
+            break;
+        default:
+            break;
+    }
+    if (!result) {
+        goto error;
+    }
+    return result;
+
+error:
+    AUDIO_ERR_LOG("RestoreAudioStream failed");
+    state_ = oldState;
+    return false;
+}
+
+FastPolicyServiceDiedCallbackImpl::FastPolicyServiceDiedCallbackImpl()
+{
+    AUDIO_DEBUG_LOG("FastPolicyServiceDiedCallbackImpl instance create");
+}
+
+FastPolicyServiceDiedCallbackImpl::~FastPolicyServiceDiedCallbackImpl()
+{
+    AUDIO_DEBUG_LOG("FastPolicyServiceDiedCallbackImpl instance destory");
+}
+
+void FastPolicyServiceDiedCallbackImpl::OnAudioPolicyServiceDied()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("FastPolicyServiceDiedCallbackImpl OnAudioPolicyServiceDied");
+    if (policyServiceDiedCallback_ != nullptr) {
+        policyServiceDiedCallback_->OnAudioPolicyServiceDied();
+    }
+}
+
+void FastPolicyServiceDiedCallbackImpl::SaveRendererOrCapturerPolicyServiceDiedCB(
+    const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (callback != nullptr) {
+        policyServiceDiedCallback_ = callback;
+    }
+}
+
+void FastPolicyServiceDiedCallbackImpl::RemoveRendererOrCapturerPolicyServiceDiedCB()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (policyServiceDiedCallback_ != nullptr) {
+        policyServiceDiedCallback_ = nullptr;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

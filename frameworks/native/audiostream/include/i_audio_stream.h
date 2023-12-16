@@ -36,6 +36,18 @@ public:
      */
     virtual void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 };
+
+class RendererOrCapturerPolicyServiceDiedCallback {
+public:
+    virtual ~RendererOrCapturerPolicyServiceDiedCallback() = default;
+    /**
+     * Called when AudioPolicyService died.
+     *
+     * since 11
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 class IAudioStream {
 public:
     enum StreamClass : uint32_t {
@@ -198,6 +210,24 @@ public:
     virtual void SetWakeupCapturerState(bool isWakeupCapturer) = 0;
 
     virtual void SetCapturerSource(int capturerSource) = 0;
+
+    virtual int32_t RegisterRendererOrCapturerPolicyServiceDiedCB(
+        const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
+    {
+        return 0;
+    }
+
+    virtual int32_t RemoveRendererOrCapturerPolicyServiceDiedCB()
+    {
+        return 0;
+    }
+
+    virtual bool RestoreAudioStream()
+    {
+        return 0;
+    }
+
+    virtual void SetState() {}
 };
 } // namespace AudioStandard
 } // namespace OHOS
