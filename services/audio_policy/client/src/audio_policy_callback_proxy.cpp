@@ -22,7 +22,8 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
+    const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -38,6 +39,7 @@ int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, co
     }
     data.WriteUint32(sessionID);
     (void)data.WriteRemoteObject(object);
+    data.WriteInt32(zoneID);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {
@@ -48,7 +50,8 @@ int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, co
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID)
+int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID,
+    const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -59,6 +62,7 @@ int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID)
         return -1;
     }
     data.WriteUint32(sessionID);
+    data.WriteInt32(zoneID);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK), data, reply, option);
     if (error != ERR_NONE) {

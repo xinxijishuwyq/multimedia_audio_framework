@@ -44,7 +44,7 @@ class SessionProcessor {
 public:
     DISALLOW_COPY_AND_MOVE(SessionProcessor);
 
-    SessionProcessor(std::function<void(const uint64_t)> processorSessionRemoved,
+    SessionProcessor(std::function<void(const uint64_t, const int32_t)> processorSessionRemoved,
         std::function<void(SessionEvent)> processorSessionAdded,
         std::function<void(const uint64_t)> processorCloseWakeupSource)
         : processorSessionRemoved_(processorSessionRemoved), processorSessionAdded_(processorSessionAdded),
@@ -94,11 +94,11 @@ public:
     }
 
 private:
-    void ProcessSessionEvent(SessionEvent event)
+    void ProcessSessionEvent(SessionEvent event, const int32_t zoneID)
     {
         switch (event.type) {
             case SessionEvent::Type::REMOVE :
-                processorSessionRemoved_(event.sessionID);
+                processorSessionRemoved_(event.sessionID, zoneID);
                 break;
             case SessionEvent::Type::ADD :
                 processorSessionAdded_(event);
@@ -119,7 +119,7 @@ private:
                 auto frontEvent = sessionEvents_.front();
                 sessionEvents_.pop();
                 lock.unlock();
-                ProcessSessionEvent(frontEvent);
+                ProcessSessionEvent(frontEvent, 0);
                 lock.lock();
             }
             cv_.wait(lock, [this] {
@@ -138,7 +138,7 @@ private:
     std::mutex mutex_;
     std::condition_variable cv_;
     std::queue<SessionEvent> sessionEvents_;
-    std::function<void(const uint64_t)> processorSessionRemoved_;
+    std::function<void(const uint64_t, const int32_t)> processorSessionRemoved_;
     std::function<void(SessionEvent)> processorSessionAdded_;
     std::function<void(const uint64_t)> processorCloseWakeupSource_;
 };

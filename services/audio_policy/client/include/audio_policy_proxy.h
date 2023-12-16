@@ -79,7 +79,7 @@ public:
     int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetDistributedRoutingRoleCallback() override;
-    
+
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones() override;
 
@@ -98,13 +98,14 @@ public:
 
     AudioScene GetAudioScene() override;
 
-    int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
+    int32_t SetAudioInterruptCallback(const uint32_t sessionID,
+        const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
 
-    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) override;
+    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
 
-    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) override;
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
@@ -114,9 +115,9 @@ public:
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
-    AudioStreamType GetStreamInFocus() override;
+    AudioStreamType GetStreamInFocus(const int32_t zoneID = 0) override;
 
-    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) override;
+    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
 
     bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         SourceType sourceType = SOURCE_TYPE_MIC) override;
@@ -156,7 +157,8 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
 
-    int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
+    int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
+        const int32_t zoneID = 0) override;
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
 
@@ -232,7 +234,15 @@ public:
 
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
 
-    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object) override;
+    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
+
+    int32_t CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID) override;
+
+    int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID) override;
+
+    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID) override;
+
+    int32_t ReleaseAudioInterruptZone(const int32_t zoneID) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
