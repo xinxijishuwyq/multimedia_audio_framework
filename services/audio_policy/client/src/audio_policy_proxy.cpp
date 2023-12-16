@@ -18,6 +18,10 @@
 #include "audio_policy_proxy.h"
 #include "microphone_descriptor.h"
 
+namespace {
+constexpr int MAX_PID_COUNT = 1000;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -826,7 +830,8 @@ void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
     focusInfoList.push_back(focusInfo);
 }
 
-int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
+    const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -836,6 +841,7 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
         AUDIO_ERR_LOG(" GetAudioFocusInfoList WriteInterfaceToken failed");
         return ERROR;
     }
+    data.WriteInt32(zoneID);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_FOCUS_INFO_LIST), data, reply, option);
     if (error != ERR_NONE) {
@@ -855,7 +861,7 @@ int32_t AudioPolicyProxy::GetAudioFocusInfoList(std::list<std::pair<AudioInterru
     }
 }
 
-int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -865,6 +871,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInte
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
+    data.WriteInt32(zoneID);
     audioInterrupt.Marshalling(data);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);
@@ -876,7 +883,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInte
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -886,6 +893,7 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
+    data.WriteInt32(zoneID);
     audioInterrupt.Marshalling(data);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT), data, reply, option);
@@ -944,7 +952,7 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
     return reply.ReadInt32();
 }
 
-AudioStreamType AudioPolicyProxy::GetStreamInFocus()
+AudioStreamType AudioPolicyProxy::GetStreamInFocus(const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -954,6 +962,7 @@ AudioStreamType AudioPolicyProxy::GetStreamInFocus()
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return STREAM_DEFAULT;
     }
+    data.WriteInt32(zoneID);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_IN_FOCUS), data, reply, option);
     if (error != ERR_NONE) {
@@ -962,7 +971,7 @@ AudioStreamType AudioPolicyProxy::GetStreamInFocus()
     return static_cast<AudioStreamType>(reply.ReadInt32());
 }
 
-int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -972,6 +981,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return -1;
     }
+    data.WriteInt32(zoneID);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SESSION_INFO_IN_FOCUS), data, reply, option);
     if (error != ERR_NONE) {
@@ -2190,7 +2200,7 @@ int32_t AudioPolicyProxy::UnregisterSpatializationStateEventListener(const uint3
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object)
+int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2206,12 +2216,97 @@ int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject>
     }
 
     data.WriteRemoteObject(object);
+    data.WriteInt32(zoneID);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_POLICY_CALLBACK_CLIENT), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("RegisterPolicyCallbackClient failed, error: %d", error);
         return ERROR;
     }
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    CHECK_AND_RETURN_RET_LOG(!data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(zoneID);
+    data.WriteInt32(pids.size());
+    int32_t count = 0;
+    for (int32_t pid : pids) {
+        data.WriteInt32(pid);
+        count++;
+        if (count >= MAX_PID_COUNT) {
+            break;
+        }
+    }
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_AUDIO_INTERRUPT_ZONE), data, reply, option);
+
+    CHECK_AND_RETURN_RET_LOG(error != ERR_NONE, ERROR, "CreateAudioInterruptZone failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    CHECK_AND_RETURN_RET_LOG(!data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
+    data.WriteInt32(zoneID);
+    data.WriteInt32(pids.size());
+    int32_t count = 0;
+    for (int32_t pid : pids) {
+        data.WriteInt32(pid);
+        count++;
+        if (count >= MAX_PID_COUNT) {
+            break;
+        }
+    }
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::ADD_AUDIO_INTERRUPT_ZONE_PIDS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error != ERR_NONE, ERROR, "AddAudioInterruptZonePids failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    CHECK_AND_RETURN_RET_LOG(!data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
+    data.WriteInt32(zoneID);
+    data.WriteInt32(pids.size());
+    int32_t count = 0;
+    for (int32_t pid : pids) {
+        data.WriteInt32(pid);
+        count++;
+        if (count >= MAX_PID_COUNT) {
+            break;
+        }
+    }
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::REMOVE_AUDIO_INTERRUPT_ZONE_PIDS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error != ERR_NONE, ERROR, "RemoveAudioInterruptZonePids failed, error: %d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::ReleaseAudioInterruptZone(const int32_t zoneID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    CHECK_AND_RETURN_RET_LOG(!data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
+    data.WriteInt32(zoneID);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::RELEASE_AUDIO_INTERRUPT_ZONE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error != ERR_NONE, ERROR, "ReleaseAudioInterruptZone failed, error: %d", error);
     return reply.ReadInt32();
 }
 } // namespace AudioStandard

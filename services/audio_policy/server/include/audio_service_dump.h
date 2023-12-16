@@ -73,6 +73,14 @@ typedef struct {
 } GroupInfo;
 
 typedef struct {
+    int32_t zoneID; // Zone ID value should 0 on local device.
+    std::set<int32_t> pids; // When Zone ID is 0, there does not need to be a value.
+    std::set<uint32_t> interruptCbSessionIDsMap;
+    std::set<int32_t> audioPolicyClientProxyCBClientPidMap;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
+} AudioInterruptZoneDump;
+
+typedef struct {
     std::vector<DevicesInfo> inputDevices;
     std::vector<DevicesInfo> outputDevices;
     DeviceType priorityOutputDevice;
@@ -87,6 +95,7 @@ typedef struct {
     std::vector<Effect> availableEffects;
     StreamVolumeInfoMap streamVolumeInfos;
     std::vector<sptr<MicrophoneDescriptor>> availableMicrophones;
+    std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZoneDump>> audioInterruptZonesMapDump;
 } PolicyData;
 
 typedef struct {
@@ -127,6 +136,7 @@ private:
     void StreamVolumesDump(std::string &dumpString);
     void DevicesInfoDump(std::string &dumpString);
     void AudioFocusInfoDump(std::string &dumpString);
+    void AudioInterruptZoneDump(std::string &dumpString);
     void GroupInfoDump(std::string& dumpString);
     void EffectManagerInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);

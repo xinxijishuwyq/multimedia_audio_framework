@@ -418,14 +418,15 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredInputDe
     return gsp->GetPreferredInputDeviceDescriptors(captureInfo);
 }
 
-int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
+int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
+    const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetAudioFocusInfoList: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->GetAudioFocusInfoList(focusInfoList);
+    return gsp->GetAudioFocusInfoList(focusInfoList, zoneID);
 }
 
 int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t clientId,
@@ -712,7 +713,7 @@ int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
 }
 
 int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
-    const std::shared_ptr<AudioInterruptCallback> &callback)
+    const std::shared_ptr<AudioInterruptCallback> &callback, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
@@ -737,37 +738,37 @@ int32_t AudioPolicyManager::SetAudioInterruptCallback(const uint32_t sessionID,
         return ERROR;
     }
 
-    return gsp->SetAudioInterruptCallback(sessionID, object);
+    return gsp->SetAudioInterruptCallback(sessionID, object, zoneID);
 }
 
-int32_t AudioPolicyManager::UnsetAudioInterruptCallback(const uint32_t sessionID)
+int32_t AudioPolicyManager::UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("UnsetAudioInterruptCallback: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->UnsetAudioInterruptCallback(sessionID);
+    return gsp->UnsetAudioInterruptCallback(sessionID, zoneID);
 }
 
-int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyManager::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("ActivateAudioInterrupt: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->ActivateAudioInterrupt(audioInterrupt);
+    return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID);
 }
 
-int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("DeactivateAudioInterrupt: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->DeactivateAudioInterrupt(audioInterrupt);
+    return gsp->DeactivateAudioInterrupt(audioInterrupt, zoneID);
 }
 
 int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
@@ -831,24 +832,24 @@ int32_t AudioPolicyManager::AbandonAudioFocus(const int32_t clientId, const Audi
     return gsp->AbandonAudioFocus(clientId, audioInterrupt);
 }
 
-AudioStreamType AudioPolicyManager::GetStreamInFocus()
+AudioStreamType AudioPolicyManager::GetStreamInFocus(const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetStreamInFocus: audio policy manager proxy is NULL.");
         return STREAM_DEFAULT;
     }
-    return gsp->GetStreamInFocus();
+    return gsp->GetStreamInFocus(zoneID);
 }
 
-int32_t AudioPolicyManager::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt)
+int32_t AudioPolicyManager::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("GetSessionInfoInFocus: audio policy manager proxy is NULL.");
         return -1;
     }
-    return gsp->GetSessionInfoInFocus(audioInterrupt);
+    return gsp->GetSessionInfoInFocus(audioInterrupt, zoneID);
 }
 
 int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
@@ -1676,6 +1677,50 @@ int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uin
     }
 
     return gsp->UnregisterSpatializationStateEventListener(sessionID);
+}
+
+int32_t AudioPolicyManager::CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("CreateAudioInterruptZone: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->CreateAudioInterruptZone(pids, zoneID);
+}
+
+int32_t AudioPolicyManager::AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("AddAudioInterruptZonePids: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->AddAudioInterruptZonePids(pids, zoneID);
+}
+
+int32_t AudioPolicyManager::RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("RemoveAudioInterruptZonePids: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->RemoveAudioInterruptZonePids(pids, zoneID);
+}
+
+int32_t AudioPolicyManager::ReleaseAudioInterruptZone(const int32_t zoneID)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("ReleaseAudioInterruptZone: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    return gsp->ReleaseAudioInterruptZone(zoneID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -60,6 +60,7 @@ void AudioServiceDump::InitDumpFuncMap()
     dumpFuncMap[u"-rm"] = &AudioServiceDump::RingerModeDump;
     dumpFuncMap[u"-v"] = &AudioServiceDump::StreamVolumesDump;
     dumpFuncMap[u"-a"] = &AudioServiceDump::AudioFocusInfoDump;
+    dumpFuncMap[u"-az"] = &AudioServiceDump::AudioInterruptZoneDump;
     dumpFuncMap[u"-g"] = &AudioServiceDump::GroupInfoDump;
     dumpFuncMap[u"-e"] = &AudioServiceDump::EffectManagerInfoDump;
     dumpFuncMap[u"-vi"] = &AudioServiceDump::StreamVolumeInfosDump;
@@ -560,8 +561,59 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
         AppendFormat(dumpString, "  - AudioFocus State: %d\n", iter->second);
         dumpString += "\n";
     }
+    return;
+}
 
-	return;
+void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
+{
+    dumpString += "\nAudioInterrupt Zone:\n";
+    AppendFormat(dumpString, "- %d AudioInterruptZoneDump (s) available:\n",
+        audioData_.policyData.audioInterruptZonesMapDump.size());
+    for (const auto&[zoneID, audioInterruptZoneDump] : audioData_.policyData.audioInterruptZonesMapDump) {
+        if (zoneID < 0) {
+            continue;
+        }
+        AppendFormat(dumpString, "  - Zone ID: %d\n", zoneID);
+        AppendFormat(dumpString, "  - Pids size: %d\n", audioInterruptZoneDump->pids.size());
+        for (auto pid : audioInterruptZoneDump->pids) {
+            AppendFormat(dumpString, "    - pid: %d\n", pid);
+        }
+
+        AppendFormat(dumpString, "  - Interrupt callback size: %d\n",
+            audioInterruptZoneDump->interruptCbSessionIDsMap.size());
+        AppendFormat(dumpString, "    - The sessionIDs as follow:\n");
+        for (auto sessionID : audioInterruptZoneDump->interruptCbSessionIDsMap) {
+            AppendFormat(dumpString, "      - SessionID: %d -- have interrupt callback.\n", sessionID);
+        }
+
+        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %d\n",
+            audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap.size());
+        AppendFormat(dumpString, "    - The clientPids as follow:\n");
+        for (auto pid : audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap) {
+            AppendFormat(dumpString, "      - ClientPid: %d -- have audiopolicy client proxy callback.\n", pid);
+        }
+
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList
+            = audioInterruptZoneDump->audioFocusInfoList;
+        AppendFormat(dumpString, "  - %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
+        uint32_t invalidSessionID = static_cast<uint32_t>(-1);
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+            if ((iter->first).sessionID == invalidSessionID) {
+                continue;
+            }
+            AppendFormat(dumpString, "    - Pid: %d\n", (iter->first).pid);
+            AppendFormat(dumpString, "    - Session ID: %d\n", (iter->first).sessionID);
+            AppendFormat(dumpString, "    - AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
+            AppendFormat(dumpString, "    - Stream Name: %s\n",
+                GetStreamName((iter->first).audioFocusType.streamType).c_str());
+            AppendFormat(dumpString, "    - Source Name: %s\n",
+                GetSourceName((iter->first).audioFocusType.sourceType).c_str());
+            AppendFormat(dumpString, "    - AudioFocus State: %d\n", iter->second);
+            dumpString += "\n";
+        }
+        dumpString += "\n";
+    }
+    return;
 }
 
 void AudioServiceDump::GroupInfoDump(std::string& dumpString)
@@ -710,6 +762,7 @@ void AudioServiceDump::DataDump(string &dumpString)
     RingerModeDump(dumpString);
     StreamVolumesDump(dumpString);
     AudioFocusInfoDump(dumpString);
+    AudioInterruptZoneDump(dumpString);
     GroupInfoDump(dumpString);
     EffectManagerInfoDump(dumpString);
     StreamVolumeInfosDump(dumpString);
@@ -753,6 +806,7 @@ void AudioServiceDump::HelpInfoDump(string &dumpString)
     AppendFormat(dumpString, "  -rm\t\t\t|dump ringer mode\n");
     AppendFormat(dumpString, "  -v\t\t\t|dump stream volumes\n");
     AppendFormat(dumpString, "  -a\t\t\t|dump audio in focus info\n");
+    AppendFormat(dumpString, "  -az\t\t\t|dump audio in interrupt zone info\n");
     AppendFormat(dumpString, "  -g\t\t\t|dump group info\n");
     AppendFormat(dumpString, "  -e\t\t\t|dump effect manager info\n");
     AppendFormat(dumpString, "  -vi\t\t\t|dump volume config of streams\n");

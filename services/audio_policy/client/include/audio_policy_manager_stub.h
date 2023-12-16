@@ -126,6 +126,10 @@ private:
     void UnsetDistributedRoutingRoleCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnregisterSpatializationStateEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply);
+    void CreateAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply);
+    void AddAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
+    void RemoveAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
+    void ReleaseAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -226,6 +230,10 @@ private:
         &AudioPolicyManagerStub::UnsetDistributedRoutingRoleCallbackInternal,
         &AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal,
         &AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal,
+        &AudioPolicyManagerStub::CreateAudioInterruptZoneInternal,
+        &AudioPolicyManagerStub::AddAudioInterruptZonePidsInternal,
+        &AudioPolicyManagerStub::RemoveAudioInterruptZonePidsInternal,
+        &AudioPolicyManagerStub::ReleaseAudioInterruptZoneInternal,
     };
 };
 } // namespace AudioStandard

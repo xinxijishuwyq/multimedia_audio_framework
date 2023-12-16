@@ -89,13 +89,17 @@ public:
 
     virtual AudioScene GetAudioScene() = 0;
 
-    virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID) = 0;
+    virtual int32_t UnsetAudioInterruptCallback(const uint32_t sessionID,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
+    virtual int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) = 0;
+    virtual int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) = 0;
 
@@ -105,9 +109,10 @@ public:
 
     virtual int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) = 0;
 
-    virtual AudioStreamType GetStreamInFocus() = 0;
+    virtual AudioStreamType GetStreamInFocus(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt) = 0;
+    virtual int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         SourceType sourceType = SOURCE_TYPE_MIC) = 0;
@@ -155,7 +160,8 @@ public:
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) = 0;
 
-    virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
+    virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
 
@@ -237,7 +243,20 @@ public:
 
     virtual int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) = 0;
 
-    virtual int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object) = 0;
+    virtual int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
+    virtual int32_t CreateAudioInterruptZone(const std::set<int32_t> pids,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
+    virtual int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
+    virtual int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids,
+        const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
+    virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

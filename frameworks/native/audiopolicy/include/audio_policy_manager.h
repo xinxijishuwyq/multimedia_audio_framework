@@ -123,13 +123,13 @@ public:
                                   const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
-                                    const std::shared_ptr<AudioInterruptCallback> &callback);
+        const std::shared_ptr<AudioInterruptCallback> &callback, const int32_t zoneID = 0);
 
-    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID);
+    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0);
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
-    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt);
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId,
         const std::shared_ptr<AudioInterruptCallback> &callback);
@@ -140,9 +140,9 @@ public:
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt);
 
-    AudioStreamType GetStreamInFocus();
+    AudioStreamType GetStreamInFocus(const int32_t zoneID = 0);
 
-    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt);
+    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
@@ -205,7 +205,8 @@ public:
 
     int32_t UnsetPreferredInputDeviceChangeCallback();
 
-    int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
+    int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
+        const int32_t zoneID = 0);
 
     int32_t RegisterFocusInfoChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioFocusInfoChangeCallback> &callback);
@@ -239,7 +240,7 @@ public:
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
     int32_t GetMaxRendererInstances();
-    
+
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config, uint32_t appTokenId);
@@ -305,6 +306,14 @@ public:
     int32_t UnsetDistributedRoutingRoleCallback();
 
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
+
+    int32_t CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID);
+
+    int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID);
+
+    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID);
+
+    int32_t ReleaseAudioInterruptZone(const int32_t zoneID);
 
 private:
     AudioPolicyManager()

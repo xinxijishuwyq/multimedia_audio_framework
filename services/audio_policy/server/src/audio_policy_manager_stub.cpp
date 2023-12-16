@@ -19,6 +19,10 @@
 #include "audio_log.h"
 #include "audio_policy_ipc_interface_code.h"
 
+namespace {
+constexpr int MAX_PID_COUNT = 1000;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -312,7 +316,8 @@ void AudioPolicyManagerStub::WriteAudioFocusInfo(MessageParcel &reply,
 void AudioPolicyManagerStub::GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
-    int32_t result = GetAudioFocusInfoList(focusInfoList);
+    int32_t zoneID = data.ReadInt32();
+    int32_t result = GetAudioFocusInfoList(focusInfoList, zoneID);
     int32_t size = static_cast<int32_t>(focusInfoList.size());
     reply.WriteInt32(result);
     reply.WriteInt32(size);
@@ -394,34 +399,38 @@ void AudioPolicyManagerStub::SetInterruptCallbackInternal(MessageParcel &data, M
 {
     uint32_t sessionID = data.ReadUint32();
     sptr<IRemoteObject> object = data.ReadRemoteObject();
+    uint32_t zoneID = data.ReadUint32();
     if (object == nullptr) {
         AUDIO_ERR_LOG("AudioPolicyManagerStub: AudioInterruptCallback obj is null");
         return;
     }
-    int32_t result = SetAudioInterruptCallback(sessionID, object);
+    int32_t result = SetAudioInterruptCallback(sessionID, object, zoneID);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
-    uint32_t sessionID = data.ReadUint32();
-    int32_t result = UnsetAudioInterruptCallback(sessionID);
+    int32_t sessionID = data.ReadInt32();
+    int32_t zoneID = data.ReadInt32();
+    int32_t result = UnsetAudioInterruptCallback(sessionID, zoneID);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
 {
+    int32_t zoneID = data.ReadInt32();
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.Unmarshalling(data);
-    int32_t result = ActivateAudioInterrupt(audioInterrupt);
+    int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID);
     reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, MessageParcel &reply)
 {
+    int32_t zoneID = data.ReadInt32();
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.Unmarshalling(data);
-    int32_t result = DeactivateAudioInterrupt(audioInterrupt);
+    int32_t result = DeactivateAudioInterrupt(audioInterrupt, zoneID);
     reply.WriteInt32(result);
 }
 
@@ -462,18 +471,20 @@ void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, Mess
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel & /* data */, MessageParcel &reply)
+void AudioPolicyManagerStub::GetStreamInFocusInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AudioStreamType streamInFocus = GetStreamInFocus();
+    int32_t zoneID = data.ReadInt32();
+    AudioStreamType streamInFocus = GetStreamInFocus(zoneID);
     reply.WriteInt32(static_cast<int32_t>(streamInFocus));
 }
 
-void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel & /* data */, MessageParcel &reply)
+void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t invalidSessionID = static_cast<uint32_t>(-1);
     AudioInterrupt audioInterrupt {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
-    int32_t ret = GetSessionInfoInFocus(audioInterrupt);
+    int32_t zoneID = data.ReadInt32();
+    int32_t ret = GetSessionInfoInFocus(audioInterrupt, zoneID);
     audioInterrupt.Marshalling(reply);
     reply.WriteInt32(ret);
 }
@@ -1035,11 +1046,64 @@ void AudioPolicyManagerStub::UnregisterSpatializationStateEventListenerInternal(
 void AudioPolicyManagerStub::RegisterPolicyCallbackClientInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
+    int32_t zoneID = data.ReadInt32();
     if (object == nullptr) {
         AUDIO_ERR_LOG("RegisterPolicyCallbackClientInternal obj is null");
         return;
     }
-    int32_t result = RegisterPolicyCallbackClient(object);
+    int32_t result = RegisterPolicyCallbackClient(object, zoneID);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::CreateAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::set<int32_t> pids;
+    int32_t zoneID = data.ReadInt32();
+    int32_t pidsSize = data.ReadInt32();
+    pidsSize = pidsSize > MAX_PID_COUNT ? MAX_PID_COUNT : pidsSize;
+    if (pidsSize > 0) {
+        for (int32_t i = 0; i < pidsSize; i ++) {
+            pids.insert(data.ReadInt32());
+        }
+    }
+    int32_t result = CreateAudioInterruptZone(pids, zoneID);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::AddAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::set<int32_t> pids;
+    int32_t zoneID = data.ReadInt32();
+    int32_t pidsSize = data.ReadInt32();
+    pidsSize = pidsSize > MAX_PID_COUNT ? MAX_PID_COUNT : pidsSize;
+    if (pidsSize > 0) {
+        for (int32_t i = 0; i < pidsSize; i ++) {
+            pids.insert(data.ReadInt32());
+        }
+    }
+    int32_t result = AddAudioInterruptZonePids(pids, zoneID);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::RemoveAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::set<int32_t> pids;
+    int32_t zoneID = data.ReadInt32();
+    int32_t pidsSize = data.ReadInt32();
+    pidsSize = pidsSize > MAX_PID_COUNT ? MAX_PID_COUNT : pidsSize;
+    if (pidsSize > 0) {
+        for (int32_t i = 0; i < pidsSize; i ++) {
+            pids.insert(data.ReadInt32());
+        }
+    }
+    int32_t result = RemoveAudioInterruptZonePids(pids, zoneID);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::ReleaseAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t zoneID = data.ReadInt32();
+    int32_t result = ReleaseAudioInterruptZone(zoneID);
     reply.WriteInt32(result);
 }
 
