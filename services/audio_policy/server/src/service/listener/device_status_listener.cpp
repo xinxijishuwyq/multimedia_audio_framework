@@ -26,6 +26,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -184,6 +185,14 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener()
         return ERR_OPERATION_FAILED;
     }
 
+    audioPnpServer_ = &AudioPnpServer::GetAudioPnpServer();
+    pnpDeviceCB_ = std::make_shared<AudioPnpStatusCallback>();
+    pnpDeviceCB_->SetDeviceStatusListener(this);
+    int32_t cbstatus = audioPnpServer_->RegisterPnpStatusListener(pnpDeviceCB_);
+    if (cbstatus != SUCCESS) {
+        AUDIO_ERR_LOG("[DeviceStatusListener]: Register Pnp Status Listener failed");
+        return ERR_OPERATION_FAILED;
+    }
     return SUCCESS;
 }
 
@@ -203,6 +212,37 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
     listener_ = nullptr;
 
     return SUCCESS;
+}
+
+void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
+{
+    CHECK_AND_RETURN_LOG(!info.empty(), "OnPnpDeviceStatusChange invalid info");
+    AudioDeviceType hdiDeviceType = AUDIO_DEVICE_UNKNOWN;
+    AudioEventType hdiEventType = AUDIO_EVENT_UNKNOWN;
+    if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d", &hdiEventType, &hdiDeviceType) < EVENT_PARAMS) {
+        AUDIO_ERR_LOG("[OnPnpDeviceStatusChanged]: Failed to scan info string %{public}s", info.c_str());
+        return;
+    }
+    DeviceType internalDevice = GetInternalDeviceType(hdiDeviceType);
+    CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", hdiDeviceType);
+    bool isConnected = (hdiEventType == AUDIO_DEVICE_ADD) ? true : false;
+    AUDIO_INFO_LOG("[device type :%{public}d], [connection state: %{public}d]",
+        internalDevice, isConnected);
+    deviceObserver_.OnPnpDeviceStatusUpdated(internalDevice, isConnected);
+}
+
+AudioPnpStatusCallback::AudioPnpStatusCallback() {}
+
+AudioPnpStatusCallback::~AudioPnpStatusCallback() {}
+
+void AudioPnpStatusCallback::SetDeviceStatusListener(DeviceStatusListener *listener)
+{
+    listener_ = listener;
+}
+
+void AudioPnpStatusCallback::OnPnpDeviceStatusChanged(const std::string &info)
+{
+    listener_->OnPnpDeviceStatusChanged(info);
 }
 } // namespace AudioStandard
 } // namespace OHOS

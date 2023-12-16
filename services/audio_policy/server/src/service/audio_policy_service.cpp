@@ -90,6 +90,7 @@ bool AudioPolicyService::Init(void)
     audioPolicyManager_.Init();
     audioEffectManager_.EffectManagerInit();
     audioDeviceManager_.ParseDeviceXml();
+    audioPnpServer_.init();
 
     if (!configParser_.LoadConfiguration()) {
         AUDIO_ERR_LOG("Audio Config Load Configuration failed");
@@ -122,10 +123,8 @@ bool AudioPolicyService::Init(void)
     }
     AUDIO_INFO_LOG("Audio interrupt configuration has been loaded. FocusMap.size: %{public}zu", focusMap_.size());
 
-    if (deviceStatusListener_->RegisterDeviceStatusListener()) {
-        AUDIO_ERR_LOG("[Policy Service] Register for device status events failed");
-        return false;
-    }
+    int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
+    CHECK_AND_RETURN_RET_LOG(status != SUCCESS, false, "[Policy Service] Register for device status events failed");
 
     RegisterRemoteDevStatusCallback();
 
@@ -202,6 +201,7 @@ void AudioPolicyService::Deinit(void)
     accessibilityConfigListener_->UnsubscribeObserver();
 #endif
     deviceStatusListener_->UnRegisterDeviceStatusListener();
+    audioPnpServer_.StopPnpServer();
 
     if (isBtListenerRegistered) {
         UnregisterBluetoothListener();

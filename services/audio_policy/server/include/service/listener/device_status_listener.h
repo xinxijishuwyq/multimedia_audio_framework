@@ -20,9 +20,11 @@
 
 #include "audio_module_info.h"
 #include "idevice_status_observer.h"
+#include "audio_pnp_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioPnpStatusCallback;
 class DeviceStatusListener {
 public:
     DeviceStatusListener(IDeviceStatusObserver &observer);
@@ -32,10 +34,26 @@ public:
     int32_t UnRegisterDeviceStatusListener();
 
     IDeviceStatusObserver &deviceObserver_;
+    void OnPnpDeviceStatusChanged(const std::string &info);
 
 private:
+    AudioPnpServer *audioPnpServer_;
+    std::shared_ptr<AudioPnpStatusCallback> pnpDeviceCB_ = nullptr;
     struct HDIServiceManager *hdiServiceManager_;
     struct ServiceStatusListener *listener_;
+};
+
+class AudioPnpStatusCallback : public AudioPnpDeviceChangeCallback {
+public:
+    AudioPnpStatusCallback();
+
+    virtual ~AudioPnpStatusCallback();
+
+    void OnPnpDeviceStatusChanged(const std::string &info);
+
+    void SetDeviceStatusListener(DeviceStatusListener *listener);
+private:
+    DeviceStatusListener *listener_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

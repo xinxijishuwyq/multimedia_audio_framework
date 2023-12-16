@@ -52,6 +52,7 @@
 #include "audio_device_manager.h"
 #include "audio_device_parser.h"
 #include "audio_state_manager.h"
+#include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
 
 #ifdef BLUETOOTH_ENABLE
@@ -411,7 +412,8 @@ private:
         audioEffectManager_(AudioEffectManager::GetAudioEffectManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
-        audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
+        audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
+        audioPnpServer_(AudioPnpServer::GetAudioPnpServer())
     {
 #ifdef ACCESSIBILITY_ENABLE
         accessibilityConfigListener_ = std::make_shared<AccessibilityConfigListener>(*this);
@@ -765,6 +767,7 @@ private:
     AudioDeviceManager &audioDeviceManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    AudioPnpServer &audioPnpServer_;
 
     std::optional<uint32_t> offloadSessionID_;
     PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
