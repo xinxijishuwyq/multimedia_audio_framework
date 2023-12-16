@@ -514,8 +514,12 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDev
         AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
         return deviceInfo;
     }
-    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-    audioRendererFilter->uid = -1;
+
+    if (!rendererInfo.Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioRendererInfo Marshalling() failed");
+        return deviceInfo;
+    }
+
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS), data, reply, option);
     if (error != ERR_NONE) {
@@ -541,6 +545,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredInputDevi
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         AUDIO_ERR_LOG("GetPreferredInputDeviceDescriptors: WriteInterfaceToken failed");
+        return deviceInfo;
+    }
+
+    if (!captureInfo.Marshalling(data)) {
+        AUDIO_ERR_LOG("AudioCapturerInfo Marshalling() failed");
         return deviceInfo;
     }
 

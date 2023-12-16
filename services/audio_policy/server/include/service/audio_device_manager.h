@@ -115,6 +115,7 @@ private:
     void UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
     void UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    void UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;
@@ -136,6 +137,7 @@ private:
     sptr<AudioDeviceDescriptor> earpiece_ = nullptr;
     sptr<AudioDeviceDescriptor> speaker_ = nullptr;
     sptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
+    std::mutex deviceInfoUpdateMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

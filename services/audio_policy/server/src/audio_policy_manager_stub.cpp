@@ -249,6 +249,7 @@ void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(Message
 {
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
     AudioRendererInfo rendererInfo;
+    rendererInfo.Unmarshalling(data);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredOutputDeviceDescriptors(rendererInfo);
     int32_t size = static_cast<int32_t>(devices.size());
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS size= %{public}d", size);
@@ -261,6 +262,7 @@ void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(Message
 void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioCapturerInfo captureInfo;
+    captureInfo.Unmarshalling(data);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredInputDeviceDescriptors(captureInfo);
     size_t size = static_cast<int32_t>(devices.size());
     AUDIO_DEBUG_LOG("GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS size= %{public}zu", size);

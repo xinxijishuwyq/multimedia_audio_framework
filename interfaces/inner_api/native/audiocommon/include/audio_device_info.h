@@ -216,6 +216,14 @@ enum DeviceInfoUpdateCommand {
     CATEGORY_UPDATE = 1,
     CONNECTSTATE_UPDATE,
     ENABLE_UPDATE,
+    EXCEPTION_FLAG_UPDATE,
+};
+
+enum ConnectState {
+    CONNECTED,
+    SUSPEND_CONNECTED,
+    VIRTUAL_CONNECTED,
+    DEACTIVE_CONNECTED
 };
 
 struct DevicePrivacyInfo {
@@ -314,6 +322,7 @@ public:
     int32_t interruptGroupId;
     int32_t volumeGroupId;
     bool isLowLatencyDevice;
+    ConnectState connectState = CONNECTED;
 
     DeviceInfo() = default;
     ~DeviceInfo() = default;

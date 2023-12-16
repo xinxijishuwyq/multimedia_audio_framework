@@ -42,12 +42,14 @@ void AudioStreamTracker::RegisterTracker(const AudioRegisterTrackerInfo &registe
         streamChangeInfo.audioRendererChangeInfo.clientPid = registerTrackerInfo.clientPid;
         streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(registerTrackerInfo.state);
         streamChangeInfo.audioRendererChangeInfo.rendererInfo = registerTrackerInfo.rendererInfo;
+        streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceRole = OUTPUT_DEVICE;
     } else {
         streamChangeInfo.audioCapturerChangeInfo.clientUID = clientUid_;
         streamChangeInfo.audioCapturerChangeInfo.sessionId = registerTrackerInfo.sessionId;
         streamChangeInfo.audioCapturerChangeInfo.clientPid = registerTrackerInfo.clientPid;
         streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(registerTrackerInfo.state);
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo = registerTrackerInfo.capturerInfo;
+        streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceRole = INPUT_DEVICE;
     }
     AudioPolicyManager::GetInstance().RegisterTracker(eMode_, streamChangeInfo, clientTrackerObj);
 }

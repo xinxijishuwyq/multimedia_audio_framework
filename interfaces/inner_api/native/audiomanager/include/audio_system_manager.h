@@ -31,12 +31,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum ConnectState {
-    CONNECTED,
-    SUSPEND_CONNECTED,
-    VIRTUAL_CONNECTED,
-    DEACTIVE_CONNECTED
-};
 
 class AudioDeviceDescriptor;
 class AudioDeviceDescriptor : public Parcelable {

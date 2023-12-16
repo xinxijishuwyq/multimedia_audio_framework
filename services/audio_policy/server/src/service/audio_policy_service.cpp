@@ -1637,10 +1637,12 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
     vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated)
 {
-    int32_t ret = SwitchActiveA2dpDevice(new AudioDeviceDescriptor(*desc));
+    sptr<AudioDeviceDescriptor> deviceDesc = new AudioDeviceDescriptor(*desc);
+    int32_t ret = SwitchActiveA2dpDevice(deviceDesc);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
-        desc->exceptionFlag_ = true;
+        deviceDesc->exceptionFlag_ = true;
+        audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
         FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
         return ERROR;
     }
@@ -1655,6 +1657,7 @@ int32_t AudioPolicyService::HandleScoDeviceFetched(unique_ptr<AudioDeviceDescrip
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
             desc->exceptionFlag_ = true;
+            audioDeviceManager_.UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
             FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
             return ERROR;
         }
@@ -1730,7 +1733,7 @@ void AudioPolicyService::OffloadStartPlayingIfOffloadMode(uint64_t sessionId)
 bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo)
 {
     if (desc->networkId_ == deviceInfo.networkId && desc->deviceType_ == deviceInfo.deviceType &&
-        desc->macAddress_ == deviceInfo.macAddress) {
+        desc->macAddress_ == deviceInfo.macAddress && desc->connectState_ == deviceInfo.connectState) {
         return true;
     } else {
         return false;
@@ -1740,7 +1743,7 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, D
 bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc)
 {
     if (desc->networkId_ == deviceDesc.networkId_ && desc->deviceType_ == deviceDesc.deviceType_ &&
-        desc->macAddress_ == deviceDesc.macAddress_) {
+        desc->macAddress_ == deviceDesc.macAddress_ && desc->connectState_ == deviceDesc.connectState_) {
         return true;
     } else {
         return false;
@@ -1773,6 +1776,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device");
                 desc->exceptionFlag_ = true;
+                audioDeviceManager_.UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
                 FetchInputDevice(capturerChangeInfos, isStreamStatusUpdated);
                 return;
             }
@@ -2451,6 +2455,15 @@ void AudioPolicyService::AddEarpiece()
     }
     sptr<AudioDeviceDescriptor> audioDescriptor =
         new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+    // Use speaker streaminfo for earpiece cap
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
+        [](const sptr<AudioDeviceDescriptor> &devDesc) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
+        return (devDesc->deviceType_ == DEVICE_TYPE_SPEAKER);
+    });
+    if (itr != connectedDevices_.end()) {
+        audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
+    }
     audioDescriptor->deviceId_ = startDeviceId++;
     UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
@@ -3814,6 +3827,7 @@ void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<Aud
     deviceInfo.channelMasks = desc->channelMasks_;
     deviceInfo.channelIndexMasks = desc->channelIndexMasks_;
     deviceInfo.displayName = desc->displayName_;
+    deviceInfo.connectState = desc->connectState_;
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;

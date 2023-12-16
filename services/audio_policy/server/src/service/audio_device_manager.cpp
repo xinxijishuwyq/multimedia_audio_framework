@@ -659,6 +659,9 @@ void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor>
         case ENABLE_UPDATE:
             UpdateEnableState(devDesc);
             break;
+        case EXCEPTION_FLAG_UPDATE:
+            UpdateExceptionFlag(devDesc);
+            break;
         default:
             break;
     }
@@ -725,6 +728,24 @@ void AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescripto
             desc->networkId_ == devDesc->networkId_ &&
             desc->isEnable_ != devDesc->isEnable_) {
                 desc->isEnable_ = devDesc->isEnable_;
+        }
+    }
+}
+
+void AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    lock_guard<mutex> lock(deviceInfoUpdateMutex_);
+    for (auto &desc : connectedDevices_) {
+        if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+            deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            if (desc->macAddress_ == deviceDescriptor->macAddress_ &&
+                desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
+                desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
+            }
+        } else if (desc->deviceType_ == deviceDescriptor->deviceType_ &&
+            desc->networkId_ == deviceDescriptor->networkId_ &&
+            desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
+                desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
         }
     }
 }
