@@ -734,6 +734,7 @@ void AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescripto
 
 void AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    lock_guard<mutex> lock(deviceInfoUpdateMutex_);
     for (auto &desc : connectedDevices_) {
         if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {

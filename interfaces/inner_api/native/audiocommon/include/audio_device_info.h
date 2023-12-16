@@ -219,6 +219,13 @@ enum DeviceInfoUpdateCommand {
     EXCEPTION_FLAG_UPDATE,
 };
 
+enum ConnectState {
+    CONNECTED,
+    SUSPEND_CONNECTED,
+    VIRTUAL_CONNECTED,
+    DEACTIVE_CONNECTED
+};
+
 struct DevicePrivacyInfo {
     std::string deviceName;
     DeviceType deviceType;
@@ -315,6 +322,7 @@ public:
     int32_t interruptGroupId;
     int32_t volumeGroupId;
     bool isLowLatencyDevice;
+    ConnectState connectState = CONNECTED;
 
     DeviceInfo() = default;
     ~DeviceInfo() = default;

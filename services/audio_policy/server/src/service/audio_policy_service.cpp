@@ -1744,7 +1744,7 @@ void AudioPolicyService::OffloadStartPlayingIfOffloadMode(uint64_t sessionId)
 bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo)
 {
     if (desc->networkId_ == deviceInfo.networkId && desc->deviceType_ == deviceInfo.deviceType &&
-        desc->macAddress_ == deviceInfo.macAddress) {
+        desc->macAddress_ == deviceInfo.macAddress && desc->connectState_ == deviceInfo.connectState) {
         return true;
     } else {
         return false;
@@ -1754,7 +1754,7 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, D
 bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc)
 {
     if (desc->networkId_ == deviceDesc.networkId_ && desc->deviceType_ == deviceDesc.deviceType_ &&
-        desc->macAddress_ == deviceDesc.macAddress_) {
+        desc->macAddress_ == deviceDesc.macAddress_ && desc->connectState_ == deviceDesc.connectState_) {
         return true;
     } else {
         return false;
@@ -2466,6 +2466,15 @@ void AudioPolicyService::AddEarpiece()
     }
     sptr<AudioDeviceDescriptor> audioDescriptor =
         new (std::nothrow) AudioDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE);
+    // Use speaker streaminfo for earpiece cap
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(),
+        [](const sptr<AudioDeviceDescriptor> &devDesc) {
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "Invalid device descriptor");
+        return (devDesc->deviceType_ == DEVICE_TYPE_SPEAKER);
+    });
+    if (itr != connectedDevices_.end()) {
+        audioDescriptor->SetDeviceCapability((*itr)->audioStreamInfo_, 0);
+    }
     audioDescriptor->deviceId_ = startDeviceId++;
     UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
@@ -3834,6 +3843,7 @@ void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<Aud
     deviceInfo.channelMasks = desc->channelMasks_;
     deviceInfo.channelIndexMasks = desc->channelIndexMasks_;
     deviceInfo.displayName = desc->displayName_;
+    deviceInfo.connectState = desc->connectState_;
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
