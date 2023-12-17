@@ -1498,7 +1498,7 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
         buffer = buffer + writableSize;
         length -= writableSize;
 
-        HandleRenderPositionCallbacks(writableSize);
+        HandleRenderPositionCallbacks(writableSize * speed_);
     }
 
     return error;
@@ -3601,6 +3601,17 @@ void AudioServiceClient::OnSpatializationStateChange(const AudioSpatializationSt
     pa_operation_unref(updatePropOperation);
 
     pa_threaded_mainloop_unlock(mainLoop);
+}
+
+int32_t AudioServiceClient::SetStreamSpeed(float speed)
+{
+    speed_ = speed;
+    return SUCCESS;
+}
+
+float AudioServiceClient::GetStreamSpeed()
+{
+    return speed_;
 }
 
 AudioSpatializationStateChangeCallbackImpl::AudioSpatializationStateChangeCallbackImpl()

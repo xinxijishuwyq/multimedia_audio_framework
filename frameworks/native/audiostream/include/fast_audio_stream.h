@@ -121,6 +121,8 @@ public:
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t buffer_size) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
+    int32_t SetSpeed(float speed) override;
+    float GetSpeed() override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;

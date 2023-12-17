@@ -123,6 +123,8 @@ class OHAudioRenderer {
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
+        int32_t SetSpeed(float speed);
+        float GetSpeed();
 
         void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
         void SetPreferredFrameSize(int32_t frameSize);

@@ -33,6 +33,7 @@ namespace AudioTestConstants {
     constexpr int32_t FOUR_ARG_IDX = 4;
     constexpr int32_t FIFTH_ARG_IDX = 5;
     constexpr int32_t SIXTH_ARG_IDX = 6;
+    constexpr int32_t SEVEN_ARG_IDX = 7;
     constexpr int32_t WAIT_INTERVAL = 1000;
 }
 
@@ -44,6 +45,7 @@ int32_t g_channelCount = 2;
 int32_t g_latencyMode = 0;
 int32_t g_sampleFormat = 1;
 int32_t g_frameSize = 240;
+float g_speed = 1.0f;
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     void* userData,
@@ -93,7 +95,10 @@ void PlayerTest(char *argv[])
     ret = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     printf("create renderer client, ret: %d \n", ret);
 
-    // 4. start
+    // 4. setspeed
+    ret = OH_AudioRenderer_SetSpeed(audioRenderer, g_speed);
+
+    // 5. start
     ret = OH_AudioRenderer_Start(audioRenderer);
     printf("start ret: %d \n", ret);
     int32_t frameSize;
@@ -111,13 +116,13 @@ void PlayerTest(char *argv[])
         OH_AudioRenderer_GetTimestamp(audioRenderer, CLOCK_MONOTONIC, &framePosition, &timestamp);
         printf("framePosition %ld timestamp:%ld\n", framePosition, timestamp);
     }
-    // 5. stop and release client
+    // 6. stop and release client
     ret = OH_AudioRenderer_Stop(audioRenderer);
     printf("stop ret: %d \n", ret);
     ret = OH_AudioRenderer_Release(audioRenderer);
     printf("release ret: %d \n", ret);
 
-    // 6. destroy the builder
+    // 7. destroy the builder
     ret = OH_AudioStreamBuilder_Destroy(builder);
     printf("destroy builder ret: %d \n", ret);
 }
@@ -137,6 +142,7 @@ int main(int argc, char *argv[])
     printf("latency mode =%s \n", argv[AudioTestConstants::FOUR_ARG_IDX]);
     printf("sample Format = %s \n", argv[AudioTestConstants::FIFTH_ARG_IDX]);
     printf("buffer size = %s \n", argv[AudioTestConstants::SIXTH_ARG_IDX]);
+    printf("speed = %s \n", argv[AudioTestConstants::SEVEN_ARG_IDX]);
 
     g_filePath = argv[AudioTestConstants::FIRST_ARG_IDX];
     g_samplingRate = atoi(argv[AudioTestConstants::SECOND_ARG_IDX]);
@@ -144,6 +150,7 @@ int main(int argc, char *argv[])
     g_latencyMode = atoi(argv[AudioTestConstants::FOUR_ARG_IDX]);
     g_sampleFormat = atoi(argv[AudioTestConstants::FIFTH_ARG_IDX]);
     g_frameSize = atoi(argv[AudioTestConstants::SIXTH_ARG_IDX]);
+    g_speed = atof(argv[AudioTestConstants::SEVEN_ARG_IDX]);
 
     printf("filePATH: %s \n", g_filePath.c_str());
 

@@ -21,6 +21,9 @@
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
+#ifdef SONIC_ENABLE
+#include "sonic.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,6 +109,11 @@ public:
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
 
+    int32_t SetSpeed(float speed) override;
+    float GetSpeed() override;
+#ifdef SONIC_ENABLE
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize);
+#endif
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
@@ -157,6 +165,13 @@ private:
     bool isFastRenderer_ = false;
     bool isSwitching_ = false;
     mutable std::mutex switchStreamMutex_;
+
+    float speed_ = 1.0;
+#ifdef SONIC_ENABLE
+    size_t bufferSize_;
+    size_t formatSize_;
+    sonicStream  sonicStream_;
+#endif
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

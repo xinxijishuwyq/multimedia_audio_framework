@@ -31,10 +31,18 @@ config("audio_renderer_config") {
     "$pulseaudio_dir/confgure/src",
   ]
 
+  if (sonic_enable == true) {
+    include_dirs += [ "$pulseaudio_dir/sonic" ]
+  }
+
   cflags = [
     "-Wall",
     "-Werror",
   ]
+
+  if (sonic_enable == true) {
+    cflags += [ "-DSONIC_ENABLE" ]
+  }
 }
 
 ohos_shared_library("audio_renderer") {
@@ -63,6 +71,10 @@ ohos_shared_library("audio_renderer") {
   ]
 
   deps += audio_renderer_gateway_deps
+
+  if (sonic_enable == true) {
+    deps += [ "$pulseaudio_dir/sonic:sonic" ]
+  }
 
   public_configs = [ ":audio_external_library_config" ]
 

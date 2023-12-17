@@ -226,6 +226,29 @@ OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer,
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* renderer, int32_t* frameSize);
+
+/*
+* Query the playback speed of the stream client
+*
+* @since 11
+*
+* @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+* @param speed Pointer to a variable to receive the playback speed.
+* @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+*/
+OH_AudioStream_Result OH_AudioRenderer_GetSpeed(OH_AudioRenderer* renderer, float* speed);
+
+
+/*
+* Set the playback speed of the stream client
+*
+* @since 11
+*
+* @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+* @param speed The playback speed, form 0.25 to 4.0.
+* @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+*/
+OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer* renderer, float speed);
 #ifdef __cplusplus
 }
 #endif

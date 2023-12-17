@@ -871,6 +871,18 @@ public:
     virtual int32_t SetVolumeWithRamp(float volume, int32_t duration) = 0;
 
     virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
+    /**
+     * @brief Changes the renderer speed.
+     * @param Speed to set. The value type is float, form 0.25 to 4.0.
+     * @since 11
+     */
+    virtual int32_t SetSpeed(float speed) = 0;
+
+    /**
+     * @brief Get the renderer speed.
+     * @since 11
+     */
+    virtual float GetSpeed() = 0;
 
     virtual ~AudioRenderer();
 private:
