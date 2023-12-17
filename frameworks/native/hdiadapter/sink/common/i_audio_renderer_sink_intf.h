@@ -33,6 +33,7 @@ typedef struct {
     const char *filePath;
     const char *deviceNetworkId;
     int32_t deviceType;
+    unsigned long channelLayout;
 } SinkAttr;
 
 struct RendererSinkAdapter {
