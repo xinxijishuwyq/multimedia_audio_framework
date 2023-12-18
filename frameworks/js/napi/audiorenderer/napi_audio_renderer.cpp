@@ -538,7 +538,10 @@ napi_status NapiAudioRenderer::WriteArrayBufferToNative(std::shared_ptr<AudioRen
     while ((totalBytesWritten < bufferLen) && ((bufferLen - totalBytesWritten) > minBytes)) {
         bytesWritten = napiAudioRenderer->audioRenderer_->Write(buffer.get() + totalBytesWritten,
         bufferLen - totalBytesWritten);
-        CHECK_AND_BREAK_LOG(bytesWritten >= 0, "Write length < 0,break.");
+        if (bytesWritten < 0) {
+            AUDIO_ERR_LOG("Write length < 0,break.");
+            break;
+        }
         totalBytesWritten += bytesWritten;
     }
     context->status = napi_ok;

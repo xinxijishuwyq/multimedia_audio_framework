@@ -2006,6 +2006,23 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
         u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
         u->multiChannel.isHDISinkStarted = false;
     }
+
+    unsigned nPrimary, nOffload, nHd;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+    if (nPrimary > 0) {
+        return;
+    }
+
+    // Continuously dropping data clear counter on entering suspended state.
+    if (u->bytes_dropped != 0) {
+        AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, HDI-sink continuously dropping data - clear statistics "
+                       "(%zu -> 0 bytes dropped)", u->bytes_dropped);
+        u->bytes_dropped = 0;
+    }
+
+    u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
+    AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, Stopped HDI renderer");
+    u->primary.isHDISinkStarted = false;
 }
 
 static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
