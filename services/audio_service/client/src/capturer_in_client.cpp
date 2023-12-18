@@ -80,6 +80,8 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
+    int32_t SetSpeed(float speed) override;
+    float GetSpeed() override;
 
     // callback mode api
     AudioRenderMode GetRenderMode() override;
@@ -582,6 +584,19 @@ float CapturerInClientInner::GetVolume()
     // in plan
     return 0.0;
 }
+
+int32_t CapturerInClientInner::SetSpeed(float speed)
+{
+    AUDIO_ERR_LOG("SetSpeed is not supported");
+    return ERROR;
+}
+
+float CapturerInClientInner::GetSpeed()
+{
+    AUDIO_ERR_LOG("GetSpeed is not supported");
+    return 1.0;
+}
+
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {

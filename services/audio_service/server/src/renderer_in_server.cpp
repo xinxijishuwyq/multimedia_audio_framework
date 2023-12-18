@@ -56,7 +56,7 @@ int32_t RendererInServer::ConfigServerBuffer()
         "byteSizePerFrame_:%{public}u", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     
     // create OHAudioBuffer in server
-    audioServerBuffer_ = OHAudioBuffer::CreateFormLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
+    audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
 
     // we need to clear data buffer to avoid dirty data.

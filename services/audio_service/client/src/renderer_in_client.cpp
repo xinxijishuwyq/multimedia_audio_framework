@@ -82,6 +82,8 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
+    int32_t SetSpeed(float speed) override;
+    float GetSpeed() override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
@@ -746,6 +748,18 @@ int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
     // in plan
     return ERROR;
+}
+
+int32_t RendererInClientInner::SetSpeed(float speed)
+{
+    // in plan
+    return ERROR;
+}
+
+float RendererInClientInner::GetSpeed()
+{
+    // in plan
+    return 1.0;
 }
 
 AudioRendererRate RendererInClientInner::GetRenderRate()
