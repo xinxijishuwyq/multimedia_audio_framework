@@ -119,7 +119,8 @@ static void OnPnpDeviceStatusChange(const std::string &info, DeviceStatusListene
     CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", hdiDeviceType);
 
     bool isConnected = (hdiEventType == AUDIO_DEVICE_ADD) ? true : false;
-    devListener->deviceObserver_.OnPnpDeviceStatusUpdated(internalDevice, isConnected);
+    AUDIO_DEBUG_LOG("[OnPnpDeviceStatusChange]:[device type :%{public}d], [connection state: %{public}d]",
+        internalDevice, isConnected);
 }
 
 static void OnServiceStatusReceived(struct ServiceStatusListener *listener, struct ServiceStatus *serviceStatus)
@@ -211,6 +212,13 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
     hdiServiceManager_ = nullptr;
     listener_ = nullptr;
 
+    int32_t cbstatus = audioPnpServer_->UnRegisterPnpStatusListener();
+    if (cbstatus != SUCCESS) {
+        AUDIO_ERR_LOG("[DeviceStatusListener]: UnRegister Pnp Status Listener failed");
+        return ERR_OPERATION_FAILED;
+    }
+    audioPnpServer_ = nullptr;
+    pnpDeviceCB_ = nullptr;
     return SUCCESS;
 }
 
@@ -226,7 +234,7 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     DeviceType internalDevice = GetInternalDeviceType(hdiDeviceType);
     CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", hdiDeviceType);
     bool isConnected = (hdiEventType == AUDIO_DEVICE_ADD) ? true : false;
-    AUDIO_INFO_LOG("[device type :%{public}d], [connection state: %{public}d]",
+    AUDIO_INFO_LOG("[OnPnpDeviceStatusChanged]:[device type :%{public}d], [connection state: %{public}d]",
         internalDevice, isConnected);
     deviceObserver_.OnPnpDeviceStatusUpdated(internalDevice, isConnected);
 }

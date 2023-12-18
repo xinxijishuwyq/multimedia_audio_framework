@@ -52,6 +52,9 @@ private:
     void OpenAndReadWithSocket();
     void OpenAndReadInput();
     void DetectAudioDevice();
+#ifdef AUDIO_DOUBLE_PNP_DETECT
+    void UpdateUsbHeadset();
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS
