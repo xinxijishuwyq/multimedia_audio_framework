@@ -107,6 +107,8 @@ public:
 
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
 
+    void NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     int32_t SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
