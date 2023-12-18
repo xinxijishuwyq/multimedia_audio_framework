@@ -805,7 +805,6 @@ private:
     static void PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     static void GetSinkInputInfoCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
-    static void GetSinkInputInfoOffloadCb(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata);
     static void SetPaVolume(const AudioServiceClient &client);
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 

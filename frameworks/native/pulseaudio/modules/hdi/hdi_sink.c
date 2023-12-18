@@ -190,6 +190,7 @@ static bool InputIsPrimary(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
 static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i);
+static void StopPrimaryHdiIfNoRunning(struct Userdata* u);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -1528,16 +1529,19 @@ static void OffloadRewindAndFlush(struct Userdata* u, pa_sink_input* i, bool aft
             bufSizeInInput += pa_usec_to_bytes(pa_bytes_to_usec(
                 pa_memblockq_get_length(i->thread_info.render_memblockq), &i->sink->sample_spec), &sampleSpecIn);
             uint64_t rewindSize = afterRender ? bufSizeInRender : bufSizeInInput;
-
-            if (afterRender && rewindSize <= i->thread_info.render_memblockq->maxrewind) {
-                pa_memblockq_rewind(i->thread_info.render_memblockq, rewindSize);
-            } else if (!afterRender && rewindSize <= ps->memblockq->maxrewind) {
-                pa_memblockq_rewind(ps->memblockq, rewindSize);
-                pa_memblockq_flush_read(i->thread_info.render_memblockq);
-            } else {
+            uint64_t maxRewind = afterRender ? i->thread_info.render_memblockq->maxrewind : ps->memblockq->maxrewind;
+            if (rewindSize > maxRewind) {
                 AUDIO_WARNING_LOG("OffloadRewindAndFlush, rewindSize(%" PRIu64 ") > maxrewind(%u), afterRender(%d)",
                     rewindSize, (uint32_t)(afterRender ? i->thread_info.render_memblockq->maxrewind :
-                    ps->memblockq->maxrewind), afterRender);
+                                           ps->memblockq->maxrewind), afterRender);
+                rewindSize = maxRewind;
+            }
+
+            if (afterRender) {
+                pa_memblockq_rewind(i->thread_info.render_memblockq, rewindSize);
+            } else {
+                pa_memblockq_rewind(ps->memblockq, rewindSize);
+                pa_memblockq_flush_read(i->thread_info.render_memblockq);
             }
         }
     }
@@ -1586,14 +1590,33 @@ static void OffloadUnlock(struct Userdata *u)
     }
 }
 
+static void offloadSetMaxRewind(struct Userdata* u, pa_sink_input* i)
+{
+    pa_sink_input_assert_ref(i);
+    pa_sink_input_assert_io_context(i);
+    pa_assert(PA_SINK_INPUT_IS_LINKED(i->thread_info.state));
+
+    pa_memblockq_set_maxrewind(i->thread_info.render_memblockq, OFFLOAD_FRAME_SIZE);
+
+    size_t nbytes = pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
+
+    if (i->update_max_rewind) {
+        i->update_max_rewind(i, i->thread_info.resampler ?
+                                pa_resampler_request(i->thread_info.resampler, nbytes) : nbytes);
+    }
+}
+
 static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
 {
-    pa_sink_input_update_max_rewind(i, pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec));
+    offloadSetMaxRewind(u, i);
     pa_sink_input *it;
     void *state = NULL;
     while ((it = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
-        if (it != i) {
+        if (it != i && pa_memblockq_get_maxrewind(it->thread_info.render_memblockq) != 0) {
             pa_sink_input_update_max_rewind(it, 0);
+            drop_backlog(it->thread_info.render_memblockq);
+            playback_stream* ps = it->userdata;
+            drop_backlog(ps->memblockq);
         }
     }
     int32_t sessionID = getSinkInputSessionID(i);
@@ -1615,6 +1638,7 @@ static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
             u->offload.sessionID = sessionID;
         }
     }
+    StopPrimaryHdiIfNoRunning(u);
 }
 
 static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa_sink_input_state_t state)
@@ -1627,9 +1651,8 @@ static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa
         OffloadReset(u);
         StartOffloadHdi(u, i);
     } else if (corking) {
-        // will remove this log
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
-        OffloadRewindAndFlush(u, i, true);
+        OffloadRewindAndFlush(u, i, false);
         OffloadUnlock(u);
     } else if (stopping) {
         if (u->offload.isHDISinkStarted) {
@@ -1664,24 +1687,32 @@ static void PaInputStateChangeCbPrimary(struct Userdata* u, pa_sink_input* i, pa
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
         }
     } else if (stopping) {
-        unsigned nPrimary, nOffload, nHd;
-        GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-        if (nPrimary > 0) {
-            return;
-        }
-        // Continuously dropping data clear counter on entering suspended state.
-        if (u->bytes_dropped != 0) {
-            AUDIO_INFO_LOG("PaInputStateChangeCb, HDI-sink continuously dropping data - clear statistics "
-                           "(%zu -> 0 bytes dropped)", u->bytes_dropped);
-            u->bytes_dropped = 0;
-        }
-
-        if (u->primary.isHDISinkStarted) {
-            u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
-            AUDIO_INFO_LOG("PaInputStateChangeCb, Stopped HDI renderer");
-            u->primary.isHDISinkStarted = false;
-        }
+        StopPrimaryHdiIfNoRunning(u);
     }
+}
+
+static void StopPrimaryHdiIfNoRunning(struct Userdata *u)
+{
+    if (!u->primary.isHDISinkStarted) {
+        return;
+    }
+
+    unsigned nPrimary, nOffload, nHd;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+    if (nPrimary > 0) {
+        return;
+    }
+
+    // Continuously dropping data clear counter on entering suspended state.
+    if (u->bytes_dropped != 0) {
+        AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, HDI-sink continuously dropping data - clear statistics "
+                       "(%zu -> 0 bytes dropped)", u->bytes_dropped);
+        u->bytes_dropped = 0;
+    }
+
+    u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
+    AUDIO_INFO_LOG("StopPrimaryHdiIfNoRunning, Stopped HDI renderer");
+    u->primary.isHDISinkStarted = false;
 }
 
 static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
@@ -2069,7 +2100,8 @@ static void ThreadFuncWriteHDI(void *userdata)
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
                 if (!u->primary.isHDISinkStarted) {
-                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite wait sink suspend");
+                    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
+                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
                     pa_memblock_unref(chunk.memblock);
                 } else if (RenderWrite(u->primary.sinkAdapter, &chunk) < 0) {
                     u->bytes_dropped += chunk.length;
@@ -2298,7 +2330,8 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         return RemoteSinkStateChange(s, newState);
     }
 
-    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT) {
+    if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
+        newState == PA_SINK_RUNNING) {
         return SinkSetStateInIoThreadCbStartPrimary(u, newState);
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
         if (newState != PA_SINK_SUSPENDED) {
@@ -2330,8 +2363,7 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, st
 {
     pa_sink_input_assert_ref(i);
     if (u->offload_enable) {
-        const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) ==
-                                  pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
+        const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) != 0;
         if (maybeOffload || InputIsOffload(i)) {
             OffloadRewindAndFlush(u, i, false);
             OffloadUnlock(u);
