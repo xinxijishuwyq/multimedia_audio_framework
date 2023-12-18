@@ -41,30 +41,8 @@ namespace OHOS {
 namespace AudioStandard {
 static bool g_socketRunThread = false;
 static bool g_inputRunThread = false;
-
 #ifdef AUDIO_DOUBLE_PNP_DETECT
-static AudioEvent usbHeadset = {0};
-static void* UpdateUsbHeadset(void *arg)
-{
-    OsalMSleep(AUDIO_DEVICE_WAIT_USB_HEADSET_ONLINE);
-    char pnpInfo[AUDIO_EVENT_INFO_LEN_MAX] = {0};
-    int32_t ret;
-    bool status = AudioSocketThread::IsUpdatePnpDeviceState(&usbHeadset);
-    if (!status) {
-        AUDIO_ERR_LOG("audio first pnp device[%{public}u] state[%{public}u] not need flush !",
-            usbHeadset.deviceType, usbHeadset.eventType);
-        return NULL;
-    }
-    ret = snprintf_s(pnpInfo, AUDIO_EVENT_INFO_LEN_MAX, AUDIO_EVENT_INFO_LEN_MAX - 1, "EVENT_TYPE=%u;DEVICE_TYPE=%u",
-        usbHeadset.eventType, usbHeadset.deviceType);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("snprintf_s fail!");
-        return NULL;
-    }
-    AUDIO_DEBUG_LOG("usbHeadset.eventType [%{public}u], usbHeadset.deviceType [%{public}u]",
-        usbHeadset.eventType, usbHeadset.deviceType);
-    AudioSocketThread::UpdatePnpDeviceState(&usbHeadset);
-}
+AudioEvent g_usbHeadset = {0};
 #endif
 
 static std::string GetAudioEventInfo(const AudioEvent audioEvent)
@@ -81,6 +59,8 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
         AUDIO_ERR_LOG("snprintf_s failed");
         return event;
     }
+    AUDIO_DEBUG_LOG("audio event info EVENT_TYPE = [%{public}u], DEVICE_TYPE = [%{public}u]",
+        audioEvent.eventType, audioEvent.deviceType);
     return event;
 }
 
@@ -188,6 +168,31 @@ void AudioPnpServer::OpenAndReadWithSocket()
     return;
 }
 
+#ifdef AUDIO_DOUBLE_PNP_DETECT
+void AudioPnpServer::UpdateUsbHeadset()
+{
+    OsalMSleep(AUDIO_DEVICE_WAIT_USB_HEADSET_ONLINE);
+    char pnpInfo[AUDIO_EVENT_INFO_LEN_MAX] = {0};
+    int32_t ret;
+    bool status = AudioSocketThread::IsUpdatePnpDeviceState(&g_usbHeadset);
+    if (!status) {
+        AUDIO_ERR_LOG("audio first pnp device[%{public}u] state[%{public}u] not need flush !",
+            g_usbHeadset.deviceType, g_usbHeadset.eventType);
+        return;
+    }
+    ret = snprintf_s(pnpInfo, AUDIO_EVENT_INFO_LEN_MAX, AUDIO_EVENT_INFO_LEN_MAX - 1, "EVENT_TYPE=%u;DEVICE_TYPE=%u",
+        g_usbHeadset.eventType, g_usbHeadset.deviceType);
+    if (ret < 0) {
+        AUDIO_ERR_LOG("snprintf_s fail!");
+        return;
+    }
+    AUDIO_DEBUG_LOG("g_usbHeadset.eventType [%{public}u], g_usbHeadset.deviceType [%{public}u]",
+        g_usbHeadset.eventType, g_usbHeadset.deviceType);
+    AudioSocketThread::UpdatePnpDeviceState(&g_usbHeadset);
+    return;
+}
+#endif
+
 void AudioPnpServer::DetectAudioDevice()
 {
     int32_t ret;
@@ -207,11 +212,11 @@ void AudioPnpServer::DetectAudioDevice()
 #endif
     }
 #ifdef AUDIO_DOUBLE_PNP_DETECT
-    ret = AudioSocketThread::DetectUsbHeadsetState(&usbHeadset);
-    if ((ret == SUCCESS) && (usbHeadset.eventType == AUDIO_DEVICE_ADD)) {
+    ret = AudioSocketThread::DetectUsbHeadsetState(&g_usbHeadset);
+    if ((ret == SUCCESS) && (g_usbHeadset.eventType == AUDIO_DEVICE_ADD)) {
         AUDIO_INFO_LOG("audio detect usb headset");
         std::unique_ptr<std::thread> bootupThread_ = nullptr;
-        bootupThread_ = std::make_unique<std::thread>(UpdateUsbHeadset, this);
+        bootupThread_ = std::make_unique<std::thread>(&AudioPnpServer::UpdateUsbHeadset, this);
         pthread_setname_np(bootupThread_->native_handle(), "OS_BootupEvent");
         if (AudioSocketThread::audioSocketEvent_.eventType != AUDIO_EVENT_UNKNOWN &&
             AudioSocketThread::audioSocketEvent_.deviceType != AUDIO_DEVICE_UNKNOWN) {
