@@ -912,7 +912,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool deviceFlag = EffectChainManagerCheckBlueTooth();
+    bool deviceFlag = EffectChainManagerCheckBluetooth();
     bool isCaptureSilently = IsCaptureSilently();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
@@ -971,7 +971,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool deviceFlag = EffectChainManagerCheckBlueTooth();
+    bool deviceFlag = EffectChainManagerCheckBluetooth();
     if (!deviceFlag) {
         return 0;
     }
@@ -1188,7 +1188,7 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
     pa_sink_input *sinkIn;
     void *state = NULL;
     unsigned maxInfo = MAX_MIX_CHANNELS;
-    bool deviceFlag = EffectChainManagerCheckBlueTooth();
+    bool deviceFlag = EffectChainManagerCheckBluetooth();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
@@ -1345,7 +1345,7 @@ static bool InputIsOffload(pa_sink_input *i)
 
 static bool InputIsMultiChannel(pa_sink_input *i)
 {
-    bool deviceFlag = EffectChainManagerCheckBlueTooth();
+    bool deviceFlag = EffectChainManagerCheckBluetooth();
     if (deviceFlag) {
         int32_t sinkChannels = i->sample_spec.channels;
         const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
@@ -2208,7 +2208,7 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     pa_sink_input *sinkIn;
     void *state = NULL;
     unsigned maxInfo = MAX_MIX_CHANNELS;
-    bool deviceFlag = EffectChainManagerCheckBlueTooth();
+    bool deviceFlag = EffectChainManagerCheckBluetooth();
     if (!deviceFlag) {
         return;
     }
@@ -3141,7 +3141,7 @@ int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module* m, pa_modargs* ma, struct 
 
     u->multiChannel.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
 
-    paThreadName = "write-pa-multiChannel";
+    paThreadName = "OS_write-pa-mch";
     if (!(u->multiChannel.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerMultiChannel, u))) {
         AUDIO_ERR_LOG("Failed to write-pa-multiChannel thread.");
         return -1;
@@ -3355,7 +3355,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
             goto fail;
         }
         if (!strcmp(u->sink->name, "Speaker")) {
-            hdiThreadNameMch = "write-hdi-multichannel";
+            hdiThreadNameMch = "OS_write-hdi-mch";
             if (!(u->multiChannel.thread_hdi = pa_thread_new(hdiThreadNameMch, ThreadFuncWriteHDIMultiChannel, u))) {
                 AUDIO_ERR_LOG("Failed to write-hdi-multichannel thread.");
                 goto fail;
@@ -3393,7 +3393,7 @@ static void UserdataFreeOffload(struct Userdata *u)
 
 static void UserdataFreeMultiChannel(struct Userdata *u)
 {
-    AUDIO_DEBUG_LOG("yjy UserdataFreeMultiChannel");
+    AUDIO_DEBUG_LOG("UserdataFreeMultiChannel");
     if (u->multiChannel.msgq) {
         pa_asyncmsgq_unref(u->multiChannel.msgq);
     }

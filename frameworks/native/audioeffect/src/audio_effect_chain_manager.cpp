@@ -192,7 +192,7 @@ int32_t EffectChainManagerInitCb(const char *sceneType)
     return SUCCESS;
 }
 
-bool EffectChainManagerCheckBlueTooth()
+bool EffectChainManagerCheckBluetooth()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");

@@ -16,11 +16,11 @@
 #ifndef MULTICHANNEL_RENDERER_SINK_H
 #define MULTICHANNEL_RENDERER_SINK_H
 
-#include "audio_info.h"
-#include "i_audio_renderer_sink.h"
-
 #include <cstdio>
 #include <list>
+
+#include "audio_info.h"
+#include "i_audio_renderer_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
