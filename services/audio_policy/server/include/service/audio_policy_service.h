@@ -664,6 +664,8 @@ private:
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
+    
+    void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
