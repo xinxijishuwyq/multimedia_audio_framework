@@ -90,7 +90,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilde
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
     StreamUsage streamUsage = (StreamUsage)usage;
-    ContentType contentType = ContentType::CONTENT_TYPE_MUSIC;
+    ContentType contentType = ContentType::CONTENT_TYPE_UNKNOWN;
     return audioStreamBuilder->SetRendererInfo(streamUsage, contentType);
 }
 
