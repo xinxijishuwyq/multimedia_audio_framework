@@ -399,7 +399,7 @@ napi_status NapiParamUtils::SetStreamInfo(const napi_env &env, const AudioStream
     SetValueInt32(env, "channels", static_cast<int32_t>(streamInfo.channels), result);
     SetValueInt32(env, "sampleFormat", static_cast<int32_t>(streamInfo.format), result);
     SetValueInt32(env, "encodingType", static_cast<int32_t>(streamInfo.encoding), result);
-    SetValueInt64(env, "channelLayout", static_cast<int64_t>(streamInfo.channelLayout), result);
+    SetValueInt64(env, "channelLayout", static_cast<uint64_t>(streamInfo.channelLayout), result);
 
     return napi_ok;
 }
