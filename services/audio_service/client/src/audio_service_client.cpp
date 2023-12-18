@@ -529,7 +529,7 @@ void AudioServiceClient::PAContextStateCb(pa_context *context, void *userdata)
 }
 
 AudioServiceClient::AudioServiceClient()
-    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("AudioServiceClientRunner"))
+    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create("OS_ACRunner"))
 {
     sinkDevices.clear();
     sourceDevices.clear();
