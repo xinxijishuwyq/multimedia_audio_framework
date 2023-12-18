@@ -828,23 +828,6 @@ int32_t AudioPolicyServer::VerifyVoiceCallPermission(uint64_t fullTokenId, Secur
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::CloseWakeUpAudioCapturer()
-{
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    if (!hasSystemPermission) {
-        AUDIO_ERR_LOG("CloseWakeUpAudioCapturer: No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
-
-    bool hasManageIntellgentPermission = VerifyPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION);
-    if (!hasManageIntellgentPermission) {
-        AUDIO_ERR_LOG("CloseWakeUpAudioCapturer: No permission");
-        return ERR_PERMISSION_DENIED;
-    }
-    auto res = audioPolicyService_.CloseWakeUpAudioCapturer();
-    return res;
-}
-
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {

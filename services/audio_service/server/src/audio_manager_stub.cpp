@@ -99,21 +99,6 @@ int AudioManagerStub::HandleUpdateActiveDeviceRoute(MessageParcel &data, Message
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleRetrieveCookie(MessageParcel &data, MessageParcel &reply)
-{
-    AUDIO_DEBUG_LOG("RETRIEVE_COOKIE AudioManagerStub");
-    int32_t size = 0;
-    const char *cookieInfo = RetrieveCookie(size);
-    reply.WriteInt32(size);
-    if (size > 0) {
-        AUDIO_DEBUG_LOG("cookie received from server");
-        reply.WriteRawData(static_cast<const void *>(cookieInfo), size);
-        free((void *)cookieInfo);
-        cookieInfo = nullptr;
-    }
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleGetTransactionId(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_TRANSACTION_ID AudioManagerStub");

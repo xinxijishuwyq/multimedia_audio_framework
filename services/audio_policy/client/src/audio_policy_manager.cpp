@@ -385,15 +385,6 @@ int32_t AudioPolicyManager::SetWakeUpAudioCapturer(InternalAudioCapturerOptions 
     return gsp->SetWakeUpAudioCapturer(options);
 }
 
-int32_t AudioPolicyManager::CloseWakeUpAudioCapturer()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("CloseWakeUpAudioCapturer: audio policy manager proxy is NULL.");
-        return -1;
-    }
-    return gsp->CloseWakeUpAudioCapturer();
-}
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {

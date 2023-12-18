@@ -79,8 +79,6 @@ public:
 
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
-    int32_t CloseWakeUpAudioCapturer();
-
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType);

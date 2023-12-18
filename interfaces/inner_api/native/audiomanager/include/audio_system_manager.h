@@ -604,15 +604,6 @@ public:
     void SetAudioParameter(const std::string &key, const std::string &value);
 
     /**
-     * @brief Retrieve cookie.
-     *
-     * @param size size.
-     * @return Returns char.
-     * @since 9
-     */
-    const char *RetrieveCookie(int32_t &size);
-
-    /**
      * @brief Get transaction Id.
      *
      * @param deviceType device type.

@@ -242,13 +242,6 @@ void AudioPolicyManagerStub::SetWakeUpAudioCapturerInternal(MessageParcel &data,
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::CloseWakeUpAudioCapturerInternal(MessageParcel &data, MessageParcel &reply)
-{
-    AUDIO_DEBUG_LOG("CloseWakeUpAudioCapturerInternal AudioManagerStub");
-    int32_t result = CloseWakeUpAudioCapturer();
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply)
 {
     AUDIO_DEBUG_LOG("GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS AudioManagerStub");
