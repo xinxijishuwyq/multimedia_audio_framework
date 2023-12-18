@@ -39,6 +39,7 @@ config("hdi_config") {
     "../../../hdiadapter/source/file",
     "../../../hdiadapter/source/primary",
     "../../../hdiadapter/source/remote",
+    "../../../hdiadapter/source/multichannel",
     "../../../audioeffect/include",
     "../../../playbackcapturer/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",

@@ -80,7 +80,7 @@ private:
     void HandleSpatializationStateChange();
     IAudioPolicyInterface& audioPolicyManager_;
     std::string currentDeviceAddress_ = "";
-    bool spatializationEnabledFlag_ = true;
+    bool spatializationEnabledFlag_ = false;
     bool headTrackingEnabledFlag_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;

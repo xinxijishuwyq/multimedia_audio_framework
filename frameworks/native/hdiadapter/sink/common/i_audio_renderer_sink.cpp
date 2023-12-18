@@ -24,6 +24,7 @@
 #include "bluetooth_renderer_sink.h"
 #include "remote_audio_renderer_sink.h"
 #include "offload_audio_renderer_sink.h"
+#include "multichannel_audio_renderer_sink.h"
 
 
 namespace OHOS {
@@ -41,6 +42,7 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     const char *deviceClassFile = "file_io";
     const char *deviceClassRemote = "remote";
     const char *deviceClassOffload = "offload";
+    const char *deviceClassMultiChannel = "multichannel";
 
     IAudioRendererSink *iAudioRendererSink = nullptr;
     if (!strcmp(devceClass, deviceClassPrimary)) {
@@ -60,6 +62,9 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     }
     if (!strcmp(devceClass, deviceClassOffload)) {
         iAudioRendererSink = OffloadRendererSink::GetInstance();
+    }
+    if (!strcmp(devceClass, deviceClassMultiChannel)) {
+        iAudioRendererSink = MultiChannelRendererSink::GetInstance("multichannel");
     }
 
     if (iAudioRendererSink == nullptr) {
@@ -112,6 +117,7 @@ int32_t IAudioRendererSinkInit(struct RendererSinkAdapter *adapter, const SinkAt
     iAttr.filePath = attr->filePath;
     iAttr.deviceNetworkId = attr->deviceNetworkId;
     iAttr.deviceType = attr->deviceType;
+    iAttr.channelLayout = 3;    // 3 stereo
 
     return audioRendererSink->Init(iAttr);
 }

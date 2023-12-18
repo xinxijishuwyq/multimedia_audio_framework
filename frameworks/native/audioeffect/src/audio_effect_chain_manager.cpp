@@ -192,6 +192,17 @@ int32_t EffectChainManagerInitCb(const char *sceneType)
     return SUCCESS;
 }
 
+bool EffectChainManagerCheckBluetooth()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    const char *effectChainManagerDeviceType = audioEffectChainManager->GetDeviceTypeName().c_str();
+    if (!strcmp(effectChainManagerDeviceType, "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+        return true;
+    }
+    return false;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -555,7 +566,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
     isInitialized_ = false;
-    
+
 #ifdef SENSOR_ENABLE
     headTracker_ = std::make_shared<HeadTracker>();
 #endif
@@ -985,7 +996,6 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
             if (ret != 0) {
                 AUDIO_ERR_LOG("set hdi init failed");
                 offloadEnabled_ = false;
-                return ERROR;
             } else {
                 offloadEnabled_ = true;
             }
@@ -995,7 +1005,6 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
             ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
                 AUDIO_ERR_LOG("set hdi destory failed");
-                return ERROR;
             }
             offloadEnabled_ = false;
         }
@@ -1105,7 +1114,7 @@ void AudioEffectChainManager::UpdateSensorState()
     AUDIO_INFO_LOG("set hdi head mode.");
     int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
     if (ret != 0) {
-        AUDIO_WARNING_LOG("set hdi head mode failed");
+        AUDIO_ERR_LOG("set hdi head mode failed");
     }
 
     if (headTrackingEnabled_) {
