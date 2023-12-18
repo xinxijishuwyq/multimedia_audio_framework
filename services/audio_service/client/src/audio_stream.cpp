@@ -178,10 +178,11 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             timestamp.framePosition = GetStreamFramesRead();
         }
 
-        timestamp.time.tv_sec = static_cast<time_t>((paTimeStamp - resetTimestamp_) / TIME_CONVERSION_US_S);
+        uint64_t delta = paTimeStamp > resetTimestamp_ ? paTimeStamp - resetTimestamp_ : 0;
+        timestamp.time.tv_sec = static_cast<time_t>(delta / TIME_CONVERSION_US_S);
         timestamp.time.tv_nsec
-            = static_cast<time_t>(((paTimeStamp - resetTimestamp_) - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
-                                  * TIME_CONVERSION_NS_US);
+            = static_cast<time_t>((delta - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
+            * TIME_CONVERSION_NS_US);
         timestamp.time.tv_sec += baseTimestamp_.tv_sec;
         timestamp.time.tv_nsec += baseTimestamp_.tv_nsec;
         timestamp.time.tv_sec += (timestamp.time.tv_nsec / TIME_CONVERSION_NS_S);
