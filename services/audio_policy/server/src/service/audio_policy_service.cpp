@@ -810,6 +810,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
     if ((deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) || (networkId != LOCAL_NETWORK_ID)) {
+        std::vector<int32_t> allSessions;
+        GetAllRunningStreamSessionAndType(allSessions);
+        OffloadStopPlaying(allSessions);
         preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
         a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     } else {
@@ -3924,7 +3927,7 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
         }
     }
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
-    UpdateA2dpOffloadFlagForAllStream(DEVICE_TYPE_BLUETOOTH_A2DP);
+    UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
     return ret;
 }
 
