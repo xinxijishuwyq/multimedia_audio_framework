@@ -393,7 +393,7 @@ int pa__init(pa_module *m)
 
     pa_sink_set_max_request(u->sink, u->buffer_size);
 
-    if (!(u->thread = pa_thread_new("inner-capturer-sink", ThreadFunc, u))) {
+    if (!(u->thread = pa_thread_new("OS_InnerCap", ThreadFunc, u))) {
         AUDIO_ERR_LOG("Failed to create thread.");
         return InitFailed(m, ma);
     }

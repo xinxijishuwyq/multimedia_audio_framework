@@ -546,13 +546,13 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config)
     bool isIndependent = bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     if (config.audioMode == AUDIO_MODE_RECORD) {
         callbackLoop_ = std::thread(&AudioProcessInClientInner::RecordProcessCallbackFuc, this);
-        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioProcessRecordCb");
+        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
     } else if (isIndependent) {
         callbackLoop_ = std::thread(&AudioProcessInClientInner::ProcessCallbackFucIndependent, this);
-        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioProcessCb");
+        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     } else {
         callbackLoop_ = std::thread(&AudioProcessInClientInner::ProcessCallbackFuc, this);
-        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioProcessCb");
+        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     }
 
     int waitThreadStartTime = 5; // wait for thread start.
