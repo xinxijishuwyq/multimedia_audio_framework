@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <vector>
 
 #include "napi_audio_spatialization_manager.h"
+
+#include <vector>
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
@@ -30,11 +31,13 @@ using namespace std;
 using namespace HiviewDFX;
 
 const std::vector<DeviceRole> DEVICE_ROLE_SET = {
+    DEVICE_ROLE_NONE,
     INPUT_DEVICE,
     OUTPUT_DEVICE
 };
 
 const std::vector<DeviceType> DEVICE_TYPE_SET = {
+    DEVICE_TYPE_NONE,
     DEVICE_TYPE_INVALID,
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_SPEAKER,
