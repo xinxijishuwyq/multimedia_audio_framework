@@ -349,5 +349,42 @@ HWTEST(AudioServiceUnitTest, AudioServiceClient_001, TestSize.Level1)
 
     audioServiceClient->OnTimeOut();
 }
+
+/**
+ * @tc.name  : Test AudioServiceClient API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceClient_002
+ * @tc.desc  : Test AudioServiceClient interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceClient_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+
+    std::unique_ptr<AudioServiceClient> audioServiceClient = std::make_unique<AudioStream>(STREAM_MUSIC,
+        AUDIO_MODE_PLAYBACK, getuid());
+
+    ASClientType eClientType = ASClientType::AUDIO_SERVICE_CLIENT_PLAYBACK;
+    ret = audioServiceClient->Initialize(eClientType);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioStreamParams audioParams = {};
+    audioParams.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    audioParams.encoding = AudioEncodingType::ENCODING_PCM;
+    audioParams.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioParams.channels = AudioChannel::STEREO;
+
+    ret = audioServiceClient->CreateStream(audioParams, AudioStreamType::STREAM_MUSIC);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->StartStream();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->SetStreamOffloadMode(2, true);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->OffloadStopStream();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = audioServiceClient->UnsetStreamOffloadMode();
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioServiceClient->OnTimeOut();
+}
 } // namespace AudioStandard
 } // namespace OHOS
