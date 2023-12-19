@@ -2213,7 +2213,7 @@ int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> pids,
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    CHECK_AND_RETURN_RET_LOG(!data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(zoneID);
     data.WriteInt32(pids.size());
@@ -2229,7 +2229,7 @@ int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> pids,
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::CREATE_AUDIO_INTERRUPT_ZONE), data, reply, option);
 
-    CHECK_AND_RETURN_RET_LOG(error != ERR_NONE, ERROR, "CreateAudioInterruptZone failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "CreateAudioInterruptZone failed, error: %d", error);
     return reply.ReadInt32();
 }
 
@@ -2238,7 +2238,7 @@ int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> pids
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    CHECK_AND_RETURN_RET_LOG(!data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
     data.WriteInt32(pids.size());
     int32_t count = 0;
@@ -2252,7 +2252,7 @@ int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> pids
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ADD_AUDIO_INTERRUPT_ZONE_PIDS), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error != ERR_NONE, ERROR, "AddAudioInterruptZonePids failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "AddAudioInterruptZonePids failed, error: %d", error);
     return reply.ReadInt32();
 }
 
@@ -2261,7 +2261,7 @@ int32_t AudioPolicyProxy::RemoveAudioInterruptZonePids(const std::set<int32_t> p
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    CHECK_AND_RETURN_RET_LOG(!data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
     data.WriteInt32(pids.size());
     int32_t count = 0;
@@ -2274,7 +2274,7 @@ int32_t AudioPolicyProxy::RemoveAudioInterruptZonePids(const std::set<int32_t> p
     }
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REMOVE_AUDIO_INTERRUPT_ZONE_PIDS), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error != ERR_NONE, ERROR, "RemoveAudioInterruptZonePids failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "RemoveAudioInterruptZonePids failed, error: %d", error);
 
     return reply.ReadInt32();
 }
@@ -2284,11 +2284,11 @@ int32_t AudioPolicyProxy::ReleaseAudioInterruptZone(const int32_t zoneID)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    CHECK_AND_RETURN_RET_LOG(!data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::RELEASE_AUDIO_INTERRUPT_ZONE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error != ERR_NONE, ERROR, "ReleaseAudioInterruptZone failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "ReleaseAudioInterruptZone failed, error: %d", error);
     return reply.ReadInt32();
 }
 } // namespace AudioStandard
