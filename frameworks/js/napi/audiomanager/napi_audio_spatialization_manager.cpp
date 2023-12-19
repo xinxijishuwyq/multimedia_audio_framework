@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "napi_audio_spatialization_manager.h"
 
 #include <vector>
@@ -29,9 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 using namespace HiviewDFX;
-
 static __thread napi_ref g_spatializationManagerConstructor = nullptr;
-
 NapiAudioSpatializationManager::NapiAudioSpatializationManager()
     : audioSpatializationMngr_(nullptr), env_(nullptr) {}
 
