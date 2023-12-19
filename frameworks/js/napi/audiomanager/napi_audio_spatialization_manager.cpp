@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "napi_audio_spatialization_manager.h"
+
+#include <vector>
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
@@ -27,7 +29,6 @@ namespace AudioStandard {
 using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_spatializationManagerConstructor = nullptr;
-
 NapiAudioSpatializationManager::NapiAudioSpatializationManager()
     : audioSpatializationMngr_(nullptr), env_(nullptr) {}
 
@@ -185,6 +186,9 @@ napi_value NapiAudioSpatializationManager::IsSpatializationEnabled(napi_env env,
 {
     AUDIO_INFO_LOG("IsSpatializationEnabled in");
     napi_value result = nullptr;
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     size_t argc = PARAM0;
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(argc == PARAM0, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
@@ -200,6 +204,9 @@ napi_value NapiAudioSpatializationManager::IsSpatializationEnabled(napi_env env,
 
 napi_value NapiAudioSpatializationManager::SetSpatializationEnabled(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     auto context = std::make_shared<AudioSpatializationManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetSpatializationEnabled failed : no memory");
@@ -237,6 +244,9 @@ napi_value NapiAudioSpatializationManager::SetSpatializationEnabled(napi_env env
 napi_value NapiAudioSpatializationManager::IsHeadTrackingEnabled(napi_env env, napi_callback_info info)
 {
     AUDIO_INFO_LOG("IsHeadTrackingEnabled in");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
@@ -253,6 +263,9 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingEnabled(napi_env env, n
 
 napi_value NapiAudioSpatializationManager::SetHeadTrackingEnabled(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     auto context = std::make_shared<AudioSpatializationManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetHeadTrackingEnabled failed : no memory");
@@ -290,6 +303,9 @@ napi_value NapiAudioSpatializationManager::SetHeadTrackingEnabled(napi_env env, 
 napi_value NapiAudioSpatializationManager::IsSpatializationSupported(napi_env env, napi_callback_info info)
 {
     AUDIO_DEBUG_LOG("IsSpatializationSupported in");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
@@ -308,6 +324,9 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupported(napi_env en
 napi_value NapiAudioSpatializationManager::IsSpatializationSupportedForDevice(napi_env env, napi_callback_info info)
 {
     AUDIO_DEBUG_LOG("IsSpatializationSupportedForDevice");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     napi_value result = nullptr;
     bool argTransFlag = true;
     size_t argc = ARGS_ONE;
@@ -317,11 +336,14 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupportedForDevice(na
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
         "invalid valueType");
 
     sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
     NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(argTransFlag == true, ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM),
+        "invalid parameter");
+
     bool isSpatializationSupportedForDevice = napiAudioSpatializationManager
         ->audioSpatializationMngr_->IsSpatializationSupportedForDevice(selectedAudioDevice);
     NapiParamUtils::SetValueBoolean(env, isSpatializationSupportedForDevice, result);
@@ -331,6 +353,9 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupportedForDevice(na
 napi_value NapiAudioSpatializationManager::IsHeadTrackingSupported(napi_env env, napi_callback_info info)
 {
     AUDIO_DEBUG_LOG("IsHeadTrackingSupported in");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
@@ -347,7 +372,9 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupported(napi_env env,
 
 napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi_env env, napi_callback_info info)
 {
-    AUDIO_DEBUG_LOG("IsHeadTrackingSupportedForDevice");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     napi_value result = nullptr;
     bool argTransFlag = true;
     size_t argc = ARGS_ONE;
@@ -357,11 +384,14 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
         "invalid valueType");
 
     sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
     NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(argTransFlag == true, ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM),
+        "invalid parameter");
+
     bool isHeadTrackingSupportedForDevice = napiAudioSpatializationManager
         ->audioSpatializationMngr_->IsHeadTrackingSupportedForDevice(selectedAudioDevice);
     NapiParamUtils::SetValueBoolean(env, isHeadTrackingSupportedForDevice, result);
@@ -371,6 +401,9 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi
 napi_value NapiAudioSpatializationManager::UpdateSpatialDeviceState(napi_env env, napi_callback_info info)
 {
     AUDIO_INFO_LOG("UpdateSpatialDeviceState");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
@@ -457,6 +490,9 @@ void NapiAudioSpatializationManager::RegisterHeadTrackingEnabledChangeCallback(n
 
 napi_value NapiAudioSpatializationManager::On(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     const size_t requireArgc = ARGS_TWO;
     size_t argc = ARGS_THREE;
     napi_value undefinedResult = nullptr;
@@ -557,6 +593,8 @@ void NapiAudioSpatializationManager::UnregisterHeadTrackingEnabledChangeCallback
 
 napi_value NapiAudioSpatializationManager::Off(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     const size_t requireArgc = ARGS_ONE;
     size_t argc = PARAM2;
 
