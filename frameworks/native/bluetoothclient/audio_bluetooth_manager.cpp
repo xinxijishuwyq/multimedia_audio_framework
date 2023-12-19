@@ -349,13 +349,19 @@ void AudioHfpManager::DisconnectBluetoothHfpSink()
     HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice();
 }
 
-void AudioHfpManager::SetActiveHfpDevice(BluetoothRemoteDevice &device)
+void AudioHfpManager::UpdateCurrentActiveHfpDevice(BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
     activeHfpDevice_ = device;
 }
 
-void AudioHfpManager::SetAudioScene(AudioScene scene)
+std::string AudioHfpManager::GetCurrentActiveHfpDevice()
+{
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    return activeHfpDevice_.GetDeviceAddr();
+}
+
+void AudioHfpManager::UpdateAudioScene(AudioScene scene)
 {
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
     scene_ = scene;
@@ -368,6 +374,11 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
         HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected);
+        if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice() &&
+            scoState == HfpScoConnectState::SCO_DISCONNECTED) {
+            AUDIO_INFO_LOG("Sco disconnect, need set audio scene as default.");
+            AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
+        }
     }
 }
 
@@ -378,10 +389,11 @@ void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &dev
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::CONNECT_ACTION);
     }
     if (state == static_cast<int>(BTConnectState::DISCONNECTED)) {
-        if (device.GetDeviceAddr() == AudioHfpManager::GetActiveHfpDevice()) {
+        if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice()) {
             BluetoothRemoteDevice defaultDevice;
-            AudioHfpManager::SetActiveHfpDevice(defaultDevice);
-            AudioHfpManager::SetAudioScene(AUDIO_SCENE_DEFAULT);
+            AudioHfpManager::UpdateCurrentActiveHfpDevice(defaultDevice);
+            AUDIO_INFO_LOG("Current active hfp device diconnect, need set audio scene as default.");
+            AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
         }
         HfpBluetoothDeviceManager::SetHfpStack(device, BluetoothDeviceAction::DISCONNECT_ACTION);
     }
