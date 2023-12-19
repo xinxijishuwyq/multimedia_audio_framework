@@ -292,7 +292,9 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     }
     std::lock_guard<std::mutex> hfpLock(g_hfpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
-    if (scene == AUDIO_SCENE_RINGING && !hfpInstance_->IsInbandRingingEnabled()) {
+    bool isInbardingEnabled = false;
+    hfpInstance_->IsInbandRingingEnabled(isInbardingEnabled);
+    if (scene == AUDIO_SCENE_RINGING && !isInbardingEnabled) {
         AUDIO_INFO_LOG("The inbarding switch is off, ignore the ring scene.");
         return SUCCESS;
     }
