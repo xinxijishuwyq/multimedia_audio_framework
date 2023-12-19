@@ -30,88 +30,7 @@ namespace AudioStandard {
 using namespace std;
 using namespace HiviewDFX;
 
-const std::vector<DeviceRole> DEVICE_ROLE_SET = {
-    DEVICE_ROLE_NONE,
-    INPUT_DEVICE,
-    OUTPUT_DEVICE
-};
-
-const std::vector<DeviceType> DEVICE_TYPE_SET = {
-    DEVICE_TYPE_NONE,
-    DEVICE_TYPE_INVALID,
-    DEVICE_TYPE_EARPIECE,
-    DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_WIRED_HEADSET,
-    DEVICE_TYPE_WIRED_HEADPHONES,
-    DEVICE_TYPE_BLUETOOTH_SCO,
-    DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_MIC,
-    DEVICE_TYPE_WAKEUP,
-    DEVICE_TYPE_USB_HEADSET,
-    DEVICE_TYPE_USB_ARM_HEADSET,
-    DEVICE_TYPE_FILE_SINK,
-    DEVICE_TYPE_FILE_SOURCE,
-    DEVICE_TYPE_EXTERN_CABLE,
-    DEVICE_TYPE_DEFAULT
-};
-
 static __thread napi_ref g_spatializationManagerConstructor = nullptr;
-
-static void ParseAudioDeviceDescriptor(napi_env env, napi_value root, sptr<AudioDeviceDescriptor> &selectedAudioDevice,
-    bool &argTransFlag)
-{
-    napi_value tempValue = nullptr;
-    int32_t intValue = {0};
-    argTransFlag = true;
-    bool hasDeviceRole = true;
-    bool hasNetworkId = true;
-    napi_has_named_property(env, root, "deviceRole", &hasDeviceRole);
-    napi_has_named_property(env, root, "networkId", &hasNetworkId);
-    if ((!hasDeviceRole) || (!hasNetworkId)) {
-        argTransFlag = false;
-        return;
-    }
-
-    if (napi_get_named_property(env, root, "deviceRole", &tempValue) == napi_ok) {
-        napi_valuetype valueType = napi_undefined;
-        napi_typeof(env, tempValue, &valueType);
-        if (valueType != napi_number) {
-            argTransFlag = false;
-            return;
-        }
-        napi_get_value_int32(env, tempValue, &intValue);
-        if (std::find(DEVICE_ROLE_SET.begin(), DEVICE_ROLE_SET.end(), intValue) == DEVICE_ROLE_SET.end()) {
-            argTransFlag = false;
-            return;
-        }
-        selectedAudioDevice->deviceRole_ = static_cast<DeviceRole>(intValue);
-    }
-
-    if (napi_get_named_property(env, root, "deviceType", &tempValue) == napi_ok) {
-        napi_valuetype valueType = napi_undefined;
-        napi_typeof(env, tempValue, &valueType);
-        if (valueType != napi_number) {
-            argTransFlag = false;
-            return;
-        }
-        napi_get_value_int32(env, tempValue, &intValue);
-        if (std::find(DEVICE_TYPE_SET.begin(), DEVICE_TYPE_SET.end(), intValue) == DEVICE_TYPE_SET.end()) {
-            argTransFlag = false;
-            return;
-        }
-        selectedAudioDevice->deviceType_ = static_cast<DeviceType>(intValue);
-    }
-
-    if (napi_get_named_property(env, root, "address", &tempValue) == napi_ok) {
-        napi_valuetype valueType = napi_undefined;
-        napi_typeof(env, tempValue, &valueType);
-        if (valueType != napi_string) {
-            argTransFlag = false;
-            return;
-        }
-        selectedAudioDevice->macAddress_ = NapiParamUtils::GetStringArgument(env, tempValue);
-    }
-}
 
 NapiAudioSpatializationManager::NapiAudioSpatializationManager()
     : audioSpatializationMngr_(nullptr), env_(nullptr) {}
@@ -424,7 +343,7 @@ napi_value NapiAudioSpatializationManager::IsSpatializationSupportedForDevice(na
         "invalid valueType");
 
     sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
-    ParseAudioDeviceDescriptor(env, args[PARAM0], selectedAudioDevice, argTransFlag);
+    NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(argTransFlag == true, ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM),
         "invalid parameter");
 
@@ -472,7 +391,7 @@ napi_value NapiAudioSpatializationManager::IsHeadTrackingSupportedForDevice(napi
         "invalid valueType");
 
     sptr<AudioDeviceDescriptor> selectedAudioDevice = new (std::nothrow) AudioDeviceDescriptor();
-    ParseAudioDeviceDescriptor(env, args[PARAM0], selectedAudioDevice, argTransFlag);
+    NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(argTransFlag == true, ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM),
         "invalid parameter");
 

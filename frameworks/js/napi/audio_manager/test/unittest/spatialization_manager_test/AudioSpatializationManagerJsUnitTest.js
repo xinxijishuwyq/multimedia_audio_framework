@@ -513,7 +513,7 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
     let deviceDescriptor = {
       address: "123",
       deviceRole: 2,
-      deviceType: -1,
+      deviceType: -2,
       id: 123,
       name: "123",
       sampleRates: [18],
@@ -603,7 +603,7 @@ describe("AudioSpatializationManagerJsUnitTest", function () {
     let deviceDescriptor = {
       address: "123",
       deviceRole: 2,
-      deviceType: -1,
+      deviceType: -2,
       id: 123,
       name: "123",
       sampleRates: [18],

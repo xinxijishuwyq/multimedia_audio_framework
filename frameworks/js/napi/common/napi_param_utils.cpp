@@ -733,11 +733,19 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
 
     status = GetValueInt32(env, "deviceRole", intValue, in);
     if (status == napi_ok) {
+        if (std::find(DEVICE_ROLE_SET.begin(), DEVICE_ROLE_SET.end(), intValue) == DEVICE_ROLE_SET.end()) {
+            argTransFlag = false;
+            return status;
+        }
         selectedAudioDevice->deviceRole_ = static_cast<DeviceRole>(intValue);
     }
 
     status = GetValueInt32(env, "deviceType", intValue, in);
     if (status == napi_ok) {
+        if (std::find(DEVICE_TYPE_SET.begin(), DEVICE_TYPE_SET.end(), intValue) == DEVICE_TYPE_SET.end()) {
+            argTransFlag = false;
+            return status;
+        }
         selectedAudioDevice->deviceType_ = static_cast<DeviceType>(intValue);
     }
 
