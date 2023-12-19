@@ -23,6 +23,14 @@
 #define AUDIO_MS_PER_SECOND 1000
 #define AUDIO_US_PER_SECOND 1000000
 #define AUDIO_NS_PER_SECOND ((int64_t)1000000000)
+
+#define FLOAT_EPS 1e-9f
+#define OFFSET_BIT_24 3
+#define BIT_DEPTH_TWO 2
+#define BIT_8 8
+#define BIT_16 16
+#define BIT_24 24
+#define BIT_32 32
 namespace OHOS {
 namespace AudioStandard {
 class Trace {
@@ -71,6 +79,11 @@ void AdjustAudioBalanceForPCM8Bit(int8_t *data, uint64_t len, float left, float 
 void AdjustAudioBalanceForPCM16Bit(int16_t *data, uint64_t len, float left, float right);
 void AdjustAudioBalanceForPCM24Bit(int8_t *data, uint64_t len, float left, float right);
 void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, float right);
+
+void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b);
+void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b);
+void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
+void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
 template <typename T>
 bool GetSysPara(const char *key, T &value);
