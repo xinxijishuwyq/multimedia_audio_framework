@@ -522,7 +522,7 @@ pa_source *PaHdiSourceNew(pa_module *m, pa_modargs *ma, const char *driver)
         goto fail;
     }
 
-    if (!(u->thread = pa_thread_new("read-hdi", ThreadFuncCapturerTimer, u))) {
+    if (!(u->thread = pa_thread_new("OS_ReadHdi", ThreadFuncCapturerTimer, u))) {
         AUDIO_ERR_LOG("Failed to create hdi-source-record thread!");
         goto fail;
     }

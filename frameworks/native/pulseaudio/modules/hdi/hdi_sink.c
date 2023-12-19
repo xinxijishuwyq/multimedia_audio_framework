@@ -3177,15 +3177,15 @@ int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
 {
     char *paThreadName = NULL;
 
-    paThreadName = "write-pa-bus";
+    paThreadName = "OS_WriteBus";
     if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerBus, u))) {
-        AUDIO_ERR_LOG("Failed to write-pa thread.");
+        AUDIO_ERR_LOG("Failed to create bus thread.");
         return -1;
     }
 
-    paThreadName = "write-pa-primary";
+    paThreadName = "OS_WritePrimary";
     if (!(u->primary.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
-        AUDIO_ERR_LOG("Failed to write-pa-primary thread.");
+        AUDIO_ERR_LOG("Failed to create primary thread.");
         return -1;
     }
 
@@ -3220,9 +3220,9 @@ int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
             (pa_hook_cb_t)SinkInputMoveStartCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
             (pa_hook_cb_t)SinkInputStateChangedCb, u);
-        paThreadName = "write-pa-offload";
+        paThreadName = "OS_WriteOffload";
         if (!(u->offload.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerOffload, u))) {
-            AUDIO_ERR_LOG("Failed to write-pa-offload thread.");
+            AUDIO_ERR_LOG("Failed to create offload thread.");
             return -1;
         }
     } else {
@@ -3365,13 +3365,13 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     if (u->test_mode_on) {
         u->writeCount = 0;
         u->renderCount = 0;
-        hdiThreadName = "test-mode-write-hdi";
+        hdiThreadName = "OS_WriteHdiTest";
         if (!(u->primary.thread_hdi = pa_thread_new(hdiThreadName, TestModeThreadFuncWriteHDI, u))) {
             AUDIO_ERR_LOG("Failed to test-mode-write-hdi thread.");
             goto fail;
         }
     } else {
-        hdiThreadName = "write-hdi-primary";
+        hdiThreadName = "OS_WriteHdi";
         if (!(u->primary.thread_hdi = pa_thread_new(hdiThreadName, ThreadFuncWriteHDI, u))) {
             AUDIO_ERR_LOG("Failed to write-hdi-primary thread.");
             goto fail;

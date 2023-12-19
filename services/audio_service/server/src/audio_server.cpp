@@ -101,7 +101,7 @@ void AudioServer::OnStart()
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
 #ifdef PA
     int32_t ret = pthread_create(&m_paDaemonThread, nullptr, AudioServer::paDaemonThread, nullptr);
-    pthread_setname_np(m_paDaemonThread, "AudioServer");
+    pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
     if (ret != 0) {
         AUDIO_ERR_LOG("pthread_create failed %d", ret);
     }
