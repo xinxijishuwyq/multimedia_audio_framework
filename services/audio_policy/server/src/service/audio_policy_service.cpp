@@ -124,7 +124,7 @@ bool AudioPolicyService::Init(void)
     AUDIO_INFO_LOG("Audio interrupt configuration has been loaded. FocusMap.size: %{public}zu", focusMap_.size());
 
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
-    CHECK_AND_RETURN_RET_LOG(status != SUCCESS, false, "[Policy Service] Register for device status events failed");
+    CHECK_AND_RETURN_RET_LOG(status == SUCCESS, false, "[Policy Service] Register for device status events failed");
 
     RegisterRemoteDevStatusCallback();
 
