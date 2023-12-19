@@ -601,7 +601,7 @@ static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink,
     }
 
     if (deviceSink == sinkName) {
-        AUDIO_INFO_LOG("DeviceSink do not need to be Updated");
+        AUDIO_INFO_LOG("Same DeviceSinkName");
     }
     deviceSink = sinkName;
 
