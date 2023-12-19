@@ -3525,9 +3525,6 @@ void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
 {
     Trace trace("AudioPolicyService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceType));
-    if (effectActiveDevice_ == deviceType) {
-        return;
-    }
     effectActiveDevice_ = deviceType;
     switch (deviceType) {
         case DeviceType::DEVICE_TYPE_EARPIECE:
@@ -5340,6 +5337,8 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
     if (preA2dpOffloadFlag_ == a2dpOffloadFlag_) {
         return SUCCESS;
     }
+    DeviceType dev = GetActiveOutputDevice();
+    UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice Out Offload");
     ResetOffloadMode();
     GetA2dpOffloadCodecAndSendToDsp();
@@ -5369,6 +5368,8 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload()
     if (preA2dpOffloadFlag_ == a2dpOffloadFlag_) {
         return SUCCESS;
     }
+    DeviceType dev = GetActiveOutputDevice();
+    UpdateEffectDefaultSink(dev);
     AUDIO_INFO_LOG("Handle A2dpDevice In Offload");
     ResetOffloadMode();
     GetA2dpOffloadCodecAndSendToDsp();

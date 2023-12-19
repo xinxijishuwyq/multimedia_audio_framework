@@ -143,6 +143,7 @@ public:
     int32_t ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr);
     int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
     std::string GetDeviceTypeName();
+    std::string GetDeviceSinkName();
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
     void Dump();
