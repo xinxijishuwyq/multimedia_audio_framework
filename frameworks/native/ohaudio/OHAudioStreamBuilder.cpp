@@ -233,8 +233,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetPreferredFrameSize(int32_t frameS
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage, ContentType contentType)
 {
-    if (streamType_ == CAPTURER_TYPE || usage == StreamUsage::STREAM_USAGE_UNKNOWN
-        || contentType == ContentType::CONTENT_TYPE_UNKNOWN) {
+    if (streamType_ == CAPTURER_TYPE || usage == StreamUsage::STREAM_USAGE_UNKNOWN) {
         AUDIO_ERR_LOG("Error, invalid type input");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
