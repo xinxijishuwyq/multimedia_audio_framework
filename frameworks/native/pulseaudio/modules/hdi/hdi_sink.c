@@ -2859,6 +2859,14 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         return RemoteSinkStateChange(s, newState);
     }
 
+    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_A2DP)) {
+        if (s->thread_info.state == PA_SINK_IDLE && newState == PA_SINK_RUNNING) {
+            u->primary.sinkAdapter->RendererSinkResume(u->primary.sinkAdapter);
+        } else if (s->thread_info.state == PA_SINK_RUNNING && newState == PA_SINK_IDLE) {
+            u->primary.sinkAdapter->RendererSinkPause(u->primary.sinkAdapter);
+        }
+    }
+
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
         newState == PA_SINK_RUNNING) {
         return SinkSetStateInIoThreadCbStartPrimary(u, newState);
