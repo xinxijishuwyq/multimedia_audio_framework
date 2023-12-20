@@ -153,13 +153,13 @@ public:
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
     void Dump();
-    int32_t UpdateMultichannelConfig(const std::string &sceneTypeString);
+    int32_t UpdateMultichannelConfig(const std::string &sceneType);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
     int32_t SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info);
     int32_t SessionInfoMapDelete(std::string sceneType, std::string sessionID);
-    int32_t ReturnEffectChannelInfo(const std::string &sceneTypeString, uint32_t *channels, uint64_t *channelLayout);
+    int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
 private:
     void UpdateSensorState();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
