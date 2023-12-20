@@ -27,6 +27,8 @@
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "securec.h"
+#include "safe_block_queue.h"
 
 #include "ipc_stream.h"
 #include "audio_log.h"
@@ -39,6 +41,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
+#include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
 
@@ -48,8 +51,14 @@ namespace {
 static const size_t MAX_CLIENT_READ_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
+const uint64_t AUDIO_US_PER_MS = 1000;
+const uint64_t AUDIO_US_PER_S = 1000000;
+const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
+const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
+const int64_t INVALID_FRAME_SIZE = -1;
+static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
+static constexpr int CB_QUEUE_CAPACITY = 1;
 }
-class CapturerStreamListener;
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<CapturerInClientInner> {
 public:
@@ -181,9 +190,15 @@ private:
 
     int32_t InitCacheBuffer(size_t targetSize);
     int32_t InitSharedBuffer();
+    int32_t FlushRingCache();
 
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
+
+    void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    void ReadCallbackFunc();
+    // for callback mode. Check status if not running, wait for start or release.
+    bool WaitForRunning();
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -202,6 +217,15 @@ private:
 
     // callback mode
     AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
+    std::thread callbackLoop_; // thread for callback to client and write.
+    std::atomic<bool> cbThreadReleased_ = true;
+    std::mutex readCbMutex_; // lock for change or use callback
+    std::condition_variable cbThreadCv_;
+    std::shared_ptr<AudioCapturerReadCallback> readCb_ = nullptr;
+    std::mutex cbBufferMutex_;
+    std::unique_ptr<uint8_t[]> cbBuffer_ {nullptr};
+    size_t cbBufferSize_ = 0;
+    SafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
     bool isInnerCapturer_ = false;
     bool isWakeupCapturer_ = false;
@@ -216,12 +240,13 @@ private:
     std::weak_ptr<AudioStreamCallback> streamCallback_;
 
     size_t cacheSizeInByte_ = 0;
+    uint32_t spanSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
     // using this lock when change status_
     std::mutex statusMutex_;
-    std::atomic<State> state_ = NEW; // Waiting for review, state_ is new or invalid?
+    std::atomic<State> state_ = INVALID;
     // for status operation wait and notify
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
@@ -233,8 +258,10 @@ private:
     std::mutex readDataMutex_;
     std::condition_variable readDataCV_;
 
+    uint32_t overflowCount_ = 0;
     // ipc stream related
-    sptr<CapturerStreamListener> listener_ = nullptr;
+    AudioProcessConfig clientConfig_;
+    sptr<IpcStreamListenerImpl> listener_ = nullptr;
     sptr<IpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
 
@@ -281,47 +308,17 @@ private:
     };
 };
 
-// CapturerStreamListener --> sptr | CapturerInClientInner --> shared_ptr
-class CapturerStreamListener : public IpcStreamListenerStub {
-public:
-    CapturerStreamListener(std::shared_ptr<CapturerInClientInner> capturerInClinet);
-    virtual ~CapturerStreamListener() = default;
-
-    // IpcStreamListenerStub
-    int32_t OnOperationHandled(Operation operation, int64_t result) override;
-private:
-    std::weak_ptr<CapturerInClientInner> capturerInClinet_;
-};
-
-CapturerStreamListener::CapturerStreamListener(std::shared_ptr<CapturerInClientInner> capturerInClinet)
-{
-    if (capturerInClinet == nullptr) {
-        AUDIO_ERR_LOG("CapturerStreamListener() find null rendererInClinet");
-    }
-    capturerInClinet_ = capturerInClinet;
-}
-
-int32_t CapturerStreamListener::OnOperationHandled(Operation operation, int64_t result)
-{
-    std::shared_ptr<CapturerInClientInner> capturer = capturerInClinet_.lock();
-    if (capturer == nullptr) {
-        AUDIO_WARNING_LOG("OnOperationHandled() find capturerInClinet_ is null, operation:%{public}d result:"
-            "%{public}" PRId64".", operation, result);
-        return ERR_ILLEGAL_STATE;
-    }
-    return capturer->OnOperationHandled(operation, result);
-}
-
 std::shared_ptr<CapturerInClient> CapturerInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
     return std::make_shared<CapturerInClientInner>(eStreamType, appUid);
 }
 
 CapturerInClientInner::CapturerInClientInner(AudioStreamType eStreamType, int32_t appUid) : eStreamType_(eStreamType),
-    appUid_(appUid)
+    appUid_(appUid), cbBufferQueue_(CB_QUEUE_CAPACITY)
 {
-    AUDIO_INFO_LOG("CapturerInClientInner() with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
-    // AUDIO_MODE_RECORD
+    AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
+    audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_RECORD, appUid);
+    state_ = NEW;
 }
 
 CapturerInClientInner::~CapturerInClientInner()
@@ -335,6 +332,14 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     if (operation == UPDATE_STREAM) {
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
         // notify write if blocked
+        readDataCV_.notify_all();
+        return SUCCESS;
+    }
+
+    if (operation == BUFFER_OVERFLOW) {
+        overflowCount_++;
+        AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
+        // in plan next: do more to reduce overflow
         readDataCV_.notify_all();
         return SUCCESS;
     }
@@ -373,7 +378,7 @@ void CapturerInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
 {
     if (audioStreamTracker_ && audioStreamTracker_.get() && !streamTrackerRegistered_) {
         // make sure sessionId_ is set before.
-        AUDIO_INFO_LOG("AudioStream:Calling register tracker, sessionid = %{public}d", sessionId_);
+        AUDIO_INFO_LOG("Calling register tracker, sessionid = %{public}d", sessionId_);
         AudioRegisterTrackerInfo registerTrackerInfo;
 
         registerTrackerInfo.sessionId = sessionId_;
@@ -496,15 +501,15 @@ void CapturerInClientInner::HandleStateChangeEvent(int64_t data)
     std::unique_lock<std::mutex> lock(streamCbMutex_);
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
-        lock.unlock();
-        streamCb->OnStateChange(state, cmdType); // waiting for review: put is in eventrunner for async call
+        state = state != STOPPING ? state : STOPPED; // client only need STOPPED
+        streamCb->OnStateChange(state, cmdType);
     }
 }
 
 void CapturerInClientInner::HandleCapturerMarkReachedEvent(int64_t capturerMarkPosition)
 {
     AUDIO_DEBUG_LOG("Start HandleCapturerMarkReachedEvent");
-    std::unique_lock<std::mutex> lock(markReachMutex_); // 这里是否需要提前解锁
+    std::unique_lock<std::mutex> lock(markReachMutex_);
     if (capturerPositionCallback_) {
         capturerPositionCallback_->OnMarkReached(capturerMarkPosition);
     }
@@ -513,7 +518,7 @@ void CapturerInClientInner::HandleCapturerMarkReachedEvent(int64_t capturerMarkP
 void CapturerInClientInner::HandleCapturerPeriodReachedEvent(int64_t capturerPeriodNumber)
 {
     AUDIO_DEBUG_LOG("Start HandleCapturerPeriodReachedEvent");
-    std::unique_lock<std::mutex> lock(periodReachMutex_); // 这里是否需要提前解锁
+    std::unique_lock<std::mutex> lock(periodReachMutex_);
     if (capturerPeriodPositionCallback_) {
         capturerPeriodPositionCallback_->OnPeriodReached(capturerPeriodNumber);
     }
@@ -646,6 +651,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.isInnerCapturer = isInnerCapturer_;
     config.isWakeupCapturer = isWakeupCapturer_;
 
+    clientConfig_ = config;
     return config;
 }
 
@@ -656,17 +662,16 @@ int32_t CapturerInClientInner::InitSharedBuffer()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
 
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame_, byteSizePerFrame);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret, "ResolveBuffer failed"
         ":%{public}d", ret);
 
-    clientSpanSizeInByte_ = spanSizeInFrame * byteSizePerFrame;
+    clientSpanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame;
 
-    AUDIO_INFO_LOG("InitSharedBuffer totalSizeInFrame_[%{public}u] spanSizeInFrame_[%{public}u] sizePerFrameInByte_["
-        "%{public}zu] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame, sizePerFrameInByte_,
+    AUDIO_INFO_LOG("totalSizeInFrame_[%{public}u] spanSizeInFrame_[%{public}u] sizePerFrameInByte_["
+        "%{public}zu] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
 
     return SUCCESS;
@@ -677,7 +682,7 @@ int32_t CapturerInClientInner::InitCacheBuffer(size_t targetSize)
 {
     CHECK_AND_RETURN_RET_LOG(clientSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "clientSpanSizeInByte_ invalid");
 
-    AUDIO_INFO_LOG("InitCacheBuffer old size:%{public}zu, new size:%{public}zu", cacheSizeInByte_, targetSize);
+    AUDIO_INFO_LOG("old size:%{public}zu, new size:%{public}zu", cacheSizeInByte_, targetSize);
     cacheSizeInByte_ = targetSize;
 
     if (ringCache_ == nullptr) {
@@ -701,12 +706,12 @@ int32_t CapturerInClientInner::InitIpcStream()
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config); // in plan: add ret
-    CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "InitIpcStream failed with null ipcProxy.");
+    CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
     ipcStream_ = iface_cast<IpcStream>(ipcProxy);
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitIpcStream failed when iface_cast.");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
 
     // in plan: old listener_ is destoried here, will server receive dieth notify?
-    listener_ = sptr<CapturerStreamListener>::MakeSptr(shared_from_this());
+    listener_ = sptr<IpcStreamListenerImpl>::MakeSptr(shared_from_this());
     int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterStreamListener failed:%{public}d", ret);
 
@@ -749,7 +754,6 @@ int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
 
 State CapturerInClientInner::GetState()
 {
-    // waiting for review
     return state_;
 }
 
@@ -761,46 +765,48 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
 int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
 {
-    // waiting for review
     bufferSize = clientSpanSizeInByte_;
-    AUDIO_INFO_LOG("GetBufferSize size:%{public}zu", bufferSize);
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        bufferSize = cbBufferSize_;
+    }
+    AUDIO_INFO_LOG("Buffer size is %{public}zu, mode is %{public}s", bufferSize, capturerMode_ == CAPTURE_MODE_NORMAL ?
+        "CAPTURE_MODE_NORMAL" : "CAPTURE_MODE_CALLBACK");
     return SUCCESS;
 }
 
 int32_t CapturerInClientInner::GetFrameCount(uint32_t &frameCount)
 {
-    if (sizePerFrameInByte_ != 0) {
-        frameCount = clientSpanSizeInByte_ / sizePerFrameInByte_;
-        AUDIO_INFO_LOG("GetFrameCount count:%{public}d", frameCount);
-        return SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
+    frameCount = spanSizeInFrame_;
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        frameCount = cbBufferSize_ / sizePerFrameInByte_;
     }
-    AUDIO_ERR_LOG("GetFrameCount failed clientSpanSizeInByte_ is 0");
-    return ERR_ILLEGAL_STATE;
+    AUDIO_INFO_LOG("Frame count is %{public}u, mode is %{public}s", frameCount, capturerMode_ == CAPTURE_MODE_NORMAL ?
+        "CAPTURE_MODE_NORMAL" : "CAPTURE_MODE_CALLBACK");
+    return SUCCESS;
 }
 
 int32_t CapturerInClientInner::GetLatency(uint64_t &latency)
 {
     // in plan:
-    latency = 150000000; // 150000000, only for debug
+    latency = 150000; // unit is us
     return ERROR;
 }
 
 int32_t CapturerInClientInner::SetAudioStreamType(AudioStreamType audioStreamType)
 {
-    // in plan
+    AUDIO_ERR_LOG("Change stream type %{public}d to %{public}d is not supported", eStreamType_, audioStreamType);
     return ERROR;
 }
 
 int32_t CapturerInClientInner::SetVolume(float volume)
 {
-    // Waiting for review
     AUDIO_WARNING_LOG("SetVolume is only for renderer");
     return ERROR;
 }
 
 float CapturerInClientInner::GetVolume()
 {
-    // Waiting for review
     AUDIO_WARNING_LOG("GetVolume is only for renderer");
     return 0.0;
 }
@@ -820,14 +826,12 @@ float CapturerInClientInner::GetSpeed()
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
-    // Waiting for review
     AUDIO_WARNING_LOG("SetRenderRate is only for renderer");
     return ERROR;
 }
 
 AudioRendererRate CapturerInClientInner::GetRenderRate()
 {
-    // Waiting for review
     AUDIO_WARNING_LOG("GetRenderRate is only for renderer");
     return RENDER_RATE_NORMAL; // not supported
 }
@@ -868,46 +872,206 @@ int32_t CapturerInClientInner::SetRendererWriteCallback(const std::shared_ptr<Au
     return ERROR;
 }
 
+void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs) {
+    if (bufferDurationInUs > MAX_BUF_DURATION_IN_USEC) {
+        AUDIO_ERR_LOG("InitCallbackBuffer with invalid duration %{public}" PRIu64", use default instead.",
+            bufferDurationInUs);
+        bufferDurationInUs = DEFAULT_BUF_DURATION_IN_USEC;
+    }
+    // Calculate buffer size based on duration.
+    cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * streamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
+    AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64", size: %{public}zu", bufferDurationInUs,
+        cbBufferSize_);
+    std::lock_guard<std::mutex> lock(cbBufferMutex_);
+    cbBuffer_ = std::make_unique<uint8_t[]>(cbBufferSize_);
+    BufferDesc temp = {cbBuffer_.get(), cbBufferSize_, cbBufferSize_};
+    cbBufferQueue_.Push(temp);
+}
+
 int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
 {
-    AUDIO_INFO_LOG("Set capturer mode: %{public}d", captureMode);
+    AUDIO_INFO_LOG("Set mode to %{public}s", captureMode == CAPTURE_MODE_NORMAL ? "CAPTURE_MODE_NORMAL" :
+        "CAPTURE_MODE_CALLBACK");
+    if (capturerMode_ == captureMode) {
+        return SUCCESS;
+    }
+
+    // capturerMode_ is inited as CAPTURE_MODE_NORMAL, can only be set to CAPTURE_MODE_CALLBACK.
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK && captureMode == CAPTURE_MODE_NORMAL) {
+        AUDIO_ERR_LOG("Set capturer mode from callback to normal is not supported.");
+        return ERR_INCORRECT_MODE;
+    }
+
+    // state check
+    if (state_ != PREPARED && state_ != NEW) {
+        AUDIO_ERR_LOG("Set capturer mode failed. invalid state:%{public}d", state_.load());
+        return ERR_ILLEGAL_STATE;
+    }
     capturerMode_ = captureMode;
-    return ERROR;
+
+    // init callbackLoop_
+    callbackLoop_ = std::thread(&CapturerInClientInner::ReadCallbackFunc, this);
+    pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioReadCB");
+
+    std::unique_lock<std::mutex> threadStartlock(statusMutex_);
+    bool stopWaiting = cbThreadCv_.wait_for(threadStartlock, std::chrono::milliseconds(SHORT_TIMEOUT_IN_MS), [this] {
+        return cbThreadReleased_ == false; // When thread is started, cbThreadReleased_ will be false. So stop waiting.
+    });
+
+    if(!stopWaiting) {
+        AUDIO_WARNING_LOG("Init OS_AudioReadCB thread time out");
+    }
+
+    CHECK_AND_RETURN_RET_LOG(streamParams_.samplingRate != 0, ERR_ILLEGAL_STATE, "invalid sample rate");
+
+    uint64_t bufferDurationInUs = spanSizeInFrame_ * AUDIO_US_PER_S / streamParams_.samplingRate;
+    InitCallbackBuffer(bufferDurationInUs);
+    return SUCCESS;
 }
 
 AudioCaptureMode CapturerInClientInner::GetCaptureMode()
 {
+    AUDIO_INFO_LOG("capturer mode is %{public}s", capturerMode_ == CAPTURE_MODE_NORMAL ? "CAPTURE_MODE_NORMAL" :
+        "CAPTURE_MODE_CALLBACK");
     return capturerMode_;
 }
 
 int32_t CapturerInClientInner::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
 {
-    // in plan callback mode
-    return ERROR;
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    CHECK_AND_RETURN_RET_LOG(capturerMode_ == CAPTURE_MODE_CALLBACK, ERR_INCORRECT_MODE, "incorrect capturer mode");
+    std::lock_guard<std::mutex> lock(readCbMutex_);
+    readCb_ = callback;
+    return SUCCESS;
 }
+
+bool CapturerInClientInner::WaitForRunning()
+{
+    Trace trace("CapturerInClientInner::WaitForRunning");
+    // check capturer state_: call client write only in running else wait on statusMutex_
+    std::unique_lock<std::mutex> stateLock(statusMutex_);
+    if (state_ != RUNNING) {
+        bool stopWaiting = cbThreadCv_.wait_for(stateLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+            return state_ == RUNNING || cbThreadReleased_;
+        });
+        if (cbThreadReleased_) {
+            AUDIO_INFO_LOG("CBThread end in non-running status, sessionID :%{public}d", sessionId_);
+            return false;
+        }
+        if (!stopWaiting) {
+            AUDIO_INFO_LOG("Wait timeout, current state_ is %{public}d", state_.load()); // wait 0.5s
+            return false;
+        }
+    }
+    return true;
+}
+
+void CapturerInClientInner::ReadCallbackFunc()
+{
+    AUDIO_INFO_LOG("Thread start, sessionID :%{public}d", sessionId_);
+    cbThreadReleased_ = false;
+
+    // Modify thread priority is not need as first call read will do these work.
+    cbThreadCv_.notify_one();
+
+    // start loop
+    while (!cbThreadReleased_) {
+        Trace traceLoop("CapturerInClientInner::WriteCallbackFunc");
+        if (!WaitForRunning()) {
+            continue;
+        }
+
+        // If client didn't call GetBufferDesc/Enqueue in OnReadData, pop will block here.
+        BufferDesc temp = cbBufferQueue_.Pop();
+        if (temp.buffer == nullptr) {
+            AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
+            break;
+        }
+
+        std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
+        // call read here.
+        int32_t result = Read(*temp.buffer, temp.bufLength, true); // blocking read
+        if (result < 0 || result != cbBufferSize_) {
+            AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
+        }
+        lockBuffer.unlock();
+
+        // call client read
+        Trace traceCb("CapturerInClientInner::OnReadData");
+        std::unique_lock<std::mutex> lockCb(readCbMutex_);
+        if (readCb_ != nullptr) {
+            readCb_->OnReadData(cbBufferSize_);
+        }
+        lockCb.unlock();
+        traceCb.End();
+    }
+    AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
+}
+
 
 int32_t CapturerInClientInner::GetBufferDesc(BufferDesc &bufDesc)
 {
-    // in plan callback mode
-    return ERROR;
+    Trace trace("CapturerInClientInner::GetBufferDesc");
+    if (capturerMode_ != CAPTURE_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("Not supported. mode is not callback.");
+        return ERR_INCORRECT_MODE;
+    }
+    std::lock_guard<std::mutex> lock(cbBufferMutex_);
+    bufDesc.buffer = cbBuffer_.get();
+    bufDesc.bufLength = cbBufferSize_;
+    bufDesc.dataLength = cbBufferSize_;
+    return SUCCESS;
 }
 
 int32_t CapturerInClientInner::GetBufQueueState(BufferQueueState &bufState)
 {
-    // in plan callback mode
-    return ERROR;
+    Trace trace("CapturerInClientInner::GetBufQueueState");
+    if (capturerMode_ != CAPTURE_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("Not supported, mode is not callback.");
+        return ERR_INCORRECT_MODE;
+    }
+    // only one buffer in queue.
+    bufState.numBuffers = 1;
+    bufState.currentIndex = 0;
+    return SUCCESS;
 }
 
 int32_t CapturerInClientInner::Enqueue(const BufferDesc &bufDesc)
 {
-    // in plan callback mode
-    return ERROR;
+    Trace trace("CapturerInClientInner::Enqueue");
+    if (capturerMode_ != CAPTURE_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("Not supported, mode is not callback.");
+        return ERR_INCORRECT_MODE;
+    }
+    std::lock_guard<std::mutex> lock(cbBufferMutex_);
+
+    if (bufDesc.bufLength != cbBufferSize_ || bufDesc.dataLength != cbBufferSize_) {
+        AUDIO_ERR_LOG("Enqueue invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
+            bufDesc.bufLength, bufDesc.dataLength, cbBufferSize_);
+        return ERR_INVALID_INDEX;
+    }
+    if (bufDesc.buffer != cbBuffer_.get()) {
+        AUDIO_WARNING_LOG("Enqueue buffer is not from us.");
+    }
+
+    // if Enqueue is not called in OnReadData, loop thread will block on pop, wait for the Push call here.
+    BufferDesc temp = {cbBuffer_.get(), cbBufferSize_, cbBufferSize_};
+    cbBufferQueue_.Push(temp);
+    // Call read may block, so put it in loop callbackLoop_
+    return SUCCESS;
 }
 
 int32_t CapturerInClientInner::Clear()
 {
-    // in plan callback mode
-    return ERROR;
+    Trace trace("CapturerInClientInner::Clear");
+    if (capturerMode_ != CAPTURE_MODE_CALLBACK) {
+        AUDIO_ERR_LOG("Not supported, mode is not callback.");
+        return ERR_INCORRECT_MODE;
+    }
+    std::lock_guard<std::mutex> lock(cbBufferMutex_);
+    int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
+    return SUCCESS;
 }
 
 int32_t CapturerInClientInner::SetLowPowerVolume(float volume)
@@ -960,10 +1124,12 @@ int64_t CapturerInClientInner::GetFramesWritten()
 
 int64_t CapturerInClientInner::GetFramesRead()
 {
-    return totalBytesRead_;
+    CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, INVALID_FRAME_SIZE, "sizePerFrameInByte_ is 0!");
+    int64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
+    return readFrameNumber;
 }
 
-
+// Will only take effect before SetAudioStreaminfo
 void CapturerInClientInner::SetInnerCapturerState(bool isInnerCapturer)
 {
     isInnerCapturer_ = isInnerCapturer;
@@ -971,6 +1137,7 @@ void CapturerInClientInner::SetInnerCapturerState(bool isInnerCapturer)
     return;
 }
 
+// Will only take effect before SetAudioStreaminfo
 void CapturerInClientInner::SetWakeupCapturerState(bool isWakeupCapturer)
 {
     isWakeupCapturer_ = isWakeupCapturer;
@@ -987,23 +1154,23 @@ void CapturerInClientInner::SetCapturerSource(int capturerSource)
 
 void CapturerInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 {
-    // in plan
+    AUDIO_WARNING_LOG("SetPrivacyType is only for renderer");
     return;
 }
 
 bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType)
 {
-    Trace trace("StartAudioStream " + std::to_string(sessionId_));
+    Trace trace("CapturerInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
-        AUDIO_ERR_LOG("StartAudioStream failed Illegal state: %{public}d", state_.load());
+        AUDIO_ERR_LOG("Start failed Illegal state: %{public}d", state_.load());
         return false;
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("StartAudioStream call server failed: %{public}u", ret);
+        AUDIO_ERR_LOG("Start call server failed: %{public}u", ret);
         return false;
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
@@ -1012,46 +1179,41 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     });
 
     if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("StartAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+        AUDIO_ERR_LOG("Start failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
     }
     waitLock.unlock();
 
+    state_ = RUNNING; // change state_ to RUNNING, then notify cbThread
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
-        // in plan
         // start the callback-write thread
+        cbThreadCv_.notify_all();
     }
-    state_ = RUNNING;
     statusLock.unlock();
-    // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    // in plan: call HiSysEventWrite
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
     callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, param);
 
-    AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
     return true;
 }
 
 bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    Trace trace(":PauseAudioStream " + std::to_string(sessionId_));
+    Trace trace("CapturerInClientInner::PauseAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
-        AUDIO_ERR_LOG("PauseAudioStream State is not RUNNING. Illegal state:%{public}u", state_.load());
+        AUDIO_ERR_LOG("Pause State is not RUNNING. Illegal state:%{public}u", state_.load());
         return false;
-    }
-
-    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
-        // in plan
-        // stop the callback-write thread
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("PauseAudioStream call server failed:%{public}u", ret);
+        AUDIO_ERR_LOG("Pause call server failed:%{public}u", ret);
         return false;
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
@@ -1060,7 +1222,7 @@ bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     });
 
     if (notifiedOperation_ != PAUSE_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("PauseAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+        AUDIO_ERR_LOG("Pause failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
     }
@@ -1074,40 +1236,43 @@ bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     StateCmdTypeToParams(param, state_, cmdType);
     callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, param);
 
-    AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    AUDIO_INFO_LOG("Pause SUCCESS, sessionId: %{public}d, uid: %{public}d, mode %{public}s", sessionId_, clientUid_,
+        capturerMode_ == CAPTURE_MODE_NORMAL ? "CAPTURE_MODE_NORMAL" : "CAPTURE_MODE_CALLBACK");
     UpdateTracker("PAUSED");
     return true;
 }
 
 bool CapturerInClientInner::StopAudioStream()
 {
-    Trace trace("StopAudioStream " + std::to_string(sessionId_));
-    AUDIO_INFO_LOG("StopAudioStream begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+    Trace trace("CapturerInClientInner::StopAudioStream " + std::to_string(sessionId_));
+    AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if ((state_ != RUNNING) && (state_ != PAUSED)) {
-        AUDIO_ERR_LOG("StopAudioStream failed. Illegal state:%{public}u", state_.load());
+        AUDIO_ERR_LOG("Stop failed. Illegal state:%{public}u", state_.load());
         return false;
-    }
-
-    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
-        // in plan
-        // stop the callback-write thread
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Stop();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("StopAudioStream call server failed:%{public}u", ret);
+        AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
         return false;
     }
+
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        state_ = STOPPING;
+        AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+    }
+
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return notifiedOperation_ == STOP_STREAM; // will be false when got notified.
     });
 
     if (notifiedOperation_ != STOP_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("StopAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+        AUDIO_ERR_LOG("Stop failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        state_ = INVALID;
         return false;
     }
     waitLock.unlock();
@@ -1118,14 +1283,15 @@ bool CapturerInClientInner::StopAudioStream()
     // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
     callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
     return true;
 }
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
-    Trace trace("ReleaseAudioStream " + std::to_string(sessionId_));
+    Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is null");
     ipcStream_->Release();
     // lock_guard<mutex> lock(statusMutex_) // no lock, call release in any case, include blocked case.
     {
@@ -1136,21 +1302,36 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
             runnerReleased_ = true;
         }
     }
-    return false;
+
+    // clear write callback
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        cbThreadReleased_ = true; // stop loop
+        if (cbBufferQueue_.IsEmpty()) {
+            cbBufferQueue_.PushNoWait({nullptr, 0, 0});
+        }
+        cbThreadCv_.notify_all();
+        if (callbackLoop_.joinable()) {
+            callbackLoop_.join();
+        }
+    }
+    AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    return true;
 }
 
 bool CapturerInClientInner::FlushAudioStream()
 {
-    Trace trace("FlushAudioStream " + std::to_string(sessionId_));
+    Trace trace("CapturerInClientInner::FlushAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if ((state_ != RUNNING) && (state_ != PAUSED) && (state_ != STOPPED)) {
-        AUDIO_ERR_LOG("FlushAudioStream failed. Illegal state:%{public}u", state_.load());
+        AUDIO_ERR_LOG("Flush failed. Illegal state:%{public}u", state_.load());
         return false;
     }
+    CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
+
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("FlushAudioStream call server failed:%{public}u", ret);
+        AUDIO_ERR_LOG("Flush call server failed:%{public}u", ret);
         return false;
     }
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
@@ -1159,7 +1340,7 @@ bool CapturerInClientInner::FlushAudioStream()
     });
 
     if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {
-        AUDIO_ERR_LOG("FlushAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+        AUDIO_ERR_LOG("Flush failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
     }
@@ -1168,9 +1349,15 @@ bool CapturerInClientInner::FlushAudioStream()
     return true;
 }
 
+int32_t CapturerInClientInner::FlushRingCache()
+{
+    ringCache_->ResetBuffer();
+    return SUCCESS;
+}
+
 bool CapturerInClientInner::DrainAudioStream()
 {
-    // in plan
+    AUDIO_ERR_LOG("Drain is not supported");
     return false;
 }
 
@@ -1181,21 +1368,21 @@ void CapturerInClientInner::SetPreferredFrameSize(int32_t frameSize)
 
 int32_t CapturerInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
 {
-     AUDIO_ERR_LOG("Write is not supported");
+    AUDIO_ERR_LOG("Write is not supported");
     return ERR_INVALID_OPERATION;
 }
 
 int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
-    // in plan
-    return ERROR;
+    AUDIO_ERR_LOG("Write is not supported");
+    return ERR_INVALID_OPERATION;
 }
 
 int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 {
     AUDIO_INFO_LOG("Start read data, userSize: %{public}zu, is blocking read: %{public}d", userSize, isBlockingRead);
     Trace trace("CapturerInClientInner::Read " + std::to_string(userSize));
-    // Waiting for review, 因为buffer使用引用传递的，所以&buffer永远非空
+
     CHECK_AND_RETURN_RET_LOG(userSize > 0 && userSize < MAX_CLIENT_READ_SIZE,
         ERR_INVALID_PARAM, "Read with invalid params, size is %{public}zu", userSize);
 
@@ -1238,14 +1425,9 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
             AUDIO_INFO_LOG("If OHAudioBuffer has data, clientBuffer_->GetCurReadFrame() %{public}" PRId64 ", sizePerFrameInByte_%{public}zu", clientBuffer_->GetCurReadFrame(), sizePerFrameInByte_);
             BufferDesc currentOHBuffer_ = {};
             clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
-            uint32_t totalSizeInFrame = 0;
-            uint32_t spanSizeInFrame = 0;
-            uint32_t byteSizePerFrame = 0;
-            clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-            BufferWrap bufferWrap = {currentOHBuffer_.buffer, spanSizeInFrame};
-            AUDIO_INFO_LOG("totalSizeInFrame %{public}d, spanSizeInFrame %{public}d, byteSizePerFrame %{public}d", totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+            BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
             ringCache_->Enqueue(bufferWrap); 
-            clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame);
+            clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
         } else {
             AUDIO_INFO_LOG("If OHAudioBuffer NOT has data");
             if (!isBlockingRead) {
@@ -1300,7 +1482,8 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
 
 uint32_t CapturerInClientInner::GetUnderflowCount()
 {
-    // in plan
+    // not supported for capturer
+    AUDIO_WARNING_LOG("No Underflow in Capturer");
     return 0;
 }
 
@@ -1382,8 +1565,13 @@ uint32_t CapturerInClientInner::GetRendererSamplingRate()
 
 int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
+    // bufferSizeInMsec is checked between 5ms and 20ms.
     bufferSizeInMsec_ = bufferSizeInMsec;
     AUDIO_INFO_LOG("SetBufferSizeInMsec to %{publid}d", bufferSizeInMsec_);
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;
+        InitCallbackBuffer(bufferDurationInUs);
+    }
     return SUCCESS;
 }
 
@@ -1395,13 +1583,13 @@ void CapturerInClientInner::SetApplicationCachePath(const std::string cachePath)
 
 int32_t CapturerInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
-    // in plan
+    AUDIO_WARNING_LOG("not supported in capturer");
     return ERROR;
 }
 
 int32_t CapturerInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
 {
-    // in plan
+    AUDIO_WARNING_LOG("not supported in capturer");
     return ERROR;
 }
 

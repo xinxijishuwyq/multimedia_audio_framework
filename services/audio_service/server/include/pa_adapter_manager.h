@@ -62,7 +62,6 @@ public:
     int32_t ReleaseRender(uint32_t streamIndex_) override;
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex_) override;
-    void UpdateStreamIndexToPropList(pa_stream *paStream);
     uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
     const std::string GetEffectSceneName(AudioStreamType audioType);
 
@@ -82,9 +81,9 @@ private:
     int32_t ResetPaContext();
     int32_t InitPaContext();
     int32_t HandleMainLoopStart();
-    pa_stream *InitPaStream(AudioProcessConfig processConfig);
+    pa_stream *InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId);
     int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
-        const std::string &streamName);
+        const std::string &streamName, uint32_t sessionId);
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream);
     std::shared_ptr<ICapturerStream> CreateCapturerStream(AudioProcessConfig processConfig, pa_stream *paStream);
     int32_t ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec);

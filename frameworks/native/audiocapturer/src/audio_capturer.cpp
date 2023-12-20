@@ -356,11 +356,11 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 bool AudioCapturerPrivate::Start() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Start");
-    // if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-    //     appInfo_.appUid, AUDIO_PERMISSION_START)) {
-    //     AUDIO_ERR_LOG("recording start check failed");
-    //     return false;
-    // }
+    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+        appInfo_.appUid, AUDIO_PERMISSION_START)) {
+        AUDIO_ERR_LOG("recording start check failed");
+        return false;
+    }
 
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_INVALID ||
         audioInterrupt_.sessionID == INVALID_SESSION_ID) {

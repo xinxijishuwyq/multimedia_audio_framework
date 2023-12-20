@@ -463,9 +463,15 @@ void PaCapturerStreamImpl::GetSpanSizePerFrame(size_t &spanSizeInFrame) const
     spanSizeInFrame = spanSizeInFrame_;
 }
 
+void PaCapturerStreamImpl::SetStreamIndex(uint32_t index)
+{
+    AUDIO_INFO_LOG("Using index/sessionId %{public}d", index);
+    streamIndex_ = index;
+}
+
 uint32_t PaCapturerStreamImpl::GetStreamIndex()
 {
-    return pa_stream_get_index(paStream_);
+    return streamIndex_;
 }
 
 void PaCapturerStreamImpl::AbortCallback(int32_t abortTimes)

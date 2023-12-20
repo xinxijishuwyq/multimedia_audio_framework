@@ -51,6 +51,7 @@ public:
     int32_t GetMinimumBufferSize(size_t &minBufferSize) const override;
     void GetByteSizePerFrame(size_t &byteSizePerFrame) const override;
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
+    void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
     void AbortCallback(int32_t abortTimes) override;
 
@@ -69,6 +70,7 @@ private:
     const std::string GetEffectModeName(int32_t effectMode);
     const std::string GetEffectSceneName(AudioStreamType audioType);
 
+    uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
     pa_stream *paStream_ = nullptr;

@@ -181,13 +181,14 @@ void RendererInServer::WriteData()
     }
     BufferDesc bufferDesc = {nullptr, totalSizeInFrame_, totalSizeInFrame_};
 
-    if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == 0) {
+    if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
         AUDIO_INFO_LOG("Buffer length: %{public}zu", bufferDesc.bufLength);
         stream_->EnqueueBuffer(bufferDesc);
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
-        AUDIO_INFO_LOG("RendererInServer::WriteData: CurrentReadFrame: %{public}" PRIu64 ","
-            "nextReadFrame:%{public}" PRIu64 "", currentReadFrame, nextReadFrame);
+        AUDIO_INFO_LOG("CurrentReadFrame: %{public}" PRIu64 ", nextReadFrame:%{public}" PRIu64 "", currentReadFrame,
+            nextReadFrame);
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+        memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");

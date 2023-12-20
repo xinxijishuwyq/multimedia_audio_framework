@@ -15,6 +15,7 @@
 
 #include "pa_adapter_manager.h"
 #include <sstream>
+#include <atomic>
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "pa_renderer_stream_impl.h"
@@ -71,6 +72,8 @@ PaAdapterManager::PaAdapterManager(ManagerType type)
     managerType_ = type;
 }
 
+std::atomic<uint32_t> g_sessionID_ = {100000}; // begin at 100000
+
 int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
 {
     AUDIO_DEBUG_LOG("Create renderer start");
@@ -80,9 +83,11 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     }
 
-    pa_stream *paStream = InitPaStream(processConfig);
+    uint32_t sessionId = g_sessionID_++;
+    pa_stream *paStream = InitPaStream(processConfig, sessionId);
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    rendererStream->SetStreamIndex(sessionId);
     stream = rendererStream;
     return SUCCESS;
 }
@@ -122,9 +127,11 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
         int32_t ret = InitPaContext();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     }
-    pa_stream *paStream = InitPaStream(processConfig);
+    uint32_t sessionId = g_sessionID_++;
+    pa_stream *paStream = InitPaStream(processConfig, sessionId);
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    capturerStream->SetStreamIndex(sessionId);
     stream = capturerStream;
     return SUCCESS;
 }
@@ -247,7 +254,7 @@ int32_t PaAdapterManager::HandleMainLoopStart()
     return SUCCESS;
 }
 
-pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig)
+pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId)
 {
     AUDIO_DEBUG_LOG("Enter InitPaStream");
     int32_t error = ERROR;
@@ -266,7 +273,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig)
     }
     const std::string streamName = GetStreamName(processConfig.streamType);
     pa_channel_map map;
-    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName) == 0, nullptr,
+    CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName, sessionId) == 0, nullptr,
         "set pa proplist failed");
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec, nullptr, propList);
@@ -291,10 +298,10 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig)
 }
 
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
-    const std::string &streamName)
+    const std::string &streamName, uint32_t sessionId)
 {
     // for remote audio device router filter
-    pa_proplist_sets(propList, "stream.sessionID", std::to_string(-1).c_str());
+    pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionId).c_str());
     pa_proplist_sets(propList, "stream.client.uid", std::to_string(processConfig.appInfo.appUid).c_str());
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(processConfig.appInfo.appPid).c_str());
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
@@ -442,7 +449,6 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         }
         pa_threaded_mainloop_wait(mainLoop_);
     }
-    UpdateStreamIndexToPropList(paStream);
     pa_threaded_mainloop_unlock(mainLoop_);
     return SUCCESS;
 }
@@ -450,29 +456,6 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
 void PaAdapterManager::PAStreamUpdateStreamIndexSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     AUDIO_DEBUG_LOG("P1111111111111111111111111111111111111111111111111");
-}
-
-void PaAdapterManager::UpdateStreamIndexToPropList(pa_stream *paStream)
-{
-    uint32_t paStreamIndex = pa_stream_get_index(paStream);
-    pa_proplist *propListForUpdate = pa_proplist_new();
-    if (propListForUpdate == nullptr) {
-        AUDIO_ERR_LOG("pa_proplist_new failed");
-        pa_threaded_mainloop_unlock(mainLoop_);
-        return;
-    }
-    pa_proplist_sets(propListForUpdate, "stream.sessionID", std::to_string(paStreamIndex).c_str());
-    AUDIO_DEBUG_LOG("stream.sessionID is %{public}s", std::to_string(paStreamIndex).c_str());
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propListForUpdate,
-        PAStreamUpdateStreamIndexSuccessCb, nullptr);
-    if (updatePropOperation == nullptr) {
-        AUDIO_ERR_LOG("000000000000000000000000updatePropOperation == nullptr");
-        pa_proplist_free(propListForUpdate);
-        return;
-    }
-
-    pa_proplist_free(propListForUpdate);
-    pa_operation_unref(updatePropOperation);
 }
 
 void PaAdapterManager::PAContextStateCb(pa_context *context, void *userdata)

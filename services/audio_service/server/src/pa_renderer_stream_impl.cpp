@@ -641,10 +641,15 @@ void PaRendererStreamImpl::GetSpanSizePerFrame(size_t &spanSizeInFrame) const
     spanSizeInFrame = spanSizeInFrame_;
 }
 
-// Waiting for review, 开个方法GetByteSizePerFrame，让renderer in server 调用 结果 4 // 能不能从pulseAudio获取 
+void PaRendererStreamImpl::SetStreamIndex(uint32_t index)
+{
+    AUDIO_INFO_LOG("Using index/sessionId %{public}d", index);
+    streamIndex_ = index;
+}
+
 uint32_t PaRendererStreamImpl::GetStreamIndex()
 {
-    return pa_stream_get_index(paStream_);
+    return streamIndex_;
 }
 
 const std::string PaRendererStreamImpl::GetEffectSceneName(AudioStreamType audioType)

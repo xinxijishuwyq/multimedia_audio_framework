@@ -162,14 +162,13 @@ public:
     // void SetIndexAutoUpdate(bool isAutoUpdate = false);
 
     // Size_t GetWritableSize(); // Get the buffer size that can be written. 0 <= WritableSize <= cacheTotalSize_
+    // ResultCode NoBlockingWrite(const BufferDesc &bufferDesc, uint64_t &checkPos); // can fail
+    // ResultCode BlockingWrite(const BufferDesc &bufferDesc, uint64_t &checkPos, int64_t timeOut = 0); // data: bufferDesc --> OHAudioBuffer
+
 
     // Size_t GetReadableSize(); // Get the buffer size that can be read. 0 <= ReadableSize <= cacheTotalSize_
-
-    // ResultCode NoBlockingEnqueue(const BufferDesc &bufferDesc, uint64_t &checkPos); // can fail
-    // ResultCode BlockingEnqueue(const BufferDesc &bufferDesc, uint64_t &checkPos, int64_t timeOut = 0); // data: bufferDesc --> OHAudioBuffer
-
-    // ResultCode NoBlockingDequeue(const BufferDesc &bufferDesc, uint64_t &checkPos); // can fail
-    // ResultCode BlockingDequeue(const BufferDesc &bufferDesc, uint64_t &checkPos, int64_t timeOut = 0); // data: OHAudioBuffer --> bufferDesc
+    // ResultCode NoBlockingRead(const BufferDesc &bufferDesc, uint64_t &checkPos); // can fail
+    // ResultCode BlockingRead(const BufferDesc &bufferDesc, uint64_t &checkPos, int64_t timeOut = 0); // data: OHAudioBuffer --> bufferDesc
 private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();

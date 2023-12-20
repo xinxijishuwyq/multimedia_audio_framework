@@ -57,6 +57,7 @@ public:
 
 class IStream {
 public:
+    virtual void SetStreamIndex(uint32_t index) = 0;
     virtual uint32_t GetStreamIndex() = 0;
     virtual int32_t Start() = 0;
     virtual int32_t Pause() = 0;

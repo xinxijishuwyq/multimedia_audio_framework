@@ -43,6 +43,7 @@ public:
     int32_t GetMinimumBufferSize(size_t &minBufferSize) const override;
     void GetByteSizePerFrame(size_t &byteSizePerFrame) const override;
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
+    void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
     int32_t DropBuffer() override;
     void AbortCallback(int32_t abortTimes) override;
@@ -57,6 +58,8 @@ private:
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     pa_stream_success_cb_t PAStreamCorkSuccessCb;
+
+    uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
     pa_stream *paStream_ = nullptr;
     AudioProcessConfig processConfig_;

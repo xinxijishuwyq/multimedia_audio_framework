@@ -836,8 +836,20 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
         AUDIO_ERR_LOG("Invalid proplist for source output (%{public}d).", i->index);
         return;
     }
-    uint32_t sessionID = i->index;
-    sourceIndexSessionIDMap[i->index] = i->index;
+
+    const char *streamSession = pa_proplist_gets(i->proplist, "stream.sessionID");
+    if (streamSession == nullptr) {
+        AUDIO_ERR_LOG("Invalid stream parameter:sessionID.");
+        return;
+    }
+
+    std::stringstream sessionStr;
+    uint32_t sessionID;
+    sessionStr << streamSession;
+    sessionStr >> sessionID;
+    AUDIO_INFO_LOG("sessionID %{public}u", sessionID);
+    sourceIndexSessionIDMap[i->index] = sessionID;
+
     SourceType sourceType = static_cast<SourceType>(atoi(pa_proplist_gets(i->proplist, "stream.capturerSource")));
 
     g_audioServiceAdapterCallback->OnCapturerSessionAdded(sessionID,
