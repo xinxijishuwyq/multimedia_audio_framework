@@ -2405,7 +2405,7 @@ static void SetHdiParam(struct Userdata *userdata)
         bool effectEnabled = pa_safe_streq(sinkSceneMode, "EFFECT_DEFAULT") ? true : false;
         bool spatialEnabled = spatializationEnabled && effectEnabled;
         int sessionID = atoi(sinkSessionStr);
-        if (sessionID > sessionIDMax) {
+        if (sessionID > sessionIDMax && !sinkSceneType && !sinkSceneMode && !sinkSpatialization) {
             sessionIDMax = sessionID;
             sinkSceneTypeMax = (char *)sinkSceneType;
             sinkSceneModeMax = (char *)sinkSceneMode;
