@@ -489,7 +489,7 @@ ohos_executable("audio_service_playback_test") {
 ohos_executable("audio_faststream_playback_test") {
   install_enable = false
 
-  sources = [ "test/example/fast_audio_stream_playback_test.cpp" ]
+  sources = [ "test/example/audio_stream_playback_test.cpp" ]
 
   configs = [ ":audio_client_public_config" ]
 
@@ -497,6 +497,7 @@ ohos_executable("audio_faststream_playback_test") {
     ":audio_client",
     "../../frameworks/native/audiocapturer:audio_capturer",
     "../../frameworks/native/audiorenderer:audio_renderer",
+    "../../frameworks/native/audioutils:audio_utils",
   ]
 
   include_dirs = [
@@ -511,6 +512,7 @@ ohos_executable("audio_faststream_playback_test") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",

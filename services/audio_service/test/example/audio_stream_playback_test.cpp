@@ -20,59 +20,76 @@
 #include "audio_info.h"
 #include "audio_log.h"
 #include "audio_renderer.h"
+#include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "parameter.h"
 #include "pcm2wav.h"
 
+using namespace std;
 namespace OHOS {
 namespace AudioStandard {
+enum AudioOptCode : int32_t {
+    INVALID_OPERATION = -1,
+    INIT_LOCAL_SPK = 0,
+    INIT_REMOTE_SPK = 1,
+    START_SPK = 2,
+    STOP_SPK = 3,
+    SWITCH_SPK = 4,
+    RELEASE_SPK = 5,
+    INIT_LOCAL_MIC = 6,
+    INIT_REMOTE_MIC = 7,
+    START_MIC = 8,
+    STOP_MIC = 9,
+    SWITCH_MIC = 10,
+    RELEASE_MIC = 11,
+    EXIT_DEMO = 12,
+};
+
 std::map<int32_t, std::string> g_OptStrMap = {
     {INIT_LOCAL_SPK, "call local spk init process"},
     {INIT_REMOTE_SPK, "call remote spk init process"},
     {START_SPK, "call start spk process"},
     {STOP_SPK, "call stop spk process"},
+    {SWITCH_SPK, "call switch spk device process"},
     {RELEASE_SPK, "release spk process"},
 
     {INIT_LOCAL_MIC, "call local mic init process"},
     {INIT_REMOTE_MIC, "call remote mic init process"},
     {START_MIC, "call start mic process"},
     {STOP_MIC, "call stop mic process"},
+    {SWITCH_MIC, "call switch mic device process"},
     {RELEASE_MIC, "release mic process"},
 
     {EXIT_DEMO, "exit interactive run test"},
-};
-
-enum AudioOptCode : int32_t {
-    INIT_LOCAL_SPK = 0,
-    INIT_REMOTE_SPK = 1,
-    START_SPK = 2,
-    STOP_SPK = 3,
-    RELEASE_SPK = 4,
-    INIT_LOCAL_MIC = 5,
-    INIT_REMOTE_MIC = 6,
-    START_MIC = 7,
-    STOP_MIC = 8,
-    RELEASE_MIC = 9,
-    EXIT_DEMO = 10,
 };
 
 class PlaybackTest : public AudioRendererWriteCallback,
     public AudioCapturerReadCallback,
     public std::enable_shared_from_this<PlaybackTest> {
 public:
-    int32_t InitRenderer();
+    int32_t InitRenderer(bool isFast);
     int32_t StartPlay();
     int32_t StopPlay();
-    int32_t ReleasePlay();
-    int32_t InitCapturer();
+    int32_t ReleaseRenderer();
+    int32_t InitCapturer(bool isFast);
     int32_t StartCapture();
     int32_t StopCapture();
+    int32_t ReleaseCapture();
     void OnWriteData(size_t length) override;
     void OnReadData(size_t length) override;
     bool OpenSpkFile(const std::string &spkFilePath);
     bool OpenMicFile(const std::string &micFilePath);
     void CloseSpkFile();
     void CloseMicFile();
+    int32_t SwitchDevice(DeviceRole deviceRole);
+    void SetSpkRemote(bool isRemote);
+    bool GetSpkRemote();
+    void SetMicRemote(bool isRemote);
+    bool GetMicRemote();
+
+private:
+    int32_t SwitchOutputDevice();
+    int32_t SwitchInputDevice();
 
 private:
     std::unique_ptr<AudioStandard::AudioRenderer> audioRenderer_ = nullptr;
@@ -81,6 +98,10 @@ private:
     bool needSkipWavHeader_ = true;
     FILE *spkWavFile_ = nullptr;
     FILE *micWavFile_ = nullptr;
+    bool isSpkFast_ = false;
+    bool isMicFast_ = false;
+    bool isSpkRemote_ = false;
+    bool isMicRemote_ = false;
 };
 
 void PlaybackTest::OnWriteData(size_t length)
@@ -103,11 +124,8 @@ void PlaybackTest::OnWriteData(size_t length)
     if (feof(spkWavFile_)) {
         fseek(spkWavFile_, WAV_HEADER_SIZE, SEEK_SET); // infinite loop
     }
-    if (renderFinish_) {
-        AUDIO_INFO_LOG("%{public}s render finish.", __func__);
-        return;
-    }
     fread(bufDesc.buffer, 1, bufDesc.bufLength, spkWavFile_);
+    AUDIO_INFO_LOG("%{public}s OnWriteData data length: %{public}zu.", __func__, bufDesc.bufLength);
     audioRenderer_->Enqueue(bufDesc);
 }
 
@@ -139,7 +157,27 @@ void PlaybackTest::CloseSpkFile()
     }
 }
 
-int32_t PlaybackTest::InitRenderer()
+void PlaybackTest::SetSpkRemote(bool isRemote)
+{
+    isSpkRemote_ = isRemote;
+}
+
+bool PlaybackTest::GetSpkRemote()
+{
+    return isSpkRemote_;
+}
+
+void PlaybackTest::SetMicRemote(bool isRemote)
+{
+    isMicRemote_ = isRemote;
+}
+
+bool PlaybackTest::GetMicRemote()
+{
+    return isMicRemote_;
+}
+
+int32_t PlaybackTest::InitRenderer(bool isFast)
 {
     AudioStandard::AudioRendererOptions rendererOptions = {
         {
@@ -151,7 +189,7 @@ int32_t PlaybackTest::InitRenderer()
         {
             AudioStandard::ContentType::CONTENT_TYPE_MUSIC,
             AudioStandard::StreamUsage::STREAM_USAGE_MEDIA,
-            AudioStandard::STREAM_FLAG_FAST, // fast audio stream
+            isFast ? AudioStandard::STREAM_FLAG_FAST : AudioStandard::STREAM_FLAG_NORMAL, // fast audio stream
         }
     };
     audioRenderer_ = AudioStandard::AudioRenderer::Create(rendererOptions);
@@ -161,10 +199,110 @@ int32_t PlaybackTest::InitRenderer()
     }
     std::string path = "/data/test.wav";
     OpenSpkFile(path);
-    int32_t ret = audioRenderer_->SetRendererWriteCallback(shared_from_this());
+    int32_t ret = audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set render mode callback fail, ret %{public}d.", ret);
+    ret = audioRenderer_->SetRendererWriteCallback(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
     AUDIO_INFO_LOG("Audio renderer create success.");
+    isSpkFast_ = isFast;
     return 0;
+}
+
+int32_t PlaybackTest::SwitchDevice(DeviceRole deviceRole)
+{
+    vector<sptr<AudioDeviceDescriptor>> devices;
+    if (deviceRole == OUTPUT_DEVICE) {
+        return SwitchOutputDevice();
+    } else {
+        return SwitchInputDevice();
+    }
+}
+
+int32_t PlaybackTest::SwitchOutputDevice()
+{
+    cout << "Select output device. current play device: " << isSpkRemote_ << "(0 : local, 1 : remote)" << endl;
+    AudioSystemManager *manager = AudioSystemManager::GetInstance();
+    if (manager == nullptr) {
+        cout << "Get AudioSystemManager failed" << std::endl;
+        return ERR_INVALID_OPERATION;
+    }
+
+    vector<sptr<AudioDeviceDescriptor>> devices;
+    if (isSpkRemote_) {
+        devices = manager->GetDevices(OUTPUT_DEVICES_FLAG);
+        vector<sptr<AudioDeviceDescriptor>>::iterator it;
+        for (it = devices.begin(); it != devices.end();) {
+            if ((*it)->deviceType_ != DEVICE_TYPE_SPEAKER) {
+                it = devices.erase(it);
+            } else {
+                it++;
+            }
+        }
+    } else {
+        devices = manager->GetDevices(DISTRIBUTED_OUTPUT_DEVICES_FLAG);
+    }
+    if (devices.size() != 1) {
+        cout << "GetDevices failed, find no device, unsupported size:" << devices.size() << endl;
+        return ERR_INVALID_OPERATION;
+    }
+
+    cout << "using device:" << devices[0]->networkId_ << endl;
+
+    int32_t ret = -1;
+
+    sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+    filter->uid = getuid();
+    if (isSpkFast_) {
+        filter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+    }
+    ret = manager->SelectOutputDevice(filter, devices);
+    if (ret == SUCCESS) {
+        isSpkRemote_ = !isSpkRemote_;
+        cout << "Select output device success. current play device:" <<
+            isSpkRemote_ << "(0 : local, 1 : remote)" << endl;
+    } else {
+        cout << "SelectOutputDevice failed, ret:" << ret << endl;
+    }
+    return ret;
+}
+
+int32_t PlaybackTest::SwitchInputDevice()
+{
+    AudioSystemManager *manager = AudioSystemManager::GetInstance();
+    if (manager == nullptr) {
+        cout << "Get AudioSystemManager failed" << std::endl;
+        return ERR_INVALID_OPERATION;
+    }
+
+    vector<sptr<AudioDeviceDescriptor>> devices;
+    if (isMicRemote_) {
+        devices = manager->GetDevices(INPUT_DEVICES_FLAG);
+    } else {
+        devices = manager->GetDevices(DISTRIBUTED_INPUT_DEVICES_FLAG);
+    }
+    if (devices.size() != 1) {
+        cout << "GetDevices failed, find no device, unsupported size:" << devices.size() << endl;
+        return ERR_INVALID_OPERATION;
+    }
+
+    cout << "using device:" << devices[0]->networkId_ << endl;
+
+    int32_t ret = -1;
+
+    sptr<AudioCapturerFilter> filter = new AudioCapturerFilter();
+    filter->uid = getuid();
+    if (isMicFast_) {
+        filter->capturerInfo.sourceType = SOURCE_TYPE_MIC;
+        filter->capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    }
+    ret = manager->SelectInputDevice(filter, devices);
+    if (ret == SUCCESS) {
+        isMicRemote_ = !isMicRemote_;
+        cout << "SelectInputDevice success" << endl;
+    } else {
+        cout << "SelectInputDevice failed, ret:" << ret << endl;
+    }
+    return ret;
 }
 
 int32_t PlaybackTest::StartPlay()
@@ -177,6 +315,7 @@ int32_t PlaybackTest::StartPlay()
         AUDIO_ERR_LOG("Audio renderer start failed.");
         return -1;
     }
+    cout << "Start play. current play device: " << isSpkRemote_ << "(0 : local, 1 : remote)" << endl;
     return 0;
 }
 
@@ -193,16 +332,16 @@ int32_t PlaybackTest::StopPlay()
     return 0;
 }
 
-int32_t PlaybackTest::ReleasePlay()
+int32_t PlaybackTest::ReleaseRenderer()
 {
-    if (audioRenderer_ == nullptr) {
-        AUDIO_ERR_LOG("Audiorenderer init failed.");
-        return -1;
-    }
-    if (!audioRenderer_->Release()) {
+    isSpkFast_ = false;
+    if (audioRenderer_ != nullptr && !audioRenderer_->Release()) {
         AUDIO_ERR_LOG("Audio renderer release failed.");
-        return -1;
+        cout << "Audio render release failed" << endl;
     }
+    audioRenderer_ = nullptr;
+    CloseSpkFile();
+    AUDIO_INFO_LOG("Audio renderer release success.");
     return 0;
 }
 
@@ -259,7 +398,7 @@ void PlaybackTest::CloseMicFile()
     }
 }
 
-int32_t PlaybackTest::InitCapturer()
+int32_t PlaybackTest::InitCapturer(bool isFast)
 {
     AudioStandard::AudioCapturerOptions capturerOptions = {
         {
@@ -270,7 +409,7 @@ int32_t PlaybackTest::InitCapturer()
         },
         {
             AudioStandard::SourceType::SOURCE_TYPE_MIC,
-            AudioStandard::STREAM_FLAG_FAST,
+            isFast ? AudioStandard::STREAM_FLAG_FAST : AudioStandard::STREAM_FLAG_NORMAL,
         }
     };
     audioCapturer_ = AudioStandard::AudioCapturer::Create(capturerOptions);
@@ -280,9 +419,12 @@ int32_t PlaybackTest::InitCapturer()
     }
     std::string path = "/data/mic.pcm";
     OpenMicFile(path);
-    int32_t ret = audioCapturer_->SetCapturerReadCallback(shared_from_this());
+    int32_t ret = audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set capture mode callback fail, ret %{public}d.", ret);
+    ret = audioCapturer_->SetCapturerReadCallback(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
     AUDIO_INFO_LOG("Audio capturer create success.");
+    isMicFast_ = isFast;
     return 0;
 }
 
@@ -311,6 +453,20 @@ int32_t PlaybackTest::StopCapture()
     }
     return 0;
 }
+
+int32_t PlaybackTest::ReleaseCapture()
+{
+    isMicFast_ = false;
+    if (audioCapturer_ != nullptr && !audioCapturer_->Release()) {
+        AUDIO_ERR_LOG("Audio capturer release failed.");
+        cout << "Audio capturer release failed" << endl;
+    }
+    audioCapturer_ = nullptr;
+    CloseMicFile();
+    AUDIO_INFO_LOG("Audio capturer release success.");
+    return 0;
+}
+using CallTestOptCodeFunc = int32_t (*)(std::shared_ptr<PlaybackTest> playTest);
 
 bool SetSysPara(const std::string &key, int32_t &value)
 {
@@ -341,37 +497,70 @@ int32_t GetUserInput()
 
 void PrintUsage()
 {
-    cout << "[Fast Audio Stream Test App]" << endl << endl;
     cout << "Supported Functionalities:" << endl;
     cout << "================================Usage=======================================" << endl << endl;
     cout << "  0: Init local spk." << endl;
     cout << "  1: Init remote spk." << endl;
     cout << "  2: Start play." << endl;
     cout << "  3: Stop play." << endl;
-    cout << "  4: Release spk." << endl;
-    cout << "  5: Init local mic." << endl;
-    cout << "  6: Init remote mic." << endl;
-    cout << "  7: Start record." << endl;
-    cout << "  8: Stop record." << endl;
-    cout << "  9: Release mic." << endl;
-    cout << "  10: exit demo." << endl;
+    cout << "  4: Switch play device between local and remote." << endl;
+    cout << "  5: Release spk." << endl;
+    cout << "  6: Init local mic." << endl;
+    cout << "  7: Init remote mic." << endl;
+    cout << "  8: Start record." << endl;
+    cout << "  9: Stop record." << endl;
+    cout << "  10: Switch record device between local and remote." << endl;
+    cout << "  11: Release mic." << endl;
+    cout << "  12: exit demo." << endl;
     cout << " Please input your choice: " << endl;
 }
 
-int32_t InitPlayback(std:share_ptr<PlaybackTest> playTest, bool isRemote) {
+int32_t InitPlayback(std::shared_ptr<PlaybackTest> playTest, bool isRemote, bool isFast)
+{
+    cout << "Init renderer." << endl;
+    cout << "--isRemote: " << isRemote << "-- --isSpkFast: " << isFast << " --" <<endl;
     if (playTest == nullptr) {
         cout << "Play test is nullptr, init spk error." << endl;
         return -1;
     }
-    int32_t ret = playTest->InitRenderer();
+    if (isRemote) {
+        cout << "Use remote device, select remote spk." << endl;
+        int32_t ret = playTest->SwitchDevice(OUTPUT_DEVICE);
+        if (ret != 0) {
+            cout << "find no remote device." << endl;
+            return -1;
+        }
+    }
+    int32_t ret = playTest->InitRenderer(isFast);
     if (ret != 0) {
         cout << "Init renderer error!" << endl;
         return -1;
     }
+    if (isRemote) {
+        playTest->SetSpkRemote(true);
+    }
+    cout << "Init renderer success." << endl << endl;
     return 0;
 }
 
-int32_t StartPlay(std:share_ptr<PlaybackTest> playTest) {
+int32_t ReleasePlayback(std::shared_ptr<PlaybackTest> playTest)
+{
+    if (playTest == nullptr) {
+        cout << "Play test is nullptr, release spk error." << endl;
+        return -1;
+    }
+    int32_t ret = playTest->ReleaseRenderer();
+    if (ret != 0) {
+        cout << "Release renderer error!" << endl;
+        return -1;
+    }
+    playTest->SetSpkRemote(false);
+    cout << "Release renderer success." << endl << endl;
+    return 0;
+}
+
+int32_t StartPlay(std::shared_ptr<PlaybackTest> playTest)
+{
     if (playTest == nullptr) {
         cout << "Play test is nullptr, start play error." << endl;
         return -1;
@@ -381,10 +570,12 @@ int32_t StartPlay(std:share_ptr<PlaybackTest> playTest) {
         cout << "Start play error!" << endl;
         return -1;
     }
+    cout << "Start play success." << endl << endl;
     return 0;
 }
 
-int32_t StopPlay(std:share_ptr<PlaybackTest> playTest) {
+int32_t StopPlay(std::shared_ptr<PlaybackTest> playTest)
+{
     if (playTest == nullptr) {
         cout << "Play test is nullptr, stop play error." << endl;
         return -1;
@@ -394,93 +585,160 @@ int32_t StopPlay(std:share_ptr<PlaybackTest> playTest) {
         cout << "Stop play error!" << endl;
         return -1;
     }
+    cout << "Stop play success." << endl << endl;
     return 0;
 }
 
-int32_t InitMic(std:share_ptr<PlaybackTest> playTest, bool isRemote) {
+int32_t SwitchPlayDevice(std::shared_ptr<PlaybackTest> playTest)
+{
+    if (playTest == nullptr) {
+        cout << "Play test is nullptr, switch play device error." << endl;
+        return -1;
+    }
+    int32_t ret = playTest->SwitchDevice(OUTPUT_DEVICE);
+    if (ret != 0) {
+        cout << "Switch play device error!" << endl;
+        return -1;
+    }
+    cout << "Switch play device success." << endl << endl;
+    return 0;
+}
+
+int32_t InitMic(std::shared_ptr<PlaybackTest> playTest, bool isRemote, bool isFast)
+{
     if (playTest == nullptr) {
         cout << "Play test is nullptr, init mic error." << endl;
         return -1;
     }
-    int32_t ret = playTest->InitCapturer();
+    if (isRemote) {
+        cout << "Use remote device, select remote mic." << endl;
+        int32_t ret = playTest->SwitchDevice(INPUT_DEVICE);
+        if (ret != 0) {
+            cout << "find no remote device." << endl;
+            return -1;
+        }
+    }
+    int32_t ret = playTest->InitCapturer(isFast);
     if (ret != 0) {
         cout << "Init capturer error!" << endl;
         return -1;
     }
+    if (isRemote) {
+        playTest->SetMicRemote(true);
+    }
+    cout << "Init capturer success." << endl << endl;
     return 0;
 }
 
-int32_t StartCpature(std:share_ptr<PlaybackTest> playTest) {
+int32_t ReleaseMic(std::shared_ptr<PlaybackTest> playTest)
+{
     if (playTest == nullptr) {
-        cout << "Play test is nullptr, start capture error." << endl;
+        cout << "Play test is nullptr, release capturer error." << endl;
+        return -1;
+    }
+    int32_t ret = playTest->ReleaseCapture();
+    if (ret != 0) {
+        cout << "Release capturer error!" << endl;
+        return -1;
+    }
+    playTest->SetMicRemote(false);
+    cout << "Release capturer success." << endl << endl;
+    return 0;
+}
+
+int32_t StartCapture(std::shared_ptr<PlaybackTest> playTest)
+{
+    if (playTest == nullptr) {
+        cout << "Play test is nullptr, start capturer error." << endl;
         return -1;
     }
     int32_t ret = playTest->StartCapture();
     if (ret != 0) {
-        cout << "Start capture error!" << endl;
+        cout << "Start capturer error!" << endl;
         return -1;
     }
+    cout << "Start capturer success." << endl << endl;
     return 0;
 }
 
-int32_t StopCapture(std:share_ptr<PlaybackTest> playTest) {
+int32_t StopCapture(std::shared_ptr<PlaybackTest> playTest)
+{
     if (playTest == nullptr) {
-        cout << "Play test is nullptr, stop capture error." << endl;
+        cout << "Play test is nullptr, stop capturer error." << endl;
         return -1;
     }
     int32_t ret = playTest->StopCapture();
     if (ret != 0) {
-        cout << "Stop capture error!" << endl;
+        cout << "Stop capturer error!" << endl;
         return -1;
     }
+    cout << "Stop capturer success." << endl << endl;
     return 0;
 }
+
+int32_t SwitchCaptureDevice(std::shared_ptr<PlaybackTest> playTest)
+{
+    if (playTest == nullptr) {
+        cout << "Play test is nullptr, switch capture device error." << endl;
+        return -1;
+    }
+    int32_t ret = playTest->SwitchDevice(INPUT_DEVICE);
+    if (ret != 0) {
+        cout << "Switch capture device error!" << endl;
+        return -1;
+    }
+    cout << "Switch capture device success." << endl << endl;
+    return 0;
+}
+
+std::map<int32_t, CallTestOptCodeFunc> g_optFuncMap = {
+    {START_SPK, StartPlay},
+    {STOP_SPK, StopPlay},
+    {SWITCH_SPK, SwitchPlayDevice},
+    {RELEASE_SPK, ReleasePlayback},
+    {START_MIC, StartCapture},
+    {STOP_MIC, StopCapture},
+    {SWITCH_MIC, SwitchCaptureDevice},
+    {RELEASE_MIC, ReleaseMic},
+};
 
 void Loop(std::shared_ptr<PlaybackTest> playTest)
 {
     bool isProcTestRun = true;
     while (isProcTestRun) {
         PrintUsage();
-        AudioOptCode optCode = -1;
+        AudioOptCode optCode = INVALID_OPERATION;
         int32_t res = GetUserInput();
-        if (g_optStrMap.count(res)) {
+        if (g_OptStrMap.count(res)) {
             optCode = static_cast<AudioOptCode>(res);
         }
         switch (optCode) {
             case INIT_LOCAL_SPK:
-                InitPlayback(playTest, false);
+                InitPlayback(playTest, false, false);
                 break;
             case INIT_REMOTE_SPK:
-                InitPlayback(playTest, true);
-                break;
-            case START_SPK:
-                StartPlay(playTest);
-                break;
-            case STOP_SPK:
-                StopPlay(playTest);
-                break;
-            case RELEASE_SPK:
-                ReleasePlay(playTest);
+                InitPlayback(playTest, true, false);
                 break;
             case INIT_LOCAL_MIC:
-                InitMic(playTest, false);
+                InitMic(playTest, false, false);
                 break;
             case INIT_REMOTE_MIC:
-                InitMic(playTest, true);
-                break;
-            case START_MIC:
-                StartCapture(playTest);
-                break;
-            case STOP_MIC:
-                StopCapture(playTest);
-                break;
-            case RELEASE_MIC:
+                InitMic(playTest, true, false);
                 break;
             case EXIT_DEMO:
+                ReleasePlayback(playTest);
+                ReleaseMic(playTest);
                 isProcTestRun = false;
+                cout << "exit demo..." << endl;
                 break;
             default:
-                cout << "invalid input: " << res << endl;
+                auto it = g_optFuncMap.find(optCode);
+                if (it != g_optFuncMap.end() && it->second != nullptr) {
+                    CallTestOptCodeFunc &func = it->second;
+                    cout << (*func)(playTest) << endl;
+                    break;
+                }
+                cout << "Invalid input: " << optCode << endl;
                 break;
         }
     }
@@ -492,14 +750,12 @@ using namespace OHOS::AudioStandard;
 using namespace std;
 int main(int argc, char* argv[])
 {
-    cout << "oh fast audio stream test." << endl;
+    cout << "[Fast Audio Stream Test App]" << endl << endl;
+    AUDIO_INFO_LOG("oh fast audio stream test.");
     std::shared_ptr<PlaybackTest> playTest = std::make_shared<PlaybackTest>();
     int32_t val = 1;
     std::string key = "persist.multimedia.audio.mmap.enable";
     SetSysPara(key, val);
-
     Loop(playTest);
-    playTest->CloseSpkFile();
-    playTest->CloseMicFile();
     return 0;
 }
