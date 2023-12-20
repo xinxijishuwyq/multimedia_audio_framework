@@ -1060,7 +1060,7 @@ void AudioStream::WriteCbTheadLoop()
             if (writeError != 0) {
                 AUDIO_ERR_LOG("WriteStreamInCb fail, writeError:%{public}d", writeError);
             } else {
-                AUDIO_DEBUG_LOG("WriteCb WriteStream, bytesWritten:%{public}zu", bytesWritten);   
+                AUDIO_DEBUG_LOG("WriteCb WriteStream, bytesWritten:%{public}zu", bytesWritten);
             }
 
             freeBufferQ_.emplace(filledBufferQ_.front());
