@@ -912,16 +912,15 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool deviceFlag = EffectChainManagerCheckBluetooth();
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
     bool isCaptureSilently = IsCaptureSilently();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        bool a2dpFlag = !strcmp(sinkIn->sink->name, "Speaker");
         int32_t sinkChannels = sinkIn->sample_spec.channels;
-        if (a2dpFlag && deviceFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             continue;
         }
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
@@ -971,8 +970,8 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool deviceFlag = EffectChainManagerCheckBluetooth();
-    if (!deviceFlag) {
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
+    if (!a2dpFlag) {
         return 0;
     }
 
@@ -982,7 +981,6 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        bool a2dpFlag = !strcmp(sinkIn->sink->name, "Speaker");
         if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             pa_sink_input_assert_ref(sinkIn);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
@@ -1188,16 +1186,15 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
     pa_sink_input *sinkIn;
     void *state = NULL;
     unsigned maxInfo = MAX_MIX_CHANNELS;
-    bool deviceFlag = EffectChainManagerCheckBluetooth();
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const uint8_t sinkChannels = sinkIn->sample_spec.channels;
         const char *sinkChannelLayout = pa_proplist_gets(sinkIn->proplist, "stream.channelLayout");
         const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
-        bool a2dpFlag = !strcmp(sinkIn->sink->name, "Speaker");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        if (a2dpFlag && deviceFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             continue;
         }
         if (NeedPARemap(sinkSceneType, sinkSceneMode, sinkChannels, sinkChannelLayout, sinkSpatializationEnabled)
@@ -1345,15 +1342,14 @@ static bool InputIsOffload(pa_sink_input *i)
 
 static bool InputIsMultiChannel(pa_sink_input *i)
 {
-    bool deviceFlag = EffectChainManagerCheckBluetooth();
-    if (deviceFlag) {
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
+    if (a2dpFlag) {
         int32_t sinkChannels = i->sample_spec.channels;
         const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
         const char *sinkSpatializationEnabled = pa_proplist_gets(i->proplist, "spatialization.enabled");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        bool a2dpFlag = !strcmp(i->sink->name, "Speaker");
-        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+        if (!existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             return true;
         }
     }
@@ -2225,8 +2221,8 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     pa_sink_input *sinkIn;
     void *state = NULL;
     unsigned maxInfo = MAX_MIX_CHANNELS;
-    bool deviceFlag = EffectChainManagerCheckBluetooth();
-    if (!deviceFlag) {
+    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
+    if (!a2dpFlag) {
         return;
     }
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
@@ -2234,7 +2230,6 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
-        bool a2dpFlag = !strcmp(sinkIn->sink->name, "Speaker");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
         if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             sceneTypeLenRef = sinkIn->sample_spec.channels;

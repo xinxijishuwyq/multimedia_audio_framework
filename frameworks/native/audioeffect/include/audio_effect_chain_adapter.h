@@ -46,7 +46,7 @@ bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t s
     const char *sinkChannelLayout, const char *sinkSpatializationEnabled);
 int32_t EffectChainManagerInitCb(const char *sceneType);
 int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled);
-bool EffectChainManagerCheckBluetooth();
+bool EffectChainManagerCheckA2dpOffload();
 
 #ifdef __cplusplus
 }
