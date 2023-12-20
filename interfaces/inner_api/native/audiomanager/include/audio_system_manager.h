@@ -239,6 +239,7 @@ public:
 
 class AudioManagerAvailableDeviceChangeCallback {
 public:
+    virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
     /**
      * Called when an interrupt is received.
      *

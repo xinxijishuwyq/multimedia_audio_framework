@@ -46,6 +46,22 @@ public:
     void OnInterrupt(const InterruptAction &interruptAction) override {}
 };
 
+class AudioManagerAvailableDeviceChangeCallbackImpl : public AudioManagerAvailableDeviceChangeCallback {
+public:
+    AudioManagerAvailableDeviceChangeCallbackImpl() {}
+    ~AudioManagerAvailableDeviceChangeCallbackImpl() {}
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage,
+        const DeviceChangeAction &deviceChangeAction) override {}
+};
+
+class AudioDistributedRoutingRoleCallbackTest : public AudioDistributedRoutingRoleCallback {
+public:
+    AudioDistributedRoutingRoleCallbackTest() {}
+    ~AudioDistributedRoutingRoleCallbackTest() {}
+    void OnDistributedRoutingRoleChange(const AudioDeviceDescriptor *descriptor,
+        const CastType type) override {}
+};
+
 class AudioFocusInfoChangeCallbackTest : public AudioFocusInfoChangeCallback {
 public:
     ~AudioFocusInfoChangeCallbackTest() = default;
