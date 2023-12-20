@@ -29,6 +29,7 @@ enum Operation : int32_t {
     DRAIN_STREAM,
     UPDATE_STREAM, // when server notify client index update
     BUFFER_UNDERRUN,
+    BUFFER_OVERFLOW,
     MAX_OPERATION_CODE // in plan add underrun overflow
 };
 class IStreamListener {

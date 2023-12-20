@@ -92,6 +92,9 @@ private:
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
+
+    static void PAStreamUpdateStreamIndexSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+
     const std::string GetStreamName(AudioStreamType audioType);
     pa_sample_spec ConvertToPAAudioParams(AudioProcessConfig processConfig);
 

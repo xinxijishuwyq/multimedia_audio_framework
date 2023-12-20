@@ -44,15 +44,16 @@ int32_t CapturerInServer::ConfigServerBuffer()
     }
 
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    stream_->GetMinimumBufferSize(totalSizeInFrame_);
+    totalSizeInFrame_ = spanSizeInFrame_ * 4; // 4 frames
+    // stream_->GetMinimumBufferSize(totalSizeInFrame_);
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
+    spanSizeInBytes_ = byteSizePerFrame_ * spanSizeInFrame_;
+    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu,"
+        "byteSizePerFrame_: %{public}zu, spanSizeInBytes_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, spanSizeInBytes_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
         return ERR_INVALID_PARAM;
     }
-
-    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}u, spanSizeInFrame_: %{public}u,"
-        "byteSizePerFrame_: %{public}u", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
 
     // create OHAudioBuffer in server
     audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
@@ -99,15 +100,11 @@ int32_t CapturerInServer::InitBufferStatus()
     return SUCCESS;
 }
 
-void CapturerInServer::RegisterStatusCallback()
+void CapturerInServer::Init()
 {
-    AUDIO_INFO_LOG("CapturerInServer::RegisterStatusCallback");
+    AUDIO_INFO_LOG("Init, register status and read callback");
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "Capturer stream is nullptr");
     stream_->RegisterStatusCallback(shared_from_this());
-}
-
-void CapturerInServer::RegisterReadCallback()
-{
-    AUDIO_INFO_LOG("CapturerInServer::RegisterReadCallback");
     stream_->RegisterReadCallback(shared_from_this());
 }
 
@@ -120,20 +117,26 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         AUDIO_WARNING_LOG("Stream already released");
         return;
     }
-    std::shared_ptr<CapturerListener> callback = testCallback_.lock();
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    // std::shared_ptr<CapturerListener> callback = testCallback_.lock();
     switch (operation) {
         case OPERATION_UNDERFLOW:
             underflowCount += 1;
             AUDIO_INFO_LOG("Underflow!! underflow count %{public}d", underflowCount);
+            stateListener->OnOperationHandled(BUFFER_OVERFLOW, underflowCount);
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
+            stateListener->OnOperationHandled(START_STREAM, 0);
             break;
         case OPERATION_PAUSED:
             status_ = I_STATUS_PAUSED;
+            stateListener->OnOperationHandled(PAUSE_STREAM, 0);
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
+            stateListener->OnOperationHandled(STOP_STREAM, 0);
             break;
         case OPERATION_FLUSHED:
             if (status_ == I_STATUS_FLUSHING_WHEN_STARTED) {
@@ -143,9 +146,7 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             } else {
                 AUDIO_WARNING_LOG("Invalid status before flusing");
             }
-            break;
-        case OPERATION_RELEASED:
-            status_ = I_STATUS_RELEASED;
+            stateListener->OnOperationHandled(FLUSH_STREAM, 0);
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
@@ -160,21 +161,22 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
 
 void CapturerInServer::ReadData(size_t length)
 {
-    
-    std::shared_ptr<CapturerListener> callback = testCallback_.lock();
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("Callback from test is nullptr");
-        return ;
+    if (length < spanSizeInBytes_) {
+        AUDIO_WARNING_LOG("Length %{public}zu is less than spanSizeInBytes %{public}zu, return", length, spanSizeInBytes_);
+        return;
     }
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     AUDIO_INFO_LOG("Current write frame: %{public}" PRIu64 ", read frame: %{public}" PRIu64 ","
-        "avaliable frame:%{public}d, spanSizeInFrame:%{public}u", currentWriteFrame, currentReadFrame,
+        "avaliable frame:%{public}d, spanSizeInFrame:%{public}zu", currentWriteFrame, currentReadFrame,
         audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_);
     if (audioServerBuffer_->GetAvailableDataFrames() <= spanSizeInFrame_) {
         AUDIO_INFO_LOG("OverFlow!!!");
         stream_->DequeueBuffer(length);
-        callback->OnReadEvent();
+        stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
         return;
     }
     BufferDesc srcBuffer = stream_->DequeueBuffer(length);
@@ -183,28 +185,30 @@ void CapturerInServer::ReadData(size_t length)
         uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
         int32_t ret = audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer);
         if (ret < 0) {
-            callback->OnReadEvent();
+            // callback->OnReadEvent();
             return;
         }
-        memcpy_s(dstBuffer.buffer, totalSizeInFrame_, srcBuffer.buffer, totalSizeInFrame_);
+        AUDIO_INFO_LOG("On read spanSizeInBytes_ %{public}zu", spanSizeInBytes_);
+        memcpy_s(dstBuffer.buffer, spanSizeInBytes_, srcBuffer.buffer, spanSizeInBytes_);
 
         uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
         AUDIO_INFO_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
             currentWriteFrame, nextWriteFrame);
         audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
-        callback->OnReadEvent();
+        // callback->OnReadEvent();
     }
     stream_->EnqueueBuffer(srcBuffer);
+    stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
 }
 
 int32_t CapturerInServer::OnReadData(size_t length)
 {
     AUDIO_INFO_LOG("CapturerInServer::OnReadData, length: %{public}zu", length);
-    std::shared_ptr<CapturerListener> callback = testCallback_.lock();
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("Callback from test is nullptr");
-        return ERR_UNKNOWN;
-    }
+    // std::shared_ptr<CapturerListener> callback = testCallback_.lock();
+    // if (callback == nullptr) {
+    //     AUDIO_ERR_LOG("Callback from test is nullptr");
+    //     return ERR_UNKNOWN;
+    // }
 
     ReadData(length);
     return SUCCESS;
@@ -286,7 +290,7 @@ int32_t CapturerInServer::Flush()
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
         readFrame += spanSizeInFrame_;
-        AUDIO_INFO_LOG("On flush, write frame: %{public}" PRIu64 ", nextReadFrame: %{public}u,"
+        AUDIO_INFO_LOG("On flush, write frame: %{public}" PRIu64 ", nextReadFrame: %{public}zu,"
             "readFrame: %{public}" PRIu64 "", writeFrame, spanSizeInFrame_, readFrame);
         audioServerBuffer_->SetCurReadFrame(readFrame);
     }
@@ -316,16 +320,23 @@ int32_t CapturerInServer::Stop()
 
 int32_t CapturerInServer::Release()
 {
-    std::unique_lock<std::mutex> lock(statusLock_);
-    status_ = I_STATUS_RELEASED;
+    AUDIO_INFO_LOG("Start release capturer");
+    {
+        std::unique_lock<std::mutex> lock(statusLock_);
+        status_ = I_STATUS_RELEASED;
 
-    int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
-    stream_ = nullptr;
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
-        status_ = I_STATUS_INVALID;
-        return ret;
+        int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
+        stream_ = nullptr;
+        if (ret < 0) {
+            AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
+            status_ = I_STATUS_INVALID;
+            return ret;
+        }
+        status_ = I_STATUS_RELEASED;
     }
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERROR, "IStreamListener is nullptr");
+    stateListener->OnOperationHandled(RELEASE_STREAM, 0);
     return SUCCESS;
 }
 

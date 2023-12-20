@@ -77,9 +77,9 @@ private:
     // LYH waiting for review
     std::weak_ptr<IStreamListener> streamListener_;
     AudioProcessConfig processConfig_;
-    uint32_t totalSizeInFrame_ = 0;
-    uint32_t spanSizeInFrame_ = 0;
-    uint32_t byteSizePerFrame_ = 0;
+    size_t totalSizeInFrame_ = 0;
+    size_t spanSizeInFrame_ = 0;
+    size_t byteSizePerFrame_ = 0;
     bool isBufferConfiged_  = false;
     std::atomic<bool> isInited_ = false;
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;

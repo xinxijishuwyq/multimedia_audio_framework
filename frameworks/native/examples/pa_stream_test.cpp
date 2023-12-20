@@ -191,6 +191,7 @@ int32_t PaRendererTest::InitRenderer(RendererMode rendererMode, int32_t fileInde
     rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader_.SamplesPerSec);
     rendererOptions.streamInfo.format = GetSampleFormat(wavHeader_.bitsPerSample);
     rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader_.NumOfChan);
+    rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader_.NumOfChan);
     rendererOptions.rendererInfo.contentType = contentType;
     rendererOptions.rendererInfo.streamUsage = streamUsage;
     rendererOptions.rendererInfo.rendererFlags = 0;
@@ -416,7 +417,7 @@ int32_t PaCapturerTest::InitCapturer(bool isBlocking, CapturerMode capturerMode)
     isBlocking_ = isBlocking;
     capturerMode_ = capturerMode;
     AudioCapturerOptions capturerOptions;
-    capturerOptions.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    capturerOptions.streamInfo.samplingRate = SAMPLE_RATE_44100;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     capturerOptions.streamInfo.channels = AudioChannel::STEREO;
@@ -445,6 +446,7 @@ int32_t PaCapturerTest::InitCapturer(bool isBlocking, CapturerMode capturerMode)
 
 int32_t PaCapturerTest::StartRecorder()
 {
+    AUDIO_INFO_LOG("StartRecorder");
     if (audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("audioCapturer_ init failed.");
         return -1;
@@ -516,7 +518,8 @@ int32_t PaCapturerTest::ReleaseRecorder()
 
 int32_t PaCapturerTest::ReadData()
 {
-    enableRead_ = true;
+    // AUDIO_INFO_LOG("ReadData    1");
+    // enableRead_ = true;
     std::thread readDataThread = std::thread(&PaCapturerTest::ReadDataWorker, this);
     readDataThread.detach();
     return 0;
@@ -530,7 +533,7 @@ void PaCapturerTest::ReadDataWorker()
             AUDIO_INFO_LOG("enable read state: %{public}d", enableRead_);
             return enableRead_;
         });
-
+        AUDIO_INFO_LOG("ReadDataWorker");
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis(fast_, slow_);
@@ -799,45 +802,7 @@ int32_t ReadData(std::shared_ptr<PaCapturerTest> capturerTest)
     return 0;
 }
 
-
-void Loop(std::shared_ptr<PaRendererTest> streamTest, std::shared_ptr<PaCapturerTest> capturerTest)
-{
-    bool isProcTestRun = true;
-    while (isProcTestRun) {
-        PrintUsage();
-        OperationCode optCode = CODE_INVALID;
-        int32_t res = GetUserInput();
-        int32_t fileIndex = -1;
-        int32_t rendererMode = 0;
-        int32_t isBlocking = 0;
-        int32_t capturerMode = 0;
-
-        if (g_OptStrMap.count(res)) {
-            optCode = static_cast<OperationCode>(res);
-        }
-        switch (optCode) {
-            case RENDERER_CODE_INIT:
-                rendererMode = GetUserInput();
-                fileIndex = GetUserInput();
-                InitPlayback(streamTest, static_cast<RendererMode>(rendererMode), fileIndex);
-                break;
-            // Capturer
-            case CAPTURER_CODE_INIT:
-                isBlocking = GetUserInput();
-                capturerMode = GetUserInput();
-                InitRecorder(capturerTest, isBlocking, static_cast<CapturerMode>(capturerMode));
-                break;
-            case EXIT_DEMO:
-                isProcTestRun = false;
-                break;
-            default:
-                HandleCapturerCode(optCode, capturerTest);
-                break;
-        }
-    }
-}
-
-void HandleCapturerCode(OperationCode optCode, std::shared_ptr<PaCapturerTest> capturerTest)
+void HandleCapturerCode(OperationCode optCode, std::shared_ptr<PaRendererTest> streamTest, std::shared_ptr<PaCapturerTest> capturerTest)
 {
     switch (optCode) {
         case RENDERER_CODE_START:
@@ -880,10 +845,49 @@ void HandleCapturerCode(OperationCode optCode, std::shared_ptr<PaCapturerTest> c
             ReadData(capturerTest);
             break;
         default:
-            cout << "Invalid input: " << res << endl;
+            cout << "Invalid input: " << optCode << endl;
             break;
     }
 }
+
+void Loop(std::shared_ptr<PaRendererTest> streamTest, std::shared_ptr<PaCapturerTest> capturerTest)
+{
+    bool isProcTestRun = true;
+    while (isProcTestRun) {
+        PrintUsage();
+        OperationCode optCode = CODE_INVALID;
+        int32_t res = GetUserInput();
+        int32_t fileIndex = -1;
+        int32_t rendererMode = 0;
+        int32_t isBlocking = 0;
+        int32_t capturerMode = 0;
+
+        if (g_OptStrMap.count(res)) {
+            optCode = static_cast<OperationCode>(res);
+        }
+        switch (optCode) {
+            case RENDERER_CODE_INIT:
+                rendererMode = GetUserInput();
+                fileIndex = GetUserInput();
+                InitPlayback(streamTest, static_cast<RendererMode>(rendererMode), fileIndex);
+                break;
+            // Capturer
+            case CAPTURER_CODE_INIT:
+                isBlocking = GetUserInput();
+                capturerMode = GetUserInput();
+                InitRecorder(capturerTest, isBlocking, static_cast<CapturerMode>(capturerMode));
+                break;
+            case EXIT_DEMO:
+                isProcTestRun = false;
+                break;
+            default:
+                HandleCapturerCode(optCode, streamTest, capturerTest);
+                break;
+        }
+    }
+}
+
+
 }
 }
 

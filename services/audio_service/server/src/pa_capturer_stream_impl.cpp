@@ -70,9 +70,6 @@ void PaCapturerStreamImpl::InitParams()
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
-    sampleSpec_->channels = sampleSpec->channels;
-    sampleSpec_->format = sampleSpec->format;
-    sampleSpec_->rate = sampleSpec->rate;
     if (sampleSpec->channels != processConfig_.streamInfo.channels) {
         AUDIO_WARNING_LOG("Unequal channels, in server: %{public}d, in client: %{public}d", sampleSpec->channels,
             processConfig_.streamInfo.channels);
@@ -81,8 +78,7 @@ void PaCapturerStreamImpl::InitParams()
         AUDIO_WARNING_LOG("Unequal format, in server: %{public}d, in client: %{public}d", sampleSpec->format,
             processConfig_.streamInfo.format);
     }
-    uint32_t formatbyte = PcmFormatToBits(sampleSpec->format);
-    byteSizePerFrame_ = sampleSpec->channels * formatbyte;
+    byteSizePerFrame_ = pa_frame_size(sampleSpec);
 
     // Get min buffer size in frame
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
@@ -90,8 +86,12 @@ void PaCapturerStreamImpl::InitParams()
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
         return;
     }
-    minBufferSize_ = (size_t)bufferAttr->minreq;
+    minBufferSize_ = (size_t)bufferAttr->fragsize;
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
+    AUDIO_INFO_LOG("byteSizePerFrame_ %{public}zu, spanSizeInFrame_ %{public}zu, minBufferSize_ %{public}zu",
+        byteSizePerFrame_, spanSizeInFrame_, minBufferSize_);
+
+    capturerServerDumpFile_ = fopen("/data/capturer_impl.pcm", "wb+");
 }
 
 int32_t PaCapturerStreamImpl::Start()
@@ -176,11 +176,12 @@ int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
         return ERR_OPERATION_FAILED;
     }
     int32_t uid = static_cast<int32_t>(getuid());
-
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    timeStamp = pa_bytes_to_usec(info->write_index, sampleSpec);
     // 1013 is media_service's uid
     int32_t media_service = 1013;
     if (uid == media_service) {
-        timeStamp = pa_bytes_to_usec(totalBytesRead_, sampleSpec_);
+        timeStamp = pa_bytes_to_usec(totalBytesRead_, sampleSpec);
     }
     pa_threaded_mainloop_unlock(mainloop_);
     return SUCCESS;
@@ -220,7 +221,8 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 
     // In plan, 怎么计算cacheLatency
     // Get audio read cache latency
-    cacheLatency = pa_bytes_to_usec(minBufferSize_, sampleSpec_);
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    cacheLatency = pa_bytes_to_usec(minBufferSize_, sampleSpec);
 
     // Total latency will be sum of audio read cache latency + PA latency
     latency = paLatency + cacheLatency;
@@ -272,10 +274,6 @@ int32_t PaCapturerStreamImpl::Release()
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
     }
-    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(OPERATION_RELEASED);
-    }
     return SUCCESS;
 }
 
@@ -286,6 +284,7 @@ void PaCapturerStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCal
 
 void PaCapturerStreamImpl::RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback)
 {
+    AUDIO_INFO_LOG("RegisterReadCallback start");
     readCallback_ = callback;
 }
 
@@ -297,6 +296,7 @@ BufferDesc PaCapturerStreamImpl::DequeueBuffer(size_t length)
     bufferDesc.buffer = static_cast<uint8_t *>(const_cast<void* >(tempBuffer));
     totalBytesRead_ += bufferDesc.bufLength;
     AUDIO_INFO_LOG("PaCapturerStreamImpl::DequeueBuffer length %{public}zu", bufferDesc.bufLength);
+    fwrite(reinterpret_cast<void *>(bufferDesc.buffer), 1, 3840, capturerServerDumpFile_);
     return bufferDesc;
 }
 
@@ -318,15 +318,19 @@ int32_t PaCapturerStreamImpl::DropBuffer()
 
 void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_INFO_LOG("PAStreamReadCb, length: %{public}zu, pa_stream_writeable_size: %{public}zu",
-        length, pa_stream_writable_size(stream));
+    AUDIO_INFO_LOG("PAStreamReadCb, length size: %{public}zu, pa_stream_readable_size: %{public}zu",
+        length, pa_stream_readable_size(stream));
+
+    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(stream);
+    AUDIO_INFO_LOG("Buffer attr: maxlength %{public}d, tlength %{public}d, prebuf %{public}d, minreq %{public}d, fragsize %{public}d", bufferAttr->maxlength,
+        bufferAttr->tlength, bufferAttr->prebuf, bufferAttr->minreq, bufferAttr->fragsize);
     if (!userdata) {
         AUDIO_ERR_LOG("PAStreamReadCb: userdata is null");
         return;
     }
     auto streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
     if (streamImpl->abortFlag_ != 0) {
-        AUDIO_ERR_LOG("PAStreamWriteCb: Abort pa stream read callback");
+        AUDIO_ERR_LOG("PAStreamReadCb: Abort pa stream read callback");
         streamImpl->abortFlag_--;
         return ;
     }

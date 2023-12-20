@@ -294,6 +294,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     const std::string &streamName)
 {
     // for remote audio device router filter
+    pa_proplist_sets(propList, "stream.sessionID", std::to_string(-1).c_str());
     pa_proplist_sets(propList, "stream.client.uid", std::to_string(processConfig.appInfo.appUid).c_str());
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(processConfig.appInfo.appPid).c_str());
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
@@ -402,16 +403,16 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
             return ERR_INVALID_OPERATION;
         }
     } else {
-        uint32_t fragsize = 0;
-        GetSysPara("multimedia.audio.fragsize", fragsize);
-        uint32_t maxlength = 0;
-        GetSysPara("multimedia.audio.maxlength", maxlength);
+        uint32_t fragsize = 1;
+        // GetSysPara("multimedia.audio.fragsize", fragsize);
+        uint32_t maxlength = 3;
+        // GetSysPara("multimedia.audio.maxlength", maxlength);
 
         pa_buffer_attr bufferAttr;
         bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
         bufferAttr.fragsize = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * fragsize, &sampleSpec);
-        AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}u, fragsize: %{public}u",
-            maxlength, fragsize);
+        AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}d, fragsize: %{public}d",
+            bufferAttr.maxlength, bufferAttr.fragsize);
 
         result = pa_stream_connect_record(paStream, nullptr, &bufferAttr,
             (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
@@ -429,6 +430,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     while (true) {
         pa_stream_state_t state = pa_stream_get_state(paStream);
         if (state == PA_STREAM_READY) {
+            AUDIO_INFO_LOG("PaStream is ready");
             break;
         }
         if (!PA_STREAM_IS_GOOD(state)) {
@@ -445,6 +447,11 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     return SUCCESS;
 }
 
+void PaAdapterManager::PAStreamUpdateStreamIndexSuccessCb(pa_stream *stream, int32_t success, void *userdata)
+{
+    AUDIO_DEBUG_LOG("P1111111111111111111111111111111111111111111111111");
+}
+
 void PaAdapterManager::UpdateStreamIndexToPropList(pa_stream *paStream)
 {
     uint32_t paStreamIndex = pa_stream_get_index(paStream);
@@ -455,8 +462,15 @@ void PaAdapterManager::UpdateStreamIndexToPropList(pa_stream *paStream)
         return;
     }
     pa_proplist_sets(propListForUpdate, "stream.sessionID", std::to_string(paStreamIndex).c_str());
+    AUDIO_DEBUG_LOG("stream.sessionID is %{public}s", std::to_string(paStreamIndex).c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propListForUpdate,
-        nullptr, nullptr);
+        PAStreamUpdateStreamIndexSuccessCb, nullptr);
+    if (updatePropOperation == nullptr) {
+        AUDIO_ERR_LOG("000000000000000000000000updatePropOperation == nullptr");
+        pa_proplist_free(propListForUpdate);
+        return;
+    }
+
     pa_proplist_free(propListForUpdate);
     pa_operation_unref(updatePropOperation);
 }

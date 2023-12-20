@@ -83,9 +83,9 @@ private:
     bool isDrain_ = false;
     pa_threaded_mainloop *mainloop_;
 
-    uint32_t byteSizePerFrame_ = 0;
-    uint32_t spanSizeInFrame_ = 0;
-    uint32_t minBufferSize_ = 0;
+    size_t byteSizePerFrame_ = 0;
+    size_t spanSizeInFrame_ = 0;
+    size_t minBufferSize_ = 0;
 
     size_t totalBytesWritten_ = 0;
     uint32_t sinkLatencyInMsec_ {0};

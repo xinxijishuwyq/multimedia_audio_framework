@@ -68,12 +68,13 @@ private:
     uint32_t underFlowCount_;
     pa_threaded_mainloop *mainloop_;
 
-    uint32_t byteSizePerFrame_ = 0;
-    uint32_t spanSizeInFrame_ = 0;
-    uint32_t minBufferSize_ = 0;
+    size_t byteSizePerFrame_ = 0;
+    size_t spanSizeInFrame_ = 0;
+    size_t minBufferSize_ = 0;
 
     size_t totalBytesRead_ = 0;
-    pa_sample_spec *sampleSpec_;
+
+    FILE *capturerServerDumpFile_ = nullptr;
 
     // Only for debug
     int32_t abortFlag_ = 0;

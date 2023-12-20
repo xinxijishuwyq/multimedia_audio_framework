@@ -48,8 +48,7 @@ public:
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp);
     int32_t GetLatency(uint64_t &latency);
 
-    void RegisterStatusCallback();
-    void RegisterReadCallback();
+    void Init();
     void RegisterTestCallback(const std::weak_ptr<CapturerListener> &callback);
 
     int32_t ConfigServerBuffer();
@@ -75,9 +74,10 @@ private:
     std::weak_ptr<IStreamListener> streamListener_;
     std::weak_ptr<CapturerListener> testCallback_;
     AudioProcessConfig processConfig_;
-    uint32_t totalSizeInFrame_ = 0;
-    uint32_t spanSizeInFrame_ = 0;
-    uint32_t byteSizePerFrame_ = 0;
+    size_t totalSizeInFrame_ = 0;
+    size_t spanSizeInFrame_ = 0;
+    size_t byteSizePerFrame_ = 0;
+    size_t spanSizeInBytes_ = 0;
     bool isBufferConfiged_  = false;
     std::atomic<bool> isInited_ = false;
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;

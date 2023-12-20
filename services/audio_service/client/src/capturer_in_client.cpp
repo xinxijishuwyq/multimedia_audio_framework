@@ -40,15 +40,17 @@
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
 #include "ipc_stream_listener_stub.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+static const size_t MAX_CLIENT_READ_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
 }
 class CapturerStreamListener;
-class CapturerInClientInner : public CapturerInClient, public IStreamListener,
+class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<CapturerInClientInner> {
 public:
     CapturerInClientInner(AudioStreamType eStreamType, int32_t appUid);
@@ -126,19 +128,21 @@ public:
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
 
-    uint32_t GetUnderflowCount() override;
-    void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
-        override;
-    void UnsetRendererPositionCallback() override;
-    void UnsetRendererPeriodPositionCallback() override;
-    void SetRendererPeriodPositionCallback(int64_t markPosition,
-        const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
-    void SetCapturerPositionCallback(int64_t markPosition, const std::shared_ptr<CapturerPositionCallback> &callback)
-        override;
+    // Position and period callbacks
+    void SetCapturerPositionCallback(int64_t markPosition,
+        const std::shared_ptr<CapturerPositionCallback> &callback) override;
     void UnsetCapturerPositionCallback() override;
     void SetCapturerPeriodPositionCallback(int64_t markPosition,
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback) override;
     void UnsetCapturerPeriodPositionCallback() override;
+    void SetRendererPositionCallback(int64_t markPosition,
+        const std::shared_ptr<RendererPositionCallback> &callback) override;
+    void UnsetRendererPositionCallback() override;
+    void SetRendererPeriodPositionCallback(int64_t markPosition,
+        const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
+    void UnsetRendererPeriodPositionCallback() override;
+
+    uint32_t GetUnderflowCount() override;
     uint32_t GetRendererSamplingRate() override;
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
@@ -152,6 +156,18 @@ public:
     IAudioStream::StreamClass GetStreamClass() override;
 
     static void AudioServerDied(pid_t pid);
+
+    void OnHandle(uint32_t code, int64_t data) override;
+    void InitCallbackHandler();
+
+    void SendCapturerMarkReachedEvent(int64_t capturerMarkPosition);
+    void SendCapturerPeriodReachedEvent(int64_t capturerPeriodSize);
+
+    void HandleCapturerPositionChanges(size_t bytesRead);
+    void HandleStateChangeEvent(int64_t data);
+    void HandleCapturerMarkReachedEvent(int64_t data);
+    void HandleCapturerPeriodReachedEvent(int64_t data);
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -165,6 +181,9 @@ private:
 
     int32_t InitCacheBuffer(size_t targetSize);
     int32_t InitSharedBuffer();
+
+    int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
+    int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -178,12 +197,23 @@ private:
     AudioRendererInfo rendererInfo_; // not in use
     AudioCapturerInfo capturerInfo_;
 
+    int32_t bufferSizeInMsec_ = 20; // 20ms
     std::string cachePath_;
+
+    // callback mode
+    AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
 
     bool isInnerCapturer_ = false;
     bool isWakeupCapturer_ = false;
 
+    bool needSetThreadPriority_ = true;
+    uint32_t readThreadId_ = 0; // 0 is invalid
+
     AudioStreamParams streamParams_; // in plan: replace it with AudioCapturerParams
+
+    // callbacks
+    std::mutex streamCbMutex_;
+    std::weak_ptr<AudioStreamCallback> streamCallback_;
 
     size_t cacheSizeInByte_ = 0;
     size_t clientSpanSizeInByte_ = 0;
@@ -191,7 +221,7 @@ private:
 
     // using this lock when change status_
     std::mutex statusMutex_;
-    std::atomic<State> state_ = INVALID;
+    std::atomic<State> state_ = NEW; // Waiting for review, state_ is new or invalid?
     // for status operation wait and notify
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
@@ -211,6 +241,44 @@ private:
     // buffer handle
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     std::mutex readMutex_; // used for prevent multi thread call read
+
+    // Mark reach and period reach callback
+    int64_t totalBytesRead_ = 0;
+    std::mutex markReachMutex_;
+    bool capturerMarkReached_ = false;
+    int64_t capturerMarkPosition_ = 0;
+    std::shared_ptr<CapturerPositionCallback> capturerPositionCallback_ = nullptr;
+
+    std::mutex periodReachMutex_;
+    int64_t capturerPeriodSize_ = 0;
+    int64_t capturerPeriodRead_ = 0;
+    std::shared_ptr<CapturerPeriodPositionCallback> capturerPeriodPositionCallback_ = nullptr;
+
+    // Event handler
+    bool runnerReleased_ = false;
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+
+    enum {
+        STATE_CHANGE_EVENT = 0,
+        RENDERER_MARK_REACHED_EVENT,
+        RENDERER_PERIOD_REACHED_EVENT,
+        CAPTURER_PERIOD_REACHED_EVENT,
+        CAPTURER_MARK_REACHED_EVENT,
+    };
+
+    enum : int64_t {
+        HANDLER_PARAM_INVALID = -1,
+        HANDLER_PARAM_NEW = 0,
+        HANDLER_PARAM_PREPARED,
+        HANDLER_PARAM_RUNNING,
+        HANDLER_PARAM_STOPPED,
+        HANDLER_PARAM_RELEASED,
+        HANDLER_PARAM_PAUSED,
+        HANDLER_PARAM_STOPPING,
+        HANDLER_PARAM_RUNNING_FROM_SYSTEM,
+        HANDLER_PARAM_PAUSED_FROM_SYSTEM,
+    };
 };
 
 // CapturerStreamListener --> sptr | CapturerInClientInner --> shared_ptr
@@ -344,7 +412,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
 
     if (state_ != NEW) {
-        AUDIO_INFO_LOG("CapturerInClient: State is not new, release existing stream and recreate.");
+        AUDIO_INFO_LOG("State is %{public}d, not new, release existing stream and recreate.", state_.load());
         int32_t ret = DeinitIpcStream();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
     }
@@ -355,7 +423,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     state_ = PREPARED;
 
     RegisterTracker(proxyObj);
-    return ERROR;
+    return SUCCESS;
 }
 
 std::mutex g_serverMutex;
@@ -402,9 +470,149 @@ void CapturerInClientInner::AudioServerDied(pid_t pid)
     g_ServerProxy = nullptr;
 }
 
+void CapturerInClientInner::OnHandle(uint32_t code, int64_t data)
+{
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}d, data: %{public}" PRIu64 "", code, data);
+    switch (code) {
+        case STATE_CHANGE_EVENT:
+            HandleStateChangeEvent(data);
+            break;
+        case RENDERER_MARK_REACHED_EVENT:
+            HandleCapturerMarkReachedEvent(data);
+            break;
+        case RENDERER_PERIOD_REACHED_EVENT:
+            HandleCapturerPeriodReachedEvent(data);
+            break;
+        default:
+            break;
+    }
+}
+
+void CapturerInClientInner::HandleStateChangeEvent(int64_t data)
+{
+    State state = INVALID;
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    ParamsToStateCmdType(data, state, cmdType);
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        lock.unlock();
+        streamCb->OnStateChange(state, cmdType); // waiting for review: put is in eventrunner for async call
+    }
+}
+
+void CapturerInClientInner::HandleCapturerMarkReachedEvent(int64_t capturerMarkPosition)
+{
+    AUDIO_DEBUG_LOG("Start HandleCapturerMarkReachedEvent");
+    std::unique_lock<std::mutex> lock(markReachMutex_); // 这里是否需要提前解锁
+    if (capturerPositionCallback_) {
+        capturerPositionCallback_->OnMarkReached(capturerMarkPosition);
+    }
+}
+
+void CapturerInClientInner::HandleCapturerPeriodReachedEvent(int64_t capturerPeriodNumber)
+{
+    AUDIO_DEBUG_LOG("Start HandleCapturerPeriodReachedEvent");
+    std::unique_lock<std::mutex> lock(periodReachMutex_); // 这里是否需要提前解锁
+    if (capturerPeriodPositionCallback_) {
+        capturerPeriodPositionCallback_->OnPeriodReached(capturerPeriodNumber);
+    }
+}
+
+// OnCapturerMarkReach by eventHandler
+void CapturerInClientInner::SendCapturerMarkReachedEvent(int64_t capturerMarkPosition)
+{
+    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("SendCapturerMarkReachedEvent runner released");
+        return;
+    }
+    callbackHandler_->SendCallbackEvent(RENDERER_MARK_REACHED_EVENT, capturerMarkPosition);
+}
+
+// OnCapturerPeriodReach by eventHandler
+void CapturerInClientInner::SendCapturerPeriodReachedEvent(int64_t capturerPeriodSize)
+{
+    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+    if (runnerReleased_) {
+        AUDIO_WARNING_LOG("SendCapturerPeriodReachedEvent runner released");
+        return;
+    }
+    callbackHandler_->SendCallbackEvent(RENDERER_PERIOD_REACHED_EVENT, capturerPeriodSize);
+}
+
+int32_t CapturerInClientInner::ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType)
+{
+    cmdType = CMD_FROM_CLIENT;
+    switch (params) {
+        case HANDLER_PARAM_NEW:
+            state = NEW;
+            break;
+        case HANDLER_PARAM_PREPARED:
+            state = PREPARED;
+            break;
+        case HANDLER_PARAM_RUNNING://
+            state = RUNNING;
+            break;
+        case HANDLER_PARAM_STOPPED:
+            state = STOPPED;
+            break;
+        case HANDLER_PARAM_RELEASED:
+            state = RELEASED;
+            break;
+        case HANDLER_PARAM_PAUSED:
+            state = PAUSED;
+            break;
+        case HANDLER_PARAM_STOPPING:
+            state = STOPPING;
+            break;
+        case HANDLER_PARAM_RUNNING_FROM_SYSTEM:
+            state = RUNNING;
+            cmdType = CMD_FROM_SYSTEM;
+            break;
+        case HANDLER_PARAM_PAUSED_FROM_SYSTEM:
+            state = PAUSED;
+            cmdType = CMD_FROM_SYSTEM;
+            break;
+        default:
+            state = INVALID;
+            break;
+    }
+    return SUCCESS;
+}
+
+int32_t CapturerInClientInner::StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType)
+{
+    if (cmdType == CMD_FROM_CLIENT) {
+        params = static_cast<int64_t>(state);
+        return SUCCESS;
+    }
+    switch (state) {
+        case RUNNING:
+            params = HANDLER_PARAM_RUNNING_FROM_SYSTEM;
+            break;
+        case PAUSED:
+            params = HANDLER_PARAM_PAUSED_FROM_SYSTEM;
+            break;
+        default:
+            params = HANDLER_PARAM_INVALID;
+            break;
+    }
+    return SUCCESS;
+}
+
+void CapturerInClientInner::InitCallbackHandler()
+{
+    if (callbackHandler_ == nullptr) {
+        callbackHandler_ = CallbackHandler::GetInstance(shared_from_this());
+    }
+}
+
 // call this without lock, we should be able to call deinit in any case.
 int32_t CapturerInClientInner::DeinitIpcStream()
 {
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, SUCCESS, "IpcStream is already nullptr");
+    ipcStream_->Release();
     // in plan:
     ipcStream_ = nullptr;
     ringCache_->ResetBuffer();
@@ -457,8 +665,8 @@ int32_t CapturerInClientInner::InitSharedBuffer()
 
     clientSpanSizeInByte_ = spanSizeInFrame * byteSizePerFrame;
 
-    AUDIO_INFO_LOG("InitSharedBuffer totalSizeInFrame_[%{public}d] spanSizeInFrame_[%{public}d] sizePerFrameInByte_["
-        "%{public}d] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame, sizePerFrameInByte_,
+    AUDIO_INFO_LOG("InitSharedBuffer totalSizeInFrame_[%{public}u] spanSizeInFrame_[%{public}u] sizePerFrameInByte_["
+        "%{public}zu] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame, sizePerFrameInByte_,
         clientSpanSizeInByte_);
 
     return SUCCESS;
@@ -477,7 +685,7 @@ int32_t CapturerInClientInner::InitCacheBuffer(size_t targetSize)
     } else {
         OptResult result = ringCache_->ReConfig(cacheSizeInByte_, false); // false --> clear buffer
         if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_ERR_LOG("ReConfig AudioRingCache to size %{public}zu failed:ret%{public}d", result.ret, targetSize);
+            AUDIO_ERR_LOG("ReConfig AudioRingCache to size %{public}u failed:ret%{public}zu", result.ret, targetSize);
             return ERR_OPERATION_FAILED;
         }
     }
@@ -487,6 +695,7 @@ int32_t CapturerInClientInner::InitCacheBuffer(size_t targetSize)
 
 int32_t CapturerInClientInner::InitIpcStream()
 {
+    AUDIO_INFO_LOG("Init Ipc stream");
     AudioProcessConfig config = ConstructConfig();
 
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
@@ -510,6 +719,7 @@ int32_t CapturerInClientInner::InitIpcStream()
     ret = ipcStream_->GetAudioSessionID(sessionId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
 
+    InitCallbackHandler();
     return SUCCESS;
 }
 
@@ -539,8 +749,8 @@ int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
 
 State CapturerInClientInner::GetState()
 {
-    // in plan
-    return INVALID;
+    // waiting for review
+    return state_;
 }
 
 bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
@@ -551,19 +761,27 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
 int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
 {
-    // in plan
-    return ERROR;
+    // waiting for review
+    bufferSize = clientSpanSizeInByte_;
+    AUDIO_INFO_LOG("GetBufferSize size:%{public}zu", bufferSize);
+    return SUCCESS;
 }
 
 int32_t CapturerInClientInner::GetFrameCount(uint32_t &frameCount)
 {
-    // in plan
-    return ERROR;
+    if (sizePerFrameInByte_ != 0) {
+        frameCount = clientSpanSizeInByte_ / sizePerFrameInByte_;
+        AUDIO_INFO_LOG("GetFrameCount count:%{public}d", frameCount);
+        return SUCCESS;
+    }
+    AUDIO_ERR_LOG("GetFrameCount failed clientSpanSizeInByte_ is 0");
+    return ERR_ILLEGAL_STATE;
 }
 
 int32_t CapturerInClientInner::GetLatency(uint64_t &latency)
 {
-    // in plan
+    // in plan:
+    latency = 150000000; // 150000000, only for debug
     return ERROR;
 }
 
@@ -575,13 +793,15 @@ int32_t CapturerInClientInner::SetAudioStreamType(AudioStreamType audioStreamTyp
 
 int32_t CapturerInClientInner::SetVolume(float volume)
 {
-    // in plan
+    // Waiting for review
+    AUDIO_WARNING_LOG("SetVolume is only for renderer");
     return ERROR;
 }
 
 float CapturerInClientInner::GetVolume()
 {
-    // in plan
+    // Waiting for review
+    AUDIO_WARNING_LOG("GetVolume is only for renderer");
     return 0.0;
 }
 
@@ -600,136 +820,147 @@ float CapturerInClientInner::GetSpeed()
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
-    // in plan
+    // Waiting for review
+    AUDIO_WARNING_LOG("SetRenderRate is only for renderer");
     return ERROR;
 }
 
 AudioRendererRate CapturerInClientInner::GetRenderRate()
 {
-    // in plan
+    // Waiting for review
+    AUDIO_WARNING_LOG("GetRenderRate is only for renderer");
     return RENDER_RATE_NORMAL; // not supported
 }
 
 int32_t CapturerInClientInner::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
 {
-    // in plan
-    return ERROR;
-}
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("SetStreamCallback failed. callback == nullptr");
+        return ERR_INVALID_PARAM;
+    }
 
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    streamCallback_ = callback;
+    lock.unlock();
+
+    if (state_ != PREPARED) {
+        return SUCCESS;
+    }
+    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, PREPARED);
+    return SUCCESS;
+}
 
 int32_t CapturerInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
-    // in plan
+    AUDIO_WARNING_LOG("SetRenderMode is only for renderer");
     return ERROR;
 }
 
 AudioRenderMode CapturerInClientInner::GetRenderMode()
 {
-    // in plan
+    AUDIO_WARNING_LOG("GetRenderMode is only for renderer");
     return RENDER_MODE_NORMAL; // not supported
 }
 
 int32_t CapturerInClientInner::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
-    // in plan
+    AUDIO_WARNING_LOG("SetRendererWriteCallback is only for renderer");
     return ERROR;
 }
 
 int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
 {
-    // in plan
+    AUDIO_INFO_LOG("Set capturer mode: %{public}d", captureMode);
+    capturerMode_ = captureMode;
     return ERROR;
 }
 
 AudioCaptureMode CapturerInClientInner::GetCaptureMode()
 {
-    // in plan
-    return CAPTURE_MODE_NORMAL;
+    return capturerMode_;
 }
 
 int32_t CapturerInClientInner::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
 {
-    // in plan
+    // in plan callback mode
     return ERROR;
 }
 
 int32_t CapturerInClientInner::GetBufferDesc(BufferDesc &bufDesc)
 {
-    // in plan
+    // in plan callback mode
     return ERROR;
 }
 
 int32_t CapturerInClientInner::GetBufQueueState(BufferQueueState &bufState)
 {
-    // in plan
+    // in plan callback mode
     return ERROR;
 }
 
 int32_t CapturerInClientInner::Enqueue(const BufferDesc &bufDesc)
 {
-    // in plan
+    // in plan callback mode
     return ERROR;
 }
 
 int32_t CapturerInClientInner::Clear()
 {
-    // in plan
+    // in plan callback mode
     return ERROR;
 }
 
-
 int32_t CapturerInClientInner::SetLowPowerVolume(float volume)
 {
-    // in plan
+    AUDIO_WARNING_LOG("SetLowPowerVolume is only for renderer");
     return ERROR;
 }
 
 float CapturerInClientInner::GetLowPowerVolume()
 {
-    // in plan
+    AUDIO_WARNING_LOG("GetLowPowerVolume is only for renderer");
     return 0.0;
 }
 
 int32_t CapturerInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    // in plan
+    AUDIO_WARNING_LOG("SetOffloadMode is only for renderer");
     return ERROR;
 }
 
 int32_t CapturerInClientInner::UnsetOffloadMode()
 {
-    // in plan
+    AUDIO_WARNING_LOG("UnsetOffloadMode is only for renderer");
     return ERROR;
 }
 
 float CapturerInClientInner::GetSingleStreamVolume()
 {
-    // in plan
+    AUDIO_WARNING_LOG("GetSingleStreamVolume is only for renderer");
     return 0.0;
 }
 
 AudioEffectMode CapturerInClientInner::GetAudioEffectMode()
 {
-    // in plan
+    AUDIO_WARNING_LOG("GetAudioEffectMode is only for renderer");
     return EFFECT_NONE;
 }
 
 int32_t CapturerInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 {
-    // in plan
+    AUDIO_WARNING_LOG("SetAudioEffectMode is only for renderer");
     return ERROR;
 }
 
 int64_t CapturerInClientInner::GetFramesWritten()
 {
-    // in plan
+    AUDIO_WARNING_LOG("GetFramesWritten is only for renderer");
     return -1;
 }
 
 int64_t CapturerInClientInner::GetFramesRead()
 {
-    // in plan
-    return -1;
+    return totalBytesRead_;
 }
 
 
@@ -762,32 +993,179 @@ void CapturerInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 
 bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType)
 {
-    // in plan
-    return false;
+    Trace trace("StartAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
+        AUDIO_ERR_LOG("StartAudioStream failed Illegal state: %{public}d", state_.load());
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Start();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("StartAudioStream call server failed: %{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == START_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("StartAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        // in plan
+        // start the callback-write thread
+    }
+    state_ = RUNNING;
+    statusLock.unlock();
+    // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    int64_t param = -1;
+    StateCmdTypeToParams(param, state_, cmdType);
+    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, param);
+
+    AUDIO_INFO_LOG("StartAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("RUNNING");
+    return true;
 }
 
 bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    // in plan
-    return false;
+    Trace trace(":PauseAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if (state_ != RUNNING) {
+        AUDIO_ERR_LOG("PauseAudioStream State is not RUNNING. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        // in plan
+        // stop the callback-write thread
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Pause();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("PauseAudioStream call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == PAUSE_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != PAUSE_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("PauseAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+
+    state_ = PAUSED;
+    statusLock.unlock();
+
+    // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    int64_t param = -1;
+    StateCmdTypeToParams(param, state_, cmdType);
+    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, param);
+
+    AUDIO_INFO_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("PAUSED");
+    return true;
 }
 
 bool CapturerInClientInner::StopAudioStream()
 {
-    // in plan
-    return false;
+    Trace trace("StopAudioStream " + std::to_string(sessionId_));
+    AUDIO_INFO_LOG("StopAudioStream begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if ((state_ != RUNNING) && (state_ != PAUSED)) {
+        AUDIO_ERR_LOG("StopAudioStream failed. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+
+    if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        // in plan
+        // stop the callback-write thread
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Stop();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("StopAudioStream call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == STOP_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != STOP_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("StopAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+
+    state_ = STOPPED;
+    statusLock.unlock();
+
+    // waiting for review: use send event to clent with cmdType | call OnStateChange | call HiSysEventWrite
+    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, state_);
+
+    AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    UpdateTracker("STOPPED");
+    return true;
 }
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
-    // in plan
+    Trace trace("ReleaseAudioStream " + std::to_string(sessionId_));
+    ipcStream_->Release();
+    // lock_guard<mutex> lock(statusMutex_) // no lock, call release in any case, include blocked case.
+    {
+        std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+        if (releaseRunner) {
+            AUDIO_INFO_LOG("runner remove");
+            callbackHandler_->ReleaseEventRunner();
+            runnerReleased_ = true;
+        }
+    }
     return false;
 }
 
 bool CapturerInClientInner::FlushAudioStream()
 {
-    // in plan
-    return false;
+    Trace trace("FlushAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if ((state_ != RUNNING) && (state_ != PAUSED) && (state_ != STOPPED)) {
+        AUDIO_ERR_LOG("FlushAudioStream failed. Illegal state:%{public}u", state_.load());
+        return false;
+    }
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Flush();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("FlushAudioStream call server failed:%{public}u", ret);
+        return false;
+    }
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == FLUSH_STREAM; // will be false when got notified.
+    });
+
+    if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {
+        AUDIO_ERR_LOG("FlushAudioStream failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        return false;
+    }
+    waitLock.unlock();
+    AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
+    return true;
 }
 
 bool CapturerInClientInner::DrainAudioStream()
@@ -815,11 +1193,109 @@ int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 
 int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 {
-    // in plan
-    std::unique_lock<std::mutex> lock(readDataMutex_);
-    std::cv_status stat = readDataCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
-    CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
-    return ERROR;
+    AUDIO_INFO_LOG("Start read data, userSize: %{public}zu, is blocking read: %{public}d", userSize, isBlockingRead);
+    Trace trace("CapturerInClientInner::Read " + std::to_string(userSize));
+    // Waiting for review, 因为buffer使用引用传递的，所以&buffer永远非空
+    CHECK_AND_RETURN_RET_LOG(userSize > 0 && userSize < MAX_CLIENT_READ_SIZE,
+        ERR_INVALID_PARAM, "Read with invalid params, size is %{public}zu", userSize);
+
+    std::lock_guard<std::mutex> lock(readMutex_);
+
+    // if first call, call set thread priority. if thread tid change recall set thread priority
+    if (needSetThreadPriority_ || readThreadId_ != gettid()) {
+        AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
+        readThreadId_ = gettid();
+        needSetThreadPriority_ = false;
+    }
+
+    // Waiting for review, add isFirstRead?
+    std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Read: Illegal state:%{public}u", state_.load());
+    statusLock.unlock();
+    size_t readSize = 0;
+    while(readSize < userSize) {
+        AUDIO_INFO_LOG("readSize %{public}zu < userSize %{public}zu",readSize, userSize);
+        OptResult result = ringCache_->GetReadableSize();
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "GetReadableSize failed %{public}d", result.ret);
+        size_t readableSize = std::min(result.size, userSize - readSize);
+        AUDIO_INFO_LOG("result.size:%{public}zu, userSize - readSize %{public}zu", result.size, (userSize - readSize));
+        if (readSize + result.size >= userSize) { // If ringCache is sufficient
+            result = ringCache_->Dequeue({&buffer + (readSize), readableSize});
+            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
+            readSize += readableSize;
+            return readSize; // data size
+        }
+        // In plan, 如果readSIZE和result.size都是0，就会挂
+        if (result.size != 0) {
+            AUDIO_INFO_LOG("result.size != 0");
+            result = ringCache_->Dequeue({&buffer + readSize, result.size});
+            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
+            readSize += result.size;
+        }
+        uint64_t availableSizeInFrame = clientBuffer_->GetCurWriteFrame() - clientBuffer_->GetCurReadFrame();
+        AUDIO_INFO_LOG("availableSizeInFrame %{public}" PRId64 "", availableSizeInFrame);
+        if (availableSizeInFrame > 0) { // If OHAudioBuffer has data
+            AUDIO_INFO_LOG("If OHAudioBuffer has data, clientBuffer_->GetCurReadFrame() %{public}" PRId64 ", sizePerFrameInByte_%{public}zu", clientBuffer_->GetCurReadFrame(), sizePerFrameInByte_);
+            BufferDesc currentOHBuffer_ = {};
+            clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
+            uint32_t totalSizeInFrame = 0;
+            uint32_t spanSizeInFrame = 0;
+            uint32_t byteSizePerFrame = 0;
+            clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+            BufferWrap bufferWrap = {currentOHBuffer_.buffer, spanSizeInFrame};
+            AUDIO_INFO_LOG("totalSizeInFrame %{public}d, spanSizeInFrame %{public}d, byteSizePerFrame %{public}d", totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+            ringCache_->Enqueue(bufferWrap); 
+            clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame);
+        } else {
+            AUDIO_INFO_LOG("If OHAudioBuffer NOT has data");
+            if (!isBlockingRead) {
+                AUDIO_INFO_LOG("return directly");
+                return readSize; // Return buffer immediately
+            }
+            // wait for server read some data
+            std::unique_lock<std::mutex> lock(readDataMutex_);
+            std::cv_status stat = readDataCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
+            CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
+        }
+    }
+    return readSize;
+}
+
+void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
+{
+    totalBytesRead_ += bytesRead;
+    if (sizePerFrameInByte_ == 0) {
+        AUDIO_ERR_LOG("HandleCapturerPositionChanges: sizePerFrameInByte_ is 0");
+        return;
+    }
+    int64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
+    AUDIO_DEBUG_LOG("totalBytesRead_ %{public}" PRId64 ", frame size: %{public}zu", totalBytesRead_, sizePerFrameInByte_);
+
+    {
+        std::lock_guard<std::mutex> lock(markReachMutex_);
+        if (!capturerMarkReached_) {
+            AUDIO_DEBUG_LOG("Frame mark position: %{public}" PRId64 ", Total frames read: %{public}" PRId64,
+                static_cast<int64_t>(capturerMarkPosition_), static_cast<int64_t>(readFrameNumber));
+            if (readFrameNumber >= capturerMarkPosition_) {
+                AUDIO_DEBUG_LOG("capturerInClient OnMarkReached");
+                SendCapturerMarkReachedEvent(capturerMarkPosition_);
+                capturerMarkReached_ = true;
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(periodReachMutex_);
+        capturerPeriodRead_ += (totalBytesRead_ / sizePerFrameInByte_);
+        AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
+            static_cast<int64_t>(capturerPeriodSize_), static_cast<int64_t>(capturerPeriodRead_));
+        if (capturerPeriodRead_ >= capturerPeriodSize_) {
+            capturerPeriodRead_ %= capturerPeriodSize_;
+            AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRId64,
+                static_cast<int64_t>(capturerPeriodRead_));
+            SendCapturerPeriodReachedEvent(capturerPeriodSize_);
+        }
+    }
 }
 
 uint32_t CapturerInClientInner::GetUnderflowCount()
@@ -828,50 +1304,68 @@ uint32_t CapturerInClientInner::GetUnderflowCount()
     return 0;
 }
 
-void CapturerInClientInner::SetRendererPositionCallback(int64_t markPosition, const
-    std::shared_ptr<RendererPositionCallback> &callback)
-       
+void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, const
+    std::shared_ptr<CapturerPositionCallback> &callback)   
 {
-    // in plan
+    std::lock_guard<std::mutex> lock(markReachMutex_);
+    CHECK_AND_RETURN_LOG(callback != nullptr, "CapturerPositionCallback is nullptr");
+    capturerPositionCallback_ = callback;
+    capturerMarkPosition_ = markPosition;
+    capturerMarkReached_ = false;
+}
+
+void CapturerInClientInner::UnsetCapturerPositionCallback()
+{
+    std::lock_guard<std::mutex> lock(markReachMutex_);
+    capturerPositionCallback_ = nullptr;
+    capturerMarkPosition_ = 0;
+    capturerMarkReached_ = false;
+}
+
+void CapturerInClientInner::SetCapturerPeriodPositionCallback(int64_t markPosition,
+    const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(periodReachMutex_);
+    CHECK_AND_RETURN_LOG(callback != nullptr, "CapturerPeriodPositionCallback is nullptr");
+    capturerPeriodPositionCallback_ = callback;
+    capturerPeriodSize_ = 0;
+    totalBytesRead_ = 0;
+    capturerPeriodRead_ = 0;
+}
+
+void CapturerInClientInner::UnsetCapturerPeriodPositionCallback()
+{
+    std::lock_guard<std::mutex> lock(periodReachMutex_);
+    capturerPeriodPositionCallback_ = nullptr;
+    capturerPeriodSize_ = 0;
+    totalBytesRead_ = 0;
+    capturerPeriodRead_ = 0;
+}
+
+void CapturerInClientInner::SetRendererPositionCallback(int64_t markPosition,
+    const std::shared_ptr<RendererPositionCallback> &callback)
+{
+    AUDIO_ERR_LOG("SetRendererPositionCallback is not supported");
+    return;
 }
 
 void CapturerInClientInner::UnsetRendererPositionCallback()
 {
-    // in plan
+    AUDIO_ERR_LOG("UnsetRendererPositionCallback is not supported");
+    return;
 }
 
 void CapturerInClientInner::SetRendererPeriodPositionCallback(int64_t markPosition,
     const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
-    // in plan
+    AUDIO_ERR_LOG("SetRendererPeriodPositionCallback is not supported");
+    return;
 }
 
 void CapturerInClientInner::UnsetRendererPeriodPositionCallback()
 {
-    // in plan
-}
-
-void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, const
-    std::shared_ptr<CapturerPositionCallback> &callback)
-       
-{
-    // in plan
-}
-
-void CapturerInClientInner::UnsetCapturerPositionCallback()
-{
-    // in plan
-}
-
-void CapturerInClientInner::SetCapturerPeriodPositionCallback(int64_t markPosition, const
-    std::shared_ptr<CapturerPeriodPositionCallback> &callback)
-{
-    // in plan
-}
-
-void CapturerInClientInner::UnsetCapturerPeriodPositionCallback()
-{
-    // in plan
+    AUDIO_ERR_LOG("UnsetRendererPeriodPositionCallback is not supported");
+    return;
 }
 
 int32_t CapturerInClientInner::SetRendererSamplingRate(uint32_t sampleRate)
@@ -888,8 +1382,9 @@ uint32_t CapturerInClientInner::GetRendererSamplingRate()
 
 int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
-    // in plan
-    return ERROR;
+    bufferSizeInMsec_ = bufferSizeInMsec;
+    AUDIO_INFO_LOG("SetBufferSizeInMsec to %{publid}d", bufferSizeInMsec_);
+    return SUCCESS;
 }
 
 void CapturerInClientInner::SetApplicationCachePath(const std::string cachePath)
@@ -912,8 +1407,7 @@ int32_t CapturerInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
 
 void CapturerInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
 {
-    // in plan
-    return;
+    streamTrackerRegistered_ = trackerRegisteredState;
 }
 
 void CapturerInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)

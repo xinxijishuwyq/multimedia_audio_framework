@@ -44,7 +44,8 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    stream_->GetMinimumBufferSize(totalSizeInFrame_);
+    totalSizeInFrame_ = spanSizeInFrame_ * 4; // 4 frames
+    // stream_->GetMinimumBufferSize(totalSizeInFrame_);
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
@@ -52,8 +53,8 @@ int32_t RendererInServer::ConfigServerBuffer()
     }
 
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
-    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}u, spanSizeInFrame_: %{public}u,"
-        "byteSizePerFrame_:%{public}u", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
+    AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu,"
+        "byteSizePerFrame_:%{public}zu", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     
     // create OHAudioBuffer in server
     audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
@@ -108,6 +109,7 @@ void RendererInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterWriteCallback(shared_from_this());
 }
+
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     AUDIO_INFO_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
@@ -213,7 +215,7 @@ int32_t RendererInServer::OnWriteData(size_t length)
 int32_t RendererInServer::UpdateWriteIndex()
 {
     AUDIO_INFO_LOG("UpdateWriteIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, "
-        "spanSizeInFrame_:%{public}d, needStart: %{public}d", audioServerBuffer_->GetAvailableDataFrames(),
+        "spanSizeInFrame_:%{public}zu, needStart: %{public}d", audioServerBuffer_->GetAvailableDataFrames(),
         spanSizeInFrame_, needStart);
     if (audioServerBuffer_->GetAvailableDataFrames() == spanSizeInFrame_ && needStart < 3) { // 3 is maxlength - 1
         AUDIO_WARNING_LOG("Start write data");
@@ -246,6 +248,7 @@ int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
 
 int32_t RendererInServer::Start()
 {
+    AUDIO_INFO_LOG("Start.");
     needStart = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
@@ -261,6 +264,7 @@ int32_t RendererInServer::Start()
 
 int32_t RendererInServer::Pause()
 {
+    AUDIO_INFO_LOG("Pause.");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_);
@@ -274,10 +278,11 @@ int32_t RendererInServer::Pause()
 
 int32_t RendererInServer::Flush()
 {
+    AUDIO_INFO_LOG("Flush.");
     std::unique_lock<std::mutex> lock(statusLock_);
-    if (status_ != I_STATUS_STARTED) {
+    if (status_ == I_STATUS_STARTED) {
         status_ = I_STATUS_FLUSHING_WHEN_STARTED;
-    } else if (status_ != I_STATUS_PAUSED) {
+    } else if (status_ == I_STATUS_PAUSED) {
         status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
     } else {
         AUDIO_ERR_LOG("RendererInServer::Flush failed, Illegal state: %{public}u", status_);
@@ -296,7 +301,7 @@ int32_t RendererInServer::Flush()
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
         readFrame += spanSizeInFrame_;
-        AUDIO_INFO_LOG("On flush, read frame: %{public}" PRIu64 ", nextReadFrame: %{public}u,"
+        AUDIO_INFO_LOG("On flush, read frame: %{public}" PRIu64 ", nextReadFrame: %{public}zu,"
             "writeFrame: %{public}" PRIu64 "", readFrame, spanSizeInFrame_, writeFrame);
         audioServerBuffer_->SetCurReadFrame(readFrame);
     }

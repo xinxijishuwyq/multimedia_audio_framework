@@ -14,6 +14,7 @@
  */
 
 #include <memory>
+#include <cinttypes>
 
 #include "ipc_stream_in_server.h"
 #include "audio_log.h"
@@ -44,7 +45,7 @@ int32_t StreamListenerHolder::RegisterStreamListener(sptr<IpcStreamListener> lis
 
 int32_t StreamListenerHolder::OnOperationHandled(Operation operation, int64_t result)
 {
-    AUDIO_INFO_LOG("OnOperationHandled: operation: %{public}d, result: %{public}lld", operation, result);
+    AUDIO_INFO_LOG("OnOperationHandled: operation: %{public}d, result: [%{public}" PRId64 "]", operation, result);
     std::lock_guard<std::mutex> lock(listenerMutex_);
     CHECK_AND_RETURN_RET_LOG(streamListener_ != nullptr, ERR_OPERATION_FAILED, "stream listrener not set");
     return streamListener_->OnOperationHandled(operation, result);
@@ -102,6 +103,7 @@ int32_t IpcStreamInServer::ConfigCapturer()
     // LYH waiting for review: use config_.streamInfo instead of AudioStreamParams
     capturerInServer_ = std::make_shared<CapturerInServer>(config_, streamListenerHolder_);
     CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed");
+    capturerInServer_->Init();
     return SUCCESS;
 }
 

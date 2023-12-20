@@ -345,6 +345,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
 {
     // read/write operation may print many log, use debug.
     if (operation == UPDATE_STREAM) {
+        AUDIO_ERR_LOG("state_ :  %{public}d", state_.load());
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
         // notify write if blocked
         writeDataCV_.notify_all();
@@ -489,7 +490,7 @@ void RendererInClientInner::AudioServerDied(pid_t pid)
 
 void RendererInClientInner::OnHandle(uint32_t code, int64_t data)
 {
-    AUDIO_DEBUG_LOG("On handle event, event code: %{public}d, data: %{public}llu", code, data);
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}d, data: %{public}" PRIu64 "", code, data);
     switch (code) {
         case STATE_CHANGE_EVENT:
             HandleStateChangeEvent(data);
@@ -596,13 +597,13 @@ int32_t RendererInClientInner::InitSharedBuffer()
     ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame_, byteSizePerFrame);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret, "GetSizeParameter failed"
-        ":%{public}d, byteSizePerFrame:%{public}d, sizePerFrameInByte_:%{public}d",
+        ":%{public}d, byteSizePerFrame:%{public}u, sizePerFrameInByte_:%{public}zu",
             ret, byteSizePerFrame, sizePerFrameInByte_);
 
     clientSpanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame;
 
-    AUDIO_INFO_LOG("InitSharedBuffer totalSizeInFrame_[%{public}d] spanSizeInFrame[%{public}d] sizePerFrameInByte_["
-        "%{public}d] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
+    AUDIO_INFO_LOG("InitSharedBuffer totalSizeInFrame_[%{public}u] spanSizeInFrame[%{public}u] sizePerFrameInByte_["
+        "%{public}zu] clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
 
     return SUCCESS;
@@ -622,7 +623,7 @@ int32_t RendererInClientInner::InitCacheBuffer(size_t targetSize)
         // in plan
         OptResult result = ringCache_->ReConfig(cacheSizeInByte_, false); // false --> clear buffer
         if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_ERR_LOG("ReConfig AudioRingCache to size %{public}zu failed:ret%{public}d", result.ret, targetSize);
+            AUDIO_ERR_LOG("ReConfig AudioRingCache to size %{public}u failed:ret%{public}zu", result.ret, targetSize);
             return ERR_OPERATION_FAILED;
         }
     }
@@ -892,8 +893,7 @@ int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 
 int64_t RendererInClientInner::GetFramesWritten()
 {
-    // in plan
-    return -1;
+    return totalBytesWritten_;
 }
 
 int64_t RendererInClientInner::GetFramesRead()
@@ -932,7 +932,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
-        AUDIO_ERR_LOG("StartAudioStream  failed Illegal state:%{public}d", state_.load());
+        AUDIO_ERR_LOG("StartAudioStream failed Illegal state:%{public}d", state_.load());
         return false;
     }
 
@@ -1185,7 +1185,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
         // 1. write data into ring cache
         OptResult result = ringCache_->GetWritableSize();
         if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_ERR_LOG("RingCache write status invalid size is:%{public}u", result.size);
+            AUDIO_ERR_LOG("RingCache write status invalid size is:%{public}zu", result.size);
             break;
         }
         size_t writableSize = result.size;
@@ -1209,7 +1209,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
         // 2. copy data from cache to OHAudioBuffer
         result = ringCache_->GetReadableSize();
         if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_ERR_LOG("RingCache read status invalid size is:%{public}u", result.size);
+            AUDIO_ERR_LOG("RingCache read status invalid size is:%{public}zu", result.size);
             break;
         }
         size_t readableSize = result.size;
@@ -1242,7 +1242,7 @@ int32_t RendererInClientInner::WriteCacheData()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
     OptResult result = ringCache_->Dequeue({desc.buffer, desc.bufLength});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-    AUDIO_INFO_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}llu], spanSizeInFrame_%{public}d",
+    AUDIO_INFO_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_%{public}u",
         curWriteIndex, spanSizeInFrame_);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
     ipcStream_->UpdatePosition(); // notiify server update position
@@ -1258,7 +1258,7 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
         return;
     }
     int64_t writtenFrameNumber = totalBytesWritten_ / sizePerFrameInByte_;
-    AUDIO_DEBUG_LOG("frame size: %{public}d", sizePerFrameInByte_);
+    AUDIO_DEBUG_LOG("frame size: %{public}zu", sizePerFrameInByte_);
 
     {
         std::lock_guard<std::mutex> lock(markReachMutex_);

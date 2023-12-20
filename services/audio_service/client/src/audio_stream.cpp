@@ -308,14 +308,16 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         StopAudioStream();
         ReleaseAudioStream(false);
     }
-
+    AUDIO_ERR_LOG("0000000000000000000000111");
     AudioStreamParams param = info;
 
     int32_t ret = 0;
 
     if ((ret = InitFromParams(param)) != SUCCESS) {
+        AUDIO_ERR_LOG("InitFromParams error");
         return ret;
     }
+    AUDIO_ERR_LOG("000000000000000000000011122");
 
     if (CreateStream(param, eStreamType_) != SUCCESS) {
         AUDIO_ERR_LOG("AudioStream:Create stream failed");
