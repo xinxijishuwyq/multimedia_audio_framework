@@ -224,11 +224,11 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_004
-* @tc.desc  : Test SelectOutputDevice interface.
-* @tc.require: issueI5NZAQ
-*/
+ * @tc.name  : Test SelectOutputDevice API
+ * @tc.number: SelectOutputDevice_004
+ * @tc.desc  : Test SelectOutputDevice interface.
+ * @tc.require: issueI5NZAQ
+ */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level1)
 {
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
@@ -246,7 +246,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level1)
     outputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_LT(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2625,6 +2625,115 @@ HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_004, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(EFFECT_NONE, audioSceneEffectInfo.mode[0]);
     EXPECT_EQ(EFFECT_DEFAULT, audioSceneEffectInfo.mode[1]);
+}
+
+/**
+ * @tc.name  : Test SetDeviceAbsVolumeSupported API
+ * @tc.number: SetDeviceAbsVolumeSupported_001
+ * @tc.desc  : Test SetDeviceAbsVolumeSupported interface.
+ */
+HWTEST(AudioManagerUnitTest, SetDeviceAbsVolumeSupported_001, TestSize.Level1)
+{
+    int32_t ret;
+    bool support = true;
+    auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
+
+    for (auto outputDevice : audioDeviceDescriptors) {
+        EXPECT_EQ(outputDevice->deviceRole_, DeviceRole::OUTPUT_DEVICE);
+        if (outputDevice->deviceType_ != DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP) {
+            continue;
+        }
+        EXPECT_GE(outputDevice->deviceId_, MIN_DEVICE_ID);
+        EXPECT_EQ(true, (*outputDevice->audioStreamInfo_.samplingRate.rbegin() >= SAMPLE_RATE_8000)
+            && ((*outputDevice->audioStreamInfo_.samplingRate.begin() <= SAMPLE_RATE_96000)));
+        EXPECT_EQ(outputDevice->audioStreamInfo_.encoding, AudioEncodingType::ENCODING_PCM);
+        EXPECT_EQ(true, (*outputDevice->audioStreamInfo_.channels.rbegin() >= MONO)
+            && ((*outputDevice->audioStreamInfo_.channels.rbegin() <= CHANNEL_8)));
+        EXPECT_EQ(true, (outputDevice->audioStreamInfo_.format >= SAMPLE_U8)
+            && ((outputDevice->audioStreamInfo_.format <= SAMPLE_F32LE)));
+        if ((outputDevice->macAddress_).c_str()!= nullptr) {
+            ret = AudioSystemManager::GetInstance()->SetDeviceAbsVolumeSupported(outputDevice->macAddress_, support);
+            EXPECT_EQ(SUCCESS, ret);
+
+            ret = AudioSystemManager::GetInstance()->SetA2dpDeviceVolume(outputDevice->macAddress_, 2, support);
+            EXPECT_EQ(SUCCESS, ret);
+        }
+    }
+    std::string macAddress = "";
+    support = false;
+    ret = AudioSystemManager::GetInstance()->SetDeviceAbsVolumeSupported(macAddress, support);
+    EXPECT_EQ(ERROR, ret);
+
+    ret = AudioSystemManager::GetInstance()->SetA2dpDeviceVolume(macAddress, 0, support);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test SetAvailableDeviceChangeCallback API
+ * @tc.number: SetAvailableDeviceChangeCallback_001
+ * @tc.desc  : Test SetAvailableDeviceChangeCallback interface.
+ */
+HWTEST(AudioManagerUnitTest, SetAvailableDeviceChangeCallback_001, TestSize.Level1)
+{
+    int32_t ret;
+    AudioDeviceUsage usage = AudioDeviceUsage::MEDIA_OUTPUT_DEVICES;
+    shared_ptr<AudioManagerAvailableDeviceChangeCallback> callback = nullptr;
+    ret = AudioSystemManager::GetInstance()->SetAvailableDeviceChangeCallback(usage, callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = AudioSystemManager::GetInstance()->UnsetAvailableDeviceChangeCallback(usage);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetAvailableDeviceChangeCallback API
+ * @tc.number: SetAvailableDeviceChangeCallback_002
+ * @tc.desc  : Test SetAvailableDeviceChangeCallback interface.
+ */
+HWTEST(AudioManagerUnitTest, SetAvailableDeviceChangeCallback_002, TestSize.Level1)
+{
+    int32_t ret;
+    AudioDeviceUsage usage = MEDIA_INPUT_DEVICES;
+    shared_ptr<AudioManagerAvailableDeviceChangeCallback> callback
+        = make_shared<AudioManagerAvailableDeviceChangeCallbackImpl>();
+    ret = AudioSystemManager::GetInstance()->SetAvailableDeviceChangeCallback(usage, callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->UnsetAvailableDeviceChangeCallback(usage);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetDistributedRoutingRoleCallback API
+ * @tc.number: SetDistributedRoutingRoleCallback_001
+ * @tc.desc  : Test SetDistributedRoutingRoleCallback interface.
+ */
+HWTEST(AudioManagerUnitTest, SetDistributedRoutingRoleCallback_001, TestSize.Level1)
+{
+    int32_t ret;
+    shared_ptr<AudioDistributedRoutingRoleCallback> callback = nullptr;
+    ret = AudioSystemManager::GetInstance()->SetDistributedRoutingRoleCallback(callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = AudioSystemManager::GetInstance()->UnsetDistributedRoutingRoleCallback(callback);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test SetDistributedRoutingRoleCallback API
+ * @tc.number: SetDistributedRoutingRoleCallback_002
+ * @tc.desc  : Test SetDistributedRoutingRoleCallback interface.
+ */
+HWTEST(AudioManagerUnitTest, SetDistributedRoutingRoleCallback_002, TestSize.Level1)
+{
+    int32_t ret;
+    shared_ptr<AudioDistributedRoutingRoleCallback> callback
+        = make_shared<AudioDistributedRoutingRoleCallbackTest>();
+    ret = AudioSystemManager::GetInstance()->SetDistributedRoutingRoleCallback(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->UnsetDistributedRoutingRoleCallback(callback);
+    EXPECT_EQ(ERROR, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS
