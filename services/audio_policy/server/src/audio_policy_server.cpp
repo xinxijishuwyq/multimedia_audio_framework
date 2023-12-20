@@ -984,6 +984,17 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         AUDIO_ERR_LOG("SetAudioScene: param is invalid");
         return ERR_INVALID_PARAM;
     }
+    if (audioScene == AUDIO_SCENE_CALL_START) {
+        AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_START means voip start.");
+        isAvSessionSetVoipStart = true;
+        return SUCCESS;
+
+    }
+    if (audioScene == AUDIO_SCENE_CALL_END) {
+        AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_END means voip end, need set AUDIO_SCENE_DEFAULT.");
+        isAvSessionSetVoipStart = false;
+        return audioPolicyService_.SetAudioScene(AUDIO_SCENE_DEFAULT);
+    }
 
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("SetAudioScene: No system permission");
@@ -1421,7 +1432,10 @@ void AudioPolicyServer::UpdateAudioScene(const AudioScene audioScene, AudioInter
             AUDIO_ERR_LOG("Unexpected changeType=%{public}d", changeType);
             return;
     }
-
+    if (isAvSessionSetVoipStart && audioScene == AUDIO_SCENE_DEFAULT) {
+        AUDIO_INFO_LOG("AudioScene 0 is blocked because current call is in the range set by AvSession.");
+        return;
+    }
     audioPolicyService_.SetAudioScene(audioScene);
 }
 
