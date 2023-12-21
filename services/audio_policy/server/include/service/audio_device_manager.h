@@ -137,7 +137,7 @@ private:
     sptr<AudioDeviceDescriptor> earpiece_ = nullptr;
     sptr<AudioDeviceDescriptor> speaker_ = nullptr;
     sptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
-    std::mutex deviceInfoUpdateMutex_;
+    std::mutex connectedDevicesMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
