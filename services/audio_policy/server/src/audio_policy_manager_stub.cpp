@@ -792,6 +792,14 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
     reply.WriteInt32(ret);
 }
 
+void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t flag = data.ReadInt32();
+
+    int32_t ret = SetCaptureSilentState(flag == 1);
+    reply.WriteInt32(ret);
+}
+
 void AudioPolicyManagerStub::GetHardwareOutputSamplingRateInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::Unmarshalling(data);

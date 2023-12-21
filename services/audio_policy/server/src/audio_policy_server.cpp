@@ -2533,6 +2533,11 @@ int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCap
     return audioPolicyService_.SetPlaybackCapturerFilterInfos(config);
 }
 
+int32_t AudioPolicyServer:: SetCaptureSilentState(bool state)
+{
+    return audioPolicyService_.SetCaptureSilentState(state);
+}
+
 int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
 {
     return audioPolicyService_.GetHardwareOutputSamplingRate(desc);

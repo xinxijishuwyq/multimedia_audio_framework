@@ -337,6 +337,8 @@ public:
 
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config);
 
+    int32_t SetCaptureSilentState(bool state);
+
     void UnloadLoopback();
 
     void UpdateOutputDeviceSelectedByCalling(DeviceType deviceType);
