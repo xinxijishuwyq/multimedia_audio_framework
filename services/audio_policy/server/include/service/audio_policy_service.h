@@ -275,6 +275,8 @@ public:
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
 
     AudioStreamType GetStreamType(int32_t sessionId);
+    
+    uint32_t GetChannelNum(uint32_t sessionId);
 
     int32_t GetUid(int32_t sessionId);
 

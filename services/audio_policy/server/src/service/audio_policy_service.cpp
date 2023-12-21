@@ -62,6 +62,8 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t MEDIA_SERVICE_UID = 1013;
+const uint8_t CHANNEL_1 = 1;
+const uint8_t CHANNEL_2 = 2;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -386,10 +388,16 @@ void AudioPolicyService::ResetOffloadMode()
         return;
     }
 
-    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC);
+    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, CHANNEL_2);
+    if (runningStreamId == -1) {
+        runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, CHANNEL_1);
+    }
     if (runningStreamId == -1) {
         AUDIO_DEBUG_LOG("No running STREAM_MUSIC, wont restart offload");
-        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH);
+        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, CHANNEL_2);
+        if (runningStreamId == -1) {
+            runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, CHANNEL_1);
+        }
         if (runningStreamId == -1) {
             AUDIO_DEBUG_LOG("No running STREAM_SPEECH, wont restart offload");
             return;
@@ -413,6 +421,12 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
     AudioStreamType streamType = GetStreamType(sessionId);
     if ((streamType != STREAM_MUSIC) && (streamType != STREAM_SPEECH)) {
         AUDIO_DEBUG_LOG("StreamType not allowed get offload mode, Skipped");
+        return;
+    }
+    
+    uint8_t channels = GetChannelNum(sessionId);
+    if (channels > CHANNEL_2) {
+        AUDIO_DEBUG_LOG("ChannelNum not allowed get offload mode, Skipped");
         return;
     }
 
@@ -4371,6 +4385,11 @@ int32_t AudioPolicyService::UpdateStreamState(int32_t clientUid,
 AudioStreamType AudioPolicyService::GetStreamType(int32_t sessionId)
 {
     return streamCollector_.GetStreamType(sessionId);
+}
+
+uint32_t AudioPolicyService::GetChannelNum(uint32_t sessionId)
+{
+    return streamCollector_.GetChannelNum(sessionId);
 }
 
 int32_t AudioPolicyService::GetUid(int32_t sessionId)

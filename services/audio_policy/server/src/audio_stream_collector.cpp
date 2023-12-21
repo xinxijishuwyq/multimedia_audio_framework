@@ -114,6 +114,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
+    rendererChangeInfo->channels = streamChangeInfo.audioRendererChangeInfo.channels;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     AUDIO_DEBUG_LOG("audioRendererChangeInfos_: Added for client %{public}d session %{public}d",
@@ -267,6 +268,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "RendererChangeInfo Memory Allocation Failed");
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
+            rendererChangeInfo->channels = (*it)->channels;
             if (rendererChangeInfo->rendererState != RENDERER_RUNNING) {
                 rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;
             }
@@ -479,6 +481,18 @@ AudioStreamType AudioStreamCollector::GetStreamType(int32_t sessionId)
     return streamType;
 }
 
+uint8_t AudioStreamCollector::GetChannelNum(int32_t sessionId)
+{
+    uint8_t channelNum = 0;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->sessionId == sessionId) {
+            channelNum = changeInfo->channels;
+        }
+    }
+    return channelNum;
+}
+
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
@@ -624,13 +638,22 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
     return result;
 }
 
-int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType)
+int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType, uint8_t certainChannels)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     int32_t runningStream = -1;
-    if (certainType == STREAM_DEFAULT) {
+    if ((certainType == STREAM_DEFAULT) && (certainChannels == 0)) {
         for (auto &changeInfo : audioRendererChangeInfos_) {
             if (changeInfo->rendererState == RENDERER_RUNNING) {
+                runningStream = changeInfo->sessionId;
+                break;
+            }
+        }
+    } else if (certainChannels == 0) {
+        for (auto &changeInfo : audioRendererChangeInfos_) {
+            if ((changeInfo->rendererState == RENDERER_RUNNING) &&
+                    (certainType == GetStreamType(changeInfo->rendererInfo.contentType,
+                    changeInfo->rendererInfo.streamUsage))) {
                 runningStream = changeInfo->sessionId;
                 break;
             }
@@ -639,7 +662,7 @@ int32_t AudioStreamCollector::GetRunningStream(AudioStreamType certainType)
         for (auto &changeInfo : audioRendererChangeInfos_) {
             if ((changeInfo->rendererState == RENDERER_RUNNING) &&
                     (certainType == GetStreamType(changeInfo->rendererInfo.contentType,
-                    changeInfo->rendererInfo.streamUsage))) {
+                    changeInfo->rendererInfo.streamUsage)) && (certainChannels == changeInfo->channels)) {
                 runningStream = changeInfo->sessionId;
                 break;
             }
