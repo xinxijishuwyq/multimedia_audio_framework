@@ -215,6 +215,8 @@ static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
 static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i);
 static void StopPrimaryHdiIfNoRunning(struct Userdata* u);
+static void StartPrimaryHdiIfRunning(struct Userdata* u);
+static void CheckInputChangeToOffload(struct Userdata* u, pa_sink_input* i);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -1326,6 +1328,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     pa_assert(chunk.length > 0);
     EndCTrace(renderTrace);
 
+    StartPrimaryHdiIfRunning(u);
     pa_asyncmsgq_post(u->primary.dq, NULL, HDI_RENDER, NULL, 0, &chunk, NULL);
     u->primary.timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
 }
@@ -1659,6 +1662,8 @@ int32_t RenderWriteOffloadFunc(struct Userdata* u, size_t length, pa_mix_info* i
     int64_t l, d;
     l = chunk->length;
     size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
+    blockSize = PA_MAX(blockSize, pa_usec_to_bytes(0.6 * OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC, // 0.6 40% is hdi limit
+        &u->sink->sample_spec));
     d = 0;
     while (l > 0) {
         pa_memchunk tchunk;
@@ -1723,6 +1728,7 @@ int32_t ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* n
     }
 
     pa_sink_input* i = infoInputs[0].userdata;
+    CheckInputChangeToOffload(u, i);
     size_t length = GetOffloadRenderLength(u, i, wait);
     if (*wait && length == 0) {
         InputsDropFromInputs2(infoInputs, nInputs);
@@ -1836,7 +1842,8 @@ static void offloadSetMaxRewind(struct Userdata* u, pa_sink_input* i)
     pa_sink_input_assert_io_context(i);
     pa_assert(PA_SINK_INPUT_IS_LINKED(i->thread_info.state));
 
-    pa_memblockq_set_maxrewind(i->thread_info.render_memblockq, OFFLOAD_FRAME_SIZE);
+    size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
+    pa_memblockq_set_maxrewind(i->thread_info.render_memblockq, blockSize);
 
     size_t nbytes = pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
 
@@ -1846,19 +1853,26 @@ static void offloadSetMaxRewind(struct Userdata* u, pa_sink_input* i)
     }
 }
 
-static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
+static void CheckInputChangeToOffload(struct Userdata* u, pa_sink_input* i)
 {
-    offloadSetMaxRewind(u, i);
-    pa_sink_input *it;
-    void *state = NULL;
-    while ((it = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
-        if (it != i && pa_memblockq_get_maxrewind(it->thread_info.render_memblockq) != 0) {
-            pa_sink_input_update_max_rewind(it, 0);
-            drop_backlog(it->thread_info.render_memblockq);
-            playback_stream* ps = it->userdata;
-            drop_backlog(ps->memblockq);
+    if (InputIsOffload(i) && pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) == 0) {
+        offloadSetMaxRewind(u, i);
+        pa_sink_input* it;
+        void* state = NULL;
+        while ((it = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+            if (it != i && pa_memblockq_get_maxrewind(it->thread_info.render_memblockq) != 0) {
+                pa_sink_input_update_max_rewind(it, 0);
+                drop_backlog(it->thread_info.render_memblockq);
+                playback_stream* ps = it->userdata;
+                drop_backlog(ps->memblockq);
+            }
         }
     }
+}
+
+static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
+{
+    CheckInputChangeToOffload(u, i);
     int32_t sessionID = getSinkInputSessionID(i);
     if (u->offload.isHDISinkStarted) {
         if (sessionID != u->offload.sessionID) {
@@ -1928,6 +1942,29 @@ static void PaInputStateChangeCbPrimary(struct Userdata* u, pa_sink_input* i, pa
         }
     } else if (stopping) {
         StopPrimaryHdiIfNoRunning(u);
+    }
+}
+
+static void StartPrimaryHdiIfRunning(struct Userdata *u)
+{
+    if (u->primary.isHDISinkStarted) {
+        return;
+    }
+
+    unsigned nPrimary, nOffload, nMultiChannel;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
+    if (nPrimary == 0) {
+        return;
+    }
+
+    if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
+        AUDIO_ERR_LOG("StartPrimaryHdiIfRunning, audiorenderer control start failed!");
+        u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
+    } else {
+        u->primary.isHDISinkStarted = true;
+        u->writeCount = 0;
+        u->renderCount = 0;
+        AUDIO_INFO_LOG("StartPrimaryHdiIfRunning, Successfully restarted HDI renderer");
     }
 }
 
@@ -3218,7 +3255,7 @@ int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
         u->offload.msgq = pa_asyncmsgq_new(0);
         pa_atomic_store(&u->offload.hdistate, 0);
         u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool,
-            pa_usec_to_bytes(300 * PA_USEC_PER_MSEC, &u->sink->sample_spec)); // 300ms for max len once offload render
+            pa_usec_to_bytes(200 * PA_USEC_PER_MSEC, &u->sink->sample_spec)); // 200ms for max len once offload render
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_START], PA_HOOK_LATE,
             (pa_hook_cb_t)SinkInputMoveStartCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,

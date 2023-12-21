@@ -2687,6 +2687,15 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
 
     pa_buffer_attr* bufferAttr;
     printBufAttr(paStream);
+
+    const pa_buffer_attr* bufferAttrOri = pa_stream_get_buffer_attr(paStream);
+    if (bufferAttrOri->prebuf ==
+        AlignToAudioFrameSize(pa_usec_to_bytes(MIN_BUF_DURATION_IN_USEC, &sampleSpec), sampleSpec)) {
+        AUDIO_DEBUG_LOG(
+            "AudioServiceClient::UpdatebufferAttrOffload pa buffer attr not update, maybe in callback api");
+        return AUDIO_CLIENT_SUCCESS;
+    }
+
     if (bufferAttrStateMap_.find(statePolicy)!=bufferAttrStateMap_.end()) {
         bufferAttr = &(bufferAttrStateMap_[statePolicy]);
     } else {
