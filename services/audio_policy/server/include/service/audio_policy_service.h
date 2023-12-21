@@ -490,8 +490,6 @@ private:
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
-    int32_t HandleA2dpOffloadDeviceSuspend(DeviceType deviceType);
-
     int32_t LoadUsbModule(string deviceInfo);
 
     int32_t LoadDefaultUsbModule();

@@ -2054,13 +2054,6 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::HandleA2dpOffloadDeviceSuspend(DeviceType deviceType)
-{
-    UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER);
-    HandleActiveDevice(deviceType);
-    return SUCCESS;
-}
-
 int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo)
 {
     AUDIO_INFO_LOG("ReloadA2dpAudioPort: switch device from a2dp to another a2dp, reload a2dp module");
@@ -3071,7 +3064,7 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
             * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
         AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
-        if (!HandleA2dpDeviceOutOffload()) {
+        if (HandleA2dpDeviceOutOffload() == SUCCESS) {
             lastBTDevice_ = macAddress;
             return;
         }
@@ -5319,9 +5312,8 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
     FetchOutputDevice(rendererChangeInfos, false);
 
-    int32_t ret = HandleA2dpOffloadDeviceSuspend(DEVICE_TYPE_BLUETOOTH_A2DP);
     preA2dpOffloadFlag_ = a2dpOffloadFlag_;
-    return ret;
+    return SUCCESS;
 #else
     return ERROR;
 #endif
