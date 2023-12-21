@@ -4876,7 +4876,7 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
 int32_t AudioPolicyService::SetCaptureSilentState(bool state)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    if(gsp == nullptr) {
+    if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetCaptureSilentState error for g_adProxy null");
         return ERR_OPERATION_FAILED;
     }
