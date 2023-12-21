@@ -1662,7 +1662,7 @@ int32_t AudioPolicyProxy::SetCaptureSilentState(bool state)
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE), data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetCaptureSilentState failed, error: %d",error);
+        AUDIO_ERR_LOG("SetCaptureSilentState failed, error: %d", error);
         return ERROR;
     }
     return reply.ReadInt32();
