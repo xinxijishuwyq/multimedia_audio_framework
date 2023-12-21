@@ -1024,7 +1024,6 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
     return SUCCESS;
 }
 
-
 int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneType)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
