@@ -794,9 +794,9 @@ void AudioPolicyManagerStub::SetPlaybackCapturerFilterInfosInternal(MessageParce
 
 void AudioPolicyManagerStub::SetCaptureSilentStateInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t flag = data.ReadInt32();
+    bool flag = data.ReadBool();
 
-    int32_t ret = SetCaptureSilentState(flag == 1);
+    int32_t ret = SetCaptureSilentState(flag);
     reply.WriteInt32(ret);
 }
 
