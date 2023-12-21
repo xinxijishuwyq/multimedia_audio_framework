@@ -1081,6 +1081,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
 int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels,
     uint64_t *channelLayout)
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     if (!SceneTypeToSessionIDMap_.count(sceneType)) {
         AUDIO_INFO_LOG("empty scene type.");
         return ERROR;
@@ -1117,6 +1118,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
 
 int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info)
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     if (!SessionIDToEffectInfoMap_.count(sessionID)) {
         SceneTypeToSessionIDMap_[sceneType].insert(sessionID);
         SessionIDToEffectInfoMap_[sessionID] = info;
@@ -1131,6 +1133,7 @@ int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sceneType, std::s
 
 int32_t AudioEffectChainManager::SessionInfoMapDelete(std::string sceneType, std::string sessionID)
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     if (!SceneTypeToSessionIDMap_.count(sceneType)) {
         return ERROR;
     }
