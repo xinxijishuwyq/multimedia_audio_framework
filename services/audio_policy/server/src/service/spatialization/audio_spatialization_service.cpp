@@ -363,18 +363,24 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
             continue;
         }
         if ((it->second).second == STREAM_USAGE_GAME) {
-            sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, false));
+            if (!outputDeviceChange) {
+                sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, false));
+            }
             spatializationStateChangeCb->OnSpatializationStateChange(spatializationNotSupported);
         } else {
-            sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, spatializationEnabledReal_));
+            if (!outputDeviceChange) {
+                sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, spatializationEnabledReal_));
+            }
             spatializationStateChangeCb->OnSpatializationStateChange(spatializationState);
         }
     }
 
     if (!outputDeviceChange) {
-        std::thread notifyOffloadThread = std::thread(
-            &AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService,
-            currentDeviceAddress_, sessionIDToSpatializationEnabledMap);
+        std::thread notifyOffloadThread = std::thread(std::bind(
+            &AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService,
+            &AudioPolicyService::GetAudioPolicyService(),
+            currentDeviceAddress_,
+            sessionIDToSpatializationEnabledMap));
         notifyOffloadThread.detach();
     }
 }

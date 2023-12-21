@@ -3609,6 +3609,9 @@ void AudioSpatializationStateChangeCallbackImpl::setAudioServiceClientObj(AudioS
 void AudioSpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
     const AudioSpatializationState &spatializationState)
 {
+    if (serviceClient_ == nullptr) {
+        return;
+    }
     serviceClient_->OnSpatializationStateChange(spatializationState);
 }
 } // namespace AudioStandard
