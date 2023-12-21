@@ -1657,7 +1657,7 @@ int32_t AudioPolicyProxy::SetCaptureSilentState(bool state)
         AUDIO_ERR_LOG(" SetCaptureSilentState WriteInterfaceToken failed");
         return ERROR;
     }
-    data.WriteInt32(static_cast<int32_t>(state));
+    data.WriteBool(state);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE), data, reply, option);
