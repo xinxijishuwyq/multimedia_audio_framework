@@ -492,8 +492,6 @@ private:
 
     int32_t LoadA2dpModule(DeviceType deviceType);
 
-    int32_t HandleA2dpOffloadDeviceSuspend(DeviceType deviceType);
-
     int32_t LoadUsbModule(string deviceInfo);
 
     int32_t LoadDefaultUsbModule();
@@ -666,6 +664,8 @@ private:
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceDesc);
+    
+    void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
