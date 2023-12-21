@@ -2535,6 +2535,11 @@ int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCap
 
 int32_t AudioPolicyServer::SetCaptureSilentState(bool state)
 {
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_CAST_ENGINE_SA) {
+        AUDIO_ERR_LOG("SetCaptureSilentState callerUid is Error: not cast_engine");
+        return ERROR;
+    }
     return audioPolicyService_.SetCaptureSilentState(state);
 }
 
