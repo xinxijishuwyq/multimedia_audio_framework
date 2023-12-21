@@ -1022,7 +1022,8 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
     }
     audioEffectChain->UpdateMultichannelIoBufferConfig(inputChannels, inputChannelLayout);
     return SUCCESS;
- }
+}
+
 
 int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneType)
 {
