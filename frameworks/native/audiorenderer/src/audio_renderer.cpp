@@ -1551,5 +1551,10 @@ float AudioRendererPrivate::GetSpeed()
 #endif
     return speed_;
 }
+
+bool AudioRendererPrivate::IsFastRenderer()
+{
+    return isFastRenderer_;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
