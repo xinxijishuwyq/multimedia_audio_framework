@@ -24,9 +24,7 @@
 #include <gtest/gtest.h>
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-#define private public
 #include "audio_service_client.h"
-#undef private
 
 using namespace testing::ext;
 namespace OHOS {
@@ -417,10 +415,13 @@ HWTEST(AudioServiceUnitTest, AudioServiceClient_003, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     AudioSpatializationState spatializationState = {false, false};
-    audioServiceClient->spatializationStateChangeCallback_->OnSpatializationStateChange(spatializationState);
+    audioServiceClient->OnSpatializationStateChange(spatializationState);
 
     std::unique_ptr<AudioSpatializationStateChangeCallbackImpl> spatializationStateChangeCallbackPtr(
         new AudioSpatializationStateChangeCallbackImpl());
+    spatializationStateChangeCallbackPtr->OnSpatializationStateChange(spatializationState);
+
+    spatializationStateChangeCallbackPtr->setAudioServiceClientObj(spatializationStateChangeCallbackPtr);
     spatializationStateChangeCallbackPtr->OnSpatializationStateChange(spatializationState);
     EXPECT_EQ(SUCCESS, SUCCESS);
 
