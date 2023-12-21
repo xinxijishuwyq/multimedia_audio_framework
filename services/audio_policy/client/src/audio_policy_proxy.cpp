@@ -1663,7 +1663,7 @@ int32_t AudioPolicyProxy::SetCaptureSilentState(bool state)
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("SetCaptureSilentState failed, error: %d",error);
-        return ERRPR;
+        return ERROR;
     }
     return reply.ReadInt32();
 }
