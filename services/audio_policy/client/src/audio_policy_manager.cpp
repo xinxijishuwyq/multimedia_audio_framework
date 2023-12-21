@@ -1281,7 +1281,7 @@ int32_t AudioPolicyManager::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
 int32_t AudioPolicyManager::SetCaptureSilentState(bool state)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if(gsp == nullptr) {
+    if (gsp == nullptr) {
         AUDIO_ERR_LOG("SetCaptureSilentState: audio policy manager proxy is NULL");
         return ERROR;
     }
