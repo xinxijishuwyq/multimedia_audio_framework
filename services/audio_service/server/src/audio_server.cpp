@@ -391,11 +391,6 @@ int32_t AudioServer::SetVoiceVolume(float volume)
 
 int32_t AudioServer::OffloadSetVolume(float volume)
 {
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
-        AUDIO_ERR_LOG("OffloadSetVolume refused for %{public}d", callingUid);
-        return ERR_NOT_SUPPORTED;
-    }
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
 
     if (audioRendererSinkInstance == nullptr) {
