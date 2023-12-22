@@ -201,20 +201,22 @@ struct Userdata {
 };
 
 static void UserdataFree(struct Userdata *u);
-static int32_t PrepareDevice(struct Userdata *u, const char* filePath);
+static int32_t PrepareDevice(struct Userdata *u, const char *filePath);
 
 static int32_t PrepareDeviceOffload(struct Userdata *u, struct RendererSinkAdapter *sinkAdapter, const char *filePath);
 static char *GetStateInfo(pa_sink_state_t state);
 static char *GetInputStateInfo(pa_sink_input_state_t state);
-static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state);
+static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state);
 static void OffloadLock(struct Userdata *u);
 static void OffloadUnlock(struct Userdata *u);
-static int32_t UpdatePresentationPosition(struct Userdata* u);
+static int32_t UpdatePresentationPosition(struct Userdata *u);
 static bool InputIsPrimary(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
-static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i);
-static void StopPrimaryHdiIfNoRunning(struct Userdata* u);
+static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i);
+static void StopPrimaryHdiIfNoRunning(struct Userdata *u);
+static void StartPrimaryHdiIfRunning(struct Userdata *u);
+static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i);
 
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-9f
@@ -403,10 +405,10 @@ static enum AudioOffloadType GetInputPolicyState(pa_sink_input *i)
     return atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
 }
 
-static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memchunk* pchunk)
+static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memchunk *pchunk)
 {
     size_t index, length;
-    void* p = NULL;
+    void *p = NULL;
 
     pa_assert(pchunk);
 
@@ -453,9 +455,9 @@ static int32_t RenderWriteOffload(struct Userdata* u, pa_sink_input* i, pa_memch
 
 void OffloadCallback(const enum RenderCallbackType type, int8_t *userdata)
 {
-    struct Userdata *u = (struct Userdata*)userdata;
+    struct Userdata *u = (struct Userdata *)userdata;
     switch (type) {
-        case CB_NONBLOCK_WRITE_COMPLETED:{ //need more data
+        case CB_NONBLOCK_WRITE_COMPLETED: { //need more data
             const int hdistate = pa_atomic_load(&u->offload.hdistate);
             if (hdistate == 1) {
                 pa_atomic_store(&u->offload.hdistate, 0);
@@ -1326,6 +1328,7 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
     pa_assert(chunk.length > 0);
     EndCTrace(renderTrace);
 
+    StartPrimaryHdiIfRunning(u);
     pa_asyncmsgq_post(u->primary.dq, NULL, HDI_RENDER, NULL, 0, &chunk, NULL);
     u->primary.timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
 }
@@ -1364,7 +1367,7 @@ static bool InputIsPrimary(pa_sink_input *i)
     return !isOffload && !isMultiChannel && isRunning;
 }
 
-static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink* s, pa_mix_info* info, unsigned maxinfo)
+static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa_mix_info *info, unsigned maxinfo)
 {
     pa_sink_input *i;
     unsigned n = 0;
@@ -1374,7 +1377,7 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink* s, pa
     pa_sink_assert_io_context(s);
     pa_assert(is);
 
-    while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) &&maxinfo > 0) {
+    while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
         pa_sink_input_assert_ref(i);
 
         bool flag = false;
@@ -1410,8 +1413,8 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink* s, pa
     return n;
 }
 
-static int32_t GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload,
-    unsigned* nMultiChannel, bool isRunning)
+static int32_t GetInputsType(pa_sink *s, unsigned *nPrimary, unsigned *nOffload,
+    unsigned *nMultiChannel, bool isRunning)
 {
     int ret;
     struct Userdata *u;
@@ -1449,10 +1452,10 @@ static int32_t GetInputsType(pa_sink* s, unsigned* nPrimary, unsigned* nOffload,
     return n;
 }
 
-size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
+size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool *wait)
 {
     size_t length;
-    playback_stream* ps = i->userdata;
+    playback_stream *ps = i->userdata;
     const bool b = (bool)ps->sink_input->thread_info.resampler;
     const pa_sample_spec sampleSpecIn = b ? ps->sink_input->thread_info.resampler->i_ss : ps->sink_input->sample_spec;
     const pa_sample_spec sampleSpecOut = b ? ps->sink_input->thread_info.resampler->o_ss : ps->sink_input->sample_spec;
@@ -1499,7 +1502,7 @@ size_t GetOffloadRenderLength(struct Userdata* u, pa_sink_input* i, bool* wait)
     return length;
 }
 
-static void InputsDropFromInputs2(pa_mix_info* info, unsigned n)
+static void InputsDropFromInputs2(pa_mix_info *info, unsigned n)
 {
     for (; n > 0; info++, n--) {
         if (info->userdata) {
@@ -1512,8 +1515,8 @@ static void InputsDropFromInputs2(pa_mix_info* info, unsigned n)
     }
 }
 
-static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_mix_info* info, unsigned n,
-    pa_memchunk* result)
+static void InputsDropFromInputs(pa_mix_info *infoInputs, unsigned nInputs, pa_mix_info *info, unsigned n,
+    pa_memchunk *result)
 {
     unsigned p = 0, ii = 0, nUnreffed = 0;
 
@@ -1524,12 +1527,12 @@ static void InputsDropFromInputs(pa_mix_info* infoInputs, unsigned nInputs, pa_m
     for (ii = 0; ii < nInputs; ++ii) {
         pa_sink_input *i = infoInputs[ii].userdata;
         unsigned j;
-        pa_mix_info* m = NULL;
+        pa_mix_info *m = NULL;
 
         pa_sink_input_assert_ref(i);
 
         /* Let's try to find the matching entyr info the pa_mix_info array */
-        for (j = 0; j < n ; j++) {
+        for (j = 0; j < n; j++) {
             if (info[p].userdata == i) {
                 m = info + p;
                 break;
@@ -1614,7 +1617,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
 
     pa_assert(n == 1 || n == 0);
     if (n == 0) {
-        if (target->length >length)
+        if (target->length > length)
             target->length = length;
 
         pa_silence_memchunk(target, &s->sample_spec);
@@ -1634,7 +1637,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
     InputsDropFromInputs(infoInputs, nInputs, info, n, target);
 }
 
-void OffloadReset(struct Userdata* u)
+void OffloadReset(struct Userdata *u)
 {
     u->offload.pos = 0;
     u->offload.hdiPos = 0;
@@ -1647,18 +1650,20 @@ void OffloadReset(struct Userdata* u)
     u->offload.fullTs = 0;
 }
 
-int32_t RenderWriteOffloadFunc(struct Userdata* u, size_t length, pa_mix_info* infoInputs, unsigned nInputs,
-    int32_t* writen)
+int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_info *infoInputs, unsigned nInputs,
+    int32_t *writen)
 {
-    pa_sink_input* i = infoInputs[0].userdata;
+    pa_sink_input *i = infoInputs[0].userdata;
 
     pa_assert(length != 0);
-    pa_memchunk* chunk = &(u->offload.chunk);
+    pa_memchunk *chunk = &(u->offload.chunk);
     chunk->index = 0;
     chunk->length = length;
     int64_t l, d;
     l = chunk->length;
     size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
+    blockSize = PA_MAX(blockSize, pa_usec_to_bytes(0.6 * OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC, // 0.6 40% is hdi limit
+        &u->sink->sample_spec));
     d = 0;
     while (l > 0) {
         pa_memchunk tchunk;
@@ -1692,10 +1697,10 @@ int32_t RenderWriteOffloadFunc(struct Userdata* u, size_t length, pa_mix_info* i
     return ret;
 }
 
-int32_t ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* nInput, int32_t* writen)
+int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int32_t *nInput, int32_t *writen)
 {
     *wait = true;
-    pa_sink* s = u->sink;
+    pa_sink *s = u->sink;
     pa_mix_info infoInputs[MAX_MIX_CHANNELS];
     unsigned nInputs;
 
@@ -1722,7 +1727,8 @@ int32_t ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* n
         AUDIO_ERR_LOG("GetInputsInfo offload input != 1");
     }
 
-    pa_sink_input* i = infoInputs[0].userdata;
+    pa_sink_input *i = infoInputs[0].userdata;
+    CheckInputChangeToOffload(u, i);
     size_t length = GetOffloadRenderLength(u, i, wait);
     if (*wait && length == 0) {
         InputsDropFromInputs2(infoInputs, nInputs);
@@ -1737,7 +1743,7 @@ int32_t ProcessRenderUseTimingOffload(struct Userdata* u, bool* wait, int32_t* n
     return ret;
 }
 
-static int32_t UpdatePresentationPosition(struct Userdata* u)
+static int32_t UpdatePresentationPosition(struct Userdata *u)
 {
     uint64_t frames;
     int64_t timeSec, timeNanoSec;
@@ -1752,10 +1758,10 @@ static int32_t UpdatePresentationPosition(struct Userdata* u)
     return 0;
 }
 
-static void OffloadRewindAndFlush(struct Userdata* u, pa_sink_input* i, bool afterRender)
+static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool afterRender)
 {
     pa_sink_input_assert_ref(i);
-    playback_stream* ps = i->userdata;
+    playback_stream *ps = i->userdata;
     pa_assert(ps);
 
     int ret = UpdatePresentationPosition(u);
@@ -1764,7 +1770,7 @@ static void OffloadRewindAndFlush(struct Userdata* u, pa_sink_input* i, bool aft
         if (cacheLenInHdi != 0) {
             uint64_t bufSizeInRender = pa_usec_to_bytes(cacheLenInHdi, &i->sink->sample_spec);
             const pa_sample_spec sampleSpecIn = i->thread_info.resampler ? i->thread_info.resampler->i_ss
-                                                                            : i->sample_spec;
+                                                                         : i->sample_spec;
             uint64_t bufSizeInInput = pa_usec_to_bytes(cacheLenInHdi, &sampleSpecIn);
             bufSizeInInput += pa_usec_to_bytes(pa_bytes_to_usec(
                 pa_memblockq_get_length(i->thread_info.render_memblockq), &i->sink->sample_spec), &sampleSpecIn);
@@ -1790,21 +1796,21 @@ static void OffloadRewindAndFlush(struct Userdata* u, pa_sink_input* i, bool aft
     OffloadReset(u);
 }
 
-static void GetSinkInputName(pa_sink_input* i, char* str, int len)
+static void GetSinkInputName(pa_sink_input *i, char *str, int len)
 {
-    const char* streamUid = safeProplistGets(i->proplist, "stream.client.uid", "NULL");
-    const char* streamPid = safeProplistGets(i->proplist, "stream.client.pid", "NULL");
-    const char* streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
-    const char* sessionID = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
+    const char *streamUid = safeProplistGets(i->proplist, "stream.client.uid", "NULL");
+    const char *streamPid = safeProplistGets(i->proplist, "stream.client.pid", "NULL");
+    const char *streamType = safeProplistGets(i->proplist, "stream.type", "NULL");
+    const char *sessionID = safeProplistGets(i->proplist, "stream.sessionID", "NULL");
     int ret = sprintf_s(str, len, "%s_%s_%s_%s_of%d", streamType, streamUid, streamPid, sessionID, InputIsOffload(i));
     if (ret < 0) {
         AUDIO_ERR_LOG("sprintf_s fail! ret %d", ret);
     }
 }
 
-static int32_t getSinkInputSessionID(pa_sink_input* i)
+static int32_t getSinkInputSessionID(pa_sink_input *i)
 {
-    const char* res = pa_proplist_gets(i->proplist, "stream.sessionID");
+    const char *res = pa_proplist_gets(i->proplist, "stream.sessionID");
     if (res == NULL) {
         return -1;
     } else {
@@ -1812,7 +1818,7 @@ static int32_t getSinkInputSessionID(pa_sink_input* i)
     }
 }
 
-static void OffloadLock(struct Userdata* u)
+static void OffloadLock(struct Userdata *u)
 {
     if (!u->offload.runninglocked) {
         u->offload.sinkAdapter->RendererSinkOffloadRunningLockLock(u->offload.sinkAdapter);
@@ -1830,13 +1836,14 @@ static void OffloadUnlock(struct Userdata *u)
     }
 }
 
-static void offloadSetMaxRewind(struct Userdata* u, pa_sink_input* i)
+static void offloadSetMaxRewind(struct Userdata *u, pa_sink_input *i)
 {
     pa_sink_input_assert_ref(i);
     pa_sink_input_assert_io_context(i);
     pa_assert(PA_SINK_INPUT_IS_LINKED(i->thread_info.state));
 
-    pa_memblockq_set_maxrewind(i->thread_info.render_memblockq, OFFLOAD_FRAME_SIZE);
+    size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
+    pa_memblockq_set_maxrewind(i->thread_info.render_memblockq, blockSize);
 
     size_t nbytes = pa_usec_to_bytes(MAX_REWIND, &i->sink->sample_spec);
 
@@ -1846,19 +1853,26 @@ static void offloadSetMaxRewind(struct Userdata* u, pa_sink_input* i)
     }
 }
 
-static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
+static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i)
 {
-    offloadSetMaxRewind(u, i);
-    pa_sink_input *it;
-    void *state = NULL;
-    while ((it = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
-        if (it != i && pa_memblockq_get_maxrewind(it->thread_info.render_memblockq) != 0) {
-            pa_sink_input_update_max_rewind(it, 0);
-            drop_backlog(it->thread_info.render_memblockq);
-            playback_stream* ps = it->userdata;
-            drop_backlog(ps->memblockq);
+    if (InputIsOffload(i) && pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) == 0) {
+        offloadSetMaxRewind(u, i);
+        pa_sink_input *it;
+        void *state = NULL;
+        while ((it = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+            if (it != i && pa_memblockq_get_maxrewind(it->thread_info.render_memblockq) != 0) {
+                pa_sink_input_update_max_rewind(it, 0);
+                drop_backlog(it->thread_info.render_memblockq);
+                playback_stream *ps = it->userdata;
+                drop_backlog(ps->memblockq);
+            }
         }
     }
+}
+
+static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
+{
+    CheckInputChangeToOffload(u, i);
     int32_t sessionID = getSinkInputSessionID(i);
     if (u->offload.isHDISinkStarted) {
         if (sessionID != u->offload.sessionID) {
@@ -1881,7 +1895,7 @@ static void StartOffloadHdi(struct Userdata* u, pa_sink_input* i)
     StopPrimaryHdiIfNoRunning(u);
 }
 
-static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa_sink_input_state_t state)
+static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa_sink_input_state_t state)
 {
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
@@ -1905,7 +1919,7 @@ static void PaInputStateChangeCbOffload(struct Userdata* u, pa_sink_input* i, pa
     }
 }
 
-static void PaInputStateChangeCbPrimary(struct Userdata* u, pa_sink_input* i, pa_sink_input_state_t state)
+static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa_sink_input_state_t state)
 {
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
@@ -1928,6 +1942,29 @@ static void PaInputStateChangeCbPrimary(struct Userdata* u, pa_sink_input* i, pa
         }
     } else if (stopping) {
         StopPrimaryHdiIfNoRunning(u);
+    }
+}
+
+static void StartPrimaryHdiIfRunning(struct Userdata *u)
+{
+    if (u->primary.isHDISinkStarted) {
+        return;
+    }
+
+    unsigned nPrimary, nOffload, nMultiChannel;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
+    if (nPrimary == 0) {
+        return;
+    }
+
+    if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
+        AUDIO_ERR_LOG("StartPrimaryHdiIfRunning, audiorenderer control start failed!");
+        u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
+    } else {
+        u->primary.isHDISinkStarted = true;
+        u->writeCount = 0;
+        u->renderCount = 0;
+        AUDIO_INFO_LOG("StartPrimaryHdiIfRunning, Successfully restarted HDI renderer");
     }
 }
 
@@ -2021,9 +2058,9 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
     u->primary.isHDISinkStarted = false;
 }
 
-static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
+static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 {
-    struct Userdata* u = NULL;
+    struct Userdata *u = NULL;
 
     pa_assert(i);
     pa_sink_input_assert_ref(i);
@@ -2058,7 +2095,7 @@ static void PaInputStateChangeCb(pa_sink_input* i, pa_sink_input_state_t state)
     }
 }
 
-static void ThreadFuncRendererTimerOffloadProcess(struct Userdata* u, pa_usec_t now, int64_t* sleepForUsec)
+static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t now, int64_t *sleepForUsec)
 {
     const uint64_t pos = u->offload.pos;
     const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
@@ -2106,7 +2143,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata* u, pa_usec_t 
     }
 }
 
-static void ThreadFuncRendererTimerOffloadFlag(struct Userdata* u, pa_usec_t now, bool* flagOut, int64_t* sleepForUsec)
+static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now, bool *flagOut, int64_t *sleepForUsec)
 {
     bool flag = PA_SINK_IS_RUNNING(u->sink->thread_info.state);
     if (flag) {
@@ -2128,7 +2165,7 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata* u, pa_usec_t now
     *flagOut = flag;
 }
 
-static int32_t WaitMsg(const char* prefix, const char* suffix, struct Userdata* u, pa_asyncmsgq* msgq)
+static int32_t WaitMsg(const char *prefix, const char *suffix, struct Userdata *u, pa_asyncmsgq *msgq)
 {
     int32_t ret;
     int32_t code = 0;
@@ -2151,11 +2188,11 @@ static int32_t WaitMsg(const char* prefix, const char* suffix, struct Userdata* 
     return 0;
 }
 
-static void ThreadFuncRendererTimerOffload(void* userdata)
+static void ThreadFuncRendererTimerOffload(void *userdata)
 {
     ScheduleReportData(getpid(), gettid(), "pulseaudio"); // set audio thread priority
 
-    struct Userdata* u = userdata;
+    struct Userdata *u = userdata;
 
     pa_assert(u);
 
@@ -2706,7 +2743,7 @@ static void SinkUpdateRequestedLatencyCb(pa_sink *s)
 }
 
 static int32_t SinkProcessMsg(pa_msgobject *o, int32_t code, void *data, int64_t offset,
-                          pa_memchunk *chunk)
+    pa_memchunk *chunk)
 {
     AUDIO_DEBUG_LOG("SinkProcessMsg: code: %{public}d", code);
     struct Userdata *u = PA_SINK(o)->userdata;
@@ -2891,12 +2928,12 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
     return 0;
 }
 
-static size_t MsToAlignedSize(size_t ms, const pa_sample_spec* ss)
+static size_t MsToAlignedSize(size_t ms, const pa_sample_spec *ss)
 {
     return pa_frame_align(pa_usec_to_bytes(ms * PA_USEC_PER_MSEC, ss), ss);
 }
 
-static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
+static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
     if (u->offload_enable) {
@@ -2905,7 +2942,7 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, st
             OffloadRewindAndFlush(u, i, false);
             OffloadUnlock(u);
 
-            playback_stream* ps = i->userdata;
+            playback_stream *ps = i->userdata;
             pa_assert(ps);
             pa_assert(ps->memblockq);
             const pa_sample_spec sampleSpecIn = i->thread_info.resampler ? i->thread_info.resampler->i_ss
@@ -2921,7 +2958,7 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core* core, pa_sink_input* i, st
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SinkInputStateChangedCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
+static pa_hook_result_t SinkInputStateChangedCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
     if (u->offload_enable && InputIsOffload(i)) {
@@ -2932,7 +2969,7 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core* core, pa_sink_input* i,
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SinkInputPutCb(pa_core* core, pa_sink_input* i, struct Userdata* u)
+static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
     if (u->offload_enable) {
@@ -2966,7 +3003,7 @@ static enum HdiAdapterFormat ConvertPaToHdiAdapterFormat(pa_sample_format_t form
     return adapterFormat;
 }
 
-static int32_t PrepareDevice(struct Userdata *u, const char* filePath)
+static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
 {
     SinkAttr sample_attrs;
     int32_t ret;
@@ -3030,7 +3067,7 @@ static int32_t PrepareDeviceOffload(struct Userdata *u, struct RendererSinkAdapt
 }
 
 static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSinkAdapter *sinkAdapter,
-    const char* filePath)
+    const char *filePath)
 {
     int32_t ret;
 
@@ -3088,7 +3125,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->spatialEnabled = false;
 }
 
-static pa_sink* PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
+static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)
 {
     // set audio thread priority
     ScheduleReportData(getpid(), gettid(), "pulseaudio");
@@ -3146,7 +3183,7 @@ fail:
     return NULL;
 }
 
-int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module* m, pa_modargs* ma, struct Userdata* u)
+int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
     int ret;
     char *paThreadName = NULL;
@@ -3176,7 +3213,7 @@ int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module* m, pa_modargs* ma, struct 
     return 0;
 }
 
-int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
+int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
     char *paThreadName = NULL;
 
@@ -3195,7 +3232,7 @@ int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
     if (!strcmp(u->sink->name, "Speaker")) {
         u->multichannel_enable = true;
         PaHdiSinkNewInitThreadMultiChannel(m, ma, u);
-        
+
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
             (pa_hook_cb_t)SinkInputPutCb, u);
     } else {
@@ -3218,7 +3255,7 @@ int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
         u->offload.msgq = pa_asyncmsgq_new(0);
         pa_atomic_store(&u->offload.hdistate, 0);
         u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool,
-            pa_usec_to_bytes(300 * PA_USEC_PER_MSEC, &u->sink->sample_spec)); // 300ms for max len once offload render
+            pa_usec_to_bytes(200 * PA_USEC_PER_MSEC, &u->sink->sample_spec)); // 200ms for max len once offload render
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_MOVE_START], PA_HOOK_LATE,
             (pa_hook_cb_t)SinkInputMoveStartCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
@@ -3234,7 +3271,7 @@ int32_t PaHdiSinkNewInitThread(pa_module* m, pa_modargs* ma, struct Userdata* u)
     return 0;
 }
 
-int32_t PaHdiSinkNewInitUserData(pa_module* m, pa_modargs* ma, struct Userdata *u)
+int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
     u->core = m->core;
     u->module = m;
@@ -3293,7 +3330,7 @@ int32_t PaHdiSinkNewInitUserData(pa_module* m, pa_modargs* ma, struct Userdata *
     return 0;
 }
 
-int32_t PaHdiSinkNewInitUserDataAndSink(pa_module* m, pa_modargs* ma, const char* driver, struct Userdata* u)
+int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, const char *driver, struct Userdata *u)
 {
     if (pa_modargs_get_value_boolean(ma, "offload_enable", &u->offload_enable) < 0) {
         AUDIO_ERR_LOG("Failed to parse offload_enable argument.");
@@ -3454,7 +3491,7 @@ static void UserdataFreeThread(struct Userdata *u)
         pa_asyncmsgq_send(u->multiChannel.msgq, NULL, QUIT, NULL, 0, NULL);
         pa_thread_free(u->multiChannel.thread);
     }
-    
+
     if (u->multiChannel.thread_hdi) {
         pa_asyncmsgq_post(u->multiChannel.dq, NULL, QUIT, NULL, 0, NULL, NULL);
         pa_thread_free(u->multiChannel.thread_hdi);

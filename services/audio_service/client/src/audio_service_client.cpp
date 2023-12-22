@@ -882,7 +882,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
         return errorCode;
     }
 
-    const char* deviceName = deviceNameS.empty() ? nullptr : deviceNameS.c_str();
+    const char *deviceName = deviceNameS.empty() ? nullptr : deviceNameS.c_str();
 
     pa_threaded_mainloop_lock(mainLoop);
 
@@ -2506,9 +2506,9 @@ float AudioServiceClient::GetStreamVolume()
     return volumeFactor_;
 }
 
-static void printBufAttr(pa_stream* paStream)
+static void printBufAttr(pa_stream *paStream)
 {
-    const pa_buffer_attr* bufferAttr = pa_stream_get_buffer_attr(paStream);
+    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
     AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: minreq    %{public}u", bufferAttr->minreq);
     AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: prebuf    %{public}u", bufferAttr->prebuf);
     AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: tlength   %{public}u", bufferAttr->tlength);
@@ -2523,7 +2523,7 @@ int32_t AudioServiceClient::InitializePAProbListOffload()
         return AUDIO_CLIENT_PA_ERR;
     }
 
-    pa_proplist* propList = pa_proplist_new();
+    pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
@@ -2685,8 +2685,17 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
         return AUDIO_CLIENT_PA_ERR;
     }
 
-    pa_buffer_attr* bufferAttr;
+    pa_buffer_attr *bufferAttr;
     printBufAttr(paStream);
+
+    const pa_buffer_attr *bufferAttrOri = pa_stream_get_buffer_attr(paStream);
+    if (bufferAttrOri->prebuf ==
+        AlignToAudioFrameSize(pa_usec_to_bytes(MIN_BUF_DURATION_IN_USEC, &sampleSpec), sampleSpec)) {
+        AUDIO_DEBUG_LOG(
+            "AudioServiceClient::UpdatebufferAttrOffload pa buffer attr not update, maybe in callback api");
+        return AUDIO_CLIENT_SUCCESS;
+    }
+
     if (bufferAttrStateMap_.find(statePolicy)!=bufferAttrStateMap_.end()) {
         bufferAttr = &(bufferAttrStateMap_[statePolicy]);
     } else {
@@ -2694,7 +2703,7 @@ int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy
         return AUDIO_CLIENT_ERR;
     }
 
-    pa_operation* operation =
+    pa_operation *operation =
         pa_stream_set_buffer_attr(paStream, bufferAttr, PAStreamSetBufAttrSuccessCb, (void*)this);
 
     if (operation == nullptr) {
