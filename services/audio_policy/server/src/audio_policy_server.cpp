@@ -192,6 +192,12 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
                 sessionProcessor_.Start();
                 RegisterParamCallback();
                 LoadEffectLibrary();
+                if (system::GetBoolParameter("persist.edm.mic_disable", false)) {
+                    int32_t ret = this->SetMicrophoneMute(true);
+                    if (ret != SUCCESS) {
+                        AUDIO_ERR_LOG("AudioPolicyServer Init SetMicrophoneMute result %{public}d", ret);
+                    }
+                }
                 isFirstAudioServiceStart_ = true;
             } else {
                 AUDIO_ERR_LOG("OnAddSystemAbility audio service is not first start");
@@ -928,7 +934,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     std::lock_guard<std::mutex> lock(micStateChangeMutex_);
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != EDM_SERVICE_UID && system::GetBoolParameter("persist.edm.mic_disable", false)) {
+    if (!isMute && callerUid != EDM_SERVICE_UID && system::GetBoolParameter("persist.edm.mic_disable", false)) {
         AUDIO_ERR_LOG("set microphone mute failed cause feature is disabled by edm");
         return ERR_MICROPHONE_DISABLED_BY_EDM;
     }
