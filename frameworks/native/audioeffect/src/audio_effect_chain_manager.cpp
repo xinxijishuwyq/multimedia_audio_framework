@@ -1091,7 +1091,6 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     uint64_t *channelLayout)
 {
     if (!SceneTypeToSessionIDMap_.count(sceneType)) {
-        AUDIO_INFO_LOG("empty scene type.");
         return ERROR;
     }
     std::set<std::string> sessions = SceneTypeToSessionIDMap_[sceneType];
