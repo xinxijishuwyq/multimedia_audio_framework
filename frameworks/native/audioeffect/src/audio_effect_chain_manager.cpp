@@ -201,8 +201,18 @@ bool EffectChainManagerCheckA2dpOffload()
     return false;
 }
 
-int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, const uint32_t channels,
-    const char *channelLayout, const char *sceneMode, const char *spatializationEnabled)
+SessionInfoPack PackSessionInfo(const uint32_t channels, const char *channelLayout, const char *sceneMode,
+    const char *spatializationEnabled)
+{
+    SessionInfoPack pack;
+    pack.channels = channels;
+    pack.channelLayout = (char *)channelLayout;
+    pack.sceneMode = (char *)sceneMode;
+    pack.spatializationEnabled = (char *)spatializationEnabled;
+    return pack;
+}
+
+int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
@@ -212,12 +222,12 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     std::string sessionIDString = "";
     std::string sceneModeString = "";
     std::string spatializationEnabledString = "";
-    if (sceneType && channelLayout && sessionID && sceneMode && spatializationEnabled) {
+    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode && pack.spatializationEnabled) {
         sceneTypeString = sceneType;
-        channelLayoutNum = std::strtoull(channelLayout, nullptr, BASE_TEN);
+        channelLayoutNum = std::strtoull(pack.channelLayout, nullptr, BASE_TEN);
         sessionIDString = sessionID;
-        sceneModeString = sceneMode;
-        spatializationEnabledString = spatializationEnabled;
+        sceneModeString = pack.sceneMode;
+        spatializationEnabledString = pack.spatializationEnabled;
     } else {
         AUDIO_ERR_LOG("map input parameters missing.");
         return ERROR;
@@ -225,7 +235,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
 
     sessionEffectInfo info;
     info.sceneMode = sceneModeString;
-    info.channels = channels;
+    info.channels = pack.channels;
     info.channelLayout = channelLayoutNum;
     info.spatializationEnabled = spatializationEnabledString;
     return audioEffectChainManager->SessionInfoMapAdd(sceneTypeString, sessionIDString, info);
@@ -1081,7 +1091,6 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
 int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels,
     uint64_t *channelLayout)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
     if (!SceneTypeToSessionIDMap_.count(sceneType)) {
         AUDIO_INFO_LOG("empty scene type.");
         return ERROR;
@@ -1118,7 +1127,6 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
 
 int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
     if (!SessionIDToEffectInfoMap_.count(sessionID)) {
         SceneTypeToSessionIDMap_[sceneType].insert(sessionID);
         SessionIDToEffectInfoMap_[sessionID] = info;
@@ -1133,7 +1141,6 @@ int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sceneType, std::s
 
 int32_t AudioEffectChainManager::SessionInfoMapDelete(std::string sceneType, std::string sessionID)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
     if (!SceneTypeToSessionIDMap_.count(sceneType)) {
         return ERROR;
     }

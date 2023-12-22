@@ -362,7 +362,7 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType)
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
     EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
 
-    pa_resampler* r;
+    pa_resampler *r;
     pa_sample_spec ss = sinkIn->thread_info.resampler->o_ss;
     pa_channel_map cm = sinkIn->thread_info.resampler->o_cm;
     if (processChannels == sinkIn->thread_info.resampler->i_ss.channels) {
