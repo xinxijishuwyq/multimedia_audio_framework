@@ -23,7 +23,6 @@
 #include <memory>
 #include <vector>
 #include <set>
-#include <algorithm>
 
 #include "securec.h"
 #include "audio_effect_chain_adapter.h"
