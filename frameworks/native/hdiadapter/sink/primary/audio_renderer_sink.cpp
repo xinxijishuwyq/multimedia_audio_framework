@@ -53,6 +53,7 @@ const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
+const unsigned int TIME_OUT_SECONDS = 5;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -527,6 +528,7 @@ int32_t AudioRendererSinkInner::Start(void)
     AUDIO_INFO_LOG("Start.");
     Trace trace("Sink::Start");
 #ifdef FEATURE_POWER_MANAGER
+    AudioXCollie audioXCollie("AudioRendererSinkInner::CreateRunningLock", TIME_OUT_SECONDS);
     if (keepRunningLock_ == nullptr) {
         keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
@@ -538,6 +540,7 @@ int32_t AudioRendererSinkInner::Start(void)
     } else {
         AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
+    audioXCollie.CancelXCollieTimer();
 #endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
 
