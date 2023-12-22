@@ -24,7 +24,6 @@
 #include <gtest/gtest.h>
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-#include "audio_service_client.h"
 
 using namespace testing::ext;
 namespace OHOS {
