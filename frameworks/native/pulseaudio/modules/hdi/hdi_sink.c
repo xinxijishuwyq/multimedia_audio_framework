@@ -367,6 +367,8 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType)
     pa_resampler *r;
     pa_sample_spec ss = sinkIn->thread_info.resampler->o_ss;
     pa_channel_map cm = sinkIn->thread_info.resampler->o_cm;
+    pa_channel_map processCm;
+    ConvertChLayoutToPaChMap(processChannelLayout, &processCm);
     if (processChannels == sinkIn->thread_info.resampler->i_ss.channels) {
         ss.channels = sinkIn->thread_info.resampler->i_ss.channels;
         cm          = sinkIn->thread_info.resampler->i_cm;
@@ -381,14 +383,14 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType)
                             sinkIn->thread_info.resampler->method,
                             sinkIn->thread_info.resampler->flags);
     } else {
-        ss.channels = DEFAULT_NUM_CHANNEL;
+        ss.channels = processChannels;
         if (ss.channels == sinkIn->thread_info.resampler->o_ss.channels) {
             return;
         }
         r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
                             &sinkIn->thread_info.resampler->i_ss,
                             &sinkIn->thread_info.resampler->i_cm,
-                            &ss, NULL,
+                            &ss, &processCm,
                             sinkIn->core->lfe_crossover_freq,
                             sinkIn->thread_info.resampler->method,
                             sinkIn->thread_info.resampler->flags);
