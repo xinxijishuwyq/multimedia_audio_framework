@@ -1113,6 +1113,11 @@ std::string AudioSystemManager::GetSelfBundleName()
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     sptr<OHOS::IRemoteObject> remoteObject =
         systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        AUDIO_ERR_LOG("remoteObject is null");
+        return bundleName;
+    }
+
     sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     if (iBundleMgr == nullptr) {
         AUDIO_ERR_LOG("bundlemgr interface is null");
