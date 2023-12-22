@@ -186,7 +186,7 @@ private:
     void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
-    void SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel);
+    void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
     void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);

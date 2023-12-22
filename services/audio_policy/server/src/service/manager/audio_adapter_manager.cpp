@@ -87,12 +87,12 @@ bool AudioAdapterManager::Init()
 
     // init volume before kvstore start by local prop for bootanimation
     char currentVolumeValue[3] = {0};
-    auto ret = GetParameter("persist.multimedia.audio.mediavolume", "7",
+    auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", "7",
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
-        int32_t mediaVolumeLevel = atoi(currentVolumeValue);
-        volumeLevelMap_[STREAM_MUSIC] = mediaVolumeLevel;
-        AUDIO_INFO_LOG("Init: Get music volume to map success %{public}d", volumeLevelMap_[STREAM_MUSIC]);
+        int32_t ringtoneVolumeLevel = atoi(currentVolumeValue);
+        volumeLevelMap_[STREAM_RING] = ringtoneVolumeLevel;
+        AUDIO_INFO_LOG("Init: Get ringtone volume to map success %{public}d", volumeLevelMap_[STREAM_RING]);
     } else {
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
     }
@@ -171,14 +171,14 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
     return minVolumeIndexMap_[volumeType];
 }
 
-void AudioAdapterManager::SaveMediaVolumeToLocal(AudioStreamType streamType, int32_t volumeLevel)
+void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel)
 {
-    if (streamType == STREAM_MUSIC) {
-        int32_t ret = SetParameter("persist.multimedia.audio.mediavolume", std::to_string(volumeLevel).c_str());
+    if (volumeType == STREAM_RING) {
+        int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
         if (ret == 0) {
-            AUDIO_INFO_LOG("Save media volume for boot success %{public}d", volumeLevel);
+            AUDIO_INFO_LOG("Save ringtone volume for boot success %{public}d", volumeLevel);
         } else {
-            AUDIO_ERR_LOG("Save media volume for boot failed, result %{public}d", ret);
+            AUDIO_ERR_LOG("Save ringtone volume for boot failed, result %{public}d", ret);
         }
     }
 }
@@ -251,7 +251,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     int32_t volumeLevel = volumeLevelMap_[streamForVolumeMap] * (muteStatusMap_[streamForVolumeMap] ? 0 : 1);
 
     // Save volume in local prop for bootanimation
-    SaveMediaVolumeToLocal(streamType, volumeLevel);
+    SaveRingtoneVolumeToLocal(streamForVolumeMap, volumeLevel);
 
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
