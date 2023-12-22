@@ -415,15 +415,13 @@ HWTEST(AudioServiceUnitTest, AudioServiceClient_003, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     AudioSpatializationState spatializationState = {false, false};
-    audioServiceClient->OnSpatializationStateChange(spatializationState);
 
     std::unique_ptr<AudioSpatializationStateChangeCallbackImpl> spatializationStateChangeCallbackPtr(
         new AudioSpatializationStateChangeCallbackImpl());
     spatializationStateChangeCallbackPtr->OnSpatializationStateChange(spatializationState);
 
-    spatializationStateChangeCallbackPtr->setAudioServiceClientObj(spatializationStateChangeCallbackPtr);
+    spatializationStateChangeCallbackPtr->setAudioServiceClientObj(audioServiceClient.get());
     spatializationStateChangeCallbackPtr->OnSpatializationStateChange(spatializationState);
-    EXPECT_EQ(SUCCESS, SUCCESS);
 
     audioServiceClient->OnTimeOut();
 }
