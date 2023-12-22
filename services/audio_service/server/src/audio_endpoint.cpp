@@ -638,16 +638,23 @@ bool AudioEndpointInner::StartDevice()
         return false;
     }
     endpointStatus_ = STARTING;
+    bool isStartSuccess = true;
     if (deviceInfo_.deviceRole == INPUT_DEVICE) {
         if (fastSource_ == nullptr || fastSource_->Start() != SUCCESS) {
             AUDIO_ERR_LOG("Source start failed.");
-            return false;
+            isStartSuccess = false;
         }
     } else {
         if (fastSink_ == nullptr || fastSink_->Start() != SUCCESS) {
             AUDIO_ERR_LOG("Sink start failed.");
-            return false;
+            isStartSuccess = false;
         }
+    }
+
+    if (isStartSuccess == false) {
+        endpointStatus_ = IDEL;
+        workThreadCV_.notify_all();
+        return false;
     }
 
     std::unique_lock<std::mutex> lock(loopThreadLock_);
@@ -789,7 +796,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     if (endpointStatus_ == STARTING) {
         AUDIO_INFO_LOG("LinkProcessStream wait start begin.");
         std::unique_lock<std::mutex> lock(loopThreadLock_);
-        workThreadCV_.wait(lock, [this] {
+        workThreadCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_IN_DEFAULT), [this] {
             return endpointStatus_ != STARTING;
         });
         AUDIO_DEBUG_LOG("LinkProcessStream wait start end.");
