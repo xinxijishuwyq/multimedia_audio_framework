@@ -75,6 +75,8 @@
 #define OFFLOAD_HDI_CACHE2_PLUS (OFFLOAD_HDI_CACHE2 + OFFLOAD_FRAME_SIZE + 5)   // to make sure get full
 #define SPRINTF_STR_LEN 100
 #define DEFAULT_MULTICHANNEL_LAYOUT 6
+#define DEFAULT_NUM_CHANNEL 2
+#define DEFAULT_CHANNELLAYOUT 3
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -354,6 +356,46 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
             }
             break;
     }
+}
+
+static void updateResampler(pa_sink_input *sinkIn, const char *sceneType)
+{
+    uint32_t processChannels = DEFAULT_NUM_CHANNEL;
+    uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
+    EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
+
+    pa_resampler *r;
+    pa_sample_spec ss = sinkIn->thread_info.resampler->o_ss;
+    pa_channel_map cm = sinkIn->thread_info.resampler->o_cm;
+    if (processChannels == sinkIn->thread_info.resampler->i_ss.channels) {
+        ss.channels = sinkIn->thread_info.resampler->i_ss.channels;
+        cm          = sinkIn->thread_info.resampler->i_cm;
+        if (ss.channels == sinkIn->thread_info.resampler->o_ss.channels) {
+            return;
+        }
+        r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
+                            &sinkIn->thread_info.resampler->i_ss,
+                            &sinkIn->thread_info.resampler->i_cm,
+                            &ss, &cm,
+                            sinkIn->core->lfe_crossover_freq,
+                            sinkIn->thread_info.resampler->method,
+                            sinkIn->thread_info.resampler->flags);
+    } else {
+        ss.channels = DEFAULT_NUM_CHANNEL;
+        if (ss.channels == sinkIn->thread_info.resampler->o_ss.channels) {
+            return;
+        }
+        r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
+                            &sinkIn->thread_info.resampler->i_ss,
+                            &sinkIn->thread_info.resampler->i_cm,
+                            &ss, NULL,
+                            sinkIn->core->lfe_crossover_freq,
+                            sinkIn->thread_info.resampler->method,
+                            sinkIn->thread_info.resampler->flags);
+    }
+    pa_resampler_free(sinkIn->thread_info.resampler);
+    sinkIn->thread_info.resampler = r;
+    return;
 }
 
 static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk *pchunk)
@@ -930,7 +972,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
             (pa_safe_streq(sceneType, "EFFECT_NONE") && (!existFlag))) {
             pa_sink_input_assert_ref(sinkIn);
-
+            updateResampler(sinkIn, sinkSceneType);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength)
@@ -1193,21 +1235,20 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const uint8_t sinkChannels = sinkIn->sample_spec.channels;
-        const char *sinkChannelLayout = pa_proplist_gets(sinkIn->proplist, "stream.channelLayout");
         const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
         if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             continue;
         }
-        if (NeedPARemap(sinkSceneType, sinkSceneMode, sinkChannels, sinkChannelLayout, sinkSpatializationEnabled)
-            && sinkIn->thread_info.resampler) {
-            sinkIn->thread_info.resampler->map_required = true;
+        uint32_t processChannels = DEFAULT_NUM_CHANNEL;
+        uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
+        EffectChainManagerReturnEffectChannelInfo(sinkSceneType, &processChannels, &processChannelLayout);
+        if (processChannels == DEFAULT_NUM_CHANNEL) {
             continue;
         }
         for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-            if (pa_safe_streq(sinkSceneType, sceneTypeSet[i]) && sinkIn->thread_info.resampler) {
-                sceneTypeLenRef[i] = sinkIn->sample_spec.channels;
-                sinkIn->thread_info.resampler->map_required = false;
+            if (pa_safe_streq(sinkSceneType, sceneTypeSet[i])) {
+                sceneTypeLenRef[i] = processChannels;
             }
         }
         maxInfo--;

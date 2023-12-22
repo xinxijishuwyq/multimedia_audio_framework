@@ -34,19 +34,30 @@ typedef struct BufferAttr {
     float *tempBufOut;
 } BufferAttr;
 
+typedef struct SessionInfoPack {
+    uint32_t channels;
+    char *channelLayout;
+    char *sceneMode;
+    char *spatializationEnabled;
+} SessionInfoPack;
+
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
 int32_t EffectChainManagerGetFrameLen(void);
 bool EffectChainManagerExist(const char *sceneType, const char *effectMode, const char *spatializationEnabled);
 int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID);
 int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID);
-int32_t EffectChainManagerMultichannelUpdate(const char *sceneType, const uint32_t channels,
-    const char *channelLayout);
+int32_t EffectChainManagerMultichannelUpdate(const char *sceneType);
 bool IsChannelLayoutHVSSupported(const uint64_t channelLayout);
 bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
     const char *sinkChannelLayout, const char *sinkSpatializationEnabled);
+int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack);
 int32_t EffectChainManagerInitCb(const char *sceneType);
 int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled);
 bool EffectChainManagerCheckA2dpOffload();
+int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *sessionID);
+int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_t *channels, uint64_t *channelLayout);
+SessionInfoPack PackSessionInfo(const uint32_t channels, const char *channelLayout, const char *sceneMode,
+    const char *spatializationEnabled);
 
 #ifdef __cplusplus
 }

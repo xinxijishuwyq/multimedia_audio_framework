@@ -53,6 +53,13 @@ const uint32_t SEND_HDI_COMMAND_LEN = 20;
 const uint32_t GET_HDI_BUFFER_LEN = 10;
 const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 
+typedef struct sessionEffectInfo {
+    std::string sceneMode;
+    uint32_t channels;
+    uint64_t channelLayout;
+    std::string spatializationEnabled;
+} sessionEffectInfo;
+
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
     CH_LAYOUT_5POINT1_BACK,
@@ -105,8 +112,7 @@ public:
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
     void Dump();
-    void UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout,
-        const std::string &deviceName);
+    int32_t UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout);
     void StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig);
     AudioEffectConfig GetIoBufferConfig();
     void InitEffectChain();
@@ -147,11 +153,13 @@ public:
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
     void Dump();
-    int32_t UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
-        const uint64_t &channelLayout);
+    int32_t UpdateMultichannelConfig(const std::string &sceneType);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
+    int32_t SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info);
+    int32_t SessionInfoMapDelete(std::string sceneType, std::string sessionID);
+    int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
 private:
     void UpdateSensorState();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
@@ -161,6 +169,8 @@ private:
     std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap_;
     std::map<std::string, int32_t> SceneTypeToEffectChainCountMap_;
     std::set<std::string> SessionIDSet_;
+    std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
+    std::map<std::string, sessionEffectInfo> SessionIDToEffectInfoMap_;
     uint32_t frameLen_ = DEFAULT_FRAMELEN;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;

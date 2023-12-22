@@ -118,20 +118,15 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
     return SUCCESS;
 }
 
-int32_t EffectChainManagerMultichannelUpdate(const char *sceneType, const uint32_t channels,
-    const char *channelLayout)
+int32_t EffectChainManagerMultichannelUpdate(const char *sceneType)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     std::string sceneTypeString = "";
-    uint64_t channelLayoutNum;
     if (sceneType) {
         sceneTypeString = sceneType;
     }
-    if (channelLayout) {
-        channelLayoutNum = std::strtoull(channelLayout, nullptr, BASE_TEN);
-    }
-    if (audioEffectChainManager->UpdateMultichannelConfig(sceneTypeString, channels, channelLayoutNum) != SUCCESS) {
+    if (audioEffectChainManager->UpdateMultichannelConfig(sceneTypeString) != SUCCESS) {
         return ERROR;
     }
     return SUCCESS;
@@ -203,6 +198,74 @@ bool EffectChainManagerCheckA2dpOffload()
         return true;
     }
     return false;
+}
+
+SessionInfoPack PackSessionInfo(const uint32_t channels, const char *channelLayout, const char *sceneMode,
+    const char *spatializationEnabled)
+{
+    SessionInfoPack pack;
+    pack.channels = channels;
+    pack.channelLayout = (char *)channelLayout;
+    pack.sceneMode = (char *)sceneMode;
+    pack.spatializationEnabled = (char *)spatializationEnabled;
+    return pack;
+}
+
+int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+
+    uint64_t channelLayoutNum = 0;
+    std::string sceneTypeString = "";
+    std::string sessionIDString = "";
+    std::string sceneModeString = "";
+    std::string spatializationEnabledString = "";
+    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode && pack.spatializationEnabled) {
+        sceneTypeString = sceneType;
+        channelLayoutNum = std::strtoull(pack.channelLayout, nullptr, BASE_TEN);
+        sessionIDString = sessionID;
+        sceneModeString = pack.sceneMode;
+        spatializationEnabledString = pack.spatializationEnabled;
+    } else {
+        AUDIO_ERR_LOG("map input parameters missing.");
+        return ERROR;
+    }
+
+    sessionEffectInfo info;
+    info.sceneMode = sceneModeString;
+    info.channels = pack.channels;
+    info.channelLayout = channelLayoutNum;
+    info.spatializationEnabled = spatializationEnabledString;
+    return audioEffectChainManager->SessionInfoMapAdd(sceneTypeString, sessionIDString, info);
+}
+
+int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *sessionID)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+
+    std::string sceneTypeString = "";
+    std::string sessionIDString = "";
+    if (sceneType && sessionID) {
+        sceneTypeString = sceneType;
+        sessionIDString = sessionID;
+    } else {
+        AUDIO_ERR_LOG("map unlink parameters missing.");
+        return ERROR;
+    }
+
+    return audioEffectChainManager->SessionInfoMapDelete(sceneTypeString, sessionIDString);
+}
+
+int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_t *channels, uint64_t *channelLayout)
+{
+    if (sceneType == nullptr || channels == nullptr || channelLayout == nullptr) {
+        return ERROR;
+    }
+    std::string sceneTypeString = sceneType;
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    return audioEffectChainManager->ReturnEffectChannelInfo(sceneTypeString, channels, channelLayout);
 }
 
 namespace OHOS {
@@ -437,30 +500,25 @@ bool AudioEffectChain::IsEmptyEffectHandles()
     return standByEffectHandles.size() == 0;
 }
 
-void AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout,
-    const std::string &deviceName)
+int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout)
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
     if (ioBufferConfig.inputCfg.channels == channels && ioBufferConfig.inputCfg.channelLayout == channelLayout) {
-        return;
+        return SUCCESS;
     }
     ioBufferConfig.inputCfg.channels = channels;
     ioBufferConfig.inputCfg.channelLayout = channelLayout;
-    AudioEffectConfig tmpIoBufferConfig = ioBufferConfig;
-    if (deviceName != "DEVICE_TYPE_BLUETOOTH_A2DP" || !IsChannelLayoutHVSSupported(channelLayout)) {
-        tmpIoBufferConfig.inputCfg.channels = DEFAULT_NUM_CHANNEL;
-        tmpIoBufferConfig.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    }
     int32_t replyData = 0;
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
+    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     for (AudioEffectHandle handle: standByEffectHandles) {
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
         if (ret != 0) {
             AUDIO_ERR_LOG("Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
-            return;
+            return ERROR;
         }
     }
+    return SUCCESS;
 }
 
 AudioEffectConfig AudioEffectChain::GetIoBufferConfig()
@@ -664,7 +722,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
             AUDIO_ERR_LOG("Fail to set effect chain for [%{public}s]", sceneType.c_str());
         }
         audioEffectChain->UpdateMultichannelIoBufferConfig(ioBufferConfig.inputCfg.channels,
-            ioBufferConfig.inputCfg.channelLayout, deviceName);
+            ioBufferConfig.inputCfg.channelLayout);
     }
     return SUCCESS;
 }
@@ -957,19 +1015,21 @@ void AudioEffectChainManager::Dump()
     }
 }
 
-int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sceneTypeString, const uint32_t &channels,
-    const uint64_t &channelLayout)
+int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sceneType)
 {
-    std::string deviceName = GetDeviceTypeName();
-    std::string sceneTypeAndDeviceKey = sceneTypeString + "_&_" + deviceName;
-    if (SceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey) == SceneTypeToEffectChainMap_.end()) {
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         return ERROR;
     }
+    uint32_t inputChannels = DEFAULT_NUM_CHANNEL;
+    uint64_t inputChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    ReturnEffectChannelInfo(sceneType, &inputChannels, &inputChannelLayout);
+
     auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     if (audioEffectChain == nullptr) {
         return ERROR;
     }
-    audioEffectChain->UpdateMultichannelIoBufferConfig(channels, channelLayout, deviceName);
+    audioEffectChain->UpdateMultichannelIoBufferConfig(inputChannels, inputChannelLayout);
     return SUCCESS;
 }
 
@@ -1023,6 +1083,70 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
         headTrackingEnabled_ = spatializationState.headTrackingEnabled;
         UpdateSensorState();
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels,
+    uint64_t *channelLayout)
+{
+    if (!SceneTypeToSessionIDMap_.count(sceneType)) {
+        return ERROR;
+    }
+    std::set<std::string> sessions = SceneTypeToSessionIDMap_[sceneType];
+    for (auto s = sessions.begin(); s != sessions.end(); ++s) {
+        sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+        if ((info.spatializationEnabled == "0")
+            && (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+            *channels = DEFAULT_NUM_CHANNEL;
+            *channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+            return SUCCESS;
+        }
+
+        uint32_t TmpChannelCount;
+        uint64_t TmpChannelLayout;
+        if (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP"
+            || !ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
+            || !IsChannelLayoutHVSSupported(info.channelLayout)) {
+            TmpChannelCount = DEFAULT_NUM_CHANNEL;
+            TmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+        } else {
+            TmpChannelLayout = info.channelLayout;
+            TmpChannelCount = info.channels;
+        }
+
+        if (TmpChannelCount >= *channels) {
+            *channels = TmpChannelCount;
+            *channelLayout = TmpChannelLayout;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info)
+{
+    if (!SessionIDToEffectInfoMap_.count(sessionID)) {
+        SceneTypeToSessionIDMap_[sceneType].insert(sessionID);
+        SessionIDToEffectInfoMap_[sessionID] = info;
+    } else if (SessionIDToEffectInfoMap_[sessionID].sceneMode != info.sceneMode ||
+        SessionIDToEffectInfoMap_[sessionID].spatializationEnabled != info.spatializationEnabled) {
+        SessionIDToEffectInfoMap_[sessionID] = info;
+    } else {
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::SessionInfoMapDelete(std::string sceneType, std::string sessionID)
+{
+    if (!SceneTypeToSessionIDMap_.count(sceneType)) {
+        return ERROR;
+    }
+    if (!SceneTypeToSessionIDMap_[sceneType].erase(sessionID)) {
+        return ERROR;
+    }
+    if (!SessionIDToEffectInfoMap_.erase(sessionID)) {
+        return ERROR;
     }
     return SUCCESS;
 }
