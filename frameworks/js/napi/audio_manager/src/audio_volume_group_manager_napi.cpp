@@ -484,8 +484,10 @@ void AudioVolumeGroupManagerNapi::AsyncSetVolume(napi_env env, void *data)
 {
     std::lock_guard<mutex> lock(volumeGroupManagerMutex_);
     auto context = static_cast<AudioVolumeGroupManagerAsyncContext*>(data);
-    if (context->status == SUCCESS) {
-        auto &audioGroupManager = context->objectInfo->audioGroupMngr_;
+    ObjectRefMap objectGuard(context->objectInfo);
+    AudioVolumeGroupManagerNapi *object = objectGuard.GetPtr();
+    if (context->status == SUCCESS && object != nullptr) {
+        auto &audioGroupManager = object->audioGroupMngr_;
         context->status = (audioGroupManager == nullptr) ? NAPI_ERR_SYSTEM : audioGroupManager->
             SetVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->volLevel);
     }
