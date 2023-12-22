@@ -1647,6 +1647,27 @@ int32_t AudioPolicyProxy::SetPlaybackCapturerFilterInfos(const AudioPlaybackCapt
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetCaptureSilentState(bool state)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG(" SetCaptureSilentState WriteInterfaceToken failed");
+        return ERROR;
+    }
+    data.WriteBool(state);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CAPTURER_SILENT_STATE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("SetCaptureSilentState failed, error: %d", error);
+        return ERROR;
+    }
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
 {
     MessageParcel data;

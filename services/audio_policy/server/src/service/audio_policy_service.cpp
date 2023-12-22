@@ -4841,6 +4841,17 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
     return gsp->SetSupportStreamUsage(targetUsages);
 }
 
+int32_t AudioPolicyService::SetCaptureSilentState(bool state)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetCaptureSilentState error for g_adProxy null");
+        return ERR_OPERATION_FAILED;
+    }
+
+    return gsp->SetCaptureSilentState(state);
+}
+
 void AudioPolicyService::UpdateOutputDeviceSelectedByCalling(DeviceType deviceType)
 {
     if ((deviceType == DEVICE_TYPE_DEFAULT) || (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {

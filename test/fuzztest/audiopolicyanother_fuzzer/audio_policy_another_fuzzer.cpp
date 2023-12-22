@@ -200,6 +200,9 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     bool updateUi = *reinterpret_cast<const bool *>(rawData);
     AudioPolicyServerPtr->SetDeviceAbsVolumeSupported(macAddress, support);
     AudioPolicyServerPtr->SetA2dpDeviceVolume(macAddress, volume, updateUi);
+
+    bool state = *reinterpret_cast<const bool *>(rawData);
+    AudioPolicyServerPtr->SetCaptureSilentState(state);
 }
 
 void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)

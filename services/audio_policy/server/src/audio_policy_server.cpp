@@ -2533,6 +2533,16 @@ int32_t AudioPolicyServer::SetPlaybackCapturerFilterInfos(const AudioPlaybackCap
     return audioPolicyService_.SetPlaybackCapturerFilterInfos(config);
 }
 
+int32_t AudioPolicyServer::SetCaptureSilentState(bool state)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_CAST_ENGINE_SA) {
+        AUDIO_ERR_LOG("SetCaptureSilentState callerUid is Error: not cast_engine");
+        return ERROR;
+    }
+    return audioPolicyService_.SetCaptureSilentState(state);
+}
+
 int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc)
 {
     return audioPolicyService_.GetHardwareOutputSamplingRate(desc);

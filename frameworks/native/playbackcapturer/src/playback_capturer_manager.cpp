@@ -111,7 +111,9 @@ void PlaybackCapturerManager::SetSupportStreamUsage(std::vector<int32_t> usage)
 bool PlaybackCapturerManager::IsStreamSupportInnerCapturer(int32_t streamUsage)
 {
     if (supportStreamUsageSet_.empty()) {
-        return streamUsage == STREAM_USAGE_MEDIA;
+        return streamUsage == STREAM_USAGE_MEDIA || streamUsage == STREAM_USAGE_MUSIC ||
+            streamUsage == STREAM_USAGE_MOVIE || streamUsage == STREAM_USAGE_GAME ||
+            streamUsage == STREAM_USAGE_AUDIOBOOK;
     }
     return supportStreamUsageSet_.find(streamUsage) != supportStreamUsageSet_.end();
 }

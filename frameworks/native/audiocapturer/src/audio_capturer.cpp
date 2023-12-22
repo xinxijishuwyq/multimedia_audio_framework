@@ -159,6 +159,11 @@ int32_t AudioCapturerPrivate::InitPlaybackCapturer(int32_t type, const AudioPlay
     return AudioPolicyManager::GetInstance().SetPlaybackCapturerFilterInfos(config, appInfo_.appTokenId);
 }
 
+int32_t AudioCapturerPrivate::SetCaptureSilentState(bool state)
+{
+    return AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
+}
+
 int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 {
     return audioStream_->GetFrameCount(frameCount);
