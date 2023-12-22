@@ -17,6 +17,7 @@ import("../../../config.gni")
 import("../../../sensor.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
+pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 config("audio_effect_config") {
   include_dirs = [
@@ -53,12 +54,14 @@ ohos_shared_library("audio_effect") {
   configs = [ ":audio_effect_config" ]
 
   # include_dirs = audio_gateway_include_dirs
-  # include_dirs += [ multimedia_audio_framework_pulse_audio ]
+  include_dirs = [ multimedia_audio_framework_pulse_audio ]
 
   sources = [
     "src/audio_effect_chain_manager.cpp",
     "src/audio_head_tracker.cpp",
   ]
+
+  deps = [ "$pulseaudio_build_path/src/pulse:pulse" ]
 
   external_deps = [
     "c_utils:utils",
