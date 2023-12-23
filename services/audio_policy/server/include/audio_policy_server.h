@@ -522,6 +522,7 @@ private:
 
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    bool isAvSessionSetVoipStart = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

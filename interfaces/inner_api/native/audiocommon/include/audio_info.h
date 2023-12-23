@@ -357,6 +357,14 @@ enum AudioScene : int32_t {
      */
     AUDIO_SCENE_PHONE_CHAT,
     /**
+     * AvSession set call start flag
+     */
+    AUDIO_SCENE_CALL_START,
+    /**
+     * AvSession set call end flag
+     */
+    AUDIO_SCENE_CALL_END,
+    /**
      * Max
      */
     AUDIO_SCENE_MAX,
