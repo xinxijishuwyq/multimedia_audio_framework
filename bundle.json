@@ -22,7 +22,7 @@
           "SystemCapability.Multimedia.Audio.Tone",
           "SystemCapability.Multimedia.Audio.Interrupt",
           "SystemCapability.Multimedia.Audio.PlaybackCapture",
-		  "SystemCapability.Multimedia.Audio.Spatialization"
+          "SystemCapability.Multimedia.Audio.Spatialization"
         ],
         "features": [
           "audio_framework_feature_dtmf_tone",
