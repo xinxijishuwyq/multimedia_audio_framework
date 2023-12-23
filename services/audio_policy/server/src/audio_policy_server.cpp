@@ -988,7 +988,6 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
         AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_START means voip start.");
         isAvSessionSetVoipStart = true;
         return SUCCESS;
-
     }
     if (audioScene == AUDIO_SCENE_CALL_END) {
         AUDIO_INFO_LOG("SetAudioScene, AUDIO_SCENE_CALL_END means voip end, need set AUDIO_SCENE_DEFAULT.");
