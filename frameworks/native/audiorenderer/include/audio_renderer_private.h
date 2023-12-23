@@ -21,9 +21,6 @@
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
 #include "i_audio_stream.h"
-#ifdef SONIC_ENABLE
-#include "sonic.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -112,19 +109,7 @@ public:
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
-#ifdef SONIC_ENABLE
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize);
-    int32_t ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
-    int32_t ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
-    int32_t ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
-    int32_t ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
-    int32_t ChangeSpeedForFloat(float *buffer, int32_t bufferSize, float* outBuffer, int32_t &outBufferSize);
-    int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize);
-#endif
+
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
@@ -178,13 +163,6 @@ private:
     mutable std::mutex switchStreamMutex_;
 
     float speed_ = 1.0;
-#ifdef SONIC_ENABLE
-    size_t bufferSize_;
-    size_t formatSize_;
-    size_t channel_;
-    size_t format_;
-    sonicStream sonicStream_ = nullptr;
-#endif
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

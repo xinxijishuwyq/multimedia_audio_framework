@@ -397,14 +397,27 @@ int64_t FastAudioStream::GetFramesRead()
 
 int32_t FastAudioStream::SetSpeed(float speed)
 {
-    AUDIO_ERR_LOG("SetSpeed  is not supported");
+    AUDIO_ERR_LOG("SetSpeed is not supported");
     return ERR_OPERATION_FAILED;
 }
 
 float FastAudioStream::GetSpeed()
 {
-    AUDIO_ERR_LOG("GetSpeed  is not supported");
+    AUDIO_ERR_LOG("GetSpeed is not supported");
     return static_cast<float>(ERROR);
+}
+
+int32_t FastAudioStream::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
+{
+    AUDIO_ERR_LOG("WriteSpeedBuffer is not supported");
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
+    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
+{
+    AUDIO_ERR_LOG("ChangeSpeed is not supported");
+    return ERR_OPERATION_FAILED;
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
