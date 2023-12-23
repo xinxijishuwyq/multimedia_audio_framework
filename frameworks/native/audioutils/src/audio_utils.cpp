@@ -337,6 +337,65 @@ void AdjustAudioBalanceForPCM32Bit(int32_t *data, uint64_t len, float left, floa
     }
 }
 
+uint32_t Read24Bit(const uint8_t *p)
+{
+    return ((uint32_t) p[BIT_DEPTH_TWO] << BIT_16) | ((uint32_t) p[1] << BIT_8) | ((uint32_t) p[0]);
+}
+
+void Write24Bit(uint8_t *p, uint32_t u)
+{
+    p[BIT_DEPTH_TWO] = (uint8_t) (u >> BIT_16);
+    p[1] = static_cast<uint8_t>(u >> BIT_8);
+    p[0] = static_cast<uint8_t>(u);
+}
+
+void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        int32_t s = Read24Bit(a) << BIT_8;
+        *b = s * (1.0f / (1U << (BIT_32 - 1)));
+        a += OFFSET_BIT_24;
+        b++;
+    }
+}
+
+void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
+{
+    for (; n > 0; n--) {
+        *(b++) = *(a++) * (1.0f / (1U << (BIT_32 - 1)));
+    }
+}
+
+float CapMax(float v)
+{
+    float value = v;
+    if (v > 1.0f) {
+        value = 1.0f - FLOAT_EPS;
+    } else if (v < -1.0f) {
+        value = -1.0f + FLOAT_EPS;
+    }
+    return value;
+}
+
+void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
+{
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1U << (BIT_32 - 1));
+        Write24Bit(b, (static_cast<int32_t>(v)) >> BIT_8);
+        b += OFFSET_BIT_24;
+    }
+}
+
+void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
+{
+    for (; n > 0; n--) {
+        float tmp = *a++;
+        float v = CapMax(tmp) * (1U << (BIT_32 - 1));
+        *(b++) = static_cast<int32_t>(v);
+    }
+}
+
 template <typename T>
 bool GetSysPara(const char *key, T &value)
 {

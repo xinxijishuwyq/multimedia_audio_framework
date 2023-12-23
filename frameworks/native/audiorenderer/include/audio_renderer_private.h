@@ -114,6 +114,16 @@ public:
     bool IsFastRenderer() override;
 #ifdef SONIC_ENABLE
     int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize);
+    int32_t ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
+        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
+    int32_t ChangeSpeedForFloat(float *buffer, int32_t bufferSize, float* outBuffer, int32_t &outBufferSize);
+    int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize);
 #endif
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -171,6 +181,8 @@ private:
 #ifdef SONIC_ENABLE
     size_t bufferSize_;
     size_t formatSize_;
+    size_t channel_;
+    size_t format_;
     sonicStream sonicStream_ = nullptr;
 #endif
 };
