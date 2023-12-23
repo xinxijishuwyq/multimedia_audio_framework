@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <pulse/pulseaudio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +51,7 @@ int32_t EffectChainManagerMultichannelUpdate(const char *sceneType);
 bool IsChannelLayoutHVSSupported(const uint64_t channelLayout);
 bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
     const char *sinkChannelLayout, const char *sinkSpatializationEnabled);
+uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap);
 int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack);
 int32_t EffectChainManagerInitCb(const char *sceneType);
 int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled);

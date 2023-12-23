@@ -307,10 +307,17 @@ ohos_shared_library("audio_service") {
 
   configs = [ ":audio_service_config" ]
 
+  include_dirs = [
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+  ]
+  include_dirs += [ multimedia_audio_framework_pulse_audio ]
+
   deps = [
     ":audio_common",
     ":audio_process_service",
     "$pulseaudio_build_path/src/daemon:pulseaudio",
+    "$pulseaudio_build_path/src/pulse:pulse",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
