@@ -128,6 +128,13 @@ public:
     virtual void OnEventCb(AudioServiceEventTypes error) const = 0;
 };
 
+enum UpdatePositionTimeNode {
+    START_NODE = 1,
+    CORKED_NODE = 2,
+    RUNNING_NODE = 3,
+    USER_NODE = 4,
+};
+
 class AudioServiceClient : public IAudioStream, public AudioTimer, public AppExecFwk::EventHandler {
 public:
     static constexpr char PA_RUNTIME_DIR[] = "/data/data/.pulse_dir/runtime";
@@ -258,6 +265,23 @@ public:
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
     int32_t GetCurrentTimeStamp(uint64_t &timeStamp);
+
+    /**
+    * Provides the current timestamp for playback/record stream created using CreateStream
+    *
+    * @param framePosition will be filled up with current frame position
+    * @param timeStamp will be filled up with current timestamp
+    * @return Returns {@code 0} if success; returns {@code -1} otherwise.
+    */
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timeStamp);
+
+    /**
+    * Update the stream positon and timestamp
+    *
+    * @param node The time node for updating the stream position and its timestamp
+    * @return Returns {@code 0} if success; returns {@code -1} otherwise.
+    */
+    int32_t UpdateStreamPosition(UpdatePositionTimeNode node);
 
     void GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool beforeLocked);
 
@@ -609,6 +633,7 @@ private:
     std::mutex runnerMutex_;
     std::mutex writeCallbackMutex_;
     std::mutex stoppingMutex_;
+    std::mutex streamPositionMutex_;
     bool runnerReleased_ = false;
     AudioCache acache_;
     const void *internalReadBuffer_;
@@ -714,6 +739,11 @@ private:
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
     float speed_ = 1.0;
+
+    uint64_t lastStreamPosition_ = 0;
+    uint64_t lastPositionTimestamp_ = 0;
+    uint64_t lastHdiPosition_ = 0;
+    
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
     int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);

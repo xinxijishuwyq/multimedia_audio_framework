@@ -56,6 +56,7 @@ public:
     int32_t SetInputRoute(DeviceType inputDevice) override;
 
     uint64_t GetTransactionId() override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
@@ -531,6 +532,11 @@ uint64_t FastAudioCapturerSourceInner::GetTransactionId()
 {
     AUDIO_INFO_LOG("FastAudioCapturerSourceInner::GetTransactionId in");
     return reinterpret_cast<uint64_t>(audioCapture_);
+}
+
+int32_t FastAudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    return ERR_DEVICE_NOT_SUPPORTED;
 }
 
 void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)

@@ -85,6 +85,7 @@ public:
     int32_t GetTransactionId(uint64_t *transactionId) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     int32_t SetVoiceVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
@@ -743,6 +744,12 @@ void BluetoothRendererSinkInner::SetAudioBalanceValue(float audioBalance)
             rightBalanceCoef_ += audioBalance;
         }
     }
+}
+
+int32_t BluetoothRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    AUDIO_ERR_LOG("BluetoothRendererSink GetPresentationPosition not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 
 void BluetoothRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)

@@ -35,6 +35,9 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    const int64_t SECOND_TO_NANOSECOND = 1000000000;
+}
 class AudioCapturerSourceInner : public AudioCapturerSource {
 public:
     int32_t Init(const IAudioSourceAttr &attr) override;
@@ -59,6 +62,8 @@ public:
 
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
+
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
@@ -140,6 +145,7 @@ public:
 
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
@@ -839,6 +845,33 @@ uint64_t AudioCapturerSourceInner::GetTransactionId()
     return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
+int32_t AudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    int32_t ret;
+    if (audioCapture_ == nullptr) {
+        AUDIO_ERR_LOG("failed audioCapture_ is NULL");
+        return ERR_INVALID_HANDLE;
+    }
+    struct AudioTimeStamp timestamp = {};
+    ret = audioCapture_->GetCapturePosition(audioCapture_, &frames, &timestamp);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("get position failed");
+        return ERR_OPERATION_FAILED;
+    }
+    int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it;
+    if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
+        timestamp.tvNSec > SECOND_TO_NANOSECOND) {
+        AUDIO_ERR_LOG(
+            "Hdi GetRenderPosition get invaild second:%{public}" PRIu64 " or nanosecond:%{public}" PRIu64 " !",
+            timestamp.tvSec, timestamp.tvNSec);
+        return ERR_OPERATION_FAILED;
+    }
+
+    timeSec = timestamp.tvSec;
+    timeNanoSec = timestamp.tvNSec;
+    return ret;
+}
+
 int32_t AudioCapturerSourceInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
@@ -1188,6 +1221,11 @@ int32_t AudioCapturerSourceWakeup::SetInputRoute(DeviceType inputDevice)
 uint64_t AudioCapturerSourceWakeup::GetTransactionId()
 {
     return audioCapturerSource_.GetTransactionId();
+}
+
+int32_t AudioCapturerSourceWakeup::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    return audioCapturerSource_.GetPresentationPosition(frames, timeSec, timeNanoSec);
 }
 
 void AudioCapturerSourceWakeup::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)

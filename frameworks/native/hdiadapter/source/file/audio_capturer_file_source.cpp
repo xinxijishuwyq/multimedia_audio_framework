@@ -87,6 +87,11 @@ uint64_t AudioCapturerFileSource::GetTransactionId(void)
     return res;
 }
 
+int32_t AudioCapturerFileSource::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    return SUCCESS;
+}
+
 int32_t AudioCapturerFileSource::Pause(void)
 {
     return SUCCESS;

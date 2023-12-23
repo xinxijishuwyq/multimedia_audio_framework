@@ -78,6 +78,7 @@ public:
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
@@ -641,6 +642,12 @@ void RemoteAudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
     (void)audioBalance;
     AUDIO_ERR_LOG("SetAudioBalanceValue not supported");
     return;
+}
+
+int32_t RemoteAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    AUDIO_ERR_LOG("GetPresentationPosition not supported");
+    return ERR_NOT_SUPPORTED;
 }
 
 std::string RemoteAudioRendererSinkInner::GetNetworkId()

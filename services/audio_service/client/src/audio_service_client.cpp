@@ -53,6 +53,9 @@ const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
 const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_US_PER_MS = 1000;
+const uint64_t AUDIO_S_TO_NS = 1000000000;
+const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
+const int64_t SECOND_TO_MICROSECOND = 1000000;
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
@@ -184,10 +187,10 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
         AUDIO_ERR_LOG("PAStreamStartSuccessCb: userdata is null");
         return;
     }
-
     AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
+    asClient->UpdateStreamPosition(UpdatePositionTimeNode::START_NODE);
     asClient->state_ = RUNNING;
     asClient->breakingWritePa_ = false;
     asClient->offloadTsLast_ = 0;
@@ -449,6 +452,21 @@ void AudioServiceClient::PAStreamEventCb(pa_stream *stream, const char *event, p
     if (!strcmp(event, "signal_mainloop")) {
         pa_threaded_mainloop_signal(asClient->mainLoop, 0);
         AUDIO_DEBUG_LOG("AudioServiceClient::PAEventCb receive event signal_mainloop");
+    }
+
+    if (!strcmp(event, "state_changed")) {
+        const char *old_state = pa_proplist_gets(pl, "old_state");
+        const char *new_state = pa_proplist_gets(pl, "new_state");
+        AUDIO_INFO_LOG("AudioServiceClient::PAEventCb old state : %{public}s, new state : %{public}s",
+            old_state, new_state);
+        if (asClient != nullptr) {
+            if (!strcmp(old_state, "RUNNING") && !strcmp(new_state, "CORKED")) {
+                asClient->UpdateStreamPosition(UpdatePositionTimeNode::CORKED_NODE);
+            }
+            if (!strcmp(old_state, "CORKED") && !strcmp(new_state, "RUNNING")) {
+                asClient->UpdateStreamPosition(UpdatePositionTimeNode::RUNNING_NODE);
+            }
+        }
     }
 }
 
@@ -2241,6 +2259,54 @@ int32_t AudioServiceClient::GetAudioLatencyOffload(uint64_t &latency)
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
+{
+    uint64_t frames;
+    int64_t timeSec, timeNanoSec;
+    
+    unique_lock<mutex> positionLock(streamPositionMutex_);
+    std::string deviceClass = offloadEnable_ ? "offload" : "primary";
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK &&
+        audioSystemManager_->GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec) == 0) {
+        if (offloadEnable_) {
+            frames = frames * HDI_OFFLOAD_SAMPLE_RATE / SECOND_TO_MICROSECOND;
+            lastStreamPosition_ = frames;
+            lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
+            return AUDIO_CLIENT_SUCCESS;
+        }
+        if (node == UpdatePositionTimeNode::USER_NODE && state_ == RUNNING) {
+            lastStreamPosition_ = lastStreamPosition_ + frames - lastHdiPosition_;
+            lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
+            lastHdiPosition_ = frames;
+        } else if (node == UpdatePositionTimeNode::CORKED_NODE) {
+            lastStreamPosition_ = lastStreamPosition_ + frames - lastHdiPosition_;
+            lastHdiPosition_ = frames;
+        } else if (node == UpdatePositionTimeNode::RUNNING_NODE) {
+            lastHdiPosition_ = frames;
+        }
+        return AUDIO_CLIENT_SUCCESS;
+    } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD &&
+        audioSystemManager_->GetCapturePresentationPosition("primary", frames, timeSec, timeNanoSec) == 0) {
+        lastStreamPosition_ = frames;
+        lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
+        return AUDIO_CLIENT_SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("UpdateStreamPosition failed!");
+        return AUDIO_CLIENT_ERR;
+    }
+}
+
+int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t &timeStamp)
+{
+    int32_t ret = UpdateStreamPosition(UpdatePositionTimeNode::USER_NODE);
+    if (ret != AUDIO_CLIENT_SUCCESS) {
+        return ret;
+    }
+    framePosition = lastStreamPosition_;
+    timeStamp = lastPositionTimestamp_;
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 {
     lock_guard<mutex> lock(dataMutex_);
@@ -3622,3 +3688,4 @@ void AudioSpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
 }
 } // namespace AudioStandard
 } // namespace OHOS
+

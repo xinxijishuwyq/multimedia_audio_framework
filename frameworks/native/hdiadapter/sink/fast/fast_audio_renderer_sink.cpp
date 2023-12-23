@@ -86,6 +86,8 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
+
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
@@ -757,6 +759,12 @@ void FastAudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
 {
     AUDIO_ERR_LOG("FastAudioRendererSink SetAudioBalanceValue not supported.");
     return;
+}
+
+int32_t FastAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    AUDIO_ERR_LOG("FastAudioRendererSink GetPresentationPosition not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t FastAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
