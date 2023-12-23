@@ -20,6 +20,7 @@
 #include <thread>
 #include <chrono>
 #include <ctime>
+#include <cinttypes>
 #include "common/native_audiostreambuilder.h"
 #include "native_audiorenderer.h"
 
@@ -110,11 +111,11 @@ void PlayerTest(char *argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(AudioTestConstants::WAIT_INTERVAL));
         int64_t frames;
         OH_AudioRenderer_GetFramesWritten(audioRenderer, &frames);
-        printf("Wait for the audio to finish playing.(..%d s) frames:%ld\n", ++timer, frames);
+        printf("Wait for the audio to finish playing.(..%d s) frames:%" PRId64 "\n", ++timer, frames);
         int64_t framePosition;
         int64_t timestamp;
         OH_AudioRenderer_GetTimestamp(audioRenderer, CLOCK_MONOTONIC, &framePosition, &timestamp);
-        printf("framePosition %ld timestamp:%ld\n", framePosition, timestamp);
+        printf("framePosition %" PRId64 " timestamp:%" PRId64 "\n", framePosition, timestamp);
     }
     // 6. stop and release client
     ret = OH_AudioRenderer_Stop(audioRenderer);
