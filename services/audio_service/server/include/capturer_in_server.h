@@ -33,7 +33,7 @@ class CapturerInServer : public IStatusCallback, public IReadCallback,
 public:
     // LYH waiting for review: add IStreamListener
     CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
-    virtual ~CapturerInServer() {};
+    virtual ~CapturerInServer();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnReadData(size_t length) override;
 

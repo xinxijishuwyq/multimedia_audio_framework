@@ -440,7 +440,7 @@ int32_t PaCapturerTest::InitCapturer(bool isBlocking, CapturerMode capturerMode)
         }
     }
     AUDIO_INFO_LOG("Audio capturer create success.");
-    pfd_ = fopen("/data/capturer.pcm", "wb+");
+    pfd_ = fopen("/data/data/.pulse_dir/capturer.pcm", "wb+");
     return 0;
 }
 

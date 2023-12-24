@@ -28,7 +28,7 @@ class RendererInServer : public IStatusCallback, public IWriteCallback,
 public:
     // LYH waiting for review: add IStreamListener
     RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
-    virtual ~RendererInServer() {};
+    virtual ~RendererInServer();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
     

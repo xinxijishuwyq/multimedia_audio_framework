@@ -36,6 +36,13 @@ CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_p
     ConfigServerBuffer();
 }
 
+CapturerInServer::~CapturerInServer() 
+{
+    if (status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE) {
+        Release();
+    }
+}
+
 int32_t CapturerInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
@@ -143,6 +150,8 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
                 status_ = I_STATUS_STARTED;
             } else if (status_ == I_STATUS_FLUSHING_WHEN_PAUSED) {
                 status_ = I_STATUS_PAUSED;
+            } else if (status_ == I_STATUS_FLUSHING_WHEN_STOPPED) {
+                status_ = I_STATUS_STOPPED;
             } else {
                 AUDIO_WARNING_LOG("Invalid status before flusing");
             }
@@ -229,6 +238,11 @@ int32_t CapturerInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 
 int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
 {
+    {
+        std::unique_lock<std::mutex> lock(statusLock_);
+        CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE, ERR_ILLEGAL_STATE,
+            "Illegal state %{public}d", status_);
+    }
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetSessionId failed, stream_ is null");
     sessionId = streamIndex_;
     CHECK_AND_RETURN_RET_LOG(sessionId < INT32_MAX, ERR_OPERATION_FAILED, "GetSessionId failed, sessionId:%{public}d",
@@ -273,6 +287,8 @@ int32_t CapturerInServer::Flush()
         status_ = I_STATUS_FLUSHING_WHEN_STARTED;
     } else if (status_ != I_STATUS_PAUSED) {
         status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
+    } else if (status_ != I_STATUS_STOPPED) {
+        status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
         AUDIO_ERR_LOG("CapturerInServer::Flush failed, Illegal state: %{public}u", status_);
         return ERR_ILLEGAL_STATE;
@@ -320,6 +336,11 @@ int32_t CapturerInServer::Stop()
 
 int32_t CapturerInServer::Release()
 {
+    {
+        std::unique_lock<std::mutex> lock(statusLock_);
+        CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE, ERR_ILLEGAL_STATE,
+            "Illegal state %{public}d", status_);
+    }
     AUDIO_INFO_LOG("Start release capturer");
     {
         std::unique_lock<std::mutex> lock(statusLock_);

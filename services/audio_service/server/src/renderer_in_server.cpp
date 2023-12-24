@@ -37,6 +37,13 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
     ConfigServerBuffer();
 }
 
+RendererInServer::~RendererInServer()
+{
+    if (status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE) {
+        Release();
+    }
+}
+
 int32_t RendererInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
@@ -147,13 +154,15 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 status_ = I_STATUS_STARTED;
             } else if (status_ == I_STATUS_FLUSHING_WHEN_PAUSED) {
                 status_ = I_STATUS_PAUSED;
+            } else if (status_ == I_STATUS_FLUSHING_WHEN_STOPPED) {
+                status_ = I_STATUS_STOPPED;
             } else {
                 AUDIO_WARNING_LOG("Invalid status before flusing");
             }
             break;
         case OPERATION_DRAINED:
             stateListener->OnOperationHandled(DRAIN_STREAM, 0);
-            status_ = I_STATUS_DRAINED;
+            status_ = I_STATUS_STARTED;
             afterDrain = true;
             break;
         case OPERATION_RELEASED:
@@ -285,6 +294,8 @@ int32_t RendererInServer::Flush()
         status_ = I_STATUS_FLUSHING_WHEN_STARTED;
     } else if (status_ == I_STATUS_PAUSED) {
         status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
+    } else if (status_ == I_STATUS_STOPPED) {
+        status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
         AUDIO_ERR_LOG("RendererInServer::Flush failed, Illegal state: %{public}u", status_);
         return ERR_ILLEGAL_STATE;
@@ -365,6 +376,8 @@ int32_t RendererInServer::Release()
 {
     {
         std::unique_lock<std::mutex> lock(statusLock_);
+        CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE, false,
+            "Illegal state: %{public}d", status_);
         status_ = I_STATUS_RELEASED;
     }
     int32_t ret = IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);

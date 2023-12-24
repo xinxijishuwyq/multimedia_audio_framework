@@ -294,6 +294,9 @@ private:
     std::mutex runnerMutex_;
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
 
+    bool paramsIsSet_ = false;
+    AudioRendererRate rendererRate_ = RENDER_RATE_NORMAL;
+
     enum {
         STATE_CHANGE_EVENT = 0,
         RENDERER_MARK_REACHED_EVENT,
@@ -407,6 +410,7 @@ void RendererInClientInner::UpdateTracker(const std::string &updateCase)
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
+    // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
         eStreamType_, info.encoding);
@@ -430,6 +434,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     }
 
     streamParams_ = info; // keep it for later use
+    paramsIsSet_ = true;
     int32_t initRet = InitIpcStream();
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
@@ -653,6 +658,7 @@ int32_t RendererInClientInner::InitIpcStream()
 
 int32_t RendererInClientInner::GetAudioStreamInfo(AudioStreamParams &info)
 {
+    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
     info = streamParams_;
     return SUCCESS;
 }
@@ -673,6 +679,8 @@ bool RendererInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint6
 
 int32_t RendererInClientInner::GetAudioSessionID(uint32_t &sessionID)
 {
+    CHECK_AND_RETURN_RET_LOG((state_ != RELEASED) && (state_ != NEW), ERR_ILLEGAL_STATE,
+        "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
 }
@@ -684,13 +692,14 @@ State RendererInClientInner::GetState()
 
 bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
     // in plan:
-
     return false;
 }
 
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
     bufferSize = clientSpanSizeInByte_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
@@ -702,6 +711,7 @@ int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 
 int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 {
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
     frameCount = spanSizeInFrame_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
@@ -744,9 +754,9 @@ float RendererInClientInner::GetVolume()
 
 int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
-    // in plan
-    AUDIO_ERR_LOG("Change RenderRate is not supported yet.");
-    return ERROR;
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+    rendererRate_ = renderRate;
+    return ipcStream_->SetRate(renderRate);
 }
 
 int32_t RendererInClientInner::SetSpeed(float speed)
@@ -763,9 +773,8 @@ float RendererInClientInner::GetSpeed()
 
 AudioRendererRate RendererInClientInner::GetRenderRate()
 {
-    // in plan
-    AUDIO_ERR_LOG("Get RenderRate is not supported yet.");
-    return RENDER_RATE_NORMAL;
+    AUDIO_INFO_LOG("Get RenderRate %{public}d", rendererRate_);
+    return rendererRate_;
 }
 
 int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
@@ -1214,6 +1223,7 @@ bool RendererInClientInner::StopAudioStream()
 
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is already released");
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is null");
     ipcStream_->Release();
@@ -1238,6 +1248,9 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
             callbackLoop_.join();
         }
     }
+    paramsIsSet_ = false;
+    state_ = RELEASED;
+    UpdateTracker("RELEASED");
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     return true;
 }
@@ -1287,6 +1300,10 @@ int32_t RendererInClientInner::DrainRingCache()
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
     size_t readableSize = result.size;
+    if (readableSize == 0) {
+        AUDIO_WARNING_LOG("Readable size is already zero");
+        return SUCCESS;
+    }
 
     BufferDesc desc = {};
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
@@ -1351,6 +1368,9 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
+        "Write not support, render mode is callback");
+
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize > 0 && bufferSize < MAX_CLIENT_WRITE_SIZE,
         ERR_INVALID_PARAM, "Write with invalid params, size is %{public}zu", bufferSize);

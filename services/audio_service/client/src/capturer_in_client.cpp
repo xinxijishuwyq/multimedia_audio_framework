@@ -286,6 +286,8 @@ private:
     std::mutex runnerMutex_;
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
 
+    bool paramsIsSet_ = false;
+
     enum {
         STATE_CHANGE_EVENT = 0,
         RENDERER_MARK_REACHED_EVENT,
@@ -423,6 +425,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     }
 
     streamParams_ = info; // keep it for later use
+    paramsIsSet_ = true;
     int32_t initRet = InitIpcStream();
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
@@ -730,6 +733,7 @@ int32_t CapturerInClientInner::InitIpcStream()
 
 int32_t CapturerInClientInner::GetAudioStreamInfo(AudioStreamParams &info)
 {
+    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
     info = streamParams_;
     return SUCCESS;
 }
@@ -748,6 +752,8 @@ bool CapturerInClientInner::CheckRecordingStateChange(uint32_t appTokenId, uint6
 
 int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
 {
+    CHECK_AND_RETURN_RET_LOG((state_ != RELEASED) && (state_ != NEW), ERR_ILLEGAL_STATE,
+        "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
 }
@@ -759,12 +765,14 @@ State CapturerInClientInner::GetState()
 
 bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
     // in plan
     return false;
 }
 
 int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
     bufferSize = clientSpanSizeInByte_;
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
@@ -776,6 +784,7 @@ int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
 
 int32_t CapturerInClientInner::GetFrameCount(uint32_t &frameCount)
 {
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
     frameCount = spanSizeInFrame_;
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
@@ -1290,6 +1299,7 @@ bool CapturerInClientInner::StopAudioStream()
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is already released");
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is null");
     ipcStream_->Release();
@@ -1314,6 +1324,9 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
             callbackLoop_.join();
         }
     }
+    paramsIsSet_ = false;
+    state_ = RELEASED;
+    UpdateTracker("RELEASED");
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     return true;
 }

@@ -480,7 +480,7 @@ int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame)
 
     // check new pos in (read + cache) range: read ~ read + totalSize - 1*spanSize
     uint64_t curRead = basicBufferInfo_->curReadFrame.load();
-    if (writeFrame < curRead || writeFrame - curRead > totalSizeInFrame_ - spanSizeInFrame_) {
+    if (writeFrame < curRead || writeFrame - curRead > totalSizeInFrame_) {
         AUDIO_ERR_LOG("Invalid writeFrame %{public}" PRIu64" out of cache range, curRead %{public}" PRIu64".",
             writeFrame, curRead);
         return ERR_INVALID_PARAM;
