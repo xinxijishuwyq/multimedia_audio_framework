@@ -20,7 +20,8 @@
 namespace {
 static const int32_t UINT8_SHIFT = 0x80;
 static const int32_t INT24_SHIFT = 8;
-static const uint32_t SHIRT_EIGHT = 8;
+static const uint32_t SHIFT_EIGHT = 8;
+static const uint32_t SHIFT_SIXTEEN = 16;
 static const uint32_t ARRAY_INDEX_TWO = 2;
 static const size_t MIN_FRAME_SIZE = 1;
 }
@@ -120,13 +121,13 @@ inline size_t GetByteSize(AudioSampleFormat format)
 
 static inline uint32_t ReadInt24LE(const uint8_t *p)
 {
-    return ((uint32_t) p[ARRAY_INDEX_TWO] << 16) | ((uint32_t) p[1] << SHIRT_EIGHT) | ((uint32_t) p[0]);
+    return ((uint32_t) p[ARRAY_INDEX_TWO] << SHIFT_SIXTEEN) | ((uint32_t) p[1] << SHIFT_EIGHT) | ((uint32_t) p[0]);
 }
 
 static inline void WriteInt24LE(uint8_t *p, uint32_t u)
 {
-    p[ARRAY_INDEX_TWO] = (uint8_t) (u >> 16);
-    p[1] = (uint8_t) (u >> SHIRT_EIGHT);
+    p[ARRAY_INDEX_TWO] = (uint8_t) (u >> SHIFT_SIXTEEN);
+    p[1] = (uint8_t) (u >> SHIFT_EIGHT);
     p[0] = (uint8_t) u;
 }
 
