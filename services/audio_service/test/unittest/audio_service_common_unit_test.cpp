@@ -16,6 +16,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_info.h"
+#include "audio_ring_cache.h"
 #include "linear_pos_time_model.h"
 #include "oh_audio_buffer.h"
 #include <gtest/gtest.h>
@@ -330,6 +331,334 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_008, TestSize.Level1)
 
     oHAudioBuffer = oHAudioBuffer->ReadFromParcel(parcel);
     EXPECT_NE(nullptr, oHAudioBuffer);
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: AudioRingCache_001
+* @tc.desc  : Test AudioRingCache interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, AudioRingCache_001, TestSize.Level1)
+{
+    size_t testSize = 3840;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
+    EXPECT_NE(nullptr, ringCache);
+
+    std::unique_ptr<uint8_t[]> writeBuffer = std::make_unique<uint8_t[]>(testSize);
+    std::unique_ptr<uint8_t[]> readBuffer = std::make_unique<uint8_t[]>(testSize);
+
+    BufferWrap writeWrap = {writeBuffer.get(), testSize};
+    BufferWrap readWrap = {readBuffer.get(), testSize};
+
+    int32_t tryCount = 200;
+    while (tryCount-- > 0) {
+        OptResult result1 = ringCache->Enqueue(writeWrap);
+        EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+        OptResult result2 = ringCache->Dequeue(readWrap);
+        EXPECT_EQ(result2.ret, OPERATION_SUCCESS);
+    }
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: AudioRingCache_002
+* @tc.desc  : Test AudioRingCache interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, AudioRingCache_002, TestSize.Level1)
+{
+    size_t testSize = 3840;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
+    EXPECT_NE(nullptr, ringCache);
+
+    size_t tempSize = 1920;
+    std::unique_ptr<uint8_t[]> writeBuffer = std::make_unique<uint8_t[]>(tempSize);
+    std::unique_ptr<uint8_t[]> readBuffer = std::make_unique<uint8_t[]>(tempSize);
+
+    BufferWrap writeWrap = {writeBuffer.get(), tempSize};
+    BufferWrap readWrap = {readBuffer.get(), tempSize};
+
+    int32_t tryCount = 200;
+    while (tryCount-- > 0) {
+        OptResult result1 = ringCache->GetWritableSize();
+        EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+        EXPECT_EQ(result1.size, testSize);
+
+        result1 = ringCache->Enqueue(writeWrap); // write 1920
+        EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+        result1 = ringCache->GetWritableSize();
+        EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+        EXPECT_EQ(result1.size, testSize - tempSize); // left 1920
+
+
+        OptResult result2 = ringCache->GetReadableSize();
+        EXPECT_EQ(result2.ret, OPERATION_SUCCESS);
+        EXPECT_EQ(result2.size, tempSize); // can read 1920
+
+        result2 = ringCache->Dequeue(readWrap);
+        EXPECT_EQ(result2.ret, OPERATION_SUCCESS);
+
+        result2 = ringCache->GetReadableSize();
+        EXPECT_EQ(result2.ret, OPERATION_SUCCESS);
+        EXPECT_EQ(result2.size, 0); // can read 0
+    }
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: AudioRingCache_003
+* @tc.desc  : Test AudioRingCache interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, AudioRingCache_003, TestSize.Level1)
+{
+    size_t cacheSize = 960;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(cacheSize);
+
+    size_t tempSize = 19200;
+    std::unique_ptr<uint8_t[]> writeBuffer = std::make_unique<uint8_t[]>(tempSize);
+    std::unique_ptr<uint8_t[]> readBuffer = std::make_unique<uint8_t[]>(tempSize);
+
+    for (size_t index = 0; index < tempSize;index++) {
+        writeBuffer[index] = index;
+    }
+
+    int32_t totalCount = tempSize / cacheSize;
+    size_t offset = 0;
+    while (totalCount-- > 0) {
+        uint8_t *writePtr = writeBuffer.get() + offset;
+        BufferWrap spanWrap = {writePtr, cacheSize};
+        OptResult result1 = ringCache->Enqueue(spanWrap);
+        EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+        uint8_t *readPtr = readBuffer.get() + offset;
+        BufferWrap readWrap = {readPtr, cacheSize};
+        OptResult result2 = ringCache->Dequeue(readWrap);
+        EXPECT_EQ(result2.ret, OPERATION_SUCCESS);
+        offset += cacheSize;
+    }
+
+    for (size_t index = 0; index < tempSize;index++) {
+        EXPECT_EQ(writeBuffer[index], readBuffer[index]);
+    }
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: AudioRingCache_004
+* @tc.desc  : Test AudioRingCache interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, AudioRingCache_004, TestSize.Level1)
+{
+    size_t cacheSize = 960;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(cacheSize);
+
+    size_t tempSize = 480;
+    std::unique_ptr<uint8_t[]> writeBuffer = std::make_unique<uint8_t[]>(tempSize);
+    std::unique_ptr<uint8_t[]> readBuffer = std::make_unique<uint8_t[]>(tempSize);
+
+    for (size_t index = 0; index < tempSize;index++) {
+        writeBuffer[index] = index;
+    }
+
+    BufferWrap writeWrap = {writeBuffer.get(), tempSize};
+    BufferWrap readWrap = {readBuffer.get(), tempSize};
+
+    OptResult result1 = ringCache->Enqueue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+    result1 = ringCache->ReConfig(tempSize, true); // test copyRemained is true
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    result1 = ringCache->Dequeue(readWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    for (size_t index = 0; index < tempSize;index++) {
+        EXPECT_EQ(writeBuffer[index], readBuffer[index]);
+    }
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: AudioRingCache_005
+* @tc.desc  : Test AudioRingCache interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, AudioRingCache_005, TestSize.Level1)
+{
+    size_t cacheSize = 960;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(cacheSize);
+
+    size_t tempSize = 480;
+    std::unique_ptr<uint8_t[]> writeBuffer = std::make_unique<uint8_t[]>(tempSize);
+    std::unique_ptr<uint8_t[]> readBuffer = std::make_unique<uint8_t[]>(tempSize);
+
+    for (size_t index = 0; index < tempSize;index++) {
+        writeBuffer[index] = index;
+    }
+
+    BufferWrap writeWrap = {writeBuffer.get(), tempSize};
+    BufferWrap readWrap = {readBuffer.get(), tempSize};
+
+    OptResult result1 = ringCache->Enqueue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+    result1 = ringCache->Dequeue(readWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    result1 = ringCache->Enqueue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+    result1 = ringCache->ReConfig(tempSize, true); // test copyRemained is true
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    result1 = ringCache->Dequeue(readWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    for (size_t index = 0; index < tempSize;index++) {
+        EXPECT_EQ(writeBuffer[index], readBuffer[index]);
+    }
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: AudioRingCache_006
+* @tc.desc  : Test AudioRingCache interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, AudioRingCache_006, TestSize.Level1)
+{
+    size_t cacheSize = 960;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(cacheSize);
+
+    size_t tempSize = 480;
+    std::unique_ptr<uint8_t[]> writeBuffer = std::make_unique<uint8_t[]>(tempSize);
+
+    for (size_t index = 0; index < tempSize;index++) {
+        writeBuffer[index] = index;
+    }
+
+    BufferWrap writeWrap = {writeBuffer.get(), tempSize};
+
+    OptResult result1 = ringCache->Enqueue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+    result1 = ringCache->Dequeue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    result1 = ringCache->Enqueue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+    result1 = ringCache->ReConfig(tempSize, false); // test copyRemained is false
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    result1 = ringCache->GetReadableSize();
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, 0);
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: AudioRingCache_007
+* @tc.desc  : Test AudioRingCache interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, AudioRingCache_007, TestSize.Level1)
+{
+    size_t cacheSize = 480;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(cacheSize);
+
+    size_t tempSize = 480;
+    std::unique_ptr<uint8_t[]> writeBuffer = std::make_unique<uint8_t[]>(tempSize);
+
+    for (size_t index = 0; index < tempSize;index++) {
+        writeBuffer[index] = index;
+    }
+
+    BufferWrap writeWrap = {writeBuffer.get(), tempSize};
+
+    OptResult result1 = ringCache->Enqueue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+    size_t reSize = tempSize + tempSize;
+    result1 = ringCache->ReConfig(reSize, false); // test copyRemained is false
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, reSize);
+
+    result1 = ringCache->GetReadableSize();
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, 0);
+
+    result1 = ringCache->GetWritableSize();
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, reSize);
+
+    result1 = ringCache->Enqueue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    result1 = ringCache->GetWritableSize();
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    result1 = ringCache->Enqueue(writeWrap);
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, tempSize);
+
+    result1 = ringCache->GetWritableSize();
+    EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+    EXPECT_EQ(result1.size, 0);
+}
+
+/**
+* @tc.name  : Test AudioRingCache API
+* @tc.type  : FUNC
+* @tc.number: AudioRingCache_008
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioServiceCommonUnitTest, AudioRingCache_008, TestSize.Level1)
+{
+    size_t cacheSize = 480;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(cacheSize);
+
+    size_t tempSize = 1920;
+    std::unique_ptr<uint8_t[]> writeBuffer = std::make_unique<uint8_t[]>(tempSize);
+    std::unique_ptr<uint8_t[]> readBuffer = std::make_unique<uint8_t[]>(tempSize);
+
+    for (size_t index = 0; index < tempSize;index++) {
+        writeBuffer[index] = index % UINT8_MAX;
+    }
+
+    size_t offset = 0;
+    size_t spanSize = 320; // 480 * 2 /3
+    int32_t totalCount = tempSize / spanSize;
+    while (totalCount-- > 0) {
+        uint8_t *writePtr = writeBuffer.get() + offset;
+        BufferWrap spanWrap = {writePtr, spanSize};
+        OptResult result1 = ringCache->Enqueue(spanWrap);
+        EXPECT_EQ(result1.ret, OPERATION_SUCCESS);
+
+        uint8_t *readPtr = readBuffer.get() + offset;
+        BufferWrap readWrap = {readPtr, spanSize};
+        OptResult result2 = ringCache->Dequeue(readWrap);
+        EXPECT_EQ(result2.ret, OPERATION_SUCCESS);
+        offset += spanSize;
+    }
+
+    for (size_t index = 0; index < tempSize;index++) {
+        EXPECT_EQ(writeBuffer[index], readBuffer[index]);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

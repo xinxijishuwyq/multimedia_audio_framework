@@ -21,6 +21,7 @@
 #include "audio_log.h"
 #include "remote_audio_renderer_sink.h"
 #include "policy_handler.h"
+#include "ipc_stream_in_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -82,6 +83,14 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
     }
 
     return SUCCESS;
+}
+
+sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
+{
+    // in plan: GetDeviceInfoForProcess(config) and stream limit check
+    sptr<IpcStreamInServer> ipcStreamInServer = IpcStreamInServer::Create(config, ret);
+
+    return ipcStreamInServer;
 }
 
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)

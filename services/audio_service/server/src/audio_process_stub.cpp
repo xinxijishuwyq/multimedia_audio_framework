@@ -69,6 +69,7 @@ int AudioProcessStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Messag
 
 int32_t AudioProcessStub::HandleResolveBuffer(MessageParcel &data, MessageParcel &reply)
 {
+    AUDIO_INFO_LOG("HandleResolveBuffer");
     (void)data;
     std::shared_ptr<OHAudioBuffer> buffer;
     int32_t ret = ResolveBuffer(buffer);

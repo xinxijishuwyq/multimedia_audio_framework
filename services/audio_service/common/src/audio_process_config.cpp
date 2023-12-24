@@ -34,6 +34,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.streamInfo.encoding);
     parcel.WriteInt32(config.streamInfo.format);
     parcel.WriteInt32(config.streamInfo.channels);
+    parcel.WriteUint64(config.streamInfo.channelLayout);
 
     // AudioMode
     parcel.WriteInt32(config.audioMode);
@@ -50,6 +51,11 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     // streamType
     parcel.WriteInt32(config.streamType);
 
+    // Recorder only
+    parcel.WriteBool(config.isInnerCapturer);
+    parcel.WriteBool(config.isWakeupCapturer);
+    // LYH waiting for review, capturerParam 还有layout
+
     return SUCCESS;
 }
 
@@ -65,6 +71,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
     config.streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
     config.streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());
+    config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(parcel.ReadUint64());
 
     // AudioMode
     config.audioMode = static_cast<AudioMode>(parcel.ReadInt32());
@@ -81,6 +88,9 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     // streamType
     config.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
 
+    // Recorder only
+    config.isInnerCapturer = parcel.ReadBool();
+    config.isWakeupCapturer = parcel.ReadBool();
     return SUCCESS;
 }
 

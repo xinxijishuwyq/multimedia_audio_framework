@@ -44,8 +44,10 @@ ohos_shared_library("audio_common") {
 
   sources = [
     "common/src/audio_process_config.cpp",
+    "common/src/audio_ring_cache.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
+    "common/src/volume_tools.cpp",
   ]
 
   cflags = [
@@ -145,10 +147,16 @@ ohos_shared_library("audio_client") {
     "client/src/audio_stream_manager.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
+    "client/src/callback_handler.cpp",
+    "client/src/capturer_in_client.cpp",
     "client/src/fast_audio_stream.cpp",
     "client/src/i_audio_stream.cpp",
+    "client/src/ipc_stream_listener_impl.cpp",
+    "client/src/ipc_stream_listener_stub.cpp",
+    "client/src/ipc_stream_proxy.cpp",
     "client/src/microphone_descriptor.cpp",
     "client/src/policy_provider_stub.cpp",
+    "client/src/renderer_in_client.cpp",
   ]
 
   public_configs = [ ":audio_client_public_config" ]
@@ -230,6 +238,10 @@ config("audio_service_config") {
     "common/include",
     "client/include",
     "server/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_dir/include/pulse",
     "../audio_policy/server/include/service/effect",
     "../../frameworks/native/audioeffect/include",
     "../../frameworks/native/audiopolicy/include",
@@ -276,14 +288,24 @@ ohos_shared_library("audio_process_service") {
     "server/src/audio_process_in_server.cpp",
     "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",
+    "server/src/capturer_in_server.cpp",
+    "server/src/i_stream_manager.cpp",
+    "server/src/ipc_stream_in_server.cpp",
+    "server/src/ipc_stream_listener_proxy.cpp",
+    "server/src/ipc_stream_stub.cpp",
+    "server/src/pa_adapter_manager.cpp",
+    "server/src/pa_capturer_stream_impl.cpp",
+    "server/src/pa_renderer_stream_impl.cpp",
     "server/src/policy_handler.cpp",
     "server/src/policy_provider_proxy.cpp",
+    "server/src/renderer_in_server.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
 
   deps = [
     ":audio_common",
+    "$pulseaudio_build_path/src/pulse:pulse",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",

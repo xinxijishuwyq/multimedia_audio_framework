@@ -628,6 +628,16 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         return nullptr;
     }
 
+    if ((resetConfig.audioMode == AUDIO_MODE_PLAYBACK && resetConfig.rendererInfo.rendererFlags == 0) ||
+        (resetConfig.audioMode == AUDIO_MODE_RECORD && resetConfig.capturerInfo.capturerFlags == 0)) {
+        AUDIO_INFO_LOG("Create normal ipc stream.");
+        int32_t ret = 0;
+        sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
+        CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, nullptr, "GetIpcStream failed.");
+        sptr<IRemoteObject> remoteObject= ipcStream->AsObject();
+        return remoteObject;
+    }
+
     sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
     sptr<IRemoteObject> remoteObject= process->AsObject();

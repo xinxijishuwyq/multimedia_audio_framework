@@ -98,6 +98,7 @@ public:
 
     virtual ~IAudioStream() = default;
 
+    static int32_t GetByteSizePerFrame(const AudioStreamParams &params, size_t &result);
     static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);
@@ -233,6 +234,20 @@ public:
     }
 
     virtual void SetState() {}
+
+    bool IsFormatValid(uint8_t format);
+
+    bool IsRendererChannelValid(uint8_t channel);
+
+    bool IsCapturerChannelValid(uint8_t channel);
+
+    bool IsEncodingTypeValid(uint8_t encodingType);
+
+    bool IsSamplingRateValid(uint32_t samplingRate);
+
+    bool IsRendererChannelLayoutValid(uint64_t channelLayout);
+
+    bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 };
 } // namespace AudioStandard
 } // namespace OHOS

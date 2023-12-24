@@ -223,7 +223,7 @@ enum AudioEncodingType {
 
 
 // format
-enum AudioSampleFormat {
+enum AudioSampleFormat : uint8_t {
     SAMPLE_U8 = 0,
     SAMPLE_S16LE = 1,
     SAMPLE_S24LE = 2,
@@ -233,7 +233,7 @@ enum AudioSampleFormat {
 };
 
 // channel
-enum AudioChannel {
+enum AudioChannel : uint8_t {
     MONO = 1,
     STEREO = 2,
     CHANNEL_3 = 3,

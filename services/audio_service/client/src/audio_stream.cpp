@@ -263,70 +263,6 @@ vector<AudioSamplingRate> AudioStream::GetSupportedSamplingRates() const
     return AUDIO_SUPPORTED_SAMPLING_RATES;
 }
 
-bool IsFormatValid(uint8_t format)
-{
-    bool isValidFormat = (find(AUDIO_SUPPORTED_FORMATS.begin(), AUDIO_SUPPORTED_FORMATS.end(), format)
-                          != AUDIO_SUPPORTED_FORMATS.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsFormatValid: %{public}s", isValidFormat ? "true" : "false");
-    return isValidFormat;
-}
-
-bool IsRendererChannelValid(uint8_t channel)
-{
-    bool isValidChannel = (find(RENDERER_SUPPORTED_CHANNELS.begin(), RENDERER_SUPPORTED_CHANNELS.end(), channel)
-                           != RENDERER_SUPPORTED_CHANNELS.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
-    return isValidChannel;
-}
-
-bool IsCapturerChannelValid(uint8_t channel)
-{
-    bool isValidChannel = (find(CAPTURER_SUPPORTED_CHANNELS.begin(), CAPTURER_SUPPORTED_CHANNELS.end(), channel)
-                           != CAPTURER_SUPPORTED_CHANNELS.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
-    return isValidChannel;
-}
-
-bool IsEncodingTypeValid(uint8_t encodingType)
-{
-    bool isValidEncodingType
-            = (find(AUDIO_SUPPORTED_ENCODING_TYPES.begin(), AUDIO_SUPPORTED_ENCODING_TYPES.end(), encodingType)
-               != AUDIO_SUPPORTED_ENCODING_TYPES.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsEncodingTypeValid: %{public}s", isValidEncodingType ? "true" : "false");
-    return isValidEncodingType;
-}
-
-bool IsSamplingRateValid(uint32_t samplingRate)
-{
-    bool isValidSamplingRate
-            = (find(AUDIO_SUPPORTED_SAMPLING_RATES.begin(), AUDIO_SUPPORTED_SAMPLING_RATES.end(), samplingRate)
-               != AUDIO_SUPPORTED_SAMPLING_RATES.end());
-    AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s", isValidSamplingRate ? "true" : "false");
-    return isValidSamplingRate;
-}
-
-bool IsRendererChannelLayoutValid(uint64_t channelLayout)
-{
-    bool isValidRendererChannelLayout = (find(RENDERER_SUPPORTED_CHANNELLAYOUTS.begin(),
-        RENDERER_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != RENDERER_SUPPORTED_CHANNELLAYOUTS.end());
-    AUDIO_DEBUG_LOG("AudioStream: isValidRendererChannelLayout: %{public}s",
-        isValidRendererChannelLayout ? "true" : "false");
-    return isValidRendererChannelLayout;
-}
-
-bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
-{
-    if (!IsRendererChannelValid(channels)) {
-        AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", channels);
-        return false;
-    }
-    if (!IsRendererChannelLayoutValid(channelLayout)) {
-        AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
-        return false;
-    }
-    return true;
-}
-
 int32_t AudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 {
     AUDIO_INFO_LOG("AudioStream: GetAudioStreamInfo");
@@ -372,14 +308,16 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         StopAudioStream();
         ReleaseAudioStream(false);
     }
-
+    AUDIO_ERR_LOG("0000000000000000000000111");
     AudioStreamParams param = info;
 
     int32_t ret = 0;
 
     if ((ret = InitFromParams(param)) != SUCCESS) {
+        AUDIO_ERR_LOG("InitFromParams error");
         return ret;
     }
+    AUDIO_ERR_LOG("000000000000000000000011122");
 
     if (CreateStream(param, eStreamType_) != SUCCESS) {
         AUDIO_ERR_LOG("AudioStream:Create stream failed");

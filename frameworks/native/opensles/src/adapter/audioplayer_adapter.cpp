@@ -185,6 +185,7 @@ SLresult AudioPlayerAdapter::EnqueueAdapter(SLuint32 id, const void *buffer, SLu
     BufferDesc bufDesc = {};
     bufDesc.buffer = (uint8_t*) buffer;
     bufDesc.bufLength = size;
+    bufDesc.dataLength = size;
     audioRenderer->Enqueue(bufDesc);
     return SL_RESULT_SUCCESS;
 }
