@@ -109,13 +109,6 @@ AudioRendererPrivate::~AudioRendererPrivate()
     }
 
     RemoveRendererPolicyServiceDiedCallback();
-
-#ifdef SONIC_ENABLE
-    if (sonicStream_ != nullptr) {
-        sonicDestroyStream(sonicStream_);
-        sonicStream_ = nullptr;
-    }
-#endif
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -325,13 +318,6 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
         SetSelfRendererStateCallback();
     }
 
-#ifdef SONIC_ENABLE
-    GetBufferSize(bufferSize_);
-    formatSize_ = GetFormatSize(audioStreamParams);
-    format_ = audioStreamParams.format;
-    channel_ = audioStreamParams.channels;
-    sonicStream_ = sonicCreateStream(audioStreamParams.samplingRate, audioStreamParams.channels);
-#endif
     return SUCCESS;
 }
 
@@ -560,138 +546,18 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
     return audioStream_->StartAudioStream(cmdType);
 }
 
-#ifdef SONIC_ENABLE
-
-int32_t AudioRendererPrivate::ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
-    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
-{
-    int32_t numSamples = bufferSize / (formatSize_ * channel_);
-    int32_t res = sonicWriteUnsignedCharToStream(sonicStream_, static_cast<unsigned char*>(buffer), numSamples);
-    CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write unsigned char to stream failed.");
-
-    int32_t outSamples = sonicReadUnsignedCharFromStream(sonicStream_,
-        static_cast<unsigned char*>(outBuffer.get()), MAX_BUFFER_SIZE);
-    CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
-
-    outBufferSize = outSamples * (formatSize_ * channel_);
-    return bufferSize;
-}
-
-int32_t AudioRendererPrivate::ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
-    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
-{
-    int32_t numSamples = bufferSize / (formatSize_ * channel_);
-    int32_t res = sonicWriteShortToStream(sonicStream_, (short*)(buffer), numSamples);
-    CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write short to stream failed.");
-
-    int32_t outSamples = sonicReadShortFromStream(sonicStream_, (short*)(outBuffer.get()), MAX_BUFFER_SIZE);
-    CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
-
-    outBufferSize = outSamples * (formatSize_ * channel_);
-    return bufferSize;
-}
-
-int32_t AudioRendererPrivate::ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
-    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
-{
-    float* bitTofloat = new(std::nothrow) float[bufferSize];
-    int32_t frameLen = formatSize_ > 0 ? static_cast<int32_t>(bufferSize / formatSize_) : 0;
-    ConvertFrom24BitToFloat(frameLen, buffer, bitTofloat);
-
-    float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
-    int32_t ret = ChangeSpeedForFloat(bitTofloat, bufferSize, speedBuf, outBufferSize);
-
-    ConvertFromFloatTo24Bit(outBufferSize / formatSize_, speedBuf, outBuffer.get());
-
-    delete [] bitTofloat;
-    delete [] speedBuf;
-    return ret;
-}
-
-int32_t AudioRendererPrivate::ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
-    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
-{
-    float* bitTofloat = new(std::nothrow) float[bufferSize];
-    int32_t frameLen = formatSize_ > 0 ? static_cast<int32_t>(bufferSize / formatSize_) : 0;
-    ConvertFrom32BitToFloat(frameLen, reinterpret_cast<int32_t *>(buffer), bitTofloat);
-
-    float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
-    int32_t ret = ChangeSpeedForFloat(bitTofloat, bufferSize, speedBuf, outBufferSize);
-
-    ConvertFromFloatTo32Bit(outBufferSize / formatSize_, speedBuf, reinterpret_cast<int32_t *>(outBuffer.get()));
-
-    delete [] bitTofloat;
-    delete [] speedBuf;
-    return ret;
-}
-
-int32_t AudioRendererPrivate::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
-    float* outBuffer, int32_t &outBufferSize)
-{
-    int32_t numSamples = bufferSize/(formatSize_*channel_);
-    int32_t res = sonicWriteFloatToStream(sonicStream_, buffer, numSamples);
-    CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write float to stream failed.");
-    int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, MAX_BUFFER_SIZE);
-    outBufferSize = outSamples * (formatSize_ * channel_);
-    return bufferSize;
-}
-
-int32_t AudioRendererPrivate::ChangeSpeed(uint8_t *buffer, int32_t bufferSize)
-{
-    int32_t ret = 0;
-    auto outBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
-    int32_t outBufferSize = 0;
-    switch (format_) {
-        case SAMPLE_U8:
-            ret = ChangeSpeedFor8Bit(buffer, bufferSize, outBuffer, outBufferSize);
-            break;
-        case SAMPLE_S16LE:
-            ret = ChangeSpeedFor16Bit(buffer, bufferSize, outBuffer, outBufferSize);
-            break;
-        case SAMPLE_S24LE:
-            ret = ChangeSpeedFor24Bit(buffer, bufferSize, outBuffer, outBufferSize);
-            break;
-        case SAMPLE_S32LE:
-            ret = ChangeSpeedFor32Bit(buffer, bufferSize, outBuffer, outBufferSize);
-            break;
-        default:
-            ret = ChangeSpeedFor16Bit(buffer, bufferSize, outBuffer, outBufferSize);
-            break;
-    }
-    if (ret == 0) return ret; // Sonic write error
-    if (outBufferSize == 0) return bufferSize; // Continue writing when the sonic is not full
-    return WriteSpeedBuffer(bufferSize, outBuffer.get(), outBufferSize);
-}
-
-int32_t AudioRendererPrivate::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
-{
-    int32_t writeIndex = 0;
-    int32_t writeSize = bufferSize_;
-    while (speedBufferSize > 0) {
-        if (speedBufferSize < bufferSize_) {
-            writeSize = speedBufferSize;
-        }
-        int32_t writtenSize = audioStream_->Write(speedBuffer+writeIndex, writeSize);
-        if (writtenSize < 0) return writtenSize;
-        if (writtenSize == 0) {
-            AUDIO_WARNING_LOG("writeen size is zero");
-            continue;
-        }
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(speedBuffer + writeIndex), writtenSize);
-        writeIndex += writtenSize;
-        speedBufferSize -= writtenSize;
-    }
-
-    return bufferSize;
-}
-#endif
-
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
 #ifdef SONIC_ENABLE
-    if ((speed_ - 1 > MINIMUM_SPEED_CHANGE || 1 - speed_ > MINIMUM_SPEED_CHANGE) && sonicStream_ != nullptr) {
-        return ChangeSpeed(buffer, bufferSize);
+    if ((speed_ - 1 > MINIMUM_SPEED_CHANGE || 1 - speed_ > MINIMUM_SPEED_CHANGE)) {
+        auto outBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+        int32_t outBufferSize = 0;
+        int32_t ret = audioStream_->ChangeSpeed(buffer, bufferSize, outBuffer, outBufferSize);
+        if (ret == 0) return ret; // Sonic write error
+        if (outBufferSize == 0) return bufferSize; // Continue writing when the sonic is not full
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(outBuffer.get()), outBufferSize);
+        return audioStream_->WriteSpeedBuffer(bufferSize, outBuffer.get(), outBufferSize);
     }
 #endif
     int32_t size = audioStream_->Write(buffer, bufferSize);
@@ -1625,11 +1491,8 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
         ERR_INVALID_PARAM, "invaild speed index");
     speed_ = speed;
 #ifdef SONIC_ENABLE
-    CHECK_AND_RETURN_RET_LOG(sonicStream_ != nullptr, ERROR, "change speed failed, sonicStream is nullptr");
-    sonicSetSpeed(sonicStream_, speed_);
     return audioStream_->SetSpeed(speed_);
 #endif
-    AUDIO_WARNING_LOG("SetSpeed: sonic cannot be used");
     return SUCCESS;
 }
 

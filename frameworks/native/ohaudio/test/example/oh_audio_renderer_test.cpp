@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
     printf("start \n");
     if ((argv == nullptr) || (argc < AudioTestConstants::SIXTH_ARG_IDX)) {
         printf("input parms wrong. input format: filePath samplingRate channelCount latencyMode\n");
-        printf("input demo: ./oh_audio_renderer_test ./oh_test_audio.pcm 48000 2 1 1 800\n");
+        printf("input demo: ./oh_audio_renderer_test ./oh_test_audio.pcm 48000 2 1 1 800 1\n");
         return 0;
     }
     printf("argc=%d ", argc);

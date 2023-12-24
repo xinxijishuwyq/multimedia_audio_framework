@@ -42,6 +42,10 @@ const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_MS = 80;
+#ifdef SONIC_ENABLE
+constexpr int32_t MAX_BUFFER_SIZE = 100000;
+constexpr float MINIMUM_SPEED_CHANGE = 0.01;
+#endif
 static AppExecFwk::BundleInfo gBundleInfo_;
 
 static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
@@ -127,6 +131,31 @@ AudioStream::~AudioStream()
         fclose(pfd_);
         pfd_ = nullptr;
     }
+}
+
+inline size_t GetFormatSize(const AudioStreamParams& info)
+{
+    size_t result = 0;
+    size_t bitWidthSize = 0;
+    switch (info.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            bitWidthSize = 2; // size is 2
+            break;
+    }
+    result = bitWidthSize * info.channels;
+    return result;
 }
 
 void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -381,6 +410,11 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     AUDIO_DEBUG_LOG("AudioStream:Set stream Info SUCCESS");
     streamParams_ = param;
     RegisterTracker(proxyObj);
+#ifdef SONIC_ENABLE
+    GetBufferSize(bufferSize_);
+    formatSize_ = GetFormatSize(param) / param.channels;
+    sonicStream_ = sonicCreateStream(param.samplingRate, param.channels);
+#endif
     return SUCCESS;
 }
 
@@ -743,6 +777,14 @@ bool AudioStream::ReleaseAudioStream(bool releaseRunner)
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, GetClientPid(), rendererInfo_, capturerInfo_);
     }
+
+#ifdef SONIC_ENABLE
+    if (sonicStream_ != nullptr) {
+        sonicDestroyStream(sonicStream_);
+        sonicStream_ = nullptr;
+        AUDIO_DEBUG_LOG("Sonic stream destroy");
+    }
+#endif
     return true;
 }
 
@@ -784,31 +826,6 @@ int32_t AudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback
     SaveStreamCallback(callback);
 
     return SUCCESS;
-}
-
-inline size_t GetFormatSize(const AudioStreamParams& info)
-{
-    size_t result = 0;
-    size_t bitWidthSize = 0;
-    switch (info.format) {
-        case SAMPLE_U8:
-            bitWidthSize = 1; // size is 1
-            break;
-        case SAMPLE_S16LE:
-            bitWidthSize = 2; // size is 2
-            break;
-        case SAMPLE_S24LE:
-            bitWidthSize = 3; // size is 3
-            break;
-        case SAMPLE_S32LE:
-            bitWidthSize = 4; // size is 4
-            break;
-        default:
-            bitWidthSize = 2; // size is 2
-            break;
-    }
-    result = bitWidthSize * info.channels;
-    return result;
 }
 
 void AudioStream::SetPreferredFrameSize(int32_t frameSize)
@@ -1021,10 +1038,38 @@ int32_t AudioStream::Clear()
     return SUCCESS;
 }
 
+int32_t AudioStream::GetStreamBufferCB(StreamBuffer &stream,
+    std::unique_ptr<uint8_t[]> &speedBuffer, int32_t &speedBufferSize)
+{
+    stream.buffer = filledBufferQ_.front().buffer;
+    stream.bufferLen = filledBufferQ_.front().bufLength;
+
+    if (stream.buffer == nullptr) {
+        AUDIO_ERR_LOG("WriteCb stream.buffer is nullptr return");
+        return ERR_INVALID_PARAM;
+    }
+    if ((speed_ - 1 > MINIMUM_SPEED_CHANGE || 1 - speed_ > MINIMUM_SPEED_CHANGE) && sonicStream_ != nullptr) {
+        speedBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+        int32_t ret = ChangeSpeed(stream.buffer, stream.bufferLen, speedBuffer, speedBufferSize);
+        if (ret == 0 || speedBufferSize == 0) {
+            freeBufferQ_.emplace(filledBufferQ_.front());
+            filledBufferQ_.pop();
+            SendWriteBufferRequestEvent();
+            return ERR_INVALID_WRITE; // Continue writing when the sonic is not full
+        }
+        stream.buffer = speedBuffer.get();
+        stream.bufferLen = speedBufferSize;
+        return SUCCESS;
+    }
+    return SUCCESS;
+}
+
 void AudioStream::WriteCbTheadLoop()
 {
     AUDIO_INFO_LOG("WriteCb thread start");
     StreamBuffer stream;
+    std::unique_ptr<uint8_t[]> speedBuffer = nullptr;
+    int32_t speedBufferSize;
     size_t bytesWritten;
     int32_t writeError;
 
@@ -1046,13 +1091,10 @@ void AudioStream::WriteCbTheadLoop()
                 bufferQueueCV_.wait_for(lock, chrono::milliseconds(CB_WRITE_BUFFERS_WAIT_IN_MS));
                 continue;
             }
-            stream.buffer = filledBufferQ_.front().buffer;
-            stream.bufferLen = filledBufferQ_.front().bufLength;
 
-            if (stream.buffer == nullptr) {
-                AUDIO_ERR_LOG("WriteCb stream.buffer is nullptr return");
-                break;
-            }
+            int32_t ret = GetStreamBufferCB(stream, speedBuffer, speedBufferSize);
+            if (ret == ERR_INVALID_PARAM) break;
+            if (ret == ERR_INVALID_WRITE) continue; // Continue writing when the sonic is not full
 
             ProcessDataByAudioBlend(stream.buffer, stream.bufferLen);
             ProcessDataByVolumeRamp(stream.buffer, stream.bufferLen);
@@ -1176,15 +1218,140 @@ int64_t AudioStream::GetFramesRead()
     return GetStreamFramesRead();
 }
 
+#ifdef SONIC_ENABLE
+int32_t AudioStream::ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
+    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
+{
+    int32_t numSamples = bufferSize / (formatSize_ * streamParams_.channels);
+    int32_t res = sonicWriteUnsignedCharToStream(sonicStream_, static_cast<unsigned char*>(buffer), numSamples);
+    CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write unsigned char to stream failed.");
+
+    int32_t outSamples = sonicReadUnsignedCharFromStream(sonicStream_,
+        static_cast<unsigned char*>(outBuffer.get()), MAX_BUFFER_SIZE);
+    CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
+
+    outBufferSize = outSamples * (formatSize_ * streamParams_.channels);
+    return bufferSize;
+}
+
+int32_t AudioStream::ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
+    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
+{
+    int32_t numSamples = bufferSize / (formatSize_ * streamParams_.channels);
+    int32_t res = sonicWriteShortToStream(sonicStream_, (short*)(buffer), numSamples);
+    CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write short to stream failed.");
+
+    int32_t outSamples = sonicReadShortFromStream(sonicStream_, (short*)(outBuffer.get()), MAX_BUFFER_SIZE);
+    CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
+
+    outBufferSize = outSamples * (formatSize_ * streamParams_.channels);
+    return bufferSize;
+}
+
+int32_t AudioStream::ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
+    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
+{
+    float* bitTofloat = new(std::nothrow) float[bufferSize];
+    ConvertFrom24BitToFloat(bufferSize / formatSize_, buffer, bitTofloat);
+
+    float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
+    int32_t ret = ChangeSpeedForFloat(bitTofloat, bufferSize, speedBuf, outBufferSize);
+
+    ConvertFromFloatTo24Bit(outBufferSize / formatSize_, speedBuf, outBuffer.get());
+
+    delete [] bitTofloat;
+    delete [] speedBuf;
+    return ret;
+}
+
+int32_t AudioStream::ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
+    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
+{
+    float* bitTofloat = new(std::nothrow) float[bufferSize];
+    ConvertFrom32BitToFloat(bufferSize / formatSize_, reinterpret_cast<int32_t *>(buffer), bitTofloat);
+
+    float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
+    int32_t ret = ChangeSpeedForFloat(bitTofloat, bufferSize, speedBuf, outBufferSize);
+
+    ConvertFromFloatTo32Bit(outBufferSize / formatSize_, speedBuf, reinterpret_cast<int32_t *>(outBuffer.get()));
+
+    delete [] bitTofloat;
+    delete [] speedBuf;
+    return ret;
+}
+
+int32_t AudioStream::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
+    float* outBuffer, int32_t &outBufferSize)
+{
+    int32_t numSamples = bufferSize / (formatSize_ * streamParams_.channels);
+    int32_t res = sonicWriteFloatToStream(sonicStream_, buffer, numSamples);
+    CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write float to stream failed.");
+    int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, MAX_BUFFER_SIZE);
+    outBufferSize = outSamples * (formatSize_ * streamParams_.channels);
+    return bufferSize;
+}
+
+int32_t AudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
+    std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
+{
+    int32_t ret = ERROR;
+    switch (streamParams_.format) {
+        case SAMPLE_U8:
+            ret = ChangeSpeedFor8Bit(buffer, bufferSize, outBuffer, outBufferSize);
+            break;
+        case SAMPLE_S16LE:
+            ret = ChangeSpeedFor16Bit(buffer, bufferSize, outBuffer, outBufferSize);
+            break;
+        case SAMPLE_S24LE:
+            ret = ChangeSpeedFor24Bit(buffer, bufferSize, outBuffer, outBufferSize);
+            break;
+        case SAMPLE_S32LE:
+            ret = ChangeSpeedFor32Bit(buffer, bufferSize, outBuffer, outBufferSize);
+            break;
+        default:
+            ret = ChangeSpeedFor16Bit(buffer, bufferSize, outBuffer, outBufferSize);
+            break;
+    }
+    return ret;
+}
+
+int32_t AudioStream::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
+{
+    int32_t writeIndex = 0;
+    int32_t writeSize = bufferSize_;
+    while (speedBufferSize > 0) {
+        if (speedBufferSize < bufferSize_) {
+            writeSize = speedBufferSize;
+        }
+        int32_t writtenSize = Write(speedBuffer + writeIndex, writeSize);
+        if (writtenSize < 0) return writtenSize;
+        if (writtenSize == 0) {
+            AUDIO_WARNING_LOG("writeen size is zero");
+            continue;
+        }
+        writeIndex += writtenSize;
+        speedBufferSize -= writtenSize;
+    }
+
+    return bufferSize;
+}
+#endif
+
 int32_t AudioStream::SetSpeed(float speed)
 {
     speed_ = speed;
+#ifdef SONIC_ENABLE
+    CHECK_AND_RETURN_RET_LOG(sonicStream_ != nullptr, ERROR, "change speed failed, sonicStream is nullptr");
+    sonicSetSpeed(sonicStream_, speed_);
     return SetStreamSpeed(speed);
+#endif
+    AUDIO_WARNING_LOG("SetSpeed: sonic cannot be used");
+    return SUCCESS;
 }
 
 float AudioStream::GetSpeed()
 {
-    return GetStreamSpeed();
+    return speed_;
 }
 
 int32_t AudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
