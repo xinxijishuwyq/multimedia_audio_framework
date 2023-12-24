@@ -51,7 +51,7 @@ const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compa
 const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
-static const size_t MAX_CLIENT_WRITE_SIZE = 20 * 1024 * 1024; // 20M
+static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
@@ -216,7 +216,6 @@ private:
     bool streamTrackerRegistered_ = false;
 
     bool needSetThreadPriority_ = true;
-    int32_t writeThreadId_ = 0; // 0 is invalid
 
     AudioStreamParams streamParams_; // in plan next: replace it with AudioRendererParams
 
@@ -596,8 +595,8 @@ int32_t RendererInClientInner::InitSharedBuffer()
     ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame_, byteSizePerFrame);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret, "GetSizeParameter failed"
-        ":%{public}d, byteSizePerFrame:%{public}u, sizePerFrameInByte_:%{public}zu",
-            ret, byteSizePerFrame, sizePerFrameInByte_);
+        ":%{public}d, byteSizePerFrame:%{public}u, sizePerFrameInByte_:%{public}zu", ret, byteSizePerFrame,
+        sizePerFrameInByte_);
 
     clientSpanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame;
 
@@ -724,9 +723,9 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 
 int32_t RendererInClientInner::GetLatency(uint64_t &latency)
 {
-    // in plan:
-    latency = 150000; // unit is us
-    return ERROR;
+    // in plan: 150000 for debug
+    latency = 150000; // unit is us, 150000 is 150ms
+    return SUCCESS;
 }
 
 int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamType)
@@ -804,7 +803,8 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     }
     // Calculate buffer size based on duration.
 
-    cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * streamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
+    cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * streamParams_.samplingRate / AUDIO_US_PER_S) *
+        sizePerFrameInByte_;
     AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64", size: %{public}zu", bufferDurationInUs,
         cbBufferSize_);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
@@ -840,8 +840,7 @@ int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
     bool stopWaiting = cbThreadCv_.wait_for(threadStartlock, std::chrono::milliseconds(SHORT_TIMEOUT_IN_MS), [this] {
         return cbThreadReleased_ == false; // When thread is started, cbThreadReleased_ will be false. So stop waiting.
     });
-
-    if(!stopWaiting) {
+    if (!stopWaiting) {
         AUDIO_WARNING_LOG("Init OS_AudioWriteCB thread time out");
     }
 
@@ -1362,25 +1361,23 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
-     AUDIO_ERR_LOG("Write with metaBuffer is not supported");
+    AUDIO_ERR_LOG("Write with metaBuffer is not supported");
     return ERR_INVALID_OPERATION;
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
-    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
-        "Write not support, render mode is callback");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE, "Not support mode");
 
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize > 0 && bufferSize < MAX_CLIENT_WRITE_SIZE,
-        ERR_INVALID_PARAM, "Write with invalid params, size is %{public}zu", bufferSize);
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE, ERR_INVALID_PARAM,
+        "invalid size is %{public}zu", bufferSize);
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_ || writeThreadId_ != gettid()) {
+    if (needSetThreadPriority_) {
         AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
-        writeThreadId_ = gettid();
         needSetThreadPriority_ = false;
     }
 
@@ -1398,10 +1395,9 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
     while (targetSize > sizePerFrameInByte_) {
         // 1. write data into ring cache
         OptResult result = ringCache_->GetWritableSize();
-        if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_ERR_LOG("RingCache write status invalid size is:%{public}zu", result.size);
-            break;
-        }
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, bufferSize - targetSize, "RingCache write status "
+            "invalid size is:%{public}zu", result.size);
+
         size_t writableSize = result.size;
         Trace::Count("RendererInClient::CacheBuffer->writableSize", writableSize);
 
@@ -1422,10 +1418,8 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 
         // 2. copy data from cache to OHAudioBuffer
         result = ringCache_->GetReadableSize();
-        if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_ERR_LOG("RingCache read status invalid size is:%{public}zu", result.size);
-            break;
-        }
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, bufferSize - targetSize, "RingCache read status "
+            "invalid size is:%{public}zu", result.size);
         size_t readableSize = result.size;
         Trace::Count("RendererInClient::CacheBuffer->readableSize", readableSize);
 
@@ -1456,8 +1450,8 @@ int32_t RendererInClientInner::WriteCacheData()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
     OptResult result = ringCache_->Dequeue({desc.buffer, desc.bufLength});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-    AUDIO_INFO_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_%{public}u",
-        curWriteIndex, spanSizeInFrame_);
+    AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
+        "%{public}u", curWriteIndex, spanSizeInFrame_);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
@@ -1533,7 +1527,7 @@ int32_t RendererInClientInner::ParamsToStateCmdType(int64_t params, State &state
         case HANDLER_PARAM_PREPARED:
             state = PREPARED;
             break;
-        case HANDLER_PARAM_RUNNING://
+        case HANDLER_PARAM_RUNNING:
             state = RUNNING;
             break;
         case HANDLER_PARAM_STOPPED:
@@ -1638,7 +1632,7 @@ void RendererInClientInner::UnsetRendererPeriodPositionCallback()
 }
 
 void RendererInClientInner::SetCapturerPositionCallback(int64_t markPosition,
-    const std::shared_ptr<CapturerPositionCallback> &callback)  
+    const std::shared_ptr<CapturerPositionCallback> &callback)
 {
     AUDIO_ERR_LOG("SetCapturerPositionCallback is not supported");
     return;

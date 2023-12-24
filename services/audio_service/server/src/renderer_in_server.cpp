@@ -52,7 +52,6 @@ int32_t RendererInServer::ConfigServerBuffer()
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     totalSizeInFrame_ = spanSizeInFrame_ * 4; // 4 frames
-    // stream_->GetMinimumBufferSize(totalSizeInFrame_);
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
@@ -150,15 +149,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             break;
         case OPERATION_FLUSHED:
             stateListener->OnOperationHandled(FLUSH_STREAM, 0);
-            if (status_ == I_STATUS_FLUSHING_WHEN_STARTED) {
-                status_ = I_STATUS_STARTED;
-            } else if (status_ == I_STATUS_FLUSHING_WHEN_PAUSED) {
-                status_ = I_STATUS_PAUSED;
-            } else if (status_ == I_STATUS_FLUSHING_WHEN_STOPPED) {
-                status_ = I_STATUS_STOPPED;
-            } else {
-                AUDIO_WARNING_LOG("Invalid status before flusing");
-            }
+            HandleOperationFlushed();
             break;
         case OPERATION_DRAINED:
             stateListener->OnOperationHandled(DRAIN_STREAM, 0);
@@ -172,6 +163,23 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
+    }
+}
+
+void RendererInServer::HandleOperationFlushed()
+{
+    switch (status_) {
+        case I_STATUS_FLUSHING_WHEN_STARTED:
+            status_ = I_STATUS_STARTED;
+            break;
+        case I_STATUS_FLUSHING_WHEN_PAUSED:
+            status_ = I_STATUS_PAUSED;
+            break;
+        case I_STATUS_FLUSHING_WHEN_STOPPED:
+            status_ = I_STATUS_STOPPED;
+            break;
+        default:
+            AUDIO_WARNING_LOG("Invalid status before flusing");
     }
 }
 
@@ -328,12 +336,6 @@ int32_t RendererInServer::DrainAudioBuffer()
     return SUCCESS;
 }
 
-int32_t RendererInServer::SendOneFrame()
-{
-    OnWriteData(100000);
-    return SUCCESS;
-}
-
 int32_t RendererInServer::GetInfo()
 {
     IStreamManager::GetPlaybackManager().GetInfo();
@@ -457,20 +459,6 @@ int32_t RendererInServer::WriteOneFrame()
     }
     BufferDesc bufferDesc = stream_->DequeueBuffer(minBufferSize);
     stream_->EnqueueBuffer(bufferDesc);
-    return SUCCESS;
-}
-
-int32_t RendererInServer::AbortOneCallback()
-{
-    std::lock_guard<std::mutex> lock(statusLock_);
-    stream_->AbortCallback(1);
-    return SUCCESS;
-}
-
-int32_t RendererInServer::AbortAllCallback()
-{
-    std::lock_guard<std::mutex> lock(statusLock_);
-    stream_->AbortCallback(5);
     return SUCCESS;
 }
 

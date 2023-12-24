@@ -58,8 +58,6 @@ public:
     void ReadData(size_t length);
     int32_t DrainAudioBuffer();
     int32_t ReadOneFrame();
-    int32_t AbortOneCallback();
-    int32_t AbortAllCallback();
     std::shared_ptr<OHAudioBuffer> GetOHSharedBuffer();
 
 private:

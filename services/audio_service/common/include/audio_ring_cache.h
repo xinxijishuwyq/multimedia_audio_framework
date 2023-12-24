@@ -79,6 +79,7 @@ private:
     bool Init();
     OptResult GetWritableSizeNoLock();
     OptResult GetReadableSizeNoLock();
+    OptResult HandleCrossDequeue(size_t tempReadIndex, size_t readableSize, const BufferWrap &buffer);
     void ReIndex();
 private:
     std::mutex cacheMutex_;

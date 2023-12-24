@@ -27,7 +27,7 @@
 namespace OHOS {
 namespace AudioStandard {
 // in plan extends IStatusCallback
-class StreamListenerHolder : public IStreamListener{
+class StreamListenerHolder : public IStreamListener {
 public:
     StreamListenerHolder();
     ~StreamListenerHolder();

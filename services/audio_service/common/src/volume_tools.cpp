@@ -20,6 +20,8 @@
 namespace {
 static const int32_t UINT8_SHIFT = 0x80;
 static const int32_t INT24_SHIFT = 8;
+static const uint32_t SHIRT_EIGHT = 8;
+static const uint32_t ARRAY_INDEX_TWO = 2;
 static const size_t MIN_FRAME_SIZE = 1;
 }
 namespace OHOS {
@@ -90,7 +92,8 @@ ChannelVolumes VolumeTools::GetChannelVolumes(AudioChannel channel, float volSta
     return vols;
 }
 
-inline size_t GetByteSize(AudioSampleFormat format) {
+inline size_t GetByteSize(AudioSampleFormat format)
+{
     size_t bitWidthSize = 0;
     switch (format) {
         case SAMPLE_U8:
@@ -114,13 +117,16 @@ inline size_t GetByteSize(AudioSampleFormat format) {
     }
     return bitWidthSize;
 }
-static inline uint32_t ReadInt24LE(const uint8_t *p) {
-    return ((uint32_t) p[2] << 16) | ((uint32_t) p[1] << 8) | ((uint32_t) p[0]);
+
+static inline uint32_t ReadInt24LE(const uint8_t *p)
+{
+    return ((uint32_t) p[ARRAY_INDEX_TWO] << 16) | ((uint32_t) p[1] << SHIRT_EIGHT) | ((uint32_t) p[0]);
 }
 
-static inline void WriteInt24LE(uint8_t *p, uint32_t u) {
-    p[2] = (uint8_t) (u >> 16);
-    p[1] = (uint8_t) (u >> 8);
+static inline void WriteInt24LE(uint8_t *p, uint32_t u)
+{
+    p[ARRAY_INDEX_TWO] = (uint8_t) (u >> 16);
+    p[1] = (uint8_t) (u >> SHIRT_EIGHT);
     p[0] = (uint8_t) u;
 }
 
@@ -138,7 +144,7 @@ inline void ProcessOneFrame(uint8_t *ptr, AudioSampleFormat format, int32_t vol)
     switch (format) {
         case SAMPLE_U8:
             temp = *ptr - UINT8_SHIFT;
-            temp = temp * vol >> VOLUME_SHIFT;
+            temp = (temp * vol) >> VOLUME_SHIFT;
             temp = temp < INT8_MIN ? INT8_MIN : (temp > INT8_MAX ? INT8_MAX : temp);
             *ptr = static_cast<uint8_t>(temp + UINT8_SHIFT);
             break;

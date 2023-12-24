@@ -65,14 +65,14 @@ PaAdapterManager::PaAdapterManager(ManagerType type)
 {
     AUDIO_DEBUG_LOG("Constructor PaAdapterManager");
     mainLoop_ = nullptr;
-    api_ = nullptr;;
+    api_ = nullptr;
     context_ = nullptr;
     isContextConnected_ = false;
     isMainLoopStarted_ = false;
     managerType_ = type;
 }
 
-std::atomic<uint32_t> g_sessionID_ = {100000}; // begin at 100000
+std::atomic<uint32_t> g_sessionId = {100000}; // begin at 100000
 
 int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
 {
@@ -83,7 +83,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     }
 
-    uint32_t sessionId = g_sessionID_++;
+    uint32_t sessionId = g_sessionId++;
     pa_stream *paStream = InitPaStream(processConfig, sessionId);
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
@@ -127,7 +127,7 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
         int32_t ret = InitPaContext();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     }
-    uint32_t sessionId = g_sessionID_++;
+    uint32_t sessionId = g_sessionId++;
     pa_stream *paStream = InitPaStream(processConfig, sessionId);
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
@@ -362,7 +362,7 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
     pa_stream *paStream)
 {
     std::shared_ptr<PaCapturerStreamImpl> capturerStream =
-        std::make_shared<PaCapturerStreamImpl>(paStream,processConfig, mainLoop_);
+        std::make_shared<PaCapturerStreamImpl>(paStream, processConfig, mainLoop_);
     if (capturerStream == nullptr) {
         AUDIO_ERR_LOG("Create capturerStream Failed");
         return nullptr;
@@ -376,64 +376,18 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
 int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
 {
     AUDIO_DEBUG_LOG("Enter PaAdapterManager::ConnectStreamToPA");
-    int error, result;
-
     if (CheckReturnIfinvalid(mainLoop_ && context_ && paStream, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
     }
 
     pa_threaded_mainloop_lock(mainLoop_);
     if (managerType_ == PLAYBACK) {
-        uint32_t tlength = 3;
-        // GetSysPara("multimedia.audio.tlength", tlength);
-        uint32_t maxlength = 4;
-        // GetSysPara("multimedia.audio.maxlength", maxlength);
-        uint32_t prebuf = 1;
-        // GetSysPara("multimedia.audio.prebuf", prebuf);
-        pa_buffer_attr bufferAttr;
-        bufferAttr.fragsize = static_cast<uint32_t>(-1);
-        bufferAttr.prebuf = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * prebuf, &sampleSpec);
-        bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
-        bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
-        bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
-        AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}u, tlength: %{public}u, prebuf: %{public}u",
-            maxlength, tlength, prebuf);
-
-        result = pa_stream_connect_playback(paStream, nullptr, &bufferAttr,
-            (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
-            PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
-
-        if (result < 0) {
-            error = pa_context_errno(context_);
-            AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
-            pa_threaded_mainloop_unlock(mainLoop_);
-            return ERR_INVALID_OPERATION;
-        }
+        int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
+        CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     } else {
-        uint32_t fragsize = 1;
-        // GetSysPara("multimedia.audio.fragsize", fragsize);
-        uint32_t maxlength = 3;
-        // GetSysPara("multimedia.audio.maxlength", maxlength);
-
-        pa_buffer_attr bufferAttr;
-        bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
-        bufferAttr.fragsize = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * fragsize, &sampleSpec);
-        AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}d, fragsize: %{public}d",
-            bufferAttr.maxlength, bufferAttr.fragsize);
-
-        result = pa_stream_connect_record(paStream, nullptr, &bufferAttr,
-            (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
-            PA_STREAM_VARIABLE_RATE));
-        // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
-
-        if (result < 0) {
-            error = pa_context_errno(context_);
-            AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
-            pa_threaded_mainloop_unlock(mainLoop_);
-            return ERR_INVALID_OPERATION;
-        }
+        int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec);
+        CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }
-
     while (true) {
         pa_stream_state_t state = pa_stream_get_state(paStream);
         if (state == PA_STREAM_READY) {
@@ -441,8 +395,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
             break;
         }
         if (!PA_STREAM_IS_GOOD(state)) {
-
-            error = pa_context_errno(context_);
+            int32_t error = pa_context_errno(context_);
             pa_threaded_mainloop_unlock(mainLoop_);
             AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
             return ERR_INVALID_OPERATION;
@@ -453,9 +406,58 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     return SUCCESS;
 }
 
+int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
+{
+    uint32_t tlength = 3; // 3 is tlength of playback
+    uint32_t maxlength = 4; // 4 is max buffer length of playback
+    uint32_t prebuf = 1; // 1 is prebuf of playback
+    pa_buffer_attr bufferAttr;
+    bufferAttr.fragsize = static_cast<uint32_t>(-1);
+    bufferAttr.prebuf = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * prebuf, &sampleSpec);
+    bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
+    bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
+    bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
+    AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}u, tlength: %{public}u, prebuf: %{public}u",
+        maxlength, tlength, prebuf);
+
+    int32_t result = pa_stream_connect_playback(paStream, nullptr, &bufferAttr,
+        (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+        PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
+    if (result < 0) {
+        int32_t error = pa_context_errno(context_);
+        AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
+        pa_threaded_mainloop_unlock(mainLoop_);
+        return ERR_INVALID_OPERATION;
+    }
+    return SUCCESS;
+}
+
+int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
+{
+    uint32_t fragsize = 1; // 1 is frag size of recorder
+    uint32_t maxlength = 3; // 3 is max buffer length of recorder
+    pa_buffer_attr bufferAttr;
+    bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
+    bufferAttr.fragsize = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * fragsize, &sampleSpec);
+    AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}d, fragsize: %{public}d",
+        bufferAttr.maxlength, bufferAttr.fragsize);
+
+    int32_t result = pa_stream_connect_record(paStream, nullptr, &bufferAttr,
+        (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+        PA_STREAM_VARIABLE_RATE));
+    // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
+    if (result < 0) {
+        int32_t error = pa_context_errno(context_);
+        AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
+        pa_threaded_mainloop_unlock(mainLoop_);
+        return ERR_INVALID_OPERATION;
+    }
+    return SUCCESS;
+}
+
 void PaAdapterManager::PAStreamUpdateStreamIndexSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
-    AUDIO_DEBUG_LOG("P1111111111111111111111111111111111111111111111111");
+    AUDIO_DEBUG_LOG("PAStreamUpdateStreamIndexSuccessCb in");
 }
 
 void PaAdapterManager::PAContextStateCb(pa_context *context, void *userdata)

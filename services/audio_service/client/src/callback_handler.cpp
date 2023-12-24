@@ -23,7 +23,7 @@ namespace AudioStandard {
 using namespace std;
 class CallbackHandlerInner : public CallbackHandler, public AppExecFwk::EventHandler {
 public:
-    CallbackHandlerInner(std::shared_ptr<IHandler> iHandler);
+    explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler);
     ~CallbackHandlerInner();
 
     void SendCallbackEvent(uint32_t code, int64_t data) override;

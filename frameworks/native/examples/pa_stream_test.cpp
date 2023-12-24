@@ -518,8 +518,6 @@ int32_t PaCapturerTest::ReleaseRecorder()
 
 int32_t PaCapturerTest::ReadData()
 {
-    // AUDIO_INFO_LOG("ReadData    1");
-    // enableRead_ = true;
     std::thread readDataThread = std::thread(&PaCapturerTest::ReadDataWorker, this);
     readDataThread.detach();
     return 0;
@@ -802,7 +800,8 @@ int32_t ReadData(std::shared_ptr<PaCapturerTest> capturerTest)
     return 0;
 }
 
-void HandleCapturerCode(OperationCode optCode, std::shared_ptr<PaRendererTest> streamTest, std::shared_ptr<PaCapturerTest> capturerTest)
+void HandleCapturerCode(OperationCode optCode, std::shared_ptr<PaRendererTest> streamTest,
+    std::shared_ptr<PaCapturerTest> capturerTest)
 {
     switch (optCode) {
         case RENDERER_CODE_START:
@@ -886,8 +885,6 @@ void Loop(std::shared_ptr<PaRendererTest> streamTest, std::shared_ptr<PaCapturer
         }
     }
 }
-
-
 }
 }
 

@@ -231,7 +231,7 @@ private:
     bool isWakeupCapturer_ = false;
 
     bool needSetThreadPriority_ = true;
-    uint32_t readThreadId_ = 0; // 0 is invalid
+
 
     AudioStreamParams streamParams_; // in plan: replace it with AudioCapturerParams
 
@@ -559,7 +559,7 @@ int32_t CapturerInClientInner::ParamsToStateCmdType(int64_t params, State &state
         case HANDLER_PARAM_PREPARED:
             state = PREPARED;
             break;
-        case HANDLER_PARAM_RUNNING://
+        case HANDLER_PARAM_RUNNING:
             state = RUNNING;
             break;
         case HANDLER_PARAM_STOPPED:
@@ -797,8 +797,8 @@ int32_t CapturerInClientInner::GetFrameCount(uint32_t &frameCount)
 
 int32_t CapturerInClientInner::GetLatency(uint64_t &latency)
 {
-    // in plan:
-    latency = 150000; // unit is us
+    // GetLatency is never called in audio_capturer.cpp
+    latency = 150000; // unit is us, 150000 is 150ms
     return ERROR;
 }
 
@@ -881,14 +881,16 @@ int32_t CapturerInClientInner::SetRendererWriteCallback(const std::shared_ptr<Au
     return ERROR;
 }
 
-void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs) {
+void CapturerInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
+{
     if (bufferDurationInUs > MAX_BUF_DURATION_IN_USEC) {
         AUDIO_ERR_LOG("InitCallbackBuffer with invalid duration %{public}" PRIu64", use default instead.",
             bufferDurationInUs);
         bufferDurationInUs = DEFAULT_BUF_DURATION_IN_USEC;
     }
     // Calculate buffer size based on duration.
-    cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * streamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
+    cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * streamParams_.samplingRate / AUDIO_US_PER_S) *
+        sizePerFrameInByte_;
     AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64", size: %{public}zu", bufferDurationInUs,
         cbBufferSize_);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
@@ -926,8 +928,7 @@ int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
     bool stopWaiting = cbThreadCv_.wait_for(threadStartlock, std::chrono::milliseconds(SHORT_TIMEOUT_IN_MS), [this] {
         return cbThreadReleased_ == false; // When thread is started, cbThreadReleased_ will be false. So stop waiting.
     });
-
-    if(!stopWaiting) {
+    if (!stopWaiting) {
         AUDIO_WARNING_LOG("Init OS_AudioReadCB thread time out");
     }
 
@@ -1379,7 +1380,8 @@ void CapturerInClientInner::SetPreferredFrameSize(int32_t frameSize)
     AUDIO_WARNING_LOG("Not Supported Yet");
 }
 
-int32_t CapturerInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize)
+int32_t CapturerInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
+    size_t metaBufferSize)
 {
     AUDIO_ERR_LOG("Write is not supported");
     return ERR_INVALID_OPERATION;
@@ -1393,58 +1395,50 @@ int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 
 int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 {
-    AUDIO_INFO_LOG("Start read data, userSize: %{public}zu, is blocking read: %{public}d", userSize, isBlockingRead);
     Trace trace("CapturerInClientInner::Read " + std::to_string(userSize));
 
-    CHECK_AND_RETURN_RET_LOG(userSize > 0 && userSize < MAX_CLIENT_READ_SIZE,
-        ERR_INVALID_PARAM, "Read with invalid params, size is %{public}zu", userSize);
+    CHECK_AND_RETURN_RET_LOG(userSize < MAX_CLIENT_READ_SIZE, ERR_INVALID_PARAM, "invalid size %{public}zu", userSize);
 
     std::lock_guard<std::mutex> lock(readMutex_);
 
     // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_ || readThreadId_ != gettid()) {
+    if (needSetThreadPriority_) {
         AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
-        readThreadId_ = gettid();
         needSetThreadPriority_ = false;
     }
 
-    // Waiting for review, add isFirstRead?
     std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Read: Illegal state:%{public}u", state_.load());
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Illegal state:%{public}u", state_.load());
     statusLock.unlock();
     size_t readSize = 0;
-    while(readSize < userSize) {
-        AUDIO_INFO_LOG("readSize %{public}zu < userSize %{public}zu",readSize, userSize);
+    while (readSize < userSize) {
+        AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
         OptResult result = ringCache_->GetReadableSize();
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "GetReadableSize failed %{public}d", result.ret);
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "GetReadableSize err %{public}d", result.ret);
         size_t readableSize = std::min(result.size, userSize - readSize);
-        AUDIO_INFO_LOG("result.size:%{public}zu, userSize - readSize %{public}zu", result.size, (userSize - readSize));
         if (readSize + result.size >= userSize) { // If ringCache is sufficient
             result = ringCache_->Dequeue({&buffer + (readSize), readableSize});
-            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
+            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d",
+                result.ret);
             readSize += readableSize;
             return readSize; // data size
         }
-        // In plan, 如果readSIZE和result.size都是0，就会挂
+
         if (result.size != 0) {
-            AUDIO_INFO_LOG("result.size != 0");
             result = ringCache_->Dequeue({&buffer + readSize, result.size});
-            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
+            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "Dequeue failed %{public}d", result.ret);
             readSize += result.size;
         }
         uint64_t availableSizeInFrame = clientBuffer_->GetCurWriteFrame() - clientBuffer_->GetCurReadFrame();
-        AUDIO_INFO_LOG("availableSizeInFrame %{public}" PRId64 "", availableSizeInFrame);
+        AUDIO_DEBUG_LOG("availableSizeInFrame %{public}" PRId64 "", availableSizeInFrame);
         if (availableSizeInFrame > 0) { // If OHAudioBuffer has data
-            AUDIO_INFO_LOG("If OHAudioBuffer has data, clientBuffer_->GetCurReadFrame() %{public}" PRId64 ", sizePerFrameInByte_%{public}zu", clientBuffer_->GetCurReadFrame(), sizePerFrameInByte_);
             BufferDesc currentOHBuffer_ = {};
             clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
             BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
-            ringCache_->Enqueue(bufferWrap); 
+            ringCache_->Enqueue(bufferWrap);
             clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
         } else {
-            AUDIO_INFO_LOG("If OHAudioBuffer NOT has data");
             if (!isBlockingRead) {
-                AUDIO_INFO_LOG("return directly");
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
@@ -1464,8 +1458,8 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
         return;
     }
     int64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
-    AUDIO_DEBUG_LOG("totalBytesRead_ %{public}" PRId64 ", frame size: %{public}zu", totalBytesRead_, sizePerFrameInByte_);
-
+    AUDIO_DEBUG_LOG("totalBytesRead_ %{public}" PRId64 ", frame size: %{public}zu", totalBytesRead_,
+        sizePerFrameInByte_);
     {
         std::lock_guard<std::mutex> lock(markReachMutex_);
         if (!capturerMarkReached_) {
@@ -1501,7 +1495,7 @@ uint32_t CapturerInClientInner::GetUnderflowCount()
 }
 
 void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, const
-    std::shared_ptr<CapturerPositionCallback> &callback)   
+    std::shared_ptr<CapturerPositionCallback> &callback)
 {
     std::lock_guard<std::mutex> lock(markReachMutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr, "CapturerPositionCallback is nullptr");

@@ -24,6 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+    static const size_t CAPTURER_BUFFER_MAX_NUM = 4;
 }
 
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -36,7 +37,7 @@ CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_p
     ConfigServerBuffer();
 }
 
-CapturerInServer::~CapturerInServer() 
+CapturerInServer::~CapturerInServer()
 {
     if (status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE) {
         Release();
@@ -51,12 +52,12 @@ int32_t CapturerInServer::ConfigServerBuffer()
     }
 
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    totalSizeInFrame_ = spanSizeInFrame_ * 4; // 4 frames
-    // stream_->GetMinimumBufferSize(totalSizeInFrame_);
+    totalSizeInFrame_ = spanSizeInFrame_ * CAPTURER_BUFFER_MAX_NUM; // 4 frames
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     spanSizeInBytes_ = byteSizePerFrame_ * spanSizeInFrame_;
     AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu,"
-        "byteSizePerFrame_: %{public}zu, spanSizeInBytes_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, spanSizeInBytes_);
+        "byteSizePerFrame_: %{public}zu, spanSizeInBytes_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_,
+        byteSizePerFrame_, spanSizeInBytes_);
     if (totalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || totalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
         return ERR_INVALID_PARAM;
@@ -171,7 +172,7 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
 void CapturerInServer::ReadData(size_t length)
 {
     if (length < spanSizeInBytes_) {
-        AUDIO_WARNING_LOG("Length %{public}zu is less than spanSizeInBytes %{public}zu, return", length, spanSizeInBytes_);
+        AUDIO_WARNING_LOG("Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
         return;
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
@@ -194,7 +195,6 @@ void CapturerInServer::ReadData(size_t length)
         uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
         int32_t ret = audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer);
         if (ret < 0) {
-            // callback->OnReadEvent();
             return;
         }
         AUDIO_INFO_LOG("On read spanSizeInBytes_ %{public}zu", spanSizeInBytes_);
@@ -204,7 +204,6 @@ void CapturerInServer::ReadData(size_t length)
         AUDIO_INFO_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
             currentWriteFrame, nextWriteFrame);
         audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
-        // callback->OnReadEvent();
     }
     stream_->EnqueueBuffer(srcBuffer);
     stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
@@ -213,11 +212,6 @@ void CapturerInServer::ReadData(size_t length)
 int32_t CapturerInServer::OnReadData(size_t length)
 {
     AUDIO_INFO_LOG("CapturerInServer::OnReadData, length: %{public}zu", length);
-    // std::shared_ptr<CapturerListener> callback = testCallback_.lock();
-    // if (callback == nullptr) {
-    //     AUDIO_ERR_LOG("Callback from test is nullptr");
-    //     return ERR_UNKNOWN;
-    // }
 
     ReadData(length);
     return SUCCESS;
@@ -397,20 +391,6 @@ int32_t CapturerInServer::ReadOneFrame()
     }
     BufferDesc bufferDesc = stream_->DequeueBuffer(minBufferSize);
     stream_->EnqueueBuffer(bufferDesc);
-    return SUCCESS;
-}
-
-int32_t CapturerInServer::AbortOneCallback()
-{
-    std::lock_guard<std::mutex> lock(statusLock_);
-    stream_->AbortCallback(1);
-    return SUCCESS;
-}
-
-int32_t CapturerInServer::AbortAllCallback()
-{
-    std::lock_guard<std::mutex> lock(statusLock_);
-    stream_->AbortCallback(5); // In plan: 5 is only for debug, will be removed before merge
     return SUCCESS;
 }
 

@@ -296,7 +296,7 @@ BufferDesc PaCapturerStreamImpl::DequeueBuffer(size_t length)
     bufferDesc.buffer = static_cast<uint8_t *>(const_cast<void* >(tempBuffer));
     totalBytesRead_ += bufferDesc.bufLength;
     AUDIO_INFO_LOG("PaCapturerStreamImpl::DequeueBuffer length %{public}zu", bufferDesc.bufLength);
-    fwrite(reinterpret_cast<void *>(bufferDesc.buffer), 1, 3840, capturerServerDumpFile_);
+    fwrite(reinterpret_cast<void *>(bufferDesc.buffer), 1, bufferDesc.bufLength, capturerServerDumpFile_);
     return bufferDesc;
 }
 
@@ -322,8 +322,9 @@ void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void
         length, pa_stream_readable_size(stream));
 
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(stream);
-    AUDIO_INFO_LOG("Buffer attr: maxlength %{public}d, tlength %{public}d, prebuf %{public}d, minreq %{public}d, fragsize %{public}d", bufferAttr->maxlength,
-        bufferAttr->tlength, bufferAttr->prebuf, bufferAttr->minreq, bufferAttr->fragsize);
+    AUDIO_INFO_LOG("Buffer attr: maxlength %{public}d, tlength %{public}d, prebuf %{public}d, minreq %{public}d,"
+        "fragsize %{public}d", bufferAttr->maxlength, bufferAttr->tlength, bufferAttr->prebuf,
+        bufferAttr->minreq, bufferAttr->fragsize);
     if (!userdata) {
         AUDIO_ERR_LOG("PAStreamReadCb: userdata is null");
         return;

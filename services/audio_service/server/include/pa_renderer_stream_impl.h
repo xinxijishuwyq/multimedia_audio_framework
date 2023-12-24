@@ -43,7 +43,6 @@ public:
     int32_t SetPrivacyType(int32_t privacyType) override;
     int32_t GetPrivacyType(int32_t &privacyType) override;
 
-
     void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override;
     void RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback) override;
     BufferDesc DequeueBuffer(size_t length) override;
@@ -96,9 +95,7 @@ private:
     std::string effectSceneName_ = "SCENE_MUSIC";
     int32_t privacyType_ = 0;
 
-    // float volumeFactor_ = 1.0f;
     float powerVolumeFactor_ = 1.0f;
-
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;

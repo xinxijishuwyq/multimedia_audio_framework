@@ -87,8 +87,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
-    // DeviceInfo deviceInfo = GetDeviceInfoForProcess(config); // in plan
-    // in plan: stream limit check
+    // in plan: GetDeviceInfoForProcess(config) and stream limit check
     sptr<IpcStreamInServer> ipcStreamInServer = IpcStreamInServer::Create(config, ret);
 
     return ipcStreamInServer;

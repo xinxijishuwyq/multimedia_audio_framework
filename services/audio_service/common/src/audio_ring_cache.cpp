@@ -34,7 +34,7 @@ AudioRingCache::~AudioRingCache()
     AUDIO_DEBUG_LOG("~AudioRingCache()");
 }
 
-// Init is private and called in Create, not need lock. Call Init with lock in ReConfig 
+// Init is private and called in Create, not need lock. Call Init with lock in ReConfig
 bool AudioRingCache::Init()
 {
     if (cacheTotalSize_ > MAX_CACHE_SIZE) {
@@ -239,6 +239,32 @@ void AudioRingCache::ReIndex()
     readIndex_ -= baseIndex_;
     baseIndex_ = 0;
 }
+OptResult AudioRingCache::HandleCrossDequeue(size_t tempReadIndex, size_t readableSize, const BufferWrap &buffer)
+{
+    OptResult result;
+    // cross
+    size_t headSize = baseIndex_ + cacheTotalSize_ - readIndex_;
+    size_t tailSize = tempReadIndex - (baseIndex_ + cacheTotalSize_);
+    void *headPtr = static_cast<void *>(basePtr_.get() + (readIndex_ - baseIndex_));
+    void *tailPtr = static_cast<void *>(basePtr_.get());
+    if (memcpy_s(static_cast<void *>(buffer.dataPtr), headSize, headPtr, headSize) != EOK ||
+        memcpy_s(static_cast<void *>(buffer.dataPtr + headSize), tailSize, tailPtr, tailSize) != EOK) {
+        result = {OPERATION_FAILED, readableSize};
+        AUDIO_ERR_LOG("Dequeue memcpy_s failed: readIndex[%{public}zu] baseIndex_[%{public}zu] buffer.dataSize"
+            "[%{public}zu]", readIndex_, baseIndex_, buffer.dataSize);
+        return result;
+    }
+    CHECK_AND_BREAK_LOG(memset_s(headPtr, headSize, 0, headSize) == EOK, "reset headPtr fail.");
+    CHECK_AND_BREAK_LOG(memset_s(tailPtr, tailSize, 0, tailSize) == EOK, "reset headPtr fail.");
+
+    readIndex_ = tempReadIndex; // move write index
+    baseIndex_ += cacheTotalSize_; // move base index
+    if (baseIndex_ >= BASE_INDEX_FENCE) {
+        ReIndex();
+    }
+    result = {OPERATION_SUCCESS, buffer.dataSize};
+    return result;
+}
 
 OptResult AudioRingCache::Dequeue(const BufferWrap &buffer)
 {
@@ -265,28 +291,7 @@ OptResult AudioRingCache::Dequeue(const BufferWrap &buffer)
     // judge if cross buffer
     size_t tempReadIndex = readIndex_ + buffer.dataSize;
     if (tempReadIndex > baseIndex_ + cacheTotalSize_) {
-        // cross
-        size_t headSize = baseIndex_ + cacheTotalSize_ - readIndex_;
-        size_t tailSize = tempReadIndex - (baseIndex_ + cacheTotalSize_);
-        void *headPtr = static_cast<void *>(basePtr_.get() + (readIndex_ - baseIndex_));
-        void *tailPtr = static_cast<void *>(basePtr_.get());
-        if (memcpy_s(static_cast<void *>(buffer.dataPtr), headSize, headPtr, headSize) != EOK ||
-            memcpy_s(static_cast<void *>(buffer.dataPtr + headSize), tailSize, tailPtr, tailSize) != EOK) {
-            result = {OPERATION_FAILED, readableSize};
-            AUDIO_ERR_LOG("Dequeue memcpy_s failed: readIndex[%{public}zu] baseIndex_[%{public}zu] buffer.dataSize"
-                "[%{public}zu]", readIndex_, baseIndex_, buffer.dataSize);
-            return result;
-        }
-        CHECK_AND_BREAK_LOG(memset_s(headPtr, headSize, 0, headSize) == EOK, "reset headPtr fail.");
-        CHECK_AND_BREAK_LOG(memset_s(tailPtr, tailSize, 0, tailSize) == EOK, "reset headPtr fail.");
-
-        readIndex_ = tempReadIndex; // move write index
-        baseIndex_ += cacheTotalSize_; // move base index
-        if (baseIndex_ >= BASE_INDEX_FENCE) {
-            ReIndex();
-        }
-        result = {OPERATION_SUCCESS, buffer.dataSize};
-        return result;
+        return HandleCrossDequeue(tempReadIndex, readableSize, buffer);
     }
 
     // not cross

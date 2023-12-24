@@ -46,8 +46,6 @@ public:
     virtual void GetByteSizePerFrame(size_t &byteSizePerFrame) const = 0;
     virtual void GetSpanSizePerFrame(size_t &spanSizeInFrame) const = 0;
     virtual void AbortCallback(int32_t abortTimes) = 0;
-
-
 };
 } // namespace AudioStandard
 } // namespace OHOS

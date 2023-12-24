@@ -30,6 +30,7 @@ public:
     RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
     virtual ~RendererInServer();
     void OnStatusUpdate(IOperation operation) override;
+    void HandleOperationFlushed();
     int32_t OnWriteData(size_t length) override;
     
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
@@ -59,11 +60,8 @@ public:
     void WriteData();
     void WriteEmptyData();
     int32_t DrainAudioBuffer();
-    int32_t SendOneFrame();
     int32_t GetInfo();
     int32_t WriteOneFrame();
-    int32_t AbortOneCallback();
-    int32_t AbortAllCallback();
     std::shared_ptr<OHAudioBuffer> GetOHSharedBuffer();
 
 private:

@@ -28,7 +28,7 @@ public:
     virtual void OnHandle(uint32_t code, int64_t data) = 0;
 };
 
-class CallbackHandler{
+class CallbackHandler {
 public:
     virtual ~CallbackHandler() = default;
     static std::shared_ptr<CallbackHandler> GetInstance(std::shared_ptr<IHandler> iHandler);
@@ -36,7 +36,6 @@ public:
     virtual void SendCallbackEvent(uint32_t code, int64_t data) = 0;
 
     virtual void ReleaseEventRunner() = 0;
-
 };
 } // namespace AudioStandard
 } // namespace OHOS

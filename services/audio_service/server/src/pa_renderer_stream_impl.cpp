@@ -95,11 +95,8 @@ void PaRendererStreamImpl::InitParams()
     minBufferSize_ = (size_t)bufferAttr->minreq;
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
 
-    // In plan, 怎么获取XML的东西
-    // sinkLatencyInMsec_ = AudioSystemManager::GetInstance()->GetSinkLatencyFromXml();
+    // In plan: Get data from xml
     effectSceneName_ = GetEffectSceneName(processConfig_.streamType);
-    //mFrameSize_ == byteSizePerFrame_
-    // mFrameSize_ = pa_frame_size(&sampleSpec);
 }
 
 int32_t PaRendererStreamImpl::Start()
@@ -262,7 +259,6 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
         return ERR_OPERATION_FAILED;
     }
 
-    // In plan: sampleSpec需要释放吗
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     timeStamp = pa_bytes_to_usec(info->write_index, sampleSpec);
     pa_threaded_mainloop_unlock(mainloop_);
@@ -300,11 +296,8 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
         pa_threaded_mainloop_wait(mainloop_);
     }
     pa_threaded_mainloop_unlock(mainloop_);
-    // In plan, 怎么计算cacheLatency
-    // Get audio write cache latency
-    // cacheLatency = pa_bytes_to_usec((acache_.totalCacheSize - acache_.writeIndex), &sampleSpec_);
     cacheLatency = 0;
-    // Total latency will be sum of audio write cache latency + PA latency
+    // In plan: Total latency will be sum of audio write cache latency plus PA latency
     uint64_t fwLatency = paLatency + cacheLatency;
     uint64_t sinkLatency = sinkLatencyInMsec_ * PA_USEC_PER_MSEC;
     if (fwLatency > sinkLatency) {
