@@ -36,8 +36,6 @@ using namespace OHOS::AppExecFwk;
 
 namespace OHOS {
 namespace AudioStandard {
-const unsigned long long TIME_CONVERSION_US_S = 1000000ULL; /* us to s */
-const unsigned long long TIME_CONVERSION_NS_US = 1000ULL; /* ns to us */
 const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
@@ -85,8 +83,6 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
     : eStreamType_(eStreamType),
       eMode_(eMode),
       state_(NEW),
-      resetTime_(false),
-      resetTimestamp_(0),
       renderMode_(RENDER_MODE_NORMAL),
       captureMode_(CAPTURE_MODE_NORMAL),
       isReadyToWrite_(false),
@@ -194,29 +190,13 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
     if (state_ == STOPPED) {
         return false;
     }
-    uint64_t paTimeStamp = 0;
-    if (GetCurrentTimeStamp(paTimeStamp) == SUCCESS) {
-        if (resetTime_) {
-            AUDIO_INFO_LOG("AudioStream::GetAudioTime resetTime_ %{public}d", resetTime_);
-            resetTime_ = false;
-            resetTimestamp_ = paTimeStamp;
-        }
-        if (eMode_ == AUDIO_MODE_PLAYBACK) {
-            timestamp.framePosition = GetStreamFramesWritten() * speed_;
-        } else {
-            timestamp.framePosition = GetStreamFramesRead();
-        }
-
-        uint64_t delta = paTimeStamp > resetTimestamp_ ? paTimeStamp - resetTimestamp_ : 0;
-        timestamp.time.tv_sec = static_cast<time_t>(delta / TIME_CONVERSION_US_S);
+    uint64_t framePosition = 0;
+    uint64_t timeStamp = 0;
+    if (GetCurrentPosition(framePosition, timeStamp) == SUCCESS) {
+        timestamp.framePosition = framePosition;
+        timestamp.time.tv_sec = static_cast<time_t>(timeStamp / TIME_CONVERSION_NS_S);
         timestamp.time.tv_nsec
-            = static_cast<time_t>((delta - (timestamp.time.tv_sec * TIME_CONVERSION_US_S))
-            * TIME_CONVERSION_NS_US);
-        timestamp.time.tv_sec += baseTimestamp_.tv_sec;
-        timestamp.time.tv_nsec += baseTimestamp_.tv_nsec;
-        timestamp.time.tv_sec += (timestamp.time.tv_nsec / TIME_CONVERSION_NS_S);
-        timestamp.time.tv_nsec = (timestamp.time.tv_nsec % TIME_CONVERSION_NS_S);
-
+            = static_cast<time_t>(timeStamp - (timestamp.time.tv_sec * TIME_CONVERSION_NS_S));
         return true;
     }
     return false;
@@ -435,7 +415,6 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
         return false;
     }
 
-    resetTime_ = true;
     int32_t retCode = clock_gettime(CLOCK_MONOTONIC, &baseTimestamp_);
     if (retCode != 0) {
         AUDIO_ERR_LOG("AudioStream::StartAudioStream get system elapsed time failed: %d", retCode);

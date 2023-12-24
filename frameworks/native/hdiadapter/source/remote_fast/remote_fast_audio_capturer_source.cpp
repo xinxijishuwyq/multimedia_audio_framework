@@ -51,6 +51,7 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
@@ -610,6 +611,12 @@ uint64_t RemoteFastAudioCapturerSourceInner::GetTransactionId()
 {
     AUDIO_INFO_LOG("RemoteFastAudioCapturerSource: GetTransactionId enter.");
     return reinterpret_cast<uint64_t>(audioCapture_);
+}
+
+int32_t RemoteFastAudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec,
+    int64_t& timeNanoSec)
+{
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t RemoteFastAudioCapturerSourceInner::SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)

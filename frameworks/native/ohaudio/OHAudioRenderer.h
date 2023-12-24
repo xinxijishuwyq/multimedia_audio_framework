@@ -119,7 +119,7 @@ class OHAudioRenderer {
         AudioEncodingType GetEncodingType();
         int64_t GetFramesWritten();
         void GetRendererInfo(AudioRendererInfo& rendererInfo);
-        void GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+        bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;

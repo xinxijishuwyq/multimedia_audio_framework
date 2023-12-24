@@ -150,8 +150,6 @@ private:
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
-    bool resetTime_;
-    uint64_t resetTimestamp_;
     struct timespec baseTimestamp_ = {0};
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;

@@ -58,6 +58,8 @@ const unsigned int TIME_OUT_SECONDS = 5;
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
 const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 120;
+
+const int64_t SECOND_TO_NANOSECOND = 1000000000;
 }
 class AudioRendererSinkInner : public AudioRendererSink {
 public:
@@ -86,6 +88,7 @@ public:
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     int32_t SetOutputRoute(DeviceType outputDevice) override;
     int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
@@ -256,6 +259,33 @@ void AudioRendererSinkInner::SetAudioBalanceValue(float audioBalance)
             rightBalanceCoef_ += audioBalance;
         }
     }
+}
+
+int32_t AudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    int32_t ret;
+    if (audioRender_ == nullptr) {
+        AUDIO_ERR_LOG("failed audioRender_ is NULL");
+        return ERR_INVALID_HANDLE;
+    }
+    struct AudioTimeStamp timestamp = {};
+    ret = audioRender_->GetRenderPosition(audioRender_, &frames, &timestamp);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("GetRenderPosition from hdi failed");
+        return ERR_OPERATION_FAILED;
+    }
+    int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it;
+    if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
+        timestamp.tvNSec > SECOND_TO_NANOSECOND) {
+        AUDIO_ERR_LOG(
+            "Hdi GetRenderPosition get invaild second:%{public}" PRIu64 " or nanosecond:%{public}" PRIu64 " !",
+            timestamp.tvSec, timestamp.tvNSec);
+        return ERR_OPERATION_FAILED;
+    }
+
+    timeSec = timestamp.tvSec;
+    timeNanoSec = timestamp.tvNSec;
+    return ret;
 }
 
 void AudioRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)

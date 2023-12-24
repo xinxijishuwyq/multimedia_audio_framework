@@ -2120,6 +2120,14 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
         return;
     }
 
+    {
+        // const char *render_in_idle_state = u->render_in_idle_state
+        pa_proplist *propList = pa_proplist_new();
+        pa_proplist_sets(propList, "old_state", GetInputStateInfo(i->thread_info.state));
+        pa_proplist_sets(propList, "new_state", GetInputStateInfo(state));
+        pa_sink_input_send_event(i, "state_changed", propList);
+    }
+
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;

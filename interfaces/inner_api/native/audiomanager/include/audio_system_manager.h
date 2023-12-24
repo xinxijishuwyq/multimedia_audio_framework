@@ -1024,6 +1024,12 @@ public:
 
     int32_t OffloadDrain();
 
+    int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec);
+
+    int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec);
+
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
 
     int32_t OffloadSetBufferSize(uint32_t sizeMs);

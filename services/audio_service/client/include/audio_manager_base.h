@@ -44,6 +44,12 @@ public:
      */
     virtual int32_t SetVoiceVolume(float volume) = 0;
 
+    virtual int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec) = 0;
+
+    virtual int32_t GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
+        int64_t& timeNanoSec) = 0;
+
     virtual int32_t OffloadSetVolume(float volume) = 0;
     virtual int32_t OffloadDrain() = 0;
     virtual int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
@@ -284,6 +290,8 @@ private:
     int HandleSetWakeupSourceCallback(MessageParcel &data, MessageParcel &reply);
     int HandleSetCaptureSilentState(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
+    int HandleGetCapturePresentationPosition(MessageParcel &data, MessageParcel &reply);
+    int HandleGetRenderPresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadDrain(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
@@ -322,6 +330,8 @@ private:
         &AudioManagerStub::HandleOffloadGetPresentationPosition,
         &AudioManagerStub::HandleOffloadSetBufferSize,
         &AudioManagerStub::HandleNotifyStreamVolumeChanged,
+        &AudioManagerStub::HandleGetCapturePresentationPosition,
+        &AudioManagerStub::HandleGetRenderPresentationPosition,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

@@ -1143,6 +1143,28 @@ int32_t AudioSystemManager::OffloadDrain()
     return gasp->OffloadDrain();
 }
 
+int32_t AudioSystemManager::GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames,
+    int64_t& timeSec, int64_t& timeNanoSec)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("GetCapturePresentationPosition Audio service unavailable.");
+        return ERR_INVALID_PARAM;
+    }
+    return gasp->GetCapturePresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
+}
+
+int32_t AudioSystemManager::GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames,
+    int64_t& timeSec, int64_t& timeNanoSec)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("GetRenderPresentationPosition Audio service unavailable.");
+        return ERR_INVALID_PARAM;
+    }
+    return gasp->GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
+}
+
 int32_t AudioSystemManager::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();

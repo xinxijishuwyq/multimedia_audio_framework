@@ -73,6 +73,7 @@ public:
     virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
     virtual int32_t SetInputRoute(DeviceType deviceType) = 0;
     virtual uint64_t GetTransactionId() = 0;
+    virtual int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) = 0;
 
     virtual void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) = 0;
     virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) = 0;

@@ -100,6 +100,11 @@ void AudioRendererFileSink::SetAudioBalanceValue(float audioBalance)
     return;
 }
 
+int32_t AudioRendererFileSink::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    return ERR_NOT_SUPPORTED;
+}
+
 void AudioRendererFileSink::DeInit()
 {
     if (filePtr_ != nullptr) {

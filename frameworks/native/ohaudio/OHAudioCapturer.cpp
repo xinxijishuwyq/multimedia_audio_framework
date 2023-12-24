@@ -173,10 +173,15 @@ OH_AudioStream_Result OH_AudioCapturer_GetTimestamp(OH_AudioCapturer* capturer,
 {
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(clockId == CLOCK_MONOTONIC, AUDIOSTREAM_ERROR_INVALID_PARAM, "error clockId value");
 
     Timestamp stamp;
     Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
-    audioCapturer->GetAudioTime(stamp, base);
+    bool ret = audioCapturer->GetAudioTime(stamp, base);
+    if (!ret) {
+        AUDIO_ERR_LOG("GetAudioTime error!");
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
     *framePosition = stamp.framePosition;
     *timestamp = stamp.time.tv_sec * SECOND_TO_NANOSECOND + stamp.time.tv_nsec;
     return AUDIOSTREAM_SUCCESS;
@@ -338,10 +343,10 @@ int64_t OHAudioCapturer::GetFramesRead()
     return audioCapturer_->GetFramesRead();
 }
 
-void OHAudioCapturer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool OHAudioCapturer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "capturer client is nullptr");
-    audioCapturer_->GetAudioTime(timestamp, base);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "capturer client is nullptr");
+    return audioCapturer_->GetAudioTime(timestamp, base);
 }
 
 int32_t OHAudioCapturer::GetFrameSizeInCallback()

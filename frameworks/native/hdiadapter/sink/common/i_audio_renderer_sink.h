@@ -78,6 +78,8 @@ public:
     virtual void SetAudioMonoState(bool audioMono) = 0;
     virtual void SetAudioBalanceValue(float audioBalance) = 0;
 
+    virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
+
     virtual int32_t Preload(const std::string &usbInfoStr)
     {
         return 0;
@@ -103,7 +105,6 @@ public:
     IOffloadAudioRendererSink() = default;
     virtual ~IOffloadAudioRendererSink() = default;
     virtual int32_t RegisterRenderCallback(OnRenderCallback (*callback), int8_t *userdata) = 0;
-    virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
     virtual int32_t Drain(AudioDrainType type) = 0;
     virtual int32_t SetBufferSize(uint32_t sizeMs) = 0;
 

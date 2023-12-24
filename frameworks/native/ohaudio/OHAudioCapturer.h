@@ -75,7 +75,7 @@ class OHAudioCapturer {
         AudioSampleFormat GetSampleFormat();
         void GetCapturerInfo(AudioCapturerInfo& capturerInfo);
         int64_t GetFramesRead();
-        void GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+        bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;

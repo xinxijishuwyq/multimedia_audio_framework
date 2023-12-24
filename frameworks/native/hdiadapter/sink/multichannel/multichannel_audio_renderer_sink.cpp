@@ -97,6 +97,7 @@ public:
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
@@ -348,6 +349,12 @@ bool MultiChannelRendererSinkInner::IsInited()
 void MultiChannelRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
 {
     AUDIO_ERR_LOG("RegisterParameterCallback not supported.");
+}
+
+int32_t MultiChannelRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    AUDIO_ERR_LOG("not supported.");
+    return ERR_INVALID_HANDLE;
 }
 
 void MultiChannelRendererSinkInner::DeInit()

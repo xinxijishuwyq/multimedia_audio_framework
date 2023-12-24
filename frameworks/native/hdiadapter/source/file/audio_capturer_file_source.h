@@ -45,6 +45,7 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetInputRoute(DeviceType deviceType) override;
     uint64_t GetTransactionId() override;
+    int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
