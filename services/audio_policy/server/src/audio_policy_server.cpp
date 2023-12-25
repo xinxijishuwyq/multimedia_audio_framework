@@ -927,6 +927,7 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
 void AudioPolicyServer::InitMicrophoneMute()
 {
     if (system::GetBoolParameter("persist.edm.mic_disable", false)) {
+        AUDIO_DEBUG_LOG("InitMicrophoneMute");
         bool isMute = true;
         bool isMicrophoneMute = audioPolicyService_.IsMicrophoneMute();
         int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
@@ -954,6 +955,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
+     
         micStateChangeEvent.mute = isMute;
         audioPolicyServerHandler_->SendMicStateUpdatedCallBack(micStateChangeEvent);
     }
