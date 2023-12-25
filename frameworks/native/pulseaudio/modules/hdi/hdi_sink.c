@@ -3507,7 +3507,7 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
             AUDIO_ERR_LOG("Failed to write-hdi-primary thread.");
             goto fail;
         }
-        hdiThreadNameMch = "OS_write-hdi-mch";
+        hdiThreadNameMch = "OS_WriteHdiMch";
         if (!(u->multiChannel.thread_hdi = pa_thread_new(hdiThreadNameMch, ThreadFuncWriteHDIMultiChannel, u))) {
             AUDIO_ERR_LOG("Failed to write-hdi-multichannel thread.");
             goto fail;
