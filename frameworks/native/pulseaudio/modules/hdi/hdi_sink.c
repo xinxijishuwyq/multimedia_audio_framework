@@ -358,7 +358,7 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
     }
 }
 
-static void updateResampler(pa_sink_input *sinkIn, const char *sceneType)
+static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool mchFlag)
 {
     uint32_t processChannels = DEFAULT_NUM_CHANNEL;
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
