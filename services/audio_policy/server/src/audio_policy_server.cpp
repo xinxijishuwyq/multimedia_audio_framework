@@ -955,7 +955,6 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_
     int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
     if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
         MicStateChangeEvent micStateChangeEvent;
-     
         micStateChangeEvent.mute = isMute;
         audioPolicyServerHandler_->SendMicStateUpdatedCallBack(micStateChangeEvent);
     }
