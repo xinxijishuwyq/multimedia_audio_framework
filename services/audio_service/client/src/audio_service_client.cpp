@@ -2517,6 +2517,10 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     int32_t ret = SetStreamVolumeInML(volume);
     pa_threaded_mainloop_unlock(mainLoop);
 
+    if (offloadEnable_) {
+        audioSystemManager_->OffloadSetVolume(volume);
+    }
+
     return ret;
 }
 
@@ -3077,7 +3081,9 @@ int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
             return AUDIO_CLIENT_ERR;
         }
 
-        pa_threaded_mainloop_accept(mainLoop);
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainLoop);
+        }
 
         pa_operation_unref(operation);
     } else {

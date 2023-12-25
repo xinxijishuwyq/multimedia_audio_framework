@@ -1034,6 +1034,8 @@ public:
 
     int32_t OffloadSetBufferSize(uint32_t sizeMs);
 
+    int32_t OffloadSetVolume(float volume);
+
     /**
      * @brief Set whether or not absolute volume is supported for the specified Bluetooth device
      *

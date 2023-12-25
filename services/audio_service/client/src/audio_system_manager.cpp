@@ -1185,6 +1185,16 @@ int32_t AudioSystemManager::OffloadSetBufferSize(uint32_t sizeMs)
     return gasp->OffloadSetBufferSize(sizeMs);
 }
 
+int32_t AudioSystemManager::OffloadSetVolume(float volume)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("OffloadSetVolume Audio service unavailable.");
+        return ERR_INVALID_PARAM;
+    }
+    return gasp->OffloadSetVolume(volume);
+}
+
 void AudioSystemManager::RequestThreadPriority(uint32_t tid)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
