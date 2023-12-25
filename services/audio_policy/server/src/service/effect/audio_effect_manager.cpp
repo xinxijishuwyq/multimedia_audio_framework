@@ -32,10 +32,7 @@ void AudioEffectManager::EffectManagerInit()
     // load XML
     std::unique_ptr<AudioEffectConfigParser> effectConfigParser = std::make_unique<AudioEffectConfigParser>();
     int32_t ret = effectConfigParser->LoadEffectConfig(oriEffectConfig_);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("AudioEffectManager->effectConfigParser failed: %{public}d", ret);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ret == 0, "AudioEffectManager->effectConfigParser failed: %{public}d", ret);
 }
 
 void AudioEffectManager::GetAvailableEffects(std::vector<Effect> &availableEffects)

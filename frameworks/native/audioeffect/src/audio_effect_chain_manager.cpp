@@ -366,7 +366,7 @@ void AudioEffectChain::Dump()
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
     for (AudioEffectHandle handle: standByEffectHandles) {
-        AUDIO_INFO_LOG("Dump standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
+        AUDIO_INFO_LOG("standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
             handle);
     }
 }
@@ -423,23 +423,14 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_INIT fail",
-            sceneType.c_str(), effectMode.c_str());
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_INIT fail",
+        sceneType.c_str(), effectMode.c_str());
     ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
-            sceneType.c_str(), effectMode.c_str());
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
+        sceneType.c_str(), effectMode.c_str());
     ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
-            sceneType.c_str(), effectMode.c_str());
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
+        sceneType.c_str(), effectMode.c_str());
     // Set param
     AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
         NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
@@ -453,11 +444,8 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
-    if (ret != 0) {
-        AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
-            sceneType.c_str(), effectMode.c_str());
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
+        sceneType.c_str(), effectMode.c_str());
     standByEffectHandles.emplace_back(handle);
     libHandles.emplace_back(libHandle);
 }
@@ -519,11 +507,8 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
                 audioBufIn.raw = bufOut;
             }
             int32_t ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
-            if (ret != 0) {
-                AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs process fail",
-                    sceneType.c_str(), effectMode.c_str());
-                continue;
-            }
+            CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs process fail",
+                sceneType.c_str(), effectMode.c_str());
             count++;
         }
     }
@@ -563,10 +548,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &chann
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     for (AudioEffectHandle handle: standByEffectHandles) {
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
     }
     return SUCCESS;
 }
@@ -631,35 +613,27 @@ void AudioEffectChain::InitEffectChain()
         AudioEffectTransInfo cmdInfo = {sizeof(int32_t), &replyData};
         AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
-                sceneType.c_str(), effectMode.c_str());
-            return;
-        }
+        CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
+            sceneType.c_str(), effectMode.c_str());
     }
 }
 
 int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string &effect, const std::string &libName)
 {
-    if (!libEntry) {
-        AUDIO_ERR_LOG("Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(), libName.c_str());
-        return ERROR;
-    }
-    if (!libEntry->audioEffectLibHandle) {
-        AUDIO_ERR_LOG("AudioEffectLibHandle of Effect [%{public}s] in lib [%{public}s] is nullptr",
-                      effect.c_str(), libName.c_str());
-        return ERROR;
-    }
-    if (!libEntry->audioEffectLibHandle->createEffect) {
-        AUDIO_ERR_LOG("CreateEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
-                      effect.c_str(), libName.c_str());
-        return ERROR;
-    }
-    if (!libEntry->audioEffectLibHandle->releaseEffect) {
-        AUDIO_ERR_LOG("ReleaseEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
-                      effect.c_str(), libName.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(libEntry, ERROR, "Effect [%{public}s] in lib [%{public}s] is nullptr",
+        effect.c_str(), libName.c_str());
+
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle, ERROR,
+        "AudioEffectLibHandle of Effect [%{public}s] in lib [%{public}s] is nullptr",
+        effect.c_str(), libName.c_str());
+
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->createEffect, ERROR,
+        "CreateEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
+        effect.c_str(), libName.c_str());
+
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->releaseEffect, ERROR,
+        "ReleaseEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
+        effect.c_str(), libName.c_str());
     return SUCCESS;
 }
 
@@ -820,19 +794,12 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     std::string libName;
     for (std::string effect: effectSet) {
         int32_t ret = FindEffectLib(effect, effectLibraryList, &libEntry, libName);
-        if (ret == ERROR) {
-            AUDIO_ERR_LOG("Couldn't find libEntry of effect %{public}s", effect.c_str());
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(ret != ERROR, "Couldn't find libEntry of effect %{public}s", effect.c_str());
         ret = CheckValidEffectLibEntry(libEntry, effect, libName);
-        if (ret == ERROR) {
-            AUDIO_ERR_LOG("Invalid libEntry of effect %{public}s", effect.c_str());
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(ret != ERROR, "Invalid libEntry of effect %{public}s", effect.c_str());
         EffectToLibraryEntryMap_[effect] = libEntry;
         EffectToLibraryNameMap_[effect] = libName;
     }
-    
     // Construct EffectChainToEffectsMap that stores all effect names of each effect chain
     for (EffectChain efc: effectChains) {
         std::string key = efc.name;
@@ -916,10 +883,9 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(std::string scene
 int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string sceneType, std::string effectMode)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-        AUDIO_ERR_LOG("SceneType [%{public}s] does not exist, failed to set", sceneType.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey), ERROR,
+        "SceneType [%{public}s] does not exist, failed to set", sceneType.c_str());
+
     AudioEffectChain *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
 
     std::string effectChain;
@@ -946,10 +912,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string sceneTyp
         descriptor.libraryName = EffectToLibraryNameMap_[effect];
         descriptor.effectName = effect;
         int32_t ret = EffectToLibraryEntryMap_[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(ret == 0, "EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
         audioEffectChain->AddEffectHandle(handle, EffectToLibraryEntryMap_[effect]->audioEffectLibHandle);
     }
 

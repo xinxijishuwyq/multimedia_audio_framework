@@ -29,7 +29,7 @@
 #ifndef OHOS_DEBUG
 #define DECORATOR_HILOG(op, fmt, args...) \
     do {                                  \
-        op(LOG_CORE, "[%{public}s] " fmt, FILENAME, ##args);        \
+        op(LOG_CORE, "[%{public}s] [%{public}s]" fmt, FILENAME, __FUNCTION__, ##args);        \
     } while (0)
 #else
 #define DECORATOR_HILOG(op, fmt, args...)                                                \
@@ -53,7 +53,7 @@
 #define CHECK_AND_RETURN_RET_LOG(cond, ret, fmt, ...)  \
     do {                                               \
         if (!(cond)) {                                 \
-            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);            \
+            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
             return ret;                                \
         }                                              \
     } while (0)
@@ -61,17 +61,32 @@
 #define CHECK_AND_RETURN_LOG(cond, fmt, ...)           \
     do {                                               \
         if (!(cond)) {                                 \
-            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);            \
+            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
             return;                                    \
         }                                              \
     } while (0)
 
 #define CHECK_AND_BREAK_LOG(cond, fmt, ...)            \
-    do {                                               \
+    if (1) {                                           \
         if (!(cond)) {                                 \
-            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);            \
+            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
             break;                                     \
         }                                              \
+    } else void (0)
+
+#define CHECK_AND_RETURN_RET(cond, ret, ...)           \
+    do {                                               \
+        if (!(cond)) {                                 \
+            return ret;                                \
+        }                                              \
     } while (0)
+
+#define CHECK_AND_CONTINUE_LOG(cond, fmt, ...)         \
+    if (1) {                                           \
+        if (!(cond)) {                                 \
+            AUDIO_DEBUG_LOG(fmt, ##__VA_ARGS__);       \
+            continue;                                  \
+        }                                              \
+    } else void (0)
 
 #endif // OHOS_AUDIO_LOG_H

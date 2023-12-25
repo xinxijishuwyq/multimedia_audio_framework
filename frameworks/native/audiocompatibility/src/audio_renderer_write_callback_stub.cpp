@@ -29,11 +29,7 @@ AudioRendererWriteCallbackStub::~AudioRendererWriteCallbackStub()
 int AudioRendererWriteCallbackStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    AUDIO_DEBUG_LOG("AudioRendererWriteCallbackStub::OnRemoteRequest");
-    if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioRendererWriteCallbackStub: ReadInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(), -1, "ReadInterfaceToken failed");
     switch (code) {
         case ON_WRITE_DATA: {
             size_t length = static_cast<size_t>(data.ReadInt64());
@@ -51,20 +47,15 @@ int AudioRendererWriteCallbackStub::OnRemoteRequest(
 
 void AudioRendererWriteCallbackStub::OnWriteData(size_t length)
 {
-    AUDIO_DEBUG_LOG("AudioRendererWriteCallbackStub::OnWriteData");
     std::shared_ptr<AudioRendererWriteCallback> cb = callback_.lock();
     if (cb != nullptr) {
-        AUDIO_DEBUG_LOG("AudioRendererWriteCallbackStub::OnWriteData CALLBACK NOT NULL");
         cb->OnWriteData(length);
-    } else {
-        AUDIO_DEBUG_LOG("AudioRendererWriteCallbackStub::OnWriteData CALLBACK NULL");
     }
 }
 
 void AudioRendererWriteCallbackStub::SetOnRendererWriteCallback(
     const std::weak_ptr<AudioRendererWriteCallback> &callback)
 {
-    AUDIO_DEBUG_LOG("AudioRendererWriteCallbackStub::SetOnRendererWriteCallback");
     callback_ = callback;
 }
 } // namespace AudioStandard

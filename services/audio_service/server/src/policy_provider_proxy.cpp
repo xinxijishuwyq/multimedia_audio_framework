@@ -21,12 +21,10 @@ namespace OHOS {
 namespace AudioStandard {
 PolicyProviderProxy::PolicyProviderProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IPolicyProviderIpc>(impl)
 {
-    AUDIO_INFO_LOG("PolicyProviderProxy()");
 }
 
 PolicyProviderProxy::~PolicyProviderProxy()
 {
-    AUDIO_INFO_LOG("~PolicyProviderProxy()");
 }
 
 int32_t PolicyProviderProxy::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)

@@ -21,12 +21,10 @@ namespace OHOS {
 namespace AudioStandard {
 AudioPolicyManagerListenerStub::AudioPolicyManagerListenerStub()
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub Instance create");
 }
 
 AudioPolicyManagerListenerStub::~AudioPolicyManagerListenerStub()
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerListenerStub Instance complete");
 }
 
 void AudioPolicyManagerListenerStub::ReadInterruptEventParams(MessageParcel &data,
@@ -58,10 +56,8 @@ void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &da
 int AudioPolicyManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerStub: ReadInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
+        AUDIO_INVALID_PARAM, "ReadInterfaceToken failed");
     switch (code) {
         case ON_INTERRUPT: {
             InterruptEventInternal interruptEvent = {};
@@ -86,19 +82,17 @@ int AudioPolicyManagerListenerStub::OnRemoteRequest(
 
 void AudioPolicyManagerListenerStub::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnInterrupt start");
     std::shared_ptr<AudioInterruptCallback> cb = callback_.lock();
     if (cb != nullptr) {
         cb->OnInterrupt(interruptEvent);
     } else {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerStub: callback_ is nullptr");
+        AUDIO_WARNING_LOG("AudioPolicyManagerListenerStub: callback_ is nullptr");
     }
 }
 
 void AudioPolicyManagerListenerStub::OnAvailableDeviceChange(const AudioDeviceUsage usage,
     const DeviceChangeAction &deviceChangeAction)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManagerLiternerStub OnAvailableDeviceChange start");
     std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> availabledeviceChangedCallback =
         audioAvailableDeviceChangeCallback_.lock();
 

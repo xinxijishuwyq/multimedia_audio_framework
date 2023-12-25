@@ -68,10 +68,8 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
 {
     AUDIO_INFO_LOG("FastAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
         " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
-    if (processClient_ != nullptr) {
-        AUDIO_ERR_LOG("Process is already inited, reset stream info is not supported.");
-        return ERR_INVALID_OPERATION;
-    }
+    CHECK_AND_RETURN_RET_LOG(processClient_ == nullptr, ERR_INVALID_OPERATION,
+        "Process is already inited, reset stream info is not supported.");
     streamInfo_ = info;
     if (state_ != NEW) {
         AUDIO_INFO_LOG("FastAudioStream: State is not new, release existing stream");
@@ -120,7 +118,7 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
 
 int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 {
-    AUDIO_INFO_LOG("GetAudioStreamInfo in");
+    AUDIO_INFO_LOG("GetAudioStreamInfo enter.");
     audioStreamInfo = streamInfo_;
     return SUCCESS;
 }
@@ -134,7 +132,7 @@ bool FastAudioStream::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFull
 bool FastAudioStream::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    AUDIO_INFO_LOG("CheckRecordingStateChange in");
+    AUDIO_INFO_LOG("CheckRecordingStateChange enter.");
     // note: add support later
     return true;
 }
@@ -214,9 +212,7 @@ float FastAudioStream::GetVolume()
 
 int32_t FastAudioStream::SetRenderRate(AudioRendererRate renderRate)
 {
-    if (RENDER_RATE_NORMAL == renderRate) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(RENDER_RATE_NORMAL != renderRate, SUCCESS);
     AUDIO_ERR_LOG("Unsupported operation: SetRenderRate");
     return ERR_INVALID_OPERATION;
 }
@@ -228,33 +224,29 @@ AudioRendererRate FastAudioStream::GetRenderRate()
 
 int32_t FastAudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
 {
-    AUDIO_INFO_LOG("SetStreamCallback in");
+    AUDIO_INFO_LOG("SetStreamCallback enter.");
     // note: need add support
     return SUCCESS;
 }
 
 int32_t FastAudioStream::SetRenderMode(AudioRenderMode renderMode)
 {
-    if (renderMode != RENDER_MODE_CALLBACK || eMode_ != AUDIO_MODE_PLAYBACK) {
-        AUDIO_ERR_LOG("SetRenderMode is not supported.");
-        return ERR_INVALID_OPERATION;
-    }
+    CHECK_AND_RETURN_RET_LOG(renderMode == RENDER_MODE_CALLBACK && eMode_ == AUDIO_MODE_PLAYBACK,
+        ERR_INVALID_OPERATION, "SetRenderMode is not supported.");
     return SUCCESS;
 }
 
 AudioRenderMode FastAudioStream::GetRenderMode()
 {
-    AUDIO_INFO_LOG("GetRenderMode in");
+    AUDIO_INFO_LOG("GetRenderMode enter.");
     return renderMode_;
 }
 
 int32_t FastAudioStream::SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
 {
-    AUDIO_INFO_LOG("SetRendererWriteCallback in.");
-    if (!callback || !processClient_ || eMode_ != AUDIO_MODE_PLAYBACK) {
-        AUDIO_ERR_LOG("SetRendererWriteCallback callback is nullptr");
-        return ERR_INVALID_PARAM;
-    }
+    AUDIO_INFO_LOG("SetRendererWriteCallback enter.");
+    CHECK_AND_RETURN_RET_LOG(callback && processClient_ && eMode_ == AUDIO_MODE_PLAYBACK,
+        ERR_INVALID_PARAM, "callback is nullptr");
     spkProcClientCb_ = std::make_shared<FastAudioStreamRenderCallback>(callback);
     int32_t ret = processClient_->SaveDataCallback(spkProcClientCb_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
@@ -263,10 +255,8 @@ int32_t FastAudioStream::SetRendererWriteCallback(const std::shared_ptr<AudioRen
 
 int32_t FastAudioStream::SetCaptureMode(AudioCaptureMode captureMode)
 {
-    if (captureMode != CAPTURE_MODE_CALLBACK || eMode_ != AUDIO_MODE_RECORD) {
-        AUDIO_ERR_LOG("SetCaptureMode is not supported.");
-        return ERR_INVALID_OPERATION;
-    }
+    CHECK_AND_RETURN_RET_LOG(captureMode == CAPTURE_MODE_CALLBACK && eMode_ == AUDIO_MODE_RECORD,
+        ERR_INVALID_OPERATION, "SetCaptureMode is not supported.");
     return SUCCESS;
 }
 
@@ -277,11 +267,9 @@ AudioCaptureMode FastAudioStream::GetCaptureMode()
 
 int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback)
 {
-    AUDIO_INFO_LOG("SetCapturerReadCallback in.");
-    if (!callback || !processClient_ || eMode_ != AUDIO_MODE_RECORD) {
-        AUDIO_ERR_LOG("SetCapturerReadCallback, callback or client is nullptr or mode is not record.");
-        return ERR_INVALID_PARAM;
-    }
+    AUDIO_INFO_LOG("SetCapturerReadCallback enter.");
+    CHECK_AND_RETURN_RET_LOG(callback && processClient_ && eMode_ == AUDIO_MODE_RECORD,
+        ERR_INVALID_PARAM, "callback or client is nullptr or mode is not record.");
     micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(callback);
     int32_t ret = processClient_->SaveDataCallback(micProcClientCb_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client save data callback fail, ret %{public}d.", ret);
@@ -290,38 +278,28 @@ int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapt
 
 int32_t FastAudioStream::GetBufferDesc(BufferDesc &bufDesc)
 {
-    AUDIO_DEBUG_LOG("GetBufferDesc in.");
-    if (!processClient_) {
-        AUDIO_ERR_LOG("spkClient is null.");
-        return ERR_INVALID_OPERATION;
-    }
+    AUDIO_DEBUG_LOG("GetBufferDesc enter.");
+    CHECK_AND_RETURN_RET_LOG(processClient_, ERR_INVALID_OPERATION, "spkClient is null.");
     int32_t ret = processClient_->GetBufferDesc(bufDesc);
-    if (ret != SUCCESS || bufDesc.buffer == nullptr || bufDesc.bufLength ==0) {
-        AUDIO_ERR_LOG("GetBufferDesc failed.");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && bufDesc.buffer != nullptr && bufDesc.bufLength != 0,
+        -1, "GetBufferDesc failed.");
     return SUCCESS;
 }
 
 int32_t FastAudioStream::GetBufQueueState(BufferQueueState &bufState)
 {
-    AUDIO_INFO_LOG("GetBufQueueState in.");
+    AUDIO_INFO_LOG("GetBufQueueState enter.");
     // note: add support
     return SUCCESS;
 }
 
 int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
 {
-    AUDIO_DEBUG_LOG("Enqueue in");
-    if (!processClient_) {
-        AUDIO_ERR_LOG("spkClient is null.");
-        return ERR_INVALID_OPERATION;
-    }
+    AUDIO_DEBUG_LOG("Enqueue enter.");
+    CHECK_AND_RETURN_RET_LOG(processClient_, ERR_INVALID_OPERATION,
+        "spkClient is null.");
     int32_t ret = processClient_->Enqueue(bufDesc);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Enqueue failed.");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, -1, "Enqueue failed.");
     return SUCCESS;
 }
 
@@ -339,31 +317,31 @@ int32_t FastAudioStream::Clear()
 
 int32_t FastAudioStream::SetLowPowerVolume(float volume)
 {
-    AUDIO_INFO_LOG("SetLowPowerVolume in.");
+    AUDIO_INFO_LOG("SetLowPowerVolume enter.");
     return 1.0f;
 }
 
 float FastAudioStream::GetLowPowerVolume()
 {
-    AUDIO_INFO_LOG("GetLowPowerVolume in.");
+    AUDIO_INFO_LOG("GetLowPowerVolume enter.");
     return 1.0f;
 }
 
 int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    AUDIO_WARNING_LOG("SetOffloadMode in.");
+    AUDIO_WARNING_LOG("SetOffloadMode enter.");
     return ERR_NOT_SUPPORTED;
 }
 
 int32_t FastAudioStream::UnsetOffloadMode()
 {
-    AUDIO_WARNING_LOG("UnsetOffloadMode in.");
+    AUDIO_WARNING_LOG("UnsetOffloadMode enter.");
     return ERR_NOT_SUPPORTED;
 }
 
 float FastAudioStream::GetSingleStreamVolume()
 {
-    AUDIO_INFO_LOG("GetSingleStreamVolume in.");
+    AUDIO_INFO_LOG("GetSingleStreamVolume enter.");
     return 1.0f;
 }
 
@@ -422,11 +400,9 @@ int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
 {
-    AUDIO_INFO_LOG("StartAudioStream in.");
-    if ((state_ != PREPARED) && (state_ != STOPPED) && (state_ != PAUSED)) {
-        AUDIO_ERR_LOG("StartAudioStream Illegal state:%{public}u", state_);
-        return false;
-    }
+    AUDIO_INFO_LOG("StartAudioStream enter.");
+    CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
+        false, "Illegal state:%{public}u", state_);
 
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "Start failed, process is null.");
     int32_t ret = ERROR;
@@ -450,11 +426,9 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
 
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    AUDIO_INFO_LOG("PauseAudioStream in");
-    if (state_ != RUNNING) {
-        AUDIO_ERR_LOG("PauseAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
-        return false;
-    }
+    AUDIO_INFO_LOG("PauseAudioStream enter.");
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
+        "state is not RUNNING. Illegal state:%{public}u", state_);
     State oldState = state_;
 
     state_ = PAUSED;
@@ -476,10 +450,8 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
 bool FastAudioStream::StopAudioStream()
 {
-    if ((state_ != RUNNING) && (state_ != PAUSED)) {
-        AUDIO_ERR_LOG("StopAudioStream: State is not RUNNING. Illegal state:%{public}u", state_);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG((state_ == RUNNING) || (state_ == PAUSED), false,
+        "State is not RUNNING. Illegal state:%{public}u", state_);
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
 
@@ -501,7 +473,7 @@ bool FastAudioStream::StopAudioStream()
 
 bool FastAudioStream::FlushAudioStream()
 {
-    AUDIO_INFO_LOG("FlushAudioStream in.");
+    AUDIO_INFO_LOG("FlushAudioStream enter.");
     return true;
 }
 
@@ -513,10 +485,8 @@ bool FastAudioStream::DrainAudioStream()
 
 bool FastAudioStream::ReleaseAudioStream(bool releaseRunner)
 {
-    if (state_ == RELEASED || state_ == NEW) {
-        AUDIO_ERR_LOG("Illegal state: state = %{public}u", state_);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED && state_ != NEW,
+        false, "Illegal state: state = %{public}u", state_);
     // If state_ is RUNNING try to Stop it first and Release
     if (state_ == RUNNING) {
         StopAudioStream();
@@ -553,7 +523,7 @@ int32_t FastAudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t
 
 uint32_t FastAudioStream::GetUnderflowCount()
 {
-    AUDIO_INFO_LOG("GetUnderflowCount in.");
+    AUDIO_INFO_LOG("GetUnderflowCount enter.");
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 0, "process client is null.");
     underflowCount_ = processClient_->GetUnderflowCount();
     return underflowCount_;
@@ -614,7 +584,7 @@ int32_t FastAudioStream::SetRendererSamplingRate(uint32_t sampleRate)
 
 uint32_t FastAudioStream::GetRendererSamplingRate()
 {
-    AUDIO_INFO_LOG("GetRendererSamplingRate in");
+    AUDIO_INFO_LOG("GetRendererSamplingRate enter.");
     return streamInfo_.samplingRate;
 }
 

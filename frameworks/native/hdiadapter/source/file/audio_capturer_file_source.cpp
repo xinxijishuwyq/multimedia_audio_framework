@@ -63,17 +63,17 @@ int32_t AudioCapturerFileSource::SetInputRoute(DeviceType inputDevice)
 
 void AudioCapturerFileSource::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
 {
-    AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
+    AUDIO_WARNING_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
 void AudioCapturerFileSource::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
 {
-    AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
+    AUDIO_WARNING_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
 
 void AudioCapturerFileSource::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
-    AUDIO_ERR_LOG("RegisterParameterCallback in file mode is not supported!");
+    AUDIO_WARNING_LOG("RegisterParameterCallback in file mode is not supported!");
 }
 
 int32_t AudioCapturerFileSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
@@ -140,17 +140,12 @@ int32_t AudioCapturerFileSource::Init(const IAudioSourceAttr &attr)
         fileName = sourceFilePath.substr(pos);
     }
 
-    if ((strlen(sourceFilePath.c_str()) >= PATH_MAX) || (realpath(rootPath.c_str(), realPath) == nullptr)) {
-        AUDIO_ERR_LOG("AudioCapturerFileSource:: Invalid path errno = %{public}d", errno);
-        return ERROR;
-    }
+    bool tmp = strlen(sourceFilePath.c_str()) >= PATH_MAX || realpath(rootPath.c_str(), realPath) == nullptr;
+    CHECK_AND_RETURN_RET_LOG(!tmp, ERROR, "AudioCapturerFileSource:: Invalid path errno = %{public}d", errno);
 
     std::string verifiedPath(realPath);
     filePtr = fopen(verifiedPath.append(fileName).c_str(), "rb");
-    if (filePtr == nullptr) {
-        AUDIO_ERR_LOG("Error opening pcm test file!");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(filePtr != nullptr, ERROR, "Error opening pcm test file!");
 
     capturerInited_ = true;
     return SUCCESS;
@@ -158,10 +153,7 @@ int32_t AudioCapturerFileSource::Init(const IAudioSourceAttr &attr)
 
 int32_t AudioCapturerFileSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
-    if (filePtr == nullptr) {
-        AUDIO_ERR_LOG("Invalid filePtr!");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(filePtr != nullptr, ERROR, "Invalid filePtr!");
 
     if (feof(filePtr)) {
         AUDIO_INFO_LOG("End of the file reached, start reading from beginning");

@@ -30,10 +30,8 @@ namespace AudioStandard {
 bool AudioStrategyRouterParser::LoadConfiguration()
 {
     doc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
-    if (doc_ == nullptr) {
-        AUDIO_ERR_LOG("xmlReadFile Failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(doc_ != nullptr, false,
+        "xmlReadFile Failed");
 
     return true;
 }
@@ -41,15 +39,10 @@ bool AudioStrategyRouterParser::LoadConfiguration()
 bool AudioStrategyRouterParser::Parse()
 {
     xmlNode *root = xmlDocGetRootElement(doc_);
-    if (root == nullptr) {
-        AUDIO_ERR_LOG("xmlDocGetRootElement failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(root != nullptr, false, "xmlDocGetRootElement failed");
 
-    if (!ParseInternal(root)) {
-        AUDIO_ERR_LOG("Audio strategy router xml parse failed.");
-        return false;
-    }
+    bool ret = ParseInternal(root);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio strategy router xml parse failed.");
     return true;
 }
 

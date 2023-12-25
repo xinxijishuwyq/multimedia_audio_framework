@@ -231,20 +231,11 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
     std::lock_guard<std::mutex> lock(g_audioServerProxyMutex);
     if (gAudioServerProxy == nullptr) {
         auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        if (samgr == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get sa manager failed");
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
         sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        if (object == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service remote object failed");
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
         gAudioServerProxy = iface_cast<IStandardAudioService>(object);
-        if (gAudioServerProxy == nullptr) {
-            AUDIO_ERR_LOG("GetAudioServerProxy: get audio service proxy failed");
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET_LOG(gAudioServerProxy != nullptr, nullptr, "get audio service proxy failed");
 
         // register death recipent to restore proxy
         sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
@@ -253,7 +244,7 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
                 std::placeholders::_1));
             bool result = object->AddDeathRecipient(asDeathRecipient);
             if (!result) {
-                AUDIO_ERR_LOG("GetAudioServerProxy: failed to add deathRecipient");
+                AUDIO_WARNING_LOG("failed to add deathRecipient");
             }
         }
     }
@@ -276,10 +267,9 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 {
     AUDIO_INFO_LOG("Create with config: render flag %{public}d, capturer flag %{public}d, streamType %{public}d.",
         config.rendererInfo.rendererFlags, config.capturerInfo.capturerFlags, config.streamType);
-    if (config.audioMode == AUDIO_MODE_PLAYBACK && !AudioProcessInClient::CheckIfSupport(config)) {
-        AUDIO_ERR_LOG("CheckIfSupport failed!");
-        return nullptr;
-    }
+    bool ret = AudioProcessInClient::CheckIfSupport(config);
+    CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_PLAYBACK || ret, nullptr,
+        "CheckIfSupport failed!");
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     AudioProcessConfig resetConfig = config;
@@ -317,10 +307,7 @@ int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
 {
     // note: Get the session id from server.
     int32_t pid = processConfig_.appInfo.appPid;
-    if (pid < 0) {
-        AUDIO_ERR_LOG("GetSessionID failed:%{public}d", pid);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(pid >= 0, ERR_OPERATION_FAILED, "GetSessionID failed:%{public}d", pid);
     sessionID = static_cast<uint32_t>(pid); // using pid as sessionID temporarily
     return SUCCESS;
 }
@@ -371,10 +358,8 @@ int32_t AudioProcessInClientInner::SetVolume(float vol)
 {
     float minVol = 0.0f;
     float maxVol = 1.0f;
-    if (vol < minVol || vol > maxVol) {
-        AUDIO_ERR_LOG("SetVolume failed to with invalid volume:%{public}f", vol);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(vol >= minVol && vol <= maxVol, ERR_INVALID_PARAM,
+        "SetVolume failed to with invalid volume:%{public}f", vol);
     int32_t volumeInt = static_cast<int32_t>(vol * PROCESS_VOLUME_MAX);
     int32_t ret = SetVolume(volumeInt);
     if (ret == SUCCESS) {
@@ -395,20 +380,14 @@ uint32_t AudioProcessInClientInner::GetUnderflowCount()
 
 int64_t AudioProcessInClientInner::GetFramesWritten()
 {
-    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK) {
-        AUDIO_ERR_LOG("Playback not support.");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(processConfig_.audioMode == AUDIO_MODE_PLAYBACK, -1, "Playback not support.");
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, -1, "buffer is null, maybe not inited.");
     return audioBuffer_->GetCurWriteFrame();
 }
 
 int64_t AudioProcessInClientInner::GetFramesRead()
 {
-    if (processConfig_.audioMode != AUDIO_MODE_RECORD) {
-        AUDIO_ERR_LOG("Record not support.");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(processConfig_.audioMode == AUDIO_MODE_RECORD, -1, "Record not support.");
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, -1, "buffer is null, maybe not inited.");
     return audioBuffer_->GetCurReadFrame();
 }
@@ -453,10 +432,8 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     CHECK_AND_RETURN_RET_LOG(processProxy_->RegisterProcessCb(processCbImpl_) == SUCCESS, false,
         "RegisterProcessCb failed.");
     int32_t ret = processProxy_->ResolveBuffer(audioBuffer_);
-    if (ret != SUCCESS || audioBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("Init failed to call ResolveBuffer");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioBuffer_ != nullptr, false,
+        "Init failed to call ResolveBuffer");
     streamStatus_ = audioBuffer_->GetStreamStatus();
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, false, "Init failed, access buffer failed.");
 
@@ -571,10 +548,8 @@ int32_t AudioProcessInClientInner::SaveDataCallback(const std::shared_ptr<AudioD
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    if (dataCallback == nullptr) {
-        AUDIO_ERR_LOG("%{public}s data callback is null.", __func__);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(dataCallback != nullptr, ERR_INVALID_PARAM,
+        "data callback is null.");
     audioDataCallback_ = dataCallback;
     return SUCCESS;
 }
@@ -584,10 +559,8 @@ int32_t AudioProcessInClientInner::SaveUnderrunCallback(const std::shared_ptr<Cl
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    if (underrunCallback == nullptr) {
-        AUDIO_ERR_LOG("%{public}s underrun callback is null.", __func__);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(underrunCallback != nullptr, ERR_INVALID_PARAM,
+        "underrun callback is null.");
     underrunCallback_ = underrunCallback;
     return SUCCESS;
 }
@@ -600,11 +573,9 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     Trace trace("AudioProcessInClient::ReadProcessData-<" + std::to_string(curReadPos));
     BufferDesc readbufDesc = {nullptr, 0, 0};
     int32_t ret = audioBuffer_->GetReadbuffer(curReadPos, readbufDesc);
-    if (ret != SUCCESS || readbufDesc.buffer == nullptr || readbufDesc.bufLength != spanSizeInByte_ ||
-        readbufDesc.dataLength != spanSizeInByte_) {
-        AUDIO_ERR_LOG("%{public}s get client mmap read buffer failed, ret %{public}d.", __func__, ret);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && readbufDesc.buffer != nullptr &&
+        readbufDesc.bufLength == spanSizeInByte_ && readbufDesc.dataLength == spanSizeInByte_,
+        ERR_OPERATION_FAILED, "get client mmap read buffer failed, ret %{public}d.", ret);
     ret = memcpy_s(static_cast<void *>(callbackBuffer_.get()), spanSizeInByte_,
         static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
@@ -612,7 +583,9 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(readbufDesc.buffer), spanSizeInByte_);
 
     ret = memset_s(readbufDesc.buffer, readbufDesc.bufLength, 0, readbufDesc.bufLength);
-    CHECK_AND_BREAK_LOG(ret == EOK, "%{public}s reset buffer fail, ret %{public}d.", __func__, ret);
+    if (ret != EOK) {
+        AUDIO_WARNING_LOG("reset buffer fail, ret %{public}d.", ret);
+    }
     return SUCCESS;
 }
 
@@ -787,17 +760,16 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
 int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
 {
     Trace trace("AudioProcessInClient::Enqueue");
-    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "%{public}s not inited!", __func__);
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    if (bufDesc.buffer == nullptr || bufDesc.bufLength != clientSpanSizeInByte_ ||
-        bufDesc.dataLength != clientSpanSizeInByte_) {
-        AUDIO_ERR_LOG("%{public}s bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
-            __func__, bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr && bufDesc.bufLength == clientSpanSizeInByte_ &&
+        bufDesc.dataLength == clientSpanSizeInByte_, ERR_INVALID_PARAM,
+        "bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
+        bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
     // check if this buffer is form us.
-    CHECK_AND_BREAK_LOG(bufDesc.buffer == callbackBuffer_.get(),
-        "%{public}s the buffer is not created by client.", __func__);
+    if (bufDesc.buffer != callbackBuffer_.get()) {
+        AUDIO_WARNING_LOG("the buffer is not created by client.");
+    }
 
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
@@ -812,11 +784,9 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
             BufferDesc curWriteBuffer = {nullptr, 0, 0};
             Trace writeProcessDataTrace("AudioProcessInClient::WriteProcessData->" + std::to_string(curPos));
             int32_t ret = audioBuffer_->GetWriteBuffer(curPos, curWriteBuffer);
-            if (ret != SUCCESS || curWriteBuffer.buffer == nullptr || curWriteBuffer.bufLength != spanSizeInByte_ ||
-                curWriteBuffer.dataLength != spanSizeInByte_) {
-                AUDIO_ERR_LOG("%{public}s get write buffer fail, ret:%{public}d", __func__, ret);
-                return ERR_OPERATION_FAILED;
-            }
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && curWriteBuffer.buffer != nullptr &&
+                curWriteBuffer.bufLength == spanSizeInByte_ && curWriteBuffer.dataLength == spanSizeInByte_,
+                ERR_OPERATION_FAILED, "get write buffer fail, ret:%{public}d", ret);
             ret = ProcessData(curCallbackBuffer, curWriteBuffer);
             if (ret != SUCCESS) {
                 return ERR_OPERATION_FAILED;
@@ -827,20 +797,19 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc) const
         }
     }
 
-    CHECK_AND_BREAK_LOG(memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) == EOK,
-        "%{public}s reset callback buffer fail.", __func__);
+    if (memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) != EOK) {
+        AUDIO_WARNING_LOG("reset callback buffer fail.");
+    }
 
     return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::SetVolume(int32_t vol)
 {
-    AUDIO_INFO_LOG("SetVolume proc client mode %{public}d to %{public}d.", processConfig_.audioMode, vol);
+    AUDIO_INFO_LOG("proc client mode %{public}d to %{public}d.", processConfig_.audioMode, vol);
     Trace trace("AudioProcessInClient::SetVolume " + std::to_string(vol));
-    if (vol < 0 || vol > PROCESS_VOLUME_MAX) {
-        AUDIO_ERR_LOG("SetVolume failed, invalid volume:%{public}d", vol);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(vol >= 0 && vol <= PROCESS_VOLUME_MAX, ERR_INVALID_PARAM,
+        "SetVolume failed, invalid volume:%{public}d", vol);
     processVolume_ = vol;
     return SUCCESS;
 }
@@ -859,10 +828,9 @@ int32_t AudioProcessInClientInner::Start()
     }
 
     StreamStatus targetStatus = StreamStatus::STREAM_IDEL;
-    if (!streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING)) {
-        AUDIO_ERR_LOG("Start failed, invalid status: %{public}s", GetStatusInfo(targetStatus).c_str());
-        return ERR_ILLEGAL_STATE;
-    }
+    bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_ILLEGAL_STATE, "Start failed, invalid status: %{public}s",
+        GetStatusInfo(targetStatus).c_str());
 
     if (processProxy_->Start() != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_IDEL);
@@ -887,10 +855,9 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
         return SUCCESS;
     }
     StreamStatus targetStatus = StreamStatus::STREAM_RUNNING;
-    if (!streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_PAUSING)) {
-        AUDIO_ERR_LOG("Pause failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
-        return ERR_ILLEGAL_STATE;
-    }
+    bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_PAUSING);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_ILLEGAL_STATE, "Pause failed, invalid status : %{public}s",
+        GetStatusInfo(targetStatus).c_str());
 
     if (processProxy_->Pause(isFlush) != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_RUNNING);
@@ -915,10 +882,9 @@ int32_t AudioProcessInClientInner::Resume()
     }
 
     StreamStatus targetStatus = StreamStatus::STREAM_PAUSED;
-    if (!streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING)) {
-        AUDIO_ERR_LOG("Resume failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
-        return ERR_ILLEGAL_STATE;
-    }
+    bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_ILLEGAL_STATE, "Resume failed, invalid status : %{public}s",
+        GetStatusInfo(targetStatus).c_str());
 
     if (processProxy_->Resume() != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_PAUSED);
@@ -944,10 +910,8 @@ int32_t AudioProcessInClientInner::Stop()
     }
 
     StreamStatus oldStatus = streamStatus_->load();
-    if (oldStatus == STREAM_IDEL || oldStatus == STREAM_RELEASED || oldStatus == STREAM_INVALID) {
-        AUDIO_ERR_LOG("Stop failed, invalid status : %{public}s", GetStatusInfo(oldStatus).c_str());
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(oldStatus != STREAM_IDEL && oldStatus != STREAM_RELEASED && oldStatus != STREAM_INVALID,
+        ERR_ILLEGAL_STATE, "Stop failed, invalid status : %{public}s", GetStatusInfo(oldStatus).c_str());
 
     streamStatus_->store(StreamStatus::STREAM_STOPPING);
     if (processProxy_->Stop() != SUCCESS) {
@@ -999,10 +963,7 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
 {
     Trace trace("AudioProcessInClient::CallClientHandleCurrent");
     std::shared_ptr<AudioDataCallback> cb = audioDataCallback_.lock();
-    if (cb == nullptr) {
-        AUDIO_ERR_LOG("%{public}s audio data callback is null.", __func__);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(cb != nullptr, "audio data callback is null.");
 
     int64_t stamp = ClockTime::GetCurNano();
     cb->OnHandleData(clientSpanSizeInByte_);
@@ -1109,10 +1070,8 @@ bool AudioProcessInClientInner::ClientPrepareNextLoop(uint64_t curWritePos, int6
 {
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     for (size_t count = 0; count < round; count++) {
-        if (!PrepareNext(curWritePos + count * spanSizeInFrame_, wakeUpTime)) {
-            AUDIO_ERR_LOG("PrepareNextLoop in process failed!");
-            return false;
-        }
+        bool ret = PrepareNext(curWritePos + count * spanSizeInFrame_, wakeUpTime);
+        CHECK_AND_RETURN_RET_LOG(ret, false, "PrepareNextLoop in process failed!");
     }
     return true;
 }
@@ -1212,20 +1171,14 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
         }
 
         curReadPos = audioBuffer_->GetCurReadFrame();
-        if (RecordPrepareCurrent(curReadPos) != SUCCESS) {
-            AUDIO_ERR_LOG("%{public}s prepare current fail.", __func__);
-            continue;
-        }
+        int32_t recordPrepare = RecordPrepareCurrent(curReadPos);
+        CHECK_AND_CONTINUE_LOG(recordPrepare == SUCCESS, "prepare current fail.");
         CallClientHandleCurrent();
-        if (RecordFinishHandleCurrent(curReadPos, clientReadCost) != SUCCESS) {
-            AUDIO_ERR_LOG("%{public}s finish handle current fail.", __func__);
-            continue;
-        }
+        int32_t recordFinish = RecordFinishHandleCurrent(curReadPos, clientReadCost);
+        CHECK_AND_CONTINUE_LOG(recordFinish == SUCCESS, "finish handle current fail.");
 
-        if (!PrepareNext(curReadPos, wakeUpTime)) {
-            AUDIO_ERR_LOG("%{public}s prepare next loop in process fail.", __func__);
-            break;
-        }
+        bool ret = PrepareNext(curReadPos, wakeUpTime);
+        CHECK_AND_BREAK_LOG(ret, "prepare next loop in process fail.");
 
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
@@ -1342,10 +1295,8 @@ bool AudioProcessInClientInner::PrepareCurrent(uint64_t curWritePos)
         ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION + ONE_MILLISECOND_DURATION);
     }
     // If the last attempt is successful, tryCount will be equal to zero.
-    if (tryCount < 0) {
-        AUDIO_ERR_LOG("wait on current span  %{public}" PRIu64" too long...", curWritePos);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(tryCount >= 0, false,
+        "wait on current span  %{public}" PRIu64" too long...", curWritePos);
     tempSpan->writeStartTime = ClockTime::GetCurNano();
     return true;
 }
@@ -1355,10 +1306,8 @@ bool AudioProcessInClientInner::PrepareCurrentLoop(uint64_t curWritePos)
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     for (size_t count = 0; count < round; count++) {
         uint64_t tmp = curWritePos + count * static_cast<uint64_t>(spanSizeInFrame_);
-        if (!PrepareCurrent(tmp)) {
-            AUDIO_ERR_LOG("PrepareCurrent failed at %{public}" PRIu64" ", tmp);
-            return false;
-        }
+        bool ret = PrepareCurrent(tmp);
+        CHECK_AND_RETURN_RET_LOG(ret, false, "PrepareCurrent failed at %{public}" PRIu64" ", tmp);
     }
     return true;
 }
@@ -1367,10 +1316,7 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
 {
     Trace trace("AudioProcessInClient::FinishHandleCurrent " + std::to_string(curWritePos));
     SpanInfo *tempSpan = audioBuffer_->GetSpanInfo(curWritePos);
-    if (tempSpan == nullptr) {
-        AUDIO_ERR_LOG("GetSpanInfo failed!");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(tempSpan != nullptr, false, "GetSpanInfo failed!");
 
     int32_t ret = ERROR;
     // mark status write-done and then server can read
@@ -1381,10 +1327,8 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
         curWritePos = nextWritePos;
         tempSpan->spanStatus.store(SpanStatus::SPAN_WRITE_DONE);
     }
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("SetCurWriteFrame %{public}" PRIu64" failed, ret:%{public}d", curWritePos, ret);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false,
+        "SetCurWriteFrame %{public}" PRIu64" failed, ret:%{public}d", curWritePos, ret);
     tempSpan->writeDoneTime = ClockTime::GetCurNano();
     tempSpan->volumeStart = processVolume_;
     tempSpan->volumeEnd = processVolume_;
@@ -1404,10 +1348,8 @@ bool AudioProcessInClientInner::FinishHandleCurrentLoop(uint64_t &curWritePos, i
     size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
     for (size_t count = 0; count < round; count++) {
         uint64_t tmp = curWritePos + count * static_cast<uint64_t>(spanSizeInFrame_);
-        if (!FinishHandleCurrent(tmp, clientWriteCost)) {
-            AUDIO_ERR_LOG("FinishHandleCurrent failed at %{public}" PRIu64" ", tmp);
-            return false;
-        }
+        bool ret = FinishHandleCurrent(tmp, clientWriteCost);
+        CHECK_AND_RETURN_RET_LOG(ret, false, "FinishHandleCurrent failed at %{public}" PRIu64" ", tmp);
     }
     return true;
 }

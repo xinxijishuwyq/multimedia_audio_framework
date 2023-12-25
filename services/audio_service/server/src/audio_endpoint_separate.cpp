@@ -275,8 +275,9 @@ int32_t AudioEndpointSeparate::PrepareDeviceBuffer(const DeviceInfo &deviceInfo)
 
     // clear data buffer
     ret = memset_s(dstAudioBuffer_->GetDataBase(), dstAudioBuffer_->GetDataSize(), 0, dstAudioBuffer_->GetDataSize());
-    CHECK_AND_BREAK_LOG(ret == EOK, "%{public}s memset buffer fail, ret %{public}d, fd %{public}d.",
-        __func__, ret, dstBufferFd_);
+    if (ret != EOK) {
+        AUDIO_WARNING_LOG("%{public}s memset buffer fail, ret %{public}d, fd %{public}d.", __func__, ret, dstBufferFd_);
+    }
     InitAudiobuffer(true);
 
     AUDIO_DEBUG_LOG("%{public}s end, fd %{public}d.", __func__, dstBufferFd_);

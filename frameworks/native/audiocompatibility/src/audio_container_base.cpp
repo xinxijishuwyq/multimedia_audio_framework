@@ -30,23 +30,23 @@ static sptr<IAudioContainerService> g_sProxy = nullptr;
 
 void AudioContainerBase::InitAudioStreamManagerGa(int serviceId)
 {
-    AUDIO_ERR_LOG("AudioContainerBase::InitAudioStreamManagerGa serviceId %d", serviceId);
+    AUDIO_INFO_LOG("serviceId %d", serviceId);
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_LOG(samgr != nullptr, "AudioContainerBase::init failed");
+    CHECK_AND_RETURN_LOG(samgr != nullptr, "init failed");
 
     sptr<IRemoteObject> object = samgr->GetSystemAbility(serviceId);
-    CHECK_AND_RETURN_LOG(object != nullptr, "AudioContainerBase::object is NULL");
+    CHECK_AND_RETURN_LOG(object != nullptr, "object is NULL");
 
     g_sProxy = iface_cast<IAudioContainerService>(object);
-    CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "AudioContainerBase::init g_sProxy is NULL");
+    CHECK_AND_RETURN_LOG(g_sProxy != nullptr, "init g_sProxy is NULL");
     g_isConnected = true;
     RegisterAudioStreamDeathRecipient(object);
-    AUDIO_INFO_LOG("AudioContainerBase::init g_sProxy is assigned.");
+    AUDIO_DEBUG_LOG("init g_sProxy is assigned.");
 }
 
 void AudioContainerBase::RegisterAudioStreamDeathRecipient(sptr<IRemoteObject> &object)
 {
-    AUDIO_INFO_LOG("AudioContainerBase Register audio renderer death recipient");
+    AUDIO_INFO_LOG("Register audio renderer death recipient");
     pid_t pid = 0;
     sptr<AudioStreamDeathRecipient> recipient = new(std::nothrow) AudioStreamDeathRecipient(pid);
     if (recipient != nullptr) {
@@ -55,14 +55,14 @@ void AudioContainerBase::RegisterAudioStreamDeathRecipient(sptr<IRemoteObject> &
         });
         bool result = object->AddDeathRecipient(recipient);
         if (!result) {
-            AUDIO_ERR_LOG("AudioContainerBase failed to add recipient");
+            AUDIO_ERR_LOG("failed to add recipient");
         }
     }
 }
 
 void AudioContainerBase::AudioStreamDied(pid_t pid)
 {
-    AUDIO_INFO_LOG("AudioContainerBase, Audio renderer died, reestablish connection");
+    AUDIO_INFO_LOG("Audio renderer died, reestablish connection");
     g_isConnected = false;
 }
 
@@ -243,7 +243,7 @@ void AudioContainerBase::UnsetCapturerPeriodPositionCallback()
 
 void AudioContainerBase::OnTimeOut()
 {
-    AUDIO_ERR_LOG("Inside read timeout callback");
+    AUDIO_WARNING_LOG("Inside read timeout callback");
 }
 
 int32_t AudioContainerBase::SetAudioCaptureMode(AudioCaptureMode captureMode)
@@ -263,13 +263,13 @@ AudioCaptureMode AudioContainerBase::GetAudioCaptureMode()
 
 void AudioContainerBase::SetAppCachePath(const std::string cachePath)
 {
-    AUDIO_INFO_LOG("SetAppCachePath cachePath %{public}s", cachePath.c_str());
+    AUDIO_INFO_LOG("cachePath %{public}s", cachePath.c_str());
 }
 
 int32_t AudioContainerBase::SaveWriteCallback(const std::weak_ptr<AudioRendererWriteCallback> &callback,
     const int32_t &trackId)
 {
-    AUDIO_INFO_LOG("AudioContainerBase::SaveWriteCallback");
+    AUDIO_INFO_LOG("SaveWriteCallback");
     return g_sProxy->SaveWriteCallbackGa(callback, trackId);
 }
 } // namespace AudioStandard

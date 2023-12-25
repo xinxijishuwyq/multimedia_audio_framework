@@ -23,21 +23,17 @@ namespace OHOS {
 namespace AudioStandard {
 AudioRoutingManagerListenerStub::AudioRoutingManagerListenerStub()
 {
-    AUDIO_DEBUG_LOG("AudioRoutingManagerListenerStub Instance create");
 }
 
 AudioRoutingManagerListenerStub::~AudioRoutingManagerListenerStub()
 {
-    AUDIO_DEBUG_LOG("AudioRoutingManagerListenerStub Instance destroy");
 }
 
 int AudioRoutingManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: ReadInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
+        -1, "AudioRingerModeUpdateListenerStub: ReadInterfaceToken failed");
     switch (code) {
         case ON_DISTRIBUTED_ROUTING_ROLE_CHANGE: {
             sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
@@ -58,10 +54,8 @@ void AudioRoutingManagerListenerStub::OnDistributedRoutingRoleChange(const sptr<
     std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback =
         audioDistributedRoutingRoleCallback_.lock();
 
-    if (audioDistributedRoutingRoleCallback == nullptr) {
-        AUDIO_ERR_LOG("OnDistributedRoutingRoleChange: audioDistributedRoutingRoleCallback_ is nullptr");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioDistributedRoutingRoleCallback != nullptr,
+        "OnDistributedRoutingRoleChange: audioDistributedRoutingRoleCallback_ is nullptr");
 
     audioDistributedRoutingRoleCallback->OnDistributedRoutingRoleChange(descriptor, type);
 }

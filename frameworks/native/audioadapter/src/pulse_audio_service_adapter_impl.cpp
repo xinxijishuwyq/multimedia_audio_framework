@@ -69,10 +69,7 @@ PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;
 
 unique_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(unique_ptr<AudioServiceAdapterCallback> cb)
 {
-    if (!cb) {
-        AUDIO_ERR_LOG("CreateAudioAdapter cb is nullptr!");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr, nullptr, "CreateAudioAdapter cb is nullptr!");
     return make_unique<PulseAudioServiceAdapterImpl>(cb);
 }
 
@@ -84,13 +81,10 @@ PulseAudioServiceAdapterImpl::PulseAudioServiceAdapterImpl(unique_ptr<AudioServi
 bool PulseAudioServiceAdapterImpl::Connect()
 {
     mMainLoop = pa_threaded_mainloop_new();
-    if (!mMainLoop) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] MainLoop creation failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(mMainLoop, false, "MainLoop creation failed");
 
     if (pa_threaded_mainloop_start(mMainLoop) < 0) {
-        AUDIO_ERR_LOG("[PulseAudioServiceAdapterImpl] Failed to start mainloop");
+        AUDIO_ERR_LOG("Failed to start mainloop");
         pa_threaded_mainloop_free(mMainLoop);
         return false;
     }
@@ -128,13 +122,13 @@ bool PulseAudioServiceAdapterImpl::Connect()
 bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
 {
     if (mContext != nullptr) {
-        AUDIO_INFO_LOG("context is not null, disconnect first!");
+        AUDIO_DEBUG_LOG("context is not null, disconnect first!");
         pa_context_disconnect(mContext);
         pa_context_set_state_callback(mContext, nullptr, nullptr);
         pa_context_set_subscribe_callback(mContext, nullptr, nullptr);
         pa_context_unref(mContext);
     }
-	
+
     swapStatus = 0;
     pa_proplist *proplist = pa_proplist_new();
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "PulseAudio Service");
@@ -143,10 +137,7 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
     mContext = pa_context_new_with_proplist(pa_threaded_mainloop_get_api(mMainLoop), nullptr, proplist);
     pa_proplist_free(proplist);
 
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("creating pa context failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, false, "creating pa context failed");
 
     pa_context_set_state_callback(mContext,  PulseAudioServiceAdapterImpl::PaContextStateCb, this);
     if (pa_context_connect(mContext, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
@@ -176,7 +167,7 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
 
     pa_threaded_mainloop_lock(mMainLoop);
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[OpenAudioPort] mContext is nullptr");
+        AUDIO_ERR_LOG("mContext is nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERROR;
     }
@@ -196,10 +187,8 @@ uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, strin
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
-    if (userData->idx == PA_INVALID_INDEX) {
-        AUDIO_ERR_LOG("OpenAudioPort returned invalid index");
-        return PA_INVALID_INDEX;
-    }
+    CHECK_AND_RETURN_RET_LOG(userData->idx != PA_INVALID_INDEX, PA_INVALID_INDEX,
+        "OpenAudioPort returned invalid index");
 
     return userData->idx;
 }
@@ -210,7 +199,7 @@ int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
 
     pa_threaded_mainloop_lock(mMainLoop);
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[CloseAudioPort] mContext is nullptr");
+        AUDIO_ERR_LOG("mContext is nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERROR;
     }
@@ -229,10 +218,10 @@ int32_t PulseAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
 
 int32_t PulseAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, bool isSuspend)
 {
-    AUDIO_INFO_LOG("SuspendAudioDevice: [%{public}s] : [%{public}d]", audioPortName.c_str(), isSuspend);
+    AUDIO_INFO_LOG("[%{public}s] : [%{public}d]", audioPortName.c_str(), isSuspend);
     pa_threaded_mainloop_lock(mMainLoop);
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[SuspendAudioDevice] mContext is nullptr");
+        AUDIO_ERR_LOG("mContext is nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERROR;
     }
@@ -275,7 +264,7 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSink(string name)
 {
     pa_threaded_mainloop_lock(mMainLoop);
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[SetDefaultSink] mContext is nullptr");
+        AUDIO_ERR_LOG("mContext is nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERROR;
     }
@@ -297,7 +286,7 @@ int32_t PulseAudioServiceAdapterImpl::SetDefaultSource(string name)
 {
     pa_threaded_mainloop_lock(mMainLoop);
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[SetDefaultSource] mContext is nullptr");
+        AUDIO_ERR_LOG("mContext is nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERROR;
     }
@@ -319,27 +308,20 @@ void PulseAudioServiceAdapterImpl::PaGetSinksCb(pa_context *c, const pa_sink_inf
 {
     UserData *userData = reinterpret_cast<UserData *>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
-    if (eol < 0) {
-        AUDIO_ERR_LOG("[PaGetSinksCb] Failed to get sink information: %{public}s",
-            pa_strerror(pa_context_errno(c)));
-        return;
-    }
+    CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get sink information: %{public}s", pa_strerror(pa_context_errno(c)));
 
     if (eol) {
         pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
         return;
     }
 
-    if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("[PaGetSinksCb] Invalid Proplist for sink (%{public}d).", i->index);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(i->proplist != nullptr, "Invalid Proplist for sink (%{public}d).", i->index);
 
     const char *adapterCStr = pa_proplist_gets(i->proplist, PA_PROP_DEVICE_STRING);
     if (adapterCStr == nullptr) {
         adapterCStr = "";
     }
-    AUDIO_DEBUG_LOG("[PaGetSinksCb] sink[%{public}d] device[%{public}s] name[%{public}s]", i->index, adapterCStr,
+    AUDIO_DEBUG_LOG("sink[%{public}d] device[%{public}s] name[%{public}s]", i->index, adapterCStr,
         i->name);
     std::string sinkDeviceName(adapterCStr);
     std::string sinkName(i->name);
@@ -358,17 +340,14 @@ std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
     userData->thiz = this;
     userData->sinkInfos = {};
 
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("GetAllSinks mContext is nullptr");
-        return userData->sinkInfos;
-    }
+    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sinkInfos, "mContext is nullptr");
 
     pa_threaded_mainloop_lock(mMainLoop);
 
     pa_operation *operation = pa_context_get_sink_info_list(mContext,
         PulseAudioServiceAdapterImpl::PaGetSinksCb, reinterpret_cast<void*>(userData.get()));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("GetAllSinks pa_context_get_sink_info_list returned nullptr");
+        AUDIO_ERR_LOG("pa_context_get_sink_info_list returned nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return userData->sinkInfos;
     }
@@ -380,7 +359,7 @@ std::vector<SinkInfo> PulseAudioServiceAdapterImpl::GetAllSinks()
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
-    AUDIO_DEBUG_LOG("GetAllSinks end, get [%{public}zu] sinks.", userData->sinkInfos.size());
+    AUDIO_DEBUG_LOG("end, get [%{public}zu] sinks.", userData->sinkInfos.size());
     return userData->sinkInfos;
 }
 
@@ -407,11 +386,9 @@ int32_t PulseAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
     for (auto sinkInput : allSinkInputs) {
         uint32_t sink = sinkInput.deviceSinkId;
         // the sink inputs connected to remote device remain the same
-        if (std::find(remoteSinks.begin(), remoteSinks.end(), sink) != remoteSinks.end()) {
-            AUDIO_INFO_LOG("[SetLocalDefaultSink] sink-input[%{public}d] connects with remote device[%{public}d]",
-                sinkInput.paStreamId, sinkInput.deviceSinkId);
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(std::find(remoteSinks.begin(), remoteSinks.end(), sink) == remoteSinks.end(),
+            "sink-input[%{public}d] connects with remote device[%{public}d]",
+            sinkInput.paStreamId, sinkInput.deviceSinkId);
         // move the remaining sink inputs to the default sink
         uint32_t invalidSinkId = PA_INVALID_INDEX;
         MoveSinkInputByIndexOrName(sinkInput.paStreamId, invalidSinkId, name);
@@ -428,10 +405,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(uint32_t sinkIn
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
 
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[MoveSinkInputByIndexOrName] SetVolume mContext is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "mContext is nullptr");
     pa_threaded_mainloop_lock(mMainLoop);
     pa_operation *operation = nullptr;
     if (sinkName.empty()) {
@@ -468,7 +442,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
     userData->thiz = this;
 
     if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[MoveSourceOutputByIndexOrName] SetVolume mContext is nullptr");
+        AUDIO_ERR_LOG("mContext is nullptr");
         return ERROR;
     }
     pa_threaded_mainloop_lock(mMainLoop);
@@ -482,7 +456,7 @@ int32_t PulseAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(uint32_t sou
     }
 
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("[MoveSourceOutputByIndexOrName] pa_context_get_sink_input_info_list nullptr");
+        AUDIO_ERR_LOG("pa_context_get_sink_input_info_list nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERROR;
     }
@@ -503,24 +477,18 @@ int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioStreamType streamType, fl
     lock_guard<mutex> lock(lock_);
 
     unique_ptr<UserData> userData = make_unique<UserData>();
-    if (userData == nullptr) {
-        AUDIO_ERR_LOG("SetVolumeDb userData memory alloc failed");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(userData != nullptr, ERROR, "userData memory alloc failed");
 
     userData->thiz = this;
     userData->volume = volumeDb;
     userData->streamType = streamType;
 
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("SetVolumeDb mContext is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "SetVolumeDb mContext is nullptr");
     pa_threaded_mainloop_lock(mMainLoop);
     pa_operation *operation = pa_context_get_sink_input_info_list(mContext,
         PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb, reinterpret_cast<void*>(userData.get()));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("SetVolumeDb pa_context_get_sink_input_info_list nullptr");
+        AUDIO_ERR_LOG("pa_context_get_sink_input_info_list nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return ERROR;
     }
@@ -536,10 +504,7 @@ int32_t PulseAudioServiceAdapterImpl::SetVolumeDb(AudioStreamType streamType, fl
 
 int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMute)
 {
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("[SetSourceOutputMute] mContext is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "mContext is nullptr");
     vector<SourceOutput> sourOutputs = GetAllSourceOutputs();
     lock_guard<mutex> lock(lock_);
     int32_t streamSet = 0;
@@ -547,12 +512,12 @@ int32_t PulseAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setM
         if (sourOutputs[i].uid == uid) {
             pa_operation_unref(pa_context_set_source_output_mute(mContext, sourOutputs[i].paStreamId, (setMute ? 1 : 0),
                 nullptr, nullptr));
-            AUDIO_DEBUG_LOG("[SetSourceOutputMute] set source output Mute : %{public}s for stream :uid %{public}d",
+            AUDIO_DEBUG_LOG("set source output Mute : %{public}s for stream :uid %{public}d",
                 (setMute ? "true" : "false"), sourOutputs[i].uid);
             streamSet++;
         }
     }
-    AUDIO_INFO_LOG("[SetSourceOutputMute] set %{public}d %{public}s", streamSet, (setMute ? "mute" : "unmuted"));
+    AUDIO_INFO_LOG("set %{public}d %{public}s", streamSet, (setMute ? "mute" : "unmuted"));
     return streamSet;
 }
 
@@ -564,17 +529,14 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
     userData->sinkInfos = GetAllSinks();
 
     lock_guard<mutex> lock(lock_);
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("GetAllSinkInputs mContext is nullptr");
-        return userData->sinkInputList;
-    }
+    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sinkInputList, "mContext is nullptr");
 
     pa_threaded_mainloop_lock(mMainLoop);
 
     pa_operation *operation = pa_context_get_sink_input_info_list(mContext,
         PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb, reinterpret_cast<void*>(userData.get()));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("[GetAllSinkInputs] pa_context_get_sink_input_info_list returned nullptr");
+        AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return userData->sinkInputList;
     }
@@ -586,7 +548,7 @@ vector<SinkInput> PulseAudioServiceAdapterImpl::GetAllSinkInputs()
     pa_operation_unref(operation);
     pa_threaded_mainloop_unlock(mMainLoop);
 
-    AUDIO_DEBUG_LOG("GetAllSinkInputs get:[%{public}zu]", userData->sinkInputList.size());
+    AUDIO_DEBUG_LOG("get:[%{public}zu]", userData->sinkInputList.size());
     return userData->sinkInputList;
 }
 
@@ -597,22 +559,16 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
     unique_ptr<UserData> userData = make_unique<UserData>();
     userData->thiz = this;
 
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("GetAllSourceOutputs mContext is nullptr");
-        return userData->sourceOutputList;
-    }
+    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sourceOutputList, "mContext is nullptr");
 
-    if (!isSetDefaultSource_) {
-        AUDIO_ERR_LOG("default source has not been set.");
-        return userData->sourceOutputList;
-    }
+    CHECK_AND_RETURN_RET_LOG(isSetDefaultSource_, userData->sourceOutputList, "default source has not been set.");
 
     pa_threaded_mainloop_lock(mMainLoop);
 
     pa_operation *operation = pa_context_get_source_output_info_list(mContext,
         PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb, reinterpret_cast<void*>(userData.get()));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("[GetAllSourceOutputs] pa_context_get_source_output_info_list returned nullptr");
+        AUDIO_ERR_LOG("pa_context_get_source_output_info_list returned nullptr");
         pa_threaded_mainloop_unlock(mMainLoop);
         return userData->sourceOutputList;
     }
@@ -650,7 +606,7 @@ AudioStreamType PulseAudioServiceAdapterImpl::GetIdByStreamType(string streamTyp
     if (STREAM_TYPE_STRING_ENUM_MAP.find(streamType) != STREAM_TYPE_STRING_ENUM_MAP.end()) {
         stream = STREAM_TYPE_STRING_ENUM_MAP.at(streamType);
     } else {
-        AUDIO_ERR_LOG("GetIdByStreamType: Invalid stream type [%{public}s]. Use default type", streamType.c_str());
+        AUDIO_WARNING_LOG("Invalid stream type [%{public}s]. Use default type", streamType.c_str());
     }
     return stream;
 }
@@ -659,7 +615,7 @@ void PulseAudioServiceAdapterImpl::PaMoveSinkInputCb(pa_context *c, int success,
 {
     UserData *userData = reinterpret_cast<UserData *>(userdata);
 
-    AUDIO_INFO_LOG("[PaMoveSinkInputCb] result[%{public}d]", success);
+    AUDIO_DEBUG_LOG("result[%{public}d]", success);
     userData->moveResult = success;
 
     pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
@@ -671,7 +627,7 @@ void PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb(pa_context *c, int succe
 {
     UserData *userData = reinterpret_cast<UserData *>(userdata);
 
-    AUDIO_INFO_LOG("[PaMoveSourceOutputCb] result[%{public}d]", success);
+    AUDIO_INFO_LOG("result[%{public}d]", success);
     userData->moveResult = success;
 
     pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
@@ -720,7 +676,7 @@ void PulseAudioServiceAdapterImpl::PaModuleLoadCb(pa_context *c, uint32_t idx, v
 {
     UserData *userData = reinterpret_cast<UserData*>(userdata);
     if (idx == PA_INVALID_INDEX) {
-        AUDIO_ERR_LOG("PaModuleLoadCb Failure: %{public}s", pa_strerror(pa_context_errno(c)));
+        AUDIO_ERR_LOG("Failure: %{public}s", pa_strerror(pa_context_errno(c)));
         userData->idx = PA_INVALID_INDEX;
     } else {
         userData->idx = idx;
@@ -747,7 +703,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     UserData *userData = reinterpret_cast<UserData*>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
-    AUDIO_DEBUG_LOG("GetSinkInputInfoVolumeCb");
+    AUDIO_DEBUG_LOG("GetSinkInputInfoVolumeCb enter.");
     if (eol < 0) {
         delete userData;
         AUDIO_ERR_LOG("Failed to get sink input information: %{public}s",
@@ -761,10 +717,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
         return;
     }
 
-    if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("Invalid Proplist for sink input (%{public}d).", i->index);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(i->proplist != nullptr, "Invalid Proplist for sink input (%{public}d).", i->index);
 
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
@@ -774,17 +727,14 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     int32_t pid = -1;
     CastValue<int32_t>(uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
     CastValue<int32_t>(pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
-    if ((streamtype == nullptr) || (streamVolume == nullptr) || (streamPowerVolume == nullptr) ||
-        (sessionCStr == nullptr)) {
-        AUDIO_DEBUG_LOG("Invalid Stream parameter info.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG((streamtype != nullptr) && (streamVolume != nullptr) && (streamPowerVolume != nullptr) &&
+        (sessionCStr != nullptr), "Invalid Stream parameter info.");
 
     std::stringstream sessionStr;
     uint32_t sessionID;
     sessionStr << sessionCStr;
     sessionStr >> sessionID;
-    AUDIO_INFO_LOG("PaGetSinkInputInfoVolumeCb sessionID %{public}u", sessionID);
+    AUDIO_INFO_LOG("sessionID %{public}u", sessionID);
 
     sinkIndexSessionIDMap[i->index] = sessionID;
 
@@ -832,16 +782,10 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
         return;
     }
 
-    if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("Invalid proplist for source output (%{public}d).", i->index);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(i->proplist != nullptr, "Invalid proplist for source output (%{public}d).", i->index);
 
     const char *streamSession = pa_proplist_gets(i->proplist, "stream.sessionID");
-    if (streamSession == nullptr) {
-        AUDIO_ERR_LOG("Invalid stream parameter:sessionID.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(streamSession != nullptr, "Invalid stream parameter:sessionID.");
 
     std::stringstream sessionStr;
     uint32_t sessionID;
@@ -857,7 +801,7 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
 
     const char *captureFlag = pa_proplist_gets(i->proplist, "stream.isInnerCapturer");
     if (captureFlag == nullptr) {
-        AUDIO_ERR_LOG("Invalid stream parameter:isInnerCapturer.");
+        AUDIO_WARNING_LOG("Invalid stream parameter:isInnerCapturer.");
     } else {
         int32_t flag = atoi(captureFlag);
         if (flag == 1) {
@@ -874,25 +818,20 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
     void *userdata)
 {
-    AUDIO_INFO_LOG("[PaGetAllSinkInputsCb] in eol[%{public}d]", eol);
+    AUDIO_INFO_LOG("in eol[%{public}d]", eol);
     UserData *userData = reinterpret_cast<UserData *>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
-    if (eol < 0) {
-        AUDIO_ERR_LOG("PaGetAllSinkInputsCb Failed to get sink input information: %{public}s",
-            pa_strerror(pa_context_errno(c)));
-        return;
-    }
+    CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get sink input information: %{public}s",
+        pa_strerror(pa_context_errno(c)));
 
     if (eol) {
         pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
         return;
     }
 
-    if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("PaGetAllSinkInputsCb Invalid Proplist for sink input (%{public}d).", i->index);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(i->proplist != nullptr,
+        "Invalid Proplist for sink input (%{public}d).", i->index);
 
     AudioStreamType audioStreamType = STREAM_DEFAULT;
     const char *streamType = pa_proplist_gets(i->proplist, "stream.type");
@@ -922,25 +861,20 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
 void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const pa_source_output_info *i, int eol,
     void *userdata)
 {
-    AUDIO_DEBUG_LOG("[PaGetAllSourceOutputsCb] in eol[%{public}d]", eol);
+    AUDIO_INFO_LOG("in eol[%{public}d]", eol);
     UserData *userData = reinterpret_cast<UserData *>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
-    if (eol < 0) {
-        AUDIO_ERR_LOG("[PaGetAllSourceOutputsCb] Failed to get source output information: %{public}s",
-            pa_strerror(pa_context_errno(c)));
-        return;
-    }
+    CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get source output information: %{public}s",
+        pa_strerror(pa_context_errno(c)));
 
     if (eol) {
         pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
         return;
     }
 
-    if (i->proplist == nullptr) {
-        AUDIO_ERR_LOG("[PaGetAllSourceOutputsCb] Invalid Proplist for source output (%{public}d).", i->index);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(i->proplist != nullptr,
+        "Invalid Proplist for source output (%{public}d).", i->index);
 
     uint32_t sessionID = 0;
     const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
@@ -979,7 +913,7 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         pa_operation *operation = pa_context_get_source_output_info(c, idx,
             PulseAudioServiceAdapterImpl::PaGetSourceOutputCb, reinterpret_cast<void*>(userData.get()));
         if (operation == nullptr) {
-            AUDIO_ERR_LOG("[ProcessSourceOutputEvent] pa_context_get_source_output_info nullptr");
+            AUDIO_ERR_LOG("pa_context_get_source_output_info nullptr");
             pa_threaded_mainloop_unlock(thiz->mMainLoop);
             return;
         }
@@ -989,7 +923,7 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         pa_threaded_mainloop_unlock(thiz->mMainLoop);
     } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
         uint32_t sessionID = sourceIndexSessionIDMap[idx];
-        AUDIO_ERR_LOG("[ProcessSourceOutputEvent] sessionID: %{public}d removed", sessionID);
+        AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
         g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
         if (g_playbackCapturerSourceOutputIndex >= 0 &&
             idx == static_cast<uint32_t>(g_playbackCapturerSourceOutputIndex)) {
@@ -1025,7 +959,7 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
                 pa_operation *operation = pa_context_get_sink_input_info(c, idx,
                     PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb, reinterpret_cast<void*>(userData.get()));
                 if (operation == nullptr) {
-                    AUDIO_ERR_LOG("PaSubscribeCb pa_context_get_sink_input_info_list nullptr");
+                    AUDIO_ERR_LOG("pa_context_get_sink_input_info_list nullptr");
                     pa_threaded_mainloop_unlock(thiz->mMainLoop);
                     return;
                 }
@@ -1051,10 +985,7 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
 
 int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
 {
-    if (mContext == nullptr) {
-        AUDIO_ERR_LOG("UpdateClusterModule mContext is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(mContext != nullptr, ERROR, "UpdateClusterModule mContext is nullptr");
     pa_threaded_mainloop_lock(mMainLoop);
 
     swapStatus = 1 - swapStatus;

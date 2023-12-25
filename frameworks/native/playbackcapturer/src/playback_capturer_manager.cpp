@@ -32,20 +32,17 @@ using namespace OHOS::AudioStandard;
 bool IsStreamSupportInnerCapturer(int32_t streamUsage)
 {
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    if (playbackCapturerMgr == nullptr) {
-        AUDIO_ERR_LOG("IsStreamSupportInnerCapturer return false for null manager.");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(playbackCapturerMgr != nullptr, false,
+        "IsStreamSupportInnerCapturer return false for null manager.");
+
     return playbackCapturerMgr->IsStreamSupportInnerCapturer(streamUsage);
 }
 
 bool IsPrivacySupportInnerCapturer(int32_t privacyType)
 {
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    if (playbackCapturerMgr == nullptr) {
-        AUDIO_ERR_LOG("IsPrivacySupportInnerCapturer return false for null manager.");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(playbackCapturerMgr != nullptr, false,
+        "IsPrivacySupportInnerCapturer return false for null manager.");
 
     return playbackCapturerMgr->IsPrivacySupportInnerCapturer(privacyType);
 }
@@ -53,10 +50,8 @@ bool IsPrivacySupportInnerCapturer(int32_t privacyType)
 bool IsCaptureSilently()
 {
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    if (playbackCapturerMgr == nullptr) {
-        AUDIO_ERR_LOG("IsCaptureSilently return false for null manager.");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(playbackCapturerMgr != nullptr, false,
+        "IsCaptureSilently return false for null manager.");
 
     return playbackCapturerMgr->IsCaptureSilently();
 }
@@ -64,10 +59,8 @@ bool IsCaptureSilently()
 extern "C" __attribute__((visibility("default"))) bool GetInnerCapturerState()
 {
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    if (playbackCapturerMgr == nullptr) {
-        AUDIO_ERR_LOG("IsCaptureSilently return false for null manager.");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(playbackCapturerMgr != nullptr, false,
+        "IsCaptureSilently return false for null manager.");
 
     return playbackCapturerMgr->GetInnerCapturerState();
 }
@@ -75,10 +68,7 @@ extern "C" __attribute__((visibility("default"))) bool GetInnerCapturerState()
 extern "C" __attribute__((visibility("default"))) void SetInnerCapturerState(bool state)
 {
     PlaybackCapturerManager *playbackCapturerMgr = PlaybackCapturerManager::GetInstance();
-    if (playbackCapturerMgr == nullptr) {
-        AUDIO_ERR_LOG("IsCaptureSilently return false for null manager.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(playbackCapturerMgr != nullptr, "IsCaptureSilently return false for null manager.");
 
     playbackCapturerMgr->SetInnerCapturerState(state);
 }

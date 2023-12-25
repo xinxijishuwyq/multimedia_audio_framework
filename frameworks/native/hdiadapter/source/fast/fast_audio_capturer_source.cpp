@@ -124,7 +124,7 @@ FastAudioCapturerSourceInner::FastAudioCapturerSourceInner() : attr_({}), captur
 
 FastAudioCapturerSourceInner::~FastAudioCapturerSourceInner()
 {
-    AUDIO_ERR_LOG("~FastAudioCapturerSourceInner");
+    AUDIO_DEBUG_LOG("~FastAudioCapturerSourceInner");
 }
 FastAudioCapturerSource *FastAudioCapturerSource::GetInstance()
 {
@@ -176,20 +176,16 @@ void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes
 int32_t FastAudioCapturerSourceInner::SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size,
     const std::string &adapterNameCase, enum AudioPortDirection portFlag, struct AudioPort &capturePort)
 {
-    if (descs == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(descs != nullptr, ERROR);
 
     for (uint32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
-        if (adapterNameCase.compare(desc->adapterName) != 0) {
-            AUDIO_WARNING_LOG("not equal: %{public}s <-> %{public}s", adapterNameCase.c_str(), desc->adapterName);
-            continue;
-        }
-        AUDIO_INFO_LOG("adapter name: %{public}s <-> %{public}s", adapterNameCase.c_str(), desc->adapterName);
+        CHECK_AND_CONTINUE_LOG(adapterNameCase.compare(desc->adapterName) == 0,
+            "not equal: %{public}s <-> %{public}s", adapterNameCase.c_str(), desc->adapterName);
+        AUDIO_DEBUG_LOG("adapter name: %{public}s <-> %{public}s", adapterNameCase.c_str(), desc->adapterName);
         for (uint32_t port = 0; port < desc->portsLen; port++) {
             // Only find out the port of out in the sound card
             if (desc->ports[port].dir == portFlag) {
@@ -276,10 +272,8 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
     }
 
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
-    if (audioCapture_ == nullptr || ret < 0) {
-        AUDIO_ERR_LOG("Create capture failed");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr && ret >= 0,
+        ERR_NOT_STARTED, "Create capture failed");
 
     return 0;
 }
@@ -305,10 +299,7 @@ uint32_t FastAudioCapturerSourceInner::PcmFormatToBits(HdiAdapterFormat format)
 int32_t FastAudioCapturerSourceInner::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
     uint32_t &byteSizePerFrame)
 {
-    if (bufferFd_ == INVALID_FD) {
-        AUDIO_ERR_LOG("buffer fd has been released!");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(bufferFd_ != INVALID_FD, ERR_INVALID_HANDLE, "buffer fd has been released!");
     fd = bufferFd_;
     totalSizeInframe = bufferTotalFrameSize_;
     spanSizeInframe = eachReadFrameSize_;
@@ -318,25 +309,17 @@ int32_t FastAudioCapturerSourceInner::GetMmapBufferInfo(int &fd, uint32_t &total
 
 int32_t FastAudioCapturerSourceInner::GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
-    if (audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("Audio render is null!");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Audio render is null!");
 
     struct AudioTimeStamp timestamp = {};
     int32_t ret = audioCapture_->GetMmapPosition(audioCapture_, &frames, &timestamp);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("Hdi GetMmapPosition filed, ret:%{public}d!", ret);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Hdi GetMmapPosition filed, ret:%{public}d!", ret);
 
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it.
-    if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
-        timestamp.tvNSec > SECOND_TO_NANOSECOND) {
-        AUDIO_ERR_LOG("Hdi GetMmapPosition get invaild second:%{public}" PRId64 " or nanosecond:%{public}" PRId64 " !",
-            timestamp.tvSec, timestamp.tvNSec);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(timestamp.tvSec >= 0 && timestamp.tvSec <= maxSec && timestamp.tvNSec >= 0 &&
+        timestamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
+        "Hdi GetMmapPosition get invaild second:%{public}" PRId64 " or nanosecond:%{public}" PRId64 " !",
+        timestamp.tvSec, timestamp.tvNSec);
     timeSec = timestamp.tvSec;
     timeNanoSec = timestamp.tvNSec;
 
@@ -351,28 +334,22 @@ int32_t FastAudioCapturerSourceInner::PrepareMmapBuffer()
 
     struct AudioMmapBufferDescriptor desc = {0};
     int32_t ret = audioCapture_->ReqMmapBuffer(audioCapture_, reqBufferFrameSize, &desc);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("ReqMmapBuffer failed, ret:%{public}d", ret);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "ReqMmapBuffer failed, ret:%{public}d", ret);
     AUDIO_INFO_LOG("AudioMmapBufferDescriptor memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"
         "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]", desc.memoryAddress,
         desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
 
     bufferFd_ = desc.memoryFd; // fcntl(fd, 1030,3) after dup?
     int32_t periodFrameMaxSize = 1920000; // 192khz * 10s
-    if (desc.totalBufferFrames < 0 || desc.transferFrameSize < 0 || desc.transferFrameSize > periodFrameMaxSize) {
-        AUDIO_ERR_LOG("ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
-            desc.totalBufferFrames, desc.transferFrameSize);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(desc.totalBufferFrames >= 0 && desc.transferFrameSize >= 0 &&
+        desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
+        "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
+        desc.totalBufferFrames, desc.transferFrameSize);
     bufferTotalFrameSize_ = desc.totalBufferFrames; // 1440 ~ 3840
     eachReadFrameSize_ = desc.transferFrameSize; // 240
 
-    if (frameSizeInByte > ULLONG_MAX / bufferTotalFrameSize_) {
-        AUDIO_ERR_LOG("BufferSize will overflow!");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(frameSizeInByte <= ULLONG_MAX / bufferTotalFrameSize_,
+        ERR_OPERATION_FAILED, "BufferSize will overflow!");
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte;
 
     return SUCCESS;
@@ -380,48 +357,35 @@ int32_t FastAudioCapturerSourceInner::PrepareMmapBuffer()
 
 int32_t FastAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
-    if (InitAudioManager() != 0) {
-        AUDIO_ERR_LOG("Init audio manager Fail");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_INVALID_HANDLE, "Init audio manager Fail");
     attr_ = attr;
     int32_t ret;
     int32_t index;
     uint32_t size = MAX_AUDIO_ADAPTER_NUM;
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
     ret = audioManager_->GetAllAdapters(audioManager_, (struct AudioAdapterDescriptor *)&descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
-        AUDIO_ERR_LOG("Get adapters Fail");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(size <= MAX_AUDIO_ADAPTER_NUM && size != 0 && ret == 0, ERR_NOT_STARTED,
+        "Get adapters Fail");
     // Get qualified sound card and port
     adapterNameCase_ = attr_.adapterName;
     openMic_ = attr_.openMicSpeaker;
     index = SwitchAdapterCapture((struct AudioAdapterDescriptor *)&descs, size, adapterNameCase_, PORT_IN, audioPort);
-    if (index < 0) {
-        AUDIO_ERR_LOG("Switch Adapter Capture Fail");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(index >= 0, ERR_NOT_STARTED, "Switch Adapter Capture Fail");
     adapterDesc_ = descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("Load Adapter Fail");
-        return ERR_NOT_STARTED;
-    }
+    int32_t loadAdapter = audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_);
+    CHECK_AND_RETURN_RET_LOG(loadAdapter == 0, ERR_NOT_STARTED, "Load Adapter Fail");
+
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device failed");
 
     // Inittialization port information, can fill through mode and other parameters
-    if (audioAdapter_->InitAllPorts(audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("InitAllPorts failed");
-        return ERR_DEVICE_INIT;
-    }
-    if (CreateCapture(audioPort) != SUCCESS || PrepareMmapBuffer() != SUCCESS) {
-        AUDIO_ERR_LOG("Create capture failed");
-        return ERR_NOT_STARTED;
-    }
+    int32_t initAllPorts = audioAdapter_->InitAllPorts(audioAdapter_);
+    CHECK_AND_RETURN_RET_LOG(initAllPorts == 0, ERR_DEVICE_INIT, "InitAllPorts failed");
+    bool tmp = CreateCapture(audioPort) == SUCCESS && PrepareMmapBuffer() == SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(tmp, ERR_NOT_STARTED, "Create capture failed");
     if (openMic_) {
         ret = SetInputRoute(DEVICE_TYPE_MIC);
         if (ret < 0) {
-            AUDIO_ERR_LOG("FastAudioCapturerSourceInner:update route FAILED: %{public}d", ret);
+            AUDIO_WARNING_LOG("update route FAILED: %{public}d", ret);
         }
     }
     capturerInited_ = true;
@@ -469,10 +433,10 @@ int32_t FastAudioCapturerSourceInner::Start(void)
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
     if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("FastAudioCapturerSourceInner call KeepRunningLock lock");
+        AUDIO_DEBUG_LOG("FastAudioCapturerSourceInner call KeepRunningLock lock");
         keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_ERR_LOG("keepRunningLock_ is null, start can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock_ is null, start can not work well!");
     }
 #endif
 
@@ -481,10 +445,9 @@ int32_t FastAudioCapturerSourceInner::Start(void)
         if (ret < 0) {
             return ERR_NOT_STARTED;
         }
-        if (CheckPositionTime() != SUCCESS) {
-            AUDIO_ERR_LOG("FastAudioCapturerSource::CheckPositionTime failed!");
-            return ERR_NOT_STARTED;
-        }
+        int32_t err = CheckPositionTime();
+        CHECK_AND_RETURN_RET_LOG(err == SUCCESS, ERR_NOT_STARTED,
+            "CheckPositionTime failed!");
         started_ = true;
     }
 
@@ -556,22 +519,19 @@ void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallbac
 
 int32_t FastAudioCapturerSourceInner::Stop(void)
 {
-    AUDIO_INFO_LOG("Stop.");
+    AUDIO_INFO_LOG("FastAudioCapturerSourceInner::Stop");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("FastAudioCapturerSourceInner call KeepRunningLock UnLock");
+        AUDIO_DEBUG_LOG("FastAudioCapturerSourceInner call KeepRunningLock UnLock");
         keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("keepRunningLock_ is null, stop can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock_ is null, stop can not work well!");
     }
 #endif
 
     if (started_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Stop(audioCapture_);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Stop capture Failed");
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "Stop capture Failed");
     }
     started_ = false;
 
@@ -582,10 +542,7 @@ int32_t FastAudioCapturerSourceInner::Pause(void)
 {
     if (started_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Pause(audioCapture_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("pause capture Failed");
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "pause capture Failed");
     }
     paused_ = true;
 
@@ -596,10 +553,7 @@ int32_t FastAudioCapturerSourceInner::Resume(void)
 {
     if (paused_ && audioCapture_ != nullptr) {
         int32_t ret = audioCapture_->Resume(audioCapture_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("resume capture Failed");
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "resume capture Failed");
     }
     paused_ = false;
 

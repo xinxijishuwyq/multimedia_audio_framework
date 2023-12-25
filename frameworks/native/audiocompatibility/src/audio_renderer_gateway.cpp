@@ -71,24 +71,16 @@ int32_t AudioRendererGateway::SetParams(const AudioRendererParams params)
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams);
 
-    AUDIO_INFO_LOG("AudioRendererGateway::SetParams SetAudioStreamInfo Success");
-    if (ret) {
-        AUDIO_ERR_LOG("AudioRendererGateway::SetParams SetAudioStreamInfo Failed");
-        return ret;
-    }
-    
-    if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
-        AUDIO_ERR_LOG("AudioRendererGateway::SetParams GetAudioSessionID Failed");
-        return ERR_INVALID_INDEX;
-    }
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "SetAudioStreamInfo Failed");
+
+    int32_t audioSessionID = audioStream_->GetAudioSessionID(sessionID_);
+    CHECK_AND_RETURN_RET_LOG(audioSessionID == 0, ERR_INVALID_INDEX, "GetAudioSessionID Failed");
     audioInterrupt_.sessionID = sessionID_;
 
     if (audioInterruptCallback_ == nullptr) {
         audioInterruptCallback_ = std::make_shared<AudioInterruptCallbackGateway>(audioStream_, audioInterrupt_);
-        if (audioInterruptCallback_ == nullptr) {
-            AUDIO_ERR_LOG("AudioRendererGateway::Failed to allocate memory for audioInterruptCallback_");
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR,
+            "Failed to allocate memory for audioInterruptCallback_");
     }
 
     return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
@@ -134,20 +126,12 @@ int32_t AudioRendererGateway::SetRendererCallback(const std::shared_ptr<AudioRen
     // If the client is using the deprecated SetParams API. SetRendererCallback must be invoked, after SetParams.
     // In general, callbacks can only be set after the renderer state is PREPARED.
     RendererState state = GetStatus();
-    if (state == RENDERER_NEW || state == RENDERER_RELEASED) {
-        AUDIO_DEBUG_LOG("AudioRendererGateway::SetRendererCallback incorrect state:%{public}d to register cb", state);
-        return ERR_ILLEGAL_STATE;
-    }
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererGateway::SetRendererCallback callback param is null");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(state != RENDERER_NEW && state != RENDERER_RELEASED, ERR_ILLEGAL_STATE,
+        "incorrect state:%{public}d to register cb", state);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback param is null");
 
     // Save reference for interrupt callback
-    if (audioInterruptCallback_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRendererGateway::SetRendererCallback audioInterruptCallback_ == nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioInterruptCallback_ != nullptr, ERROR, "audioInterruptCallback_ == nullptr");
     std::shared_ptr<AudioInterruptCallbackGateway> cbInterrupt =
         std::static_pointer_cast<AudioInterruptCallbackGateway>(audioInterruptCallback_);
     cbInterrupt->SaveCallback(callback);
@@ -155,16 +139,14 @@ int32_t AudioRendererGateway::SetRendererCallback(const std::shared_ptr<AudioRen
     // Save and Set reference for stream callback. Order is important here.
     if (audioStreamCallback_ == nullptr) {
         audioStreamCallback_ = std::make_shared<AudioStreamRenderCallback>();
-        if (audioStreamCallback_ == nullptr) {
-            AUDIO_ERR_LOG("AudioRendererGateway::Failed to allocate memory for audioStreamCallback_");
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(audioStreamCallback_ != nullptr, ERROR,
+            "Failed to allocate memory for audioStreamCallback_");
     }
 
     std::shared_ptr<AudioStreamRenderCallback> cbStream =
         std::static_pointer_cast<AudioStreamRenderCallback>(audioStreamCallback_);
     cbStream->SaveCallback(callback);
-    AUDIO_INFO_LOG("AudioRendererGateway::SetRendererCallback callback audioStreamCallback_");
+    AUDIO_INFO_LOG("callback audioStreamCallback_");
     (void)audioStream_->SetStreamCallback(audioStreamCallback_);
 
     return SUCCESS;
@@ -173,10 +155,7 @@ int32_t AudioRendererGateway::SetRendererCallback(const std::shared_ptr<AudioRen
 int32_t AudioRendererGateway::SetRendererPositionCallback(int64_t markPosition,
     const std::shared_ptr<RendererPositionCallback> &callback)
 {
-    if ((callback == nullptr) || (markPosition <= 0)) {
-        AUDIO_ERR_LOG("AudioRendererGateway::SetRendererPositionCallback input param is invalid");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG((callback != nullptr) && (markPosition > 0), ERR_INVALID_PARAM, "input param is invalid");
 
     audioStream_->SetRendererPositionCallback(markPosition, callback);
 
@@ -191,10 +170,7 @@ void AudioRendererGateway::UnsetRendererPositionCallback()
 int32_t AudioRendererGateway::SetRendererPeriodPositionCallback(int64_t frameNumber,
     const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
-    if ((callback == nullptr) || (frameNumber <= 0)) {
-        AUDIO_ERR_LOG("AudioRendererGateway::SetRendererPeriodPositionCallback input param is invalid");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG((callback != nullptr) && (frameNumber > 0), ERR_INVALID_PARAM, "input param is invalid");
 
     audioStream_->SetRendererPeriodPositionCallback(frameNumber, callback);
 
@@ -210,10 +186,8 @@ bool AudioRendererGateway::Start(StateChangeCmdType cmdType) const
 {
     AUDIO_INFO_LOG("AudioRendererGateway::Start()");
     RendererState state = GetStatus();
-    if ((state != RENDERER_PREPARED) && (state != RENDERER_STOPPED) && (state != RENDERER_PAUSED)) {
-        AUDIO_ERR_LOG("AudioRendererGateway::Start() Illegal state:%{public}u, Start failed", state);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
+        false, "Illegal state:%{public}u, Start failed", state);
     AudioInterrupt audioInterrupt;
     switch (mode_) {
         case InterruptMode::SHARE_MODE:
@@ -231,10 +205,7 @@ bool AudioRendererGateway::Start(StateChangeCmdType cmdType) const
     }
 
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("AudioRendererGateway::ActivateAudioInterrupt Failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
 
     return audioStream_->StartAudioStream();
 }
@@ -287,7 +258,7 @@ bool AudioRendererGateway::Pause(StateChangeCmdType cmdType) const
     // When user is intentionally pausing , Deactivate to remove from active/pending owners list
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioRendererGateway: DeactivateAudioInterrupt Failed");
+        AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
     }
 
     return result;
@@ -309,7 +280,7 @@ bool AudioRendererGateway::Stop() const
     }
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
     if (ret != 0) {
-        AUDIO_ERR_LOG("AudioRendererGateway: DeactivateAudioInterrupt Failed");
+        AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
     }
 
     return result;
@@ -371,10 +342,8 @@ AudioRendererRate AudioRendererGateway::GetRenderRate() const
 
 int32_t AudioRendererGateway::SetBufferDuration(uint64_t bufferDuration) const
 {
-    if (bufferDuration < MINIMUM_BUFFER_SIZE_MSEC || bufferDuration > MAXIMUM_BUFFER_SIZE_MSEC) {
-        AUDIO_ERR_LOG("Error: Please set the buffer duration between 5ms ~ 20ms");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC,
+        ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 20ms");
 
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
 }
@@ -398,14 +367,14 @@ void AudioInterruptCallbackGateway::SaveCallback(const std::weak_ptr<AudioRender
 
 void AudioInterruptCallbackGateway::NotifyEvent(const InterruptEvent &interruptEvent)
 {
-    AUDIO_DEBUG_LOG("AudioRendererGateway: NotifyEvent: Hint: %{public}d", interruptEvent.hintType);
-    AUDIO_DEBUG_LOG("AudioRendererGateway: NotifyEvent: eventType: %{public}d", interruptEvent.eventType);
+    AUDIO_DEBUG_LOG("NotifyEvent: Hint: %{public}d, eventType: %{public}d",
+        interruptEvent.hintType, interruptEvent.eventType);
 
     if (cb_ != nullptr) {
         cb_->OnInterrupt(interruptEvent);
-        AUDIO_DEBUG_LOG("AudioRendererGateway: OnInterrupt : NotifyEvent to app complete");
+        AUDIO_DEBUG_LOG("OnInterrupt : NotifyEvent to app complete");
     } else {
-        AUDIO_DEBUG_LOG("AudioRendererGateway: cb_ == nullptr cannont NotifyEvent to app");
+        AUDIO_DEBUG_LOG("cb_ == nullptr cannont NotifyEvent to app");
     }
 }
 
@@ -417,26 +386,21 @@ bool AudioInterruptCallbackGateway::HandleForceDucking(const InterruptEventInter
     int32_t ret = 0;
 
     if (systemVolumeDb <= duckVolumeDb || FLOAT_COMPARE_EQ(systemVolumeDb, 0.0f)) {
-        AUDIO_INFO_LOG("AudioRendererGateway: systemVolumeDb: %{public}f <= duckVolumeDb: %{public}f",
+        AUDIO_DEBUG_LOG("systemVolumeDb: %{public}f <= duckVolumeDb: %{public}f",
             systemVolumeDb, duckVolumeDb);
-        AUDIO_INFO_LOG("AudioRendererGateway: No need to duck further return");
+        AUDIO_DEBUG_LOG("No need to duck further return");
         return false;
     }
 
     instanceVolBeforeDucking_ = audioStream_->GetVolume();
     float duckInstanceVolume = duckVolumeDb / systemVolumeDb;
-    if (FLOAT_COMPARE_EQ(instanceVolBeforeDucking_, 0.0f) || instanceVolBeforeDucking_ < duckInstanceVolume) {
-        AUDIO_INFO_LOG("AudioRendererGateway: No need to duck further return");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(!FLOAT_COMPARE_EQ(instanceVolBeforeDucking_, 0.0f) &&
+        instanceVolBeforeDucking_ >= duckInstanceVolume, false, "No need to duck further return");
 
     ret = audioStream_->SetVolume(duckInstanceVolume);
-    if (ret) {
-        AUDIO_DEBUG_LOG("AudioRendererGateway: set duckVolumeDb(instance) %{pubic}f failed", duckInstanceVolume);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(!ret, false, "set duckVolumeDb(instance) %{pubic}f failed", duckInstanceVolume);
 
-    AUDIO_DEBUG_LOG("AudioRendererGateway: set duckVolumeDb(instance) %{pubic}f succeeded", duckInstanceVolume);
+    AUDIO_INFO_LOG("set duckVolumeDb(instance) %{pubic}f succeeded", duckInstanceVolume);
     return true;
 }
 
@@ -451,24 +415,21 @@ void AudioInterruptCallbackGateway::NotifyForcePausedToResume(const InterruptEve
 void AudioInterruptCallbackGateway::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
 {
     InterruptHint hintType = interruptEvent.hintType;
-    AUDIO_DEBUG_LOG("AudioRendererGateway ForceType: INTERRUPT_FORCE, Force handle the event and notify the app");
-    AUDIO_DEBUG_LOG("AudioRendererGateway: HandleAndNotifyForcedEvent: Hint: %{public}d eventType: %{public}d",
+    AUDIO_DEBUG_LOG("ForceType: INTERRUPT_FORCE, Force handle the event and notify the app");
+    AUDIO_DEBUG_LOG("Hint: %{public}d eventType: %{public}d",
         interruptEvent.hintType, interruptEvent.eventType);
 
     switch (hintType) {
         case INTERRUPT_HINT_PAUSE:
-            if (audioStream_->GetState() != RUNNING) {
-                AUDIO_DEBUG_LOG("AudioRendererGateway::OnInterrupt state is not running no need to pause");
-                return;
-            }
+            State state = audioStream_->GetState();
+            CHECK_AND_RETURN_LOG(state == RUNNING, "OnInterrupt state is not running no need to pause");
             (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
             isForcePaused_ = true;
             break;
         case INTERRUPT_HINT_RESUME:
-            if (audioStream_->GetState() != PAUSED || !isForcePaused_) {
-                AUDIO_DEBUG_LOG("AudioRendererGateway::OnInterrupt state is not paused or not forced paused");
-                return;
-            }
+            State state_ = audioStream_->GetState();
+            CHECK_AND_RETURN_LOG(state_ == PAUSED && isForcePaused_,
+                "OnInterrupt state is not paused or not forced paused");
             isForcePaused_ = false;
             NotifyForcePausedToResume(interruptEvent);
             return; // return, sending callback is taken care in NotifyForcePausedToResume
@@ -476,19 +437,14 @@ void AudioInterruptCallbackGateway::HandleAndNotifyForcedEvent(const InterruptEv
             (void)audioStream_->StopAudioStream();
             break;
         case INTERRUPT_HINT_DUCK:
-            if (!HandleForceDucking(interruptEvent)) {
-                AUDIO_DEBUG_LOG("AudioRendererGateway:: It is not forced ducked, no need notify app, return");
-                return;
-            }
+            bool forceDucking = HandleForceDucking(interruptEvent);
+            CHECK_AND_RETURN_LOG(forceDucking, "It is not forced ducked, no need notify app, return");
             isForceDucked_ = true;
             break;
         case INTERRUPT_HINT_UNDUCK:
-            if (!isForceDucked_) {
-                AUDIO_DEBUG_LOG("AudioRendererGateway:: It is not forced ducked, no need to unduck or notify app");
-                return;
-            }
+            CHECK_AND_RETURN_LOG(isForceDucked_, "It is not forced ducked, no need to unduck or notify app");
             (void)audioStream_->SetVolume(instanceVolBeforeDucking_);
-            AUDIO_DEBUG_LOG("AudioRendererGateway: unduck Volume(instance) complete: %{public}f",
+            AUDIO_DEBUG_LOG("unduck Volume(instance) complete: %{public}f",
                             instanceVolBeforeDucking_);
             isForceDucked_ = false;
             break;
@@ -504,20 +460,17 @@ void AudioInterruptCallbackGateway::OnInterrupt(const InterruptEventInternal &in
 {
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
-    AUDIO_DEBUG_LOG("AudioRendererGateway: OnInterrupt InterruptForceType: %{public}d", forceType);
+    AUDIO_DEBUG_LOG("OnInterrupt InterruptForceType: %{public}d", forceType);
 
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
-        AUDIO_DEBUG_LOG("AudioRendererGateway ForceType: INTERRUPT_SHARE. Let app handle the event");
+        AUDIO_DEBUG_LOG("ForceType: INTERRUPT_SHARE. Let app handle the event");
         InterruptEvent interruptEventShared {interruptEvent.eventType, interruptEvent.forceType,
                                              interruptEvent.hintType};
         NotifyEvent(interruptEventShared);
         return;
     }
 
-    if (audioStream_ == nullptr) {
-        AUDIO_DEBUG_LOG("AudioInterruptCallbackGateway::OnInterrupt: stream is null. No need to take forced action");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "stream is null. No need to take forced action");
 
     HandleAndNotifyForcedEvent(interruptEvent);
 }
@@ -532,11 +485,8 @@ void AudioStreamRenderCallback::SaveCallback(const std::weak_ptr<AudioRendererCa
 void AudioStreamRenderCallback::OnStateChange(const State state, StateChangeCmdType cmdType)
 {
     std::shared_ptr<AudioRendererCallback> cb = callback_.lock();
-    if (cb == nullptr) {
-        AUDIO_ERR_LOG("AudioStreamRenderCallback::OnStateChange cb == nullptr.");
-        return;
-    }
-    AUDIO_ERR_LOG("AudioStreamRenderCallback::OnStateChange cb");
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb == nullptr.");
+    AUDIO_ERR_LOG("OnStateChange cb");
     cb->OnStateChange(static_cast<RendererState>(state));
 }
 
@@ -582,7 +532,7 @@ int32_t AudioRendererGateway::SetRendererWriteCallback(const std::shared_ptr<Aud
 
 void AudioRendererGateway::SetInterruptMode(InterruptMode mode)
 {
-    AUDIO_INFO_LOG("AudioRendererGateway: SetInterruptMode: InterruptMode %{pubilc}d", mode);
+    AUDIO_INFO_LOG("InterruptMode %{pubilc}d", mode);
     mode_ = mode;
 }
 

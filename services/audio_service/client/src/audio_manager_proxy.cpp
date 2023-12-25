@@ -36,17 +36,13 @@ int32_t AudioManagerProxy::SetMicrophoneMute(bool isMute)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "AudioManagerProxy: WriteInterfaceToken failed");
     data.WriteBool(isMute);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_MICROPHONE_MUTE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetMicrophoneMute failed, error: %d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "SetMicrophoneMute failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     return result;
@@ -58,19 +54,15 @@ int32_t AudioManagerProxy::SetVoiceVolume(float volume)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteFloat(volume);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_VOICE_VOLUME), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetVoiceVolume failed, error: %d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
+        "SetVoiceVolume failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     return result;
@@ -82,19 +74,14 @@ int32_t AudioManagerProxy::OffloadSetVolume(float volume)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteFloat(volume);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OffloadSetVolume failed, error: %d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadSetVolume failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     return result;
@@ -106,17 +93,12 @@ int32_t AudioManagerProxy::OffloadDrain()
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_DRAIN), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OffloadDrain failed, error: %d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadDrain failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     return result;
@@ -188,17 +170,12 @@ int32_t AudioManagerProxy::OffloadGetPresentationPosition(uint64_t& frames, int6
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_GET_PRESENTATION_POSITION), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OffloadGetPresentationPosition failed, error: %d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadGetPresentationPosition failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     frames = reply.ReadUint64();
@@ -215,19 +192,14 @@ int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteUint32(sizeMs);
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_BUFFER_SIZE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("OffloadSetBufferSize failed, error: %d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OffloadSetBufferSize failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     return result;
@@ -239,20 +211,15 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activ
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(audioScene));
     data.WriteInt32(static_cast<int32_t>(activeDevice));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetAudioScene failed, error: %d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SetAudioScene failed, error: %d", error);
 
     int32_t result = reply.ReadInt32();
     return result;
@@ -264,10 +231,8 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return "";
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, "", "WriteInterfaceToken failed");
     data.WriteString(static_cast<std::string>(key));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER), data, reply, option);
@@ -288,10 +253,8 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string& networ
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return "";
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, "", "WriteInterfaceToken failed");
     data.WriteString(static_cast<std::string>(networkId));
     data.WriteInt32(static_cast<int32_t>(key));
     data.WriteString(static_cast<std::string>(condition));
@@ -313,18 +276,13 @@ void AudioManagerProxy::SetAudioParameter(const std::string &key, const std::str
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     data.WriteString(static_cast<std::string>(key));
     data.WriteString(static_cast<std::string>(value));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_PARAMETER), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "Get audio parameter failed, error: %d", error);
 }
 
 void AudioManagerProxy::SetAudioParameter(const std::string& networkId, const AudioParamKey key,
@@ -334,20 +292,15 @@ void AudioManagerProxy::SetAudioParameter(const std::string& networkId, const Au
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     data.WriteString(static_cast<std::string>(networkId));
     data.WriteInt32(static_cast<int32_t>(key));
     data.WriteString(static_cast<std::string>(condition));
     data.WriteString(static_cast<std::string>(value));
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_REMOTE_AUDIO_PARAMETER), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "Get audio parameter failed, error: %d", error);
 }
 
 uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
@@ -357,20 +310,15 @@ uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole d
     MessageOption option;
     uint32_t transactionId = 0;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return transactionId;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, transactionId, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(deviceType));
     data.WriteInt32(static_cast<int32_t>(deviceRole));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_TRANSACTION_ID), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("get transaction id failed, error: %d", error);
-        return transactionId;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, transactionId, "get transaction id failed, error: %d", error);
 
     transactionId = reply.ReadUint64();
 
@@ -383,18 +331,13 @@ void AudioManagerProxy::NotifyDeviceInfo(std::string networkId, bool connected)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     data.WriteString(networkId);
     data.WriteBool(connected);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "Get audio parameter failed, error: %d", error);
 }
 
 int32_t AudioManagerProxy::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
@@ -403,42 +346,32 @@ int32_t AudioManagerProxy::CheckRemoteDeviceState(std::string networkId, DeviceR
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return ERR_TRANSACTION_FAILED;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_TRANSACTION_FAILED, "WriteInterfaceToken failed");
     data.WriteString(networkId);
     data.WriteInt32(static_cast<int32_t>(deviceRole));
     data.WriteBool(isStartDevice);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_REMOTE_DEVICE_STATE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("CheckRemoteDeviceState failed in proxy, error: %d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "CheckRemoteDeviceState failed in proxy, error: %d", error);
     return reply.ReadInt32();
 }
 
 int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 {
-    AUDIO_DEBUG_LOG("[%{public}s]", __func__);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
     data.WriteInt32(type);
     data.WriteInt32(flag);
 
     auto error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTE_REQ), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UpdateActiveDeviceRoute failed, error: %{public}d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "UpdateActiveDeviceRoute failed, error: %{public}d", error);
 
     auto result = reply.ReadInt32();
     AUDIO_DEBUG_LOG("[UPDATE_ROUTE_REQ] result %{public}d", result);
@@ -451,22 +384,16 @@ int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& objec
     MessageParcel reply;
     MessageOption option;
 
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioManagerProxy: SetParameterCallback object is null");
-        return ERR_NULL_OBJECT;
-    }
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "object is null");
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetParameterCallback failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "SetParameterCallback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -477,22 +404,15 @@ int32_t AudioManagerProxy::RegiestPolicyProvider(const sptr<IRemoteObject> &obje
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
 
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioManagerProxy: RegiestPolicyProvider object is null");
-        return ERR_NULL_OBJECT;
-    }
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER), data,
         reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RegiestPolicyProvider failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "RegiestPolicyProvider failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -503,22 +423,15 @@ int32_t AudioManagerProxy::SetWakeupSourceCallback(const sptr<IRemoteObject>& ob
     MessageParcel reply;
     MessageOption option;
 
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("SetWakeupCloseCallback object is null");
-        return ERR_NULL_OBJECT;
-    }
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetWakeupCloseCallback failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "SetWakeupCloseCallback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -529,17 +442,12 @@ void AudioManagerProxy::SetAudioMonoState(bool audioMono)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     (void)data.WriteBool(audioMono);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_MONO_STATE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetAudioMonoState failed, error: %{public}d", error);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetAudioMonoState failed, error: %{public}d", error);
 }
 
 void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
@@ -548,17 +456,12 @@ void AudioManagerProxy::SetAudioBalanceValue(float audioBalance)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     (void)data.WriteFloat(audioBalance);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_BALANCE_VALUE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetAudioBalanceValue failed, error: %{public}d", error);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetAudioBalanceValue failed, error: %{public}d", error);
 }
 
 sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConfig &config)
@@ -567,17 +470,12 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return nullptr;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, nullptr, "WriteInterfaceToken failed");
     ProcessConfig::WriteConfigToParcel(config, data);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("CreateAudioProcess failed, error: %{public}d", error);
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, nullptr, "CreateAudioProcess failed, error: %{public}d", error);
     sptr<IRemoteObject> process = reply.ReadRemoteObject();
     return process;
 }
@@ -589,10 +487,8 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
 
     MessageParcel dataParcel, replyParcel;
     MessageOption option;
-    if (!dataParcel.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return false;
-    }
+    bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
 
     int32_t countLib = libraries.size();
     int32_t countEff = effects.size();
@@ -612,16 +508,11 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES), dataParcel, replyParcel, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("LoadAudioEffectLibraries failed, error: %{public}d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "LoadAudioEffectLibraries failed, error: %{public}d", error);
         
     int32_t successEffSize = replyParcel.ReadInt32();
-    if ((successEffSize < 0) || (successEffSize > AUDIO_EFFECT_COUNT_UPPER_LIMIT)) {
-        AUDIO_ERR_LOG("LOAD_AUDIO_EFFECT_LIBRARIES read replyParcel failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG((successEffSize >= 0) && (successEffSize <= AUDIO_EFFECT_COUNT_UPPER_LIMIT),
+        false, "LOAD_AUDIO_EFFECT_LIBRARIES read replyParcel failed");
 
     for (i = 0; i < successEffSize; i++) {
         string effectName = replyParcel.ReadString();
@@ -638,18 +529,13 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     (void)data.WriteUint32(tid);
     (void)data.WriteString(bundleName);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::REQUEST_THREAD_PRIORITY), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("RequestThreadPriority failed, error: %{public}d", error);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "RequestThreadPriority failed, error: %{public}d", error);
 }
 
 bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
@@ -659,10 +545,9 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
 
     MessageParcel dataParcel, replyParcel;
     MessageOption option;
-    if (!dataParcel.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return false;
-    }
+
+    bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
 
     int32_t countEffectChains = effectChains.size();
     std::vector<int32_t> listCountEffects;
@@ -692,10 +577,8 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER),
         dataParcel, replyParcel, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("CreateAudioEffectChainManager failed, error: %{public}d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
+        "CreateAudioEffectChainManager failed, error: %{public}d", error);
     return true;
 }
 
@@ -705,19 +588,15 @@ bool AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sin
 
     MessageParcel dataParcel, replyParcel;
     MessageOption option;
-    if (!dataParcel.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioManagerProxy: WriteInterfaceToken failed");
-        return false;
-    }
+    bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     dataParcel.WriteInt32(deviceType);
     dataParcel.WriteString(sinkName);
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK), dataParcel, replyParcel, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetOutputDeviceSink failed, error: %{public}d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
+        "SetOutputDeviceSink failed, error: %{public}d", error);
     return true;
 }
 
@@ -727,17 +606,13 @@ bool AudioManagerProxy::CreatePlaybackCapturerManager()
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("CreatePlaybackCapturerManager: WriteInterfaceToken failed");
-        return false;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("CreatePlaybackCapturerManager failed, error: %{public}d", error);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
+        "CreatePlaybackCapturerManager failed, error: %{public}d", error);
 
     return reply.ReadBool();
 }
@@ -749,10 +624,8 @@ int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("SetSupportStreamUsage: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     int32_t cnt = (int32_t)usage.size();
     data.WriteInt32(cnt);
@@ -762,10 +635,8 @@ int32_t AudioManagerProxy::SetSupportStreamUsage(std::vector<int32_t> usage)
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_SUPPORT_STREAM_USAGE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetSupportStreamUsage failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "SetSupportStreamUsage failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -777,18 +648,14 @@ int32_t AudioManagerProxy::SetCaptureSilentState(bool state)
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("SetCaptureSilentState: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(state));
     error = Remote()->SendRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_SILENT_STATE),
         data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SetCaptureSilentState failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "SetCaptureSilentState failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 
@@ -812,6 +679,7 @@ int32_t AudioManagerProxy::NotifyStreamVolumeChanged(AudioStreamType streamType,
         AUDIO_ERR_LOG("NotifyStreamVolumeChanged failed, error: %{public}d", error);
         return error;
     }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "NotifyStreamVolumeChanged failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 
@@ -822,19 +690,15 @@ int32_t AudioManagerProxy::UpdateSpatializationState(AudioSpatializationState sp
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("UpdateSpatializationState: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteBool(spatializationState.spatializationEnabled);
     data.WriteBool(spatializationState.headTrackingEnabled);
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UpdateSpatializationState failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "UpdateSpatializationState failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }

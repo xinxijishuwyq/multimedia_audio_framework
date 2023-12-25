@@ -251,7 +251,7 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
 
 int32_t FastAudioRendererSinkInner::InitAudioManager()
 {
-    AUDIO_INFO_LOG("FastAudioRendererSink: Initialize audio proxy manager");
+    AUDIO_INFO_LOG("Initialize audio proxy manager");
 
     audioManager_ = IAudioManagerGet(false);
     if (audioManager_ == nullptr) {
@@ -282,10 +282,7 @@ uint32_t PcmFormatToBits(HdiAdapterFormat format)
 int32_t FastAudioRendererSinkInner::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
     uint32_t &byteSizePerFrame)
 {
-    if (bufferFd_ == INVALID_FD) {
-        AUDIO_ERR_LOG("buffer fd has been released!");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(bufferFd_ != INVALID_FD, ERR_INVALID_HANDLE, "buffer fd has been released!");
     fd = bufferFd_;
     totalSizeInframe = bufferTotalFrameSize_;
     spanSizeInframe = eachReadFrameSize_;
@@ -295,17 +292,11 @@ int32_t FastAudioRendererSinkInner::GetMmapBufferInfo(int &fd, uint32_t &totalSi
 
 int32_t FastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("Audio render is null!");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Audio render is null!");
 
     struct AudioTimeStamp timestamp = {};
     int32_t ret = audioRender_->GetMmapPosition(audioRender_, &frames, &timestamp);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("Hdi GetMmapPosition filed, ret:%{public}d!", ret);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Hdi GetMmapPosition filed, ret:%{public}d!", ret);
 #ifdef DEBUG_DIRECT_USE_HDI
     alreadyReadFrames_ = frames; // frames already read.
     curReadPos_ = frameSizeInByte_ * (frames - bufferTotalFrameSize_ * (frames / bufferTotalFrameSize_));
@@ -316,12 +307,10 @@ int32_t FastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames, int6
 #endif
 
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it.
-    if (timestamp.tvSec < 0 || timestamp.tvSec > maxSec || timestamp.tvNSec < 0 ||
-        timestamp.tvNSec > SECOND_TO_NANOSECOND) {
-        AUDIO_ERR_LOG("Hdi GetMmapPosition get invaild second:%{public}" PRId64 " or nanosecond:%{public}" PRId64 " !",
-            timestamp.tvSec, timestamp.tvNSec);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(timestamp.tvSec >= 0 && timestamp.tvSec <= maxSec && timestamp.tvNSec >= 0 &&
+        timestamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
+        "Hdi GetMmapPosition get invaild second:%{public}" PRId64 " or nanosecond:%{public}" PRId64 " !",
+        timestamp.tvSec, timestamp.tvNSec);
     timeSec = timestamp.tvSec;
     timeNanoSec = timestamp.tvNSec;
 
@@ -358,36 +347,28 @@ int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
 
     struct AudioMmapBufferDescriptor desc = {0};
     int32_t ret = audioRender_->ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("ReqMmapBuffer failed, ret:%{public}d", ret);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "ReqMmapBuffer failed, ret:%{public}d", ret);
     AUDIO_INFO_LOG("AudioMmapBufferDescriptor memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"
         "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]", desc.memoryAddress,
         desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
 
     bufferFd_ = desc.memoryFd; // fcntl(fd, 1030,3) after dup?
     int32_t periodFrameMaxSize = 1920000; // 192khz * 10s
-    if (desc.totalBufferFrames < 0 || desc.transferFrameSize < 0 || desc.transferFrameSize > periodFrameMaxSize) {
-        AUDIO_ERR_LOG("ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
-            desc.totalBufferFrames, desc.transferFrameSize);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(desc.totalBufferFrames >= 0 && desc.transferFrameSize >= 0 &&
+        desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
+        "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
+        desc.totalBufferFrames, desc.transferFrameSize);
     bufferTotalFrameSize_ = desc.totalBufferFrames; // 1440 ~ 3840
     eachReadFrameSize_ = desc.transferFrameSize; // 240
 
-    if (frameSizeInByte_ > ULLONG_MAX / bufferTotalFrameSize_) {
-        AUDIO_ERR_LOG("BufferSize will overflow!");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
+        "BufferSize will overflow!");
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte_;
 #ifdef DEBUG_DIRECT_USE_HDI
     privFd_ = dup(bufferFd_);
     bufferAddresss_ = (char *)mmap(nullptr, bufferSize_, PROT_READ | PROT_WRITE, MAP_SHARED, privFd_, 0);
-    if (bufferAddresss_ == nullptr || bufferAddresss_ == MAP_FAILED) {
-        AUDIO_ERR_LOG("mmap buffer failed!");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(bufferAddresss_ != nullptr && bufferAddresss_ != MAP_FAILED, ERR_OPERATION_FAILED,
+        "mmap buffer failed!");
 #endif
     return SUCCESS;
 }
@@ -464,53 +445,35 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
 
 int32_t FastAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
-    AUDIO_INFO_LOG("Init.");
+    AUDIO_INFO_LOG("FastAudioRendererSinkInner::Init");
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;  // Set sound card information
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
-    if (InitAudioManager() != 0) {
-        AUDIO_ERR_LOG("Init audio manager Fail");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_NOT_STARTED, "Init audio manager Fail");
 
     uint32_t size = MAX_AUDIO_ADAPTER_NUM;
     AudioAdapterDescriptor descs[MAX_AUDIO_ADAPTER_NUM];
     int32_t ret = audioManager_->GetAllAdapters(audioManager_,
         (struct AudioAdapterDescriptor *)&descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || ret != 0) {
-        AUDIO_ERR_LOG("Get adapters Fail");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(size <= MAX_AUDIO_ADAPTER_NUM && size != 0 && ret == 0, ERR_NOT_STARTED,
+        "Get adapters Fail");
 
     int32_t index = SwitchAdapterRender((struct AudioAdapterDescriptor *)&descs, adapterNameCase_, port, audioPort_,
         size);
-    if (index < 0) {
-        AUDIO_ERR_LOG("Switch Adapter Fail");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(index >= 0, ERR_NOT_STARTED, "Switch Adapter Fail");
 
     adapterDesc_ = descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("Load Adapter Fail");
-        return ERR_NOT_STARTED;
-    }
-    if (audioAdapter_ == nullptr) {
-        AUDIO_ERR_LOG("Load audio device failed");
-        return ERR_NOT_STARTED;
-    }
+    int32_t result = audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_);
+    CHECK_AND_RETURN_RET_LOG(result == 0, ERR_NOT_STARTED, "Load Adapter Fail");
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device failed");
 
     // Initialization port information, can fill through mode and other parameters
     ret = audioAdapter_->InitAllPorts(audioAdapter_);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("InitAllPorts failed");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "InitAllPorts failed");
 
-    if (CreateRender(audioPort_) != SUCCESS || PrepareMmapBuffer() != SUCCESS) {
-        AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(CreateRender(audioPort_) == SUCCESS && PrepareMmapBuffer() == SUCCESS,
+        ERR_NOT_STARTED, "Create render failed, Audio Port: %{public}d", audioPort_.portId);
 
     rendererInited_ = true;
 
@@ -526,10 +489,7 @@ void FastAudioRendererSinkInner::PreparePosition()
     int64_t timeNanoSec = 0;
     GetMmapHandlePosition(frames, timeSec, timeNanoSec); // get first start position
     int32_t periodByteSize = eachReadFrameSize_ * frameSizeInByte_;
-    if (periodByteSize * writeAheadPeriod_ > ULLONG_MAX - curReadPos_) {
-        AUDIO_ERR_LOG("TempPos will overflow!");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(periodByteSize * writeAheadPeriod_ <= ULLONG_MAX - curReadPos_, "TempPos will overflow!");
     size_t tempPos = curReadPos_ + periodByteSize * writeAheadPeriod_; // 1 period ahead
     curWritePos_ = (tempPos < bufferSize_ ? tempPos : tempPos - bufferSize_);
     AUDIO_INFO_LOG("First render frame start with curReadPos_[%{public}d] curWritePos_[%{public}d]", curReadPos_,
@@ -541,10 +501,7 @@ int32_t FastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 {
 #ifdef DEBUG_DIRECT_USE_HDI
     int64_t stamp = ClockTime::GetCurNano();
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("Audio Render Handle is nullptr!");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Audio Render Handle is nullptr!");
 
     if (len > (bufferSize_ - eachReadFrameSize_ * frameSizeInByte_ * writeAheadPeriod_)) {
         writeLen = 0;
@@ -619,25 +576,20 @@ int32_t FastAudioRendererSinkInner::CheckPositionTime()
 
 int32_t FastAudioRendererSinkInner::Start(void)
 {
-    AUDIO_INFO_LOG("Start.");
+    AUDIO_INFO_LOG("FastAudioRendererSinkInner::Start");
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("FastAudioRendererSink::Start audioRender_ null!");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "FastAudioRendererSink::Start audioRender_ null!");
 
     if (!started_) {
         ret = audioRender_->Start(audioRender_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("FastAudioRendererSink::Start failed!");
-            return ERR_NOT_STARTED;
-        }
-        if (CheckPositionTime() != SUCCESS) {
-            AUDIO_ERR_LOG("FastAudioRendererSink::CheckPositionTime failed!");
-            return ERR_NOT_STARTED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED,
+            "FastAudioRendererSink::Start failed!");
+        int32_t err = CheckPositionTime();
+        CHECK_AND_RETURN_RET_LOG(err == SUCCESS, ERR_NOT_STARTED,
+            "FastAudioRendererSink::CheckPositionTime failed!");
     }
 #ifdef FEATURE_POWER_MANAGER
     KeepRunningLock();
@@ -671,7 +623,7 @@ void FastAudioRendererSinkInner::KeepRunningUnlock()
         AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock UnLock");
         keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("Fast: keepRunningLock_ is null, playback can not work well!");
+        AUDIO_WARNING_LOG("Fast: keepRunningLock_ is null, playback can not work well!");
     }
 }
 #endif
@@ -682,10 +634,8 @@ int32_t FastAudioRendererSinkInner::SetVolume(float left, float right)
     int32_t ret;
     float volume;
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("FastAudioRendererSink::SetVolume failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "FastAudioRendererSink::SetVolume failed audioRender_ null");
 
     leftVolume_ = left;
     rightVolume_ = right;
@@ -776,15 +726,11 @@ int32_t FastAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t FastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("FastAudioRendererSink: GetLatency failed audio render null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "GetLatency failed audio render null");
 
-    if (!latency) {
-        AUDIO_ERR_LOG("FastAudioRendererSink: GetLatency failed latency null");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(latency, ERR_INVALID_PARAM,
+        "GetLatency failed latency null");
 
     uint32_t hdiLatency;
     if (audioRender_->GetLatency(audioRender_, &hdiLatency) == 0) {
@@ -799,20 +745,16 @@ int32_t FastAudioRendererSinkInner::Stop(void)
 {
     AUDIO_INFO_LOG("Stop.");
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("FastAudioRendererSink::Stop failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "Stop failed audioRender_ null");
 #ifdef FEATURE_POWER_MANAGER
     KeepRunningUnlock();
 #endif
 
     if (started_) {
         int32_t ret = audioRender_->Stop(audioRender_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("FastAudioRendererSink::Stop failed! ret: %{public}d.", ret);
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
+            "Stop failed! ret: %{public}d.", ret);
     }
     started_ = false;
 
@@ -823,22 +765,16 @@ int32_t FastAudioRendererSinkInner::Pause(void)
 {
     int32_t ret;
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("FastAudioRendererSink::Pause failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "Pause failed audioRender_ null");
 
-    if (!started_) {
-        AUDIO_ERR_LOG("FastAudioRendererSink::Pause invalid state!");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED,
+        "Pause invalid state!");
 
     if (!paused_) {
         ret = audioRender_->Pause(audioRender_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("FastAudioRendererSink::Pause failed!");
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
+            "Pause failed!");
     }
     paused_ = true;
 
@@ -849,22 +785,16 @@ int32_t FastAudioRendererSinkInner::Resume(void)
 {
     int32_t ret;
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("FastAudioRendererSink::Resume failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "Resume failed audioRender_ null");
 
-    if (!started_) {
-        AUDIO_ERR_LOG("FastAudioRendererSink::Resume invalid state!");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED,
+        "Resume invalid state!");
 
     if (paused_) {
         ret = audioRender_->Resume(audioRender_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("FastAudioRendererSink::Resume failed!");
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
+            "Resume failed!");
     }
     paused_ = false;
 
@@ -877,10 +807,9 @@ int32_t FastAudioRendererSinkInner::Reset(void)
 
     if (started_ && audioRender_ != nullptr) {
         ret = audioRender_->Flush(audioRender_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("FastAudioRendererSink::Reset failed!");
-            return ERR_OPERATION_FAILED;
-        }
+
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
+            "Reset failed!");
     }
 
     return SUCCESS;
@@ -892,10 +821,8 @@ int32_t FastAudioRendererSinkInner::Flush(void)
 
     if (started_ && audioRender_ != nullptr) {
         ret = audioRender_->Flush(audioRender_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("FastAudioRendererSink::Flush failed!");
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
+            "Flush failed!");
     }
 
     return SUCCESS;

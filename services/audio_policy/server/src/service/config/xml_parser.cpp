@@ -25,10 +25,7 @@ bool XMLParser::LoadConfiguration()
 {
     AUDIO_INFO_LOG("start LoadConfiguration");
     mDoc = xmlReadFile(CONFIG_FILE, nullptr, 0);
-    if (mDoc == nullptr) {
-        AUDIO_ERR_LOG("xmlReadFile Failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(mDoc != nullptr, false, "xmlReadFile Failed");
 
     return true;
 }
@@ -36,10 +33,7 @@ bool XMLParser::LoadConfiguration()
 bool XMLParser::Parse()
 {
     xmlNode *root = xmlDocGetRootElement(mDoc);
-    if (root == nullptr) {
-        AUDIO_ERR_LOG("xmlDocGetRootElement Failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(root != nullptr, false, "xmlDocGetRootElement Failed");
 
     if (!ParseInternal(*root)) {
         return false;
@@ -101,10 +95,7 @@ void XMLParser::ParseDeviceClass(xmlNode &node)
     modulesNode = node.xmlChildrenNode;
 
     std::string className = ExtractPropertyValue("name", node);
-    if (className.empty()) {
-        AUDIO_ERR_LOG("No name provided for the device class %{public}s", node.name);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(!className.empty(), "No name provided for the device class %{public}s", node.name);
 
     deviceClassType_ = GetDeviceClassType(className);
     xmlParsedDataMap_[deviceClassType_] = {};

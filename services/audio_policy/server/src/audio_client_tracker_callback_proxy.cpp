@@ -26,16 +26,14 @@ void AudioClientTrackerCallbackProxy::PausedStreamImpl(
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: PausedStreamImpl WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
     int error = Remote()->SendRequest(PAUSEDSTREAM, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("PausedStreamImpl failed, error: %{public}d", error);
+        AUDIO_WARNING_LOG("PausedStreamImpl failed, error: %{public}d", error);
     }
 }
 
@@ -45,16 +43,14 @@ void AudioClientTrackerCallbackProxy::ResumeStreamImpl(
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: ResumeStreamImpl WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.streamSetState));
     data.WriteInt32(static_cast<int32_t>(streamSetStateEventInternal.audioStreamType));
     int error = Remote()->SendRequest(RESUMESTREAM, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("ResumeStreamImpl failed, error: %{public}d", error);
+        AUDIO_WARNING_LOG("ResumeStreamImpl failed, error: %{public}d", error);
     }
 }
 
@@ -63,15 +59,13 @@ void AudioClientTrackerCallbackProxy::SetLowPowerVolumeImpl(float volume)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
 
     data.WriteFloat(static_cast<float>(volume));
     int error = Remote()->SendRequest(SETLOWPOWERVOL, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SETLOWPOWERVOL failed, error: %{public}d", error);
+        AUDIO_WARNING_LOG("SETLOWPOWERVOL failed, error: %{public}d", error);
     }
 }
 
@@ -80,14 +74,12 @@ void AudioClientTrackerCallbackProxy::GetLowPowerVolumeImpl(float &volume)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
 
     int error = Remote()->SendRequest(GETLOWPOWERVOL, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("GETLOWPOWERVOL failed, error: %{public}d", error);
+        AUDIO_WARNING_LOG("GETLOWPOWERVOL failed, error: %{public}d", error);
     }
 
     volume = reply.ReadFloat();
@@ -98,14 +90,12 @@ void AudioClientTrackerCallbackProxy::GetSingleStreamVolumeImpl(float &volume)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
 
     int error = Remote()->SendRequest(GETSINGLESTREAMVOL, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("GETSINGLESTREAMVOL failed, error: %{public}d", error);
+        AUDIO_WARNING_LOG("GETSINGLESTREAMVOL failed, error: %{public}d", error);
     }
 
     volume = reply.ReadFloat();
@@ -116,17 +106,15 @@ void AudioClientTrackerCallbackProxy::SetOffloadModeImpl(int32_t state, bool isA
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
-        return;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(state));
     data.WriteBool(static_cast<bool>(isAppBack));
-    
+
     int error = Remote()->SendRequest(SETOFFLOADMODE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("SETOFFLOADMODE failed, error: %{public}d", error);
+        AUDIO_WARNING_LOG("SETOFFLOADMODE failed, error: %{public}d", error);
     }
 }
 
@@ -135,26 +123,22 @@ void AudioClientTrackerCallbackProxy::UnsetOffloadModeImpl()
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioClientTrackerCallbackProxy: WriteInterfaceToken failed");
-        return;
-    }
-    
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
     int error = Remote()->SendRequest(UNSETOFFLOADMODE, data, reply, option);
     if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UNSETOFFLOADMODE failed, error: %{public}d", error);
+        AUDIO_WARNING_LOG("UNSETOFFLOADMODE failed, error: %{public}d", error);
     }
 }
 
 ClientTrackerCallbackListener::ClientTrackerCallbackListener(const sptr<IStandardClientTracker> &listener)
     : listener_(listener)
 {
-    AUDIO_DEBUG_LOG("ClientTrackerCallbackListener");
 }
 
 ClientTrackerCallbackListener::~ClientTrackerCallbackListener()
 {
-    AUDIO_DEBUG_LOG("ClientTrackerCallbackListener destructor");
 }
 
 

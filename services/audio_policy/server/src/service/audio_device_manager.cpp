@@ -44,10 +44,7 @@ void AudioDeviceManager::ParseDeviceXml()
 void AudioDeviceManager::OnXmlParsingCompleted(
     const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData)
 {
-    if (xmlData.empty()) {
-        AUDIO_ERR_LOG("Failed to parse xml file.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(!xmlData.empty(), "Failed to parse xml file.");
 
     devicePrivacyMaps_ = xmlData;
 

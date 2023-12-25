@@ -42,10 +42,8 @@ int32_t AudioRoutingManager::SetMicStateChangeCallback(
 {
     AudioSystemManager* audioSystemManager = AudioSystemManager::GetInstance();
     std::shared_ptr<AudioGroupManager> groupManager = audioSystemManager->GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
-    if (groupManager == nullptr) {
-        AUDIO_ERR_LOG("setMicrophoneMuteCallback falied, groupManager is null");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(groupManager != nullptr, ERR_INVALID_PARAM,
+        "setMicrophoneMuteCallback falied, groupManager is null");
     return groupManager->SetMicStateChangeCallback(callback);
 }
 
@@ -73,10 +71,7 @@ int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendere
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("SetPreferredOutputDeviceChangeCallback: callback is nullptr");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     int32_t clientId = static_cast<int32_t>(GetCallingPid());
     return AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(clientId, callback);
@@ -86,10 +81,7 @@ int32_t AudioRoutingManager::SetPreferredInputDeviceChangeCallback(AudioCapturer
     const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("SetPreferredInputDeviceChangeCallback: callback is nullptr");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     return AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(callback);
 }

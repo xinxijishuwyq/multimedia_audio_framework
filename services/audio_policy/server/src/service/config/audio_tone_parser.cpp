@@ -30,10 +30,8 @@ int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
     AUDIO_ERR_LOG("AudioToneParser::LoadConfig");
-    if ((doc = xmlReadFile(AUDIO_TONE_CONFIG_FILE, nullptr, 0)) == nullptr) {
-        AUDIO_ERR_LOG("error: could not parse file %s", AUDIO_TONE_CONFIG_FILE);
-        return ERROR;
-    }
+    doc = xmlReadFile(AUDIO_TONE_CONFIG_FILE, nullptr, 0);
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, ERROR, "error: could not parse file %s", AUDIO_TONE_CONFIG_FILE);
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");
@@ -65,7 +63,7 @@ int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<
         }
     }
     if (currNode == nullptr) {
-        AUDIO_ERR_LOG("Missing tag - Tones, ToneInfo: %s", AUDIO_TONE_CONFIG_FILE);
+        AUDIO_WARNING_LOG("Missing tag - Tones, ToneInfo: %s", AUDIO_TONE_CONFIG_FILE);
     }
     xmlFreeDoc(doc);
     xmlCleanupParser();

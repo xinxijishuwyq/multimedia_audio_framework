@@ -122,14 +122,11 @@ int32_t AudioRendererFileSink::Init(const IAudioSinkAttr &attr)
 
 int32_t AudioRendererFileSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    if (filePtr_ == nullptr) {
-        AUDIO_ERR_LOG("Invalid file ptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(filePtr_ != nullptr, ERROR, "Invalid file ptr");
 
     size_t writeResult = fwrite(static_cast<void*>(&data), 1, len, filePtr_);
     if (writeResult != len) {
-        AUDIO_ERR_LOG("Failed to write the file.");
+        AUDIO_WARNING_LOG("Failed to write the file.");
     }
 
     writeLen = writeResult;
@@ -150,10 +147,8 @@ int32_t AudioRendererFileSink::Start(void)
     }
 
     if (filePtr_ == nullptr) {
-        if ((filePath_.length() >= PATH_MAX) || (realpath(rootPath.c_str(), realPath) == nullptr)) {
-            AUDIO_ERR_LOG("AudioRendererFileSink:: Invalid path  errno = %{public}d", errno);
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG((filePath_.length() < PATH_MAX) && (realpath(rootPath.c_str(), realPath) != nullptr),
+            ERROR, "AudioRendererFileSink:: Invalid path  errno = %{public}d", errno);
 
         std::string verifiedPath(realPath);
         filePtr_ = fopen(verifiedPath.append(fileName).c_str(), "wb+");

@@ -31,7 +31,7 @@ AudioStreamTracker::~AudioStreamTracker() {}
 void AudioStreamTracker::RegisterTracker(const AudioRegisterTrackerInfo &registerTrackerInfo,
     const std::shared_ptr<AudioClientTracker> &clientTrackerObj)
 {
-    AUDIO_DEBUG_LOG("AudioStreamtracker:Register tracker entered");
+    AUDIO_DEBUG_LOG("Register tracker entered");
     AudioStreamChangeInfo streamChangeInfo;
 
     state_ = registerTrackerInfo.state;
@@ -57,11 +57,11 @@ void AudioStreamTracker::RegisterTracker(const AudioRegisterTrackerInfo &registe
 void AudioStreamTracker::UpdateTracker(const int32_t sessionId, const State state, const int32_t clientPid,
     const AudioRendererInfo &rendererInfo, const AudioCapturerInfo &capturerInfo)
 {
-    AUDIO_DEBUG_LOG("AudioStreamtracker:Update tracker entered");
+    AUDIO_DEBUG_LOG("Update tracker entered");
     AudioStreamChangeInfo streamChangeInfo;
 
     if (state_ == INVALID || state_ == state) {
-        AUDIO_DEBUG_LOG("AudioStreamtracker:Update tracker is called in wrong state/same state");
+        AUDIO_DEBUG_LOG("Update tracker is called in wrong state/same state");
         return;
     }
 

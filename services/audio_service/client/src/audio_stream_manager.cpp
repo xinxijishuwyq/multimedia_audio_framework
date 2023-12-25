@@ -33,34 +33,28 @@ AudioStreamManager *AudioStreamManager::GetInstance()
 int32_t AudioStreamManager::RegisterAudioRendererEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioRendererStateChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("RegisterAudioRendererEventListener client id: %{public}d", clientPid);
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("callback is null");
-        return ERR_INVALID_PARAM;
-    }
+    AUDIO_INFO_LOG("client id: %{public}d", clientPid);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
     return AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(clientPid, callback);
 }
 
 int32_t AudioStreamManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
-    AUDIO_INFO_LOG("UnregisterAudioRendererEventListener client id: %{public}d", clientPid);
+    AUDIO_INFO_LOG("client id: %{public}d", clientPid);
     return AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(clientPid);
 }
 
 int32_t AudioStreamManager::RegisterAudioCapturerEventListener(const int32_t clientPid,
     const std::shared_ptr<AudioCapturerStateChangeCallback> &callback)
 {
-    AUDIO_INFO_LOG("RegisterAudioCapturerEventListener client id: %{public}d", clientPid);
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("callback is null");
-        return ERR_INVALID_PARAM;
-    }
+    AUDIO_INFO_LOG("client id: %{public}d", clientPid);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
     return AudioPolicyManager::GetInstance().RegisterAudioCapturerEventListener(clientPid, callback);
 }
 
 int32_t AudioStreamManager::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
-    AUDIO_INFO_LOG("UnregisterAudioCapturerEventListener client id: %{public}d", clientPid);
+    AUDIO_INFO_LOG("client id: %{public}d", clientPid);
     return AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientPid);
 }
 
@@ -144,12 +138,11 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
             break;
-        case STREAM_ULTRASONIC:
-            if (!PermissionUtil::VerifySelfPermission()) {
-                AUDIO_ERR_LOG("IsStreamActive: volumeType=%{public}d. No system permission", volumeType);
-                return false;
-            }
+        case STREAM_ULTRASONIC:{
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, false, "volumeType=%{public}d. No system permission", volumeType);
             break;
+        }
         case STREAM_ALL:
         default:
             AUDIO_ERR_LOG("IsStreamActive: volumeType=%{public}d not supported", volumeType);

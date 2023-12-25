@@ -174,7 +174,7 @@ int32_t BluetoothRendererSinkInner::SetOutputRoute(DeviceType deviceType)
 void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
-    AUDIO_INFO_LOG("SetAudioParameter: key %{public}d, condition: %{public}s, value: %{public}s", key,
+    AUDIO_INFO_LOG("key %{public}d, condition: %{public}s, value: %{public}s", key,
         condition.c_str(), value.c_str());
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("SetAudioParameter for render failed, audioRender_ is null");
@@ -182,7 +182,7 @@ void BluetoothRendererSinkInner::SetAudioParameter(const AudioParamKey key, cons
     } else {
         int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("SetAudioParameter for render failed, error code: %d", ret);
+            AUDIO_WARNING_LOG("SetAudioParameter for render failed, error code: %d", ret);
         }
     }
 }
@@ -243,9 +243,7 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapte
     enum AudioPortDirection portFlag, struct AudioPort &renderPort, int32_t size)
 {
     AUDIO_INFO_LOG("SwitchAdapter: adapterNameCase: %{public}s", adapterNameCase.c_str());
-    if (descs == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET(descs != nullptr, ERROR);
 
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
@@ -271,7 +269,7 @@ static int32_t SwitchAdapter(struct AudioAdapterDescriptor *descs, string adapte
 
 int32_t BluetoothRendererSinkInner::InitAudioManager()
 {
-    AUDIO_INFO_LOG("InitAudioManager: Initialize audio proxy manager");
+    AUDIO_INFO_LOG("Initialize audio proxy manager");
 
 #ifdef __aarch64__
     char resolvedPath[100] = "/vendor/lib64/chipsetsdk/libaudio_bluetooth_hdi_proxy_server.z.so";
@@ -281,22 +279,15 @@ int32_t BluetoothRendererSinkInner::InitAudioManager()
     struct AudioProxyManager *(*getAudioManager)() = nullptr;
 
     handle_ = dlopen(resolvedPath, 1);
-    if (handle_ == nullptr) {
-        AUDIO_ERR_LOG("Open so Fail");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(handle_ != nullptr, ERR_INVALID_HANDLE, "Open so Fail");
     AUDIO_DEBUG_LOG("dlopen successful");
 
     getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
-    if (getAudioManager == nullptr) {
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET(getAudioManager != nullptr, ERR_INVALID_HANDLE);
     AUDIO_DEBUG_LOG("getaudiomanager done");
 
     audioManager_ = getAudioManager();
-    if (audioManager_ == nullptr) {
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET(audioManager_ != nullptr, ERR_INVALID_HANDLE);
     AUDIO_DEBUG_LOG("audio manager created");
 
     return 0;
@@ -381,44 +372,30 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
     string adapterNameCase = "bt_a2dp";  // Set sound card information
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
-    if (InitAudioManager() != 0) {
-        AUDIO_ERR_LOG("Init audio manager Fail");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_NOT_STARTED,
+        "Init audio manager Fail");
 
     int32_t size = 0;
     struct AudioAdapterDescriptor *descs = nullptr;
     int32_t ret = audioManager_->GetAllAdapters(audioManager_, &descs, &size);
-    if (size > MAX_AUDIO_ADAPTER_NUM || size == 0 || descs == nullptr || ret != 0) {
-        AUDIO_ERR_LOG("Get adapters Fail");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(size <= MAX_AUDIO_ADAPTER_NUM && size != 0 && descs != nullptr && ret == 0,
+        ERR_NOT_STARTED, "Get adapters Fail");
 
     // Get qualified sound card and port
     int32_t index = SwitchAdapter(descs, adapterNameCase, port, audioPort, size);
-    if (index < 0) {
-        AUDIO_ERR_LOG("Switch Adapter Fail");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(index >= 0, ERR_NOT_STARTED, "Switch Adapter Fail");
 
     struct AudioAdapterDescriptor *desc = &descs[index];
-    if (audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_) != 0) {
-        AUDIO_ERR_LOG("Load Adapter Fail");
-        return ERR_NOT_STARTED;
-    }
+    int32_t loadAdapter = audioManager_->LoadAdapter(audioManager_, desc, &audioAdapter_);
+    CHECK_AND_RETURN_RET_LOG(loadAdapter == 0, ERR_NOT_STARTED, "Load Adapter Fail");
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device failed");
 
     // Initialization port information, can fill through mode and other parameters
     ret = audioAdapter_->InitAllPorts(audioAdapter_);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("InitAllPorts failed");
-        return ERR_NOT_STARTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "InitAllPorts failed");
 
-    if (CreateRender(audioPort) != 0) {
-        AUDIO_ERR_LOG("Create render failed");
-        return ERR_NOT_STARTED;
-    }
+    int32_t result = CreateRender(audioPort);
+    CHECK_AND_RETURN_RET_LOG(result == 0, ERR_NOT_STARTED, "Create render failed");
 
     rendererInited_ = true;
 
@@ -428,10 +405,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     int32_t ret = SUCCESS;
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("Bluetooth Render Handle is nullptr!");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Bluetooth Render Handle is nullptr!");
 
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
@@ -523,10 +497,8 @@ int32_t BluetoothRendererSinkInner::SetVolume(float left, float right)
     int32_t ret;
     float volume;
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("SetVolume failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "SetVolume failed audioRender_ null");
 
     leftVolume_ = left;
     rightVolume_ = right;
@@ -540,7 +512,7 @@ int32_t BluetoothRendererSinkInner::SetVolume(float left, float right)
 
     ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
     if (ret) {
-        AUDIO_ERR_LOG("Set volume failed!");
+        AUDIO_WARNING_LOG("Set volume failed!");
     }
 
     return ret;
@@ -555,15 +527,10 @@ int32_t BluetoothRendererSinkInner::GetVolume(float &left, float &right)
 
 int32_t BluetoothRendererSinkInner::GetLatency(uint32_t *latency)
 {
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("GetLatency failed audio render null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "GetLatency failed audio render null");
 
-    if (!latency) {
-        AUDIO_ERR_LOG("GetLatency failed latency null");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(latency, ERR_INVALID_PARAM, "GetLatency failed latency null");
 
     uint32_t hdiLatency;
     if (audioRender_->GetLatency(audioRender_, &hdiLatency) == 0) {
@@ -578,15 +545,11 @@ int32_t BluetoothRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
     AUDIO_INFO_LOG("GetTransactionId in");
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("GetTransactionId failed audio render null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "GetTransactionId failed audio render null");
 
-    if (!transactionId) {
-        AUDIO_ERR_LOG("GetTransactionId failed transactionId null");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(transactionId, ERR_INVALID_PARAM,
+        "GetTransactionId failed transactionId null");
 
     *transactionId = reinterpret_cast<uint64_t>(audioRender_);
     return SUCCESS;
@@ -606,10 +569,8 @@ int32_t BluetoothRendererSinkInner::Stop(void)
 #endif
     int32_t ret;
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("Stop failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "Stop failed audioRender_ null");
 
     if (started_) {
         AUDIO_DEBUG_LOG("Stop control before");
@@ -632,15 +593,11 @@ int32_t BluetoothRendererSinkInner::Pause(void)
 {
     int32_t ret;
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("Pause failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "Pause failed audioRender_ null");
 
-    if (!started_) {
-        AUDIO_ERR_LOG("Pause invalid state!");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED,
+        "Pause invalid state!");
 
     if (!paused_) {
         ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
@@ -660,15 +617,11 @@ int32_t BluetoothRendererSinkInner::Resume(void)
 {
     int32_t ret;
 
-    if (audioRender_ == nullptr) {
-        AUDIO_ERR_LOG("Resume failed audioRender_ null");
-        return ERR_INVALID_HANDLE;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        "Resume failed audioRender_ null");
 
-    if (!started_) {
-        AUDIO_ERR_LOG("Resume invalid state!");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED,
+        "Resume invalid state!");
 
     if (paused_) {
         ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
@@ -754,12 +707,10 @@ int32_t BluetoothRendererSinkInner::GetPresentationPosition(uint64_t& frames, in
 
 void BluetoothRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
 {
-    if (attr_.channel != STEREO_CHANNEL_COUNT) {
-        // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("AdjustStereoToMono: Unsupported channel number: %{public}d",
-            attr_.channel);
-        return;
-    }
+    // only stereo is surpported now (stereo channel count is 2)
+    CHECK_AND_RETURN_LOG(attr_.channel == STEREO_CHANNEL_COUNT,
+        "AdjustStereoToMono: Unsupported channel number: %{public}d", attr_.channel);
+
     switch (attr_.format) {
         case AUDIO_FORMAT_TYPE_PCM_8_BIT: {
             // this function needs to be further tested for usability
@@ -790,12 +741,8 @@ void BluetoothRendererSinkInner::AdjustStereoToMono(char *data, uint64_t len)
 
 void BluetoothRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
 {
-    if (attr_.channel != STEREO_CHANNEL_COUNT) {
-        // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("AdjustAudioBalance: Unsupported channel number: %{public}d",
-            attr_.channel);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(attr_.channel == STEREO_CHANNEL_COUNT,
+        "Unsupported channel number: %{public}d", attr_.channel);
 
     switch (attr_.format) {
         case AUDIO_FORMAT_TYPE_PCM_8_BIT: {
@@ -818,7 +765,7 @@ void BluetoothRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         default: {
             // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("AdjustAudioBalance: Unsupported audio format: %{public}d",
+            AUDIO_ERR_LOG("Unsupported audio format: %{public}d",
                 attr_.format);
             break;
         }

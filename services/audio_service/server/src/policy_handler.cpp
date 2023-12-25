@@ -96,11 +96,8 @@ bool PolicyHandler::InitVolumeMap()
     CHECK_AND_RETURN_RET_LOG((policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr), false,
         "InitSharedVolume failed.");
     size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
-    if (policyVolumeMap_->GetSize() != mapSize) {
-        AUDIO_ERR_LOG("InitSharedVolume get error size:%{public}zu, target:%{public}zu", policyVolumeMap_->GetSize(),
-            mapSize);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(policyVolumeMap_->GetSize() == mapSize, false,
+        "InitSharedVolume get error size:%{public}zu, target:%{public}zu", policyVolumeMap_->GetSize(), mapSize);
     volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
     AUDIO_INFO_LOG("InitSharedVolume success.");
     return true;

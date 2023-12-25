@@ -35,10 +35,7 @@ int32_t PowerStateListenerStub::OnRemoteRequest(uint32_t code, MessageParcel &da
     AUDIO_DEBUG_LOG("code = %{public}d, flag = %{public}d", code, option.GetFlags());
     std::u16string descriptor = PowerStateListenerStub::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
-    if (descriptor != remoteDescriptor) {
-        AUDIO_ERR_LOG("Descriptor not match");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(descriptor == remoteDescriptor, -1, "Descriptor not match");
 
     int32_t ret = ERR_OK;
     switch (code) {
@@ -77,20 +74,14 @@ PowerStateListener::PowerStateListener(const sptr<AudioPolicyServer> audioPolicy
 
 void PowerStateListener::OnSyncSleep(bool OnForceSleep)
 {
-    if (!OnForceSleep) {
-        AUDIO_ERR_LOG("OnSyncSleep not force sleep");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(OnForceSleep, "OnSyncSleep not force sleep");
 
     ControlAudioFocus(true);
 }
 
 void PowerStateListener::OnSyncWakeup(bool OnForceSleep)
 {
-    if (!OnForceSleep) {
-        AUDIO_ERR_LOG("OnSyncWakeup not force sleep");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(OnForceSleep, "OnSyncWakeup not force sleep");
 
     ControlAudioFocus(false);
 }
@@ -110,12 +101,12 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
     if (applyFocus) {
         result = audioPolicyServer_->ActivateAudioInterrupt(audioInterrupt);
         if (result != SUCCESS) {
-            AUDIO_ERR_LOG("Activate audio interrupt failed, err = %{public}d", result);
+            AUDIO_WARNING_LOG("Activate audio interrupt failed, err = %{public}d", result);
         }
     } else {
         result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt);
         if (result != SUCCESS) {
-            AUDIO_ERR_LOG("Deactivate audio interrupt failed, err = %{public}d", result);
+            AUDIO_WARNING_LOG("Deactivate audio interrupt failed, err = %{public}d", result);
         }
     }
 }
