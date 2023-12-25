@@ -96,19 +96,13 @@ AudioConverterParser::~AudioConverterParser()
 
 static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
 {
-    if (currNode == nullptr) {
-        AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-        return FILE_PARSE_ERROR;
-    }
-    if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_converter_conf"))) {
-        AUDIO_ERR_LOG("Missing tag - audio_converter_conf: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-        return FILE_CONTENT_ERROR;
-    }
-    
-    if (currNode->xmlChildrenNode == nullptr) {
-        AUDIO_ERR_LOG("Missing node - audio_converter_conf: %s", AUDIO_CONVERTER_CONFIG_FILE);
-        return FILE_CONTENT_ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, FILE_PARSE_ERROR,
+        "error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
+    bool ret = xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_converter_conf"));
+    CHECK_AND_RETURN_RET_LOG(!ret, FILE_CONTENT_ERROR,
+        "Missing tag - audio_converter_conf: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
+    CHECK_AND_RETURN_RET_LOG(currNode->xmlChildrenNode != nullptr, FILE_CONTENT_ERROR,
+        "Missing node - audio_converter_conf: %s", AUDIO_CONVERTER_CONFIG_FILE);
 
     return 0;
 }
@@ -116,9 +110,9 @@ static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
 static void LoadConfigLibrary(ConverterConfig &result, xmlNode* currNode)
 {
     if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("name"))) {
-        AUDIO_ERR_LOG("missing information: library has no name attribute");
+        AUDIO_WARNING_LOG("missing information: library has no name attribute");
     } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("path"))) {
-        AUDIO_ERR_LOG("missing information: library has no path attribute");
+        AUDIO_WARNING_LOG("missing information: library has no path attribute");
     } else {
         std::string libName = reinterpret_cast<char*>
                               (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
@@ -145,10 +139,8 @@ static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode* currNode)
 
 static void LoadConfigVersion(ConverterConfig &result, xmlNode* currNode)
 {
-    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("version"))) {
-        AUDIO_ERR_LOG("missing information: audio_converter_conf node has no version attribute");
-        return;
-    }
+    bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("version"));
+    CHECK_AND_RETURN_LOG(ret, "missing information: audio_converter_conf node has no version attribute");
 
     float pVersion = atof(reinterpret_cast<char*>
         (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("version"))));
@@ -160,11 +152,9 @@ int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
     AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
-    if ((doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr,
-        XML_PARSE_NOERROR | XML_PARSE_NOWARNING)) == nullptr) {
-        AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-        return FILE_PARSE_ERROR;
-    }
+    doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR,
+        "error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
 
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
@@ -194,7 +184,6 @@ int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
 
         currNode = currNode->next;
     }
-    
     xmlFreeDoc(doc);
     xmlCleanupParser();
     return ret;

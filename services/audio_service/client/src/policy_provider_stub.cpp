@@ -23,19 +23,15 @@ bool PolicyProviderStub::CheckInterfaceToken(MessageParcel &data)
 {
     static auto localDescriptor = IPolicyProviderIpc::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
-    if (remoteDescriptor != localDescriptor) {
-        AUDIO_ERR_LOG("CheckInterFfaceToken failed.");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(remoteDescriptor == localDescriptor, false, "CheckInterFfaceToken failed.");
     return true;
 }
 
 int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
-    if (!CheckInterfaceToken(data)) {
-        return AUDIO_ERR;
-    }
+    bool ret = CheckInterfaceToken(data);
+    CHECK_AND_RETURN_RET(ret, AUDIO_ERR);
     if (code >= IPolicyProviderMsg::POLICY_PROVIDER_MAX_MSG) {
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -71,13 +67,11 @@ int32_t PolicyProviderStub::HandleInitSharedVolume(MessageParcel &data, MessageP
 
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
-    AUDIO_INFO_LOG("~PolicyProviderWrapper()");
     policyWorker_ = nullptr;
 }
 
 PolicyProviderWrapper::PolicyProviderWrapper(IPolicyProvider *policyWorker) : policyWorker_(policyWorker)
 {
-    AUDIO_INFO_LOG("PolicyProviderWrapper()");
 }
 
 int32_t PolicyProviderWrapper::GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo)

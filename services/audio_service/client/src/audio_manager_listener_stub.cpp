@@ -29,15 +29,11 @@ AudioManagerListenerStub::~AudioManagerListenerStub()
 int AudioManagerListenerStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
-    AUDIO_DEBUG_LOG("OnRemoteRequest, cmd = %{public}u", code);
-    if (data.ReadInterfaceToken() != GetDescriptor()) {
-        AUDIO_ERR_LOG("AudioManagerStub: ReadInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
+        -1, "AudioManagerStub: ReadInterfaceToken failed");
 
     switch (code) {
         case ON_PARAMETER_CHANGED: {
-            AUDIO_DEBUG_LOG("ON_PARAMETER_CHANGED AudioManagerStub");
             string networkId = data.ReadString();
             AudioParamKey key = static_cast<AudioParamKey>(data.ReadInt32());
             string condition = data.ReadString();
@@ -46,12 +42,10 @@ int AudioManagerListenerStub::OnRemoteRequest(
             return AUDIO_OK;
         }
         case ON_WAKEUP_CLOSE: {
-            AUDIO_DEBUG_LOG("ON_WAKEUP_CLOSE AudioManagerStub");
             OnWakeupClose();
             return AUDIO_OK;
         }
         case ON_CAPTURER_STATE: {
-            AUDIO_DEBUG_LOG("ON_CAPTURER_STATE AudioManagerStub");
             bool isActive = data.ReadBool();
             OnCapturerState(isActive);
             return AUDIO_OK;
@@ -80,7 +74,7 @@ void AudioManagerListenerStub::OnAudioParameterChange(const std::string networkI
     if (cb != nullptr) {
         cb->OnAudioParameterChange(networkId, key, condition, value);
     } else {
-        AUDIO_ERR_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
+        AUDIO_WARNING_LOG("AudioRingerModeUpdateListenerStub: callback_ is nullptr");
     }
 }
 
@@ -90,7 +84,7 @@ void AudioManagerListenerStub::OnCapturerState(bool isActive)
     if (cb != nullptr) {
         cb->OnCapturerState(isActive);
     } else {
-        AUDIO_ERR_LOG("AudioManagerListenerStub: OnWakeupClose error");
+        AUDIO_WARNING_LOG("AudioManagerListenerStub: OnWakeupClose error");
     }
 }
 
@@ -100,7 +94,7 @@ void AudioManagerListenerStub::OnWakeupClose()
     if (cb != nullptr) {
         cb->OnWakeupClose();
     } else {
-        AUDIO_ERR_LOG("AudioManagerListenerStub: OnWakeupClose error");
+        AUDIO_WARNING_LOG("AudioManagerListenerStub: OnWakeupClose error");
     }
 }
 

@@ -68,13 +68,13 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
         }
     }
     if (isFind) {
-        AUDIO_INFO_LOG("OnProcessRelease find and release process result %{public}d", ret);
+        AUDIO_INFO_LOG("find and release process result %{public}d", ret);
     } else {
-        AUDIO_INFO_LOG("OnProcessRelease can not find target process, maybe already released.");
+        AUDIO_INFO_LOG("can not find target process, maybe already released.");
     }
 
     if (needRelease) {
-        AUDIO_INFO_LOG("OnProcessRelease find endpoint unlink, call delay release.");
+        AUDIO_INFO_LOG("find endpoint unlink, call delay release.");
         std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
         releasingEndpointSet_.insert(endpointName);
         int32_t delayTime = 10000;
@@ -165,31 +165,28 @@ int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process
 void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs)
 {
     AUDIO_INFO_LOG("Delay release endpoint [%{public}s] start.", endpointName.c_str());
-    if (!endpointList_.count(endpointName)) {
-        AUDIO_ERR_LOG("Find no such endpoint: %{public}s", endpointName.c_str());
-        return;
-    }
+    CHECK_AND_RETURN_LOG(endpointList_.count(endpointName),
+        "Find no such endpoint: %{public}s", endpointName.c_str());
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     releaseEndpointCV_.wait_for(lock, std::chrono::milliseconds(delayInMs), [this, endpointName] {
         if (releasingEndpointSet_.count(endpointName)) {
-            AUDIO_INFO_LOG("Wake up but keep release endpoint %{public}s in delay", endpointName.c_str());
+            AUDIO_DEBUG_LOG("Wake up but keep release endpoint %{public}s in delay", endpointName.c_str());
             return false;
         }
-        AUDIO_INFO_LOG("Delay release endpoint break when reuse: %{public}s", endpointName.c_str());
+        AUDIO_DEBUG_LOG("Delay release endpoint break when reuse: %{public}s", endpointName.c_str());
         return true;
     });
 
     if (!releasingEndpointSet_.count(endpointName)) {
-        AUDIO_INFO_LOG("Timeout or not need to release: %{public}s", endpointName.c_str());
+        AUDIO_DEBUG_LOG("Timeout or not need to release: %{public}s", endpointName.c_str());
         return;
     }
     releasingEndpointSet_.erase(endpointName);
 
     std::shared_ptr<AudioEndpoint> temp = nullptr;
-    if (endpointList_.find(endpointName) == endpointList_.end() || endpointList_[endpointName] == nullptr) {
-        AUDIO_ERR_LOG("Endpoint %{public}s not available, stop call release", endpointName.c_str());
-        return;
-    }
+    CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
+        endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
+        endpointName.c_str());
     temp = endpointList_[endpointName];
     if (temp->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
         AUDIO_INFO_LOG("%{public}s not in use anymore, call release!", endpointName.c_str());

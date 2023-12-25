@@ -35,10 +35,7 @@ LinearPosTimeModel::LinearPosTimeModel()
 bool LinearPosTimeModel::ConfigSampleRate(int32_t sampleRate)
 {
     AUDIO_INFO_LOG("ConfigSampleRate:%{public}d", sampleRate);
-    if (isConfiged) {
-        AUDIO_ERR_LOG("SampleRate already set:%{public}d", sampleRate_);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(!isConfiged, false, "SampleRate already set:%{public}d", sampleRate_);
     sampleRate_ = sampleRate;
     if (sampleRate_ <= 0 || sampleRate_ > MAX_SUPPORT_SAMPLE_RETE) {
         AUDIO_ERR_LOG("Invalid sample rate!");
@@ -96,10 +93,7 @@ bool LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
 
 bool LinearPosTimeModel::GetFrameStamp(uint64_t &frame, int64_t &nanoTime)
 {
-    if (!isConfiged) {
-        AUDIO_ERR_LOG("GetFrameStamp is not configed!");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(isConfiged, false, "GetFrameStamp is not configed!");
     frame = stampFrame_;
     nanoTime = stampNanoTime_;
     return true;
@@ -116,18 +110,19 @@ int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
 {
     int64_t deltaFrame = 0;
     int64_t invalidTime = -1;
-    if (!isConfiged) {
-        AUDIO_ERR_LOG("SampleRate is not configed!");
-        return invalidTime;
-    }
+    CHECK_AND_RETURN_RET_LOG(isConfiged, invalidTime, "SampleRate is not configed!");
     if (posInFrame >= stampFrame_) {
-        CHECK_AND_BREAK_LOG((posInFrame - stampFrame_ < (uint64_t)sampleRate_), "posInFrame %{public}" PRIu64" is too"
-            " large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
+        if (posInFrame - stampFrame_ >= (uint64_t)sampleRate_) {
+            AUDIO_WARNING_LOG("posInFrame %{public}" PRIu64" is too"
+                " large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
+        }
         deltaFrame = posInFrame - stampFrame_;
         return stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
     } else {
-        CHECK_AND_BREAK_LOG((stampFrame_ - posInFrame < (uint64_t)sampleRate_), "posInFrame %{public}" PRIu64" is too"
-            " small, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
+        if (stampFrame_ - posInFrame >= (uint64_t)sampleRate_) {
+            AUDIO_WARNING_LOG("posInFrame %{public}" PRIu64" is too"
+                " small, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
+        }
         deltaFrame = stampFrame_ - posInFrame;
         return stampNanoTime_ - deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
     }

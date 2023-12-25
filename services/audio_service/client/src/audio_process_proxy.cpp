@@ -24,18 +24,14 @@ bool ProcessCbStub::CheckInterfaceToken(MessageParcel &data)
 {
     static auto localDescriptor = IProcessCb::GetDescriptor();
     auto remoteDescriptor = data.ReadInterfaceToken();
-    if (remoteDescriptor != localDescriptor) {
-        AUDIO_ERR_LOG("CheckInterFfaceToken failed.");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(remoteDescriptor == localDescriptor, false, "CheckInterFfaceToken failed.");
     return true;
 }
 
 int ProcessCbStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
-    if (!CheckInterfaceToken(data)) {
-        return AUDIO_ERR;
-    }
+    bool ret = CheckInterfaceToken(data);
+    CHECK_AND_RETURN_RET(ret, AUDIO_ERR);
     if (code >= IProcessCbMsg::PROCESS_CB_MAX_MSG) {
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -52,12 +48,10 @@ int32_t ProcessCbStub::HandleOnEndpointChange(MessageParcel &data, MessageParcel
 
 AudioProcessProxy::AudioProcessProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IAudioProcess>(impl)
 {
-    AUDIO_INFO_LOG("AudioProcessProxy()");
 }
 
 AudioProcessProxy::~AudioProcessProxy()
 {
-    AUDIO_INFO_LOG("~AudioProcessProxy()");
 }
 
 int32_t AudioProcessProxy::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
@@ -168,10 +162,8 @@ int32_t AudioProcessProxy::RegisterProcessCb(sptr<IRemoteObject> object)
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("RegisterProcessCb object is null");
-        return ERR_NULL_OBJECT;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT,
+        "RegisterProcessCb object is null");
 
     data.WriteRemoteObject(object);
 

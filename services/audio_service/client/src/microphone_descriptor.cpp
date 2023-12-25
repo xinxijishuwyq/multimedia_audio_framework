@@ -80,9 +80,7 @@ bool MicrophoneDescriptor::Marshalling(Parcel &parcel) const
 sptr<MicrophoneDescriptor> MicrophoneDescriptor::Unmarshalling(Parcel &in)
 {
     sptr<MicrophoneDescriptor> microphoneDescriptor = new(std::nothrow) MicrophoneDescriptor();
-    if (microphoneDescriptor == nullptr) {
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET(microphoneDescriptor != nullptr, nullptr);
 
     microphoneDescriptor->micId_ = in.ReadInt32();
     microphoneDescriptor->deviceType_ = static_cast<DeviceType>(in.ReadInt32());

@@ -254,8 +254,12 @@ OptResult AudioRingCache::HandleCrossDequeue(size_t tempReadIndex, size_t readab
             "[%{public}zu]", readIndex_, baseIndex_, buffer.dataSize);
         return result;
     }
-    CHECK_AND_BREAK_LOG(memset_s(headPtr, headSize, 0, headSize) == EOK, "reset headPtr fail.");
-    CHECK_AND_BREAK_LOG(memset_s(tailPtr, tailSize, 0, tailSize) == EOK, "reset headPtr fail.");
+    if (memset_s(headPtr, headSize, 0, headSize) != EOK) {
+        AUDIO_ERR_LOG("reset headPtr fail.");
+    }
+    if (memset_s(tailPtr, tailSize, 0, tailSize) != EOK) {
+        AUDIO_ERR_LOG("reset headPtr fail.");
+    }
 
     readIndex_ = tempReadIndex; // move write index
     baseIndex_ += cacheTotalSize_; // move base index
@@ -302,7 +306,9 @@ OptResult AudioRingCache::Dequeue(const BufferWrap &buffer)
         result = {OPERATION_FAILED, readableSize};
         return result;
     }
-    CHECK_AND_BREAK_LOG(memset_s(readPtr, buffer.dataSize, 0, buffer.dataSize) == EOK, "reset readPtr fail.");
+    if (memset_s(readPtr, buffer.dataSize, 0, buffer.dataSize) != EOK) {
+        AUDIO_ERR_LOG("reset readPtr fail.");
+    }
     if (tempReadIndex - baseIndex_ == cacheTotalSize_) {
         baseIndex_ += cacheTotalSize_;
     }

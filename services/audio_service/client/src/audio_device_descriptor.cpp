@@ -97,10 +97,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
-    if (deviceDescriptor == nullptr) {
-        AUDIO_ERR_LOG("Error input parameter");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "Error input parameter");
     deviceId_ = deviceDescriptor->deviceId_;
     deviceName_ = deviceDescriptor->deviceName_;
     macAddress_ = deviceDescriptor->macAddress_;
@@ -244,9 +241,7 @@ bool AudioCapturerFilter::Marshalling(Parcel &parcel) const
 sptr<AudioCapturerFilter> AudioCapturerFilter::Unmarshalling(Parcel &in)
 {
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
-    if (audioCapturerFilter == nullptr) {
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET(audioCapturerFilter != nullptr, nullptr);
 
     audioCapturerFilter->uid = in.ReadInt32();
     audioCapturerFilter->capturerInfo.sourceType = static_cast<SourceType>(in.ReadInt32());

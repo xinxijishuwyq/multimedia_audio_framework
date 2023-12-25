@@ -138,10 +138,8 @@ int AudioSharedMemoryImpl::GetFd()
 std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFormLocal(size_t size, const std::string &name)
 {
     std::shared_ptr<AudioSharedMemoryImpl> sharedMemory = std::make_shared<AudioSharedMemoryImpl>(size, name);
-    if (sharedMemory->Init() != SUCCESS) {
-        AUDIO_ERR_LOG("CreateFormLocal failed");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(sharedMemory->Init() == SUCCESS,
+        nullptr, "CreateFormLocal failed");
     return sharedMemory;
 }
 
@@ -154,7 +152,6 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromRemote(int fd, s
         AUDIO_ERR_LOG("CreateFromRemote failed");
         return nullptr;
     }
-
     return sharedMemory;
 }
 
@@ -289,29 +286,27 @@ int32_t OHAudioBuffer::Init(int dataFd, int infoFd)
 std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromLocal(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
     uint32_t byteSizePerFrame)
 {
-    AUDIO_INFO_LOG("CreateFormLocal:totalSizeInFrame %{public}d, spanSizeInFrame %{public}d, byteSizePerFrame"
+    AUDIO_INFO_LOG("totalSizeInFrame %{public}d, spanSizeInFrame %{public}d, byteSizePerFrame"
         " %{public}d", totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     std::shared_ptr<OHAudioBuffer> buffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    if (buffer->Init(INVALID_FD, INVALID_FD) != SUCCESS) {
-        AUDIO_ERR_LOG("failed to init.");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(buffer->Init(INVALID_FD, INVALID_FD) == SUCCESS,
+        nullptr, "failed to init.");
     return buffer;
 }
 
 std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromRemote(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
     uint32_t byteSizePerFrame, AudioBufferHolder bufferHolder, int dataFd, int infoFd)
 {
-    AUDIO_INFO_LOG("CreateFromRemote: dataFd %{public}d, infoFd %{public}d", dataFd, infoFd);
+    AUDIO_INFO_LOG("dataFd %{public}d, infoFd %{public}d", dataFd, infoFd);
 
     int minfd = 2; // ignore stdout, stdin and stderr.
-    CHECK_AND_RETURN_RET_LOG(dataFd > minfd, nullptr, "CreateFromRemote invalid dataFd: %{public}d", dataFd);
+    CHECK_AND_RETURN_RET_LOG(dataFd > minfd, nullptr, "invalid dataFd: %{public}d", dataFd);
 
     if (infoFd != INVALID_FD) {
-        CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "CreateFromRemote invalid infoFd: %{public}d", infoFd);
+        CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "invalid infoFd: %{public}d", infoFd);
     }
     std::shared_ptr<OHAudioBuffer> buffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
@@ -326,11 +321,9 @@ int32_t OHAudioBuffer::WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffe
 {
     AUDIO_INFO_LOG("WriteToParcel start.");
     AudioBufferHolder bufferHolder = buffer->GetBufferHolder();
-    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
-        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
-        AUDIO_ERR_LOG("WriteToParcel buffer holder error:%{public}d", bufferHolder);
-        return ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
+        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT,
+        ERROR_INVALID_PARAM, "buffer holder error:%{public}d", bufferHolder);
 
     parcel.WriteUint32(bufferHolder);
     parcel.WriteUint32(buffer->totalSizeInFrame_);
@@ -370,7 +363,7 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parc
     } else if (totalSizeInFrame != buffer->basicBufferInfo_->totalSizeInFrame ||
         spanSizeInFrame != buffer->basicBufferInfo_->spanSizeInFrame ||
         byteSizePerFrame != buffer->basicBufferInfo_->byteSizePerFrame) {
-        AUDIO_WARNING_LOG("ReadFromParcel data in shared memory diff.");
+        AUDIO_WARNING_LOG("data in shared memory diff.");
     } else {
         AUDIO_INFO_LOG("Read some data done.");
     }
@@ -402,10 +395,9 @@ std::atomic<StreamStatus> *OHAudioBuffer::GetStreamStatus()
 
 bool OHAudioBuffer::GetHandleInfo(uint64_t &frames, int64_t &nanoTime)
 {
-    if (basicBufferInfo_ == nullptr) {
-        AUDIO_ERR_LOG("Get nullptr, failed to GetHandleInfo.");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false,
+        "Get nullptr, failed to GetHandleInfo.");
+
     frames = basicBufferInfo_->handlePos.load();
     nanoTime = basicBufferInfo_->handleTime.load();
     return true;
@@ -424,21 +416,17 @@ int32_t OHAudioBuffer::GetAvailableDataFrames()
     uint64_t read = basicBufferInfo_->curReadFrame.load();
     CHECK_AND_RETURN_RET_LOG(write >= read, result, "invalid write and read position.");
     uint32_t temp = write - read;
-    if (temp > INT32_MAX || temp > totalSizeInFrame_) {
-        AUDIO_ERR_LOG("failed to GetAvailableDataFrames.");
-        return result;
-    }
+    CHECK_AND_RETURN_RET_LOG(temp <= INT32_MAX && temp <= totalSizeInFrame_,
+        result, "failed to GetAvailableDataFrames.");
     result = static_cast<int32_t>(totalSizeInFrame_ - temp);
     return result;
 }
 
 int32_t OHAudioBuffer::ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame)
 {
-    if (readFrame > writeFrame || writeFrame - readFrame >= totalSizeInFrame_) {
-        AUDIO_ERR_LOG("Invalid read or write position:read%{public}" PRIu64" write%{public}" PRIu64".",
-            readFrame, writeFrame);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(readFrame <= writeFrame && writeFrame - readFrame < totalSizeInFrame_,
+        ERR_INVALID_PARAM, "Invalid read or write position:read%{public}" PRIu64" write%{public}" PRIu64".",
+        readFrame, writeFrame);
     uint64_t tempBase = (readFrame / totalSizeInFrame_) * totalSizeInFrame_;
     basicBufferInfo_->basePosInFrame.store(tempBase);
     basicBufferInfo_->curWriteFrame.store(writeFrame);
@@ -473,18 +461,14 @@ int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame)
         "Invalid deltaToBase, writeFrame:%{public}" PRIu64".", writeFrame);
 
     // check new pos in range: base ~ base + 2*total
-    if (deltaToBase >= (totalSizeInFrame_ + totalSizeInFrame_)) {
-        AUDIO_ERR_LOG("Invalid writeFrame %{public}" PRIu64" out of base range.", writeFrame);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(deltaToBase < (totalSizeInFrame_ + totalSizeInFrame_),
+        ERR_INVALID_PARAM, "Invalid writeFrame %{public}" PRIu64" out of base range.", writeFrame);
 
     // check new pos in (read + cache) range: read ~ read + totalSize - 1*spanSize
     uint64_t curRead = basicBufferInfo_->curReadFrame.load();
-    if (writeFrame < curRead || writeFrame - curRead > totalSizeInFrame_) {
-        AUDIO_ERR_LOG("Invalid writeFrame %{public}" PRIu64" out of cache range, curRead %{public}" PRIu64".",
-            writeFrame, curRead);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(writeFrame >= curRead && writeFrame - curRead <= totalSizeInFrame_,
+        ERR_INVALID_PARAM, "Invalid writeFrame %{public}" PRIu64" out of cache range, curRead %{public}" PRIu64".",
+        writeFrame, curRead);
 
     if (writeFrame - oldWritePos != spanSizeInFrame_) {
         AUDIO_WARNING_LOG("Not advanced in one step. newWritePos %{public}" PRIu64", oldWritePos %{public}" PRIu64".",
@@ -504,10 +488,8 @@ int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame)
     }
 
     // new read position should not be bigger than write position or less than old read position
-    if (readFrame < oldReadPos || readFrame > basicBufferInfo_->curWriteFrame.load()) {
-        AUDIO_ERR_LOG("Invalid readFrame %{public}" PRIu64".", readFrame);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(readFrame >= oldReadPos && readFrame <= basicBufferInfo_->curWriteFrame.load(),
+        ERR_INVALID_PARAM, "Invalid readFrame %{public}" PRIu64".", readFrame);
 
     uint64_t deltaToBase = readFrame - oldBasePos;
     CHECK_AND_RETURN_RET_LOG((deltaToBase / spanSizeInFrame_ * spanSizeInFrame_) == deltaToBase,
@@ -534,10 +516,9 @@ int32_t OHAudioBuffer::GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferD
 {
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t maxDelta = 2 * totalSizeInFrame_; // 0 ~ 2*totalSizeInFrame_
-    if (posInFrame < basePos || posInFrame - basePos >= maxDelta) {
-        AUDIO_ERR_LOG("Invalid position:%{public}" PRIu64".", posInFrame);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(posInFrame >= basePos && posInFrame - basePos < maxDelta,
+        ERR_INVALID_PARAM, "Invalid position:%{public}" PRIu64".", posInFrame);
+
     uint32_t deltaToBase = posInFrame - basePos;
     if (deltaToBase >= totalSizeInFrame_) {
         deltaToBase -= totalSizeInFrame_;
@@ -560,20 +541,16 @@ int32_t OHAudioBuffer::GetWriteBuffer(uint64_t writePosInFrame, BufferDesc &buff
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t readPos = basicBufferInfo_->curReadFrame.load();
     uint64_t maxWriteDelta = 2 * totalSizeInFrame_; // 0 ~ 2*totalSizeInFrame_
-    if (writePosInFrame < basePos || writePosInFrame - basePos >= maxWriteDelta || writePosInFrame < readPos) {
-        AUDIO_ERR_LOG("Invalid write position:%{public}" PRIu64".", writePosInFrame);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(writePosInFrame >= basePos && writePosInFrame - basePos < maxWriteDelta &&
+        writePosInFrame >= readPos, ERR_INVALID_PARAM, "Invalid write position:%{public}" PRIu64".", writePosInFrame);
     return GetBufferByFrame(writePosInFrame, bufferDesc);
 }
 
 int32_t OHAudioBuffer::GetReadbuffer(uint64_t readPosInFrame, BufferDesc &bufferDesc)
 {
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
-    if (readPosInFrame < basePos || readPosInFrame - basePos >= totalSizeInFrame_) {
-        AUDIO_ERR_LOG("Invalid read position:%{public}" PRIu64".", readPosInFrame);
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(readPosInFrame >= basePos && readPosInFrame - basePos < totalSizeInFrame_,
+        ERR_INVALID_PARAM, "Invalid read position:%{public}" PRIu64".", readPosInFrame);
     return GetBufferByFrame(readPosInFrame, bufferDesc);
 }
 

@@ -200,17 +200,12 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
 {
     std::string absolutePath;
     // find library in adsolutePath
-    if (!ResolveLibrary(relativePath, absolutePath)) {
-        AUDIO_ERR_LOG("<log error> find library falied in effect directories: %{public}s",
-            relativePath.c_str());
-        return false;
-    }
+    bool ret = ResolveLibrary(relativePath, absolutePath);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "<log error> find library falied in effect directories: %{public}s",
+        relativePath.c_str());
 
     libHandle_ = dlopen(absolutePath.c_str(), 1);
-    if (!libHandle_) {
-        AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", relativePath.c_str());
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(libHandle_, false, "<log error> dlopen lib %{public}s Fail", relativePath.c_str());
     AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
 
     AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(libHandle_,
@@ -249,15 +244,10 @@ bool LibLoader::AddAlgoHandle(Library library)
     libEntry_ = std::make_unique<AudioEffectLibEntry>();
     libEntry_->libraryName = library.name;
     bool loadLibrarySuccess = LoadLibrary(library.path);
-    if (!loadLibrarySuccess) {
-        AUDIO_ERR_LOG("<log error> loadLibrary fail, please check logs!");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(loadLibrarySuccess, false,
+        "<log error> loadLibrary fail, please check logs!");
     int32_t ret = libEntry_->audioEffectLibHandle->createEffect(descriptor, &handle_);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("%{public}s create fail", library.name.c_str());
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "%{public}s create fail", library.name.c_str());
     return true;
 }
 
@@ -268,30 +258,21 @@ bool LibLoader::Init()
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("[%{public}s] lib EFFECT_CMD_INIT fail", libEntry_->libraryName.c_str());
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret ==0, false,
+        "[%{public}s] lib EFFECT_CMD_INIT fail", libEntry_->libraryName.c_str());
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("[%{public}s] lib EFFECT_CMD_ENABLE fail", libEntry_->libraryName.c_str());
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret ==0, false,
+        "[%{public}s] lib EFFECT_CMD_ENABLE fail", libEntry_->libraryName.c_str());
     ret = (*handle_)->command(handle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("[%{public}s] lib EFFECT_CMD_SET_CONFIG fail", libEntry_->libraryName.c_str());
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false,
+        "[%{public}s] lib EFFECT_CMD_SET_CONFIG fail", libEntry_->libraryName.c_str());
     return true;
 }
 
 int32_t LibLoader::ApplyAlgo(AudioBuffer &inputBuffer, AudioBuffer &outputBuffer)
 {
     int32_t ret = (*handle_)->process(handle_, &inputBuffer, &outputBuffer);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("converter algo lib process fail");
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "converter algo lib process fail");
     return ret;
 }
 } // namespace AudioStandard
