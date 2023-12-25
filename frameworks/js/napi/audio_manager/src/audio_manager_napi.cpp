@@ -1800,30 +1800,25 @@ napi_value AudioManagerNapi::SetVolume(napi_env env, napi_callback_info info)
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "SetVolume", NAPI_AUTO_LENGTH, &resource);
 
-        status = napi_create_async_work(
-            env, nullptr, resource,
-            [](napi_env env, void *data) {
-                auto context = static_cast<AudioManagerAsyncContext*>(data);
-                if (context->status == SUCCESS) {
-                    context->status = context->objectInfo->audioMngr_->
-                        SetVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->volLevel);
-                }
-            },
+        status = napi_create_async_work(env, nullptr, resource, AsyncSetVolume,
             SetFunctionAsyncCallbackComplete, static_cast<void*>(asyncContext.get()), &asyncContext->work);
-        if (status != napi_ok) {
-            result = nullptr;
-        } else {
-            status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
-            if (status == napi_ok) {
-                asyncContext.release();
-            } else {
-                AUDIO_ERR_LOG("napi_error, status: %{public}u", status);
-                result = nullptr;
-            }
-        }
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_create_async_work failed.");
+        status = napi_queue_async_work_with_qos(env, asyncContext->work, napi_qos_user_initiated);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_queue_async_work_with_qos failed.");
+        asyncContext.release();
     }
-
     return result;
+}
+
+void AudioManagerNapi::AsyncSetVolume(napi_env env,void *data)
+{
+    auto context = static_cast<AudioManagerAsyncContext*>(data);
+    ObjectRefMap objectGuard(context->objectInfo);
+    AudioManagerNapi *object = objectGuard.GetPtr();
+    if (context->status == SUCCESS && object != nullptr) {
+        context->status = object->audioMngr_->
+            SetVolume(AudioCommonNapi::GetNativeAudioVolumeType(context->volType), context->volLevel);
+    }
 }
 
 napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
@@ -1870,8 +1865,7 @@ napi_value AudioManagerNapi::GetVolume(napi_env env, napi_callback_info info)
         napi_value resource = nullptr;
         napi_create_string_utf8(env, "GetVolume", NAPI_AUTO_LENGTH, &resource);
 
-        status = napi_create_async_work(
-            env, nullptr, resource,
+        status = napi_create_async_work(env, nullptr, resource,
             [](napi_env env, void *data) {
                 auto context = static_cast<AudioManagerAsyncContext*>(data);
                     if (context->status == SUCCESS) {
