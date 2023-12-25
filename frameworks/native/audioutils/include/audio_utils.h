@@ -86,6 +86,12 @@ void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
 template <typename T>
+bool isEqual(T a, T b, double precision = 0.01)
+{
+    return std::abs(a - b) < precision;
+}
+
+template <typename T>
 bool GetSysPara(const char *key, T &value);
 
 enum AudioDumpFileType {
