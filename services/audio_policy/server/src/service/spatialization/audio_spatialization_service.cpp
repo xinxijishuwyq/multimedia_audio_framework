@@ -16,6 +16,7 @@
 
 #include "audio_spatialization_service.h"
 
+#include <thread>
 #include "ipc_skeleton.h"
 #include "hisysevent.h"
 #include "iservice_registry.h"
@@ -102,7 +103,7 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
     }
     spatializationEnabledFlag_ = enable;
     HandleSpatializationEnabledChange(enable);
-    if (UpdateSpatializationStateReal() != 0) {
+    if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
     return SPATIALIZATION_SERVICE_OK;
@@ -122,7 +123,7 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
     }
     headTrackingEnabledFlag_ = enable;
     HandleHeadTrackingEnabledChange(enable);
-    if (UpdateSpatializationStateReal() != 0) {
+    if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
     return SPATIALIZATION_SERVICE_OK;
@@ -268,7 +269,7 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
     }
 
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    if (UpdateSpatializationStateReal() != 0) {
+    if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
     return SPATIALIZATION_SERVICE_OK;
@@ -303,13 +304,16 @@ int32_t AudioSpatializationService::UnregisterSpatializationStateEventListener(c
 void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddress)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    if (currentDeviceAddress_ == macAddress) {
+        return;
+    }
     currentDeviceAddress_ = macAddress;
-    if (UpdateSpatializationStateReal() != 0) {
+    if (UpdateSpatializationStateReal(true) != 0) {
         AUDIO_WARNING_LOG("UpdateSpatializationStateReal fail");
     }
 }
 
-int32_t AudioSpatializationService::UpdateSpatializationStateReal()
+int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDeviceChange)
 {
     bool spatializationEnabled = spatializationEnabledFlag_ && IsSpatializationSupported() &&
         IsSpatializationSupportedForDevice(currentDeviceAddress_);
@@ -323,7 +327,7 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal()
     if (UpdateSpatializationState() != 0) {
         return ERROR;
     }
-    HandleSpatializationStateChange();
+    HandleSpatializationStateChange(outputDeviceChange);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -342,7 +346,7 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
     return SPATIALIZATION_SERVICE_OK;
 }
 
-void AudioSpatializationService::HandleSpatializationStateChange()
+void AudioSpatializationService::HandleSpatializationStateChange(bool outputDeviceChange)
 {
     std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
 
@@ -359,15 +363,26 @@ void AudioSpatializationService::HandleSpatializationStateChange()
             continue;
         }
         if ((it->second).second == STREAM_USAGE_GAME) {
-            sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, false));
+            if (!outputDeviceChange) {
+                sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, false));
+            }
             spatializationStateChangeCb->OnSpatializationStateChange(spatializationNotSupported);
         } else {
-            sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, spatializationEnabledReal_));
+            if (!outputDeviceChange) {
+                sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, spatializationEnabledReal_));
+            }
             spatializationStateChangeCb->OnSpatializationStateChange(spatializationState);
         }
     }
-    AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(
-        currentDeviceAddress_, sessionIDToSpatializationEnabledMap);
+
+    if (!outputDeviceChange) {
+        std::thread notifyOffloadThread = std::thread(std::bind(
+            &AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService,
+            &AudioPolicyService::GetAudioPolicyService(),
+            currentDeviceAddress_,
+            sessionIDToSpatializationEnabledMap));
+        notifyOffloadThread.detach();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

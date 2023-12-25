@@ -902,7 +902,7 @@ public:
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
     void setAudioServiceClientObj(AudioServiceClient *serviceClientObj);
 private:
-    AudioServiceClient *serviceClient_;
+    AudioServiceClient *serviceClient_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
