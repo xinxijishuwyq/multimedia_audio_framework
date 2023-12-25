@@ -48,10 +48,8 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
 {
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
-    if ((doc = xmlReadFile(path, nullptr, 0)) == nullptr) {
-        AUDIO_ERR_LOG("could not parse file %{public}s", path);
-        return ERROR;
-    }
+    doc = xmlReadFile(path, nullptr, 0);
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, ERROR, "could not parse file %{public}s", path);
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, ERROR, "root element is null");

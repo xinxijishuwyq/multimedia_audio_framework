@@ -21,7 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 AudioGroupHandle::~AudioGroupHandle()
 {
-    AUDIO_ERR_LOG("~AudioGroupHandle()");
+    AUDIO_DEBUG_LOG("~AudioGroupHandle()");
 }
 
 int32_t AudioGroupHandle::GetNextId(GroupType type)

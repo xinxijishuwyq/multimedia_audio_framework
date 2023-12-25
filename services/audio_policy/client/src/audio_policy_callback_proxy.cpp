@@ -29,23 +29,17 @@ int32_t AudioPolicyProxy::SetAudioInterruptCallback(const uint32_t sessionID, co
     MessageParcel reply;
     MessageOption option;
 
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioInterruptCallback object is null");
-        return ERR_NULL_OBJECT;
-    }
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT,
+        "SetAudioInterruptCallback object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteUint32(sessionID);
     (void)data.WriteRemoteObject(object);
     data.WriteInt32(zoneID);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACK), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: set callback failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "set callback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -57,18 +51,14 @@ int32_t AudioPolicyProxy::UnsetAudioInterruptCallback(const uint32_t sessionID,
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteUint32(sessionID);
     data.WriteInt32(zoneID);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_CALLBACK), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: unset callback failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "unset callback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -79,22 +69,16 @@ int32_t AudioPolicyProxy::SetAudioManagerInterruptCallback(const int32_t clientI
     MessageParcel reply;
     MessageOption option;
 
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: SetAudioManagerInterruptCallback object is null");
-        return ERR_NULL_OBJECT;
-    }
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT,
+        "SetAudioManagerInterruptCallback object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(clientId);
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_INTERRUPT_CALLBACK), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: set callback failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "set callback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -105,19 +89,15 @@ int32_t AudioPolicyProxy::UnsetAudioManagerInterruptCallback(const int32_t clien
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
-        return -1;
-    }
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(clientId);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_INTERRUPT_CALLBACK), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: unset callback failed, error: %{public}d", error);
-        return error;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "unset callback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -142,7 +122,7 @@ int32_t AudioPolicyProxy::SetAvailableDeviceChangeCallback(const int32_t clientI
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AVAILABLE_DEVICE_CHANGE_CALLBACK), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
-        "AudioPolicyProxy: SetAvailableDeviceChangeCallback failed, error: %{public}d", error);
+        "SetAvailableDeviceChangeCallback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -161,7 +141,7 @@ int32_t AudioPolicyProxy::UnsetAvailableDeviceChangeCallback(const int32_t clien
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
-        "AudioPolicyProxy: UnsetAvailableDeviceChangeCallback failed, error: %{public}d", error);
+        "UnsetAvailableDeviceChangeCallback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }

@@ -23,10 +23,8 @@ namespace AudioStandard {
 bool AudioDeviceParser::LoadConfiguration()
 {
     mDoc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
-    if (mDoc_ == nullptr) {
-        AUDIO_ERR_LOG("xmlReadFile Failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(mDoc_ != nullptr, false,
+        "xmlReadFile Failed");
 
     return true;
 }
@@ -34,10 +32,8 @@ bool AudioDeviceParser::LoadConfiguration()
 bool AudioDeviceParser::Parse()
 {
     xmlNode *root = xmlDocGetRootElement(mDoc_);
-    if (root == nullptr) {
-        AUDIO_ERR_LOG("xmlDocGetRootElement Failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(root != nullptr, false,
+        "xmlDocGetRootElement Failed");
 
     if (!ParseInternal(root)) {
         return false;

@@ -34,7 +34,7 @@ void AudioPolicyClientProxy::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnVolumeKeyEvent: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_VOLUME_KEY_EVENT));
@@ -57,7 +57,7 @@ void AudioPolicyClientProxy::OnAudioFocusInfoChange(
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnAudioFocusInfoChange: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_FOCUS_INFO_CHANGED));
@@ -80,7 +80,7 @@ void AudioPolicyClientProxy::OnAudioFocusRequested(const AudioInterrupt &request
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
@@ -98,7 +98,7 @@ void AudioPolicyClientProxy::OnAudioFocusAbandoned(const AudioInterrupt &abandon
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
@@ -116,7 +116,7 @@ void AudioPolicyClientProxy::OnDeviceChange(const DeviceChangeAction &deviceChan
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnDeviceChange: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
@@ -161,7 +161,7 @@ void AudioPolicyClientProxy::OnMicStateUpdated(const MicStateChangeEvent &micSta
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnRingerModeUpdated: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
@@ -180,7 +180,7 @@ void AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated(const std::vector<sp
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnPreferredOutputDeviceUpdated: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
@@ -204,7 +204,7 @@ void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<spt
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnPreferredInputDeviceUpdated: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
@@ -255,7 +255,7 @@ void AudioPolicyClientProxy::OnRendererStateChange(
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnRendererStateChange: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 
@@ -310,7 +310,7 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyClientProxy::OnCapturerStateChange: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return;
     }
 

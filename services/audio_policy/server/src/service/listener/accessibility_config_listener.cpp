@@ -35,7 +35,7 @@ void AccessibilityConfigListener::OnConfigChanged(const CONFIG_ID configId, cons
         // value.audioBalance should be in the range [-1.0, 1.0]
         float balance = value.audioBalance;
         if (balance < -1.0f || balance > 1.0f) {
-            AUDIO_ERR_LOG("AccessibilityConfigListener: audioBalance value is out of range [-1.0, 1.0]");
+            AUDIO_WARNING_LOG("AccessibilityConfigListener: audioBalance value is out of range [-1.0, 1.0]");
         } else {
             audioAccessibilityConfigObserver_.OnAudioBalanceChanged(balance);
         }

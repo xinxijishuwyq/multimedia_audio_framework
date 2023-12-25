@@ -170,29 +170,23 @@ DeviceStatusListener::~DeviceStatusListener() = default;
 int32_t DeviceStatusListener::RegisterDeviceStatusListener()
 {
     hdiServiceManager_ = HDIServiceManagerGet();
-    if (hdiServiceManager_ == nullptr) {
-        AUDIO_ERR_LOG("[DeviceStatusListener]: Get HDI service manager failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(hdiServiceManager_ != nullptr, ERR_OPERATION_FAILED,
+        "[DeviceStatusListener]: Get HDI service manager failed");
 
     listener_ = HdiServiceStatusListenerNewInstance();
     listener_->callback = OnServiceStatusReceived;
     listener_->priv = (void *)this;
     int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_,
                                                                        DeviceClass::DEVICE_CLASS_AUDIO);
-    if (status != HDF_SUCCESS) {
-        AUDIO_ERR_LOG("[DeviceStatusListener]: Register service status listener failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(status == HDF_SUCCESS, ERR_OPERATION_FAILED,
+        "[DeviceStatusListener]: Register service status listener failed");
 
     audioPnpServer_ = &AudioPnpServer::GetAudioPnpServer();
     pnpDeviceCB_ = std::make_shared<AudioPnpStatusCallback>();
     pnpDeviceCB_->SetDeviceStatusListener(this);
     int32_t cbstatus = audioPnpServer_->RegisterPnpStatusListener(pnpDeviceCB_);
-    if (cbstatus != SUCCESS) {
-        AUDIO_ERR_LOG("[DeviceStatusListener]: Register Pnp Status Listener failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(cbstatus == SUCCESS, ERR_OPERATION_FAILED,
+        "[DeviceStatusListener]: Register Pnp Status Listener failed");
     return SUCCESS;
 }
 
@@ -201,12 +195,9 @@ int32_t DeviceStatusListener::UnRegisterDeviceStatusListener()
     if ((hdiServiceManager_ == nullptr) || (listener_ == nullptr)) {
         return ERR_ILLEGAL_STATE;
     }
-
     int32_t status = hdiServiceManager_->UnregisterServiceStatusListener(hdiServiceManager_, listener_);
-    if (status != HDF_SUCCESS) {
-        AUDIO_ERR_LOG("[DeviceStatusListener]: UnRegister service status listener failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(status == HDF_SUCCESS, ERR_OPERATION_FAILED,
+        "[DeviceStatusListener]: UnRegister service status listener failed");
 
     hdiServiceManager_ = nullptr;
     listener_ = nullptr;

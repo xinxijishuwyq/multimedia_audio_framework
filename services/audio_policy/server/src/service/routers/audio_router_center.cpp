@@ -109,7 +109,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsa
             return desc;
         }
     }
-    AUDIO_INFO_LOG("streamUsage %{public}d clientUID %{public}d fetch no device", streamUsage, clientUID);
+    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch no device", streamUsage, clientUID);
     return make_unique<AudioDeviceDescriptor>();
 }
 
@@ -135,7 +135,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
             }
         }
     }
-    AUDIO_INFO_LOG("sourceType %{public}d clientUID %{public}d fetch no device", sourceType, clientUID);
+    AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch no device", sourceType, clientUID);
     return make_unique<AudioDeviceDescriptor>();
 }
 

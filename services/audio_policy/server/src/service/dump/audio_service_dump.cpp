@@ -27,10 +27,7 @@ void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
 {
     char buf[STRING_BUFFER_SIZE] = {0};
     int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
-    if (len <= 0) {
-        AUDIO_ERR_LOG("snprintf_s error : buffer allocation fails");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(len > 0, "snprintf_s error : buffer allocation fails");
     out += buf;
 }
 
@@ -884,17 +881,11 @@ void AudioServiceDump::PAContextStateCb(pa_context *context, void *userdata)
 void AudioServiceDump::PASinkInfoCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
-    if (asDump == nullptr) {
-        AUDIO_ERR_LOG("Failed to get sink information");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get sink information");
 
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
-    if (eol < 0) {
-        AUDIO_ERR_LOG("Failed to get sink information: %{public}s", pa_strerror(pa_context_errno(c)));
-        return;
-    }
+    CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get sink information: %{public}s", pa_strerror(pa_context_errno(c)));
 
     if (eol) {
         pa_threaded_mainloop_signal(mainLoop, 0);
@@ -916,17 +907,12 @@ void AudioServiceDump::PASinkInfoCallback(pa_context *c, const pa_sink_info *i, 
 void AudioServiceDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
-    if (asDump == nullptr) {
-        AUDIO_ERR_LOG("Failed to get sink input information");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get sink input information");
 
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
-    if (eol < 0) {
-        AUDIO_ERR_LOG("Failed to get sink input information: %{public}s", pa_strerror(pa_context_errno(c)));
-        return;
-    }
+    CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get sink input information: %{public}s",
+        pa_strerror(pa_context_errno(c)));
 
     if (eol) {
         pa_threaded_mainloop_signal(mainLoop, 0);
@@ -978,17 +964,12 @@ void AudioServiceDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_inpu
 void AudioServiceDump::PASourceInfoCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata)
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
-    if (asDump == nullptr) {
-        AUDIO_ERR_LOG("Failed to get source information");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get source information");
 
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
-    if (eol < 0) {
-        AUDIO_ERR_LOG("Failed to get source information: %{public}s", pa_strerror(pa_context_errno(c)));
-        return;
-    }
+    CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get source information: %{public}s",
+        pa_strerror(pa_context_errno(c)));
 
     if (eol) {
         pa_threaded_mainloop_signal(mainLoop, 0);
@@ -1011,17 +992,12 @@ void AudioServiceDump::PASourceOutputInfoCallback(pa_context *c, const pa_source
     void *userdata)
 {
     AudioServiceDump *asDump = (AudioServiceDump *)userdata;
-    if (asDump == nullptr) {
-        AUDIO_ERR_LOG("Failed to get source output information");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get source output information");
 
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
 
-    if (eol < 0) {
-        AUDIO_ERR_LOG("Failed to get source output information: %{public}s", pa_strerror(pa_context_errno(c)));
-        return;
-    }
+    CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get source output information: %{public}s",
+        pa_strerror(pa_context_errno(c)));
 
     if (eol) {
         pa_threaded_mainloop_signal(mainLoop, 0);

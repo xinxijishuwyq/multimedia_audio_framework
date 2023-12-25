@@ -30,10 +30,7 @@ void DataShareObserverCallBack::OnChange()
 {
     std::string devicesName = "";
     int32_t ret = audioPolicyService_.GetDeviceNameFromDataShareHelper(devicesName);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Local UpdateDisplayName init device failed");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
     audioPolicyService_.SetDisplayName(devicesName, true);
 }
 } // namespace AudioStandard
