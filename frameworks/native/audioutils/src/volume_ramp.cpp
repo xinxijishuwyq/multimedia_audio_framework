@@ -36,11 +36,8 @@ VolumeRamp::VolumeRamp()
 void VolumeRamp::SetVolumeCurve(vector<float> &volumes)
 {
     vector<float> times = {0.0f, 1.0f};
-    if (volumes.size() != VOLUME_SIZE) {
-        AUDIO_ERR_LOG("Array size must 2!");
-        return;
-    }
-    
+    CHECK_AND_RETURN_LOG(volumes.size() == VOLUME_SIZE, "Array size must 2!");
+
     curvePoints_.clear();
     for (int32_t i = 0; i < times.size(); i++) {
         curvePoints_.emplace(times[i], volumes[i]);

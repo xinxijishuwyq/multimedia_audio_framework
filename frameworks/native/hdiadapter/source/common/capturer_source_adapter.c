@@ -44,20 +44,15 @@ const char *g_deviceClassRemote = "remote";
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
         const char *sourceName, struct CapturerSourceAdapter **sourceAdapter)
 {
-    AUDIO_INFO_LOG("%{public}s: sourceType: %{public}d  device: %{public}s ", __func__, sourceType, device);
-    if ((device == NULL) || (deviceNetworkId == NULL) || (sourceAdapter == NULL)) {
-        AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
-        return ERROR;
-    }
+    AUDIO_INFO_LOG("sourceType: %{public}d  device: %{public}s", sourceType, device);
+    CHECK_AND_RETURN_RET_LOG((device != NULL) && (deviceNetworkId != NULL) && (sourceAdapter != NULL),
+    ERROR, "Invalid parameter");
 
     struct CapturerSourceAdapter *adapter = (struct CapturerSourceAdapter *)calloc(1, sizeof(*adapter));
-    if (adapter == NULL) {
-        AUDIO_ERR_LOG("%{public}s: alloc sink adapter failed", __func__);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG((adapter != NULL), ERROR, "alloc sink adapter failed");
 
     if (FillinSourceWapper(device, deviceNetworkId, sourceType, sourceName, &adapter->wapper) != SUCCESS) {
-        AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
+        AUDIO_ERR_LOG(" Device not supported");
         free(adapter);
         return ERROR;
     }
@@ -94,10 +89,7 @@ int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const
 
 int32_t UnLoadSourceAdapter(struct CapturerSourceAdapter *sourceAdapter)
 {
-    if (sourceAdapter == NULL) {
-        AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(sourceAdapter != NULL, ERROR, "Invalid parameter");
 
     free(sourceAdapter);
 

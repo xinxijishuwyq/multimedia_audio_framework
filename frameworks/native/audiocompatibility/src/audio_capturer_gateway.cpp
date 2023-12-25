@@ -36,7 +36,7 @@ AudioCapturerGateway::AudioCapturerGateway(AudioStreamType audioStreamType)
 {
     audioStream_ = std::make_shared<AudioContainerCaptureStream>(audioStreamType, AUDIO_MODE_RECORD);
     if (audioStream_) {
-    AUDIO_DEBUG_LOG("AudioCapturerGateway::Audio stream created");
+    AUDIO_DEBUG_LOG("Audio stream created");
     }
 }
 
@@ -52,7 +52,7 @@ int32_t AudioCapturerGateway::SetParams(const AudioCapturerParams params)
     audioStreamParams.samplingRate = params.samplingRate;
     audioStreamParams.channels = params.audioChannel;
     audioStreamParams.encoding = params.audioEncoding;
-    AUDIO_INFO_LOG("AudioCapturerGateway::SetParams SetAudioStreamInfo");
+    AUDIO_INFO_LOG("SetAudioStreamInfo");
     return audioStream_->SetAudioStreamInfo(audioStreamParams);
 }
 
@@ -61,24 +61,18 @@ int32_t AudioCapturerGateway::SetCapturerCallback(const std::shared_ptr<AudioCap
     // If the client is using the deprecated SetParams API. SetCapturerCallback must be invoked, after SetParams.
     // In general, callbacks can only be set after the capturer state is  PREPARED.
     CapturerState state = GetStatus();
-    if (state == CAPTURER_NEW || state == CAPTURER_RELEASED) {
-        AUDIO_DEBUG_LOG("AudioCapturerGateway::SetCapturerCallback ncorrect state:%{public}d to register cb", state);
-        return ERR_ILLEGAL_STATE;
-    }
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerGateway::SetCapturerCallback callback param is null");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(state != CAPTURER_NEW && state != CAPTURER_RELEASED, ERR_ILLEGAL_STATE,
+        "ncorrect state:%{public}d to register cb", state);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "callback param is null");
 
     // Save and Set reference for stream callback. Order is important here.
     if (audioStreamCallback_ == nullptr) {
         audioStreamCallback_ = std::make_shared<AudioStreamCapturerCallback>();
-        if (audioStreamCallback_ == nullptr) {
-            AUDIO_ERR_LOG("AudioCapturerGateway::Failed to allocate memory for audioStreamCallback_");
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(audioStreamCallback_ != nullptr, ERROR,
+            "Failed to allocate memory for audioStreamCallback_");
     }
-    AUDIO_ERR_LOG("AudioCapturerGateway::SetCapturerCallback");
+    AUDIO_DEBUG_LOG("SetCapturerCallback");
     std::shared_ptr<AudioStreamCapturerCallback> cbStream =
         std::static_pointer_cast<AudioStreamCapturerCallback>(audioStreamCallback_);
     cbStream->SaveCallback(callback);
@@ -126,10 +120,8 @@ int32_t AudioCapturerGateway::GetStreamInfo(AudioStreamInfo &streamInfo) const
 int32_t AudioCapturerGateway::SetCapturerPositionCallback(int64_t markPosition,
     const std::shared_ptr<CapturerPositionCallback> &callback)
 {
-    if ((callback == nullptr) || (markPosition <= 0)) {
-        AUDIO_ERR_LOG("AudioCapturerGateway::SetCapturerPositionCallback input param is invalid");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG((callback != nullptr) && (markPosition > 0),
+        ERR_INVALID_PARAM, "input param is invalid");
 
     audioStream_->SetCapturerPositionCallback(markPosition, callback);
 
@@ -144,10 +136,8 @@ void AudioCapturerGateway::UnsetCapturerPositionCallback()
 int32_t AudioCapturerGateway::SetCapturerPeriodPositionCallback(int64_t frameNumber,
     const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
-    if ((callback == nullptr) || (frameNumber <= 0)) {
-        AUDIO_ERR_LOG("AudioCapturerGateway::SetCapturerPeriodPositionCallback input param is invalid");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG((callback != nullptr) && (frameNumber > 0), ERR_INVALID_PARAM,
+        "input param is invalid");
 
     audioStream_->SetCapturerPeriodPositionCallback(frameNumber, callback);
 
@@ -211,10 +201,8 @@ int32_t AudioCapturerGateway::GetAudioStreamId(uint32_t &sessionID) const
 
 int32_t AudioCapturerGateway::SetBufferDuration(uint64_t bufferDuration) const
 {
-    if (bufferDuration < MINIMUM_BUFFER_SIZE_MSEC || bufferDuration > MAXIMUM_BUFFER_SIZE_MSEC) {
-        AUDIO_ERR_LOG("Error: Please set the buffer duration between 5ms ~ 20ms");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(bufferDuration >= MINIMUM_BUFFER_SIZE_MSEC && bufferDuration <= MAXIMUM_BUFFER_SIZE_MSEC,
+        ERR_INVALID_PARAM, "Error: Please set the buffer duration between 5ms ~ 20ms");
     return audioStream_->SetBufferSizeInMsec(bufferDuration);
 }
 
@@ -226,19 +214,15 @@ void AudioCapturerGateway::SetApplicationCachePath(const std::string cachePath)
 void AudioStreamCapturerCallback::SaveCallback(const std::weak_ptr<AudioCapturerCallback> &callback)
 {
     std::shared_ptr<AudioCapturerCallback> cb = callback.lock();
-    AUDIO_ERR_LOG("AudioCapturerGateway AudioStreamCapturerCallback::SaveCallback cb");
+    AUDIO_DEBUG_LOG("SaveCallback cb");
     callback_ = callback;
 }
 
 void AudioStreamCapturerCallback::OnStateChange(const State state, StateChangeCmdType cmdType)
 {
     std::shared_ptr<AudioCapturerCallback> cb = callback_.lock();
-    if (cb == nullptr) {
-        AUDIO_ERR_LOG("AudioStreamCapturerCallback::OnStateChange cb == nullptr.");
-        return;
-    }
-
-    AUDIO_ERR_LOG("AudioCapturerGateway AudioStreamCapturerCallback::OnStateChange cb");
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr, "cb == nullptr.");
+    AUDIO_DEBUG_LOG("OnStateChange cb");
     cb->OnStateChange(static_cast<CapturerState>(state));
 }
 

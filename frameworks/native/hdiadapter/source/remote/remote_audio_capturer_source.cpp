@@ -95,10 +95,8 @@ std::map<std::string, RemoteAudioCapturerSourceInner *> allRemoteSources;
 RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::string &deviceNetworkId)
 {
     AUDIO_INFO_LOG("GetInstance.");
-    if (deviceNetworkId.empty()) {
-        AUDIO_ERR_LOG("Remote capture device networkId is null.");
-        return nullptr;
-    }
+    bool isEmpty = deviceNetworkId.empty();
+    CHECK_AND_RETURN_RET_LOG(!isEmpty, nullptr, "Remote capture device networkId is null.");
 
     if (allRemoteSources.count(deviceNetworkId)) {
         return allRemoteSources[deviceNetworkId];
@@ -124,7 +122,7 @@ RemoteAudioCapturerSourceInner::~RemoteAudioCapturerSourceInner()
     if (capturerInited_.load()) {
         RemoteAudioCapturerSourceInner::DeInit();
     } else {
-        AUDIO_INFO_LOG("RemoteAudioCapturerSource has already DeInit.");
+        AUDIO_DEBUG_LOG("RemoteAudioCapturerSource has already DeInit.");
     }
 }
 
@@ -150,12 +148,12 @@ void RemoteAudioCapturerSourceInner::ClearCapture()
 
     AudioDeviceManagerFactory::GetInstance().DestoryDeviceManager(REMOTE_DEV_MGR);
     DumpFileUtil::CloseDumpFile(&dumpFile_);
-    AUDIO_INFO_LOG("Clear capture end.");
+    AUDIO_DEBUG_LOG("Clear capture end.");
 }
 
 void RemoteAudioCapturerSourceInner::DeInit()
 {
-    AUDIO_INFO_LOG("DeInit enter.");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::DeInit");
     ClearCapture();
 
     // remove map recorder.
@@ -169,7 +167,7 @@ void RemoteAudioCapturerSourceInner::DeInit()
 
 int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource: Init start.");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Init");
     attr_ = attr;
     audioManager_ = AudioDeviceManagerFactory::GetInstance().CreatDeviceManager(REMOTE_DEV_MGR);
     CHECK_AND_RETURN_RET_LOG(audioManager_ != nullptr, ERR_NOT_STARTED, "Init audio manager fail.");
@@ -256,10 +254,8 @@ int32_t RemoteAudioCapturerSourceInner::CreateCapture(struct AudioPort &captureP
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateCapture: Audio adapter is null.");
     int32_t ret = audioAdapter_->CreateCapture(&deviceDesc, &param, &audioCapture_, this);
-    if (ret != SUCCESS || audioCapture_ == nullptr) {
-        AUDIO_ERR_LOG("Create capture failed, ret %{public}d.", ret);
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioCapture_ != nullptr, ret,
+        "Create capture failed, ret %{public}d.", ret);
 
     isCapturerCreated_.store(true);
     return SUCCESS;
@@ -278,7 +274,7 @@ int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t reque
 
 int32_t RemoteAudioCapturerSourceInner::Start(void)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource :Start enter.");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Start");
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_CAPTURE_SOURCE_FILENAME, &dumpFile_);
     if (!isCapturerCreated_.load()) {
         CHECK_AND_RETURN_RET_LOG(CreateCapture(audioPort_) == SUCCESS, ERR_NOT_STARTED,
@@ -299,7 +295,7 @@ int32_t RemoteAudioCapturerSourceInner::Start(void)
 
 int32_t RemoteAudioCapturerSourceInner::Stop(void)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource: Stop enter.");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Stop");
     if (!started_.load()) {
         AUDIO_INFO_LOG("Remote capture is already stopped.");
         return SUCCESS;
@@ -314,7 +310,7 @@ int32_t RemoteAudioCapturerSourceInner::Stop(void)
 
 int32_t RemoteAudioCapturerSourceInner::Pause(void)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource: Pause enter.");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Pause");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Pause invalid state!");
 
     if (paused_.load()) {
@@ -331,7 +327,7 @@ int32_t RemoteAudioCapturerSourceInner::Pause(void)
 
 int32_t RemoteAudioCapturerSourceInner::Resume(void)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource: Resume enter.");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Resume");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Resume invalid state!");
 
     if (!paused_.load()) {
@@ -348,7 +344,7 @@ int32_t RemoteAudioCapturerSourceInner::Resume(void)
 
 int32_t RemoteAudioCapturerSourceInner::Reset(void)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource: Reset enter.");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Reset");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Reset invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Reset: Audio capture is null.");
@@ -359,7 +355,7 @@ int32_t RemoteAudioCapturerSourceInner::Reset(void)
 
 int32_t RemoteAudioCapturerSourceInner::Flush(void)
 {
-    AUDIO_INFO_LOG("RemoteAudioCapturerSource: Flush enter.");
+    AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::Flush");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Flush invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "Flush: Audio capture is null.");
@@ -523,18 +519,14 @@ int32_t RemoteAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, Dev
     struct AudioSceneDescriptor scene;
     scene.scene.id = GetAudioCategory(audioScene);
     scene.desc.pins = PIN_IN_MIC;
-    if (audioCapture_->scene.SelectScene == nullptr) {
-        AUDIO_ERR_LOG("AudioCapturerSource: Select scene nullptr");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapture_->scene.SelectScene != nullptr, ERR_OPERATION_FAILED,
+        "AudioCapturerSource: Select scene nullptr");
 
     AUDIO_INFO_LOG("AudioCapturerSource::SelectScene start");
     int32_t ret = audioCapture_->scene.SelectScene((AudioHandle)audioCapture_, &scene);
     AUDIO_INFO_LOG("AudioCapturerSource::SelectScene over");
-    if (ret < 0) {
-        AUDIO_ERR_LOG("AudioCapturerSource: Select scene FAILED: %{public}d", ret);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
+        "AudioCapturerSource: Select scene FAILED: %{public}d", ret);
     AUDIO_INFO_LOG("AudioCapturerSource::Select audio scene SUCCESS: %{public}d", audioScene);
     return SUCCESS;
 }

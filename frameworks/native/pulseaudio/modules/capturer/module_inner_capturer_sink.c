@@ -356,23 +356,21 @@ int pa__init(pa_module *m)
     struct userdata *u = NULL;
     pa_modargs *ma = NULL;
     size_t nbytes;
+    int mq, mg;
 
     pa_assert(m);
 
-    if (!(ma = pa_modargs_new(m->argument, VALID_MODARGS))) {
-        AUDIO_ERR_LOG("Failed to parse module arguments.");
-        return InitFailed(m, ma);
-    }
+    ma = pa_modargs_new(m->argument, VALID_MODARGS);
+    CHECK_AND_RETURN_RET_LOG(ma != NULL, InitFailed(m, ma),
+        "Failed to parse module arguments.");
 
     m->userdata = u = pa_xnew0(struct userdata, 1);
     u->core = m->core;
     u->module = m;
     u->rtpoll = pa_rtpoll_new();
 
-    if (pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll) < 0) {
-        AUDIO_ERR_LOG("pa_thread_mq_init() failed.");
-        return InitFailed(m, ma);
-    }
+    mq = pa_thread_mq_init(&u->thread_mq, m->core->mainloop, u->rtpoll);
+    CHECK_AND_RETURN_RET_LOG(mq >=0, InitFailed(m, ma), "pa_thread_mq_init() failed.");
 
     if (CreateSink(m, ma, u) != 0) {
         return InitFailed(m, ma);
@@ -382,10 +380,11 @@ int pa__init(pa_module *m)
     pa_sink_set_rtpoll(u->sink, u->rtpoll);
 
     u->buffer_size = DEFAULT_BUFFER_SIZE;
-    if (pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size) < 0) {
-        AUDIO_ERR_LOG("Failed to parse buffer_size arg in capturer sink");
-        return InitFailed(m, ma);
-    }
+
+    mg = pa_modargs_get_value_u32(ma, "buffer_size", &u->buffer_size);
+    CHECK_AND_RETURN_RET_LOG(mg >= 0, InitFailed(m, ma),
+        "Failed to parse buffer_size arg in capturer sink");
+
     u->block_usec = pa_bytes_to_usec(u->buffer_size, &u->sink->sample_spec);
     nbytes = pa_usec_to_bytes(u->block_usec, &u->sink->sample_spec);
 

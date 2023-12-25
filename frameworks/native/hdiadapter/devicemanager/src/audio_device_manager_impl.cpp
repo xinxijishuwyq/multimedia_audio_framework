@@ -67,10 +67,8 @@ std::shared_ptr<IAudioDeviceManager> AudioDeviceManagerFactory::CreatDeviceManag
             return nullptr;
     }
 
-    if (audioDevMgr == nullptr) {
-        AUDIO_ERR_LOG("Get audio manager of audioMgrType %{public}d fail.", audioMgrType);
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioDevMgr != nullptr, nullptr,
+        "Get audio manager of audioMgrType %{public}d fail.", audioMgrType);
     allHdiDevMgr_[audioMgrType] = audioDevMgr;
     return allHdiDevMgr_[audioMgrType];
 }
@@ -93,16 +91,14 @@ std::shared_ptr<IAudioDeviceManager> AudioDeviceManagerFactory::InitRemoteAudioM
     struct AudioManager *(*GetAudioManagerFuncs)() = nullptr;
 
     void *handle_ = dlopen(resolvedPath, RTLD_LAZY);
-    if (handle_ == nullptr) {
-        AUDIO_ERR_LOG("Open daudio client shared object fail, resolvedPath [%{public}s].", resolvedPath);
-        return nullptr;
-    }
+
+    CHECK_AND_RETURN_RET_LOG(handle_ != nullptr, nullptr,
+        "Open audio client shared object fail, resolvedPath [%{public}s].", resolvedPath);
 
     GetAudioManagerFuncs = reinterpret_cast<struct AudioManager *(*)()>(dlsym(handle_, "GetAudioManagerFuncs"));
-    if (GetAudioManagerFuncs == nullptr) {
-        AUDIO_ERR_LOG("Link the GetAudioManagerFuncs symbol in daudio client fail.");
-        return nullptr;
-    }
+
+    CHECK_AND_RETURN_RET_LOG(GetAudioManagerFuncs != nullptr, nullptr,
+        "Link the GetAudioManagerFuncs symbol in daudio client fail.");
 
     struct AudioManager *audioMgr = GetAudioManagerFuncs();
 #else
@@ -110,7 +106,7 @@ std::shared_ptr<IAudioDeviceManager> AudioDeviceManagerFactory::InitRemoteAudioM
 #endif // FEATURE_DISTRIBUTE_AUDIO
 
     CHECK_AND_RETURN_RET_LOG((audioMgr != nullptr), nullptr, "Init remote audio manager proxy fail.");
-    AUDIO_INFO_LOG("Init remote hdi manager proxy success.");
+    AUDIO_DEBUG_LOG("Init remote hdi manager proxy success.");
     return std::make_shared<AudioDeviceManagerImpl>(REMOTE_DEV_MGR, audioMgr);
 }
 
@@ -123,12 +119,10 @@ std::shared_ptr<IAudioDeviceManager> AudioDeviceManagerFactory::InitBluetoothAud
 int32_t AudioDeviceManagerImpl::GetAllAdapters(AudioAdapterDescriptor **descs, int32_t *size)
 {
     CHECK_AND_RETURN_RET_LOG((audioMgr_ != nullptr), ERR_INVALID_HANDLE,
-        "GetAllAdapters: Audio manager is null, audioMgrType %{public}d.", audioMgrType_);
+        "Audio manager is null, audioMgrType %{public}d.", audioMgrType_);
     int32_t ret = audioMgr_->GetAllAdapters(audioMgr_, descs, size);
-    if (ret != 0 || size == nullptr || *size == 0 || descs == nullptr || *descs == nullptr) {
-        AUDIO_ERR_LOG("Audio manager proxy get all adapters fail, ret %{public}d.", ret);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0 && size != nullptr && *size != 0 && descs != nullptr && *descs != nullptr,
+        ERR_OPERATION_FAILED, "Audio manager proxy get all adapters fail, ret %{public}d.", ret);
     return SUCCESS;
 }
 
@@ -177,17 +171,15 @@ std::shared_ptr<IAudioDeviceAdapter> AudioDeviceManagerImpl::LoadAdapters(const 
         "LoadAdapters: Audio manager is null, audioMgrType %{public}d.", audioMgrType_);
     struct AudioAdapter *audioAdapter = nullptr;
     int32_t ret = audioMgr_->LoadAdapter(audioMgr_, desc, &audioAdapter);
-    if (ret != 0 || audioAdapter == nullptr) {
-        AUDIO_ERR_LOG("Load audio adapter fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0 && audioAdapter != nullptr,
+        nullptr, "Load audio adapter fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
     auto audioDevAdp = std::make_shared<AudioDeviceAdapterImpl>(std::string(desc->adapterName), audioAdapter);
     ret = audioDevAdp->Init();
     CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), nullptr, "LoadAdapters: Init all ports fail, ret %{public}d.", ret);
 
     DeviceAdapterInfo adpInfo = {audioDevAdp, audioAdapter};
     enableAdapters_[std::string(desc->adapterName)] = adpInfo;
-    AUDIO_INFO_LOG("Load adapter end.");
+    AUDIO_DEBUG_LOG("Load adapter end.");
     return audioDevAdp;
 }
 
@@ -218,10 +210,8 @@ int32_t AudioDeviceManagerImpl::Release()
 {
     AUDIO_INFO_LOG("Release enter.");
     std::lock_guard<std::mutex> lock(mtx_);
-    if (!enableAdapters_.empty()) {
-        AUDIO_ERR_LOG("Audio manager has some adapters busy, audioMgrType %{public}d.", audioMgrType_);
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(enableAdapters_.empty(), ERR_ILLEGAL_STATE,
+        "Audio manager has some adapters busy, audioMgrType %{public}d.", audioMgrType_);
 
     audioMgr_ = nullptr;
     return SUCCESS;

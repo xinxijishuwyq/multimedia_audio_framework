@@ -42,10 +42,8 @@ int64_t ClockTime::GetCurNano()
     struct timespec time;
     clockid_t clockId = CLOCK_MONOTONIC;
     int ret = clock_gettime(clockId, &time);
-    if (ret < 0) {
-        AUDIO_WARNING_LOG("GetCurNanoTime fail, result:%{public}d", ret);
-        return result;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
+        "GetCurNanoTime fail, result:%{public}d", ret);
     result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
     return result;
 }
@@ -53,10 +51,8 @@ int64_t ClockTime::GetCurNano()
 int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
 {
     int32_t ret = -1; // -1 for bad result.
-    if (nanoTime <= 0) {
-        AUDIO_WARNING_LOG("AbsoluteSleep invalid sleep time :%{public}" PRId64 " ns", nanoTime);
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(nanoTime > 0, ret,
+        "AbsoluteSleep invalid sleep time :%{public}" PRId64 " ns", nanoTime);
     struct timespec time;
     time.tv_sec = nanoTime / AUDIO_NS_PER_SECOND;
     time.tv_nsec = nanoTime - (time.tv_sec * AUDIO_NS_PER_SECOND); // Avoids % operation.
@@ -73,10 +69,8 @@ int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
 int32_t ClockTime::RelativeSleep(int64_t nanoTime)
 {
     int32_t ret = -1; // -1 for bad result.
-    if (nanoTime <= 0) {
-        AUDIO_WARNING_LOG("AbsoluteSleep invalid sleep time :%{public}" PRId64 " ns", nanoTime);
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(nanoTime > 0, ret,
+        "AbsoluteSleep invalid sleep time :%{public}" PRId64 " ns", nanoTime);
     struct timespec time;
     time.tv_sec = nanoTime / AUDIO_NS_PER_SECOND;
     time.tv_nsec = nanoTime - (time.tv_sec * AUDIO_NS_PER_SECOND); // Avoids % operation.
@@ -158,9 +152,8 @@ void AudioXCollie::CancelXCollieTimer()
 bool PermissionUtil::VerifyIsSystemApp()
 {
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
-    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
-        return true;
-    }
+    bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
+    CHECK_AND_RETURN_RET(!tmp, true);
 
     AUDIO_ERR_LOG("Check system app permission reject");
     return false;
@@ -171,17 +164,13 @@ bool PermissionUtil::VerifySelfPermission()
     Security::AccessToken::FullTokenID selfToken = IPCSkeleton::GetSelfTokenID();
 
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));
-    if (tokenTypeFlag == Security::AccessToken::TOKEN_NATIVE) {
-        return true;
-    }
 
-    if (tokenTypeFlag == Security::AccessToken::TOKEN_SHELL) {
-        return true;
-    }
+    CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_NATIVE, true);
 
-    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(selfToken)) {
-        return true;
-    }
+    CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_SHELL, true);
+
+    bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(selfToken);
+    CHECK_AND_RETURN_RET(!tmp, true);
 
     AUDIO_ERR_LOG("Check self app permission reject");
     return false;
@@ -191,17 +180,13 @@ bool PermissionUtil::VerifySystemPermission()
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
-    if (tokenTypeFlag == Security::AccessToken::TOKEN_NATIVE) {
-        return true;
-    }
 
-    if (tokenTypeFlag == Security::AccessToken::TOKEN_SHELL) {
-        return true;
-    }
+    CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_NATIVE, true);
 
-    if (VerifyIsSystemApp()) {
-        return true;
-    }
+    CHECK_AND_RETURN_RET(tokenTypeFlag != Security::AccessToken::TOKEN_SHELL, true);
+
+    bool tmp = VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET(!tmp, true);
 
     AUDIO_ERR_LOG("Check system permission reject");
     return false;
@@ -399,17 +384,12 @@ void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
 template <typename T>
 bool GetSysPara(const char *key, T &value)
 {
-    if (key == nullptr) {
-        AUDIO_ERR_LOG("GetSysPara: key is nullptr");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(key != nullptr, false, "key is nullptr");
     char paraValue[20] = {0}; // 20 for system parameter
     auto res = GetParameter(key, "-1", paraValue, sizeof(paraValue));
-    if (res <= 0) {
-        AUDIO_WARNING_LOG("GetSysPara fail, key:%{public}s res:%{public}d", key, res);
-        return false;
-    }
-    AUDIO_INFO_LOG("GetSysPara: key:%{public}s value:%{public}s", key, paraValue);
+
+    CHECK_AND_RETURN_RET_LOG(res > 0, false, "GetSysPara fail, key:%{public}s res:%{public}d", key, res);
+    AUDIO_DEBUG_LOG("key:%{public}s value:%{public}s", key, paraValue);
     std::stringstream valueStr;
     valueStr << paraValue;
     valueStr >> value;
@@ -451,16 +431,12 @@ FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, Au
     AUDIO_INFO_LOG("%{public}s = %{public}s", para.c_str(), dumpPara.c_str());
     if (dumpPara == "w") {
         dumpFile = fopen(filePath.c_str(), "wb+");
-        if (dumpFile == nullptr) {
-            AUDIO_ERR_LOG("Error opening pcm test file!");
-            return dumpFile;
-        }
+        CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,
+            "Error opening pcm test file!");
     } else if (dumpPara == "a") {
         dumpFile = fopen(filePath.c_str(), "ab+");
-        if (dumpFile == nullptr) {
-            AUDIO_ERR_LOG("Error opening pcm test file!");
-            return dumpFile;
-        }
+        CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,
+            "Error opening pcm test file!");
     }
     g_lastPara[para] = dumpPara;
     return dumpFile;
@@ -471,15 +447,9 @@ void DumpFileUtil::WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize
     if (dumpFile == nullptr) {
         return;
     }
-    if (buffer == nullptr) {
-        AUDIO_ERR_LOG("Invalid write param");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(buffer != nullptr, "Invalid write param");
     size_t writeResult = fwrite(buffer, 1, bufferSize, dumpFile);
-    if (writeResult != bufferSize) {
-        AUDIO_ERR_LOG("Failed to write the file.");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(writeResult == bufferSize, "Failed to write the file.");
 }
 
 void DumpFileUtil::CloseDumpFile(FILE **dumpFile)
@@ -492,18 +462,12 @@ void DumpFileUtil::CloseDumpFile(FILE **dumpFile)
 
 void DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std::string filePath)
 {
-    if (*dumpFile == nullptr) {
-        AUDIO_ERR_LOG("Invalid file para");
-        return;
-    }
-    if (g_lastPara[para] != "w" && g_lastPara[para] != "a") {
-        AUDIO_ERR_LOG("Invalid input para");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(*dumpFile != nullptr, "Invalid file para");
+    CHECK_AND_RETURN_LOG(g_lastPara[para] == "w" || g_lastPara[para] == "a", "Invalid input para");
     std::string dumpPara;
     bool res = GetSysPara(para.c_str(), dumpPara);
     if (!res || dumpPara.empty()) {
-        AUDIO_INFO_LOG("get %{public}s fail", para.c_str());
+        AUDIO_WARNING_LOG("get %{public}s fail", para.c_str());
     }
     if (g_lastPara[para] == "w" && dumpPara == "w") {
         return;

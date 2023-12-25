@@ -1327,10 +1327,7 @@ static int CreateSinkInput(pa_module *m, pa_modargs *ma, struct userdata *u, pa_
     pa_sink_input_new(&u->sink_input, m->core, &sinkInputData);
     pa_sink_input_new_data_done(&sinkInputData);
 
-    if (!u->sink_input) {
-        AUDIO_ERR_LOG("Create sink input failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(u->sink_input, -1, "Create sink input failed");
     return 0;
 }
 
@@ -1378,10 +1375,7 @@ static int ConfigSinkInput(struct userdata *u, const pa_source *source)
     pa_memblockq_seek(u->memblockq, pa_usec_to_bytes(u->latency, &u->sink_input->sample_spec), PA_SEEK_RELATIVE, true);
 
     u->asyncmsgq = pa_asyncmsgq_new(0);
-    if (!u->asyncmsgq) {
-        AUDIO_ERR_LOG("pa_asyncmsgq_new() failed.");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(u->asyncmsgq, -1, "pa_asyncmsgq_new() failed.");
 
     if (!pa_proplist_contains(u->source_output->proplist, PA_PROP_MEDIA_NAME)) {
         pa_proplist_setf(u->source_output->proplist, PA_PROP_MEDIA_NAME, "Loopback to %s",
@@ -1439,10 +1433,7 @@ static int CreateSourceOutput(pa_module *m, pa_modargs *ma, struct userdata *u, 
     AUDIO_DEBUG_LOG("pa_source_output_new DONE");
     pa_source_output_new_data_done(&sourceOutputData);
 
-    if (!u->source_output) {
-        AUDIO_ERR_LOG("Create source output failed");
-        return -1;
-    }
+    CHECK_AND_RETURN_RET_LOG(u->source_output, -1, "Create source output failed");
     return 0;
 }
 
@@ -1509,16 +1500,12 @@ int pa__init(pa_module *m)
     }
 
     n = pa_modargs_get_value(ma, "source", NULL);
-    if (n && !(source = pa_namereg_get(m->core, n, PA_NAMEREG_SOURCE))) {
-        AUDIO_ERR_LOG("No such source.");
-        return InitFailed(m, ma);
-    }
+    source = pa_namereg_get(m->core, n, PA_NAMEREG_SOURCE);
+    CHECK_AND_RETURN_RET_LOG(!n || source, InitFailed(m, ma), "No such source.");
 
     n = pa_modargs_get_value(ma, "sink", NULL);
-    if (n && !(sink = pa_namereg_get(m->core, n, PA_NAMEREG_SINK))) {
-        AUDIO_ERR_LOG("No such sink.");
-        return InitFailed(m, ma);
-    }
+    sink = pa_namereg_get(m->core, n, PA_NAMEREG_SINK);
+    CHECK_AND_RETURN_RET_LOG(!n || sink, InitFailed(m, ma), "No such sink.");
 
     m->userdata = u = pa_xnew0(struct userdata, 1);
     u->core = m->core;

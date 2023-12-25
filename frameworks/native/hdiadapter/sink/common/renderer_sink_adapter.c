@@ -44,16 +44,10 @@ const char *g_deviceClassOffload = "offload";
 int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter)
 {
     AUDIO_INFO_LOG("%{public}s: device:[%{public}s]", __func__, device);
-    if ((device == NULL) || (sinkAdapter == NULL)) {
-        AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG((device != NULL) && (sinkAdapter != NULL), ERROR, "Invalid parameter");
 
     struct RendererSinkAdapter *adapter = (struct RendererSinkAdapter *)calloc(1, sizeof(*adapter));
-    if (adapter == NULL) {
-        AUDIO_ERR_LOG("%{public}s: alloc sink adapter failed", __func__);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(adapter != NULL, ERROR, "alloc sink adapter failed");
 
     if (FillinSinkWapper(device, deviceNetworkId, adapter) != SUCCESS) {
         AUDIO_ERR_LOG("%{public}s: Device not supported", __func__);
@@ -94,10 +88,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
 
 int32_t UnLoadSinkAdapter(struct RendererSinkAdapter *sinkAdapter)
 {
-    if (sinkAdapter == NULL) {
-        AUDIO_ERR_LOG("%{public}s: Invalid parameter", __func__);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(sinkAdapter != NULL, ERROR, "Invalid parameter");
 
     free(sinkAdapter);
 

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "audio_container_client_base.h"
 #include "audio_renderer_write_callback_stub.h"
 #include <fstream>
@@ -87,7 +87,7 @@ AudioContainerClientBase::~AudioContainerClientBase()
 
 int32_t AudioContainerClientBase::InitializeGa(ASClientType eClientType)
 {
-    AUDIO_DEBUG_LOG("AudioContainerClientBase::InitializeGa begin.");
+    AUDIO_DEBUG_LOG("AudioContainerClientBase::InitializeGa");
     InitializeClientGa();
     eAudioClientType = eClientType;
 
@@ -166,10 +166,10 @@ int32_t AudioContainerClientBase::CreateStreamGa(AudioStreamParams audioParams, 
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR,
+        "WriteInterfaceToken failed");
+
     data.WriteInt32(static_cast<int32_t>(audioParams.samplingRate));
     data.WriteInt32(static_cast<int32_t>(audioParams.encoding));
     data.WriteInt32(static_cast<int32_t>(audioParams.format));
@@ -179,23 +179,19 @@ int32_t AudioContainerClientBase::CreateStreamGa(AudioStreamParams audioParams, 
     error = Remote()->SendRequest(CMD_CREATE_AUDIOSTREAM, data, reply, option);
 
     mFrameSize = (static_cast<uint32_t>(audioParams.channels)) * (static_cast<uint32_t>(audioParams.format));
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase::CreateRemoteAudioRenderer() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_CREATE_STREAM_ERR;
-    }
-    
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_CREATE_STREAM_ERR,
+        "CreateRemoteAudioRenderer() failed, error: %{public}d", error);
+
     audioTrackId = reply.ReadInt32();
-    if (audioTrackId < 0) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: CreateRemoteAudioRenderer() remote failed");
-        return AUDIO_CLIENT_CREATE_STREAM_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioTrackId >= 0, AUDIO_CLIENT_CREATE_STREAM_ERR,
+        "CreateRemoteAudioRenderer() remote failed");
     state_ = PREPARED;
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
         streamCb->OnStateChange(state_);
     }
 
-    AUDIO_INFO_LOG("AudioContainerClientBase: Created Stream SUCCESS TrackId %{public}d", audioTrackId);
+    AUDIO_INFO_LOG("Created Stream SUCCESS TrackId %{public}d", audioTrackId);
     return audioTrackId;
 }
 
@@ -205,17 +201,13 @@ int32_t AudioContainerClientBase::StartStreamGa(const int32_t &trackId)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_START_AUDIOSTREAM, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: StartStreamGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_START_STREAM_ERR;
-    }
-    AUDIO_INFO_LOG("AudioContainerClientBase: Start Stream SUCCESS");
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_START_STREAM_ERR,
+        "StartStreamGa() failed, error: %{public}d", error);
+    AUDIO_INFO_LOG("Start Stream SUCCESS");
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -225,16 +217,12 @@ int32_t AudioContainerClientBase::PauseStreamGa(const int32_t &trackId)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_PAUSE_AUDIOSTREAM, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: PauseStreamGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "PauseStreamGa() failed, error: %{public}d", error);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -245,16 +233,12 @@ int32_t AudioContainerClientBase::StopStreamGa(const int32_t &trackId)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_STOP_AUDIOSTREAM, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: StopStreamGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "StopStreamGa() failed, error: %{public}d", error);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -265,16 +249,12 @@ int32_t AudioContainerClientBase::FlushStreamGa(const int32_t &trackId)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_FLUSH_AUDIOSTREAM, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: FlushStreamGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "FlushStreamGa() failed, error: %{public}d", error);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -289,16 +269,12 @@ int32_t AudioContainerClientBase::GetSessionIDGa(uint32_t &sessionID, const int3
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_GET_AUDIO_SESSIONID, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: GetSessinIDGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "GetSessinIDGa() failed, error: %{public}d", error);
     sessionID = reply.ReadInt32();
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -306,23 +282,17 @@ int32_t AudioContainerClientBase::GetSessionIDGa(uint32_t &sessionID, const int3
 int32_t AudioContainerClientBase::SetAudioRenderModeGa(AudioRenderMode renderMode, const int32_t &trackId)
 {
     renderMode_ = renderMode;
-    if (renderMode_ != RENDER_MODE_CALLBACK) {
-        return AUDIO_CLIENT_SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(renderMode_ == RENDER_MODE_CALLBACK, AUDIO_CLIENT_SUCCESS);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(renderMode));
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_SET_AUDIORENDERER_MODE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: SetAudioRenderModeGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "SetAudioRenderModeGa() failed, error: %{public}d", error);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -335,41 +305,30 @@ AudioRenderMode AudioContainerClientBase::GetAudioRenderModeGa()
 int32_t AudioContainerClientBase::SaveWriteCallbackGa(const std::weak_ptr<AudioRendererWriteCallback> &callback,
     const int32_t &trackId)
 {
-    AUDIO_ERR_LOG("AudioContainerClientBase: SaveWriteCallbackGa");
     lock_guard<mutex> lock(dataMutex_);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (callback.lock() == nullptr) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: SaveWriteCallbackGa callback.lock() == nullpt");
-        return AUDIO_CLIENT_INIT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(callback.lock() != nullptr, AUDIO_CLIENT_INIT_ERR,
+        "callback.lock() == nullpt");
     writeCallback_ = callback;
     // construct writecallback stub for remote
     sptr<AudioRendererWriteCallbackStub> writeCallbackStub = new(std::nothrow) AudioRendererWriteCallbackStub();
-    if (writeCallbackStub == nullptr) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: SaveWriteCallbackGa writeCallbackStub == nullpt");
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(writeCallbackStub != nullptr, AUDIO_CLIENT_ERR,
+        "writeCallbackStub == nullpt");
     writeCallbackStub->SetOnRendererWriteCallback(callback);
     sptr<IRemoteObject> object = writeCallbackStub->AsObject();
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: SaveWriteCallbackGa writeCallbackStub->AsObject is nullpt");
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, AUDIO_CLIENT_ERR,
+        "writeCallbackStub->AsObject is nullpt");
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
 
     data.WriteRemoteObject(object);
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_WRITE_RENDERER_CALLBACK, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: SaveWriteCallbackGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "SaveWriteCallbackGa() failed, error: %{public}d", error);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -384,18 +343,15 @@ int32_t AudioContainerClientBase::WriteStreamInnerGa(const uint8_t *buffer, size
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
+
     data.WriteInt32(static_cast<int32_t>(length));
     data.WriteBuffer(static_cast<const void *>(buffer), length);
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_WRITE_AUDIOSTREAM, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase::WriteStreamInnerGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "WriteStreamInnerGa() failed, error: %{public}d", error);
     HandleRenderPositionCallbacksGa(length);
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -445,10 +401,7 @@ size_t AudioContainerClientBase::WriteStreamGa(const StreamBuffer &stream, int32
     int error = 0;
     const uint8_t *inputBuffer = stream.buffer;
     size_t inputLength = stream.bufferLen;
-    if (inputBuffer == nullptr) {
-        AUDIO_ERR_LOG("WriteStreamGa inputBuffer is null");
-        return 0;
-    }
+    CHECK_AND_RETURN_RET_LOG(inputBuffer != nullptr, 0, "WriteStreamGa inputBuffer is null");
     error = WriteStreamInnerGa(inputBuffer, inputLength, trackId);
 
     pError = error;
@@ -458,9 +411,8 @@ size_t AudioContainerClientBase::WriteStreamGa(const StreamBuffer &stream, int32
 int32_t AudioContainerClientBase::UpdateReadBufferGa(uint8_t *buffer, size_t &length, size_t &readSize)
 {
     size_t l = (internalRdBufLen_ < length) ? internalRdBufLen_ : length;
-    if (memcpy_s(buffer, length, static_cast<const uint8_t*>(internalReadBuffer_) + internalRdBufIndex_, l)) {
-        return AUDIO_CLIENT_READ_STREAM_ERR;
-    }
+    errno_t err = memcpy_s(buffer, length, static_cast<const uint8_t*>(internalReadBuffer_) + internalRdBufIndex_, l);
+    CHECK_AND_RETURN_RET(err == 0, AUDIO_CLIENT_READ_STREAM_ERR);
 
     length -= l;
     internalRdBufIndex_ += l;
@@ -479,10 +431,7 @@ int32_t AudioContainerClientBase::UpdateReadBufferGa(uint8_t *buffer, size_t &le
 void AudioContainerClientBase::HandleCapturePositionCallbacksGa(size_t bytesRead)
 {
     mTotalBytesRead += bytesRead;
-    if (mFrameSize == 0) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: HandleCapturePositionCallbacksGa capturerPeriodPositionCb not set");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(mFrameSize != 0, "capturerPeriodPositionCb not set");
 
     uint64_t readFrameNumber = mTotalBytesRead / mFrameSize;
     if (!mMarkReached && mCapturePositionCb) {
@@ -511,17 +460,13 @@ int32_t AudioContainerClientBase::ReadStreamGa(StreamBuffer &stream, bool isBloc
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(static_cast<int32_t>(stream.bufferLen));
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_READ_STREAM, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: ReadStreamGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "ReadStreamGa() failed, error: %{public}d", error);
     reply.ReadUint32(stream.bufferLen);
     size_t readSize = static_cast<size_t>(stream.bufferLen);
 
@@ -535,16 +480,13 @@ int32_t AudioContainerClientBase::ReleaseStreamGa(const int32_t &trackId)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
+
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_RELEASE_AUDIOSTREAM, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: ReleaseStreamGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "ReleaseStreamGa() failed, error: %{public}d", error);
 
     ResetPAAudioClientGa();
     state_ = RELEASED;
@@ -562,16 +504,12 @@ int32_t AudioContainerClientBase::GetMinimumBufferSizeGa(size_t &minBufferSize, 
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_GET_MINIMUM_BUFFERSIZE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: GetMinimumBufferSizeGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "GetMinimumBufferSizeGa() failed, error: %{public}d", error);
 
     minBufferSize = static_cast<size_t>(reply.ReadInt64());
 
@@ -583,16 +521,12 @@ int32_t AudioContainerClientBase::GetMinimumFrameCountGa(uint32_t &frameCount, c
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_GET_MINIMUM_FRAMECOUNT, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: GetMinimumFrameCountGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "GetMinimumFrameCountGa() failed, error: %{public}d", error);
 
     reply.ReadUint32(frameCount);
 
@@ -624,16 +558,13 @@ int32_t AudioContainerClientBase::GetAudioStreamParamsGa(AudioStreamParams &audi
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_GET_AUDIOSTREAM_PARAMS, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: GetAudioStreamParamsGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "GetAudioStreamParamsGa() failed, error: %{public}d", error);
+
     reply.ReadUint32(audioParams.samplingRate);
     reply.ReadUint8(audioParams.encoding);
     reply.ReadUint8(audioParams.format);
@@ -654,9 +585,8 @@ uint32_t AudioContainerClientBase::GetStreamVolumeGa(uint32_t sessionID)
 int32_t AudioContainerClientBase::SetStreamVolumeGa(float volume, const int32_t &trackId)
 {
     lock_guard<mutex> lock(ctrlMutex_);
-    if ((volume < MIN_STREAM_VOLUME_LEVEL) || (volume > MAX_STREAM_VOLUME_LEVEL)) {
-        return AUDIO_CLIENT_INVALID_PARAMS_ERR;
-    }
+    CHECK_AND_RETURN_RET((volume >= MIN_STREAM_VOLUME_LEVEL) && (volume <= MAX_STREAM_VOLUME_LEVEL),
+        AUDIO_CLIENT_INVALID_PARAMS_ERR);
     mVolumeFactor = volume;
     int32_t systemVolumeLevel = mAudioSystemMgr->GetVolume(static_cast<AudioVolumeType>(mStreamType));
     float systemVolumeDb = VolumeToDb(systemVolumeLevel);
@@ -670,17 +600,13 @@ int32_t AudioContainerClientBase::SetStreamVolumeGa(float volume, const int32_t 
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteFloat(vol);
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_SET_STREAM_VOLUME, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: SetStreamVolumeGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "SetStreamVolumeGa() failed, error: %{public}d", error);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -690,16 +616,12 @@ int32_t AudioContainerClientBase::GetCurrentTimeStampGa(uint64_t &timeStamp, con
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_GET_CURRENT_TIMESTAMP, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: GetCurrentTimeStampGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "GetCurrentTimeStampGa() failed, error: %{public}d", error);
 
     reply.ReadUint64(timeStamp);
 
@@ -711,16 +633,12 @@ int32_t AudioContainerClientBase::GetAudioLatencyGa(uint64_t &latency, const int
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_GET_AUDIO_LATENCY, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: GetAudioLatencyGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
+        "GetAudioLatencyGa() failed, error: %{public}d", error);
 
     reply.ReadUint64(latency);
 
@@ -812,18 +730,14 @@ int32_t AudioContainerClientBase::SetStreamTypeGa(AudioStreamType audioStreamTyp
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(audioStreamType));
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_SET_STREAM_TYPE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: SetStreamTypeGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE,
+        "SetStreamTypeGa() failed, error: %{public}d", error);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -836,18 +750,14 @@ int32_t AudioContainerClientBase::SetStreamRenderRateGa(AudioRendererRate audioR
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: WriteInterfaceToken failed");
-        return AUDIO_CLIENT_ERR;
-    }
+    bool tmp = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(tmp, AUDIO_CLIENT_ERR, "WriteInterfaceToken failed");
 
     data.WriteUint32(rate);
     data.WriteInt32(trackId);
     int32_t error = Remote()->SendRequest(CMD_SET_STREAM_RENDER_RATE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioContainerClientBase: SetStreamRenderRateGa() failed, error: %{public}d", error);
-        return AUDIO_CLIENT_ERR;
-    }
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE,
+        "SetStreamRenderRateGa() failed, error: %{public}d", error);
 
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -888,7 +798,7 @@ AudioCaptureMode AudioContainerClientBase::GetAudioCaptureMode()
 
 void AudioContainerClientBase::SetAppCachePath(const std::string cachePath)
 {
-    AUDIO_INFO_LOG("AudioContainerClientBase::SetAppCachePath cachePath %{public}s", cachePath.c_str());
+    AUDIO_INFO_LOG("cachePath %{public}s", cachePath.c_str());
 }
 } // namespace AudioStandard
 } // namespace OHOS

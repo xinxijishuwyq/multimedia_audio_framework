@@ -310,7 +310,7 @@ void MultiChannelRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
 {
     if (attr_.channel != STEREO_CHANNEL_COUNT) {
         // only stereo is surpported now (stereo channel count is 2)
-        AUDIO_ERR_LOG("AdjustAudioBalance: Unsupported channel number: %{public}d", attr_.channel);
+        AUDIO_ERR_LOG("Unsupported channel number: %{public}d", attr_.channel);
         return;
     }
 
@@ -335,7 +335,7 @@ void MultiChannelRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
         }
         default: {
             // if the audio format is unsupported, the audio data will not be changed
-            AUDIO_ERR_LOG("AdjustAudioBalance: Unsupported audio format: %{public}d", attr_.format);
+            AUDIO_ERR_LOG("Unsupported audio format: %{public}d", attr_.format);
             break;
         }
     }
@@ -418,7 +418,7 @@ uint32_t PcmFormatToBits(enum AudioFormat format)
         case AUDIO_FORMAT_TYPE_PCM_32_BIT:
             return PCM_32_BIT;
         default:
-            AUDIO_INFO_LOG("PcmFormatToBits: Unkown format type,set it to default");
+            AUDIO_INFO_LOG("Unkown format type,set it to default");
             return PCM_24_BIT;
     }
 }
@@ -543,8 +543,10 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     }
     if (renderEmptyFrameCount_ > 0) {
         Trace traceEmpty("AudioRendererSinkInner::RenderFrame::renderEmpty");
-        CHECK_AND_BREAK_LOG(memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
-            static_cast<size_t>(len)) == EOK, "call memset_s failed");
+        if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
+            static_cast<size_t>(len)) != EOK) {
+            AUDIO_WARNING_LOG("call memset_s failed");
+        }
         renderEmptyFrameCount_--;
         if (renderEmptyFrameCount_ == 0) {
             switchCV_.notify_all();
@@ -855,7 +857,7 @@ int32_t MultiChannelRendererSinkInner::SetAudioScene(AudioScene audioScene, Devi
 
 int32_t MultiChannelRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
-    AUDIO_INFO_LOG("GetTransactionId in");
+    AUDIO_INFO_LOG("MultiChannelRendererSinkInner::GetTransactionId");
 
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("GetTransactionId failed audio render null");
@@ -1048,7 +1050,7 @@ int32_t MultiChannelRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfo
 
 int32_t MultiChannelRendererSinkInner::InitAdapter()
 {
-    AUDIO_INFO_LOG("Init adapter start");
+    AUDIO_INFO_LOG("MultiChannelRendererSinkInner::InitAdapter");
 
     if (adapterInited_) {
         AUDIO_INFO_LOG("Adapter already inited");
@@ -1084,7 +1086,7 @@ int32_t MultiChannelRendererSinkInner::InitAdapter()
 
 int32_t MultiChannelRendererSinkInner::InitRender()
 {
-    AUDIO_INFO_LOG("Init render start");
+    AUDIO_INFO_LOG("MultiChannelRendererSinkInner::InitRender");
 
     if (renderInited_) {
         AUDIO_INFO_LOG("Render already inited");

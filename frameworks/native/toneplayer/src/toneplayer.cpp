@@ -48,10 +48,8 @@ std::shared_ptr<TonePlayer> TonePlayer::Create(const AudioRendererInfo &renderer
 
 std::shared_ptr<TonePlayer> TonePlayer::Create(const std::string cachePath, const AudioRendererInfo &rendererInfo)
 {
-    if (!PermissionUtil::VerifySelfPermission()) {
-        AUDIO_ERR_LOG("Create: No system permission");
-        return nullptr;
-    }
+    bool checkPermission = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(checkPermission, nullptr, "Create: No system permission");
     return std::make_shared <TonePlayerPrivate>(cachePath, rendererInfo);
 }
 
@@ -106,7 +104,7 @@ TonePlayerPrivate::~TonePlayerPrivate()
 
 bool TonePlayerPrivate::LoadEventStateHandler()
 {
-    AUDIO_INFO_LOG("TonePlayerPrivate::LoadEventStateHandler start");
+    AUDIO_INFO_LOG("TonePlayerPrivate::LoadEventStateHandler");
     bool result = true;
     if (audioRenderer_ != nullptr) {
         result = StopTone();
@@ -116,7 +114,7 @@ bool TonePlayerPrivate::LoadEventStateHandler()
                 result = false;
             }
         } else {
-            AUDIO_ERR_LOG("LoadEventStateHandler audioRenderer_ is null");
+            AUDIO_WARNING_LOG("LoadEventStateHandler audioRenderer_ is null");
         }
         mutexLock_.unlock();
         tonePlayerState_ = TONE_PLAYER_IDLE;
@@ -124,10 +122,9 @@ bool TonePlayerPrivate::LoadEventStateHandler()
     }
     if (tonePlayerState_ == TONE_PLAYER_IDLE) {
         AUDIO_DEBUG_LOG("Load Init AudioRenderer");
-        if ((audioRenderer_ == nullptr) && (!InitAudioRenderer())) {
-            AUDIO_ERR_LOG("LoadEventStateHandler InitAudioRenderer fail");
-            return false;
-        }
+        bool isInited = InitAudioRenderer();
+        CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr || isInited, false,
+            "LoadEventStateHandler InitAudioRenderer fail");
         tonePlayerState_ = TONE_PLAYER_INIT;
     }
     if (InitToneWaveInfo() == false) {
@@ -162,10 +159,8 @@ bool TonePlayerPrivate::PlayEventStateHandler()
         retStatus = waitAudioCbkCond_.wait_for(lock, std::chrono::seconds(CMAXWAIT));
         AUDIO_DEBUG_LOG("Immediate start got notified, status %{public}d", retStatus);
         mutexLock_.lock();
-        if (retStatus == std::cv_status::timeout) {
-            AUDIO_ERR_LOG("Immediate start timed out, status %{public}d", retStatus);
-            return false;
-        }
+        CHECK_AND_RETURN_RET_LOG(retStatus != std::cv_status::timeout, false,
+            "Immediate start timed out, status %{public}d", retStatus);
     }
     return result;
 }
@@ -197,10 +192,8 @@ bool TonePlayerPrivate::LoadTone(ToneType toneType)
 {
     AUDIO_INFO_LOG("LoadTone type: %{public}d, tonePlayerState_ %{public}d", toneType, tonePlayerState_);
     bool result = false;
-    if (!PermissionUtil::VerifySelfPermission()) {
-        AUDIO_ERR_LOG("LoadTone: No system permission");
-        return false;
-    }
+    bool checkPermission = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(checkPermission, false, "LoadTone: No system permission");
     if (toneType >= NUM_TONES) {
         return result;
     }
@@ -256,7 +249,7 @@ bool TonePlayerPrivate::Release()
                 retVal = false;
             }
         } else {
-            AUDIO_ERR_LOG("Release audioRenderer_ is null");
+            AUDIO_WARNING_LOG("Release audioRenderer_ is null");
         }
         mutexLock_.unlock();
         tonePlayerState_ = TONE_PLAYER_IDLE;
@@ -318,30 +311,23 @@ bool TonePlayerPrivate::InitAudioRenderer()
     } else {
         audioRenderer_ = AudioRenderer::Create(rendererOptions);
     }
-    if (audioRenderer_ == nullptr) {
-        AUDIO_ERR_LOG("initAudioRenderer: Renderer create failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
+        "Renderer create failed");
 
-    AUDIO_DEBUG_LOG("initAudioRenderer: Playback renderer created");
-    if (audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK)) {
-        AUDIO_ERR_LOG("initAudioRenderer: SetRenderMode failed");
-        return false;
-    }
-    AUDIO_DEBUG_LOG("initAudioRenderer: SetRenderMode Sucessful");
-    if (audioRenderer_->SetRendererWriteCallback(shared_from_this())) {
-        AUDIO_ERR_LOG("initAudioRenderer: SetRendererWriteCallback failed");
-        return false;
-    }
-    AUDIO_DEBUG_LOG("initAudioRenderer: SetRendererWriteCallback Sucessful");
-    if (audioRenderer_->SetRendererCallback(shared_from_this())) {
-        AUDIO_ERR_LOG("initAudioRenderer: SetRendererCallbackfailed");
-        return false;
-    }
+    AUDIO_DEBUG_LOG("Playback renderer created");
+    int32_t setRenderMode = audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
+    CHECK_AND_RETURN_RET_LOG(!setRenderMode, false, "initAudioRenderer: SetRenderMode failed");
+    AUDIO_DEBUG_LOG("SetRenderMode Sucessful");
 
-    AUDIO_DEBUG_LOG("initAudioRenderer: SetRendererCallback Sucessful");
+    int32_t setRendererWrite = audioRenderer_->SetRendererWriteCallback(shared_from_this());
+    CHECK_AND_RETURN_RET_LOG(!setRendererWrite, false, "SetRendererWriteCallback failed");
+    AUDIO_DEBUG_LOG("SetRendererWriteCallback Sucessful");
+
+    int32_t setRendererCallback = audioRenderer_->SetRendererCallback(shared_from_this());
+    CHECK_AND_RETURN_RET_LOG(!setRendererCallback, false, "initAudioRenderer: SetRendererCallbackfailed");
+    AUDIO_DEBUG_LOG("SetRendererCallback Sucessful");
     audioRenderer_->SetVolume(volume_);
-    AUDIO_INFO_LOG("initAudioRenderer: SetVolume Sucessful");
+    AUDIO_INFO_LOG("SetVolume Sucessful");
     return true;
 }
 
@@ -602,7 +588,7 @@ void TonePlayerPrivate::AudioToneDataThreadFunc()
 
 bool TonePlayerPrivate::InitToneWaveInfo()
 {
-    AUDIO_INFO_LOG("InitToneWaveInfo, Entered");
+    AUDIO_INFO_LOG("TonePlayerPrivate::InitToneWaveInfo");
     if (initialToneInfo_ == NULL) {
         return false;
     }
