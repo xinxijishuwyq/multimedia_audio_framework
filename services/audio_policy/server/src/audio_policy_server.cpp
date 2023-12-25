@@ -192,12 +192,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
                 sessionProcessor_.Start();
                 RegisterParamCallback();
                 LoadEffectLibrary();
-                if (system::GetBoolParameter("persist.edm.mic_disable", false)) {
-                    int32_t ret = this->SetMicrophoneMute(true);
-                    if (ret != SUCCESS) {
-                        AUDIO_ERR_LOG("AudioPolicyServer Init SetMicrophoneMute result %{public}d", ret);
-                    }
-                }
+                InitMicrophoneMute();
                 isFirstAudioServiceStart_ = true;
             } else {
                 AUDIO_ERR_LOG("OnAddSystemAbility audio service is not first start");
@@ -928,6 +923,23 @@ std::vector<int32_t> AudioPolicyServer::GetSupportedTones()
     return audioPolicyService_.GetSupportedTones();
 }
 #endif
+
+void AudioPolicyServer::InitMicrophoneMute()
+{
+    if (system::GetBoolParameter("persist.edm.mic_disable", false)) {
+        bool isMute = true;
+        bool isMicrophoneMute = audioPolicyService_.IsMicrophoneMute();
+        int32_t ret = audioPolicyService_.SetMicrophoneMute(isMute);
+        if (ret == SUCCESS && isMicrophoneMute != isMute && audioPolicyServerHandler_ != nullptr) {
+            MicStateChangeEvent micStateChangeEvent;
+            micStateChangeEvent.mute = isMute;
+            audioPolicyServerHandler_->SendMicStateUpdatedCallBack(micStateChangeEvent);
+        }
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("InitMicrophoneMute EDM SetMicrophoneMute result %{public}d", ret);
+        }
+    }
+}
 
 int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, API_VERSION api_v)
 {
