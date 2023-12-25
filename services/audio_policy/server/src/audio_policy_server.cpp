@@ -2787,13 +2787,6 @@ bool AudioPolicyServer::SpatializationClientDeathRecipientExist(SpatializationEv
             AUDIO_INFO_LOG("headTrackingEnabledListener has been registered for %{public}d!", uid);
             return true;
         }
-    } else if (eventCategory == SPATIALIZATION_STATE_CHANGE_EVENT) {
-        std::lock_guard<std::mutex> lock(spatializationStateListenerStateMutex_);
-        if (std::find(spatializationStateListenerState_.begin(), spatializationStateListenerState_.end(),
-            uid) != spatializationStateListenerState_.end()) {
-            AUDIO_INFO_LOG("spatializationStateListener has been registered for %{public}d!", uid);
-            return true;
-        }
     }
     return false;
 }
@@ -2834,16 +2827,6 @@ void AudioPolicyServer::RegisterSpatializationClientDeathRecipient(const sptr<IR
         }
         std::lock_guard<std::mutex> lock(headTrackingEnabledListenerStateMutex_);
         headTrackingEnabledListenerState_.push_back(uid);
-    } else if (eventCategory == SPATIALIZATION_STATE_CHANGE_EVENT) {
-        deathRecipient->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredSpatializationStateClientDied,
-            this, std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient_);
-        if (!result) {
-            AUDIO_ERR_LOG("failed to add DeathRecipient for %{public}d!", eventCategory);
-            return;
-        }
-        std::lock_guard<std::mutex> lock(spatializationStateListenerStateMutex_);
-        spatializationStateListenerState_.push_back(uid);
     }
 }
 
@@ -2879,24 +2862,6 @@ void AudioPolicyServer::RegisteredHeadTrackingEnabledClientDied(pid_t uid)
     std::lock_guard<std::mutex> lock(headTrackingEnabledListenerStateMutex_);
     headTrackingEnabledListenerState_.erase(std::remove_if(headTrackingEnabledListenerState_.begin(),
         headTrackingEnabledListenerState_.end(), filter), headTrackingEnabledListenerState_.end());
-}
-
-void AudioPolicyServer::RegisteredSpatializationStateClientDied(pid_t uid)
-{
-    AUDIO_INFO_LOG("RegisteredSpatializationStateClient died: remove entry, uid %{public}d", uid);
-
-    int32_t ret = audioSpatializationService_.UnregisterSpatializationStateEventListenerByUid(
-        static_cast<int32_t>(uid));
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("UnregisterSpatializationStateEventListenerByUid fail, uid %{public}d", uid);
-    }
-
-    auto filter = [&uid](int val) {
-        return uid == val;
-    };
-    std::lock_guard<std::mutex> lock(spatializationStateListenerStateMutex_);
-    spatializationStateListenerState_.erase(std::remove_if(spatializationStateListenerState_.begin(),
-        spatializationStateListenerState_.end(), filter), spatializationStateListenerState_.end());
 }
 
 bool AudioPolicyServer::IsSpatializationEnabled()

@@ -68,7 +68,6 @@ public:
     enum SpatializationEventCategory {
         SPATIALIZATION_ENABLED_CHANGE_EVENT,
         HEAD_TRACKING_ENABLED_CHANGE_EVENT,
-        SPATIALIZATION_STATE_CHANGE_EVENT,
     };
 
     const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
@@ -303,8 +302,6 @@ public:
 
     void RegisteredHeadTrackingEnabledClientDied(pid_t uid);
 
-    void RegisteredSpatializationStateClientDied(pid_t uid);
-
     bool IsSpatializationEnabled() override;
 
     int32_t SetSpatializationEnabled(const bool enable) override;
@@ -525,7 +522,6 @@ private:
     std::vector<pid_t> clientDiedListenerState_;
     std::vector<pid_t> spatializationEnabledListenerState_;
     std::vector<pid_t> headTrackingEnabledListenerState_;
-    std::vector<pid_t> spatializationStateListenerState_;
     sptr<PowerStateListener> powerStateListener_;
     std::unordered_map<int32_t /* zone id */, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMap_;
 
@@ -535,7 +531,6 @@ private:
     std::mutex clientDiedListenerStateMutex_;
     std::mutex spatializationEnabledListenerStateMutex_;
     std::mutex headTrackingEnabledListenerStateMutex_;
-    std::mutex spatializationStateListenerStateMutex_;
 
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1, std::placeholders::_2),

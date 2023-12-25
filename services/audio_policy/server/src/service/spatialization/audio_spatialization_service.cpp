@@ -300,15 +300,6 @@ int32_t AudioSpatializationService::UnregisterSpatializationStateEventListener(c
     return SUCCESS;
 }
 
-int32_t UnregisterSpatializationStateEventListenerByUid(int32_t clientPid)
-{
-    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
-    for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end();) {
-        if ()
-    }
-    return SUCCESS;
-}
-
 void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddress)
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);

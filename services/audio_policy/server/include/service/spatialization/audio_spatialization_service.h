@@ -68,7 +68,6 @@ public:
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object);
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
-    int32_t UnregisterSpatializationStateEventListenerByUid(int32_t clientPid);
     void UpdateCurrentDevice(const std::string macAddress);
 private:
     AudioSpatializationService()
