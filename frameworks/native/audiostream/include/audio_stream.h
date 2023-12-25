@@ -49,6 +49,7 @@ public:
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     State GetState() override;
+    bool GetAudioTimeForDev(Timestamp &timestamp, Timestamp::Timestampbase base);
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
     int32_t GetFrameCount(uint32_t &frameCount) override;
@@ -150,6 +151,8 @@ private:
     AudioStreamType eStreamType_;
     AudioMode eMode_;
     State state_;
+    bool resetTime_;
+    uint64_t resetTimestamp_;
     struct timespec baseTimestamp_ = {0};
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
@@ -192,6 +195,8 @@ private:
 
     std::shared_ptr<AudioStreamPolicyServiceDiedCallbackImpl> audioStreamPolicyServiceDiedCB_ = nullptr;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
+
+    bool hdiPositionSwitch = true;
 };
 
 class AudioStreamPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {
