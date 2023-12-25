@@ -484,6 +484,7 @@ private:
     void SubscribeVolumeKeyEvents();
 #endif
     void SubscribePowerStateChangeEvents();
+    void InitMicrophoneMute();
     void InitKVStore();
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
