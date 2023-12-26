@@ -2810,7 +2810,7 @@ void AudioPolicyServer::RegisterSpatializationClientDeathRecipient(const sptr<IR
     if (eventCategory == SPATIALIZATION_ENABLED_CHANGE_EVENT) {
         deathRecipient->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredSpatializationEnabledClientDied,
             this, std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient_);
+        bool result = object->AddDeathRecipient(deathRecipient);
         if (!result) {
             AUDIO_ERR_LOG("failed to add DeathRecipient for %{public}d!", eventCategory);
             return;
@@ -2820,7 +2820,7 @@ void AudioPolicyServer::RegisterSpatializationClientDeathRecipient(const sptr<IR
     } else if (eventCategory == HEAD_TRACKING_ENABLED_CHANGE_EVENT) {
         deathRecipient->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredHeadTrackingEnabledClientDied,
             this, std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient_);
+        bool result = object->AddDeathRecipient(deathRecipient);
         if (!result) {
             AUDIO_ERR_LOG("failed to add DeathRecipient for %{public}d!", eventCategory);
             return;
