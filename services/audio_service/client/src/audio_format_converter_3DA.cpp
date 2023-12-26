@@ -24,7 +24,7 @@ static constexpr int32_t AVS3METADATA_SIZE = 19824;
 static constexpr int32_t INVALID_FORMAT = -1;
 static constexpr AudioChannelLayout DEFAULT_LAYOUT = CH_LAYOUT_5POINT1POINT2;
 
-#ifdef __aarch64__
+#if (defined(__aarch64__) || defined(__x86_64__))
     constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
 #else
     constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
