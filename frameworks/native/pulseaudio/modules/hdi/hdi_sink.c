@@ -1383,6 +1383,9 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
 static bool InputIsOffload(pa_sink_input *i)
 {
+    if (monitorLinked(i->sink, true)) {
+        return false;
+    }
     const char *offloadEnableStr = pa_proplist_gets(i->proplist, "stream.offload.enable");
     if (offloadEnableStr == NULL) {
         return false;
@@ -2632,7 +2635,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         pthread_rwlock_unlock(&u->rwlockSleep);
 
-        bool primaryFlag = n == 0 || monitorLinked(u->sink, false);
+        bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
         if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
             pa_asyncmsgq_send(u->primary.msgq, NULL, 0, NULL, 0, NULL);
         }
@@ -3067,9 +3070,6 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *core, pa_sink_input *i,
 static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
-    if (u->offload_enable) {
-        i->state_change = PaInputStateChangeCb;
-    }
     i->state_change = PaInputStateChangeCb;
     return PA_HOOK_OK;
 }

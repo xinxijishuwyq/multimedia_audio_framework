@@ -740,7 +740,6 @@ int32_t AudioStreamCollector::SetOffloadMode(int32_t streamId, int32_t state, bo
 
 int32_t AudioStreamCollector::UnsetOffloadMode(int32_t streamId)
 {
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
         ERR_INVALID_PARAM, "streamId (%{public}d) invalid.", streamId);
     std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
