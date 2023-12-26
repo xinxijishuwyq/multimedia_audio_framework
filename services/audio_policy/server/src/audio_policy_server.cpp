@@ -2904,6 +2904,7 @@ int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(const sptr
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    RegisterSpatializationClientDeathRecipient(object, SPATIALIZATION_ENABLED_CHANGE_EVENT);
     return audioSpatializationService_.RegisterSpatializationEnabledEventListener(
         clientPid, object, hasSystemPermission);
 }
@@ -2912,6 +2913,7 @@ int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(const sptr<I
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    RegisterSpatializationClientDeathRecipient(object, HEAD_TRACKING_ENABLED_CHANGE_EVENT);
     return audioSpatializationService_.RegisterHeadTrackingEnabledEventListener(clientPid, object, hasSystemPermission);
 }
 
