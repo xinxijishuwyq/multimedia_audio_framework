@@ -1509,7 +1509,7 @@ void AudioServiceClient::HandleRenderPositionCallbacks(size_t bytesWritten)
         mFramePeriodWritten += (bytesWritten / mFrameSize);
         AUDIO_DEBUG_LOG("frame period number: %{public}" PRIu64 ", Total frames written: %{public}" PRIu64,
             static_cast<uint64_t>(mFramePeriodNumber), static_cast<uint64_t>(writtenFrameNumber));
-        if (mFramePeriodWritten >= mFramePeriodNumber) {
+        if (mFramePeriodWritten >= mFramePeriodNumber && mFramePeriodNumber > 0) {
             mFramePeriodWritten %= mFramePeriodNumber;
             AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRIu64,
                 static_cast<uint64_t>(mFramePeriodWritten));

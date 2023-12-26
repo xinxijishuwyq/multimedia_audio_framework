@@ -24,7 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-#ifdef __aarch64__
+#if (defined(__aarch64__) || defined(__x86_64__))
     constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
 #else
     constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};

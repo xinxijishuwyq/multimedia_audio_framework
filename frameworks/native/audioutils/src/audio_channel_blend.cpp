@@ -63,6 +63,10 @@ void AudioBlend::Process(uint8_t *buffer, size_t bufferSize)
 template<typename T>
 void AudioBlend::ProcessWithBlendMode(T *buffer, size_t bufferSize)
 {
+    if (channels_ == 0) {
+        return;
+    }
+
     int frameCount = 0;
     frameCount = bufferSize / (channels_ * (format_ + 1));
     switch (blendMode_) {
