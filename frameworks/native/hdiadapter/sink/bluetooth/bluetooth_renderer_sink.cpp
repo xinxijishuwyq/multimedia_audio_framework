@@ -415,35 +415,30 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         AdjustAudioBalance(&data, len);
     }
 
-    if (started_ && !paused_) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
 
-        Trace trace("BluetoothRendererSinkInner::RenderFrame");
-        while (true) {
-            Trace trace1("BluetoothRendererSinkInner::RenderFrame in");
-            ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
-            AUDIO_DEBUG_LOG("A2dp RenderFrame returns: %{public}x", ret);
-            if (ret == RENDER_FRAME_NUM) {
-                AUDIO_ERR_LOG("retry render frame...");
-                usleep(RENDER_FRAME_INTERVAL_IN_MICROSECONDS);
-                continue;
-            }
-
-            if (ret != 0) {
-                AUDIO_ERR_LOG("A2dp RenderFrame failed ret: %{public}x", ret);
-                ret = ERR_WRITE_FAILED;
-            }
-
-            break;
+    Trace trace("BluetoothRendererSinkInner::RenderFrame");
+    while (true) {
+        Trace trace1("BluetoothRendererSinkInner::RenderFrame in");
+        ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
+        AUDIO_DEBUG_LOG("A2dp RenderFrame returns: %{public}x", ret);
+        if (ret == RENDER_FRAME_NUM) {
+            AUDIO_ERR_LOG("retry render frame...");
+            usleep(RENDER_FRAME_INTERVAL_IN_MICROSECONDS);
+            continue;
         }
-        if (isFirstWrite_) {
-            isFirstWrite_ = false;
-            lastCallWriteTime_ = ClockTime::GetCurNano();
+
+        if (ret != 0) {
+            AUDIO_ERR_LOG("A2dp RenderFrame failed ret: %{public}x", ret);
+            ret = ERR_WRITE_FAILED;
         }
-    } else {
-        writeLen = len;
+
+        break;
     }
-
+    if (isFirstWrite_) {
+        isFirstWrite_ = false;
+        lastCallWriteTime_ = ClockTime::GetCurNano();
+    }
     Trace trace2("BluetoothRendererSinkInner::RenderFrame sleep");
     int64_t writeTime = BytesToNanoTime(len);
     int64_t timeBetweenCall = ClockTime::GetCurNano() - lastCallWriteTime_;
