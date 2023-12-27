@@ -3191,7 +3191,7 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
     std::lock_guard<std::shared_mutex> lock(deviceStatusUpdateSharedMutex_);
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
     for (auto deviceDesc : connectedDevices_) {
-        if (deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
+        if (deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
             const std::string networkId = deviceDesc->networkId_;
             UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
             std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
