@@ -62,7 +62,6 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t MEDIA_SERVICE_UID = 1013;
-const uint32_t AUDIO_UID = 1041;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -423,13 +422,13 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         AUDIO_DEBUG_LOG("offloadUID not valid, Skipped");
         return;
     }
-    if (offloadUID == MEDIA_SERVICE_UID || offloadUID == AUDIO_UID) { // not support avplayer in current version
+    if (offloadUID == MEDIA_SERVICE_UID) { // not support avplayer in current version
         AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
         return;
     }
 
     auto CallingUid = IPCSkeleton::GetCallingUid();
-    if (CallingUid == MEDIA_SERVICE_UID || CallingUid == AUDIO_UID) { // not support avplayer in current version
+    if (CallingUid == MEDIA_SERVICE_UID) { // not support avplayer in current version
         AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
         return;
     }
