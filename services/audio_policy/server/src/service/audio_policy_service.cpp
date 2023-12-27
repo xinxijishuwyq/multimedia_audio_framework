@@ -73,6 +73,7 @@ static int32_t startMicrophoneId = 1;
 mutex g_adProxyMutex;
 mutex g_dataShareHelperMutex;
 #ifdef BLUETOOTH_ENABLE
+const unsigned int BLUETOOTH_TIME_OUT_SECONDS = 8;
 mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
@@ -2964,19 +2965,22 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
     vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        if (changeInfo->rendererState != RENDERER_RUNNING) {
-            Bluetooth::AudioA2dpManager::OffloadStopPlaying(std::vector<int32_t>(1, changeInfo->sessionId));
-            continue;
-        }
-        Bluetooth::AudioA2dpManager::OffloadStartPlaying(std::vector<int32_t>(1, changeInfo->sessionId));
-        a2dpStreamInfo.sessionId = changeInfo->sessionId;
-        a2dpStreamInfo.streamType = GetStreamType(changeInfo->sessionId);
-        StreamUsage tempStreamUsage = changeInfo->rendererInfo.streamUsage;
-        AudioSpatializationState spatialState =
+    {
+        AudioXCollie audioXCollie("AudioPolicyService::UpdateA2dpOffloadFlagForAllStream", BLUETOOTH_TIME_OUT_SECONDS);
+        for (auto &changeInfo : audioRendererChangeInfos) {
+            if (changeInfo->rendererState != RENDERER_RUNNING) {
+                Bluetooth::AudioA2dpManager::OffloadStopPlaying(std::vector<int32_t>(1, changeInfo->sessionId));
+                continue;
+            }
+            Bluetooth::AudioA2dpManager::OffloadStartPlaying(std::vector<int32_t>(1, changeInfo->sessionId));
+            a2dpStreamInfo.sessionId = changeInfo->sessionId;
+            a2dpStreamInfo.streamType = GetStreamType(changeInfo->sessionId);
+            StreamUsage tempStreamUsage = changeInfo->rendererInfo.streamUsage;
+            AudioSpatializationState spatialState =
                 AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
-        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
-        allSessionInfos.push_back(a2dpStreamInfo);
+            a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
+            allSessionInfos.push_back(a2dpStreamInfo);
+        }
     }
 
     UpdateA2dpOffloadFlag(allSessionInfos, deviceType);
