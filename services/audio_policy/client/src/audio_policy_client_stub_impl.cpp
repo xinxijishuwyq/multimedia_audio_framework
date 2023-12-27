@@ -22,6 +22,7 @@ namespace AudioStandard {
 int32_t AudioPolicyClientStubImpl::AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(volumeKeyEventMutex_);
+    volumeKeyEventCallbackList_.clear();
     volumeKeyEventCallbackList_.push_back(cb);
     return SUCCESS;
 }
