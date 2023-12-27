@@ -710,5 +710,109 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_004, T
         EXPECT_LT(SUCCESS, db);
     }
 }
+
+/**
+ * @tc.name  : Test SetRingerMode API
+ * @tc.number: Audio_Group_Manager_SetRingerMode_001
+ * @tc.desc  : SetRingerMode
+ * @tc.require: issueI5M1XV
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetRingerMode_001, TestSize.Level0)
+{
+    int32_t ret = -1;
+    AudioRingerMode audioRingerMode = AudioRingerMode::RINGER_MODE_NORMAL;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        ret = audioGroupMngr_->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
+        EXPECT_EQ(SUCCESS, ret);
+        audioRingerMode = audioGroupMngr_->GetRingerMode();
+        EXPECT_EQ(audioRingerMode, AudioRingerMode::RINGER_MODE_SILENT);
+    
+        ret = audioGroupMngr_->SetRingerMode(AudioRingerMode::RINGER_MODE_VIBRATE);
+        EXPECT_EQ(SUCCESS, ret);
+        audioRingerMode = audioGroupMngr_->GetRingerMode();
+        EXPECT_EQ(audioRingerMode, AudioRingerMode::RINGER_MODE_VIBRATE);
+
+        ret = audioGroupMngr_->SetRingerMode(AudioRingerMode::RINGER_MODE_NORMAL);
+        EXPECT_EQ(SUCCESS, ret);
+        audioRingerMode = audioGroupMngr_->GetRingerMode();
+        EXPECT_EQ(audioRingerMode, AudioRingerMode::RINGER_MODE_NORMAL);
+    }
+}
+
+/**
+ * @tc.name  : Test SetRingerModeCallback API
+ * @tc.number: Audio_Group_Manager_SetRingerModeCallback_001
+ * @tc.desc  : SetRingerModeCallback
+ * @tc.require: issueI5M1XV
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetRingerModeCallback_001, TestSize.Level0)
+{
+    int32_t ret = -1;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        int32_t clientId = getpid();
+        std::shared_ptr<AudioRingerModeCallback> callback = nullptr;
+        ret = audioGroupMngr_->SetRingerModeCallback(clientId, callback);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret);
+        ret = audioGroupMngr_->UnsetRingerModeCallback(clientId);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    }
+}
+
+/**
+ * @tc.name  : Test SetRingerModeCallback API
+ * @tc.number: Audio_Group_Manager_SetRingerModeCallback_002
+ * @tc.desc  : SetRingerModeCallback
+ * @tc.require: issueI5M1XV
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetRingerModeCallback_002, TestSize.Level0)
+{
+    int32_t ret = -1;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        int32_t clientId = getpid();
+        std::shared_ptr<AudioRingerModeCallback> callback =  make_shared<AudioRingerModeCallbackTest>();
+        ret = audioGroupMngr_->SetRingerModeCallback(clientId, callback);
+        EXPECT_EQ(SUCCESS, ret);
+        ret = audioGroupMngr_->UnsetRingerModeCallback(clientId);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+ * @tc.name  : Test SetMicrophoneMute API
+ * @tc.number: Audio_Group_Manager_SetMicrophoneMute_001
+ * @tc.desc  : SetMicrophoneMute
+ * @tc.require: issueI5M1XV
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetMicrophoneMute_001, TestSize.Level0)
+{
+    int32_t ret = -1;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        bool isMuteFirst = audioGroupMngr_->IsMicrophoneMute();
+        ret = audioGroupMngr_->SetMicrophoneMute(!isMuteFirst);
+        EXPECT_EQ(SUCCESS, ret);
+        bool isMuteSecond = audioGroupMngr_->IsMicrophoneMute();
+        EXPECT_EQ(isMuteSecond, !isMuteFirst);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
