@@ -661,7 +661,7 @@ NapiAudioEnum* NapiAudioEnum::SetValue(napi_env env, napi_callback_info info, na
     napi_get_undefined(env, &result);
 
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr) {
+    if (status != napi_ok || jsThis == nullptr || argc < 1) {
         AUDIO_ERR_LOG("SetValue fail to napi_get_cb_info");
         return nullptr;
     }

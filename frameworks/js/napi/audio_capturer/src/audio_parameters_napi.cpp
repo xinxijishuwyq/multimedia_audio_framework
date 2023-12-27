@@ -498,7 +498,7 @@ napi_value AudioParametersNapi::SetAudioSampleFormat(napi_env env, napi_callback
     napi_get_undefined(env, &jsResult);
 
     status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr) {
+    if (status != napi_ok || jsThis == nullptr || argc < 1) {
         HiLog::Error(LABEL, "set sample format fail to napi_get_cb_info");
         return jsResult;
     }
@@ -560,7 +560,7 @@ napi_value AudioParametersNapi::SetAudioChannel(napi_env env, napi_callback_info
     napi_get_undefined(env, &jsResult);
 
     status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr) {
+    if (status != napi_ok || jsThis == nullptr || argc < 1) {
         HiLog::Error(LABEL, "set audio channel fail to napi_get_cb_info");
         return jsResult;
     }
@@ -622,7 +622,7 @@ napi_value AudioParametersNapi::SetAudioSamplingRate(napi_env env, napi_callback
     napi_get_undefined(env, &jsResult);
 
     status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr) {
+    if (status != napi_ok || jsThis == nullptr || argc < 1) {
         HiLog::Error(LABEL, "set sampling rate fail to napi_get_cb_info");
         return jsResult;
     }
@@ -684,7 +684,7 @@ napi_value AudioParametersNapi::SetAudioEncodingType(napi_env env, napi_callback
     napi_get_undefined(env, &jsResult);
 
     status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr) {
+    if (status != napi_ok || jsThis == nullptr || argc < 1) {
         HiLog::Error(LABEL, "set audio encoding type fail to napi_get_cb_info");
         return jsResult;
     }
@@ -746,7 +746,7 @@ napi_value AudioParametersNapi::SetContentType(napi_env env, napi_callback_info 
     napi_get_undefined(env, &jsResult);
 
     status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr) {
+    if (status != napi_ok || jsThis == nullptr || argc < 1) {
         HiLog::Error(LABEL, "set content type fail to napi_get_cb_info");
         return jsResult;
     }
@@ -808,7 +808,7 @@ napi_value AudioParametersNapi::SetStreamUsage(napi_env env, napi_callback_info 
     napi_get_undefined(env, &jsResult);
 
     status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr) {
+    if (status != napi_ok || jsThis == nullptr || argc < 1) {
         HiLog::Error(LABEL, "set stream usage fail to napi_get_cb_info");
         return jsResult;
     }
@@ -870,7 +870,7 @@ napi_value AudioParametersNapi::SetDeviceRole(napi_env env, napi_callback_info i
     napi_get_undefined(env, &jsResult);
 
     status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if (status != napi_ok || jsThis == nullptr || args[0] == nullptr) {
+    if (status != napi_ok || jsThis == nullptr || argc < 1) {
         HiLog::Error(LABEL, "set device role fail to napi_get_cb_info");
         return jsResult;
     }
@@ -933,7 +933,7 @@ napi_value AudioParametersNapi::SetDeviceType(napi_env env, napi_callback_info i
     napi_get_undefined(env, &jsResult);
 
     status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    if ((status != napi_ok) || (jsThis == nullptr) || (args[0] == nullptr)) {
+    if ((status != napi_ok) || (jsThis == nullptr) || (argc < 1)) {
         HiLog::Error(LABEL, "set device type fail to napi_get_cb_info");
         return jsResult;
     }
