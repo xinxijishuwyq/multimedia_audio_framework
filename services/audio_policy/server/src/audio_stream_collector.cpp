@@ -574,7 +574,7 @@ int32_t AudioStreamCollector::GetUid(int32_t sessionId)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->sessionId == sessionId) {
-            defaultUid = changeInfo->clientUID;
+            defaultUid = changeInfo->createrUID;
             break;
         }
     }
