@@ -504,13 +504,13 @@ bool AudioPolicyService::GetOffloadAvailableFromXml() const
 
 void AudioPolicyService::HandlePowerStateChanged(PowerMgr::PowerState state)
 {
-    if (!CheckActiveOutputDeviceSupportOffload()) {
-        return;
-    }
     if (currentPowerState_ == state) {
         return;
     }
     currentPowerState_ = state;
+    if (!CheckActiveOutputDeviceSupportOffload()) {
+        return;
+    }
     if (offloadSessionID_.has_value()) {
         AUDIO_DEBUG_LOG("SetOffloadMode! Offload power is state = %{public}d", state);
         SetOffloadMode();
