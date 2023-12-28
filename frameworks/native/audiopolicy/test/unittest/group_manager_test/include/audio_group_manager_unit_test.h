@@ -39,6 +39,13 @@ public:
     ~AudioManagerCallbackImpl() {}
     void OnInterrupt(const InterruptAction &interruptAction) override {}
 };
+
+class AudioRingerModeCallbackTest : public AudioRingerModeCallback {
+public:
+    AudioRingerModeCallbackTest() {}
+    ~AudioRingerModeCallbackTest() {}
+    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override {};
+};
 } // namespace AudioStandard
 } // namespace OHOS
 
