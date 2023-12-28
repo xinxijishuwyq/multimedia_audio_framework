@@ -263,6 +263,37 @@ int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback()
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::AddOutputDeviceChangeWithInfoCallback(
+    const uint32_t sessionId, const std::shared_ptr<OutputDeviceChangeWithInfoCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(outputDeviceChangeWithInfoCallbackMutex_);
+    outputDeviceChangeWithInfoCallbackMap_[sessionId] = cb;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveOutputDeviceChangeWithInfoCallback(const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lockCbMap(outputDeviceChangeWithInfoCallbackMutex_);
+    outputDeviceChangeWithInfoCallbackMap_.erase(sessionId);
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnRendererDeviceChange(const uint32_t sessionId,
+    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
+{
+    std::shared_ptr<OutputDeviceChangeWithInfoCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lockCbMap(outputDeviceChangeWithInfoCallbackMutex_);
+        if (outputDeviceChangeWithInfoCallbackMap_.count(sessionId) == 0) {
+            return;
+        }
+        callback = outputDeviceChangeWithInfoCallbackMap_.at(sessionId);
+    }
+    if (callback != nullptr) {
+        callback->OnOutputDeviceChangeWithInfo(sessionId, deviceInfo, reason);
+    }
+}
+
 void AudioPolicyClientStubImpl::OnRendererStateChange(
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {

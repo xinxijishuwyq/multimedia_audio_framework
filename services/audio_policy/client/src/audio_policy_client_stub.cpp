@@ -168,5 +168,15 @@ void AudioPolicyClientStub::HandleCapturerStateChange(MessageParcel &data, Messa
     }
     OnCapturerStateChange(audioCapturerChangeInfo);
 }
+
+void AudioPolicyClientStub::HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply)
+{
+    const uint32_t sessionId = data.ReadUint32();
+    DeviceInfo deviceInfo;
+    deviceInfo.Unmarshalling(data);
+    const AudioStreamDeviceChangeReason reason = static_cast<AudioStreamDeviceChangeReason> (data.ReadInt32());
+
+    OnRendererDeviceChange(sessionId, deviceInfo, reason);
+}
 } // namespace AudioStandard
 } // namespace OHOS

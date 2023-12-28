@@ -27,6 +27,7 @@ namespace AudioStandard {
 constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class AudioRendererStateChangeCallbackImpl;
 class RendererPolicyServiceDiedCallback;
+class OutputDeviceChangeWithInfoCallbackImpl;
 
 class AudioRendererPrivate : public AudioRenderer {
 public:
@@ -90,6 +91,10 @@ public:
     int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
     int32_t UnregisterAudioRendererEventListener(const int32_t clientPid) override;
+    int32_t RegisterOutputDeviceChangeWithInfoCallback(
+        const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
+    int32_t UnregisterOutputDeviceChangeWithInfoCallback() override;
+    void DestroyOutputDeviceChangeWithInfoCallback() override;
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback) override;
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid) override;
@@ -156,6 +161,7 @@ private:
     FILE *dumpFile_ = nullptr;
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
+    std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback_ = nullptr;
     mutable std::shared_ptr<RendererPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
     bool isFastRenderer_ = false;
@@ -209,6 +215,32 @@ public:
     void UnSetAudioRendererObj();
 private:
     std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
+    AudioRendererPrivate *renderer_;
+    std::mutex mutex_;
+};
+
+class OutputDeviceChangeWithInfoCallbackImpl : public OutputDeviceChangeWithInfoCallback {
+public:
+    OutputDeviceChangeWithInfoCallbackImpl() = default;
+    virtual ~OutputDeviceChangeWithInfoCallbackImpl() = default;
+    void OnOutputDeviceChangeWithInfo(
+        const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void SaveCallback(const std::weak_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
+    {
+        callback_ = callback;
+    }
+    void setAudioRendererObj(AudioRendererPrivate *rendererObj)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        renderer_ = rendererObj;
+    }
+    void UnSetAudioRendererObj()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        renderer_ = nullptr;
+    }
+private:
+    std::weak_ptr<AudioRendererOutputDeviceChangeCallback> callback_;
     AudioRendererPrivate *renderer_;
     std::mutex mutex_;
 };

@@ -103,6 +103,13 @@ AudioRendererPrivate::~AudioRendererPrivate()
     }
 
     (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
+
+    std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback = outputDeviceChangeCallback_;
+    if (outputDeviceChangeCallback != nullptr) {
+        outputDeviceChangeCallback->UnSetAudioRendererObj();
+    }
+    AudioPolicyManager::GetInstance().UnregisterOutputDeviceChangeWithInfoCallback(sessionID_);
+
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
         Release();
@@ -1078,6 +1085,74 @@ int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t
     return SUCCESS;
 }
 
+int32_t AudioRendererPrivate::RegisterOutputDeviceChangeWithInfoCallback(
+    const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("RegisterOutputDeviceChangeWithInfoCallback");
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (GetCurrentOutputDevices(currentDeviceInfo_) != SUCCESS) {
+        AUDIO_ERR_LOG("get current device info failed");
+        return ERROR;
+    }
+
+    if (!outputDeviceChangeCallback_) {
+        outputDeviceChangeCallback_ = std::make_shared<OutputDeviceChangeWithInfoCallbackImpl>();
+        if (!outputDeviceChangeCallback_) {
+            AUDIO_ERR_LOG("AudioRendererPrivate: Memory Allocation Failed !!");
+            return ERROR;
+        }
+    }
+
+    uint32_t sessionId;
+    int32_t ret = GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::RegisterOutputDeviceChangeWithInfoCallback Get sessionId failed");
+        return ret;
+    }
+
+    ret = AudioPolicyManager::GetInstance().RegisterOutputDeviceChangeWithInfoCallback(sessionId,
+        outputDeviceChangeCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::RegisterOutputDeviceChangeWithInfoCallback failed");
+        return ERROR;
+    }
+
+    outputDeviceChangeCallback_->setAudioRendererObj(this);
+    outputDeviceChangeCallback_->SaveCallback(callback);
+    AUDIO_DEBUG_LOG("AudioRendererPrivate::RegisterOutputDeviceChangeWithInfoCallback successful!");
+    return SUCCESS;
+}
+
+void AudioRendererPrivate::DestroyOutputDeviceChangeWithInfoCallback()
+{
+    outputDeviceChangeCallback_ = nullptr;
+}
+
+int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback()
+{
+    AUDIO_INFO_LOG("AudioRendererPrivate::UnregisterAudioCapturerEventListener");
+
+    uint32_t sessionId;
+    int32_t ret = GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback Get sessionId failed");
+        return ret;
+    }
+
+    ret = AudioPolicyManager::GetInstance().UnregisterOutputDeviceChangeWithInfoCallback(sessionId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("AudioRendererPrivate::UnregisterAudioRendererEventListener failed");
+        return ERROR;
+    }
+
+    DestroyOutputDeviceChangeWithInfoCallback();
+    return SUCCESS;
+}
+
 AudioRendererStateChangeCallbackImpl::AudioRendererStateChangeCallbackImpl()
 {
     AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance create");
@@ -1254,6 +1329,17 @@ void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
 
     if (isDevicedChanged) {
         cb->OnStateChange(deviceInfo);
+    }
+}
+
+void OutputDeviceChangeWithInfoCallbackImpl::OnOutputDeviceChangeWithInfo(
+    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
+{
+    std::shared_ptr<AudioRendererOutputDeviceChangeCallback> cb = callback_.lock();
+    AUDIO_INFO_LOG("OutputDeviceChangeWithInfoCallbackImpl OnRendererStateChange");
+
+    if (cb != nullptr) {
+        cb->OnOutputDeviceChange(deviceInfo, reason);
     }
 }
 

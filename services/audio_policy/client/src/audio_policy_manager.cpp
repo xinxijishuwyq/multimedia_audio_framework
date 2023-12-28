@@ -759,6 +759,41 @@ int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t c
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::RegisterOutputDeviceChangeWithInfoCallback(
+    const uint32_t sessionID, const std::shared_ptr<OutputDeviceChangeWithInfoCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("RegisterAudioRendererEventListener: audio policy manager proxy is NULL.");
+        return ERROR;
+    }
+
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("RegisterAudioRendererEventListener: RendererEvent Listener callback is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (audioPolicyClientStubCB_ == nullptr) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    audioPolicyClientStubCB_->AddOutputDeviceChangeWithInfoCallback(sessionID, callback);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterOutputDeviceChangeWithInfoCallback(const uint32_t sessionID)
+{
+    AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveOutputDeviceChangeWithInfoCallback(sessionID);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const std::shared_ptr<AudioClientTracker> &clientTrackerObj)
 {
