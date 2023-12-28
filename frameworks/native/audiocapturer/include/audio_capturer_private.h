@@ -116,6 +116,7 @@ private:
     bool isVoiceCallCapturer_ = false;
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioCapturerProxyObj> capturerProxyObj_;
+    static std::map<AudioStreamType, SourceType> streamToSource_;
     std::mutex lock_;
     bool isValid_ = true;
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;

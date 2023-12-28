@@ -26,6 +26,14 @@
 namespace OHOS {
 namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
+static std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
+    {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
+    {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
+    {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
+    {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
+    {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
+    {AudioStreamType::STREAM_SOURCE_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_CALL},
+};
 
 AudioCapturer::~AudioCapturer() = default;
 AudioCapturerPrivate::~AudioCapturerPrivate() = default;
@@ -122,14 +130,6 @@ AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, cons
         AUDIO_WARNING_LOG("audioStreamType is invalid!");
     }
     audioStreamType_ = audioStreamType;
-    static std::map<AudioStreamType, SourceType> streamToSource_ = {
-        {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
-        {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
-        {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
-        {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
-        {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
-        {AudioStreamType::STREAM_SOURCE_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_CALL},
-    };
     auto iter = streamToSource_.find(audioStreamType);
     if (iter != streamToSource_.end()) {
         capturerInfo_.sourceType = iter->second;
