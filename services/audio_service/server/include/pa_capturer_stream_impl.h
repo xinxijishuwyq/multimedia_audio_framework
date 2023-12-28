@@ -24,6 +24,7 @@ namespace AudioStandard {
 class PaCapturerStreamImpl : public ICapturerStream {
 public:
     PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop);
+    ~PaCapturerStreamImpl();
     void InitParams();
     int32_t Start() override;
     int32_t Pause() override;

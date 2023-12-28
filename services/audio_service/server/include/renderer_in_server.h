@@ -26,7 +26,6 @@ namespace AudioStandard {
 class RendererInServer : public IStatusCallback, public IWriteCallback,
     public std::enable_shared_from_this<RendererInServer> {
 public:
-    // LYH waiting for review: add IStreamListener
     RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
     virtual ~RendererInServer();
     void OnStatusUpdate(IOperation operation) override;
@@ -52,7 +51,7 @@ public:
     int32_t SetPrivacyType(int32_t privacyType);
     int32_t GetPrivacyType(int32_t &privacyType);
 
-    void Init();
+    int32_t Init();
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
     int32_t UpdateWriteIndex();

@@ -31,6 +31,8 @@ CTrace *GetAndStart(const char *traceName);
 
 void EndCTrace(CTrace *cTrace);
 
+void CTraceCount(const char *traceName, int64_t count);
+
 void CallEndAndClear(CTrace **cTrace);
 
 #ifdef __cplusplus

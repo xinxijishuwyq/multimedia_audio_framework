@@ -45,7 +45,6 @@ int32_t StreamListenerHolder::RegisterStreamListener(sptr<IpcStreamListener> lis
 
 int32_t StreamListenerHolder::OnOperationHandled(Operation operation, int64_t result)
 {
-    AUDIO_INFO_LOG("OnOperationHandled: operation: %{public}d, result: [%{public}" PRId64 "]", operation, result);
     std::lock_guard<std::mutex> lock(listenerMutex_);
     CHECK_AND_RETURN_RET_LOG(streamListener_ != nullptr, ERR_OPERATION_FAILED, "stream listrener not set");
     return streamListener_->OnOperationHandled(operation, result);
@@ -78,7 +77,6 @@ int32_t IpcStreamInServer::Config()
 {
     streamListenerHolder_ = std::make_shared<StreamListenerHolder>();
 
-    // LYH waiting for review: pass streamListenerHolder_ to RendererInServer or CapturerInServer
     if (mode_ == AUDIO_MODE_PLAYBACK) {
         return ConfigRenderer();
     }
@@ -91,19 +89,19 @@ int32_t IpcStreamInServer::Config()
 
 int32_t IpcStreamInServer::ConfigRenderer()
 {
-    // LYH waiting for review: use config_.streamInfo instead of AudioStreamParams
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
-    rendererInServer_->Init();
-    CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "create RendererInServer failed");
+    CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "Create RendererInServer failed");
+    int32_t ret = rendererInServer_->Init();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init RendererInServer failed");
     return SUCCESS;
 }
 
 int32_t IpcStreamInServer::ConfigCapturer()
 {
-    // LYH waiting for review: use config_.streamInfo instead of AudioStreamParams
     capturerInServer_ = std::make_shared<CapturerInServer>(config_, streamListenerHolder_);
     CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed");
-    capturerInServer_->Init();
+    int32_t ret = capturerInServer_->Init();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init CapturerInServer failed");
     return SUCCESS;
 }
 

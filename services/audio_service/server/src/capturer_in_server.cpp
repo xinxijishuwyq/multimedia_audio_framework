@@ -30,11 +30,7 @@ namespace {
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
 {
     processConfig_ = processConfig;
-    streamListener_ = streamListener; // LYH waiting for review
-    int32_t ret = IStreamManager::GetRecorderManager().CreateCapturer(processConfig, stream_);
-    AUDIO_INFO_LOG("Construct capturerInServer result: %{public}d", ret);
-    streamIndex_ = stream_->GetStreamIndex();
-    ConfigServerBuffer();
+    streamListener_ = streamListener;
 }
 
 CapturerInServer::~CapturerInServer()
@@ -108,12 +104,17 @@ int32_t CapturerInServer::InitBufferStatus()
     return SUCCESS;
 }
 
-void CapturerInServer::Init()
+int32_t CapturerInServer::Init()
 {
-    AUDIO_INFO_LOG("Init, register status and read callback");
-    CHECK_AND_RETURN_LOG(stream_ != nullptr, "Capturer stream is nullptr");
+    int32_t ret = IStreamManager::GetRecorderManager().CreateCapturer(processConfig_, stream_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
+        "Construct CapturerInServer failed: %{public}d", ret);
+    streamIndex_ = stream_->GetStreamIndex();
+    ret = ConfigServerBuffer();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConfigServerBuffer failed: %{public}d", ret);
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
+    return SUCCESS;
 }
 
 void CapturerInServer::OnStatusUpdate(IOperation operation)
@@ -127,7 +128,6 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
-    // std::shared_ptr<CapturerListener> callback = testCallback_.lock();
     switch (operation) {
         case OPERATION_UNDERFLOW:
             underflowCount += 1;
@@ -180,7 +180,7 @@ void CapturerInServer::ReadData(size_t length)
 
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    AUDIO_INFO_LOG("Current write frame: %{public}" PRIu64 ", read frame: %{public}" PRIu64 ","
+    AUDIO_DEBUG_LOG("Current write frame: %{public}" PRIu64 ", read frame: %{public}" PRIu64 ","
         "avaliable frame:%{public}d, spanSizeInFrame:%{public}zu", currentWriteFrame, currentReadFrame,
         audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_);
     if (audioServerBuffer_->GetAvailableDataFrames() <= spanSizeInFrame_) {
@@ -197,11 +197,10 @@ void CapturerInServer::ReadData(size_t length)
         if (ret < 0) {
             return;
         }
-        AUDIO_INFO_LOG("On read spanSizeInBytes_ %{public}zu", spanSizeInBytes_);
         memcpy_s(dstBuffer.buffer, spanSizeInBytes_, srcBuffer.buffer, spanSizeInBytes_);
 
         uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
-        AUDIO_INFO_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
+        AUDIO_DEBUG_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
             currentWriteFrame, nextWriteFrame);
         audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     }
@@ -232,11 +231,6 @@ int32_t CapturerInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 
 int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
 {
-    {
-        std::unique_lock<std::mutex> lock(statusLock_);
-        CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE, ERR_ILLEGAL_STATE,
-            "Illegal state %{public}d", status_);
-    }
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetSessionId failed, stream_ is null");
     sessionId = streamIndex_;
     CHECK_AND_RETURN_RET_LOG(sessionId < INT32_MAX, ERR_OPERATION_FAILED, "GetSessionId failed, sessionId:%{public}d",
@@ -332,26 +326,19 @@ int32_t CapturerInServer::Release()
 {
     {
         std::unique_lock<std::mutex> lock(statusLock_);
-        CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE, ERR_ILLEGAL_STATE,
-            "Illegal state %{public}d", status_);
+        if (status_ == I_STATUS_RELEASED) {
+            AUDIO_INFO_LOG("Already released");
+            return SUCCESS;
+        }
     }
     AUDIO_INFO_LOG("Start release capturer");
-    {
-        std::unique_lock<std::mutex> lock(statusLock_);
-        status_ = I_STATUS_RELEASED;
-
-        int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
-        stream_ = nullptr;
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
-            status_ = I_STATUS_INVALID;
-            return ret;
-        }
-        status_ = I_STATUS_RELEASED;
+    int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
+    if (ret < 0) {
+        AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
+        status_ = I_STATUS_INVALID;
+        return ret;
     }
-    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERROR, "IStreamListener is nullptr");
-    stateListener->OnOperationHandled(RELEASE_STREAM, 0);
+    status_ = I_STATUS_RELEASED;
     return SUCCESS;
 }
 

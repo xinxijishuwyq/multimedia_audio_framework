@@ -18,6 +18,7 @@
 #include <atomic>
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_schedule.h"
 #include "pa_renderer_stream_impl.h"
 #include "pa_capturer_stream_impl.h"
 #include "audio_utils.h"
@@ -85,9 +86,11 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
 
     uint32_t sessionId = g_sessionId++;
     pa_stream *paStream = InitPaStream(processConfig, sessionId);
+    CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init render");
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
     rendererStream->SetStreamIndex(sessionId);
+    rendererStreamMap_[sessionId] = rendererStream;
     stream = rendererStream;
     return SUCCESS;
 }
@@ -129,9 +132,11 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     }
     uint32_t sessionId = g_sessionId++;
     pa_stream *paStream = InitPaStream(processConfig, sessionId);
+    CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init capture");
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
     capturerStream->SetStreamIndex(sessionId);
+    capturerStreamMap_[sessionId] = capturerStream;
     stream = capturerStream;
     return SUCCESS;
 }
@@ -194,6 +199,7 @@ int32_t PaAdapterManager::InitPaContext()
     mainLoop_ = pa_threaded_mainloop_new();
     CHECK_AND_RETURN_RET_LOG(mainLoop_ != nullptr, ERR_DEVICE_INIT, "Failed to init pa mainLoop");
     api_ = pa_threaded_mainloop_get_api(mainLoop_);
+    pa_threaded_mainloop_set_name(mainLoop_, "OS_ClientsML");
     if (api_ == nullptr) {
         pa_threaded_mainloop_free(mainLoop_);
         AUDIO_ERR_LOG("Get api from mainLoop failed");
@@ -259,6 +265,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     AUDIO_DEBUG_LOG("Enter InitPaStream");
     int32_t error = ERROR;
     if (CheckReturnIfinvalid(mainLoop_ && context_, ERR_ILLEGAL_STATE) < 0) {
+        AUDIO_ERR_LOG("CheckReturnIfinvalid failed");
         return nullptr;
     }
     pa_threaded_mainloop_lock(mainLoop_);
@@ -300,6 +307,13 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
     const std::string &streamName, uint32_t sessionId)
 {
+    bool isEffectNone = false;
+    StreamUsage mStreamUsage = processConfig.rendererInfo.streamUsage;
+    if (mStreamUsage == STREAM_USAGE_SYSTEM || mStreamUsage == STREAM_USAGE_DTMF ||
+        mStreamUsage == STREAM_USAGE_ENFORCED_TONE || mStreamUsage == STREAM_USAGE_ULTRASONIC ||
+        mStreamUsage == STREAM_USAGE_NAVIGATION || mStreamUsage == STREAM_USAGE_NOTIFICATION) {
+            isEffectNone = true;
+    }
     // for remote audio device router filter
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionId).c_str());
     pa_proplist_sets(propList, "stream.client.uid", std::to_string(processConfig.appInfo.appUid).c_str());
@@ -308,6 +322,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "media.name", streamName.c_str());
     const std::string effectSceneName = GetEffectSceneName(processConfig.streamType);
     pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
+    pa_proplist_sets(propList, "scene.mode", isEffectNone ? "EFFECT_NONE" : "EFFECT_DEFAULT");
     float mVolumeFactor = 1.0f;
     float mPowerVolumeFactor = 1.0f;
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
@@ -317,6 +332,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
     if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        pa_proplist_sets(propList, "stream.flush", "false");
+        pa_proplist_sets(propList, "spatialization.enabled", "0");
         AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
@@ -352,9 +369,6 @@ std::shared_ptr<IRendererStream> PaAdapterManager::CreateRendererStream(AudioPro
         AUDIO_ERR_LOG("Create rendererStream Failed");
         return nullptr;
     }
-    uint32_t streamIndex = pa_stream_get_index(paStream);
-    AUDIO_DEBUG_LOG("PaStream index is %{public}u", streamIndex);
-    rendererStreamMap_[streamIndex] = rendererStream;
     return rendererStream;
 }
 
@@ -367,9 +381,6 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
         AUDIO_ERR_LOG("Create capturerStream Failed");
         return nullptr;
     }
-    uint32_t streamIndex = pa_stream_get_index(paStream);
-    AUDIO_DEBUG_LOG("PaStream index is %{public}u", streamIndex);
-    capturerStreamMap_[streamIndex] = capturerStream;
     return capturerStream;
 }
 
@@ -408,9 +419,11 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
 
 int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
 {
-    uint32_t tlength = 3; // 3 is tlength of playback
+    uint32_t tlength = 4; // 4 is tlength of playback
     uint32_t maxlength = 4; // 4 is max buffer length of playback
     uint32_t prebuf = 1; // 1 is prebuf of playback
+
+    AUDIO_INFO_LOG("Create ipc playback stream tlength: %{public}u, maxlength: %{public}u", tlength, maxlength);
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
     bufferAttr.prebuf = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * prebuf, &sampleSpec);
@@ -435,7 +448,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
 int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
 {
     uint32_t fragsize = 1; // 1 is frag size of recorder
-    uint32_t maxlength = 3; // 3 is max buffer length of recorder
+    uint32_t maxlength = 4; // 4 is max buffer length of recorder
     pa_buffer_attr bufferAttr;
     bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
     bufferAttr.fragsize = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * fragsize, &sampleSpec);
@@ -464,6 +477,7 @@ void PaAdapterManager::PAContextStateCb(pa_context *context, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
     AUDIO_INFO_LOG("Current Context State: %{public}d", pa_context_get_state(context));
+    ScheduleReportData(getpid(), gettid(), "pulseaudio");
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:

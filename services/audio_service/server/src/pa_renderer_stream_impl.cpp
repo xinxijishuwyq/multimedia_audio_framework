@@ -16,6 +16,7 @@
 #include "pa_renderer_stream_impl.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -195,14 +196,9 @@ int32_t PaRendererStreamImpl::Stop()
         return ERR_ILLEGAL_STATE;
     }
 
-    streamDrainStatus_ = 0;
-    isDrain_ = true;
-    pa_operation *operation = pa_stream_drain(paStream_, PAStreamDrainInStopCb, (void *)this);
-    if (operation == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_drain operation is null");
-        return ERR_OPERATION_FAILED;
-    }
-
+    pa_operation *operation = pa_stream_cork(paStream_, 1, PaRendererStreamImpl::PAStreamAsyncStopSuccessCb,
+        (void *)this);
+    CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
     return SUCCESS;
 }
@@ -471,6 +467,8 @@ BufferDesc PaRendererStreamImpl::DequeueBuffer(size_t length)
 
 int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
+    Trace trace("PaRendererStreamImpl::EnqueueBuffer " + std::to_string(bufferDesc.bufLength) + " totalBytesWritten" +
+        std::to_string(totalBytesWritten_));
     pa_threaded_mainloop_lock(mainloop_);
     int32_t error = 0;
     error = pa_stream_write(paStream_, static_cast<void*>(bufferDesc.buffer), bufferDesc.bufLength, nullptr,
@@ -486,8 +484,7 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 
 void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_INFO_LOG("PAStreamWriteCb, length: %{public}zu, pa_stream_writeable_size: %{public}zu",
-        length, pa_stream_writable_size(stream));
+    Trace trace("PaRendererStreamImpl::PAStreamWriteCb" + std::to_string(length));
     CHECK_AND_RETURN_LOG(userdata, "PAStreamWriteCb: userdata is null");
 
     auto streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
@@ -520,6 +517,7 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 
 void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 {
+    Trace trace("PaRendererStreamImpl::PAStreamUnderFlowCb");
     CHECK_AND_RETURN_LOG(userdata, "PAStreamUnderFlowCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
@@ -536,6 +534,7 @@ void PaRendererStreamImpl::PAStreamSetStartedCb(pa_stream *stream, void *userdat
 {
     CHECK_AND_RETURN_LOG(userdata, "PAStreamSetStartedCb: userdata is null");
     AUDIO_WARNING_LOG("PAStreamSetStartedCb");
+    Trace trace("PaRendererStreamImpl::PAStreamSetStartedCb");
 }
 
 void PaRendererStreamImpl::PAStreamStartSuccessCb(pa_stream *stream, int32_t success, void *userdata)
@@ -614,8 +613,6 @@ void PaRendererStreamImpl::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
     }
-    streamImpl->streamCmdStatus_ = success;
-    streamImpl->isDrain_ = false;
 }
 
 int32_t PaRendererStreamImpl::GetMinimumBufferSize(size_t &minBufferSize) const

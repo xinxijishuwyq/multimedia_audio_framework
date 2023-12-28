@@ -27,6 +27,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    constexpr int32_t MEDIA_UID = 1013;
+    constexpr int32_t IPC_FOR_NOT_MEDIA = 1;
+    constexpr int32_t IPC_FOR_ALL = 2;
+}
 const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_ = IAudioStream::CreateStreamMap();
 std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::CreateStreamMap()
 {
@@ -208,7 +213,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     }
 
     int32_t ipcFlag = 0;
-    if (GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
+    GetSysPara("persist.multimedia.audiostream.ipc.renderer", ipcFlag);
+    if (ipcFlag == IPC_FOR_ALL || (ipcFlag == IPC_FOR_NOT_MEDIA && getuid() != MEDIA_UID)) {
         AUDIO_INFO_LOG("Create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
     }
@@ -230,7 +236,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     }
 
     int32_t ipcFlag = 0;
-    if (GetSysPara("persist.multimedia.audio.stream.ipc", ipcFlag) && ipcFlag == 1) {
+    GetSysPara("persist.multimedia.audiostream.ipc.capturer", ipcFlag);
+    if (ipcFlag == IPC_FOR_ALL || (ipcFlag == IPC_FOR_NOT_MEDIA && getuid() != MEDIA_UID)) {
         AUDIO_INFO_LOG("Create ipc record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
