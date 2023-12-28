@@ -116,14 +116,7 @@ private:
     bool isVoiceCallCapturer_ = false;
     uint32_t sessionID_ = INVALID_SESSION_ID;
     std::shared_ptr<AudioCapturerProxyObj> capturerProxyObj_;
-    std::map<AudioStreamType, SourceType> streamToSource_ = {
-        {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
-        {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
-        {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
-        {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_ULTRASONIC},
-        {AudioStreamType::STREAM_WAKEUP, SourceType::SOURCE_TYPE_WAKEUP},
-        {AudioStreamType::STREAM_SOURCE_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_CALL},
-    };
+    static std::map<AudioStreamType, SourceType> streamToSource_;
     std::mutex lock_;
     bool isValid_ = true;
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
