@@ -18,6 +18,7 @@
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "i_stream_manager.h"
 
 namespace OHOS {
@@ -29,12 +30,7 @@ namespace {
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
 {
     processConfig_ = processConfig;
-    streamListener_ = streamListener; // LYH wating for review
-
-    int32_t ret = IStreamManager::GetPlaybackManager().CreateRender(processConfig_, stream_);
-    AUDIO_INFO_LOG("Construct rendererInServer result: %{public}d", ret);
-    streamIndex_ = stream_->GetStreamIndex();
-    ConfigServerBuffer();
+    streamListener_ = streamListener;
 }
 
 RendererInServer::~RendererInServer()
@@ -108,12 +104,18 @@ int32_t RendererInServer::InitBufferStatus()
     return SUCCESS;
 }
 
-void RendererInServer::Init()
+int32_t RendererInServer::Init()
 {
-    AUDIO_INFO_LOG("Init, register status and write callback");
-    CHECK_AND_RETURN_LOG(stream_ != nullptr, "Renderer stream is nullptr");
+    int32_t ret = IStreamManager::GetPlaybackManager().CreateRender(processConfig_, stream_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
+        "Construct rendererInServer failed: %{public}d", ret);
+    streamIndex_ = stream_->GetStreamIndex();
+    ret = ConfigServerBuffer();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "Construct rendererInServer failed: %{public}d", ret);
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterWriteCallback(shared_from_this());
+    return SUCCESS;
 }
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
@@ -192,20 +194,25 @@ void RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
+    Trace::Count("RendererInServer::WriteData", (currentWriteFrame - currentReadFrame) / spanSizeInFrame_);
+    Trace trace1("RendererInServer::WriteData");
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
         AUDIO_INFO_LOG("Underrun!!!");
+        Trace trace2("RendererInServer::Underrun");
+        std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+        CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+        stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
         return;
     }
     BufferDesc bufferDesc = {nullptr, totalSizeInFrame_, totalSizeInFrame_};
 
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
-        AUDIO_INFO_LOG("Buffer length: %{public}zu", bufferDesc.bufLength);
         stream_->EnqueueBuffer(bufferDesc);
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
-        AUDIO_INFO_LOG("CurrentReadFrame: %{public}" PRIu64 ", nextReadFrame:%{public}" PRIu64 "", currentReadFrame,
-            nextReadFrame);
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
+    } else {
+        Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
@@ -214,6 +221,7 @@ void RendererInServer::WriteData()
 
 void RendererInServer::WriteEmptyData()
 {
+    Trace trace("RendererInServer::WriteEmptyData");
     AUDIO_WARNING_LOG("Underrun, write empty data");
     BufferDesc bufferDesc = stream_->DequeueBuffer(totalSizeInFrame_);
     memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
@@ -223,7 +231,7 @@ void RendererInServer::WriteEmptyData()
 
 int32_t RendererInServer::OnWriteData(size_t length)
 {
-    AUDIO_INFO_LOG("RendererInServer::OnWriteData");
+    Trace trace("RendererInServer::OnWriteData length " + std::to_string(length));
     for (int32_t i = 0; i < length / totalSizeInFrame_; i++) {
         WriteData();
     }
@@ -232,9 +240,7 @@ int32_t RendererInServer::OnWriteData(size_t length)
 
 int32_t RendererInServer::UpdateWriteIndex()
 {
-    AUDIO_INFO_LOG("UpdateWriteIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, "
-        "spanSizeInFrame_:%{public}zu, needStart: %{public}d", audioServerBuffer_->GetAvailableDataFrames(),
-        spanSizeInFrame_, needStart);
+    Trace trace("RendererInServer::UpdateWriteIndex");
     if (audioServerBuffer_->GetAvailableDataFrames() == spanSizeInFrame_ && needStart < 3) { // 3 is maxlength - 1
         AUDIO_WARNING_LOG("Start write data");
         WriteData();
@@ -378,19 +384,18 @@ int32_t RendererInServer::Release()
 {
     {
         std::unique_lock<std::mutex> lock(statusLock_);
-        CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE, false,
-            "Illegal state: %{public}d", status_);
-        status_ = I_STATUS_RELEASED;
+        if (status_ == I_STATUS_RELEASED) {
+            AUDIO_INFO_LOG("Already released");
+            return SUCCESS;
+        }
     }
     int32_t ret = IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);
-    
-    stream_ = nullptr;
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
         return ret;
     }
-
+    status_ = I_STATUS_RELEASED;
     return SUCCESS;
 }
 

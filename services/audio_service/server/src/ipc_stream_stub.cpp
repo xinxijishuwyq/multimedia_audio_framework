@@ -72,7 +72,6 @@ int32_t IpcStreamStub::HandleResolveBuffer(MessageParcel &data, MessageParcel &r
 
 int32_t IpcStreamStub::HandleUpdatePosition(MessageParcel &data, MessageParcel &reply)
 {
-    AUDIO_INFO_LOG("IpcStreamStub::HandleUpdatePosition");
     (void)data;
     reply.WriteInt32(UpdatePosition());
     return AUDIO_OK;

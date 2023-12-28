@@ -523,6 +523,11 @@ void EndCTrace(CTrace *cTrace)
     }
 }
 
+void CTraceCount(const char *traceName, int64_t count)
+{
+    OHOS::AudioStandard::Trace::Count(traceName, count);
+}
+
 void CallEndAndClear(CTrace **cTrace)
 {
     if (cTrace != nullptr && *cTrace != nullptr) {

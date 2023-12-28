@@ -31,7 +31,6 @@ public:
 class CapturerInServer : public IStatusCallback, public IReadCallback,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
-    // LYH waiting for review: add IStreamListener
     CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
     virtual ~CapturerInServer();
     void OnStatusUpdate(IOperation operation) override;
@@ -48,7 +47,7 @@ public:
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp);
     int32_t GetLatency(uint64_t &latency);
 
-    void Init();
+    int32_t Init();
     void RegisterTestCallback(const std::weak_ptr<CapturerListener> &callback);
 
     int32_t ConfigServerBuffer();

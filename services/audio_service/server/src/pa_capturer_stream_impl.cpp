@@ -44,6 +44,15 @@ PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConf
     InitParams();
 }
 
+PaCapturerStreamImpl::~PaCapturerStreamImpl()
+{
+    AUDIO_DEBUG_LOG("~PaCapturerStreamImpl");
+    if (capturerServerDumpFile_) {
+        fclose(capturerServerDumpFile_);
+        capturerServerDumpFile_ = nullptr;
+    }
+}
+
 inline uint32_t PcmFormatToBits(uint8_t format)
 {
     switch (format) {
@@ -295,36 +304,31 @@ BufferDesc PaCapturerStreamImpl::DequeueBuffer(size_t length)
     pa_stream_peek(paStream_, &tempBuffer, &bufferDesc.bufLength);
     bufferDesc.buffer = static_cast<uint8_t *>(const_cast<void* >(tempBuffer));
     totalBytesRead_ += bufferDesc.bufLength;
-    AUDIO_INFO_LOG("PaCapturerStreamImpl::DequeueBuffer length %{public}zu", bufferDesc.bufLength);
-    fwrite(reinterpret_cast<void *>(bufferDesc.buffer), 1, bufferDesc.bufLength, capturerServerDumpFile_);
+    if (capturerServerDumpFile_ != nullptr) {
+        fwrite(reinterpret_cast<void *>(bufferDesc.buffer), 1, bufferDesc.bufLength, capturerServerDumpFile_);
+    }
     return bufferDesc;
 }
 
 int32_t PaCapturerStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
-    AUDIO_INFO_LOG("Capturer enqueue buffer");
     pa_stream_drop(paStream_);
-    AUDIO_INFO_LOG("After enqueue capturere buffer, readable size is %{public}zu", pa_stream_readable_size(paStream_));
+    AUDIO_DEBUG_LOG("After enqueue capturere buffer, readable size is %{public}zu", pa_stream_readable_size(paStream_));
     return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::DropBuffer()
 {
-    AUDIO_INFO_LOG("Capturer DropBuffer");
     pa_stream_drop(paStream_);
-    AUDIO_INFO_LOG("After capturere DropBuffer, readable size is %{public}zu", pa_stream_readable_size(paStream_));
+    AUDIO_DEBUG_LOG("After capturere DropBuffer, readable size is %{public}zu", pa_stream_readable_size(paStream_));
     return SUCCESS;
 }
 
 void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_INFO_LOG("PAStreamReadCb, length size: %{public}zu, pa_stream_readable_size: %{public}zu",
+    AUDIO_DEBUG_LOG("PAStreamReadCb, length size: %{public}zu, pa_stream_readable_size: %{public}zu",
         length, pa_stream_readable_size(stream));
 
-    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(stream);
-    AUDIO_INFO_LOG("Buffer attr: maxlength %{public}d, tlength %{public}d, prebuf %{public}d, minreq %{public}d,"
-        "fragsize %{public}d", bufferAttr->maxlength, bufferAttr->tlength, bufferAttr->prebuf,
-        bufferAttr->minreq, bufferAttr->fragsize);
     if (!userdata) {
         AUDIO_ERR_LOG("PAStreamReadCb: userdata is null");
         return;

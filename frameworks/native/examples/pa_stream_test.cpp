@@ -391,7 +391,7 @@ public:
 
 private:
     std::unique_ptr<AudioCapturer> audioCapturer_ = nullptr;
-    bool isBlocking_ = false;
+    bool isBlocking_ = true;
 
     std::condition_variable enableReadCv_;
     std::mutex enableReadThreadLock_;
@@ -417,7 +417,7 @@ int32_t PaCapturerTest::InitCapturer(bool isBlocking, CapturerMode capturerMode)
     isBlocking_ = isBlocking;
     capturerMode_ = capturerMode;
     AudioCapturerOptions capturerOptions;
-    capturerOptions.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    capturerOptions.streamInfo.samplingRate = SAMPLE_RATE_8000;
     capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     capturerOptions.streamInfo.channels = AudioChannel::STEREO;
@@ -576,15 +576,15 @@ void PrintUsage()
     cout << "  4: Drain play." << endl;
     cout << "  5: Stop play." << endl;
     cout << "  6: Release play." << endl;
-    cout << "  7: Write data." << endl;
+    cout << "  7: Write data run." << endl;
 
-    cout << "  100: Init renderer." << endl;
-    cout << "  101: Start play." << endl;
-    cout << "  102: Pause play." << endl;
-    cout << "  103: Flush play." << endl;
-    cout << "  105: Stop play." << endl;
-    cout << "  106: Release play." << endl;
-    cout << "  107: Read data." << endl;
+    cout << "  100: Init Capturer." << endl;
+    cout << "  101: Start read." << endl;
+    cout << "  102: Pause read." << endl;
+    cout << "  103: Flush read." << endl;
+    cout << "  105: Stop read." << endl;
+    cout << "  106: Release read." << endl;
+    cout << "  107: Read data run." << endl;
     
     cout << "  1000: exit demo." << endl;
     cout << " Please input your choice: " << endl;
