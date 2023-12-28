@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
-static std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
+std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
     {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
     {AudioStreamType::STREAM_VOICE_CALL, SourceType::SOURCE_TYPE_VOICE_COMMUNICATION},
