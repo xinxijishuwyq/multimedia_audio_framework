@@ -15,6 +15,7 @@
 
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -963,22 +964,24 @@ napi_status NapiParamUtils::GetSpatialDeviceState(napi_env env, AudioSpatialDevi
 {
     napi_value res = nullptr;
     int32_t intValue = {0};
-    if (napi_get_named_property(env, in, "address", &res) == napi_ok) {
-        spatialDeviceState->address = NapiParamUtils::GetStringArgument(env, res);
-    }
+    napi_valuetype valueType = napi_undefined;
+    napi_status status = napi_get_named_property(env, in, "address", &res);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get address name failed");
+    napi_typeof(env, res, &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_string, napi_invalid_arg, "Get address type failed");
+    spatialDeviceState->address = NapiParamUtils::GetStringArgument(env, res);
 
-    if (napi_get_named_property(env, in, "isSpatializationSupported", &res) == napi_ok) {
-        napi_get_value_bool(env, res, &(spatialDeviceState->isSpatializationSupported));
-    }
+    status = GetValueBoolean(env, "isSpatializationSupported", spatialDeviceState->isSpatializationSupported, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get isSpatializationSupported failed");
 
-    if (napi_get_named_property(env, in, "isHeadTrackingSupported", &res) == napi_ok) {
-        napi_get_value_bool(env, res, &(spatialDeviceState->isHeadTrackingSupported));
-    }
+    status = GetValueBoolean(env, "isHeadTrackingSupported", spatialDeviceState->isHeadTrackingSupported, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get isHeadTrackingSupported failed");
 
-    if (napi_get_named_property(env, in, "spatialDeviceType", &res) == napi_ok) {
-        napi_get_value_int32(env, res, &intValue);
-        spatialDeviceState->spatialDeviceType = static_cast<AudioSpatialDeviceType>(intValue);
-    }
+    status = GetValueInt32(env, "spatialDeviceType", intValue, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Get spatialDeviceType failed");
+    CHECK_AND_RETURN_RET_LOG((intValue >= EARPHONE_TYPE_NONE) && (intValue <= EARPHONE_TYPE_OTHERS),
+        napi_invalid_arg, "Get spatialDeviceType failed");
+    spatialDeviceState->spatialDeviceType = static_cast<AudioSpatialDeviceType>(intValue);
 
     return napi_ok;
 }
