@@ -115,7 +115,7 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
         return SUCCESS;
     }
     if (audioEffectChainManager->GetOffloadEnabled()) {
-        audioEffectChainManager->RegisterEffectChainCountBackUpMap(sceneTypeString, "Register");
+        audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Register");
         return SUCCESS;
     }
     if (audioEffectChainManager->CreateAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
@@ -140,7 +140,7 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
         return SUCCESS;
     }
     if (audioEffectChainManager->GetOffloadEnabled()) {
-        audioEffectChainManager->RegisterEffectChainCountBackUpMap(sceneTypeString, "Deregister");
+        audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Deregister");
         return SUCCESS;
     }
     if (audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
@@ -637,7 +637,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     SessionIDSet_.clear();
     SceneTypeToSessionIDMap_.clear();
     SessionIDToEffectInfoMap_.clear();
-    SceneTypeToEffectChainCountBackUpMap_.clear();
+    SceneTypeToEffectChainCountBackupMap_.clear();
     frameLen_ = DEFAULT_FRAMELEN;
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
@@ -771,6 +771,7 @@ int32_t AudioEffectChainManager::GetFrameLen()
 
 bool AudioEffectChainManager::GetOffloadEnabled()
 {
+    std::lock_guard<std::mutex> lock(spatialMutex_);
     return offloadEnabled_;
 }
 
@@ -970,10 +971,13 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
         return false;
     }
 #endif
-
-    if (offloadEnabled_) {
-        return false;
+    {
+        std::lock_guard<std::mutex> lock(spatialMutex_);
+        if (offloadEnabled_) {
+            return false;
+        }
     }
+    
 
     if ((spatializationEnabled == "0") && (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
         return false;
@@ -996,6 +1000,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
 {
+    std::lock_guard<std::mutex> lock(spatialMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
 #ifdef DEVICE_FLAG
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
@@ -1065,7 +1070,7 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneTy
 
 int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    std::unique_lock<std::mutex> lock(dynamicMutex_);
+    std::lock_guard<std::mutex> lock(spatialMutex_);
     int32_t ret;
     if (spatializatonEnabled_ != spatializationState.spatializationEnabled) {
         spatializatonEnabled_ = spatializationState.spatializationEnabled;
@@ -1079,9 +1084,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 offloadEnabled_ = false;
             } else {
                 offloadEnabled_ = true;
-                lock.unlock();
                 DeleteAllChains();
-                lock.lock();
             }
         } else {
             effectHdiInput[0] = HDI_DESTROY;
@@ -1091,9 +1094,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 AUDIO_ERR_LOG("set hdi destory failed");
             }
             offloadEnabled_ = false;
-            lock.unlock();
             RecoverAllChains();
-            lock.lock();
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
@@ -1263,6 +1264,7 @@ int32_t AudioEffectHdi::UpdateHdiState(int8_t *effectHdiInput)
 
 void AudioEffectChainManager::UpdateSensorState()
 {
+    std::lock_guard<std::mutex> lock(spatialMutex_);
     effectHdiInput[0] = HDI_HEAD_MODE;
     effectHdiInput[1] = headTrackingEnabled_ == true ? 1 : 0;
     AUDIO_INFO_LOG("set hdi head mode.");
@@ -1311,18 +1313,19 @@ void AudioEffectChainManager::UpdateSensorState()
 
 void AudioEffectChainManager::DeleteAllChains()
 {
-    std::unique_lock<std::mutex> lock(dynamicMutex_);
-    SceneTypeToEffectChainCountBackUpMap_.clear();
-    for (auto it = SceneTypeToEffectChainCountMap_.begin(); it != SceneTypeToEffectChainCountMap_.end(); ++it) {
-        SceneTypeToEffectChainCountBackUpMap_.insert(std::make_pair(it->first, it->second));
+    SceneTypeToEffectChainCountBackupMap_.clear();
+    {
+        std::lock_guard<std::mutex> lock(dynamicMutex_);
+        for (auto it = SceneTypeToEffectChainCountMap_.begin(); it != SceneTypeToEffectChainCountMap_.end(); ++it) {
+            SceneTypeToEffectChainCountBackupMap_.insert(std::make_pair(it->first, it->second));
+        }
     }
-    for (auto it = SceneTypeToEffectChainCountBackUpMap_.begin(); it != SceneTypeToEffectChainCountBackUpMap_.end();
+    
+    for (auto it = SceneTypeToEffectChainCountBackupMap_.begin(); it != SceneTypeToEffectChainCountBackupMap_.end();
         ++it) {
         std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
-            lock.unlock();
             ReleaseAudioEffectChainDynamic(sceneType);
-            lock.lock();
         }
     }
     return;
@@ -1330,37 +1333,34 @@ void AudioEffectChainManager::DeleteAllChains()
 
 void AudioEffectChainManager::RecoverAllChains()
 {
-    std::unique_lock<std::mutex> lock(dynamicMutex_);
-    for (auto it = SceneTypeToEffectChainCountBackUpMap_.begin(); it != SceneTypeToEffectChainCountBackUpMap_.end();
+    for (auto it = SceneTypeToEffectChainCountBackupMap_.begin(); it != SceneTypeToEffectChainCountBackupMap_.end();
         ++it) {
         std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
-            lock.unlock();
             CreateAudioEffectChainDynamic(sceneType);
-            lock.lock();
         }
     }
-    SceneTypeToEffectChainCountBackUpMap_.clear();
+    SceneTypeToEffectChainCountBackupMap_.clear();
 }
 
-void AudioEffectChainManager::RegisterEffectChainCountBackUpMap(std::string sceneType, std::string operation)
+void AudioEffectChainManager::RegisterEffectChainCountBackupMap(std::string sceneType, std::string operation)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     if (operation == "Register") {
-        if (!SceneTypeToEffectChainCountBackUpMap_.count(sceneTypeAndDeviceKey)) {
-            SceneTypeToEffectChainCountBackUpMap_[sceneTypeAndDeviceKey] = 1;
+        if (!SceneTypeToEffectChainCountBackupMap_.count(sceneTypeAndDeviceKey)) {
+            SceneTypeToEffectChainCountBackupMap_[sceneTypeAndDeviceKey] = 1;
             return;
         }
-        SceneTypeToEffectChainCountBackUpMap_[sceneTypeAndDeviceKey]++;
+        SceneTypeToEffectChainCountBackupMap_[sceneTypeAndDeviceKey]++;
     } else if (operation == "Deregister") {
-        if (SceneTypeToEffectChainCountBackUpMap_.count(sceneTypeAndDeviceKey) == 1) {
-            SceneTypeToEffectChainCountBackUpMap_.erase(sceneTypeAndDeviceKey);
+        if (SceneTypeToEffectChainCountBackupMap_.count(sceneTypeAndDeviceKey) == 1) {
+            SceneTypeToEffectChainCountBackupMap_.erase(sceneTypeAndDeviceKey);
             return;
         }
-        SceneTypeToEffectChainCountBackUpMap_[sceneTypeAndDeviceKey]--;
+        SceneTypeToEffectChainCountBackupMap_[sceneTypeAndDeviceKey]--;
     } else {
-        AUDIO_ERR_LOG("Wrong operation to SceneTypeToEffectChainCountBackUpMap.");
+        AUDIO_ERR_LOG("Wrong operation to SceneTypeToEffectChainCountBackupMap.");
     }
     return;
 }

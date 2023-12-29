@@ -163,7 +163,7 @@ public:
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
     void DeleteAllChains();
     void RecoverAllChains();
-    void RegisterEffectChainCountBackUpMap(std::string sceneType, std::string operation);
+    void RegisterEffectChainCountBackupMap(std::string sceneType, std::string operation);
 private:
     void UpdateSensorState();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
@@ -175,13 +175,14 @@ private:
     std::set<std::string> SessionIDSet_;
     std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
     std::map<std::string, sessionEffectInfo> SessionIDToEffectInfoMap_;
-    std::map<std::string, int32_t> SceneTypeToEffectChainCountBackUpMap_;
+    std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
     uint32_t frameLen_ = DEFAULT_FRAMELEN;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
     std::mutex sessionMutex_;
+    std::mutex spatialMutex_;
     bool spatializatonEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
