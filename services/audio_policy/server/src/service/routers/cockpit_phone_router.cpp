@@ -21,6 +21,18 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
+vector<unique_ptr<AudioDeviceDescriptor>> GetBTCarDevices(vector<unique_ptr<AudioDeviceDescriptor>> &descs)
+{
+    vector<unique_ptr<AudioDeviceDescriptor>> carDescs;
+    for (const auto &desc : descs) {
+        if (desc == nullptr || desc->deviceCategory_ != BT_CAR) {
+            continue;
+        }
+        carDescs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+    }
+    return carDescs;
+}
+
 unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     return make_unique<AudioDeviceDescriptor>();
@@ -28,12 +40,24 @@ unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetMediaRenderDevice(Strea
 
 unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
+    unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(carDescs);
+    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
+        clientUID, desc->deviceType_);
+    return desc;
 }
 
 unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePublicDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> carDescs = GetBTCarDevices(descs);
+    unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(carDescs);
+    AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
+        clientUID, desc->deviceType_);
+    return desc;
 }
 
 unique_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID)
