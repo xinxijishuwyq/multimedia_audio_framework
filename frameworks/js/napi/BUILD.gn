@@ -61,7 +61,6 @@ ohos_shared_library("audio") {
       "audiomanager/napi_audio_volume_manager.cpp",
       "audiorenderer/callback/napi_audio_renderer_callback.cpp",
       "audiorenderer/callback/napi_audio_renderer_device_change_callback.cpp",
-      "audiorenderer/callback/napi_audio_renderer_output_device_change_with_info_callback.cpp",
       "audiorenderer/callback/napi_audio_renderer_policy_service_died_callback.cpp",
       "audiorenderer/callback/napi_renderer_data_request_callback.cpp",
       "audiorenderer/callback/napi_renderer_period_position_callback.cpp",

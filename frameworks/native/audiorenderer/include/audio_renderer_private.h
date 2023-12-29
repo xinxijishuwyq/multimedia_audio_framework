@@ -212,7 +212,7 @@ public:
         const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void SaveCallback(const std::weak_ptr<AudioRendererDeviceChangeCallback> &callback);
     void setAudioRendererObj(AudioRendererPrivate *rendererObj);
-    void UnSetAudioRendererObj();
+    void UnsetAudioRendererObj();
 private:
     std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
     AudioRendererPrivate *renderer_;
@@ -229,12 +229,12 @@ public:
     {
         callback_ = callback;
     }
-    void setAudioRendererObj(AudioRendererPrivate *rendererObj)
+    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         renderer_ = rendererObj;
     }
-    void UnSetAudioRendererObj()
+    void UnsetAudioRendererObj()
     {
         std::lock_guard<std::mutex> lock(mutex_);
         renderer_ = nullptr;

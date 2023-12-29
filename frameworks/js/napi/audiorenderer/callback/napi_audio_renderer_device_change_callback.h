@@ -47,6 +47,33 @@ private:
     napi_env env_ = nullptr;
     std::list<napi_ref> callbacks_ {};
 };
+
+class NapiAudioRendererOutputDeviceChangeWithInfoCallback : public AudioRendererOutputDeviceChangeCallback {
+public:
+    explicit NapiAudioRendererOutputDeviceChangeWithInfoCallback(napi_env env);
+    virtual ~NapiAudioRendererOutputDeviceChangeWithInfoCallback();
+    void AddCallbackReference(napi_value callback);
+    void RemoveCallbackReference(napi_env env, napi_value args);
+    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void RemoveAllCallbacks();
+    int32_t GetCallbackListSize() const;
+
+private:
+    struct AudioRendererOutputDeviceChangeWithInfoJsCallback {
+        napi_ref callback_;
+        napi_env env_;
+        DeviceInfo deviceInfo_;
+        AudioStreamDeviceChangeReason reason_;
+    };
+
+    static void WorkCallbackCompleted(uv_work_t* work, int aStatus);
+    void OnJsCallbackOutputDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo,
+        const AudioStreamDeviceChangeReason reason);
+
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+    std::list<napi_ref> callbacks_ {};
+};
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // NAPI_AUDIO_RENDERER_DEVICE_CHANGE_CALLBACK_H

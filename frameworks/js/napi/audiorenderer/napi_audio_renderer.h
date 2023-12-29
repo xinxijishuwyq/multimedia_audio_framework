@@ -25,7 +25,7 @@
 #include "audio_stream_manager.h"
 #include "audio_renderer.h"
 #include "napi_async_work.h"
-#include "napi_audio_renderer_output_device_change_with_info_callback.h"
+#include "napi_audio_renderer_device_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {

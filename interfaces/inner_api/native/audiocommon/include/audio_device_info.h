@@ -359,6 +359,7 @@ public:
         isLowLatencyDevice = parcel.ReadBool();
     }
 };
+
 enum class AudioStreamDeviceChangeReason {
     UNKOWN = 0,
     NEW_DEVICE_AVAILABLE = 1,
