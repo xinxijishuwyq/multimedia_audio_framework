@@ -740,10 +740,11 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     float speed_ = 1.0;
 
+    bool firstUpdatePosition_ = true;
     uint64_t lastStreamPosition_ = 0;
     uint64_t lastPositionTimestamp_ = 0;
     uint64_t lastHdiPosition_ = 0;
-    
+    uint64_t lastOffloadStreamCorkedPosition_ = 0;
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
     int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);

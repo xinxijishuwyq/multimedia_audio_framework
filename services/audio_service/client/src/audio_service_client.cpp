@@ -2156,27 +2156,38 @@ int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
 {
     uint64_t frames;
     int64_t timeSec, timeNanoSec;
-    
     unique_lock<mutex> positionLock(streamPositionMutex_);
     std::string deviceClass = offloadEnable_ ? "offload" : "primary";
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK &&
         audioSystemManager_->GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec) == 0) {
         if (offloadEnable_) {
+            if (node == UpdatePositionTimeNode::CORKED_NODE) {
+                lastOffloadStreamCorkedPosition_ = mTotalBytesWritten / mFrameSize;
+                return AUDIO_CLIENT_SUCCESS;
+            }
             frames = frames * HDI_OFFLOAD_SAMPLE_RATE / SECOND_TO_MICROSECOND;
-            lastStreamPosition_ = frames;
+            lastStreamPosition_ = lastOffloadStreamCorkedPosition_ + frames;
             lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
             return AUDIO_CLIENT_SUCCESS;
+        }
+        if (frames < lastHdiPosition_) {
+            AUDIO_ERR_LOG("The frame position should be continuously increasing");
+            return AUDIO_CLIENT_ERR;
+        }
+        if (firstUpdatePosition_) {
+            lastHdiPosition_ = frames;
+            firstUpdatePosition_ = false;
         }
         if (node == UpdatePositionTimeNode::USER_NODE && state_ == RUNNING) {
             lastStreamPosition_ = lastStreamPosition_ + frames - lastHdiPosition_;
             lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
-            lastHdiPosition_ = frames;
         } else if (node == UpdatePositionTimeNode::CORKED_NODE) {
-            lastStreamPosition_ = lastStreamPosition_ + frames - lastHdiPosition_;
-            lastHdiPosition_ = frames;
-        } else if (node == UpdatePositionTimeNode::RUNNING_NODE) {
-            lastHdiPosition_ = frames;
+            // In the current paused state, all data will be flushed
+            lastStreamPosition_ = mTotalBytesWritten / mFrameSize;
+        } else {
+            AUDIO_INFO_LOG("other node value %{public}d!", node);
         }
+        lastHdiPosition_ = frames;
         return AUDIO_CLIENT_SUCCESS;
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD &&
         audioSystemManager_->GetCapturePresentationPosition("primary", frames, timeSec, timeNanoSec) == 0) {
@@ -2184,7 +2195,11 @@ int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
         lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
         return AUDIO_CLIENT_SUCCESS;
     } else {
-        AUDIO_ERR_LOG("UpdateStreamPosition failed!");
+        AUDIO_ERR_LOG("UpdateStreamPosition from hdi failed!");
+        if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK &&
+                !offloadEnable_ && node == UpdatePositionTimeNode::RUNNING_NODE) {
+            lastHdiPosition_ += 240000; // 240000 frame size for 5s,the state from suspend to running
+        }
         return AUDIO_CLIENT_ERR;
     }
 }

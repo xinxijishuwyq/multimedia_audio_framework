@@ -768,12 +768,6 @@ int32_t AudioServer::OffloadDrain()
 int32_t AudioServer::GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
     int64_t& timeNanoSec)
 {
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
-        AUDIO_ERR_LOG("GetCapturePresentationPosition refused for %{public}d", callingUid);
-        return ERROR;
-    }
-
     AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
     if (audioCapturerSourceInstance == nullptr) {
         AUDIO_ERR_LOG("Capturer is null.");
@@ -785,12 +779,6 @@ int32_t AudioServer::GetCapturePresentationPosition(const std::string& deviceCla
 int32_t AudioServer::GetRenderPresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
     int64_t& timeNanoSec)
 {
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != audioUid_ && callingUid != ROOT_UID) {
-        AUDIO_ERR_LOG("GetCapturePresentationPosition refused for %{public}d", callingUid);
-        return ERROR;
-    }
-
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance(deviceClass.c_str(), "");
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");

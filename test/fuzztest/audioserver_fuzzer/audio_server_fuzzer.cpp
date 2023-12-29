@@ -194,6 +194,41 @@ void AudioServerNotifyStreamVolumeChangedFuzzTest(const uint8_t *rawData, size_t
         data, reply, option);
 }
 
+void AudioServerGetCapturePresentationPositionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    std::string deviceClass(reinterpret_cast<const char*>(rawData), size);
+    data.WriteString(deviceClass);
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_CAPTURE_PRESENTATION_POSITION),
+        data, reply, option);
+}
+
+void AudioServerGetRenderPresentationPositionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    std::string deviceClass(reinterpret_cast<const char*>(rawData), size);
+    data.WriteString(deviceClass);
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_RENDER_PRESENTATION_POSITION),
+        data, reply, option);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -208,5 +243,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerOffloadGetPresentationPositionFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerOffloadSetBufferSizeFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerGetCapturePresentationPositionFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerGetRenderPresentationPositionFuzzTest(data, size);
     return 0;
 }
