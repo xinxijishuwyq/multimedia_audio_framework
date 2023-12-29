@@ -2964,7 +2964,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(
         }
         allSessionInfos.push_back(a2dpStreamInfo);
     }
-
+    UpdateAllActiveSessions(allSessionInfos);
     UpdateA2dpOffloadFlag(allSessionInfos, deviceType);
 #endif
     AUDIO_DEBUG_LOG("deviceType %{public}d", deviceType);
@@ -2994,7 +2994,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType
             allSessionInfos.push_back(a2dpStreamInfo);
         }
     }
-
+    UpdateAllActiveSessions(allSessionInfos);
     UpdateA2dpOffloadFlag(allSessionInfos, deviceType);
 #endif
     AUDIO_DEBUG_LOG("deviceType %{public}d", deviceType);
@@ -5077,6 +5077,7 @@ int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sess
             allSessionInfos.push_back(a2dpStreamInfo);
         }
     }
+    UpdateAllActiveSessions(allSessionInfos);
     UpdateA2dpOffloadFlag(allSessionInfos);
     if (a2dpOffloadFlag_ == A2DP_OFFLOAD) {
         GetA2dpOffloadCodecAndSendToDsp();
@@ -5323,6 +5324,35 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
     OffloadStopPlaying(allSessions);
     preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
     a2dpOffloadFlag_ = NO_A2DP_DEVICE;
+}
+
+void AudioPolicyService::UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions)
+{
+    std::lock_guard<std::mutex> lock(checkSpatializedMutex_);
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    std::unordered_map<uint32_t, bool> newSessionHasBeenSpatialized;
+    for (auto &changeInfo : audioRendererChangeInfos) {
+        if (changeInfo->rendererState != RENDERER_RUNNING) {
+            newSessionHasBeenSpatialized[changeInfo->sessionId] = false;
+            continue;
+        }
+        auto it = sessionHasBeenSpatialized_.find(changeInfo->sessionId);
+        if (it == sessionHasBeenSpatialized_.end()) {
+            newSessionHasBeenSpatialized[changeInfo->sessionId] = false;
+        } else {
+            newSessionHasBeenSpatialized[changeInfo->sessionId] = sessionHasBeenSpatialized_[changeInfo->sessionId];
+        }
+        for (auto &activeSession : allActiveSessions) {
+            if (activeSession.sessionId == changeInfo->sessionId) {
+                activeSession.isSpatialAudio =
+                    activeSession.isSpatialAudio | newSessionHasBeenSpatialized[changeInfo->sessionId];
+                newSessionHasBeenSpatialized[changeInfo->sessionId] = activeSession.isSpatialAudio;
+                break;
+            }
+        }
+    }
+    sessionHasBeenSpatialized_ = newSessionHasBeenSpatialized;
 }
 } // namespace AudioStandard
 } // namespace OHOS
