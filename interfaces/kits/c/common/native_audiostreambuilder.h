@@ -164,6 +164,19 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInfo(OH_AudioStreamBuilde
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererCallback(OH_AudioStreamBuilder* builder,
     OH_AudioRenderer_Callbacks callbacks, void* userData);
 
+/**
+ * @brief Set the callback when the output device of an audio renderer changed.
+ *
+ * @param builder Reference provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback to the function that will process this device change event.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ * @since 11
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_OutputDeviceChangeCallback callback, void* userData);
+
+
 /*
  * Set the callbacks for the capturer client
  *
