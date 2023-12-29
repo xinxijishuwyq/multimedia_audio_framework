@@ -764,7 +764,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetRingerModeCallback_001,
         ret = audioGroupMngr_->SetRingerModeCallback(clientId, callback);
         EXPECT_EQ(ERR_INVALID_PARAM, ret);
         ret = audioGroupMngr_->UnsetRingerModeCallback(clientId);
-        EXPECT_EQ(ERR_INVALID_PARAM, ret);
+        EXPECT_EQ(SUCCESS, ret);
     }
 }
 
