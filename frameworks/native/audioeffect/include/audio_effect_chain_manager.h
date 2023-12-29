@@ -181,6 +181,7 @@ private:
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
+    std::mutex sessionMutex_;
     bool spatializatonEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;

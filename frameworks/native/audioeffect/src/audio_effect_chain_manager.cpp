@@ -170,26 +170,6 @@ bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
         channelLayout) != HVS_SUPPORTED_CHANNELLAYOUTS.end();
 }
 
-bool NeedPARemap(const char *sinkSceneType, const char *sinkSceneMode, uint8_t sinkChannels,
-    const char *sinkChannelLayout, const char *sinkSpatializationEnabled)
-{
-    if (sinkChannels == DEFAULT_NUM_CHANNEL) {
-        return false;
-    }
-    if (!EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled)) {
-        return true;
-    }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager->GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP") {
-        return true;
-    }
-    uint64_t sinkChannelLayoutNum = std::strtoull(sinkChannelLayout, nullptr, BASE_TEN);
-    if (!IsChannelLayoutHVSSupported(sinkChannelLayoutNum)) {
-        return true;
-    }
-    return false;
-}
-
 uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap)
 {
     uint32_t channelNum = 0;
@@ -845,7 +825,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
 
 bool AudioEffectChainManager::CheckAndAddSessionID(std::string sessionID)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     if (SessionIDSet_.count(sessionID)) {
         return false;
     }
@@ -943,7 +923,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string sceneTyp
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(std::string sessionID)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     if (!SessionIDSet_.count(sessionID)) {
         return false;
     }
@@ -1086,7 +1066,7 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneTy
 
 int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    std::unique_lock<std::mutex> lock(dynamicMutex_);
     int32_t ret;
     if (spatializatonEnabled_ != spatializationState.spatializationEnabled) {
         spatializatonEnabled_ = spatializationState.spatializationEnabled;
@@ -1100,8 +1080,9 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 offloadEnabled_ = false;
             } else {
                 offloadEnabled_ = true;
-                std::thread deleteChains(&AudioEffectChainManager::DeleteAllChains, this);
-                deleteChains.detach();
+                lcok.unlock()
+                DeleteAllChains();
+                lock.lock()
             }
         } else {
             effectHdiInput[0] = HDI_DESTROY;
@@ -1111,8 +1092,9 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 AUDIO_ERR_LOG("set hdi destory failed");
             }
             offloadEnabled_ = false;
-            std::thread recoverChains(&AudioEffectChainManager::RecoverAllChains, this);
-            recoverChains.detach();
+            lcok.unlock()
+            RecoverAllChains();
+            lock.lock()
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
@@ -1125,6 +1107,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
 int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels,
     uint64_t *channelLayout)
 {
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     if (!SceneTypeToSessionIDMap_.count(sceneType)) {
         return ERROR;
     }
@@ -1160,6 +1143,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
 
 int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info)
 {
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     if (!SessionIDToEffectInfoMap_.count(sessionID)) {
         SceneTypeToSessionIDMap_[sceneType].insert(sessionID);
         SessionIDToEffectInfoMap_[sessionID] = info;
@@ -1174,6 +1158,7 @@ int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sceneType, std::s
 
 int32_t AudioEffectChainManager::SessionInfoMapDelete(std::string sceneType, std::string sessionID)
 {
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     if (!SceneTypeToSessionIDMap_.count(sceneType)) {
         return ERROR;
     }
@@ -1327,6 +1312,7 @@ void AudioEffectChainManager::UpdateSensorState()
 
 void AudioEffectChainManager::DeleteAllChains()
 {
+    std::unique_lock<std::mutex> lock(dynamicMutex_);
     SceneTypeToEffectChainCountBackUpMap_.clear();
     for (auto it = SceneTypeToEffectChainCountMap_.begin(); it != SceneTypeToEffectChainCountMap_.end(); ++it) {
         SceneTypeToEffectChainCountBackUpMap_.insert(std::make_pair(it->first, it->second));
@@ -1335,7 +1321,9 @@ void AudioEffectChainManager::DeleteAllChains()
         ++it) {
         std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
+            lock.unlock();
             ReleaseAudioEffectChainDynamic(sceneType);
+            lock.lock();
         }
     }
     return;
@@ -1343,11 +1331,14 @@ void AudioEffectChainManager::DeleteAllChains()
 
 void AudioEffectChainManager::RecoverAllChains()
 {
+    std::unique_lock<std::mutex> lock(dynamicMutex_);
     for (auto it = SceneTypeToEffectChainCountBackUpMap_.begin(); it != SceneTypeToEffectChainCountBackUpMap_.end();
         ++it) {
         std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
+            lock.unlock();
             CreateAudioEffectChainDynamic(sceneType);
+            lock.lock();
         }
     }
     SceneTypeToEffectChainCountBackUpMap_.clear();
