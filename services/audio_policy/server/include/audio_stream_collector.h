@@ -48,7 +48,7 @@ public:
     void RegisteredTrackerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
-    int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT);
+    int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT, int32_t certainChannelCount = 0);
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
     float GetLowPowerVolume(int32_t streamId);
     int32_t SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack);
@@ -57,6 +57,7 @@ public:
     bool GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo);
     int32_t UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus);
     AudioStreamType GetStreamType(int32_t sessionId);
+    int32_t GetChannelCount(int32_t sessionId);
     int32_t GetUid(int32_t sessionId);
     void GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioRendererChangeInfo &rendererInfo);
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);

@@ -600,6 +600,7 @@ struct AudioRegisterTrackerInfo {
     State state;
     AudioRendererInfo rendererInfo;
     AudioCapturerInfo capturerInfo;
+    int32_t channelCount;
 };
 
 enum StateChangeCmdType {
@@ -655,6 +656,7 @@ public:
     int32_t sessionId;
     int32_t clientPid;
     int32_t tokenId;
+    int32_t channelCount;
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
@@ -672,6 +674,7 @@ public:
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
+            && parcel.WriteInt32(channelCount)
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
@@ -685,6 +688,7 @@ public:
         sessionId = parcel.ReadInt32();
         clientPid = parcel.ReadInt32();
         tokenId = parcel.ReadInt32();
+        channelCount = parcel.ReadInt32();
 
         rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
         rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());

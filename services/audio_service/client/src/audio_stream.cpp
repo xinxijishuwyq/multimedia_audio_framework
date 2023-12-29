@@ -323,6 +323,7 @@ void AudioStream::RegisterTracker(const std::shared_ptr<AudioClientTracker> &pro
         registerTrackerInfo.state = state_;
         registerTrackerInfo.rendererInfo = rendererInfo_;
         registerTrackerInfo.capturerInfo = capturerInfo_;
+        registerTrackerInfo.channelCount = streamParams_.channels;
 
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;

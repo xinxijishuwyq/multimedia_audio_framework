@@ -387,10 +387,16 @@ void AudioPolicyService::ResetOffloadMode()
         return;
     }
 
-    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC);
+    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, AudioChannel::STEREO);
+    if (runningStreamId == -1) {
+        runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, AudioChannel::MONO);
+    }
     if (runningStreamId == -1) {
         AUDIO_DEBUG_LOG("No running STREAM_MUSIC, wont restart offload");
-        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH);
+        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, AudioChannel::STEREO);
+        if (runningStreamId == -1) {
+            runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, AudioChannel::MONO);
+        }
         if (runningStreamId == -1) {
             AUDIO_DEBUG_LOG("No running STREAM_SPEECH, wont restart offload");
             return;
@@ -414,6 +420,12 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
     AudioStreamType streamType = GetStreamType(sessionId);
     if ((streamType != STREAM_MUSIC) && (streamType != STREAM_SPEECH)) {
         AUDIO_DEBUG_LOG("StreamType not allowed get offload mode, Skipped");
+        return;
+    }
+    
+    int32_t channelCount = GetChannelCount(sessionId);
+    if ((channelCount == AudioChannel::MONO) || (channelCount == AudioChannel::STEREO)) {
+        AUDIO_DEBUG_LOG("ChannelNum not allowed get offload mode, Skipped");
         return;
     }
 
@@ -4388,6 +4400,11 @@ int32_t AudioPolicyService::UpdateStreamState(int32_t clientUid,
 AudioStreamType AudioPolicyService::GetStreamType(int32_t sessionId)
 {
     return streamCollector_.GetStreamType(sessionId);
+}
+
+int32_t AudioPolicyService::GetChannelCount(uint32_t sessionId)
+{
+    return streamCollector_.GetChannelCount(sessionId);
 }
 
 int32_t AudioPolicyService::GetUid(int32_t sessionId)

@@ -43,6 +43,7 @@ void AudioStreamTracker::RegisterTracker(const AudioRegisterTrackerInfo &registe
         streamChangeInfo.audioRendererChangeInfo.rendererState = static_cast<RendererState>(registerTrackerInfo.state);
         streamChangeInfo.audioRendererChangeInfo.rendererInfo = registerTrackerInfo.rendererInfo;
         streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceRole = OUTPUT_DEVICE;
+        streamChangeInfo.audioRendererChangeInfo.channelCount = registerTrackerInfo.channelCount;
     } else {
         streamChangeInfo.audioCapturerChangeInfo.clientUID = clientUid_;
         streamChangeInfo.audioCapturerChangeInfo.sessionId = registerTrackerInfo.sessionId;
