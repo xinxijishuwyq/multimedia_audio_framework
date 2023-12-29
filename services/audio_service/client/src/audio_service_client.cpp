@@ -2605,8 +2605,19 @@ static size_t MsToAlignedSize(size_t ms, const pa_sample_spec &ss)
     return AlignToAudioFrameSize(pa_usec_to_bytes(ms * PA_USEC_PER_MSEC, &ss), ss);
 }
 
+void AudioServiceClient::ResetOffload()
+{
+    offloadEnable_ = false;
+    offloadTsOffset_ = 0;
+    offloadTsLast_ = 0;
+    offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
+    lastOffloadUpdateFinishTime_ = 0;
+}
+
 int32_t AudioServiceClient::InitializebufferAttrOffload()
 {
+    ResetOffload();
     pa_buffer_attr bufferAttrOffloadActiveForeground;
     pa_buffer_attr bufferAttrOffloadActiveBackground;
     pa_buffer_attr bufferAttrOffloadInactiveBackground;

@@ -213,6 +213,7 @@ static void OffloadLock(struct Userdata *u);
 static void OffloadUnlock(struct Userdata *u);
 static int32_t UpdatePresentationPosition(struct Userdata *u);
 static bool InputIsPrimary(pa_sink_input *i);
+static bool InputIsOffload(pa_sink_input *i);
 static void GetSinkInputName(pa_sink_input *i, char *str, int len);
 static const char *safeProplistGets(const pa_proplist *p, const char *key, const char *defstr);
 static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i);
@@ -453,6 +454,21 @@ static enum AudioOffloadType GetInputPolicyState(pa_sink_input *i)
     return atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
 }
 
+static void OffloadSetHdiVolumeBufferSize(pa_sink_input *i)
+{
+    if (!InputIsOffload(i)) {
+        return;
+    }
+
+    struct Userdata *u = i->sink->userdata;
+    float left;
+    float right;
+    u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
+    u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
+    const uint32_t bufSize = (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ?
+                              OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
+    u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
+}
 static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memchunk *pchunk)
 {
     size_t index, length;
@@ -483,12 +499,7 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         u->offload.firstWriteHdi = false;
         u->offload.hdiPosTs = now;
         u->offload.hdiPos = 0;
-        float left, right;
-        u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
-        u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
-        const uint32_t bufSize = (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ?
-                                  OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
-        u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
+        OffloadSetHdiVolumeBufferSize(i);
     }
     if (ret == 0 && writeLen == 0) { // is full
         AUDIO_DEBUG_LOG("RenderWriteOffload, hdi is full, break");
@@ -1386,6 +1397,10 @@ static bool InputIsOffload(pa_sink_input *i)
     if (monitorLinked(i->sink, true)) {
         return false;
     }
+    struct Userdata *u = i->sink->userdata;
+    if (!u->offload_enable) {
+        return false;
+    }
     const char *offloadEnableStr = pa_proplist_gets(i->proplist, "stream.offload.enable");
     if (offloadEnableStr == NULL) {
         return false;
@@ -1941,6 +1956,7 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
             AUDIO_INFO_LOG("StartOffloadHdi, Successfully restarted offload HDI renderer");
             OffloadLock(u);
             u->offload.sessionID = sessionID;
+            OffloadSetHdiVolumeBufferSize(i);
         }
     }
     StopPrimaryHdiIfNoRunning(u);
@@ -2173,7 +2189,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
     }
     if (pos < hdiPos) {
-        AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload hdiPos wrong need sync, pos %" PRIu64 ", hdiPos %" PRIu64,
+        AUDIO_INFO_LOG("ThreadFuncRendererTimerOffload hdiPos wrong need sync, pos %" PRIu64 ", hdiPos %" PRIu64,
             pos, hdiPos);
         if (u->offload.hdiPosTs + 300 * PA_USEC_PER_MSEC < now) { // 300ms for update pos
             UpdatePresentationPosition(u);

@@ -752,21 +752,28 @@ float AudioStreamCollector::GetLowPowerVolume(int32_t streamId)
 
 int32_t AudioStreamCollector::SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack)
 {
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
-        ERR_INVALID_PARAM, "streamId (%{public}d) invalid.", streamId);
-    std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback failed");
+    std::shared_ptr<AudioClientTracker> callback;
+    {
+        std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+        CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
+            ERR_INVALID_PARAM, "streamId (%{public}d) invalid.", streamId);
+        callback = clientTracker_[streamId];
+        CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback failed");
+    }
     callback->SetOffloadModeImpl(state, isAppBack);
     return SUCCESS;
 }
 
 int32_t AudioStreamCollector::UnsetOffloadMode(int32_t streamId)
 {
-    CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
-        ERR_INVALID_PARAM, "streamId (%{public}d) invalid.", streamId);
-    std::shared_ptr<AudioClientTracker> callback = clientTracker_[streamId];
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback failed");
+    std::shared_ptr<AudioClientTracker> callback;
+    {
+        std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+        CHECK_AND_RETURN_RET_LOG(!(clientTracker_.count(streamId) == 0),
+            ERR_INVALID_PARAM, "streamId (%{public}d) invalid.", streamId);
+        callback = clientTracker_[streamId];
+        CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback failed");
+    }
     callback->UnsetOffloadModeImpl();
     return SUCCESS;
 }
