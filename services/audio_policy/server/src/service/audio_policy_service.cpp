@@ -62,8 +62,6 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t MEDIA_SERVICE_UID = 1013;
-const uint8_t CHANNEL_1 = 1;
-const uint8_t CHANNEL_2 = 2;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -388,15 +386,15 @@ void AudioPolicyService::ResetOffloadMode()
         return;
     }
 
-    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, CHANNEL_2);
+    int32_t runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, AudioChannel::STEREO);
     if (runningStreamId == -1) {
-        runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, CHANNEL_1);
+        runningStreamId = streamCollector_.GetRunningStream(STREAM_MUSIC, AudioChannel::MONO);
     }
     if (runningStreamId == -1) {
         AUDIO_DEBUG_LOG("No running STREAM_MUSIC, wont restart offload");
-        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, CHANNEL_2);
+        runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, AudioChannel::STEREO);
         if (runningStreamId == -1) {
-            runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, CHANNEL_1);
+            runningStreamId = streamCollector_.GetRunningStream(STREAM_SPEECH, AudioChannel::MONO);
         }
         if (runningStreamId == -1) {
             AUDIO_DEBUG_LOG("No running STREAM_SPEECH, wont restart offload");
@@ -424,8 +422,8 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         return;
     }
     
-    uint8_t channels = GetChannelNum(sessionId);
-    if (channels > CHANNEL_2) {
+    int32_t channelCount = GetChannelCount(sessionId);
+    if ((channelCount == AudioChannel::MONO) || (channelCount == AudioChannel::STEREO)) {
         AUDIO_DEBUG_LOG("ChannelNum not allowed get offload mode, Skipped");
         return;
     }
@@ -4387,9 +4385,9 @@ AudioStreamType AudioPolicyService::GetStreamType(int32_t sessionId)
     return streamCollector_.GetStreamType(sessionId);
 }
 
-uint32_t AudioPolicyService::GetChannelNum(uint32_t sessionId)
+int32_t AudioPolicyService::GetChannelCount(uint32_t sessionId)
 {
-    return streamCollector_.GetChannelNum(sessionId);
+    return streamCollector_.GetChannelCount(sessionId);
 }
 
 int32_t AudioPolicyService::GetUid(int32_t sessionId)
