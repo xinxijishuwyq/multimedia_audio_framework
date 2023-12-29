@@ -420,12 +420,13 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
     }
 }
 
-void OHAudioRenderer::SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback, void *userData)
+void OHAudioRenderer::SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
+    void *userData)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
     audioRendererDeviceChangeCallbackWithInfo_ =
-        std::make_shared<OHAudioRendererDeviceChangeCallbackWithInfo> (callback, audioRenderer_, userData);
+        std::make_shared<OHAudioRendererDeviceChangeCallbackWithInfo> (callback, (OH_AudioRenderer*)this, userData);
     audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(audioRendererDeviceChangeCallbackWithInfo_);
 }
 
@@ -502,7 +503,7 @@ void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const Dev
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the fuction is nullptr");
 
-    callback_(renderer, userData_, reason);
+    callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_DeviceChangeReason>(reason));
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

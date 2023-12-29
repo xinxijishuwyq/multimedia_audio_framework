@@ -56,7 +56,7 @@ class OHAudioRendererDeviceChangeCallbackWithInfo : public AudioRendererOutputDe
 public:
     OHAudioRendererDeviceChangeCallbackWithInfo(OH_AudioRenderer_OutputDeviceChangeCallback callback,
         OH_AudioRenderer* audioRenderer, void* userData)
-            : callback_(callback), ohAudioRenderer_(audioRenderer), userData_(userData)
+        : callback_(callback), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
 

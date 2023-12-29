@@ -361,12 +361,12 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerCallback(OH_AudioCapturer
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OHAudioStreamBuilder::SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
-    void* userData)
+OH_AudioStream_Result OHAudioStreamBuilder::SetRendererOutputDeviceChangeCallback(
+    OH_AudioRenderer_OutputDeviceChangeCallback callback, void* userData)
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "SetRendererCallback Error, invalid type input");
-    outputDeviceChangecallback_ = callbacks;
+    outputDeviceChangecallback_ = callback;
     outputDeviceChangeuserData_ = userData;
     return AUDIOSTREAM_SUCCESS;
 }

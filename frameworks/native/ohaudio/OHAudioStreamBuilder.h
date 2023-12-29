@@ -72,8 +72,8 @@ private:
     };
     void* userData_;
 
-    OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = NULL;
-    void* outputDeviceChangeuserData_ = NULL;
+    OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
+    void* outputDeviceChangeuserData_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
