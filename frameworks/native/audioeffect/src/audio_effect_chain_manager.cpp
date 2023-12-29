@@ -971,11 +971,8 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
         return false;
     }
 #endif
-    {
-        std::lock_guard<std::mutex> lock(spatialMutex_);
-        if (offloadEnabled_) {
-            return false;
-        }
+    if (offloadEnabled_) {
+        return false;
     }
 
     if ((spatializationEnabled == "0") && (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
@@ -1263,7 +1260,6 @@ int32_t AudioEffectHdi::UpdateHdiState(int8_t *effectHdiInput)
 
 void AudioEffectChainManager::UpdateSensorState()
 {
-    std::lock_guard<std::mutex> lock(spatialMutex_);
     effectHdiInput[0] = HDI_HEAD_MODE;
     effectHdiInput[1] = headTrackingEnabled_ == true ? 1 : 0;
     AUDIO_INFO_LOG("set hdi head mode.");
