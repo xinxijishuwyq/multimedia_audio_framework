@@ -118,7 +118,6 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
         audioEffectChainManager->RegisterEffectChainCountBackUpMap(sceneTypeString, "Register");
         return SUCCESS;
     }
-
     if (audioEffectChainManager->CreateAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
         return ERROR;
     }
@@ -1080,9 +1079,9 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 offloadEnabled_ = false;
             } else {
                 offloadEnabled_ = true;
-                lcok.unlock()
+                lock.unlock();
                 DeleteAllChains();
-                lock.lock()
+                lock.lock();
             }
         } else {
             effectHdiInput[0] = HDI_DESTROY;
@@ -1092,9 +1091,9 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 AUDIO_ERR_LOG("set hdi destory failed");
             }
             offloadEnabled_ = false;
-            lcok.unlock()
+            lock.unlock();
             RecoverAllChains();
-            lock.lock()
+            lock.lock();
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
