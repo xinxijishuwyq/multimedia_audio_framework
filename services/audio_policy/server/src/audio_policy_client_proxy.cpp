@@ -332,5 +332,28 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
     }
     reply.ReadInt32();
 }
+
+void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
+    const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RENDERER_DEVICE_CHANGE));
+
+    data.WriteUint32(sessionId);
+    deviceInfo.Marshalling(data);
+    data.WriteInt32(static_cast<int32_t>(reason));
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending DeviceChange: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

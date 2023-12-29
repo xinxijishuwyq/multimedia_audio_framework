@@ -800,7 +800,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     NotifyUserSelectionEventToBt(audioDeviceDescriptors[0]);
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     FetchDevice(false);
     if ((deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) || (networkId != LOCAL_NETWORK_ID)) {
         UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
@@ -1114,7 +1114,7 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
 void AudioPolicyService::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     StoreDistributedRoutingRoleInfo(descriptor, type);
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     FetchDevice(false);
 }
 
@@ -1524,9 +1524,17 @@ void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 }
 
 void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated = false)
+    unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated,
+    const AudioStreamDeviceChangeReason reason)
 {
     std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId);
+
+    UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
+
+    if (!isStreamStatusUpdated) {
+        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->clientPid,
+            rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
+    }
 
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevice->networkId_ == LOCAL_NETWORK_ID)
@@ -1537,7 +1545,7 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
     if (isUpdateRouteSupported_) {
         UpdateActiveDeviceRoute(outputDevice->deviceType_);
     }
-    UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
+
     if (!isStreamStatusUpdated) {
         streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
             rendererChangeInfo->outputDeviceInfo);
@@ -1642,7 +1650,7 @@ bool AudioPolicyService::IsRendererStreamRunning(unique_ptr<AudioRendererChangeI
 }
 
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-    bool isStreamStatusUpdated = false)
+    bool isStreamStatusUpdated, const AudioStreamDeviceChangeReason reason)
 {
     AUDIO_INFO_LOG("Fetch output device for %{public}zu stream", rendererChangeInfos.size());
     bool needUpdateActiveDevice = true;
@@ -1679,7 +1687,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             }
             needUpdateActiveDevice = false;
         }
-        SelectNewOutputDevice(rendererChangeInfo, desc);
+        SelectNewOutputDevice(rendererChangeInfo, desc, false, reason);
     }
     sameDeviceSwitchFlag_ = false;
     if (isUpdateActiveDevice) {
@@ -1787,13 +1795,13 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
     }
 }
 
-void AudioPolicyService::FetchDevice(bool isOutputDevice = true)
+void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDeviceChangeReason reason)
 {
     AUDIO_DEBUG_LOG("FetchDevice start");
     if (isOutputDevice) {
         vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
         streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-        FetchOutputDevice(rendererChangeInfos, false);
+        FetchOutputDevice(rendererChangeInfos, false, reason);
     } else {
         vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
@@ -2841,6 +2849,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             return descriptor->deviceType_ == devType;
         }
     };
+    AudioStreamDeviceChangeReason reason;
     if (isConnected) {
         // If device already in list, remove it else do not modify the list
         connectedDevices_.erase(std::remove_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent),
@@ -2848,6 +2857,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
         UpdateConnectedDevicesWhenConnecting(deviceDesc, deviceChangeDescriptor);
         result = HandleLocalDeviceConnected(devType, macAddress, deviceName, streamInfo);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
+        reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     } else {
         UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
         result = HandleLocalDeviceDisconnected(devType, macAddress);
@@ -2856,10 +2866,11 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
             isArmUsbDevice_ = false;
         }
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
 
     // fetch input&output device
-    FetchDevice(true);
+    FetchDevice(true, reason);
     FetchDevice(false);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, isConnected);
@@ -2895,6 +2906,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool
         }
     };
     bool isDeviceChanged = true;
+    AudioStreamDeviceChangeReason reason;
     if (isConnected) {
         auto itr  = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
         if (itr != connectedDevices_.end()) {
@@ -2903,14 +2915,16 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool
         UpdateConnectedDevicesWhenConnecting(desc, deviceChangeDescriptor);
         int32_t result = HandleLocalDeviceConnected(devType, macAddress, deviceName, streamInfo);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
+        reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     } else {
         UpdateConnectedDevicesWhenDisconnecting(desc, deviceChangeDescriptor);
         int32_t result = HandleLocalDeviceDisconnected(devType, macAddress);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     }
 
     // fetch input&output device
-    FetchDevice(true);
+    FetchDevice(true, reason);
     FetchDevice(false);
     if (isDeviceChanged) {
         TriggerDeviceChangedCallback(deviceChangeDescriptor, isConnected);
@@ -3234,7 +3248,7 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
             }
         }
     }
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
     FetchDevice(false);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, false);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
@@ -3293,7 +3307,15 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
     int32_t ret = HandleDistributedDeviceUpdate(statusInfo, deviceChangeDescriptor);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "HandleDistributedDeviceUpdate return directly.");
-    FetchDevice(true);
+
+    AudioStreamDeviceChangeReason reason;
+    if (statusInfo.isConnected) {
+        reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+    } else {
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+    }
+
+    FetchDevice(true, reason);
     FetchDevice(false);
     TriggerDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, statusInfo.isConnected);
@@ -3410,7 +3432,7 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
     } else {
         audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
     }
-    FetchDevice(true);
+    FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
 }
 
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)

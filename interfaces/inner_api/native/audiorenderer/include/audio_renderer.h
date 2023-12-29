@@ -120,6 +120,20 @@ public:
     virtual void RemoveAllCallbacks() = 0;
 };
 
+class AudioRendererOutputDeviceChangeCallback {
+public:
+    virtual ~AudioRendererOutputDeviceChangeCallback() = default;
+
+    /**
+     * Called when the output device of an autio renderer changed.
+     *
+     * @param Audio device descriptors after change.
+     * @param Audio stream device change reason.
+     * since 11
+     */
+    virtual void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) = 0;
+};
+
 class AudioRendererErrorCallback {
 public:
     virtual ~AudioRendererErrorCallback() = default;
@@ -825,6 +839,13 @@ public:
      * @since 10
      */
     virtual int32_t UnregisterAudioRendererEventListener(const int32_t clientPid);
+
+    virtual int32_t RegisterOutputDeviceChangeWithInfoCallback(
+        const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) = 0;
+
+    virtual int32_t UnregisterOutputDeviceChangeWithInfoCallback() = 0;
+
+    virtual void DestroyOutputDeviceChangeWithInfoCallback() = 0;
 
     /**
      * @brief Register audio policy service died callback.

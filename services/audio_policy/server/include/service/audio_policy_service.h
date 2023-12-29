@@ -509,7 +509,9 @@ private:
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated);
+        unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated = false,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKOWN);
+
     void SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
         unique_ptr<AudioDeviceDescriptor> &inputDevice, bool isStreamStatusUpdated);
 
@@ -525,7 +527,8 @@ private:
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated);
 
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-        bool isStreamStatusUpdated);
+        bool isStreamStatusUpdated = false,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKOWN);
 
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, bool &isStreamStatusUpdated);
@@ -533,7 +536,8 @@ private:
     void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
         bool isStreamStatusUpdated);
 
-    void FetchDevice(bool isOutputDevice);
+    void FetchDevice(bool isOutputDevice = true,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKOWN);
 
     void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& deviceDescriptor,
         std::vector<sptr<AudioDeviceDescriptor>>& desc);

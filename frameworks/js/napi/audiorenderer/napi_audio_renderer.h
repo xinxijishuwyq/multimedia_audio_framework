@@ -25,6 +25,7 @@
 #include "audio_stream_manager.h"
 #include "audio_renderer.h"
 #include "napi_async_work.h"
+#include "napi_audio_renderer_device_change_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -140,6 +141,11 @@ private:
         const std::string &cbName, NapiAudioRenderer *napiRenderer);
     static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value *argv,
         NapiAudioRenderer *napiRenderer);
+
+    static void RegisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, napi_value *args,
+        NapiAudioRenderer *napiRenderer);
+    static void UnregisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, size_t argc, napi_value *argv,
+        NapiAudioRenderer *napiRenderer);
     /* common interface in AudioRendererNapi */
     static bool CheckContextStatus(std::shared_ptr<AudioRendererAsyncContext> context);
     static bool CheckAudioRendererStatus(NapiAudioRenderer *napi, std::shared_ptr<AudioRendererAsyncContext> context);
@@ -160,6 +166,8 @@ private:
     std::shared_ptr<RendererPeriodPositionCallback> periodPositionCbNapi_ = nullptr;
     std::shared_ptr<AudioRendererWriteCallback> dataRequestCbNapi_ = nullptr;
     std::shared_ptr<AudioRendererDeviceChangeCallback> rendererDeviceChangeCallbackNapi_ = nullptr;
+    std::shared_ptr<NapiAudioRendererOutputDeviceChangeWithInfoCallback>
+        rendererOutputDeviceChangeWithInfoCallbackNapi_ = nullptr;
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> rendererPolicyServiceDiedCallbackNapi_ = nullptr;
 };
 } // namespace AudioStandard

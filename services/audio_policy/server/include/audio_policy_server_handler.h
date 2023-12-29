@@ -51,6 +51,7 @@ public:
         DISTRIBUTED_ROUTING_ROLE_CHANGE,
         RENDERER_INFO_EVENT,
         CAPTURER_INFO_EVENT,
+        RENDERER_DEVICE_CHANGE_EVENT,
     };
     /* event data */
     class EventContextObj {
@@ -68,6 +69,19 @@ public:
         CastType type;
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    };
+
+    struct RendererDeviceChangeEvent {
+        RendererDeviceChangeEvent() = delete;
+        RendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
+            const DeviceInfo outputDeviceInfo, const AudioStreamDeviceChangeReason &reason)
+            : clientPid_(clientPid), sessionId_(sessionId), outputDeviceInfo_(outputDeviceInfo), reason_(reason)
+        {}
+
+        const int32_t clientPid_;
+        const uint32_t sessionId_;
+        const DeviceInfo outputDeviceInfo_;
+        const AudioStreamDeviceChangeReason reason_;
     };
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
@@ -100,6 +114,8 @@ public:
         const CastType &type);
     bool SendRendererInfoEvent(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     bool SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
+    bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
+        const DeviceInfo &outputDeviceInfo, const AudioStreamDeviceChangeReason reason);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -122,6 +138,7 @@ private:
     void HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

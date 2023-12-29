@@ -359,6 +359,13 @@ public:
         isLowLatencyDevice = parcel.ReadBool();
     }
 };
+
+enum class AudioStreamDeviceChangeReason {
+    UNKOWN = 0,
+    NEW_DEVICE_AVAILABLE = 1,
+    OLD_DEVICE_UNAVALIABLE = 2,
+    OVERRODE = 3
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_DEVICE_INFO_H

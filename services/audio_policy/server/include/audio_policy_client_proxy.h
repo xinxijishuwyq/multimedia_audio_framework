@@ -42,6 +42,8 @@ public:
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void OnCapturerStateChange(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+    void OnRendererDeviceChange(const uint32_t sessionId,
+        const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;

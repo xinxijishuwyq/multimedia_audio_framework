@@ -99,10 +99,17 @@ AudioRendererPrivate::~AudioRendererPrivate()
     abortRestore_ = true;
     std::shared_ptr<AudioRendererStateChangeCallbackImpl> audioDeviceChangeCallback = audioDeviceChangeCallback_;
     if (audioDeviceChangeCallback != nullptr) {
-        audioDeviceChangeCallback->UnSetAudioRendererObj();
+        audioDeviceChangeCallback->UnsetAudioRendererObj();
     }
 
     (void)AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(appInfo_.appPid);
+
+    std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback = outputDeviceChangeCallback_;
+    if (outputDeviceChangeCallback != nullptr) {
+        outputDeviceChangeCallback->UnsetAudioRendererObj();
+    }
+    AudioPolicyManager::GetInstance().UnregisterOutputDeviceChangeWithInfoCallback(sessionID_);
+
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
         Release();
@@ -304,7 +311,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     audioStream_->SetStreamTrackerState(false);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
-    CHECK_AND_RETURN_RET_LOG(!ret, ret, "AudioRendererPrivate::SetParams SetAudioStreamInfo Failed");
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "SetParams SetAudioStreamInfo Failed");
 
     if (isFastRenderer_) {
         SetSelfRendererStateCallback();
@@ -1078,6 +1085,74 @@ int32_t AudioRendererPrivate::UnregisterAudioRendererEventListener(const int32_t
     return SUCCESS;
 }
 
+int32_t AudioRendererPrivate::RegisterOutputDeviceChangeWithInfoCallback(
+    const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
+{
+    AUDIO_INFO_LOG("RegisterOutputDeviceChangeWithInfoCallback");
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (GetCurrentOutputDevices(currentDeviceInfo_) != SUCCESS) {
+        AUDIO_ERR_LOG("get current device info failed");
+        return ERROR;
+    }
+
+    if (!outputDeviceChangeCallback_) {
+        outputDeviceChangeCallback_ = std::make_shared<OutputDeviceChangeWithInfoCallbackImpl>();
+        if (!outputDeviceChangeCallback_) {
+            AUDIO_ERR_LOG("Memory Allocation Failed !!");
+            return ERROR;
+        }
+    }
+
+    uint32_t sessionId;
+    int32_t ret = GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("RegisterOutputDeviceChangeWithInfoCallback Get sessionId failed");
+        return ret;
+    }
+
+    ret = AudioPolicyManager::GetInstance().RegisterOutputDeviceChangeWithInfoCallback(sessionId,
+        outputDeviceChangeCallback_);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("RegisterOutputDeviceChangeWithInfoCallback failed");
+        return ERROR;
+    }
+
+    outputDeviceChangeCallback_->SetAudioRendererObj(this);
+    outputDeviceChangeCallback_->SaveCallback(callback);
+    AUDIO_DEBUG_LOG("RegisterOutputDeviceChangeWithInfoCallback successful!");
+    return SUCCESS;
+}
+
+void AudioRendererPrivate::DestroyOutputDeviceChangeWithInfoCallback()
+{
+    outputDeviceChangeCallback_ = nullptr;
+}
+
+int32_t AudioRendererPrivate::UnregisterOutputDeviceChangeWithInfoCallback()
+{
+    AUDIO_INFO_LOG("UnregisterAudioCapturerEventListener");
+
+    uint32_t sessionId;
+    int32_t ret = GetAudioStreamId(sessionId);
+    if (ret) {
+        AUDIO_ERR_LOG("UnregisterOutputDeviceChangeWithInfoCallback Get sessionId failed");
+        return ret;
+    }
+
+    ret = AudioPolicyManager::GetInstance().UnregisterOutputDeviceChangeWithInfoCallback(sessionId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("UnregisterAudioRendererEventListener failed");
+        return ERROR;
+    }
+
+    DestroyOutputDeviceChangeWithInfoCallback();
+    return SUCCESS;
+}
+
 AudioRendererStateChangeCallbackImpl::AudioRendererStateChangeCallbackImpl()
 {
     AUDIO_INFO_LOG("AudioRendererStateChangeCallbackImpl instance create");
@@ -1100,7 +1175,7 @@ void AudioRendererStateChangeCallbackImpl::setAudioRendererObj(AudioRendererPriv
     renderer_ = rendererObj;
 }
 
-void AudioRendererStateChangeCallbackImpl::UnSetAudioRendererObj()
+void AudioRendererStateChangeCallbackImpl::UnsetAudioRendererObj()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     renderer_ = nullptr;
@@ -1218,7 +1293,7 @@ bool AudioRendererPrivate::IsDeviceChanged(DeviceInfo &newDeviceInfo)
 
     int32_t ret = GetCurrentOutputDevices(deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, deviceUpdated,
-        "AudioRendererPrivate::GetCurrentOutputDevices failed");
+        "GetCurrentOutputDevices failed");
 
     AUDIO_INFO_LOG("newDeviceInfo type: %{public}d, currentDeviceInfo_ type: %{public}d ",
         deviceInfo.deviceType, currentDeviceInfo_.deviceType);
@@ -1254,6 +1329,17 @@ void AudioRendererStateChangeCallbackImpl::OnRendererStateChange(
 
     if (isDevicedChanged) {
         cb->OnStateChange(deviceInfo);
+    }
+}
+
+void OutputDeviceChangeWithInfoCallbackImpl::OnOutputDeviceChangeWithInfo(
+    const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason)
+{
+    AUDIO_INFO_LOG("OnRendererStateChange");
+    std::shared_ptr<AudioRendererOutputDeviceChangeCallback> cb = callback_.lock();
+
+    if (cb != nullptr) {
+        cb->OnOutputDeviceChange(deviceInfo, reason);
     }
 }
 
@@ -1309,7 +1395,7 @@ void AudioRendererPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
 
 int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
 {
-    AUDIO_DEBUG_LOG("AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback");
+    AUDIO_DEBUG_LOG("RegisterRendererPolicyServiceDiedCallback");
     if (!audioPolicyServiceDiedCallback_) {
         audioPolicyServiceDiedCallback_ = std::make_shared<RendererPolicyServiceDiedCallback>();
         if (!audioPolicyServiceDiedCallback_) {
@@ -1325,7 +1411,7 @@ int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
 
 int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback() const
 {
-    AUDIO_DEBUG_LOG("AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback");
+    AUDIO_DEBUG_LOG("RemoveRendererPolicyServiceDiedCallback");
     if (audioPolicyServiceDiedCallback_) {
         int32_t ret = audioStream_->RemoveRendererOrCapturerPolicyServiceDiedCB();
         if (ret != 0) {

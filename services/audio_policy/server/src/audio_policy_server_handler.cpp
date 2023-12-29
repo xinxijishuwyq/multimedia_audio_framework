@@ -325,6 +325,20 @@ bool AudioPolicyServerHandler::SendCapturerInfoEvent(
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
+    const DeviceInfo &outputDeviceInfo, const AudioStreamDeviceChangeReason reason)
+{
+    std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = std::make_shared<RendererDeviceChangeEvent>(
+        clientPid, sessionId, outputDeviceInfo, reason);
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RENDERER_DEVICE_CHANGE_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendRendererDeviceChangeEvent event failed");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -541,6 +555,23 @@ void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEv
     }
 }
 
+void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    if (audioPolicyClientProxyAPSCbsMap_.count(pid) == 0) {
+        return;
+    }
+    sptr<IAudioPolicyClient> capturerStateChangeCb = audioPolicyClientProxyAPSCbsMap_.at(pid);
+    if (capturerStateChangeCb == nullptr) {
+        AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}" PRId32 "", pid);
+        return;
+    }
+    capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
+}
+
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -562,6 +593,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::CAPTURER_INFO_EVENT:
             HandleCapturerInfoEvent(event);
+            break;
+        case EventAudioServerCmd::RENDERER_DEVICE_CHANGE_EVENT:
+            HandleRendererDeviceChangeEvent(event);
             break;
         default:
             break;

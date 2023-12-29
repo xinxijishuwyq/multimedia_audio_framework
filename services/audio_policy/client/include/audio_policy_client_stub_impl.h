@@ -48,6 +48,9 @@ public:
     int32_t RemoveRendererStateChangeCallback();
     int32_t AddCapturerStateChangeCallback(const std::shared_ptr<AudioCapturerStateChangeCallback> &cb);
     int32_t RemoveCapturerStateChangeCallback();
+    int32_t AddOutputDeviceChangeWithInfoCallback(
+    const uint32_t sessionId, const std::shared_ptr<OutputDeviceChangeWithInfoCallback> &cb);
+    int32_t RemoveOutputDeviceChangeWithInfoCallback(const uint32_t sessionId);
 
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
@@ -62,6 +65,8 @@ public:
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     void OnCapturerStateChange(
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+    void OnRendererDeviceChange(const uint32_t sessionId,
+        const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
 
 private:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
@@ -77,6 +82,9 @@ private:
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
 
+    std::unordered_map<uint32_t,
+        std::shared_ptr<OutputDeviceChangeWithInfoCallback>> outputDeviceChangeWithInfoCallbackMap_;
+
     std::mutex volumeKeyEventMutex_;
     std::mutex focusInfoChangeMutex_;
     std::mutex deviceChangeMutex_;
@@ -86,6 +94,7 @@ private:
     std::mutex pInputDeviceChangeMutex_;
     std::mutex rendererStateChangeMutex_;
     std::mutex capturerStateChangeMutex_;
+    std::mutex outputDeviceChangeWithInfoCallbackMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
