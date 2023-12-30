@@ -94,6 +94,7 @@ public:
         // callback info
         std::shared_ptr<AudioStreamCallback> audioStreamCallback;
         std::shared_ptr<AudioRendererWriteCallback> rendererWriteCallback;
+        std::shared_ptr<AudioRendererFirstFrameWritingCallback> rendererFirstFrameWritingCallback;
     };
 
     virtual ~IAudioStream() = default;
@@ -141,6 +142,10 @@ public:
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
     virtual AudioRenderMode GetRenderMode() = 0;
     virtual int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) = 0;
+
+    virtual int32_t SetRendererFirstFrameWritingCallback(
+        const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) = 0;
+    virtual void OnFirstFrameWriting() = 0;
 
     virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) = 0;
     virtual AudioCaptureMode GetCaptureMode() = 0;

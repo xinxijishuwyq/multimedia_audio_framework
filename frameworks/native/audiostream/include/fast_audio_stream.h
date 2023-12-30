@@ -32,15 +32,19 @@ namespace AudioStandard {
 class FastPolicyServiceDiedCallbackImpl;
 class FastAudioStreamRenderCallback : public AudioDataCallback {
 public:
-    FastAudioStreamRenderCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback)
-        : rendererWriteCallback_(callback) {};
+    FastAudioStreamRenderCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback,
+        IAudioStream &audioStream)
+        : rendererWriteCallback_(callback), audioStreamImpl_(audioStream), hasFirstFrameWrited_(false) {};
     virtual ~FastAudioStreamRenderCallback() = default;
 
     void OnHandleData(size_t length) override;
     std::shared_ptr<AudioRendererWriteCallback> GetRendererWriteCallback() const;
 
+    void ResetFirstFrameState();
 private:
     std::shared_ptr<AudioRendererWriteCallback> rendererWriteCallback_ = nullptr;
+    IAudioStream &audioStreamImpl_;
+    bool hasFirstFrameWrited_ = false;
 };
 
 class FastAudioStreamCaptureCallback : public AudioDataCallback {
@@ -84,6 +88,9 @@ public:
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
 
     // callback mode api
+    int32_t SetRendererFirstFrameWritingCallback(
+        const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
+    void OnFirstFrameWriting() override;
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
     AudioRenderMode GetRenderMode() override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
@@ -172,6 +179,7 @@ private:
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
     std::shared_ptr<FastAudioStreamRenderCallback> spkProcClientCb_ = nullptr;
     std::shared_ptr<FastAudioStreamCaptureCallback> micProcClientCb_ = nullptr;
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;
     AudioCapturerInfo capturerInfo_;

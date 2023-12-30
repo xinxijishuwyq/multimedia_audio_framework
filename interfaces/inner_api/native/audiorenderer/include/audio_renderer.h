@@ -106,6 +106,15 @@ public:
     virtual void OnWriteData(size_t length) = 0;
 };
 
+class AudioRendererFirstFrameWritingCallback {
+public:
+    virtual ~AudioRendererFirstFrameWritingCallback() = default;
+    /**
+     * Called when first buffer to be enqueued.
+     */
+    virtual void OnFirstFrameWriting(uint64_t latency) = 0;
+};
+
 class AudioRendererDeviceChangeCallback {
 public:
     virtual ~AudioRendererDeviceChangeCallback() = default;
@@ -627,6 +636,9 @@ public:
      * @since 8
      */
     virtual int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) = 0;
+
+    virtual int32_t SetRendererFirstFrameWritingCallback(
+        const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) = 0;
 
     /**
      * @brief Gets the BufferDesc to fill the data.

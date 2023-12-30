@@ -51,6 +51,7 @@ const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compa
 const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
+const uint64_t AUDIO_FIRST_FRAME_LATENCY = 130; //ms
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
@@ -90,6 +91,9 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
+    int32_t SetRendererFirstFrameWritingCallback(
+        const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
+    void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
     int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
@@ -238,6 +242,9 @@ private:
 
     int32_t bufferSizeInMsec_ = 20; // 20ms
     std::string cachePath_;
+
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
+    bool hasFirstFrameWrited_ = false;
 
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
@@ -810,6 +817,24 @@ int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStre
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
+    const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
+{
+    AUDIO_INFO_LOG("SetRendererFirstFrameWritingCallback in.");
+    CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
+    firstFrameWritingCb_ = callback;
+    return SUCCESS;
+}
+
+void RendererInClientInner::OnFirstFrameWriting()
+{
+    hasFirstFrameWrited_ = true;
+    CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+    uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
+    AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
+    firstFrameWritingCb_->OnFirstFrameWriting(latency);
+}
+
 void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
 {
     if (bufferDurationInUs > MAX_BUF_DURATION_IN_USEC) {
@@ -1114,6 +1139,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
         return false;
     }
 
+    hasFirstFrameWrited_ = false;
+
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     if (ret != SUCCESS) {
@@ -1396,6 +1423,8 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
         AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
         needSetThreadPriority_ = false;
     }
+
+    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 
     std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write: Illegal state:%{public}u", state_.load());
