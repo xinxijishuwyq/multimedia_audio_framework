@@ -64,7 +64,8 @@ public:
         std::vector<std::unique_ptr<AudioDeviceDescriptor>> &captureDescs)
     {
         for (auto &captureDesc : captureDescs) {
-            if (captureDesc->deviceId_ == desc->deviceId_ && captureDesc->connectState_ != SUSPEND_CONNECTED) {
+            if (captureDesc->deviceId_ == desc->deviceId_ && captureDesc->connectState_ != SUSPEND_CONNECTED &&
+                !captureDesc->exceptionFlag_) {
                 return std::move(captureDesc);
             }
         }
