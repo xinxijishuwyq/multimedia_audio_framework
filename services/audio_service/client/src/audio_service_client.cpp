@@ -57,6 +57,7 @@ const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_S_TO_NS = 1000000000;
 const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
+const uint64_t AUDIO_FIRST_FRAME_LATENCY = 130; //ms
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
@@ -1118,6 +1119,8 @@ int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
         return AUDIO_CLIENT_START_STREAM_ERR;
     }
 
+    hasFirstFrameWrited_ = false;
+
     streamCmdStatus_ = 0;
     stateChangeCmdType_ = cmdType;
     operation = pa_stream_cork(paStream, 0, PAStreamStartSuccessCb, (void *)this);
@@ -1394,6 +1397,7 @@ int32_t AudioServiceClient::PaWriteStream(const uint8_t *buffer, size_t &length)
         AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
         firstFrame_ = false;
     }
+    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 
     if ((lastOffloadUpdateFinishTime_ != 0) &&
         (chrono::system_clock::to_time_t(chrono::system_clock::now()) > lastOffloadUpdateFinishTime_)) {
@@ -2300,6 +2304,24 @@ void AudioServiceClient::UnsetRendererPositionCallback()
     SendUnsetRenderMarkReachedRequestEvent();
     mMarkReached = false;
     mFrameMarkPosition = 0;
+}
+
+int32_t AudioServiceClient::SetRendererFirstFrameWritingCallback(
+    const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
+{
+    AUDIO_INFO_LOG("SetRendererFirstFrameWritingCallback in.");
+    CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
+    firstFrameWritingCb_ = callback;
+    return SUCCESS;
+}
+
+void AudioServiceClient::OnFirstFrameWriting()
+{
+    hasFirstFrameWrited_ = true;
+    CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+    uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
+    AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
+    firstFrameWritingCb_->OnFirstFrameWriting(latency);
 }
 
 void AudioServiceClient::SetRendererPeriodPositionCallback(int64_t periodPosition,

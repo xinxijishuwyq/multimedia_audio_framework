@@ -589,6 +589,11 @@ public:
 
     void SetCapturerSource(int capturerSource) override;
 
+    int32_t SetRendererFirstFrameWritingCallback(
+        const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
+
+    void OnFirstFrameWriting() override;
+
     int32_t GetBufferSizeForCapturer(size_t &bufferSize);
 
     int32_t GetFrameCountForCapturer(uint32_t &frameCount);
@@ -674,6 +679,7 @@ private:
     uint32_t volumeChannels_ = STEREO;
     bool streamInfoUpdated_ = false;
     bool firstFrame_ = true;
+    bool hasFirstFrameWrited_ = false;
 
     AudioRendererRate renderRate;
     uint32_t rendererSampleRate;
@@ -693,6 +699,7 @@ private:
     uint64_t mFramePeriodWritten = 0;
     std::shared_ptr<RendererPositionCallback> mRenderPositionCb;
     std::shared_ptr<RendererPeriodPositionCallback> mRenderPeriodPositionCb;
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
 
     uint64_t mTotalBytesRead = 0;
     uint64_t mFramePeriodRead = 0;

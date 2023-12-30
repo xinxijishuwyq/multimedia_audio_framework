@@ -136,6 +136,9 @@ public:
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
+    int32_t SetRendererFirstFrameWritingCallback(
+        const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
+    void OnFirstFrameWriting() override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
@@ -1393,6 +1396,18 @@ bool CapturerInClientInner::DrainAudioStream()
 void CapturerInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
     AUDIO_WARNING_LOG("Not Supported Yet");
+}
+
+int32_t CapturerInClientInner::SetRendererFirstFrameWritingCallback(
+    const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
+{
+    AUDIO_ERR_LOG("SetRendererFirstFrameWritingCallback is not supported for capturer");
+    return ERR_INVALID_OPERATION;
+}
+
+void CapturerInClientInner::OnFirstFrameWriting()
+{
+    AUDIO_ERR_LOG("OnFirstFrameWriting is not supported for capturer");
 }
 
 int32_t CapturerInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,

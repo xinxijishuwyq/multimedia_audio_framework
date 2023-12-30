@@ -70,6 +70,8 @@ public:
     int32_t SetRenderMode(AudioRenderMode renderMode) const override;
     AudioRenderMode GetRenderMode() const override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
+    int32_t SetRendererFirstFrameWritingCallback(
+        const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
     int32_t Enqueue(const BufferDesc &bufDesc) const override;

@@ -942,6 +942,12 @@ int32_t AudioRendererPrivate::SetRendererWriteCallback(const std::shared_ptr<Aud
     return audioStream_->SetRendererWriteCallback(callback);
 }
 
+int32_t AudioRendererPrivate::SetRendererFirstFrameWritingCallback(
+    const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
+{
+    return audioStream_->SetRendererFirstFrameWritingCallback(callback);
+}
+
 void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 {
     AUDIO_INFO_LOG("InterruptMode %{pubilc}d", mode);
@@ -1215,6 +1221,8 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
 
     audioStream->SetStreamCallback(info.audioStreamCallback);
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
+
+    audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
 }
 
 bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass targetClass)

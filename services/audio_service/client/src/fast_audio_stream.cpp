@@ -247,9 +247,18 @@ int32_t FastAudioStream::SetRendererWriteCallback(const std::shared_ptr<AudioRen
     AUDIO_INFO_LOG("SetRendererWriteCallback enter.");
     CHECK_AND_RETURN_RET_LOG(callback && processClient_ && eMode_ == AUDIO_MODE_PLAYBACK,
         ERR_INVALID_PARAM, "callback is nullptr");
-    spkProcClientCb_ = std::make_shared<FastAudioStreamRenderCallback>(callback);
+    spkProcClientCb_ = std::make_shared<FastAudioStreamRenderCallback>(callback, *this);
     int32_t ret = processClient_->SaveDataCallback(spkProcClientCb_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Client test save data callback fail, ret %{public}d.", ret);
+    return SUCCESS;
+}
+
+int32_t FastAudioStream::SetRendererFirstFrameWritingCallback(
+    const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
+{
+    AUDIO_INFO_LOG("SetRendererFirstFrameWritingCallback in.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    firstFrameWritingCb_ = callback;
     return SUCCESS;
 }
 
@@ -405,6 +414,10 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType)
         false, "Illegal state:%{public}u", state_);
 
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "Start failed, process is null.");
+    if (spkProcClientCb_ != nullptr) {
+        AUDIO_DEBUG_LOG("StartAudioStream: reset the first frame state before starting");
+        spkProcClientCb_->ResetFirstFrameState();
+    }
     int32_t ret = ERROR;
     if (state_ == PAUSED) {
         ret = processClient_->Resume();
@@ -653,12 +666,34 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
     }
+    if (firstFrameWritingCb_) {
+        info.rendererFirstFrameWritingCallback = firstFrameWritingCb_;
+    }
+}
+
+void FastAudioStream::OnFirstFrameWriting()
+{
+    CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+    uint64_t latency = 0;
+    this->GetLatency(latency);
+    firstFrameWritingCb_->OnFirstFrameWriting(latency);
 }
 
 void FastAudioStreamRenderCallback::OnHandleData(size_t length)
 {
     CHECK_AND_RETURN_LOG(rendererWriteCallback_!= nullptr, "OnHandleData failed: rendererWriteCallback_ is null.");
+    if (!hasFirstFrameWrited_) {
+        AUDIO_DEBUG_LOG("OnHandleData: send the first frame writing event to audio haptic player");
+        audioStreamImpl_.OnFirstFrameWriting();
+        hasFirstFrameWrited_ = true;
+    }
     rendererWriteCallback_->OnWriteData(length);
+}
+
+void FastAudioStreamRenderCallback::ResetFirstFrameState()
+{
+    AUDIO_DEBUG_LOG("ResetFirstFrameState: set the hasFirstFrameWrited_ to false");
+    hasFirstFrameWrited_ = false;
 }
 
 std::shared_ptr<AudioRendererWriteCallback> FastAudioStreamRenderCallback::GetRendererWriteCallback() const
