@@ -40,6 +40,8 @@ public:
 
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage, ContentType contentType);
     OH_AudioStream_Result SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
+    OH_AudioStream_Result SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
+    void* userData);
 
     OH_AudioStream_Result SetSourceType(SourceType type);
     OH_AudioStream_Result SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
@@ -69,6 +71,9 @@ private:
         NULL
     };
     void* userData_;
+
+    OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
+    void* outputDeviceChangeuserData_ = nullptr;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

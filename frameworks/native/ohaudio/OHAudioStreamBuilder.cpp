@@ -131,6 +131,15 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerCallback(OH_AudioStreamBu
     return audioStreamBuilder->SetCapturerCallback(callbacks, userData);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_OutputDeviceChangeCallback callback, void* userData)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+
+    return audioStreamBuilder->SetRendererOutputDeviceChangeCallback(callback, userData);
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_GenerateRenderer(OH_AudioStreamBuilder* builder,
     OH_AudioRenderer** audioRenderer)
 {
@@ -289,6 +298,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
     if (audioRenderer->Initialize(options)) {
         audioRenderer->SetRendererCallback(rendererCallbacks_, userData_);
+        audioRenderer->SetRendererOutputDeviceChangeCallback(outputDeviceChangecallback_, outputDeviceChangeuserData_);
         *renderer = (OH_AudioRenderer*)audioRenderer;
         audioRenderer->SetPreferredFrameSize(preferredFrameSize_);
         return AUDIOSTREAM_SUCCESS;
@@ -348,6 +358,16 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerCallback(OH_AudioCapturer
         "SetCapturerCallback Error, invalid type input");
     capturerCallbacks_ = callbacks;
     userData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetRendererOutputDeviceChangeCallback(
+    OH_AudioRenderer_OutputDeviceChangeCallback callback, void* userData)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetRendererCallback Error, invalid type input");
+    outputDeviceChangecallback_ = callback;
+    outputDeviceChangeuserData_ = userData;
     return AUDIOSTREAM_SUCCESS;
 }
 }  // namespace AudioStandard

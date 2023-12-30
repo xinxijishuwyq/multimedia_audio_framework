@@ -66,6 +66,12 @@ static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     return 0;
 }
 
+static void AudioRendererDeviceChangeCb(OH_AudioRenderer* renderer, void* userData,
+    OH_AudioStream_DeviceChangeReason reason)
+{
+    printf("AudioRendererDeviceChangeCb reason: %d \n", reason);
+}
+
 void PlayerTest(char *argv[])
 {
     OH_AudioStream_Result ret;
@@ -86,6 +92,9 @@ void PlayerTest(char *argv[])
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
     ret = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, nullptr);
     printf("setcallback ret: %d \n", ret);
+    OH_AudioRenderer_OutputDeviceChangeCallback deviceChangeCb = AudioRendererDeviceChangeCb;
+    ret = OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(builder, deviceChangeCb, nullptr);
+    printf("set device change callback ret: %d \n", ret);
 
     //  set buffer size to g_frameSize
     ret = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, g_frameSize);

@@ -420,6 +420,16 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
     }
 }
 
+void OHAudioRenderer::SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
+    void *userData)
+{
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioRendererDeviceChangeCallbackWithInfo_ =
+        std::make_shared<OHAudioRendererDeviceChangeCallbackWithInfo> (callback, (OH_AudioRenderer*)this, userData);
+    audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(audioRendererDeviceChangeCallbackWithInfo_);
+}
+
 void OHAudioRenderer::SetPreferredFrameSize(int32_t frameSize)
 {
     audioRenderer_->SetPreferredFrameSize(frameSize);
@@ -485,6 +495,15 @@ void OHAudioRendererErrorCallback::OnError(AudioErrors errorCode)
         "renderer client or error callback funtion is nullptr");
     OH_AudioStream_Result error = GetErrorResult(errorCode);
     callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
+}
+
+void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const DeviceInfo &deviceInfo,
+    const AudioStreamDeviceChangeReason reason)
+{
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the fuction is nullptr");
+
+    callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_DeviceChangeReason>(reason));
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

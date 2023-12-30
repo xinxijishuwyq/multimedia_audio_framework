@@ -52,6 +52,21 @@ private:
     void* userData_;
 };
 
+class OHAudioRendererDeviceChangeCallbackWithInfo : public AudioRendererOutputDeviceChangeCallback {
+public:
+    OHAudioRendererDeviceChangeCallbackWithInfo(OH_AudioRenderer_OutputDeviceChangeCallback callback,
+        OH_AudioRenderer* audioRenderer, void* userData)
+        : callback_(callback), ohAudioRenderer_(audioRenderer), userData_(userData)
+    {
+    }
+
+    void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+private:
+    OH_AudioRenderer_OutputDeviceChangeCallback callback_;
+    OH_AudioRenderer* ohAudioRenderer_;
+    void* userData_;
+};
+
 class OHAudioRendererCallback : public AudioRendererCallback {
 public:
     OHAudioRendererCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer,
@@ -129,9 +144,12 @@ class OHAudioRenderer {
         void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
         void SetPreferredFrameSize(int32_t frameSize);
 
+        void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
+            void *userData);
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
+        std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
