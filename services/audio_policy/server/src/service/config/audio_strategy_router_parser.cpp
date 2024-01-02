@@ -140,6 +140,8 @@ void AudioStrategyRouterParser::AddRouters(std::vector<std::unique_ptr<RouterBas
             routers.push_back(make_unique<DefaultRouter>());
         } else if (name == "CockpitPhoneRouter") {
             routers.push_back(make_unique<CockpitPhoneRouter>());
+        } else if (name == "PairDeviceRouter") {
+            routers.push_back(make_unique<PairDeviceRouter>());
         }
     }
 }
