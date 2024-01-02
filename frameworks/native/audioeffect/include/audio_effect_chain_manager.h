@@ -152,6 +152,7 @@ public:
     std::string GetDeviceSinkName();
     int32_t GetFrameLen();
     int32_t SetFrameLen(int32_t frameLen);
+    bool GetOffloadEnabled();
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
@@ -160,8 +161,11 @@ public:
     int32_t SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info);
     int32_t SessionInfoMapDelete(std::string sceneType, std::string sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
+    void RegisterEffectChainCountBackupMap(std::string sceneType, std::string operation);
 private:
     void UpdateSensorState();
+    void DeleteAllChains();
+    void RecoverAllChains();
     std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
@@ -171,11 +175,12 @@ private:
     std::set<std::string> SessionIDSet_;
     std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
     std::map<std::string, sessionEffectInfo> SessionIDToEffectInfoMap_;
+    std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
     uint32_t frameLen_ = DEFAULT_FRAMELEN;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
-    std::mutex dynamicMutex_;
+    std::recursive_mutex dynamicMutex_;
     bool spatializatonEnabled_ = false;
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
