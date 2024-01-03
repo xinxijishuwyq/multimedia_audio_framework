@@ -807,6 +807,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     } else {
         UpdateA2dpOffloadFlagForAllStream(deviceType);
     }
+    OnPreferredOutputDeviceUpdated(currentActiveDevice_);
     return SUCCESS;
 }
 
