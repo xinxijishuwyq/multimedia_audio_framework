@@ -300,6 +300,19 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback()
     return AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, audioInterruptCallback_);
 }
 
+int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
+{
+    uint32_t sessionId;
+    int32_t ret = GetAudioStreamId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get sessionId failed");
+
+    ret = AudioPolicyManager::GetInstance().RegisterOutputDeviceChangeWithInfoCallback(sessionId,
+        outputDeviceChangeCallback_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register failed");
+
+    return SUCCESS;
+}
+
 int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParams)
 {
     AudioRenderer *renderer = this;
@@ -392,6 +405,11 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     RegisterRendererPolicyServiceDiedCallback();
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
+
+    if (outputDeviceChangeCallback_ != nullptr) {
+        ret = InitOutputDeviceChangeCallback();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");
+    }
 
     return InitAudioInterruptCallback();
 }
@@ -654,6 +672,8 @@ bool AudioRendererPrivate::Release() const
 
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
+
+    AudioPolicyManager::GetInstance().UnregisterOutputDeviceChangeWithInfoCallback(sessionID_);
 
     return audioStream_->ReleaseAudioStream();
 }
@@ -1113,19 +1133,8 @@ int32_t AudioRendererPrivate::RegisterOutputDeviceChangeWithInfoCallback(
         }
     }
 
-    uint32_t sessionId;
-    int32_t ret = GetAudioStreamId(sessionId);
-    if (ret) {
-        AUDIO_ERR_LOG("RegisterOutputDeviceChangeWithInfoCallback Get sessionId failed");
-        return ret;
-    }
-
-    ret = AudioPolicyManager::GetInstance().RegisterOutputDeviceChangeWithInfoCallback(sessionId,
-        outputDeviceChangeCallback_);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("RegisterOutputDeviceChangeWithInfoCallback failed");
-        return ERROR;
-    }
+    int32_t ret = InitOutputDeviceChangeCallback();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");
 
     outputDeviceChangeCallback_->SetAudioRendererObj(this);
     outputDeviceChangeCallback_->SaveCallback(callback);

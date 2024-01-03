@@ -92,6 +92,7 @@ void PlayerTest(char *argv[])
     callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
     ret = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, nullptr);
     printf("setcallback ret: %d \n", ret);
+
     OH_AudioRenderer_OutputDeviceChangeCallback deviceChangeCb = AudioRendererDeviceChangeCb;
     ret = OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(builder, deviceChangeCb, nullptr);
     printf("set device change callback ret: %d \n", ret);
