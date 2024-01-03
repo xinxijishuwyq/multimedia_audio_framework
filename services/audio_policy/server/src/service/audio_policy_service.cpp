@@ -424,7 +424,7 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
     }
     
     int32_t channelCount = GetChannelCount(sessionId);
-    if ((channelCount == AudioChannel::MONO) || (channelCount == AudioChannel::STEREO)) {
+    if ((channelCount != AudioChannel::MONO) && (channelCount != AudioChannel::STEREO)) {
         AUDIO_DEBUG_LOG("ChannelNum not allowed get offload mode, Skipped");
         return;
     }
