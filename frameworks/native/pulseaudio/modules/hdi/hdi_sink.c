@@ -3007,7 +3007,7 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
         return 0;
     }
 
-    ResetMutliChannelHdiState(u,sinkChannels);
+    ResetMutliChannelHdiState(u, sinkChannels);
     return 0;
 }
 
