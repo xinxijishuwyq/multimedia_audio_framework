@@ -164,7 +164,15 @@ void AudioDeviceManager::MakePairedDefaultDeviceDescriptor(const shared_ptr<Audi
     auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (it != connectedDevices_.end()) {
         devDesc->pairDeviceDescriptor_ = *it;
-        if (devDesc->deviceType_ != DEVICE_TYPE_EARPIECE) {
+        if (devDesc->deviceType_ == DEVICE_TYPE_EARPIECE && earpiece_ != NULL) {
+            earpiece_->pairDeviceDescriptor_ = *it;
+        } else if (devDesc->deviceType_ == DEVICE_TYPE_SPEAKER && speaker_ != NULL) {
+            speaker_->pairDeviceDescriptor_ = *it;
+            defalutMic_->pairDeviceDescriptor_ = devDesc;
+            (*it)->pairDeviceDescriptor_ = devDesc;
+        } else if (devDesc->deviceType_ == DEVICE_TYPE_MIC && defalutMic_ != NULL) {
+            defalutMic_->pairDeviceDescriptor_ = *it;
+            speaker_->pairDeviceDescriptor_ = devDesc;
             (*it)->pairDeviceDescriptor_ = devDesc;
         }
     }
@@ -303,10 +311,6 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
         AUDIO_INFO_LOG("The device has been added and will not be added again.");
         return;
     }
-    {
-        std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
-        UpdateDeviceInfo(devDesc);
-    }
     AddConnectedDevices(devDesc);
 
     if (devDesc->networkId_ != LOCAL_NETWORK_ID) {
@@ -318,6 +322,10 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
         AddCommunicationDevices(devDesc);
         AddMediaDevices(devDesc);
         AddCaptureDevices(devDesc);
+    }
+    {
+        std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
+        UpdateDeviceInfo(devDesc);
     }
 }
 
