@@ -59,12 +59,6 @@ public:
         LISTENER_CLIENT
     };
 
-    enum FocusCallbackCategory : int32_t {
-        NONE_CALLBACK_CATEGORY,
-        REQUEST_CALLBACK_CATEGORY,
-        ABANDON_CALLBACK_CATEGORY,
-    };
-
     enum SpatializationEventCategory {
         SPATIALIZATION_ENABLED_CHANGE_EVENT,
         HEAD_TRACKING_ENABLED_CHANGE_EVENT,

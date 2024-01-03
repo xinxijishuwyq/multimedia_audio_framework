@@ -1197,7 +1197,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
                 }
                 itZone->second->audioFocusInfoList = audioFocusInfoList;
                 iterActiveErased = true;
-                OnAudioFocusInfoChange(NONE_CALLBACK_CATEGORY, incomingInterrupt);
+                OnAudioFocusInfoChange(AudioPolicyServerHandler::NONE_CALLBACK_CATEGORY, incomingInterrupt);
                 break;
             case INTERRUPT_HINT_PAUSE:
                 iterActive->second = PAUSE;
@@ -1217,7 +1217,7 @@ void AudioPolicyServer::ProcessCurrentInterrupt(const AudioInterrupt &incomingIn
                 audioPolicyServerHandler_->SendInterruptEventWithSeesionIdCallBack(interruptEvent, activeSessionID);
             }
             if (!iterActiveErased) {
-                OnAudioFocusInfoChange(NONE_CALLBACK_CATEGORY, incomingInterrupt);
+                OnAudioFocusInfoChange(AudioPolicyServerHandler::NONE_CALLBACK_CATEGORY, incomingInterrupt);
             }
         }
         if (!iterActiveErased) {
@@ -1270,7 +1270,7 @@ void AudioPolicyServer::ProcessAudioScene(const AudioInterrupt &audioInterrupt, 
             itZone->second->audioFocusInfoList.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
             audioInterruptZonesMap_[zoneID] = itZone->second;
         }
-        OnAudioFocusInfoChange(REQUEST_CALLBACK_CATEGORY, audioInterrupt, zoneID);
+        OnAudioFocusInfoChange(AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt, zoneID);
         AudioScene targetAudioScene = GetHighestPriorityAudioSceneFromAudioFocusInfoList(zoneID);
         UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         shouldReturnSuccess = true;
@@ -1319,7 +1319,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
         itZone->second->pids.insert(inComingPid);
         itZone->second->audioFocusInfoList.emplace_back(std::make_pair(incomingInterrupt, incomingState));
         audioInterruptZonesMap_[zoneID] = itZone->second;
-        OnAudioFocusInfoChange(REQUEST_CALLBACK_CATEGORY, incomingInterrupt, zoneID);
+        OnAudioFocusInfoChange(AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, incomingInterrupt, zoneID);
     }
     if (interruptEvent.hintType != INTERRUPT_HINT_NONE && audioPolicyServerHandler_ != nullptr) {
         AUDIO_INFO_LOG("OnInterrupt for incoming sessionID: %{public}d, hintType: %{public}d",
@@ -1564,7 +1564,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
                 }
                 return false;
             }
-            OnAudioFocusInfoChange(ABANDON_CALLBACK_CATEGORY, audioInterrupt, zoneID);
+            OnAudioFocusInfoChange(AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, audioInterrupt, zoneID);
             return true;
         });
 
@@ -1614,7 +1614,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterruptEnable(const AudioInterrupt &
             itZone->second->audioFocusInfoList = audioFocusInfoList;
             audioInterruptZonesMap_[zoneID] = itZone->second;
             isInterruptActive = true;
-            OnAudioFocusInfoChange(ABANDON_CALLBACK_CATEGORY, audioInterrupt, zoneID);
+            OnAudioFocusInfoChange(AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, audioInterrupt, zoneID);
         } else {
             AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(it->first);
             if (GetAudioScenePriority(targetAudioScene) > GetAudioScenePriority(highestPriorityAudioScene)) {

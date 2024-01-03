@@ -34,12 +34,18 @@ using namespace std;
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
 public:
+    enum FocusCallbackCategory : int32_t {
+        NONE_CALLBACK_CATEGORY,
+        REQUEST_CALLBACK_CATEGORY,
+        ABANDON_CALLBACK_CATEGORY,
+    };
+
     enum EventAudioServerCmd {
         AUDIO_DEVICE_CHANGE,
         AVAILABLE_AUDIO_DEVICE_CHANGE,
         VOLUME_KEY_EVENT,
-        REQUEST_CALLBACK_CATEGORY,
-        ABANDON_CALLBACK_CATEGORY,
+        REQUEST_CATEGORY_EVENT,
+        ABANDON_CATEGORY_EVENT,
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
         MIC_STATE_CHANGE_EVENT,

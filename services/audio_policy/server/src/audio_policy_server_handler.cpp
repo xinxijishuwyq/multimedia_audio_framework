@@ -183,12 +183,12 @@ bool AudioPolicyServerHandler::SendAudioFocusInfoChangeCallBack(int32_t callback
     bool ret = false;
 
     lock_guard<mutex> runnerlock(runnerMutex_);
-    if (callbackCategory == REQUEST_CALLBACK_CATEGORY) {
-        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::REQUEST_CALLBACK_CATEGORY, eventContextObj));
-        CHECK_AND_RETURN_RET_LOG(ret, ret, "Send REQUEST_CALLBACK_CATEGORY event failed");
-    } else if (callbackCategory == ABANDON_CALLBACK_CATEGORY) {
-        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::ABANDON_CALLBACK_CATEGORY, eventContextObj));
-        CHECK_AND_RETURN_RET_LOG(ret, ret, "Send ABANDON_CALLBACK_CATEGORY event failed");
+    if (callbackCategory == FocusCallbackCategory::REQUEST_CALLBACK_CATEGORY) {
+        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::REQUEST_CATEGORY_EVENT, eventContextObj));
+        CHECK_AND_RETURN_RET_LOG(ret, ret, "Send REQUEST_CATEGORY_EVENT event failed");
+    } else if (callbackCategory == FocusCallbackCategory::ABANDON_CALLBACK_CATEGORY) {
+        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::ABANDON_CATEGORY_EVENT, eventContextObj));
+        CHECK_AND_RETURN_RET_LOG(ret, ret, "Send ABANDON_CATEGORY_EVENT event failed");
     }
     ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::FOCUS_INFOCHANGE, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send FOCUS_INFOCHANGE event failed");
@@ -613,10 +613,10 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
         case EventAudioServerCmd::VOLUME_KEY_EVENT:
             HandleVolumeKeyEvent(event);
             break;
-        case EventAudioServerCmd::REQUEST_CALLBACK_CATEGORY:
+        case EventAudioServerCmd::REQUEST_CATEGORY_EVENT:
             HandleRequestCateGoryEvent(event);
             break;
-        case EventAudioServerCmd::ABANDON_CALLBACK_CATEGORY:
+        case EventAudioServerCmd::ABANDON_CATEGORY_EVENT:
             HandleAbandonCateGoryEvent(event);
             break;
         case EventAudioServerCmd::FOCUS_INFOCHANGE:
