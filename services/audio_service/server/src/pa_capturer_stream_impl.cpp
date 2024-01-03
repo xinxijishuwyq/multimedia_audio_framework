@@ -100,7 +100,9 @@ void PaCapturerStreamImpl::InitParams()
     AUDIO_INFO_LOG("byteSizePerFrame_ %{public}zu, spanSizeInFrame_ %{public}zu, minBufferSize_ %{public}zu",
         byteSizePerFrame_, spanSizeInFrame_, minBufferSize_);
 
+#ifdef DUMP_CAPTURER_STREAM_IMPL
     capturerServerDumpFile_ = fopen("/data/data/.pulse_dir/capturer_impl.pcm", "wb+");
+#endif
 }
 
 int32_t PaCapturerStreamImpl::Start()
