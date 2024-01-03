@@ -170,16 +170,28 @@ bool AudioA2dpManager::HasA2dpDeviceConnected()
 
 int32_t AudioA2dpManager::A2dpOffloadSessionRequest(const std::vector<A2dpStreamInfo> &info)
 {
+    if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
+        AUDIO_ERR_LOG("Invalid mac address, not request, return A2DP_NOT_OFFLOAD");
+        return A2DP_NOT_OFFLOAD;
+    }
     return a2dpInstance_->A2dpOffloadSessionRequest(activeA2dpDevice_, info);
 }
 
 int32_t AudioA2dpManager::OffloadStartPlaying(const std::vector<int32_t> &sessionsID)
 {
+    if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
+        AUDIO_ERR_LOG("Invalid mac address, not start, return error");
+        return ERROR;
+    }
     return a2dpInstance_->OffloadStartPlaying(activeA2dpDevice_, sessionsID);
 }
 
 int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &sessionsID)
 {
+    if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
+        AUDIO_ERR_LOG("Invalid mac address, not stop, return error");
+        return ERROR;
+    }
     return a2dpInstance_->OffloadStopPlaying(activeA2dpDevice_, sessionsID);
 }
 
