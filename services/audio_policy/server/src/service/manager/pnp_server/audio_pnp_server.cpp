@@ -78,11 +78,12 @@ bool AudioPnpServer::init(void)
 
 int32_t AudioPnpServer::RegisterPnpStatusListener(std::shared_ptr<AudioPnpDeviceChangeCallback> callback)
 {
-    std::lock_guard<std::mutex> lock(pnpMutex_);
-    pnpCallback_ = callback;
-    if (pnpCallback_ != nullptr) {
-        DetectAudioDevice();
+    {
+        std::lock_guard<std::mutex> lock(pnpMutex_);
+        pnpCallback_ = callback;
     }
+
+    DetectAudioDevice();
     return SUCCESS;
 }
 
