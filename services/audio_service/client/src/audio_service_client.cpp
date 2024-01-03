@@ -2210,10 +2210,11 @@ int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
 
 int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t &timeStamp)
 {
-    int32_t ret = UpdateStreamPosition(UpdatePositionTimeNode::USER_NODE);
-    if (ret != AUDIO_CLIENT_SUCCESS) {
-        return ret;
-    }
+    // Since the START processing between the framework service and hdf service is asynchronous, the application
+    // may get the frame information without the hdf service completing the stream initialization.
+    // This time will get an exception value, here will not return the exception to the application.Return the
+    // last frame information instead
+    UpdateStreamPosition(UpdatePositionTimeNode::USER_NODE);
     framePosition = lastStreamPosition_;
     timeStamp = lastPositionTimestamp_;
     return AUDIO_CLIENT_SUCCESS;
