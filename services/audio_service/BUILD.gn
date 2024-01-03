@@ -185,6 +185,7 @@ ohos_shared_library("audio_client") {
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
