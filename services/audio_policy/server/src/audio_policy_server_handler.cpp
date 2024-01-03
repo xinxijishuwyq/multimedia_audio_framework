@@ -14,7 +14,6 @@
  */
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
-#include "audio_policy_server.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -184,10 +183,10 @@ bool AudioPolicyServerHandler::SendAudioFocusInfoChangeCallBack(int32_t callback
     bool ret = false;
 
     lock_guard<mutex> runnerlock(runnerMutex_);
-    if (callbackCategory == AudioPolicyServer::REQUEST_CALLBACK_CATEGORY) {
+    if (callbackCategory == FocusCallbackCategory::REQUEST_CALLBACK_CATEGORY) {
         ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::REQUEST_CATEGORY_EVENT, eventContextObj));
         CHECK_AND_RETURN_RET_LOG(ret, ret, "Send REQUEST_CATEGORY_EVENT event failed");
-    } else if (callbackCategory == AudioPolicyServer::ABANDON_CALLBACK_CATEGORY) {
+    } else if (callbackCategory == FocusCallbackCategory::ABANDON_CALLBACK_CATEGORY) {
         ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::ABANDON_CATEGORY_EVENT, eventContextObj));
         CHECK_AND_RETURN_RET_LOG(ret, ret, "Send ABANDON_CATEGORY_EVENT event failed");
     }
