@@ -680,6 +680,8 @@ private:
 
     bool IsRendererStreamRunning(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
+    void UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -807,6 +809,9 @@ private:
 
     SourceType currentSourceType = SOURCE_TYPE_MIC;
     uint32_t currentRate = 0;
+    
+    std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
+    std::mutex checkSpatializedMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
