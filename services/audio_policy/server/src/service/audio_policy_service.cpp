@@ -1533,7 +1533,7 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
 
     if (!isStreamStatusUpdated) {
-        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->clientPid,
+        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
 

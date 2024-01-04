@@ -2105,6 +2105,10 @@ uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
 int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    streamChangeInfo.audioRendererChangeInfo.callerPid = callerPid;
+    streamChangeInfo.audioCapturerChangeInfo.callerPid = callerPid;
+
     // update the clientUid
     auto callerUid = IPCSkeleton::GetCallingUid();
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
@@ -2127,6 +2131,10 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
 
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    streamChangeInfo.audioRendererChangeInfo.callerPid = callerPid;
+    streamChangeInfo.audioCapturerChangeInfo.callerPid = callerPid;
+
     // update the clientUid
     auto callerUid = IPCSkeleton::GetCallingUid();
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;

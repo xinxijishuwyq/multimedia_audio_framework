@@ -654,6 +654,7 @@ public:
     int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
+    int32_t callerPid;
     int32_t clientPid;
     int32_t tokenId;
     int32_t channelCount;
@@ -672,6 +673,7 @@ public:
         return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUID)
             && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(callerPid)
             && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
             && parcel.WriteInt32(channelCount)
@@ -686,6 +688,7 @@ public:
         createrUID = parcel.ReadInt32();
         clientUID = parcel.ReadInt32();
         sessionId = parcel.ReadInt32();
+        callerPid = parcel.ReadInt32();
         clientPid = parcel.ReadInt32();
         tokenId = parcel.ReadInt32();
         channelCount = parcel.ReadInt32();
@@ -704,6 +707,7 @@ public:
     int32_t createrUID;
     int32_t clientUID;
     int32_t sessionId;
+    int32_t callerPid;
     int32_t clientPid;
     AudioCapturerInfo capturerInfo;
     CapturerState capturerState;
@@ -721,6 +725,7 @@ public:
         return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUID)
             && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(callerPid)
             && parcel.WriteInt32(clientPid)
             && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(capturerState))
@@ -732,6 +737,7 @@ public:
         createrUID = parcel.ReadInt32();
         clientUID = parcel.ReadInt32();
         sessionId = parcel.ReadInt32();
+        callerPid = parcel.ReadInt32();
         clientPid = parcel.ReadInt32();
         capturerInfo.Unmarshalling(parcel);
         capturerState = static_cast<CapturerState>(parcel.ReadInt32());

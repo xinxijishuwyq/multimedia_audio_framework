@@ -110,6 +110,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    rendererChangeInfo->callerPid = streamChangeInfo.audioRendererChangeInfo.callerPid;
     rendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
@@ -167,6 +168,7 @@ int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamCha
     capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
     capturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+    capturerChangeInfo->callerPid = streamChangeInfo.audioCapturerChangeInfo.callerPid;
     capturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
 
     capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
@@ -216,6 +218,7 @@ void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamC
     rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    rendererChangeInfo->callerPid = streamChangeInfo.audioRendererChangeInfo.callerPid;
     rendererChangeInfo->clientPid = streamChangeInfo.audioRendererChangeInfo.clientPid;
     rendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
@@ -229,6 +232,7 @@ void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamC
     capturerChangeInfo->createrUID = streamChangeInfo.audioCapturerChangeInfo.createrUID;
     capturerChangeInfo->clientUID = streamChangeInfo.audioCapturerChangeInfo.clientUID;
     capturerChangeInfo->sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
+    capturerChangeInfo->callerPid = streamChangeInfo.audioCapturerChangeInfo.callerPid;
     capturerChangeInfo->clientPid = streamChangeInfo.audioCapturerChangeInfo.clientPid;
     capturerChangeInfo->muted = streamChangeInfo.audioCapturerChangeInfo.muted;
     capturerChangeInfo->capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;

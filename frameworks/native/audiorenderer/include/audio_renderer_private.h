@@ -148,6 +148,7 @@ protected:
 
 private:
     int32_t InitAudioInterruptCallback();
+    int32_t InitOutputDeviceChangeCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
