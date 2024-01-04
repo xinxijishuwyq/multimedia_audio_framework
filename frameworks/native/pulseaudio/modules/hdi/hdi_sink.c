@@ -2043,6 +2043,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels)
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != sinkChannels) {
             u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkInited = false;
             u->multiChannel.sample_attrs.adapterName = "primary";
