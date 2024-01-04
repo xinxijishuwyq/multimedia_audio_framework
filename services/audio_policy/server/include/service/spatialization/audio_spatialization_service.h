@@ -43,7 +43,7 @@ public:
         return audioSpatializationService;
     }
 
-    void Init(void);
+    void Init(const std::vector<EffectChain> &effectChains);
     void Deinit(void);
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
