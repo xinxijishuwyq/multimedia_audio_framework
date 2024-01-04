@@ -2042,18 +2042,15 @@ static void ResetMutliChannelHdiState(struct Userdata *u, int32_t sinkChannels)
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != sinkChannels) {
             u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
-            AUDIO_DEBUG_LOG("ResetMutliChannelHdiState stop success");
             u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
-            AUDIO_DEBUG_LOG("ResetMutliChannelHdiState deinit success");
-
             u->multiChannel.isHDISinkInited = false;
             u->multiChannel.sample_attrs.adapterName = "primary";
             u->multiChannel.sample_attrs.channel = sinkChannels;
             u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
-            AUDIO_DEBUG_LOG("ResetMutliChannelHdiState init success");
             u->multiChannel.isHDISinkInited = true;
         } else {
             if (u->multiChannel.isHDISinkStarted) {
+                AUDIO_INFO_LOG("ResetMutliChannelHdiState inited and started");
                 return;
             }
         }
@@ -2061,17 +2058,16 @@ static void ResetMutliChannelHdiState(struct Userdata *u, int32_t sinkChannels)
         u->multiChannel.sample_attrs.adapterName = "primary";
         u->multiChannel.sample_attrs.channel = sinkChannels;
         u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
-        AUDIO_DEBUG_LOG("ResetMutliChannelHdiState init success");
         u->multiChannel.isHDISinkInited = true;
     }
-
     if (u->multiChannel.sinkAdapter->RendererSinkStart(u->multiChannel.sinkAdapter)) {
         u->multiChannel.isHDISinkStarted = false;
         u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
-        AUDIO_DEBUG_LOG("ResetMutliChannelHdiState deinit success");
         u->multiChannel.isHDISinkInited = false;
+        AUDIO_INFO_LOG("ResetMutliChannelHdiState deinit success");
     } else {
         u->multiChannel.isHDISinkStarted = true;
+        AUDIO_INFO_LOG("ResetMutliChannelHdiState start success");
         u->writeCount = 0;
         u->renderCount = 0;
     }
@@ -2139,7 +2135,6 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
             u->bytes_dropped = 0;
         }
         u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
-        AUDIO_DEBUG_LOG("PaInputStateChangeCbMultiChannel, Stopped mch renderer");
         u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
         AUDIO_DEBUG_LOG("PaInputStateChangeCbMultiChannel, deinit mch renderer");
         u->multiChannel.isHDISinkStarted = false;
