@@ -3594,6 +3594,7 @@ void AudioPolicyService::LoadEffectLibrary()
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
     audioEffectManager_.SetEffectChainManagerAvailable();
+    AudioSpatializationService::GetAudioSpatializationService().Init(supportedEffectConfig.effectChains);
 }
 
 void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,

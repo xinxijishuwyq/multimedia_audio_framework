@@ -74,6 +74,7 @@ struct Effect {
 struct EffectChain {
     std::string name;
     std::vector<std::string> apply;
+    std::string label = "";
 };
 
 struct Device {

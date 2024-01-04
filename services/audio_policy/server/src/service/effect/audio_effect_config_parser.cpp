@@ -222,12 +222,16 @@ static void LoadEffectChain(OriginalEffectConfig &result, xmlNode* secondNode)
             continue;
         }
         if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("effectChain"))) {
+            std::string label = "";
+            if (xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("label"))) {
+                label = reinterpret_cast<char*>(xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("label")));
+            }
             if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("name"))) {
                 AUDIO_WARNING_LOG("missing information: effectChain has no name attribute");
             } else {
                 std::string peffectChainName = reinterpret_cast<char*>
                                    (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
-                EffectChain tmp = {peffectChainName, apply};
+                EffectChain tmp = {peffectChainName, apply, label};
                 result.effectChains.push_back(tmp);
                 LoadApply(result, currNode, segInx);
                 segInx++;

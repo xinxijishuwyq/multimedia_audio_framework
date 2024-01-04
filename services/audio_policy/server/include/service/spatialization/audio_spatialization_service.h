@@ -43,7 +43,7 @@ public:
         return audioSpatializationService;
     }
 
-    bool Init(void);
+    void Init(const std::vector<EffectChain> &effectChains);
     void Deinit(void);
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
@@ -80,6 +80,8 @@ private:
     void HandleSpatializationStateChange(bool outputDeviceChange);
     IAudioPolicyInterface& audioPolicyManager_;
     std::string currentDeviceAddress_ = "";
+    bool isSpatializationSupported_ = false;
+    bool isHeadTrackingSupported_ = false;
     bool spatializationEnabledFlag_ = false;
     bool headTrackingEnabledFlag_ = false;
     bool spatializationEnabledReal_ = false;

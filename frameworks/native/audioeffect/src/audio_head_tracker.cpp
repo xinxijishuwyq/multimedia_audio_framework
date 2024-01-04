@@ -74,12 +74,12 @@ int32_t HeadTracker::SensorSetConfig(int32_t spatializerEngineState)
             ret = ERROR;
             break;
         case ARM_SPATIALIZER_ENGINE:
-            AUDIO_DEBUG_LOG("system uses arm spatializer engine!");
+            AUDIO_INFO_LOG("system uses arm spatializer engine!");
             ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_,
                 sensorSamplingInterval_, sensorSamplingInterval_);
             break;
         case DSP_SPATIALIZER_ENGINE:
-            AUDIO_DEBUG_LOG("system uses dsp spatializer engine!");
+            AUDIO_INFO_LOG("system uses dsp spatializer engine!");
             ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_,
                 sensorSamplingInterval_, sensorSamplingInterval_ * 2); // 2 * sampling for DSP
             break;

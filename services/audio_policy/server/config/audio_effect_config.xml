@@ -25,10 +25,10 @@
     </effects>
 
     <effectChains>
-        <effectChain name="EFFECTCHAIN_SPK_MUSIC">
+        <effectChain name="EFFECTCHAIN_SPK_MUSIC" label="BASIC_EFFECT">
             <apply effect="histen"/>
         </effectChain>
-        <effectChain name="EFFECTCHAIN_BT_MUSIC">
+        <effectChain name="EFFECTCHAIN_BT_MUSIC" label="SPATIALIZATION_AND_HEADTRACKING">
             <apply effect="hvs"/>
         </effectChain>
     </effectChains>
