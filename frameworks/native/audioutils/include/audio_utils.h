@@ -186,8 +186,9 @@ void ObjectRefMap<T>::DecreaseRef(T *obj)
 {
     std::lock_guard<std::mutex> lock(allObjLock);
     if (refMap.count(obj) && --refMap[obj] == 0) {
-        delete obj;
         refMap.erase(obj);
+        delete obj;
+        obj = nullptr;
     }
 }
 
