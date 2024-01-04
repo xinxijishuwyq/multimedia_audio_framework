@@ -385,6 +385,8 @@ public:
 #ifdef BLUETOOTH_ENABLE
     void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
         DeviceType deviceType = DEVICE_TYPE_NONE);
+
+    void UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions);
 #endif
     void GetA2dpOffloadCodecAndSendToDsp();
 
@@ -679,8 +681,6 @@ private:
     void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
 
     bool IsRendererStreamRunning(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
-
-    void UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions);
 
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
