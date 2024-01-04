@@ -37,6 +37,10 @@ namespace AudioStandard {
 using namespace std;
 
 static const int32_t SPATIALIZATION_SERVICE_OK = 0;
+static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_BT_MUSIC";
+static const std::string SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL = "SPATIALIZATION_AND_HEADTRACKING";
+static const std::string SPATIALIZATION_SUPPORTED_LABEL = "SPATIALIZATION";
+static const std::string HEAD_TRACKING_SUPPORTED_LABEL = "HEADTRACKING";
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 mutex g_adSpatializationProxyMutex;
 
@@ -51,9 +55,21 @@ AudioSpatializationService::~AudioSpatializationService()
     AUDIO_ERR_LOG("~AudioSpatializationService()");
 }
 
-bool AudioSpatializationService::Init(void)
+void AudioSpatializationService::Init(const std::vector<EffectChain> &effectChains)
 {
-    return true;
+    for (auto effectChain: effectChains) {
+        if (effectChain.name != BLUETOOTH_EFFECT_CHAIN_NAME) {
+            continue;
+        }
+        if (effectChain.label == SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL) {
+            isSpatializationSupported_ = true;
+            isHeadTrackingSupported_ = true;
+        } else if (effectChain.label == SPATIALIZATION_SUPPORTED_LABEL) {
+            isSpatializationSupported_ = true;
+        } else if (effectChain.label == HEAD_TRACKING_SUPPORTED_LABEL) {
+            isHeadTrackingSupported_ = true;
+        }
+    }
 }
 
 void AudioSpatializationService::Deinit(void)
@@ -216,8 +232,7 @@ AudioSpatializationState AudioSpatializationService::GetSpatializationState(cons
 
 bool AudioSpatializationService::IsSpatializationSupported()
 {
-    std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
-    return true;
+    return isSpatializationSupported_;
 }
 
 bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::string address)
@@ -234,8 +249,7 @@ bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::s
 
 bool AudioSpatializationService::IsHeadTrackingSupported()
 {
-    std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
-    return true;
+    return isHeadTrackingSupported_;
 }
 
 bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::string address)
