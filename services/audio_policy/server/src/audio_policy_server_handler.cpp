@@ -346,11 +346,12 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
+            DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
-                    UpdateDescWhenNoBTPermission(eventContextObj->deviceChangeAction.deviceDescriptors);
+                    UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
             }
-            it->second->OnDeviceChange(eventContextObj->deviceChangeAction);
+            it->second->OnDeviceChange(deviceChangeAction);
         }
     }
 }
