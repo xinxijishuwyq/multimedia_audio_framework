@@ -2090,7 +2090,9 @@ static void StopPrimaryHdiIfNoRunning(struct Userdata *u)
         return;
     }
 
-    unsigned nPrimary, nOffload, nMultiChannel;
+    unsigned nPrimary;
+    unsigned nOffload;
+    unsigned nMultiChannel;
     GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (nPrimary > 0) {
         return;
@@ -3323,7 +3325,6 @@ int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
     } else {
         u->multichannel_enable = false;
     }
-
 
     // offload
     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
