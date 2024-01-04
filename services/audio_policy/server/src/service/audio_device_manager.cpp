@@ -591,17 +591,32 @@ void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usag
         if (speaker_ != nullptr) {
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(speaker_));
         }
+        for (auto &desc : connectedDevices_) {
+            if (desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+            }
+        }
     }
 
     if (((usage & MEDIA_INPUT_DEVICES) != 0) || ((usage & CALL_INPUT_DEVICES) != 0)) {
         if (defalutMic_ != nullptr) {
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(defalutMic_));
         }
+        for (auto &desc : connectedDevices_) {
+            if (desc->deviceType_ == DEVICE_TYPE_MIC && desc->networkId_ != LOCAL_NETWORK_ID) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+            }
+        }
     }
 
     if ((usage & CALL_OUTPUT_DEVICES) != 0) {
         if (earpiece_ != nullptr) {
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(earpiece_));
+        }
+        for (auto &desc : connectedDevices_) {
+            if (desc->deviceType_ == DEVICE_TYPE_EARPIECE && desc->networkId_ != LOCAL_NETWORK_ID) {
+                audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+            }
         }
     }
 }
