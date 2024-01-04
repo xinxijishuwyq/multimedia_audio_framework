@@ -44,7 +44,9 @@ const uint32_t NUM_SET_EFFECT_PARAM = 3;
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
+const uint32_t DEFAULT_MCH_NUM_CHANNEL = CHANNEL_6;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
+const uint64_t DEFAULT_MCH_NUM_CHANNELLAYOUT = CH_LAYOUT_5POINT1;
 const uint32_t FACTOR_TWO = 2;
 const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
@@ -161,6 +163,7 @@ public:
     int32_t SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info);
     int32_t SessionInfoMapDelete(std::string sceneType, std::string sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
+    int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
     void RegisterEffectChainCountBackupMap(std::string sceneType, std::string operation);
 private:
     void UpdateSensorState();

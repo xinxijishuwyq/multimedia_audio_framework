@@ -306,6 +306,15 @@ int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_
     return audioEffectChainManager->ReturnEffectChannelInfo(sceneTypeString, channels, channelLayout);
 }
 
+int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
+{
+    if (channels == nullptr || channelLayout == nullptr) {
+        return ERROR;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    return audioEffectChainManager->ReturnMultiChannelInfo(channels, channelLayout);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -1130,6 +1139,31 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
         if (TmpChannelCount >= *channels) {
             *channels = TmpChannelCount;
             *channelLayout = TmpChannelLayout;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
+        std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
+        for (auto s = sessions.begin(); s != sessions.end(); ++s) {
+            sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+            uint32_t TmpChannelCount = DEFAULT_MCH_NUM_CHANNEL;
+            uint64_t TmpChannelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
+            if (info.channels > DEFAULT_NUM_CHANNEL &&
+                !ExistAudioEffectChain(it->first, info.sceneMode, info.spatializationEnabled) &&
+                IsChannelLayoutHVSSupported(info.channelLayout)) {
+                TmpChannelLayout = info.channelLayout;
+                TmpChannelCount = info.channels;
+            }
+
+            if (TmpChannelCount >= *channels) {
+                *channels = TmpChannelCount;
+                *channelLayout = TmpChannelLayout;
+            }
         }
     }
     return SUCCESS;

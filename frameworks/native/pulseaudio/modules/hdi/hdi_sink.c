@@ -76,6 +76,7 @@
 #define SPRINTF_STR_LEN 100
 #define DEFAULT_MULTICHANNEL_NUM 6
 #define DEFAULT_NUM_CHANNEL 2
+#define DEFAULT_MULTICHANNEL_CHANNELLAYOUT 1551
 #define DEFAULT_CHANNELLAYOUT 3
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
@@ -366,7 +367,7 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
     uint32_t processChannels = DEFAULT_NUM_CHANNEL;
     uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
     if (mchFlag) {
-        processChannels = sinkIn->sample_spec.channels;
+        EffectChainManagerReturnMultiChannelInfo(&processChannels, &processChannelLayout);
     } else {
         EffectChainManagerReturnEffectChannelInfo(sceneType, &processChannels, &processChannelLayout);
     }
@@ -2037,11 +2038,12 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
     }
 }
 
-static void ResetMutliChannelHdiState(struct Userdata *u, int32_t sinkChannels)
+static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels)
 {
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != sinkChannels) {
             u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkInited = false;
             u->multiChannel.sample_attrs.adapterName = "primary";
@@ -2050,7 +2052,7 @@ static void ResetMutliChannelHdiState(struct Userdata *u, int32_t sinkChannels)
             u->multiChannel.isHDISinkInited = true;
         } else {
             if (u->multiChannel.isHDISinkStarted) {
-                AUDIO_INFO_LOG("ResetMutliChannelHdiState inited and started");
+                AUDIO_INFO_LOG("ResetMultiChannelHdiState inited and started");
                 return;
             }
         }
@@ -2064,10 +2066,10 @@ static void ResetMutliChannelHdiState(struct Userdata *u, int32_t sinkChannels)
         u->multiChannel.isHDISinkStarted = false;
         u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
         u->multiChannel.isHDISinkInited = false;
-        AUDIO_INFO_LOG("ResetMutliChannelHdiState deinit success");
+        AUDIO_INFO_LOG("ResetMultiChannelHdiState deinit success");
     } else {
         u->multiChannel.isHDISinkStarted = true;
-        AUDIO_INFO_LOG("ResetMutliChannelHdiState start success");
+        AUDIO_INFO_LOG("ResetMultiChannelHdiState start success");
         u->writeCount = 0;
         u->renderCount = 0;
     }
@@ -2075,23 +2077,11 @@ static void ResetMutliChannelHdiState(struct Userdata *u, int32_t sinkChannels)
 
 static void StartMultiChannelHdiIfRunning(struct Userdata *u)
 {
-    unsigned nMultiChannel = 0;
-    pa_sink_input *sinkIn;
-    void *state = NULL;
-    int32_t sinkChannels;
-    while ((sinkIn = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
-        pa_sink_input_assert_ref(sinkIn);
-        if (sinkIn->sample_spec.channels > PRIMARY_CHANNEL_NUM) {
-            sinkChannels = sinkIn->sample_spec.channels;
-            nMultiChannel++;
-        }
-    }
+    uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
+    uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
+    EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
 
-    if (nMultiChannel == 0) {
-        return;
-    }
-
-    ResetMutliChannelHdiState(u, sinkChannels);
+    ResetMultiChannelHdiState(u, sinkChannel);
 }
 
 static void StopPrimaryHdiIfNoRunning(struct Userdata *u)
@@ -2100,8 +2090,10 @@ static void StopPrimaryHdiIfNoRunning(struct Userdata *u)
         return;
     }
 
-    unsigned nPrimary, nOffload, nHd;
-    GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
+    unsigned nPrimary;
+    unsigned nOffload;
+    unsigned nMultiChannel;
+    GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (nPrimary > 0) {
         return;
     }
@@ -2125,8 +2117,10 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
     if (starting) {
         u->multiChannel.timestamp = pa_rtclock_now();
-        int32_t sinkChannels = i->sample_spec.channels;
-        ResetMutliChannelHdiState(u, sinkChannels);
+        uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
+        uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
+        EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
+        ResetMultiChannelHdiState(u, sinkChannel);
     } else if (stopping) {
         // Continuously dropping data clear counter on entering suspended state.
         if (u->bytes_dropped != 0) {
@@ -2136,7 +2130,7 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
         }
         u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
         u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
-        AUDIO_DEBUG_LOG("PaInputStateChangeCbMultiChannel, deinit mch renderer");
+        AUDIO_INFO_LOG("PaInputStateChangeCbMultiChannel, deinit mch renderer");
         u->multiChannel.isHDISinkStarted = false;
         u->multiChannel.isHDISinkInited = false;
     } else if (corking) {
@@ -2347,31 +2341,19 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
 
 static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
-    uint8_t sceneTypeLenRef;
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    sceneTypeLenRef = DEFAULT_IN_CHANNEL_NUM;
-    pa_sink_input *sinkIn;
-    void *state = NULL;
-    unsigned maxInfo = MAX_MIX_CHANNELS;
     bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
     if (!a2dpFlag) {
         return;
     }
-    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
-        int32_t sinkChannels = sinkIn->sample_spec.channels;
-        const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
-        const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
-        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
-            sceneTypeLenRef = sinkIn->sample_spec.channels;
-        }
-        maxInfo--;
-    }
+    uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
+    uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
+    EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
+
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
-    size_t tmpLength = length * sceneTypeLenRef / DEFAULT_IN_CHANNEL_NUM;
+    size_t tmpLength = length * sinkChannel / DEFAULT_IN_CHANNEL_NUM;
     chunkIn->index = 0;
     chunkIn->length = tmpLength;
     SinkRenderMultiChannelGetData(si, chunkIn);
@@ -2986,23 +2968,10 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
 
     u->multiChannel.timestamp = pa_rtclock_now();
 
-    unsigned nMultiChannel = 0;
-    pa_sink_input *sinkIn;
-    void *state = NULL;
-    int32_t sinkChannels = DEFAULT_MULTICHANNEL_NUM;
-    while ((sinkIn = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
-        pa_sink_input_assert_ref(sinkIn);
-        if (sinkIn->sample_spec.channels > PRIMARY_CHANNEL_NUM) {
-            sinkChannels = sinkIn->sample_spec.channels;
-            nMultiChannel++;
-        }
-    }
-
-    if (nMultiChannel == 0) {
-        return 0;
-    }
-
-    ResetMutliChannelHdiState(u, sinkChannels);
+    uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
+    uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
+    EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
+    ResetMultiChannelHdiState(u, sinkChannel);
     return 0;
 }
 
@@ -3348,11 +3317,14 @@ int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
         return -1;
     }
 
-    u->multichannel_enable = true;
-    PaHdiSinkNewInitThreadMultiChannel(m, ma, u);
-
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
-        (pa_hook_cb_t)SinkInputPutCb, u);
+    if (!strcmp(u->sink->name, "Speaker")) {
+        PaHdiSinkNewInitThreadMultiChannel(m, ma, u);
+        u->multichannel_enable = true;
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
+            (pa_hook_cb_t)SinkInputPutCb, u);
+    } else {
+        u->multichannel_enable = false;
+    }
 
     // offload
     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
@@ -3531,10 +3503,12 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
             AUDIO_ERR_LOG("Failed to write-hdi-primary thread.");
             goto fail;
         }
-        hdiThreadNameMch = "OS_WriteHdiMch";
-        if (!(u->multiChannel.thread_hdi = pa_thread_new(hdiThreadNameMch, ThreadFuncWriteHDIMultiChannel, u))) {
-            AUDIO_ERR_LOG("Failed to write-hdi-multichannel thread.");
-            goto fail;
+        if (!strcmp(u->sink->name, "Speaker")) {
+            hdiThreadNameMch = "OS_WriteHdiMch";
+            if (!(u->multiChannel.thread_hdi = pa_thread_new(hdiThreadNameMch, ThreadFuncWriteHDIMultiChannel, u))) {
+                AUDIO_ERR_LOG("Failed to write-hdi-multichannel thread.");
+                goto fail;
+            }
         }
     }
 
