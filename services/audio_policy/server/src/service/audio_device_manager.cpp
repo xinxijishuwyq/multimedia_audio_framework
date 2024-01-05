@@ -71,7 +71,7 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
         return false;
     }
 
-    if (devDesc->connectState_ == VIRTUAL_CONNECTED || !devDesc->isEnable_) {
+    if (devDesc->connectState_ == VIRTUAL_CONNECTED) {
         return false;
     }
 

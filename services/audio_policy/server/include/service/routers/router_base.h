@@ -44,7 +44,7 @@ public:
     {
         // remove abnormal device
         for (size_t i = 0; i < descs.size(); i++) {
-            if (descs[i]->exceptionFlag_ || descs[i]->connectState_ == SUSPEND_CONNECTED) {
+            if (descs[i]->exceptionFlag_ || descs[i]->connectState_ == SUSPEND_CONNECTED || !descs[i]->isEnable_) {
                 descs.erase(descs.begin() + i);
                 i--;
             }
@@ -65,7 +65,7 @@ public:
     {
         for (auto &captureDesc : captureDescs) {
             if (captureDesc->deviceId_ == desc->deviceId_ && captureDesc->connectState_ != SUSPEND_CONNECTED &&
-                !captureDesc->exceptionFlag_) {
+                !captureDesc->exceptionFlag_ && captureDesc->isEnable_) {
                 return std::move(captureDesc);
             }
         }
