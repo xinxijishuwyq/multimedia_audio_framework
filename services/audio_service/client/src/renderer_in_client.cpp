@@ -43,6 +43,7 @@
 #include "ipc_stream_listener_stub.h"
 #include "volume_ramp.h"
 #include "callback_handler.h"
+#include "audio_speed.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +58,7 @@ static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 1;
+constexpr int32_t MAX_BUFFER_SIZE = 100000;
 }
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
@@ -305,6 +307,12 @@ private:
 
     bool paramsIsSet_ = false;
     AudioRendererRate rendererRate_ = RENDER_RATE_NORMAL;
+
+#ifdef SONIC_ENABLE
+    float speed_ = 1.0;
+    size_t bufferSize_;
+    std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
+#endif
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -770,27 +778,44 @@ int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
-    // in plan
-    return ERROR;
+    if (audioSpeed_ == nullptr) {
+        audioSpeed_ = std::make_unique<AudioSpeed>(streamParams_.samplingRate,
+            streamParams_.format, streamParams_.channels);
+        GetBufferSize(bufferSize_);
+    }
+    audioSpeed_->SetSpeed(speed);
+    speed_ = speed;
+    return SUCCESS;
 }
 
 float RendererInClientInner::GetSpeed()
 {
-    // in plan
-    return 1.0;
+    return speed_;
 }
 
 int32_t RendererInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
     int32_t &outBufferSize)
 {
-    // in plan
-    return ERROR;
+    return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
 }
 
 int32_t RendererInClientInner::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
 {
-    // in plan
-    return ERROR;
+    int32_t writeIndex = 0;
+    int32_t writeSize = bufferSize_;
+    while (speedBufferSize > 0) {
+        if (speedBufferSize < bufferSize_) {
+            writeSize = speedBufferSize;
+        }
+        int32_t writtenSize = Write(speedBuffer + writeIndex, writeSize);
+        if (writtenSize <= 0) {
+            return writtenSize;
+        }
+        writeIndex += writtenSize;
+        speedBufferSize -= writtenSize;
+    }
+
+    return bufferSize;
 }
 
 AudioRendererRate RendererInClientInner::GetRenderRate()
@@ -935,6 +960,9 @@ void RendererInClientInner::WriteCallbackFunc()
     // Modify thread priority is not need as first call write will do these work.
     cbThreadCv_.notify_one();
 
+    std::unique_ptr<uint8_t[]> speedBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
+    int32_t speedBufferSize = 0;
+
     // start loop
     while (!cbThreadReleased_) {
         Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
@@ -958,7 +986,16 @@ void RendererInClientInner::WriteCallbackFunc()
             AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
             break;
         }
+
         // call write here.
+        if (!isEqual(speed_, 1.0f)) {
+            int32_t ret = audioSpeed_->ChangeSpeedFunc(temp.buffer, temp.bufLength, speedBuffer, speedBufferSize);
+            if (ret == 0 || speedBufferSize == 0) {
+                continue; // Continue writing when the sonic is not full
+            }
+            temp.buffer = speedBuffer.get();
+            temp.bufLength = speedBufferSize;
+        }
         int32_t result = Write(temp.buffer, temp.bufLength);
         if (result < 0 || result != cbBufferSize_) {
             AUDIO_WARNING_LOG("Call write error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
@@ -1294,6 +1331,9 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     state_ = RELEASED;
     UpdateTracker("RELEASED");
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+
+    audioSpeed_.reset();
+    audioSpeed_ = nullptr;
     return true;
 }
 

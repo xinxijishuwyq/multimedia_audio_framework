@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("../../../config.gni")
+pulseaudio_dir = "//third_party/pulseaudio"
 config("audio_utils_public_config") {
   include_dirs = [ "./include" ]
 }
@@ -28,10 +29,12 @@ ohos_shared_library("audio_utils") {
   include_dirs = [
     "./include",
     "../../../interfaces/inner_api/native/audiocommon/include/",
+    "../../..//services/audio_service/client/include",
   ]
 
   sources = [
     "./src/audio_channel_blend.cpp",
+    "./src/audio_speed.cpp",
     "./src/audio_utils.cpp",
     "./src/volume_ramp.cpp",
   ]
@@ -45,6 +48,11 @@ ohos_shared_library("audio_utils") {
     "init:libbegetutil",
     "ipc:ipc_single",
   ]
+
+  if (sonic_enable == true) {
+    include_dirs += [ "$pulseaudio_dir/sonic" ]
+    deps = [ "$pulseaudio_dir/sonic:sonic" ]
+  }
 
   defines = []
   if (audio_framework_feature_hitrace_enable) {

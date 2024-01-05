@@ -28,6 +28,7 @@
 #include "audio_format_converter_3DA.h"
 #ifdef SONIC_ENABLE
 #include "sonic.h"
+#include "audio_speed.h"
 #endif
 
 namespace OHOS {
@@ -107,16 +108,6 @@ public:
     int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
         std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize) override;
     int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) override;
-    int32_t ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
-    int32_t ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
-    int32_t ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
-    int32_t ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
-    int32_t ChangeSpeedForFloat(float *buffer, int32_t bufferSize, float* outBuffer, int32_t &outBufferSize);
-
     int32_t GetStreamBufferCB(StreamBuffer &stream, std::unique_ptr<uint8_t[]> &speedBuffer, int32_t &speedBufferSize);
 
     // Recording related APIs
@@ -188,8 +179,7 @@ private:
     float speed_ = 1.0;
 #ifdef SONIC_ENABLE
     size_t bufferSize_;
-    size_t formatSize_;
-    sonicStream sonicStream_ = nullptr;
+    std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 #endif
     std::unique_ptr<AudioFormatConverter3DA> converter_;
 

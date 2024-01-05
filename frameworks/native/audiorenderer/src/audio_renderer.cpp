@@ -33,7 +33,6 @@ static const int32_t MAX_VOLUME_LEVEL = 15;
 static const int32_t CONST_FACTOR = 100;
 #ifdef SONIC_ENABLE
 static const int32_t MAX_BUFFER_SIZE = 100000;
-static const float MINIMUM_SPEED_CHANGE = 0.01;
 #endif
 static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_SYSTEM,
@@ -547,7 +546,7 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
 #ifdef SONIC_ENABLE
-    if ((speed_ - 1 > MINIMUM_SPEED_CHANGE || 1 - speed_ > MINIMUM_SPEED_CHANGE)) {
+    if (!isEqual(speed_, 1.0f)) {
         auto outBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
         int32_t outBufferSize = 0;
         int32_t ret = audioStream_->ChangeSpeed(buffer, bufferSize, outBuffer, outBufferSize);
@@ -1509,10 +1508,10 @@ int32_t AudioRendererPrivate::SetSpeed(float speed)
     AUDIO_INFO_LOG("set speed %{public}f", speed);
     CHECK_AND_RETURN_RET_LOG((speed >= MIN_STREAM_SPEED_LEVEL) && (speed <= MAX_STREAM_SPEED_LEVEL),
         ERR_INVALID_PARAM, "invaild speed index");
-    speed_ = speed;
 #ifdef SONIC_ENABLE
-    return audioStream_->SetSpeed(speed_);
+    audioStream_->SetSpeed(speed);
 #endif
+    speed_ = speed;
     return SUCCESS;
 }
 
