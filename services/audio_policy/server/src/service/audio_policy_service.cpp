@@ -5204,7 +5204,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
         (a2dpOffloadFlag_ != A2DP_NOT_OFFLOAD)) {
         AUDIO_ERR_LOG("A2dpOffloadSessionRequest failed");
     }
-    AUDIO_INFO_LOG("a2dpOffloadFlag_ change from %d to %d", preA2dpOffloadFlag_, a2dpOffloadFlag_);
+    AUDIO_INFO_LOG("a2dpOffloadFlag_ change from %{public}d to %{public}d", preA2dpOffloadFlag_, a2dpOffloadFlag_);
     if (HandleA2dpDeviceInOffload() == SUCCESS) {
         return;
     }
