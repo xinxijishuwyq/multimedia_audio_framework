@@ -626,7 +626,6 @@ private:
     pa_context *context;
     pa_stream *paStream;
     pa_sample_spec sampleSpec;
-    std::map<AudioOffloadType, pa_buffer_attr> bufferAttrStateMap_;
 
     std::mutex dataMutex_;
     std::condition_variable dataCv_;
@@ -755,10 +754,8 @@ private:
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
     int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
-    int32_t UpdatebufferAttrOffload(AudioOffloadType statePolicy);
     int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
     int32_t InitializePAProbListOffload();
-    int32_t InitializebufferAttrOffload();
     int32_t CheckOffloadPolicyChanged();
     int32_t GetAudioLatencyOffload(uint64_t &latency);
     void ResetOffload();

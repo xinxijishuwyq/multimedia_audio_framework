@@ -296,6 +296,11 @@ void AudioServiceClient::PAStreamFlushSuccessCb(pa_stream *stream, int32_t succe
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
+static size_t MsToAlignedSize(size_t ms, const pa_sample_spec &ss)
+{
+    return AlignToAudioFrameSize(pa_usec_to_bytes(ms * PA_USEC_PER_MSEC, &ss), ss);
+}
+
 void AudioServiceClient::PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
@@ -306,7 +311,12 @@ void AudioServiceClient::PAStreamSetBufAttrSuccessCb(pa_stream *stream, int32_t 
     AUDIO_DEBUG_LOG("SetBufAttr %{public}s", success ? "success" : "faild");
 
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(stream);
-    asClient->acache_.totalCacheSizeTgt = bufferAttr->minreq;
+    if (asClient->offloadEnable_ &&
+        MsToAlignedSize(OFFLOAD_BUFFER, asClient->sampleSpec) >= bufferAttr->tlength / 2) { // 2 tlength need bigger
+        asClient->acache_.totalCacheSizeTgt = MsToAlignedSize(OFFLOAD_BUFFER, asClient->sampleSpec);
+    } else {
+        asClient->acache_.totalCacheSizeTgt = bufferAttr->minreq;
+    }
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
 
@@ -990,7 +1000,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     uint32_t channelsInLayout = ConvertChLayoutToPaChMap(audioParams.channelLayout, map);
     CHECK_AND_RETURN_RET_LOG(channelsInLayout == audioParams.channels && channelsInLayout != 0,
         AUDIO_CLIENT_CREATE_STREAM_ERR, "Invalid channel Layout");
-    InitializebufferAttrOffload();
+    ResetOffload();
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -1459,11 +1469,12 @@ int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
             if (!offloadEnable_) {
                 break;
             }
-            if (writableSize < acache_.totalCacheSizeTgt) {
+            uint32_t tgt = acache_.totalCacheSizeTgt != 0 ? acache_.totalCacheSizeTgt : acache_.totalCacheSize;
+            if (writableSize < tgt) {
                 AUDIO_DEBUG_LOG("PaWriteStream: WaitWriteable writableSize %zu < %u wait for more",
-                    writableSize, acache_.totalCacheSizeTgt);
+                    writableSize, tgt);
             } else {
-                writableSize = writableSize / acache_.totalCacheSizeTgt * acache_.totalCacheSizeTgt;
+                writableSize = writableSize / tgt * tgt;
                 break;
             }
         }
@@ -1473,7 +1484,7 @@ int32_t AudioServiceClient::WaitWriteable(size_t length, size_t& writableSize)
             pa_threaded_mainloop_wait(mainLoop);
         }
         StopTimer();
-        if (IsTimeOut() && !offloadEnable_) {
+        if (IsTimeOut()) {
             AUDIO_ERR_LOG("Write timeout");
             return AUDIO_CLIENT_WRITE_STREAM_ERR;
         }
@@ -1558,7 +1569,7 @@ size_t AudioServiceClient::WriteToAudioCache(const StreamBuffer &stream)
     uint8_t *cacheBuffer = acache_.buffer.get() + acache_.writeIndex;
 
     size_t inputLen = stream.bufferLen;
-    if (acache_.totalCacheSize != acache_.totalCacheSizeTgt) {
+    if (acache_.totalCacheSize != acache_.totalCacheSizeTgt && acache_.totalCacheSizeTgt != 0) {
         uint32_t tgt = acache_.totalCacheSizeTgt;
         if (tgt < acache_.totalCacheSize && tgt < acache_.writeIndex) {
             tgt = acache_.writeIndex;
@@ -2443,7 +2454,7 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     pa_threaded_mainloop_unlock(mainLoop);
 
     if (offloadEnable_) {
-        audioSystemManager_->OffloadSetVolume(volume);
+        audioSystemManager_->OffloadSetVolume(GetSingleStreamVol() * duckVolumeFactor_);
     }
 
     return ret;
@@ -2499,16 +2510,6 @@ int32_t AudioServiceClient::SetStreamVolumeInML(float volume)
 float AudioServiceClient::GetStreamVolume()
 {
     return volumeFactor_;
-}
-
-static void printBufAttr(pa_stream *paStream)
-{
-    const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
-    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: minreq    %{public}u", bufferAttr->minreq);
-    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: prebuf    %{public}u", bufferAttr->prebuf);
-    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: tlength   %{public}u", bufferAttr->tlength);
-    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: maxlength %{public}u", bufferAttr->maxlength);
-    AUDIO_DEBUG_LOG("pa_stream_get_buffer_attr: fragsize  %{public}u", bufferAttr->fragsize);
 }
 
 int32_t AudioServiceClient::InitializePAProbListOffload()
@@ -2618,14 +2619,8 @@ int32_t AudioServiceClient::UpdatePolicyOffload(AudioOffloadType statePolicy)
     audioSystemManager_->OffloadSetBufferSize(bufLenMs);
 
     offloadStatePolicy_ = statePolicy;
-    UpdatebufferAttrOffload(offloadStatePolicy_);
 
     return AUDIO_CLIENT_SUCCESS;
-}
-
-static size_t MsToAlignedSize(size_t ms, const pa_sample_spec &ss)
-{
-    return AlignToAudioFrameSize(pa_usec_to_bytes(ms * PA_USEC_PER_MSEC, &ss), ss);
 }
 
 void AudioServiceClient::ResetOffload()
@@ -2636,90 +2631,13 @@ void AudioServiceClient::ResetOffload()
     offloadStatePolicy_ = OFFLOAD_DEFAULT;
     offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     lastOffloadUpdateFinishTime_ = 0;
-}
-
-int32_t AudioServiceClient::InitializebufferAttrOffload()
-{
-    ResetOffload();
-    pa_buffer_attr bufferAttrOffloadActiveForeground;
-    pa_buffer_attr bufferAttrOffloadActiveBackground;
-    pa_buffer_attr bufferAttrOffloadInactiveBackground;
-
-    // perbuf tlength maxlength minreq should same to hdi_sink.c
-    bufferAttrOffloadActiveForeground.fragsize = static_cast<uint32_t>(-1);
-    bufferAttrOffloadActiveForeground.prebuf = MsToAlignedSize(0, sampleSpec);
-    bufferAttrOffloadActiveForeground.tlength = MsToAlignedSize(
-        OFFLOAD_BUFFER * 2 + 20 * 2, sampleSpec); // 2 for reservation factor, 20ms * 2 for max_req
-    bufferAttrOffloadActiveForeground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
-    bufferAttrOffloadActiveForeground.minreq = MsToAlignedSize(OFFLOAD_BUFFER, sampleSpec);
-
-    bufferAttrOffloadActiveBackground = bufferAttrOffloadActiveForeground;
-
-    bufferAttrOffloadInactiveBackground.fragsize = static_cast<uint32_t>(-1);
-    bufferAttrOffloadInactiveBackground.prebuf = MsToAlignedSize(0, sampleSpec);
-    // +20 for requested_latency, otherwise requested_latency will set to 500us, that may cause problem
-    bufferAttrOffloadInactiveBackground.tlength = MsToAlignedSize(
-        OFFLOAD_BUFFER * 3, sampleSpec); // 3 for reservation factor
-    bufferAttrOffloadInactiveBackground.maxlength = MsToAlignedSize(MAX_LENGTH_OFFLOAD, sampleSpec);
-    bufferAttrOffloadInactiveBackground.minreq = MsToAlignedSize(OFFLOAD_BUFFER, sampleSpec);
-
-    if (bufferAttrStateMap_.count(OFFLOAD_ACTIVE_FOREGROUND)) {
-        bufferAttrStateMap_[OFFLOAD_ACTIVE_FOREGROUND] = bufferAttrOffloadActiveForeground;
-    } else {
-        bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_FOREGROUND, bufferAttrOffloadActiveForeground);
+    acache_.totalCacheSizeTgt = 0;
+    if (paStream != nullptr) {
+        const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream);
+        if (bufferAttr != nullptr) {
+            acache_.totalCacheSizeTgt = bufferAttr->minreq;
+        }
     }
-    if (bufferAttrStateMap_.count(OFFLOAD_ACTIVE_BACKGROUND)) {
-        bufferAttrStateMap_[OFFLOAD_ACTIVE_BACKGROUND] = bufferAttrOffloadActiveBackground;
-    } else {
-        bufferAttrStateMap_.emplace(OFFLOAD_ACTIVE_BACKGROUND, bufferAttrOffloadActiveBackground);
-    }
-    if (bufferAttrStateMap_.count(OFFLOAD_INACTIVE_BACKGROUND)) {
-        bufferAttrStateMap_[OFFLOAD_INACTIVE_BACKGROUND] = bufferAttrOffloadInactiveBackground;
-    } else {
-        bufferAttrStateMap_.emplace(OFFLOAD_INACTIVE_BACKGROUND, bufferAttrOffloadInactiveBackground);
-    }
-
-    return AUDIO_CLIENT_SUCCESS;
-}
-
-int32_t AudioServiceClient::UpdatebufferAttrOffload(AudioOffloadType statePolicy)
-{
-    int32_t ret = CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
-    CHECK_AND_RETURN_RET_LOG(ret >= 0, AUDIO_CLIENT_PA_ERR,
-        "set offload mode: invalid stream state");
-
-    pa_buffer_attr *bufferAttr;
-    printBufAttr(paStream);
-
-    const pa_buffer_attr *bufferAttrOri = pa_stream_get_buffer_attr(paStream);
-    if (bufferAttrOri->prebuf ==
-        AlignToAudioFrameSize(pa_usec_to_bytes(MIN_BUF_DURATION_IN_USEC, &sampleSpec), sampleSpec)) {
-        AUDIO_DEBUG_LOG(
-            "AudioServiceClient::UpdatebufferAttrOffload pa buffer attr not update, maybe in callback api");
-        return AUDIO_CLIENT_SUCCESS;
-    }
-
-    if (bufferAttrStateMap_.find(statePolicy)!=bufferAttrStateMap_.end()) {
-        bufferAttr = &(bufferAttrStateMap_[statePolicy]);
-    } else {
-        AUDIO_ERR_LOG("No match AttrState for offload state policy %{public}d", statePolicy);
-        return AUDIO_CLIENT_ERR;
-    }
-
-    pa_operation *operation =
-        pa_stream_set_buffer_attr(paStream, bufferAttr, PAStreamSetBufAttrSuccessCb, (void*)this);
-
-    CHECK_AND_RETURN_RET_LOG(operation != nullptr, AUDIO_CLIENT_ERR,
-        "pa_stream_set_buffer_attr returned null");
-
-    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(mainLoop);
-    }
-
-    pa_operation_unref(operation);
-    printBufAttr(paStream);
-
-    return AUDIO_CLIENT_SUCCESS;
 }
 
 int32_t AudioServiceClient::SetStreamOffloadMode(int32_t state, bool isAppBack)

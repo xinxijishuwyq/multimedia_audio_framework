@@ -1549,7 +1549,7 @@ size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool *wait)
     } else {
         bool waitable = false;
         const uint64_t hdiPos = u->offload.hdiPos + (pa_rtclock_now() - u->offload.hdiPosTs);
-        if (u->offload.pos > hdiPos + 20 * PA_USEC_PER_MSEC) { // if hdi cache < 20ms, indicate no enough data
+        if (u->offload.pos > hdiPos + 50 * PA_USEC_PER_MSEC) { // if hdi cache < 50ms, indicate no enough data
             // hdi left 100ms is triggered process_complete_msg, it leads to kartun. Could be stating time leads it.
             waitable = true;
         }
@@ -3018,11 +3018,6 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
     return 0;
 }
 
-static size_t MsToAlignedSize(size_t ms, const pa_sample_spec *ss)
-{
-    return pa_frame_align(pa_usec_to_bytes(ms * PA_USEC_PER_MSEC, ss), ss);
-}
-
 static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
@@ -3031,17 +3026,6 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, st
         if (maybeOffload || InputIsOffload(i)) {
             OffloadRewindAndFlush(u, i, false);
             OffloadUnlock(u);
-
-            playback_stream *ps = i->userdata;
-            pa_assert(ps);
-            pa_assert(ps->memblockq);
-            const pa_sample_spec sampleSpecIn = i->thread_info.resampler ? i->thread_info.resampler->i_ss
-                                                                         : i->sample_spec;
-            // prebuf tlength maxlength minreq should same to audio_service_client.cpp
-            pa_memblockq_set_maxlength(ps->memblockq, MsToAlignedSize(20 * 5, &sampleSpecIn)); // 20 * 5 for config
-            pa_memblockq_set_tlength(ps->memblockq, MsToAlignedSize(20 * 4, &sampleSpecIn)); // 20 * 4 for config
-            pa_memblockq_set_minreq(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
-            pa_memblockq_set_prebuf(ps->memblockq, MsToAlignedSize(20, &sampleSpecIn)); // 20 for config
             pa_sink_input_update_max_rewind(i, 0);
         }
     }
