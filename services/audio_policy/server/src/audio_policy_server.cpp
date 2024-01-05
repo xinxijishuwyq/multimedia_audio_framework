@@ -1231,6 +1231,8 @@ void AudioPolicyServer::ProcessAudioScene(const AudioInterrupt &audioInterrupt, 
     const int32_t &zoneID, bool &shouldReturnSuccess)
 {
     auto itZone = audioInterruptZonesMap_.find(zoneID);
+    CHECK_AND_RETURN_LOG(itZone != audioInterruptZonesMap_.end(), "can not find zoneId");
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != audioInterruptZonesMap_.end() && itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
