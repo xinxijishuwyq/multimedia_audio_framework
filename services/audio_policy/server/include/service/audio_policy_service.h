@@ -682,6 +682,8 @@ private:
 
     bool IsRendererStreamRunning(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
+    bool NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc);
+
     bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
