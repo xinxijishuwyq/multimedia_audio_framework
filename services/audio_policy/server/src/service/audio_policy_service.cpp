@@ -1650,6 +1650,16 @@ bool AudioPolicyService::IsRendererStreamRunning(unique_ptr<AudioRendererChangeI
     return true;
 }
 
+bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc)
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IOHandles_.find(BLUETOOTH_SPEAKER) == IOHandles_.end()) {
+        AUDIO_INFO_LOG("A2DP module is not loaded, need rehandle");
+        return true;
+    }
+    return false;
+}
+
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     bool isStreamStatusUpdated, const AudioStreamDeviceChangeReason reason)
 {
@@ -1668,7 +1678,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID);
         DeviceInfo outputDeviceInfo = rendererChangeInfo->outputDeviceInfo;
         if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, outputDeviceInfo) &&
-            !sameDeviceSwitchFlag_)) {
+            !NeedRehandleA2DPDevice(desc) && !sameDeviceSwitchFlag_)) {
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
             continue;
         }
@@ -1987,10 +1997,13 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
         "SelectNewDevice: the target A2DP device doesn't exist.");
     int32_t result = ERROR;
 #ifdef BLUETOOTH_ENABLE
-    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
-        IOHandles_.find(BLUETOOTH_SPEAKER) != IOHandles_.end()) {
-        AUDIO_INFO_LOG("a2dp device [%{public}s] is already active", deviceDescriptor->macAddress_.c_str());
-        return SUCCESS;
+    {
+        std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+        if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
+            IOHandles_.find(BLUETOOTH_SPEAKER) != IOHandles_.end()) {
+            AUDIO_INFO_LOG("a2dp device [%{public}s] is already active", deviceDescriptor->macAddress_.c_str());
+            return SUCCESS;
+        }
     }
     AUDIO_INFO_LOG("SelectNewDevice::a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
