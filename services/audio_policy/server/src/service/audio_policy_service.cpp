@@ -1542,6 +1542,7 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
                 : MoveToRemoteOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevice));
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move sink input %{public}d to device %{public}d failed!",
         rendererChangeInfo->sessionId, outputDevice->deviceType_);
+    SetVolumeForSwitchDevice(outputDevice->deviceType_);
     if (isUpdateRouteSupported_) {
         UpdateActiveDeviceRoute(outputDevice->deviceType_);
     }
@@ -1582,9 +1583,7 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
         AUDIO_INFO_LOG("output device is not change");
         return;
     }
-    if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(desc->deviceType_)) {
-        SetVolumeForSwitchDevice(desc->deviceType_);
-    }
+    SetVolumeForSwitchDevice(desc->deviceType_);
     currentActiveDevice_ = AudioDeviceDescriptor(*desc);
     AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
     OnPreferredOutputDeviceUpdated(currentActiveDevice_);
@@ -1691,9 +1690,6 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     }
     sameDeviceSwitchFlag_ = false;
     if (isUpdateActiveDevice) {
-        if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(preActiveDevice.deviceType_)) {
-            SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
-        }
         OnPreferredOutputDeviceUpdated(currentActiveDevice_);
     }
     if (runningStreamCount == 0) {
