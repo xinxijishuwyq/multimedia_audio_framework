@@ -57,7 +57,7 @@ TonePlayerPrivate::TonePlayerPrivate(const std::string cachePath, const AudioRen
 {
     tonePlayerState_ = TONE_PLAYER_IDLE;
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_48000;
     rendererOptions.streamInfo.format = SAMPLE_S16LE;
     rendererOptions.streamInfo.channels = MONO;
 
@@ -314,6 +314,14 @@ bool TonePlayerPrivate::InitAudioRenderer()
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
         "Renderer create failed");
 
+    size_t targetSize = 0;
+    int32_t ret = audioRenderer_->GetBufferSize(targetSize);
+    if (ret == 0 && targetSize != 0) {
+        size_t bufferDuration = 20; // 20 -> 20ms
+        audioRenderer_->SetBufferDuration(bufferDuration);
+        AUDIO_INFO_LOG("Init renderer with buffer %{public}zu, duration %{public}zu", targetSize, bufferDuration);
+    }
+
     AUDIO_DEBUG_LOG("Playback renderer created");
     int32_t setRenderMode = audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
     CHECK_AND_RETURN_RET_LOG(!setRenderMode, false, "initAudioRenderer: SetRenderMode failed");
@@ -326,8 +334,6 @@ bool TonePlayerPrivate::InitAudioRenderer()
     int32_t setRendererCallback = audioRenderer_->SetRendererCallback(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(!setRendererCallback, false, "initAudioRenderer: SetRendererCallbackfailed");
     AUDIO_DEBUG_LOG("SetRendererCallback Sucessful");
-    audioRenderer_->SetVolume(volume_);
-    AUDIO_INFO_LOG("SetVolume Sucessful");
     return true;
 }
 

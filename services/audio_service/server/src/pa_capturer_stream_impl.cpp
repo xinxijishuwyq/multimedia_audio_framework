@@ -35,13 +35,6 @@ PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
-
-    pa_stream_set_moved_callback(paStream, PAStreamMovedCb, (void *)this); // used to notify sink/source moved
-    pa_stream_set_read_callback(paStream, PAStreamReadCb, (void *)this);
-    pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
-    pa_stream_set_started_callback(paStream, PAStreamSetStartedCb, (void *)this);
-
-    InitParams();
 }
 
 PaCapturerStreamImpl::~PaCapturerStreamImpl()
@@ -71,10 +64,15 @@ inline uint32_t PcmFormatToBits(uint8_t format)
     }
 }
 
-void PaCapturerStreamImpl::InitParams()
+int32_t PaCapturerStreamImpl::InitParams()
 {
+    pa_stream_set_moved_callback(paStream_, PAStreamMovedCb, (void *)this); // used to notify sink/source moved
+    pa_stream_set_read_callback(paStream_, PAStreamReadCb, (void *)this);
+    pa_stream_set_underflow_callback(paStream_, PAStreamUnderFlowCb, (void *)this);
+    pa_stream_set_started_callback(paStream_, PAStreamSetStartedCb, (void *)this);
+
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
-        return;
+        return ERR_ILLEGAL_STATE;
     }
 
     // Get byte size per frame
@@ -93,7 +91,7 @@ void PaCapturerStreamImpl::InitParams()
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
     if (bufferAttr == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
-        return;
+        return ERR_OPERATION_FAILED;
     }
     minBufferSize_ = (size_t)bufferAttr->fragsize;
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
@@ -103,6 +101,7 @@ void PaCapturerStreamImpl::InitParams()
 #ifdef DUMP_CAPTURER_STREAM_IMPL
     capturerServerDumpFile_ = fopen("/data/data/.pulse_dir/capturer_impl.pcm", "wb+");
 #endif
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::Start()
@@ -200,7 +199,6 @@ int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
 
 int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 {
-    // LYH in plan, 增加dataMutex的锁
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -273,6 +271,10 @@ int32_t PaCapturerStreamImpl::Stop()
 
 int32_t PaCapturerStreamImpl::Release()
 {
+    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
+    if (statusCallback != nullptr) {
+        statusCallback->OnStatusUpdate(OPERATION_RELEASED);
+    }
     state_ = RELEASED;
     if (paStream_) {
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);

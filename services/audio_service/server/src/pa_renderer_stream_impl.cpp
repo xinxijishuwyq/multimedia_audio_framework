@@ -66,10 +66,10 @@ inline uint32_t PcmFormatToBits(uint8_t format)
     }
 }
 
-void PaRendererStreamImpl::InitParams()
+int32_t PaRendererStreamImpl::InitParams()
 {
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
-        return;
+        return ERR_ILLEGAL_STATE;
     }
 
     // Get byte size per frame
@@ -91,13 +91,14 @@ void PaRendererStreamImpl::InitParams()
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
     if (bufferAttr == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
-        return;
+        return ERR_OPERATION_FAILED;
     }
     minBufferSize_ = (size_t)bufferAttr->minreq;
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
 
     // In plan: Get data from xml
     effectSceneName_ = GetEffectSceneName(processConfig_.streamType);
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::Start()
@@ -205,6 +206,10 @@ int32_t PaRendererStreamImpl::Stop()
 
 int32_t PaRendererStreamImpl::Release()
 {
+    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
+    if (statusCallback != nullptr) {
+        statusCallback->OnStatusUpdate(OPERATION_RELEASED);
+    }
     state_ = RELEASED;
     if (paStream_) {
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);
@@ -216,10 +221,6 @@ int32_t PaRendererStreamImpl::Release()
         pa_stream_disconnect(paStream_);
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
-    }
-    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(OPERATION_RELEASED);
     }
     return SUCCESS;
 }
@@ -263,7 +264,6 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
-    // LYH in plan, 增加dataMutex的锁
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }

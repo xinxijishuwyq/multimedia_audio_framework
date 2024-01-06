@@ -579,7 +579,7 @@ public:
     // Audio timer callback
     virtual void OnTimeOut() override;
 
-    void SetClientID(int32_t clientPid, int32_t clientUid) override;
+    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
 
     IAudioStream::StreamClass GetStreamClass() override;
     void GetStreamSwitchInfo(SwitchInfo& info);
@@ -661,6 +661,7 @@ private:
 
     int32_t clientPid_ = 0;
     int32_t clientUid_ = 0;
+    uint32_t appTokenId_ = 0;
 
     std::string appCookiePath = "";
     std::string cachePath_ = "";

@@ -24,7 +24,7 @@ namespace AudioStandard {
 class PaRendererStreamImpl : public IRendererStream {
 public:
     PaRendererStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop);
-    void InitParams();
+    int32_t InitParams();
     int32_t Start() override;
     int32_t Pause() override;
     int32_t Flush() override;

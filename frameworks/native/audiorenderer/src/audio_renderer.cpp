@@ -317,7 +317,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     AudioRenderer *renderer = this;
     rendererProxyObj_->SaveRendererObj(renderer);
     audioStream_->SetRendererInfo(rendererInfo_);
-    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
+    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId);
 
     SetAudioPrivacyType(privacyType_);
     audioStream_->SetStreamTrackerState(false);
@@ -1201,7 +1201,7 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
 
     audioStream->SetStreamTrackerState(info.streamTrackerRegistered);
     audioStream->SetApplicationCachePath(info.cachePath);
-    audioStream->SetClientID(info.clientPid, info.clientUid);
+    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId);
     audioStream->SetPrivacyType(info.privacyType);
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);

@@ -110,7 +110,7 @@ public:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static const std::string GetEffectSceneName(AudioStreamType audioType);
 
-    virtual void SetClientID(int32_t clientPid, int32_t clientUid) = 0;
+    virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
     virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,

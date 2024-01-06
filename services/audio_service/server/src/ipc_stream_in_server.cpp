@@ -53,7 +53,7 @@ int32_t StreamListenerHolder::OnOperationHandled(Operation operation, int64_t re
 sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &config, int32_t &ret)
 {
     AudioMode mode = config.audioMode;
-    sptr<IpcStreamInServer> streamInServer = new(std::nothrow) IpcStreamInServer(config, mode);
+    sptr<IpcStreamInServer> streamInServer = sptr<IpcStreamInServer>::MakeSptr(config, mode);
     ret = streamInServer->Config();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
@@ -158,7 +158,7 @@ int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
 int32_t IpcStreamInServer::Start()
 {
     AUDIO_INFO_LOG("IpcStreamInServer::Start()");
-    
+
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Start();
     }

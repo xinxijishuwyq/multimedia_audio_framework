@@ -54,7 +54,6 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     // Recorder only
     parcel.WriteBool(config.isInnerCapturer);
     parcel.WriteBool(config.isWakeupCapturer);
-    // LYH waiting for review, capturerParam 还有layout
 
     return SUCCESS;
 }

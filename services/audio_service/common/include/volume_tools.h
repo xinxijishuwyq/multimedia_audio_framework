@@ -30,6 +30,11 @@ struct ChannelVolumes {
     int32_t volEnd[CHANNEL_MAX];
 };
 
+static inline bool IsVolumeSame(const float& x, const float& y, const float& epsilon)
+{
+    return (std::abs((x) - (y)) <= std::abs(epsilon));
+}
+
 class VolumeTools {
 public:
     static bool IsVolumeValid(float volFloat); // 0.0 <= volFloat <= 1.0
