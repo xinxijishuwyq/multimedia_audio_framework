@@ -404,6 +404,11 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
+    if (param.channelCount == MONO) {
+        param.channelLayout = CH_LAYOUT_MONO;
+    } else if (param.channelCount == STEREO) {
+        param.channelLayout = CH_LAYOUT_STEREO;
+    }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(attr_.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize); // not passed in hdi
