@@ -139,7 +139,7 @@ public:
     // Playback related APIs
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
-    int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
+    int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
 
     // Recording related APIs
@@ -184,8 +184,8 @@ public:
 
     void HandleRendererPositionChanges(size_t bytesWritten);
     void HandleStateChangeEvent(int64_t data);
-    void HandleRenderMarkReachedEvent(int64_t data);
-    void HandleRenderPeriodReachedEvent(int64_t data);
+    void HandleRenderMarkReachedEvent(int64_t rendererMarkPosition);
+    void HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber);
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);

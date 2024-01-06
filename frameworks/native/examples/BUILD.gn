@@ -29,8 +29,7 @@ ohos_executable("pa_stream_test") {
 
   include_dirs = [
     "../../../interfaces/inner_api/native/audiocommon/include",
-    # "../audiorenderer/include",
-    # "../audiocapturer/include",
+    "../../../services/audio_service/test/example",
   ]
 
   sources = [ "./pa_stream_test.cpp" ]

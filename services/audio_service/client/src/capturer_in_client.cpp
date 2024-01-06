@@ -134,7 +134,7 @@ public:
     // Playback related APIs
     bool DrainAudioStream() override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
-    int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
+    int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
@@ -180,8 +180,8 @@ public:
 
     void HandleCapturerPositionChanges(size_t bytesRead);
     void HandleStateChangeEvent(int64_t data);
-    void HandleCapturerMarkReachedEvent(int64_t data);
-    void HandleCapturerPeriodReachedEvent(int64_t data);
+    void HandleCapturerMarkReachedEvent(int64_t capturerMarkPosition);
+    void HandleCapturerPeriodReachedEvent(int64_t capturerPeriodNumber);
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 private:

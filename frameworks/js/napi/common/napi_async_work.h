@@ -38,7 +38,7 @@ struct ContextBase {
     virtual ~ContextBase();
     void GetCbInfo(napi_env env, napi_callback_info info, NapiCbInfoParser parse = NapiCbInfoParser(),
         bool sync = false);
-    void SignError(int32_t errCode);
+    void SignError(int32_t code);
     napi_env env = nullptr;
     napi_value output = nullptr;
     napi_status status = napi_invalid_arg;
