@@ -307,6 +307,7 @@ private:
 
     bool paramsIsSet_ = false;
     AudioRendererRate rendererRate_ = RENDER_RATE_NORMAL;
+    AudioEffectMode effectMode_ = EFFECT_NONE;
 
 #ifdef SONIC_ENABLE
     float speed_ = 1.0;
@@ -1121,13 +1122,20 @@ float RendererInClientInner::GetSingleStreamVolume()
 
 AudioEffectMode RendererInClientInner::GetAudioEffectMode()
 {
-    // in plan
-    return EFFECT_DEFAULT;
+    AUDIO_DEBUG_LOG("Current audio effect mode is %{public}d", effectMode_);
+    return effectMode_;
 }
 
 int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 {
-    // in plan
+    if (effectMode_ == effectMode) {
+        AUDIO_INFO_LOG("Set same effect mode");
+        return SUCCESS;
+    }
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetAudioEffectMode(effectMode);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Set audio effect mode failed");
+    effectMode_ = effectMode;
     return SUCCESS;
 }
 
