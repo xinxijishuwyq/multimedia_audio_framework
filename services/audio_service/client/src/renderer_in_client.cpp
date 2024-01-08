@@ -208,6 +208,7 @@ private:
     int32_t DrainRingCache();
 
     int32_t WriteCacheData();
+    bool ProcessSpeed(BufferDesc &temp);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WriteCallbackFunc();
@@ -249,6 +250,8 @@ private:
 
     int32_t bufferSizeInMsec_ = 20; // 20ms
     std::string cachePath_;
+    std::string dumpOutFile_;
+    FILE *dumpOutFd_ = nullptr;
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
     bool hasFirstFrameWrited_ = false;
@@ -316,11 +319,10 @@ private:
     AudioRendererRate rendererRate_ = RENDER_RATE_NORMAL;
     AudioEffectMode effectMode_ = EFFECT_NONE;
 
-#ifdef SONIC_ENABLE
     float speed_ = 1.0;
+    std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
     size_t bufferSize_;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
-#endif
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -361,6 +363,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 RendererInClientInner::~RendererInClientInner()
 {
     AUDIO_INFO_LOG("~RendererInClientInner()");
+    DumpFileUtil::CloseDumpFile(&dumpOutFd_);
     ReleaseAudioStream(true);
 }
 
@@ -465,6 +468,12 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     int32_t initRet = InitIpcStream();
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
+
+    // eg: 48000_2_1_out.pcm
+    dumpOutFile_ = std::to_string(streamParams_.samplingRate) + "_" + std::to_string(streamParams_.channels) +
+        "_" + std::to_string(streamParams_.format) + "_out.pcm";
+
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
 
     RegisterTracker(proxyObj);
     return SUCCESS;
@@ -820,6 +829,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         audioSpeed_ = std::make_unique<AudioSpeed>(streamParams_.samplingRate,
             streamParams_.format, streamParams_.channels);
         GetBufferSize(bufferSize_);
+        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
     speed_ = speed;
@@ -990,6 +1000,19 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
+bool RendererInClientInner::ProcessSpeed(BufferDesc &temp)
+{
+    int32_t speedBufferSize = 0;
+    int32_t ret = audioSpeed_->ChangeSpeedFunc(temp.buffer, temp.bufLength, speedBuffer_, speedBufferSize);
+    if (ret == 0 || speedBufferSize == 0) {
+        // Continue writing when the sonic is not full
+        return false;
+    }
+    temp.buffer = speedBuffer_.get();
+    temp.bufLength = speedBufferSize;
+    return true;
+}
+
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -998,53 +1021,46 @@ void RendererInClientInner::WriteCallbackFunc()
     // Modify thread priority is not need as first call write will do these work.
     cbThreadCv_.notify_one();
 
-    std::unique_ptr<uint8_t[]> speedBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
-    int32_t speedBufferSize = 0;
-
     // start loop
     while (!cbThreadReleased_) {
         Trace traceLoop("RendererInClientInner::WriteCallbackFunc");
         if (!WaitForRunning()) {
             continue;
         }
+        if (!cbBufferQueue_.IsEmpty()) {
+            Trace traceQueuePop("RendererInClientInner::QueueWaitPop");
+            // If client didn't call Enqueue in OnWriteData, pop will block here.
+            BufferDesc temp = cbBufferQueue_.Pop();
+            if (temp.buffer == nullptr) {
+                AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
+                break;
+            }
+            traceQueuePop.End();
+            if (!isEqual(speed_, 1.0f) && !ProcessSpeed(temp)) {
+                continue;
+            }
+            // call write here.
+            int32_t result = Write(temp.buffer, temp.bufLength);
+            if (result < 0 || result != temp.bufLength) {
+                AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
+            }
+        }
 
         // call client write
-        Trace traceCb("RendererInClientInner::OnWriteData");
         std::unique_lock<std::mutex> lockCb(writeCbMutex_);
         if (writeCb_ != nullptr) {
+            Trace traceCb("RendererInClientInner::OnWriteData");
             writeCb_->OnWriteData(cbBufferSize_);
         }
         lockCb.unlock();
-        traceCb.End();
 
+        Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
         std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
-        cbBufferCV_.wait_for(lockBuffer, std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS),
-            [this] {
+        cbBufferCV_.wait_for(lockBuffer, std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS), [this] {
             return cbBufferQueue_.IsEmpty() == false; // will be false when got notified.
         });
         if (cbBufferQueue_.IsEmpty()) {
             AUDIO_WARNING_LOG("cbBufferQueue_ is empty");
-            continue;
-        }
-        // If client didn't call Enqueue in OnWriteData, pop will block here.
-        BufferDesc temp = cbBufferQueue_.Pop();
-        if (temp.buffer == nullptr) {
-            AUDIO_WARNING_LOG("Queue pop error: get nullptr.");
-            break;
-        }
-
-        // call write here.
-        if (!isEqual(speed_, 1.0f)) {
-            int32_t ret = audioSpeed_->ChangeSpeedFunc(temp.buffer, temp.bufLength, speedBuffer, speedBufferSize);
-            if (ret == 0 || speedBufferSize == 0) {
-                continue; // Continue writing when the sonic is not full
-            }
-            temp.buffer = speedBuffer.get();
-            temp.bufLength = speedBufferSize;
-        }
-        int32_t result = Write(temp.buffer, temp.bufLength);
-        if (result < 0 || result != cbBufferSize_) {
-            AUDIO_WARNING_LOG("Call write error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
         }
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
@@ -1097,27 +1113,21 @@ int32_t RendererInClientInner::GetBufQueueState(BufferQueueState &bufState)
 
 int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
 {
-    Trace trace("RendererInClientInner::Enqueue");
+    Trace trace("RendererInClientInner::Enqueue " + std::to_string(bufDesc.bufLength));
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("Enqueue is not supported. Render mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
-    std::lock_guard<std::mutex> lock(cbBufferMutex_);
-
-    if (bufDesc.bufLength != cbBufferSize_ || bufDesc.dataLength != cbBufferSize_) {
-        AUDIO_ERR_LOG("Enqueue invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERR_INVALID_PARAM, "Invalid buffer");
+    if (bufDesc.bufLength > cbBufferSize_ || bufDesc.dataLength > cbBufferSize_) {
+        AUDIO_WARNING_LOG("Invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
             bufDesc.bufLength, bufDesc.dataLength, cbBufferSize_);
-        return ERR_INVALID_INDEX;
     }
-    if (bufDesc.buffer != cbBuffer_.get()) {
-        AUDIO_WARNING_LOG("Enqueue buffer is not from us. Let's copy.");
-        int ret = memcpy_s(static_cast<void *>(cbBuffer_.get()), cbBufferSize_, static_cast<void *>(bufDesc.buffer),
-            bufDesc.bufLength);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_READ_BUFFER, "copy failed, ret is:%{public}d", ret);
-    }
-    BufferDesc temp = {cbBuffer_.get(), cbBufferSize_, cbBufferSize_};
+
+    BufferDesc temp = bufDesc;
+
+    // Call write here may block, so put it in loop callbackLoop_
     cbBufferQueue_.Push(temp);
-    // Call write may block, so put it in loop callbackLoop_
     return SUCCESS;
 }
 
@@ -1128,12 +1138,13 @@ int32_t RendererInClientInner::Clear()
         AUDIO_ERR_LOG("Clear is not supported. Render mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
-    std::lock_guard<std::mutex> lock(cbBufferMutex_);
+    std::unique_lock<std::mutex> lock(cbBufferMutex_);
     int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
+    lock.unlock();
+    FlushAudioStream();
     return SUCCESS;
 }
-
 
 int32_t RendererInClientInner::SetLowPowerVolume(float volume)
 {
@@ -1602,6 +1613,7 @@ int32_t RendererInClientInner::WriteCacheData()
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
     AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
         "%{public}u", curWriteIndex, spanSizeInFrame_);
+    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     // volume process in client
@@ -1850,7 +1862,7 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 void RendererInClientInner::SetApplicationCachePath(const std::string cachePath)
 {
     cachePath_ = cachePath;
-    AUDIO_INFO_LOG("SetApplicationCachePath to %{publid}s", cachePath_.c_str());
+    AUDIO_INFO_LOG("SetApplicationCachePath to %{public}s", cachePath_.c_str());
 }
 
 int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
