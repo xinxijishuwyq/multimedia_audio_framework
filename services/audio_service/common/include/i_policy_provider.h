@@ -65,10 +65,6 @@ public:
 
     virtual int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) = 0;
 
-    // virtual int32_t GetVolume(AudioStreamType streamType, DeviceType deviceType, Volume &vol) = 0;
-
-    // virtual int32_t SetVolume(AudioStreamType streamType, DeviceType deviceType, Volume vol) = 0;
-
     virtual ~IPolicyProvider() = default;
 
     static bool GetVolumeIndex(AudioVolumeType streamType, DeviceType deviceType, size_t &index)

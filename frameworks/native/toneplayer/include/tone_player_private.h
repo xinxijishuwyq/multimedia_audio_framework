@@ -73,7 +73,7 @@ private:
     uint32_t totalSample_;  // Total no. of tone samples played
     uint32_t nextSegSample_;  // Position of next segment transition expressed in samples
     uint32_t maxSample_;  // Maximum number of audio samples played (maximun tone duration)
-    uint32_t samplingRate_;  // AudioFlinger Sampling rate
+    uint32_t samplingRate_;  // Audio Sampling rate
     uint32_t sampleCount_; // Initial value should be zero before any new Tone renderering
     std::unique_ptr<AudioRenderer> audioRenderer_;  // Pointer to AudioRenderer used for playback
     std::mutex mutexLock_; // Mutex to control concurent access

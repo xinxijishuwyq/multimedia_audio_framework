@@ -483,9 +483,11 @@ sptr<IRemoteObject> AudioManagerProxy::CreateAudioProcess(const AudioProcessConf
 bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries, const vector<Effect> effects,
     vector<Effect> &successEffects)
 {
-    int32_t error, i;
+    int32_t error;
+    int32_t i;
 
-    MessageParcel dataParcel, replyParcel;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
     MessageOption option;
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
@@ -543,7 +545,8 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
 {
     int32_t error;
 
-    MessageParcel dataParcel, replyParcel;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
     MessageOption option;
 
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
@@ -586,7 +589,8 @@ bool AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sin
 {
     int32_t error;
 
-    MessageParcel dataParcel, replyParcel;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
     MessageOption option;
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");

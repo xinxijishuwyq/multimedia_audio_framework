@@ -1202,13 +1202,12 @@ int32_t AudioPolicyProxy::GetMaxRendererInstances()
 
 static void PreprocessMode(Stream &stream, MessageParcel &reply, int countMode)
 {
-    int j, k;
-    for (j = 0; j < countMode; j++) {
+    for (int j = 0; j < countMode; j++) {
         StreamEffectMode streamEffectMode;
         streamEffectMode.mode = reply.ReadString();
         int countDev = reply.ReadInt32();
         if (countDev > 0) {
-            for (k = 0; k < countDev; k++) {
+            for (int k = 0; k < countDev; k++) {
                 string type = reply.ReadString();
                 string chain = reply.ReadString();
                 streamEffectMode.devicePort.push_back({type, chain});
@@ -1231,13 +1230,12 @@ static Stream PreprocessProcess(MessageParcel &reply)
 
 static void PostprocessMode(Stream &stream, MessageParcel &reply, int countMode)
 {
-    int j, k;
-    for (j = 0; j < countMode; j++) {
+    for (int j = 0; j < countMode; j++) {
         StreamEffectMode streamEffectMode;
         streamEffectMode.mode = reply.ReadString();
         int countDev = reply.ReadInt32();
         if (countDev > 0) {
-            for (k = 0; k < countDev; k++) {
+            for (int k = 0; k < countDev; k++) {
                 string type = reply.ReadString();
                 string chain = reply.ReadString();
                 streamEffectMode.devicePort.push_back({type, chain});

@@ -163,7 +163,8 @@ static pa_idxset* SinkGetFormatsCb(pa_sink *s)
 
 static void ProcessRewind(struct userdata *u, pa_usec_t now)
 {
-    size_t rewindNbytes, inBuffer;
+    size_t rewindNbytes;
+    size_t inBuffer;
     pa_usec_t delay;
 
     pa_assert(u);
@@ -356,7 +357,8 @@ int pa__init(pa_module *m)
     struct userdata *u = NULL;
     pa_modargs *ma = NULL;
     size_t nbytes;
-    int mq, mg;
+    int mq;
+    int mg;
 
     pa_assert(m);
 
