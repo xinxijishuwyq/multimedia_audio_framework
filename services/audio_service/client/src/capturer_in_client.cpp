@@ -1448,9 +1448,9 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
         size_t readableSize = std::min(result.size, userSize - readSize);
         if (readSize + result.size >= userSize) { // If ringCache is sufficient
             result = ringCache_->Dequeue({&buffer + (readSize), readableSize});
-            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d",
-                result.ret);
+            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "DequeueCache err %{public}d", result.ret);
             readSize += readableSize;
+            HandleCapturerPositionChanges(readSize);
             return readSize; // data size
         }
 
@@ -1469,6 +1469,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
             clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
         } else {
             if (!isBlockingRead) {
+                HandleCapturerPositionChanges(readSize);
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
@@ -1477,6 +1478,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
             CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
         }
     }
+    HandleCapturerPositionChanges(readSize);
     return readSize;
 }
 
