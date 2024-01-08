@@ -2836,6 +2836,9 @@ int32_t AudioPolicyService::HandleSpecialDeviceType(DeviceType &devType, bool &i
 
 void AudioPolicyService::ResetToSpeaker(DeviceType devType)
 {
+    if (devType != currentActiveDevice_.deviceType_) {
+        return;
+    }
     if (devType == DEVICE_TYPE_BLUETOOTH_SCO || (devType == DEVICE_TYPE_USB_HEADSET && !isArmUsbDevice_) ||
         devType == DEVICE_TYPE_WIRED_HEADSET || devType == DEVICE_TYPE_WIRED_HEADPHONES) {
         UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER);
