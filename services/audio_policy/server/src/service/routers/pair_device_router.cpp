@@ -36,10 +36,12 @@ unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceT
 {
     unique_ptr<AudioDeviceDescriptor> desc =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
-    if (desc->pairDeviceDescriptor_ != nullptr) {
+    std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
+    if (pairDevice != nullptr && pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
+        pairDevice->isEnable_) {
         AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
-            desc->pairDeviceDescriptor_->deviceType_);
-        return make_unique<AudioDeviceDescriptor>(*(desc->pairDeviceDescriptor_));
+            pairDevice->deviceType_);
+        return make_unique<AudioDeviceDescriptor>(*pairDevice);
     }
     return make_unique<AudioDeviceDescriptor>();
 }

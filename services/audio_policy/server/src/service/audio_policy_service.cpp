@@ -803,7 +803,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
     FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    FetchDevice(false);
+    if (audioDeviceDescriptors[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        FetchDevice(false);
+    }
     if ((deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) || (networkId != LOCAL_NETWORK_ID)) {
         UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
     } else {
