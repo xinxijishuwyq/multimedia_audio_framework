@@ -317,7 +317,7 @@ private:
 
     bool paramsIsSet_ = false;
     AudioRendererRate rendererRate_ = RENDER_RATE_NORMAL;
-    AudioEffectMode effectMode_ = EFFECT_NONE;
+    AudioEffectMode effectMode_ = EFFECT_DEFAULT;
 
     float speed_ = 1.0;
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
@@ -402,6 +402,14 @@ void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
+    if (rendererInfo_.streamUsage == STREAM_USAGE_SYSTEM ||
+        rendererInfo_.streamUsage == STREAM_USAGE_DTMF ||
+        rendererInfo_.streamUsage == STREAM_USAGE_ENFORCED_TONE ||
+        rendererInfo_.streamUsage == STREAM_USAGE_ULTRASONIC ||
+        rendererInfo_.streamUsage == STREAM_USAGE_NAVIGATION ||
+        rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION) {
+        effectMode_ = EFFECT_NONE;
+    }
     AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d", rendererInfo_.rendererFlags);
 }
 
@@ -1188,6 +1196,7 @@ int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
         AUDIO_INFO_LOG("Set same effect mode");
         return SUCCESS;
     }
+
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetAudioEffectMode(effectMode);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Set audio effect mode failed");
