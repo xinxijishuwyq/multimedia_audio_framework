@@ -63,7 +63,7 @@ public:
     FastAudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid);
     virtual ~FastAudioStream();
 
-    void SetClientID(int32_t clientPid, int32_t clientUid) override;
+    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
 
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
@@ -194,6 +194,7 @@ private:
     AudioRendererRate renderRate_ = RENDER_RATE_NORMAL;
     int32_t clientPid_ = 0;
     int32_t clientUid_ = 0;
+    uint32_t appTokenId_ = 0;
     bool streamTrackerRegistered_ = false;
     std::shared_ptr<FastPolicyServiceDiedCallbackImpl> audioStreamPolicyServiceDiedCB_ = nullptr;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;

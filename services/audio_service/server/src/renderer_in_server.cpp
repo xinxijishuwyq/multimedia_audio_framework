@@ -57,7 +57,7 @@ int32_t RendererInServer::ConfigServerBuffer()
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu,"
         "byteSizePerFrame_:%{public}zu", totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
-    
+
     // create OHAudioBuffer in server
     audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
@@ -211,6 +211,7 @@ void RendererInServer::WriteData()
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
+        audioServerBuffer_->SetHandleInfo(currentReadFrame, ClockTime::GetCurNano());
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }

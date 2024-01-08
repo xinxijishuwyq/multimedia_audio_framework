@@ -68,7 +68,7 @@ public:
     // IStreamListener
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 
-    void SetClientID(int32_t clientPid, int32_t clientUid) override;
+    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
 
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
@@ -211,6 +211,7 @@ private:
     uint32_t sessionId_;
     int32_t clientUid_ = -1;
     int32_t clientPid_ = -1;
+    uint32_t appTokenId_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     bool streamTrackerRegistered_ = false;
@@ -331,6 +332,7 @@ CapturerInClientInner::CapturerInClientInner(AudioStreamType eStreamType, int32_
 CapturerInClientInner::~CapturerInClientInner()
 {
     AUDIO_INFO_LOG("~CapturerInClientInner()");
+    ReleaseAudioStream(true);
 }
 
 int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -359,11 +361,12 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     return SUCCESS;
 }
 
-void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid)
+void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
 {
     AUDIO_INFO_LOG("Capturer set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
+    appTokenId_ = appTokenId;
     return;
 }
 
@@ -638,6 +641,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     // in plan: get token id
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
+    config.appInfo.appTokenId = appTokenId_;
 
     config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
@@ -646,11 +650,11 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_RECORD;
 
-    config.capturerInfo = capturerInfo_;
     if (capturerInfo_.capturerFlags != 0) {
         AUDIO_WARNING_LOG("ConstructConfig find Capturer flag invalid:%{public}d", capturerInfo_.capturerFlags);
         capturerInfo_.capturerFlags = 0;
     }
+    config.capturerInfo = capturerInfo_;
 
     config.rendererInfo = {};
 
@@ -770,9 +774,28 @@ State CapturerInClientInner::GetState()
 
 bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
-    // in plan
-    return false;
+    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
+    CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
+    int64_t currentReadPos = totalBytesRead_ / sizePerFrameInByte_;
+    timestamp.framePosition = currentReadPos;
+
+    uint64_t writePos = 0;
+    int64_t handleTime = 0;
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
+    clientBuffer_->GetHandleInfo(writePos, handleTime);
+    if (writePos == 0 || handleTime == 0) {
+        AUDIO_WARNING_LOG("GetHandleInfo may failed");
+    }
+
+    int64_t deltaPos = writePos >= currentReadPos ? writePos - currentReadPos : 0;
+    int64_t tempLatency = 25000000; // 25000000 -> 25 ms
+    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
+
+    handleTime = handleTime + deltaTime + tempLatency;
+    timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
+    timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
+
+    return true;
 }
 
 int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
@@ -1318,17 +1341,18 @@ bool CapturerInClientInner::StopAudioStream()
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is already released");
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, false, "Capturer stream is already released");
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is null");
     ipcStream_->Release();
     // lock_guard<mutex> lock(statusMutex_) // no lock, call release in any case, include blocked case.
     {
         std::lock_guard<std::mutex> runnerlock(runnerMutex_);
-        if (releaseRunner) {
+        if (releaseRunner && callbackHandler_ != nullptr) {
             AUDIO_INFO_LOG("runner remove");
             callbackHandler_->ReleaseEventRunner();
             runnerReleased_ = true;
+            callbackHandler_ = nullptr;
         }
     }
 

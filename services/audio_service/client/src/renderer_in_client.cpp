@@ -42,6 +42,7 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "volume_ramp.h"
+#include "volume_tools.h"
 #include "callback_handler.h"
 #include "audio_speed.h"
 
@@ -53,9 +54,12 @@ const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 130; //ms
+const float AUDIO_VOLOMUE_EPSILON = 0.0001;
+const float AUDIO_MAX_VOLUME = 1.0f;
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
+static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 1;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
@@ -70,7 +74,7 @@ public:
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 
     // IAudioStream
-    void SetClientID(int32_t clientPid, int32_t clientUid) override;
+    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
 
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
@@ -215,6 +219,7 @@ private:
     uint32_t sessionId_;
     int32_t clientPid_ = -1;
     int32_t clientUid_ = -1;
+    uint32_t appTokenId_ = 0;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
@@ -256,6 +261,7 @@ private:
     std::condition_variable cbThreadCv_;
     std::shared_ptr<AudioRendererWriteCallback> writeCb_ = nullptr;
     std::mutex cbBufferMutex_;
+    std::condition_variable cbBufferCV_;
     std::unique_ptr<uint8_t[]> cbBuffer_ {nullptr};
     size_t cbBufferSize_ = 0;
     SafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
@@ -275,6 +281,7 @@ private:
     std::condition_variable writeDataCV_;
 
     float clientVolume_ = 1.0;
+    float clientOldVolume_ = 1.0;
 
     uint64_t clientWrittenBytes_ = 0;
     uint32_t underrunCount_ = 0;
@@ -354,6 +361,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 RendererInClientInner::~RendererInClientInner()
 {
     AUDIO_INFO_LOG("~RendererInClientInner()");
+    ReleaseAudioStream(true);
 }
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -380,11 +388,12 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     return SUCCESS;
 }
 
-void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid)
+void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
 {
     AUDIO_INFO_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
+    appTokenId_ = appTokenId;
 }
 
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -574,9 +583,10 @@ int32_t RendererInClientInner::DeinitIpcStream()
 const AudioProcessConfig RendererInClientInner::ConstructConfig()
 {
     AudioProcessConfig config = {};
-    // in plan: get token id
+
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
+    config.appInfo.appTokenId = appTokenId_;
 
     config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
@@ -585,11 +595,11 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
-    config.rendererInfo = rendererInfo_;
     if (rendererInfo_.rendererFlags != 0) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }
+    config.rendererInfo = rendererInfo_;
 
     config.capturerInfo = {};
 
@@ -710,9 +720,28 @@ State RendererInClientInner::GetState()
 
 bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, ERR_OPERATION_FAILED, "Params is not set");
-    // in plan:
-    return false;
+    CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
+    CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
+    int64_t currentWritePos = totalBytesWritten_ / sizePerFrameInByte_;
+    timestamp.framePosition = currentWritePos;
+
+    uint64_t readPos = 0;
+    int64_t handleTime = 0;
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
+    clientBuffer_->GetHandleInfo(readPos, handleTime);
+    if (readPos == 0 || handleTime == 0) {
+        AUDIO_WARNING_LOG("GetHandleInfo may failed");
+    }
+
+    int64_t deltaPos = currentWritePos >= readPos ?  currentWritePos - readPos : 0;
+    int64_t tempLatency = 45000000; // 45000000 -> 45 ms
+    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
+
+    handleTime = handleTime + deltaTime + tempLatency;
+    timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
+    timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
+
+    return true;
 }
 
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
@@ -760,7 +789,11 @@ int32_t RendererInClientInner::SetVolume(float volume)
         AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
     }
-    clientVolume_ = volume; // in plan: using volumetools in write or enqueue
+    if (volumeRamp_.IsActive()) {
+        volumeRamp_.Terminate();
+    }
+    clientOldVolume_ = clientVolume_;
+    clientVolume_ = volume;
     return SUCCESS;
 }
 
@@ -772,6 +805,10 @@ float RendererInClientInner::GetVolume()
 
 int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
+    if (rendererRate_ == renderRate) {
+        AUDIO_INFO_LOG("Set same rate");
+        return SUCCESS;
+    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     rendererRate_ = renderRate;
     return ipcStream_->SetRate(renderRate);
@@ -980,7 +1017,15 @@ void RendererInClientInner::WriteCallbackFunc()
         lockCb.unlock();
         traceCb.End();
 
-        std::lock_guard<std::mutex> lockBuffer(cbBufferMutex_);
+        std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
+        cbBufferCV_.wait_for(lockBuffer, std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS),
+            [this] {
+            return cbBufferQueue_.IsEmpty() == false; // will be false when got notified.
+        });
+        if (cbBufferQueue_.IsEmpty()) {
+            AUDIO_WARNING_LOG("cbBufferQueue_ is empty");
+            continue;
+        }
         // If client didn't call Enqueue in OnWriteData, pop will block here.
         BufferDesc temp = cbBufferQueue_.Pop();
         if (temp.buffer == nullptr) {
@@ -1141,7 +1186,7 @@ int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 
 int64_t RendererInClientInner::GetFramesWritten()
 {
-    return totalBytesWritten_;
+    return totalBytesWritten_ / sizePerFrameInByte_;
 }
 
 int64_t RendererInClientInner::GetFramesRead()
@@ -1267,6 +1312,10 @@ bool RendererInClientInner::StopAudioStream()
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     DrainAudioStream();
     std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if (state_ == STOPPED) {
+        AUDIO_INFO_LOG("Renderer in client is already stopped");
+        return true;
+    }
     if ((state_ != RUNNING) && (state_ != PAUSED)) {
         AUDIO_ERR_LOG("Stop failed. Illegal state:%{public}u", state_.load());
         return false;
@@ -1310,17 +1359,26 @@ bool RendererInClientInner::StopAudioStream()
 
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is already released");
+    if (state_ == RELEASED) {
+        AUDIO_WARNING_LOG("Already released, do nothing");
+        return true;
+    }
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is null");
-    ipcStream_->Release();
-    // lock_guard<mutex> lock(statusMutex_) // no lock, call release in any case, include blocked case.
+    if (ipcStream_ != nullptr) {
+        ipcStream_->Release();
+        ipcStream_ = nullptr;
+    } else {
+        AUDIO_WARNING_LOG("release while ipcStream is null");
+    }
+
+    // no lock, call release in any case, include blocked case.
     {
         std::lock_guard<std::mutex> runnerlock(runnerMutex_);
-        if (releaseRunner) {
+        if (releaseRunner && callbackHandler_ != nullptr) {
             AUDIO_INFO_LOG("runner remove");
             callbackHandler_->ReleaseEventRunner();
             runnerReleased_ = true;
+            callbackHandler_ = nullptr;
         }
     }
 
@@ -1458,8 +1516,6 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
-    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE, "Not support mode");
-
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
@@ -1529,6 +1585,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 
 int32_t RendererInClientInner::WriteCacheData()
 {
+    Trace traceCache("RendererInClientInner::WriteCacheData");
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
     if (sizeInFrame * sizePerFrameInByte_ < clientSpanSizeInByte_) {
@@ -1546,6 +1603,23 @@ int32_t RendererInClientInner::WriteCacheData()
     AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
         "%{public}u", curWriteIndex, spanSizeInFrame_);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
+
+    // volume process in client
+    if (volumeRamp_.IsActive()) {
+        // do not call SetVolume here.
+        clientOldVolume_ = clientVolume_;
+        clientVolume_ = volumeRamp_.GetRampVolume();
+    }
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, clientVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
+        AudioChannel channel = clientConfig_.streamInfo.channels;
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, clientVolume_, clientVolume_);
+        int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
+        if (volRet != SUCCESS) {
+            AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
+        }
+    }
+
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(desc.bufLength);
     return SUCCESS;
@@ -1792,8 +1866,16 @@ int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 
 int32_t RendererInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
 {
-    // in plan
-    return ERROR;
+    CHECK_AND_RETURN_RET_LOG((state_ != RELEASED) && (state_ != INVALID) && (state_ != STOPPED),
+        ERR_ILLEGAL_STATE, "Illegal state %{public}d", state_.load());
+
+    if (FLOAT_COMPARE_EQ(clientVolume_, volume)) {
+        AUDIO_INFO_LOG("set same volume %{publid}f", volume);
+        return SUCCESS;
+    }
+
+    volumeRamp_.SetVolumeRampConfig(volume, clientVolume_, duration);
+    return SUCCESS;
 }
 
 void RendererInClientInner::SetStreamTrackerState(bool trackerRegisteredState)

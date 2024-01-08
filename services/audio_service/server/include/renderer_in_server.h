@@ -71,7 +71,6 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
-    // LYH waiting for review
     std::weak_ptr<IStreamListener> streamListener_;
     AudioProcessConfig processConfig_;
     size_t totalSizeInFrame_ = 0;

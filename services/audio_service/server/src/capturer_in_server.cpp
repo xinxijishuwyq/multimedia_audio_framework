@@ -17,6 +17,7 @@
 #include <cinttypes>
 #include "securec.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 #include "audio_log.h"
 #include "i_stream_manager.h"
 
@@ -203,6 +204,7 @@ void CapturerInServer::ReadData(size_t length)
         AUDIO_DEBUG_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
             currentWriteFrame, nextWriteFrame);
         audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
+        audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
     }
     stream_->EnqueueBuffer(srcBuffer);
     stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);

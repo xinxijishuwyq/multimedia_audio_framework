@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-    
+
 static std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap = {
     {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
     {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1_BACK},
@@ -99,10 +99,11 @@ private:
     const std::string GetStreamName(AudioStreamType audioType);
     pa_sample_spec ConvertToPAAudioParams(AudioProcessConfig processConfig);
 
+    std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;
     pa_mainloop_api *api_;
     pa_context *context_;
-    std::mutex listLock_;
+    std::mutex streamMapMutex_;
     std::map<int32_t, std::shared_ptr<IRendererStream>> rendererStreamMap_;
     std::map<int32_t, std::shared_ptr<ICapturerStream>> capturerStreamMap_;
     bool isContextConnected_;

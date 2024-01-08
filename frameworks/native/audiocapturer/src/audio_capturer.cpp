@@ -202,7 +202,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     audioStream_->SetCapturerInfo(capturerInfo_);
 
-    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid);
+    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId);
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         audioStream_->SetInnerCapturerState(true);

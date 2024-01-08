@@ -61,7 +61,6 @@ void CallbackHandlerInner::SendCallbackEvent(uint32_t eventCode, int64_t data)
 void CallbackHandlerInner::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventCode = event->GetInnerEventId();
-    // LYH in plan: uint64_t or int64_t? See OnHandle(uint32_t, int64_t)
     uint64_t data = event->GetParam();
     std::shared_ptr<IHandler> handler = iHandler_.lock();
     if (handler == nullptr) {
