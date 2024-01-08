@@ -42,11 +42,11 @@ const char *g_deviceClassFile = "file_io";
 const char *g_deviceClassRemote = "remote";
 
 int32_t LoadSourceAdapter(const char *device, const char *deviceNetworkId, const int32_t sourceType,
-        const char *sourceName, struct CapturerSourceAdapter **sourceAdapter)
+    const char *sourceName, struct CapturerSourceAdapter **sourceAdapter)
 {
     AUDIO_INFO_LOG("sourceType: %{public}d  device: %{public}s", sourceType, device);
     CHECK_AND_RETURN_RET_LOG((device != NULL) && (deviceNetworkId != NULL) && (sourceAdapter != NULL),
-    ERROR, "Invalid parameter");
+        ERROR, "Invalid parameter");
 
     struct CapturerSourceAdapter *adapter = (struct CapturerSourceAdapter *)calloc(1, sizeof(*adapter));
     CHECK_AND_RETURN_RET_LOG((adapter != NULL), ERROR, "alloc sink adapter failed");

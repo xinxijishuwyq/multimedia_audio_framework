@@ -329,7 +329,8 @@ int AudioManagerStub::HandleGetCapturePresentationPosition(MessageParcel &data, 
 {
     const std::string deviceClass = data.ReadString();
     uint64_t frames;
-    int64_t timeSec, timeNanoSec;
+    int64_t timeSec;
+    int64_t timeNanoSec;
     int32_t result = GetCapturePresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
     reply.WriteInt32(result);
     reply.WriteUint64(frames);
@@ -343,7 +344,8 @@ int AudioManagerStub::HandleGetRenderPresentationPosition(MessageParcel &data, M
 {
     const std::string deviceClass = data.ReadString();
     uint64_t frames;
-    int64_t timeSec, timeNanoSec;
+    int64_t timeSec;
+    int64_t timeNanoSec;
     int32_t result = GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec);
     reply.WriteInt32(result);
     reply.WriteUint64(frames);
@@ -371,7 +373,8 @@ int AudioManagerStub::HandleOffloadDrain(MessageParcel &data, MessageParcel &rep
 int AudioManagerStub::HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply)
 {
     uint64_t frames;
-    int64_t timeSec, timeNanoSec;
+    int64_t timeSec;
+    int64_t timeNanoSec;
     int32_t result = OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
     reply.WriteInt32(result);
     reply.WriteUint64(frames);

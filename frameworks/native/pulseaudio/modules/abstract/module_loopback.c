@@ -696,9 +696,9 @@ static void SourceOutputAttachCb(pa_source_output *o)
     pa_assert_se(u = o->userdata);
 
     u->rtpoll_item_write = pa_rtpoll_item_new_asyncmsgq_write(
-            o->source->thread_info.rtpoll,
-            PA_RTPOLL_LATE,
-            u->asyncmsgq);
+        o->source->thread_info.rtpoll,
+        PA_RTPOLL_LATE,
+        u->asyncmsgq);
 }
 
 /* Called from input thread context */
@@ -1014,9 +1014,9 @@ static void SinkInputAttachCb(pa_sink_input *i)
     pa_assert_se(u = i->userdata);
 
     u->rtpoll_item_read = pa_rtpoll_item_new_asyncmsgq_read(
-            i->sink->thread_info.rtpoll,
-            PA_RTPOLL_LATE,
-            u->asyncmsgq);
+        i->sink->thread_info.rtpoll,
+        PA_RTPOLL_LATE,
+        u->asyncmsgq);
 
     pa_memblockq_set_prebuf(u->memblockq, pa_sink_input_get_max_request(i) * MULTIPLE_FACTOR);
     pa_memblockq_set_maxrewind(u->memblockq, pa_sink_input_get_max_rewind(i));
@@ -1361,15 +1361,15 @@ static int ConfigSinkInput(struct userdata *u, const pa_source *source)
 
     pa_sink_input_get_silence(u->sink_input, &silence);
     u->memblockq = pa_memblockq_new(
-            "module-loopback memblockq",
-            0,                      /* idx */
-            MEMBLOCKQ_MAXLENGTH,    /* maxlength */
-            MEMBLOCKQ_MAXLENGTH,    /* tlength */
-            &(u->ss),                    /* sample_spec */
-            0,                      /* prebuf */
-            0,                      /* minreq */
-            0,                      /* maxrewind */
-            &silence);              /* silence frame */
+        "module-loopback memblockq",
+        0,                      /* idx */
+        MEMBLOCKQ_MAXLENGTH,    /* maxlength */
+        MEMBLOCKQ_MAXLENGTH,    /* tlength */
+        &(u->ss),                    /* sample_spec */
+        0,                      /* prebuf */
+        0,                      /* minreq */
+        0,                      /* maxrewind */
+        &silence);              /* silence frame */
     pa_memblock_unref(silence.memblock);
     /* Fill the memblockq with silence */
     pa_memblockq_seek(u->memblockq, pa_usec_to_bytes(u->latency, &u->sink_input->sample_spec), PA_SEEK_RELATIVE, true);

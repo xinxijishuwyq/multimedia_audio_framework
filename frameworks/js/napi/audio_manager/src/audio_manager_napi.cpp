@@ -1810,7 +1810,7 @@ napi_value AudioManagerNapi::SetVolume(napi_env env, napi_callback_info info)
     return result;
 }
 
-void AudioManagerNapi::AsyncSetVolume(napi_env env,void *data)
+void AudioManagerNapi::AsyncSetVolume(napi_env env, void *data)
 {
     auto context = static_cast<AudioManagerAsyncContext*>(data);
     ObjectRefMap objectGuard(context->objectInfo);
