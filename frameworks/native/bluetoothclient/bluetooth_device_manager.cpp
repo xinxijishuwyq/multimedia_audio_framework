@@ -147,7 +147,7 @@ void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevic
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
         case BT_HEADPHONE:
-            BluetoothAudioManager::GetInstance().IsWearDetectionEnabled(device.GetDeviceAddr(), wearEnabledAbility);
+            BluetoothAudioManager::GetInstance().GetWearDetectionState(device.GetDeviceAddr(), wearEnabledAbility);
             BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
             AUDIO_INFO_LOG("wear detection on-off state: %{public}d, wear detection support state: %{public}d",
                 wearEnabledAbility, isWearSupported);
@@ -479,7 +479,7 @@ void HfpBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice 
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
         case BT_HEADPHONE:
-            BluetoothAudioManager::GetInstance().IsWearDetectionEnabled(device.GetDeviceAddr(), wearEnabledAbility);
+            BluetoothAudioManager::GetInstance().GetWearDetectionState(device.GetDeviceAddr(), wearEnabledAbility);
             BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
             AUDIO_INFO_LOG("wear detection on-off state: %{public}d, wear detection support state: %{public}d.",
                 wearEnabledAbility, isWearSupported);
