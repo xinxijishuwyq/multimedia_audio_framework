@@ -797,7 +797,11 @@ bool FastAudioStream::RestoreAudioStream()
     }
     switch (oldState) {
         case RUNNING:
-            ret = processClient_->SaveDataCallback(spkProcClientCb_);
+            if (eMode_ == AUDIO_MODE_PLAYBACK) {
+                ret = processClient_->SaveDataCallback(spkProcClientCb_);
+            } else if (eMode_ == AUDIO_MODE_RECORD) {
+                ret = processClient_->SaveDataCallback(micProcClientCb_);
+            }
             if (ret != SUCCESS) {
                 goto error;
             }
@@ -819,7 +823,6 @@ bool FastAudioStream::RestoreAudioStream()
         goto error;
     }
     return result;
-
 error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
