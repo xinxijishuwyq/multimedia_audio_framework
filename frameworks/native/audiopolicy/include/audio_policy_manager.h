@@ -320,6 +320,8 @@ public:
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID);
 
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+
 private:
     AudioPolicyManager()
     {

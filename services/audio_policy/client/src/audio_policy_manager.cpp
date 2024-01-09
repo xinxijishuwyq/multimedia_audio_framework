@@ -1372,5 +1372,17 @@ int32_t AudioPolicyManager::ReleaseAudioInterruptZone(const int32_t zoneID)
 
     return gsp->ReleaseAudioInterruptZone(zoneID);
 }
+
+int32_t AudioPolicyManager::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+{
+    AUDIO_INFO_LOG("SetCallDeviceActive deviceType: %{public}d, active: %{public}d address: %{public}s",
+        deviceType, active, address.c_str());
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetCallDeviceActive: audio policy manager proxy is NULL.");
+        return -1;
+    }
+    return gsp->SetCallDeviceActive(deviceType, active, address);
+}
 } // namespace AudioStandard
 } // namespace OHOS

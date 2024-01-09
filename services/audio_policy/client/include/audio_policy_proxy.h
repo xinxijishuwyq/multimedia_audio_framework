@@ -244,6 +244,8 @@ public:
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID) override;
 
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) override;
+    
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

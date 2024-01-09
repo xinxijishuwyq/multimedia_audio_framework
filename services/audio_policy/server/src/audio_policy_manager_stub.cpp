@@ -1041,5 +1041,17 @@ int AudioPolicyManagerStub::OnRemoteRequest(
     AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
     return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
+
+void AudioPolicyManagerStub::SetCallDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
+{
+    InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
+    bool active = data.ReadBool();
+    std::string address = data.ReadString();
+    int32_t result = SetCallDeviceActive(deviceType, active, address);
+    if (result == SUCCESS)
+        reply.WriteInt32(AUDIO_OK);
+    else
+        reply.WriteInt32(AUDIO_ERR);
+}
 } // namespace audio_policy
 } // namespace OHOS
