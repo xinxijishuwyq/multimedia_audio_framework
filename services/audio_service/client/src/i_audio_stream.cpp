@@ -16,9 +16,6 @@
 #include "i_audio_stream.h"
 #include <map>
 
-#include "access_token.h"
-#include "accesstoken_kit.h"
-#include "ipc_skeleton.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -217,12 +214,6 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
 
     int32_t ipcFlag = 0;
     GetSysPara("persist.multimedia.audiostream.ipc.renderer", ipcFlag);
-    Security::AccessToken::FullTokenID selfToken = IPCSkeleton::GetSelfTokenID();
-    auto tokenTypeFlag = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));
-    if (tokenTypeFlag == Security::AccessToken::TOKEN_NATIVE) {
-        AUDIO_WARNING_LOG("Token native, use pa_stream");
-        ipcFlag = 0;
-    }
     if (ipcFlag == IPC_FOR_ALL || (ipcFlag == IPC_FOR_NOT_MEDIA && getuid() != MEDIA_UID)) {
         AUDIO_INFO_LOG("Create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
