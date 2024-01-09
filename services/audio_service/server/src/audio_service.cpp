@@ -231,7 +231,7 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
     AudioStreamType streamType)
 {
-    if (deviceInfo.deviceRole == INPUT_DEVICE || deviceInfo.networkId == REMOTE_NETWORK_ID ||
+    if (deviceInfo.deviceRole == INPUT_DEVICE || deviceInfo.networkId != LOCAL_NETWORK_ID ||
         deviceInfo.deviceRole == OUTPUT_DEVICE) {
         // Create shared stream.
         std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId) + "_0";

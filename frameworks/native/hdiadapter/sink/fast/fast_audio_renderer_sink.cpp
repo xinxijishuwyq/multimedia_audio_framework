@@ -551,7 +551,7 @@ int32_t FastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
 
 int32_t FastAudioRendererSinkInner::CheckPositionTime()
 {
-    int32_t tryCount = 10;
+    int32_t tryCount = 50;
     uint64_t frames = 0;
     int64_t timeSec = 0;
     int64_t timeNanoSec = 0;
