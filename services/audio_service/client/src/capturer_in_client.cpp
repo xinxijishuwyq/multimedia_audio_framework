@@ -1298,6 +1298,10 @@ bool CapturerInClientInner::StopAudioStream()
     Trace trace("CapturerInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
+    if (state_ == STOPPED) {
+        AUDIO_INFO_LOG("Capturer in client is already stopped");
+        return true;
+    }
     if ((state_ != RUNNING) && (state_ != PAUSED)) {
         AUDIO_ERR_LOG("Stop failed. Illegal state:%{public}u", state_.load());
         return false;
@@ -1341,11 +1345,19 @@ bool CapturerInClientInner::StopAudioStream()
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, false, "Capturer stream is already released");
+    if (state_ == RELEASED) {
+        AUDIO_WARNING_LOG("Already release, do nothing");
+        return true;
+    }
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is null");
-    ipcStream_->Release();
-    // lock_guard<mutex> lock(statusMutex_) // no lock, call release in any case, include blocked case.
+    if (ipcStream_ != nullptr) {
+        ipcStream_->Release();
+        ipcStream_ = nullptr;
+    } else {
+        AUDIO_WARNING_LOG("Release while ipcStream is null");
+    }
+
+    // no lock, call release in any case, include blocked case.
     {
         std::lock_guard<std::mutex> runnerlock(runnerMutex_);
         if (releaseRunner && callbackHandler_ != nullptr) {
