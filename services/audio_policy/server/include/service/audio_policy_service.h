@@ -531,6 +531,8 @@ private:
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         bool isStreamStatusUpdated = false,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKOWN);
+    
+    void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, bool &isStreamStatusUpdated);
