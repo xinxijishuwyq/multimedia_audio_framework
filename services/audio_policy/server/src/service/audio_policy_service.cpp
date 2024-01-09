@@ -1712,6 +1712,20 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     }
 }
 
+void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
+{
+    AUDIO_INFO_LOG("Fetch output device for %{public}zu stream", rendererChangeInfos.size());
+    for (auto &rendererChangeInfo : rendererChangeInfos) {
+        unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(
+            rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID);
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos, false);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", desc->macAddress_.c_str());
+            SelectNewOutputDevice(rendererChangeInfo, desc, false);
+        }
+    }
+}
+
 void AudioPolicyService::OffloadStartPlayingIfOffloadMode(uint64_t sessionId)
 {
 #ifdef BLUETOOTH_ENABLE
@@ -5290,7 +5304,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-    FetchOutputDevice(rendererChangeInfos, false);
+    FetchStreamForA2dpOffload(rendererChangeInfos);
 
     preA2dpOffloadFlag_ = a2dpOffloadFlag_;
     return HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -5324,7 +5338,7 @@ int32_t AudioPolicyService::HandleA2dpDeviceInOffload()
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-    FetchOutputDevice(rendererChangeInfos, false);
+    FetchStreamForA2dpOffload(rendererChangeInfos);
 
     std::string activePort = BLUETOOTH_SPEAKER;
     audioPolicyManager_.SuspendAudioDevice(activePort, true);
