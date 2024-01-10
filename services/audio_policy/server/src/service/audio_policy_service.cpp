@@ -1811,7 +1811,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         }
         // move sourceoutput to target device
         SelectNewInputDevice(capturerChangeInfo, desc, isStreamStatusUpdated);
-        AddAudioCapturerMicrophoneDescriptor(captureChangeInfo->sessionId, desc->deviceType_);
+        AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId, desc->deviceType_);
     }
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
