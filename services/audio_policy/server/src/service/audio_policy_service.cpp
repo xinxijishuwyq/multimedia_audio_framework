@@ -3846,6 +3846,9 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfoForRecord(AudioStreamChange
 int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
+    if (mode == AUDIO_MODE_RECORD) {
+        AddAudioCapturerMicrophoneDescriptor(streamChangeInfo.audioCapturerChangeInfo.sessionId, DEVICE_TYPE_NONE);
+    }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
 
@@ -4893,6 +4896,10 @@ void AudioPolicyService::RemoveMicrophoneDescriptor(sptr<AudioDeviceDescriptor> 
 void AudioPolicyService::AddAudioCapturerMicrophoneDescriptor(int32_t sessionId, DeviceType devType)
 {
     std::lock_guard<std::mutex> lock(microphonesMutex_);
+    if (devType == DEVICE_TYPE_NONE) {
+        audioCaptureMicrophoneDescriptor_[sessionId] = new MicrophoneDescriptor(0, DEVICE_TYPE_INVALID);
+        return;
+    }
     auto isPresent = [&devType] (const sptr<MicrophoneDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid microphone descriptor");
         return (devType == desc->deviceType_);
