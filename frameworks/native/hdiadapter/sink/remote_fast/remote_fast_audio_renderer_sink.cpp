@@ -249,11 +249,6 @@ int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &r
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    if (param.channelCount == MONO) {
-        param.channelLayout = CH_LAYOUT_MONO;
-    } else if (param.channelCount == STEREO) {
-        param.channelLayout = CH_LAYOUT_STEREO;
-    }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PCM_16_BIT * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);

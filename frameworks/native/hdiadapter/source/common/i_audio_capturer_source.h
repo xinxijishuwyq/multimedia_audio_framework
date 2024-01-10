@@ -36,6 +36,7 @@ typedef struct {
     const char *deviceNetworkId;
     int32_t deviceType;
     int32_t sourceType;
+    uint64_t channelLayout;
 } IAudioSourceAttr;
 
 class IAudioSourceCallback {
