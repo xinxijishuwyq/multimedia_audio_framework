@@ -244,7 +244,7 @@ bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::s
     std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
 
     if (!addressToSpatialDeviceStateMap_.count(address)) {
-        AUDIO_INFO_LOG("IsSpatializationSupportedForDevice result: specified address is not in memory");
+        AUDIO_INFO_LOG("specified address for spatialization is not in memory");
         return false;
     }
     return addressToSpatialDeviceStateMap_[address].isSpatializationSupported;
@@ -260,7 +260,7 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::str
     std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
 
     if (!addressToSpatialDeviceStateMap_.count(address)) {
-        AUDIO_INFO_LOG("IsHeadTrackingSupportedForDevice result: specified address is not in memory");
+        AUDIO_INFO_LOG("specified address for head tracking is not in memory");
         return false;
     }
     return addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported;
@@ -274,7 +274,7 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
         if (addressToSpatialDeviceStateMap_.count(audioSpatialDeviceState.address) > 0 &&
             IsAudioSpatialDeviceStateEqual(addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address],
             audioSpatialDeviceState)) {
-            AUDIO_INFO_LOG("no need to update spatial device state");
+            AUDIO_INFO_LOG("no need to UpdateSpatialDeviceState");
             return SPATIALIZATION_SERVICE_OK;
         }
         addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address] = audioSpatialDeviceState;
@@ -334,7 +334,7 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
     bool headTrackingEnabled = headTrackingEnabledFlag_ && IsHeadTrackingSupported() &&
         IsHeadTrackingSupportedForDevice(currentDeviceAddress_) && spatializationEnabled;
     if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled)) {
-        AUDIO_INFO_LOG("no need to UpdateSpatializationStateReal");
+        AUDIO_INFO_LOG("no need to update real spatialization state");
         return SUCCESS;
     }
     spatializationEnabledReal_ = spatializationEnabled;
