@@ -589,8 +589,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
 
     if (!started_) {
-        int32_t ret;
-        ret = audioRender_->Start(audioRender_);
+        int32_t ret = audioRender_->Start(audioRender_);
         if (ret) {
             AUDIO_ERR_LOG("Mch Start failed!");
             return ERR_NOT_STARTED;
@@ -891,8 +890,7 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
     }
 
     if (started_) {
-        int32_t ret;
-        ret = audioRender_->Stop(audioRender_);
+        int32_t ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
             return SUCCESS;
@@ -918,8 +916,7 @@ int32_t MultiChannelRendererSinkInner::Pause(void)
     }
 
     if (!paused_) {
-        int32_t ret;
-        ret = audioRender_->Pause(audioRender_);
+        int32_t ret = audioRender_->Pause(audioRender_);
         if (!ret) {
             paused_ = true;
             return SUCCESS;
@@ -934,8 +931,6 @@ int32_t MultiChannelRendererSinkInner::Pause(void)
 
 int32_t MultiChannelRendererSinkInner::Resume(void)
 {
-    int32_t ret;
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
@@ -947,7 +942,7 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
     }
 
     if (paused_) {
-        ret = audioRender_->Resume(audioRender_);
+        int32_t = ret = audioRender_->Resume(audioRender_);
         if (!ret) {
             paused_ = false;
             return SUCCESS;
@@ -963,8 +958,7 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
 int32_t MultiChannelRendererSinkInner::Reset(void)
 {
     if (started_ && audioRender_ != nullptr) {
-        int32_t ret;
-        ret = audioRender_->Flush(audioRender_);
+        int32_t ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
@@ -979,8 +973,7 @@ int32_t MultiChannelRendererSinkInner::Reset(void)
 int32_t MultiChannelRendererSinkInner::Flush(void)
 {
     if (started_ && audioRender_ != nullptr) {
-        int32_t ret;
-        ret = audioRender_->Flush(audioRender_);
+        int32_t ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
