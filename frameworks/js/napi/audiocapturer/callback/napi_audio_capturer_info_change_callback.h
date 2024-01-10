@@ -28,8 +28,8 @@ class NapiAudioCapturerInfoChangeCallback : public AudioCapturerInfoChangeCallba
 public:
     explicit NapiAudioCapturerInfoChangeCallback(napi_env env);
     virtual ~NapiAudioCapturerInfoChangeCallback();
-    void SaveCallbackReference(napi_value callback);
-    void OnStateChange(const AudioCapturerChangeInfo &deviceInfo) override;
+    void SaveCallbackReference(napi_value args);
+    void OnStateChange(const AudioCapturerChangeInfo &capturerChangeInfo) override;
     bool ContainSameJsCallback(napi_value args);
 
 private:
@@ -39,7 +39,7 @@ private:
         AudioCapturerChangeInfo capturerChangeInfo_;
     };
 
-    static void WorkCallbackCompleted(uv_work_t* work, int aStatus);
+    static void WorkCallbackCompleted(uv_work_t* work, int status);
     void OnJsCallbackCapturerChangeInfo(napi_ref method, const AudioCapturerChangeInfo &capturerChangeInfo);
 
     std::mutex mutex_;

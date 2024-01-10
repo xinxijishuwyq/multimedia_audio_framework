@@ -29,7 +29,7 @@ class NapiAudioManagerMicStateChangeCallback : public AudioManagerMicStateChange
 public:
     explicit NapiAudioManagerMicStateChangeCallback(napi_env env);
     virtual ~NapiAudioManagerMicStateChangeCallback();
-    void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
 
 private:

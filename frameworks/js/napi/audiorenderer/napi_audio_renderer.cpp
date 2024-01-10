@@ -1646,7 +1646,7 @@ void NapiAudioRenderer::UnregisterRendererCallback(napi_env env,
     cb->RemoveCallbackReference(cbName);
 }
 
-void NapiAudioRenderer::UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value *argv,
+void NapiAudioRenderer::UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, const napi_value *argv,
     NapiAudioRenderer *napiRenderer)
 {
     napi_value callback = nullptr;
@@ -1710,7 +1710,7 @@ void NapiAudioRenderer::RegisterRendererOutputDeviceChangeWithInfoCallback(napi_
 }
 
 void NapiAudioRenderer::UnregisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, size_t argc,
-    napi_value *argv, NapiAudioRenderer *napiRenderer)
+    const napi_value *argv, NapiAudioRenderer *napiRenderer)
 {
     napi_value callback = nullptr;
 

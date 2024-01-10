@@ -26,7 +26,7 @@ class NapiRendererPeriodPositionCallback : public RendererPeriodPositionCallback
 public:
     explicit NapiRendererPeriodPositionCallback(napi_env env);
     virtual ~NapiRendererPeriodPositionCallback();
-    void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnPeriodReached(const int64_t &frameNumber) override;
 
 private:

@@ -100,7 +100,7 @@ private:
         size_t &argc, napi_value *args);
 
     AudioSystemManager *audioMngr_;
-    AudioRoutingManager *audioRoutingMngr_;
+    AudioRoutingManager *audioRoutingMngr_ = nullptr;
     std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerMicStateChangeCallback> micStateChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> preferredOutputDeviceCallbackNapi_ = nullptr;

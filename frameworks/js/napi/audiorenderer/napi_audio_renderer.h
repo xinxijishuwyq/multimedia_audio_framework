@@ -136,15 +136,15 @@ private:
         const std::string &cbName, NapiAudioRenderer *napiRenderer);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *argv,
         const std::string &cbName);
-    static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value *args, NapiAudioRenderer *napiRenderer);
+    static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value *argv, NapiAudioRenderer *napiRenderer);
     static void UnregisterRendererCallback(napi_env env,
         const std::string &cbName, NapiAudioRenderer *napiRenderer);
-    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, napi_value *argv,
+    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, const napi_value *argv,
         NapiAudioRenderer *napiRenderer);
 
-    static void RegisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, napi_value *args,
+    static void RegisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, napi_value *argv,
         NapiAudioRenderer *napiRenderer);
-    static void UnregisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, size_t argc, napi_value *argv,
+    static void UnregisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, size_t argc, const napi_value *argv,
         NapiAudioRenderer *napiRenderer);
     /* common interface in AudioRendererNapi */
     static bool CheckContextStatus(std::shared_ptr<AudioRendererAsyncContext> context);
