@@ -2709,6 +2709,7 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
                 if (RenderWrite(u->multiChannel.sinkAdapter, &chunk) < 0) {
+                    AUDIO_DEBUG_LOG("ThreadFuncWriteHDIMultiChannel RenderWrite");
                     u->bytes_dropped += chunk.length;
                 }
                 if (pa_atomic_load(&u->multiChannel.dflag) == 1) {

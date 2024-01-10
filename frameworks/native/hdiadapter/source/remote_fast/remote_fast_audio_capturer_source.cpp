@@ -259,6 +259,8 @@ int32_t RemoteFastAudioCapturerSourceInner::CreateCapture(const struct AudioPort
 {
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateCapture: audio adapter is null.");
     struct AudioSampleAttributes param;
+    InitAttrs(param);
+
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
     deviceDesc.pins = PIN_IN_MIC;

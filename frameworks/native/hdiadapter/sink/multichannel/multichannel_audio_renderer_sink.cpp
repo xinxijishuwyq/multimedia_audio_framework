@@ -367,7 +367,7 @@ void MultiChannelRendererSinkInner::DeInit()
 void InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
-    attrs.channelCount = CHANNEL_3;
+    attrs.channelCount = CHANNEL_6;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
     attrs.streamId = MULTICHANNEL_OUTPUT_STREAM_ID;
