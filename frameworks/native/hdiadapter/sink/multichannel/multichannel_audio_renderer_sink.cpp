@@ -942,7 +942,7 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
     }
 
     if (paused_) {
-        int32_t = ret = audioRender_->Resume(audioRender_);
+        int32_t ret = audioRender_->Resume(audioRender_);
         if (!ret) {
             paused_ = false;
             return SUCCESS;
