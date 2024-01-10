@@ -247,7 +247,6 @@ bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::s
         AUDIO_INFO_LOG("IsSpatializationSupportedForDevice result: specified address is not in memory");
         return false;
     }
-
     return addressToSpatialDeviceStateMap_[address].isSpatializationSupported;
 }
 
@@ -264,7 +263,6 @@ bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::str
         AUDIO_INFO_LOG("IsHeadTrackingSupportedForDevice result: specified address is not in memory");
         return false;
     }
-
     return addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported;
 }
 
@@ -276,7 +274,7 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
         if (addressToSpatialDeviceStateMap_.count(audioSpatialDeviceState.address) > 0 &&
             IsAudioSpatialDeviceStateEqual(addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address],
             audioSpatialDeviceState)) {
-            AUDIO_INFO_LOG("no need to UpdateSpatialDeviceState");
+            AUDIO_INFO_LOG("no need to update spatial device state");
             return SPATIALIZATION_SERVICE_OK;
         }
         addressToSpatialDeviceStateMap_[audioSpatialDeviceState.address] = audioSpatialDeviceState;
