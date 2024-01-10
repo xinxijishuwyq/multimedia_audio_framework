@@ -984,7 +984,7 @@ void CapturerPolicyServiceDiedCallback::RestoreTheadLoop()
     int32_t ret = -1;
     while (!result && tryCounter-- > 0) {
         usleep(sleepTime);
-        if (capturer_== nullptr && capturer_->audioStream_== nullptr &&
+        if (capturer_== nullptr || capturer_->audioStream_== nullptr ||
             capturer_->abortRestore_) {
             AUDIO_INFO_LOG("CapturerPolicyServiceDiedCallback RestoreTheadLoop abort restore");
             break;

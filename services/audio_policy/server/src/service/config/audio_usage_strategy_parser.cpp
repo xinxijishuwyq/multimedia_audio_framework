@@ -69,13 +69,12 @@ bool AudioUsageStrategyParser::ParseInternal(xmlNode *node)
 void AudioUsageStrategyParser::ParserStreamUsageList(xmlNode *node)
 {
     xmlNode *strategyNode = node;
-    std::string streamUsageName = "";
     while (strategyNode != nullptr) {
         if (strategyNode->type == XML_ELEMENT_NODE &&
             (!xmlStrcmp(strategyNode->name, reinterpret_cast<const xmlChar*>("strategy")))) {
             char *strategyName = reinterpret_cast<char*>(xmlGetProp(strategyNode,
                 reinterpret_cast<xmlChar*>(const_cast<char*>("name"))));
-            
+
             char *streamUsages = reinterpret_cast<char*>(xmlGetProp(strategyNode,
                 reinterpret_cast<xmlChar*>(const_cast<char*>("streamUsage"))));
             ParserStreamUsageInfo(strategyName, streamUsages);
@@ -89,7 +88,6 @@ void AudioUsageStrategyParser::ParserStreamUsageList(xmlNode *node)
 void AudioUsageStrategyParser::ParserSourceTypeList(xmlNode *node)
 {
     xmlNode *strategyNode = node;
-    std::string streamUsageName = "";
     while (strategyNode != nullptr) {
         if (strategyNode->type == XML_ELEMENT_NODE &&
             (!xmlStrcmp(strategyNode->name, reinterpret_cast<const xmlChar*>("strategy")))) {

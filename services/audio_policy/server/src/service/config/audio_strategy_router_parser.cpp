@@ -127,7 +127,7 @@ std::vector<std::string> AudioStrategyRouterParser::split(const std::string &lin
 void AudioStrategyRouterParser::AddRouters(std::vector<std::unique_ptr<RouterBase>> &routers, string &routeName)
 {
     vector<string> buf = split(routeName, ",");
-    for (auto &name : buf) {
+    for (const auto &name : buf) {
         if (name == "UserSelectRouter") {
             routers.push_back(make_unique<UserSelectRouter>());
         } else if (name == "PrivacyPriorityRouter") {

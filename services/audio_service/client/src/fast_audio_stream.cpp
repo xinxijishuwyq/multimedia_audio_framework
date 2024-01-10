@@ -808,13 +808,11 @@ bool FastAudioStream::RestoreAudioStream()
             result = StartAudioStream();
             break;
         case PAUSED:
-            result = StartAudioStream();
-            result = PauseAudioStream();
+            result = StartAudioStream() && PauseAudioStream();
             break;
         case STOPPED:
         case STOPPING:
-            result = StartAudioStream();
-            result = StopAudioStream();
+            result = StartAudioStream() && StopAudioStream();
             break;
         default:
             break;
@@ -860,9 +858,7 @@ void FastPolicyServiceDiedCallbackImpl::SaveRendererOrCapturerPolicyServiceDiedC
 void FastPolicyServiceDiedCallbackImpl::RemoveRendererOrCapturerPolicyServiceDiedCB()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (policyServiceDiedCallback_ != nullptr) {
-        policyServiceDiedCallback_ = nullptr;
-    }
+    policyServiceDiedCallback_ = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS
