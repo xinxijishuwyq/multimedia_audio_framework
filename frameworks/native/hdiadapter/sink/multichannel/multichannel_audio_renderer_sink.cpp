@@ -162,12 +162,12 @@ MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
-    AUDIO_INFO_LOG("AudioRendererSinkInner");
+    AUDIO_INFO_LOG("MultiChannelRendererSinkInner");
 }
 
 MultiChannelRendererSinkInner::~MultiChannelRendererSinkInner()
 {
-    AUDIO_INFO_LOG("~AudioRendererSinkInner");
+    AUDIO_INFO_LOG("~MultiChannelRendererSinkInner");
 }
 
 MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(std::string halName)
