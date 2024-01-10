@@ -378,10 +378,9 @@ public:
 
     void OffloadStartPlayingIfOffloadMode(uint64_t sessionId);
 
-    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsId, const std::vector<int32_t> &streamTypes,
-        bool isNewDeviceActive = false);
+    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
 
-    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsId);
+    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
 #ifdef BLUETOOTH_ENABLE
     void UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
         DeviceType deviceType = DEVICE_TYPE_NONE);
@@ -550,11 +549,8 @@ private:
         std::vector<sptr<AudioDeviceDescriptor>> &desc);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
-
-    void GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, std::vector<int32_t> &streamTypes,
-        bool doStop = false);
-
-    void GetAllRunningStreamSessionAndType(std::vector<int32_t> &allSessions, bool doStop = false);
+    
+    void GetAllRunningStreamSession(std::vector<int32_t> &allSessions, bool doStop = false);
 
     void WriteDeviceChangedSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
