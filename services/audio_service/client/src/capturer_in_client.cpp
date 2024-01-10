@@ -1381,6 +1381,15 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
     }
     paramsIsSet_ = false;
     state_ = RELEASED;
+
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        AUDIO_INFO_LOG("Notify client the state is released");
+        streamCb->OnStateChange(RELEASED, CMD_FROM_CLIENT);
+    }
+    lock.unlock();
+
     UpdateTracker("RELEASED");
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     return true;

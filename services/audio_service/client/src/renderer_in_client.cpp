@@ -1416,6 +1416,15 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
     }
     paramsIsSet_ = false;
     state_ = RELEASED;
+
+    std::unique_lock<std::mutex> lock(streamCbMutex_);
+    std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
+    if (streamCb != nullptr) {
+        AUDIO_INFO_LOG("Notify client the state is released");
+        streamCb->OnStateChange(RELEASED, CMD_FROM_CLIENT);
+    }
+    lock.unlock();
+
     UpdateTracker("RELEASED");
     AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
 
@@ -1493,12 +1502,11 @@ int32_t RendererInClientInner::DrainRingCache()
 bool RendererInClientInner::DrainAudioStream()
 {
     Trace trace("RendererInClientInner::DrainAudioStream " + std::to_string(sessionId_));
-    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    std::lock_guard<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
         AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
         return false;
     }
-    statusLock.unlock();
 
     CHECK_AND_RETURN_RET_LOG(DrainRingCache() == SUCCESS, false, "Drain cache failed");
 
@@ -1518,6 +1526,7 @@ bool RendererInClientInner::DrainAudioStream()
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
         return false;
     }
+    notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
     AUDIO_INFO_LOG("Drain stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
