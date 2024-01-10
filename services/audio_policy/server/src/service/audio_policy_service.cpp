@@ -1811,6 +1811,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         }
         // move sourceoutput to target device
         SelectNewInputDevice(capturerChangeInfo, desc, isStreamStatusUpdated);
+        AddAudioCapturerMicrophoneDescriptor(captureChangeInfo->sessionId,desc->deviceType_);
     }
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
@@ -3845,9 +3846,6 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfoForRecord(AudioStreamChange
 int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
-    if (mode == AUDIO_MODE_RECORD) {
-        UpdateStreamChangeDeviceInfoForRecord(streamChangeInfo);
-    }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
 
@@ -3872,7 +3870,6 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
             FetchInputDevice(capturerChangeInfos, true);
             streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = capturerChangeInfos[0]->inputDeviceInfo;
         }
-        UpdateStreamChangeDeviceInfoForRecord(streamChangeInfo);
         std::lock_guard<std::mutex> lock(microphonesMutex_);
         if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
             audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
