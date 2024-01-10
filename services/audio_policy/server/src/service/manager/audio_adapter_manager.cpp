@@ -12,15 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_adapter_manager.h"
 
 #include <memory>
 #include <unistd.h>
 
-#include "audio_errors.h"
-#include "audio_log.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "audio_adapter_manager.h"
+#include "setting_provider.h"
+
+#include "audio_errors.h"
+#include "audio_log.h"
 #include "audio_volume_parser.h"
 
 using namespace std;
@@ -1007,9 +1009,17 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
 
     Status status = audioPolicyKvStore_->Put(key, value);
     if (status == Status::SUCCESS) {
-        AUDIO_INFO_LOG("WriteRingerModeToKvStore Wrote RingerMode:%d to kvStore", ringerMode);
+        AUDIO_INFO_LOG("WriteRingerModeToKvStore Wrote RingerMode:%{public}d to kvStore", ringerMode);
     } else {
-        AUDIO_WARNING_LOG("WriteRingerModeToKvStore Writing RingerMode:%d to kvStore failed!", ringerMode);
+        AUDIO_WARNING_LOG("WriteRingerModeToKvStore Writing RingerMode:%{public}d to kvStore failed!", ringerMode);
+    }
+
+    const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
+    PowerMgr::SettingProvider& settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    const std::string settingKey = "ringer_mode";
+    ErrCode ret = settingProvider.PutIntValue(settingKey, static_cast<int32_t>(ringerMode));
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("Failed to write ringer_mode: %{public}d to setting db! Err: %{public}d", ringerMode, ret);
     }
 
     return;
