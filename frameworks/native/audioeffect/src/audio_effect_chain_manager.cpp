@@ -229,10 +229,10 @@ bool EffectChainManagerCheckA2dpOffload()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    const char *effectChainManagerDeviceType = audioEffectChainManager->GetDeviceTypeName().c_str();
-    const char *effectChainManagerDeviceSink = audioEffectChainManager->GetDeviceSinkName().c_str();
-    if (!strcmp(effectChainManagerDeviceType, "DEVICE_TYPE_BLUETOOTH_A2DP") &&
-        !strcmp(effectChainManagerDeviceSink, "Speaker")) {
+    std::string effectChainManagerDeviceType = audioEffectChainManager->GetDeviceTypeName();
+    std::string effectChainManagerDeviceSink = audioEffectChainManager->GetDeviceSinkName();
+    if ((effectChainManagerDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") &&
+        (effectChainManagerDeviceSink == "Speaker")) {
         return true;
     }
     return false;
