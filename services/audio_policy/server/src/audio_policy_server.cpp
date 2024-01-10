@@ -1287,6 +1287,7 @@ int32_t AudioPolicyServer::ProcessFocusEntry(const AudioInterrupt &incomingInter
     AudioFocuState incomingState = ACTIVE;
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
     auto itZone = audioInterruptZonesMap_.find(zoneID);
+    CHECK_AND_RETURN_RET_LOG(itZone != audioInterruptZonesMap_.end(), ERROR, "can not find zoneid");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != audioInterruptZonesMap_.end() && itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
@@ -1344,6 +1345,7 @@ void AudioPolicyServer::HandleIncomingState(AudioFocuState incomingState, Interr
         interruptEvent.duckVolume = DUCK_FACTOR * GetSystemVolumeDb(incomingInterrupt.audioFocusType.streamType);
     } else {
         auto itZone = audioInterruptZonesMap_.find(zoneID);
+        CHECK_AND_RETURN_LOG(itZone != audioInterruptZonesMap_.end(), "can not find zoneid");
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
         if (itZone != audioInterruptZonesMap_.end() && itZone->second != nullptr) {
             audioFocusInfoList = itZone->second->audioFocusInfoList;
