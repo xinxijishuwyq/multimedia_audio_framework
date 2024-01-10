@@ -5414,7 +5414,17 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     }
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, updateCommand);
-    FetchDevice(true);
+
+    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKOWN;
+    if (updateCommand == CATEGORY_UPDATE) {
+        if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
+            reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        } else {
+            reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+        }
+    }
+    FetchDevice(true, reason);
+
     FetchDevice(false);
 }
 
