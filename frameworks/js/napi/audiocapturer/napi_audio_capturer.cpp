@@ -992,7 +992,7 @@ void NapiAudioCapturer::RegisterAudioCapturerInfoChangeCallback(napi_env env, na
 napi_value NapiAudioCapturer::Off(napi_env env, napi_callback_info info)
 {
     const size_t minArgCount = ARGS_ONE;
-    size_t argc = ARGS_THREE;
+    size_t argc = ARGS_TWO;
 
     napi_value argv[minArgCount + 1] = {nullptr, nullptr};
     napi_value jsThis = nullptr;
