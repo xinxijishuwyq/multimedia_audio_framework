@@ -1811,6 +1811,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         }
         // move sourceoutput to target device
         SelectNewInputDevice(capturerChangeInfo, desc, isStreamStatusUpdated);
+        AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId, desc->deviceType_);
     }
     if (isUpdateActiveDevice) {
         OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
@@ -3846,7 +3847,7 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
     const sptr<IRemoteObject> &object)
 {
     if (mode == AUDIO_MODE_RECORD) {
-        UpdateStreamChangeDeviceInfoForRecord(streamChangeInfo);
+        AddAudioCapturerMicrophoneDescriptor(streamChangeInfo.audioCapturerChangeInfo.sessionId, DEVICE_TYPE_NONE);
     }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
@@ -3872,7 +3873,6 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
             FetchInputDevice(capturerChangeInfos, true);
             streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = capturerChangeInfos[0]->inputDeviceInfo;
         }
-        UpdateStreamChangeDeviceInfoForRecord(streamChangeInfo);
         std::lock_guard<std::mutex> lock(microphonesMutex_);
         if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
             audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
@@ -4896,6 +4896,10 @@ void AudioPolicyService::RemoveMicrophoneDescriptor(sptr<AudioDeviceDescriptor> 
 void AudioPolicyService::AddAudioCapturerMicrophoneDescriptor(int32_t sessionId, DeviceType devType)
 {
     std::lock_guard<std::mutex> lock(microphonesMutex_);
+    if (devType == DEVICE_TYPE_NONE) {
+        audioCaptureMicrophoneDescriptor_[sessionId] = new MicrophoneDescriptor(0, DEVICE_TYPE_INVALID);
+        return;
+    }
     auto isPresent = [&devType] (const sptr<MicrophoneDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid microphone descriptor");
         return (devType == desc->deviceType_);
