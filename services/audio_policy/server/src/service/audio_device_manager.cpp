@@ -505,7 +505,7 @@ unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice
     (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
     string localDevicesType_ = devicesType;
     unique_ptr<AudioDeviceDescriptor> devDesc;
-    if(localDevicesType_.compare("phone")){
+    if(localDevicesType_.compare("phone")) {
         devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
     } else {
         devDesc = make_unique<AudioDeviceDescriptor>(speaker_);
