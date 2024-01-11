@@ -23,8 +23,8 @@ group("audio_service_packages") {
   deps = [
     ":audio_common",
     ":audio_converter_config",
+    ":audio_server_init",
     ":audio_service",
-    ":audio_service_init",
   ]
 }
 
@@ -223,8 +223,8 @@ ohos_prebuilt_etc("audio_converter_config") {
   part_name = "audio_framework"
 }
 
-ohos_prebuilt_etc("audio_service_init") {
-  source = "etc/pulseaudio.cfg"
+ohos_prebuilt_etc("audio_server_init") {
+  source = "etc/audio_server.cfg"
   relative_install_dir = "init"
   part_name = "audio_framework"
   subsystem_name = "multimedia"
