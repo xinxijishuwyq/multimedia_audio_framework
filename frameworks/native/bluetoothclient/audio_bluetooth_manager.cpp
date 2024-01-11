@@ -372,13 +372,13 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: state: [%{public}d]", state);
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-        bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected);
         if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice() &&
             scoState == HfpScoConnectState::SCO_DISCONNECTED) {
             AUDIO_INFO_LOG("Sco disconnect, need set audio scene as default.");
             AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
         }
+        bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
+        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected);
     }
 }
 
