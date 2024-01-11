@@ -2038,7 +2038,7 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
     }
 }
 
-static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels)
+static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels, uint64_t sinkChannelLayout)
 {
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != sinkChannels) {
@@ -2048,6 +2048,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels)
             u->multiChannel.isHDISinkInited = false;
             u->multiChannel.sample_attrs.adapterName = "primary";
             u->multiChannel.sample_attrs.channel = sinkChannels;
+            u->multiChannel.sample_attrs.channelLayout = sinkChannelLayout;
             u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
             u->multiChannel.isHDISinkInited = true;
         } else {
@@ -2059,6 +2060,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels)
     } else {
         u->multiChannel.sample_attrs.adapterName = "primary";
         u->multiChannel.sample_attrs.channel = sinkChannels;
+        u->multiChannel.sample_attrs.channelLayout = sinkChannelLayout;
         u->multiChannel.sinkAdapter->RendererSinkInit(u->multiChannel.sinkAdapter, &u->multiChannel.sample_attrs);
         u->multiChannel.isHDISinkInited = true;
     }
@@ -2081,7 +2083,7 @@ static void StartMultiChannelHdiIfRunning(struct Userdata *u)
     uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
     EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
 
-    ResetMultiChannelHdiState(u, sinkChannel);
+    ResetMultiChannelHdiState(u, sinkChannel, sinkChannelLayout);
 }
 
 static void StopPrimaryHdiIfNoRunning(struct Userdata *u)
@@ -2120,7 +2122,7 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
         uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
         uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
         EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
-        ResetMultiChannelHdiState(u, sinkChannel);
+        ResetMultiChannelHdiState(u, sinkChannel, sinkChannelLayout);
     } else if (stopping) {
         // Continuously dropping data clear counter on entering suspended state.
         if (u->bytes_dropped != 0) {
@@ -2707,6 +2709,7 @@ static void ThreadFuncWriteHDIMultiChannel(void *userdata)
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
                 if (RenderWrite(u->multiChannel.sinkAdapter, &chunk) < 0) {
+                    AUDIO_DEBUG_LOG("ThreadFuncWriteHDIMultiChannel RenderWrite");
                     u->bytes_dropped += chunk.length;
                 }
                 if (pa_atomic_load(&u->multiChannel.dflag) == 1) {
@@ -2971,7 +2974,7 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
     uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
     uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
     EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
-    ResetMultiChannelHdiState(u, sinkChannel);
+    ResetMultiChannelHdiState(u, sinkChannel, sinkChannelLayout);
     return 0;
 }
 
@@ -3152,6 +3155,7 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     u->multiChannel.sample_attrs.openMicSpeaker = u->open_mic_speaker;
     u->multiChannel.sample_attrs.sampleRate = u->ss.rate;
     u->multiChannel.sample_attrs.channel = DEFAULT_MULTICHANNEL_NUM;
+    u->multiChannel.sample_attrs.channelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
     u->multiChannel.sample_attrs.volume = MAX_SINK_VOLUME_LEVEL;
     u->multiChannel.sample_attrs.filePath = filePath;
     u->multiChannel.sample_attrs.deviceNetworkId = u->deviceNetworkId;

@@ -43,7 +43,6 @@ namespace {
 const int32_t HALF_FACTOR = 2;
 const int32_t MAX_AUDIO_ADAPTER_NUM = 5;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
-const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
 const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t INT_32_MAX = 0x7fffffff;
@@ -54,20 +53,6 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t MULTICHANNEL_OUTPUT_STREAM_ID = 61; // 13 + 6 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 
-const uint32_t MULTI_CHANNEL_THREE = 3;
-const uint32_t MULTI_CHANNEL_FOUR = 4;
-const uint32_t MULTI_CHANNEL_FIVE = 5;
-const uint32_t MULTI_CHANNEL_SIX = 6;
-const uint32_t MULTI_CHANNEL_SEVEN = 7;
-const uint32_t MULTI_CHANNEL_EIGHT = 8;
-const uint32_t MULTI_CHANNEL_TEN = 10;
-const uint64_t AUDIO_MULTICHANNEL_OUT_2POINT1 = 11;
-const uint64_t AUDIO_MULTICHANNEL_OUT_QUAD = 51;
-const uint64_t AUDIO_MULTICHANNEL_OUT_3POINT0POINT2 = 206158430215;
-const uint64_t AUDIO_MULTICHANNEL_OUT_5POINT1 = 1551;
-const uint64_t AUDIO_MULTICHANNEL_OUT_6POINT1 = 1807;
-const uint64_t AUDIO_MULTICHANNEL_OUT_7POINT1 = 1599;
-const uint64_t AUDIO_MULTICHANNEL_OUT_7POINT1POINT2 = 206158431807;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -382,7 +367,7 @@ void MultiChannelRendererSinkInner::DeInit()
 void InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
-    attrs.channelCount = AUDIO_CHANNELCOUNT;
+    attrs.channelCount = CHANNEL_6;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
     attrs.streamId = MULTICHANNEL_OUTPUT_STREAM_ID;
@@ -455,32 +440,7 @@ int32_t MultiChannelRendererSinkInner::CreateRender(const struct AudioPort &rend
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
-    switch (attr_.channel) {
-        case MULTI_CHANNEL_THREE:
-            param.channelLayout = AUDIO_MULTICHANNEL_OUT_2POINT1;
-            break;
-        case MULTI_CHANNEL_FOUR:
-            param.channelLayout = AUDIO_MULTICHANNEL_OUT_QUAD;
-            break;
-        case MULTI_CHANNEL_FIVE:
-            param.channelLayout = AUDIO_MULTICHANNEL_OUT_3POINT0POINT2;
-            break;
-        case MULTI_CHANNEL_SIX:
-            param.channelLayout = AUDIO_MULTICHANNEL_OUT_5POINT1;
-            break;
-        case MULTI_CHANNEL_SEVEN:
-            param.channelLayout = AUDIO_MULTICHANNEL_OUT_6POINT1;
-            break;
-        case MULTI_CHANNEL_EIGHT:
-            param.channelLayout = AUDIO_MULTICHANNEL_OUT_7POINT1;
-            break;
-        case MULTI_CHANNEL_TEN:
-            param.channelLayout = AUDIO_MULTICHANNEL_OUT_7POINT1POINT2;
-            break;
-        default:
-            AUDIO_ERR_LOG("Unsupported channel");
-            break;
-    }
+    param.channelLayout = attr_.channelLayout;
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);

@@ -479,6 +479,11 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
     InitAttrs(param);
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
+    if (param.channelCount == MONO) {
+        param.channelLayout = CH_LAYOUT_MONO;
+    } else if (param.channelCount == STEREO) {
+        param.channelLayout = CH_LAYOUT_STEREO;
+    }
     param.format = ConverToHdiFormat(attr_.format);
     param.offloadInfo.format = ConverToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;

@@ -115,7 +115,7 @@ int32_t IAudioRendererSinkInit(struct RendererSinkAdapter *adapter, const SinkAt
     iAttr.filePath = attr->filePath;
     iAttr.deviceNetworkId = attr->deviceNetworkId;
     iAttr.deviceType = attr->deviceType;
-    iAttr.channelLayout = 3;    // 3 stereo
+    iAttr.channelLayout = attr->channelLayout;
 
     return audioRendererSink->Init(iAttr);
 }

@@ -117,7 +117,7 @@ int32_t IAudioCapturerSourceInit(void *wapper, const SourceAttr *attr)
     iAttr.deviceNetworkId = attr->deviceNetworkId;
     iAttr.deviceType = attr->deviceType;
     iAttr.sourceType = attr->sourceType;
-
+    iAttr.channelLayout = attr->channelLayout;
     ret = iAudioCapturerSource->Init(iAttr);
 
     return ret;

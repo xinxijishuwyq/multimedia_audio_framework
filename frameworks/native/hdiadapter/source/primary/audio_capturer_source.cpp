@@ -495,6 +495,11 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
+    if (param.channelCount == MONO) {
+        param.channelLayout = CH_LAYOUT_MONO;
+    } else if (param.channelCount == STEREO) {
+        param.channelLayout = CH_LAYOUT_STEREO;
+    }
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
