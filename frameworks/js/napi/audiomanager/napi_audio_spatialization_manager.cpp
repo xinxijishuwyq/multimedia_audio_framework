@@ -235,8 +235,11 @@ napi_value NapiAudioSpatializationManager::SetSpatializationEnabled(napi_env env
             "audio spatialization manager state is error.");
         context->intValue = napiAudioSpatializationManager->audioSpatializationMngr_->SetSpatializationEnabled(
             context->spatializationEnable);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetSpatializationEnabled failed",
-            NAPI_ERR_SYSTEM);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env](napi_value &output) {
@@ -298,8 +301,11 @@ napi_value NapiAudioSpatializationManager::SetHeadTrackingEnabled(napi_env env, 
             "audio spatialization manager state is error.");
         context->intValue = napiAudioSpatializationManager->audioSpatializationMngr_->SetHeadTrackingEnabled(
             context->headTrackingEnable);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetHeadTrackingEnabled failed",
-            NAPI_ERR_SYSTEM);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env](napi_value &output) {
@@ -423,7 +429,11 @@ napi_value NapiAudioSpatializationManager::UpdateSpatialDeviceState(napi_env env
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
         return result;
     }
-    napiAudioSpatializationManager->audioSpatializationMngr_->UpdateSpatialDeviceState(audioSpatialDeviceState);
+    int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->UpdateSpatialDeviceState(
+        audioSpatialDeviceState);
+    if (ret == ERR_PERMISSION_DENIED) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_PERMISSION);
+    }
     return result;
 }
 
