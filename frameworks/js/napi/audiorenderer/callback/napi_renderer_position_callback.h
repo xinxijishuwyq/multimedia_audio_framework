@@ -29,7 +29,7 @@ class NapiRendererPositionCallback : public RendererPositionCallback {
 public:
     explicit NapiRendererPositionCallback(napi_env env);
     virtual ~NapiRendererPositionCallback();
-    void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnMarkReached(const int64_t &framePosition) override;
 
 private:

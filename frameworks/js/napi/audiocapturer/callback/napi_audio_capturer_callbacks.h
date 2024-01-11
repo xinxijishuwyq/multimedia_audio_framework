@@ -35,7 +35,7 @@ class NapiAudioCapturerCallback : public AudioCapturerCallback {
 public:
     explicit NapiAudioCapturerCallback(napi_env env);
     virtual ~NapiAudioCapturerCallback();
-    void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void RemoveCallbackReference(const std::string &callbackName);
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const CapturerState state) override;

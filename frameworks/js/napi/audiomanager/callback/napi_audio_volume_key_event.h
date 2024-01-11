@@ -31,7 +31,7 @@ public:
     explicit NapiAudioVolumeKeyEvent(napi_env env);
     virtual ~NapiAudioVolumeKeyEvent();
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
-    void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
 
 private:
     struct AudioVolumeKeyEventJsCallback {

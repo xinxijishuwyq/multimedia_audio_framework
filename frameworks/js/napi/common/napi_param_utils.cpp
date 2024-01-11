@@ -154,7 +154,7 @@ std::string NapiParamUtils::GetStringArgument(napi_env env, napi_value value)
     return strValue;
 }
 
-napi_status NapiParamUtils::SetValueString(const napi_env &env, const std::string stringValue, napi_value &result)
+napi_status NapiParamUtils::SetValueString(const napi_env &env, const std::string &stringValue, napi_value &result)
 {
     napi_status status = napi_create_string_utf8(env, stringValue.c_str(), NAPI_AUTO_LENGTH, &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueString napi_create_string_utf8 failed");
@@ -162,7 +162,7 @@ napi_status NapiParamUtils::SetValueString(const napi_env &env, const std::strin
 }
 
 napi_status NapiParamUtils::SetValueString(const napi_env &env, const std::string &fieldStr,
-    const std::string stringValue, napi_value &result)
+    const std::string &stringValue, napi_value &result)
 {
     napi_value value = nullptr;
     napi_status status = SetValueString(env, stringValue.c_str(), value);
@@ -919,12 +919,14 @@ napi_status NapiParamUtils::SetCapturerChangeInfos(const napi_env &env,
 napi_status NapiParamUtils::SetEffectInfo(const napi_env &env,
     const AudioSceneEffectInfo &audioSceneEffectInfo, napi_value &result)
 {
+    int32_t position = 0;
     napi_value jsEffectInofObj = nullptr;
     napi_create_array_with_length(env, audioSceneEffectInfo.mode.size(), &result);
     napi_create_object(env, &jsEffectInofObj);
-    for (auto i = 0; i < audioSceneEffectInfo.mode.size(); i++) {
-        SetValueUInt32(env, audioSceneEffectInfo.mode[i], jsEffectInofObj);
-        napi_set_element(env, result, i, jsEffectInofObj);
+    for (const auto &mode : audioSceneEffectInfo.mode) {
+        SetValueUInt32(env, mode, jsEffectInofObj);
+        napi_set_element(env, result, position, jsEffectInofObj);
+        position++;
     }
     return napi_ok;
 }

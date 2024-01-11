@@ -27,7 +27,7 @@ class NapiAudioRendererDeviceChangeCallback : public AudioRendererDeviceChangeCa
 public:
     explicit NapiAudioRendererDeviceChangeCallback(napi_env env);
     virtual ~NapiAudioRendererDeviceChangeCallback();
-    void AddCallbackReference(napi_value callback);
+    void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
     void OnStateChange(const DeviceInfo &deviceInfo) override;
     void RemoveAllCallbacks() override;
@@ -40,7 +40,7 @@ private:
         DeviceInfo deviceInfo_;
     };
 
-    static void WorkCallbackCompleted(uv_work_t* work, int aStatus);
+    static void WorkCallbackCompleted(uv_work_t* work, int status);
     void OnJsCallbackRendererDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo);
 
     std::mutex mutex_;
@@ -52,7 +52,7 @@ class NapiAudioRendererOutputDeviceChangeWithInfoCallback : public AudioRenderer
 public:
     explicit NapiAudioRendererOutputDeviceChangeWithInfoCallback(napi_env env);
     virtual ~NapiAudioRendererOutputDeviceChangeWithInfoCallback();
-    void AddCallbackReference(napi_value callback);
+    void AddCallbackReference(napi_value args);
     void RemoveCallbackReference(napi_env env, napi_value args);
     void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
@@ -66,7 +66,7 @@ private:
         AudioStreamDeviceChangeReason reason_;
     };
 
-    static void WorkCallbackCompleted(uv_work_t* work, int aStatus);
+    static void WorkCallbackCompleted(uv_work_t* work, int status);
     void OnJsCallbackOutputDeviceInfo(napi_ref method, const DeviceInfo &deviceInfo,
         const AudioStreamDeviceChangeReason reason);
 

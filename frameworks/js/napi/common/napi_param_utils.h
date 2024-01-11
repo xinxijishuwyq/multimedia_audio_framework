@@ -106,8 +106,8 @@ public:
 
     static std::string GetStringArgument(napi_env env, napi_value value);
     static std::string GetPropertyString(napi_env env, napi_value value, const std::string &fieldStr);
-    static napi_status SetValueString(const napi_env &env, const std::string stringValue, napi_value &result);
-    static napi_status SetValueString(const napi_env &env, const std::string &fieldStr, const std::string stringValue,
+    static napi_status SetValueString(const napi_env &env, const std::string &stringValue, napi_value &result);
+    static napi_status SetValueString(const napi_env &env, const std::string &fieldStr, const std::string &stringValue,
         napi_value &result);
 
     static napi_status GetValueBoolean(const napi_env &env, bool &boolValue, napi_value in);

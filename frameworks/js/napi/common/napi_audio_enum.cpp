@@ -449,7 +449,7 @@ napi_value NapiAudioEnum::CreateEnumObject(const napi_env &env, const std::map<s
         goto error;
     }
 
-    for (auto &iter : map) {
+    for (const auto &iter : map) {
         propName = iter.first;
         status = NapiParamUtils::SetValueInt32(env, propName, iter.second, result);
         CHECK_AND_BREAK_LOG(status == napi_ok, "Failed to add named prop!");
@@ -480,7 +480,7 @@ napi_value NapiAudioEnum::CreateEnumInt64Object(const napi_env &env, const std::
         goto error;
     }
 
-    for (auto &iter : map) {
+    for (const auto &iter : map) {
         propName = iter.first;
         status = NapiParamUtils::SetValueInt64(env, propName, iter.second, result);
         CHECK_AND_BREAK_LOG(status == napi_ok, "Failed to add named prop!");

@@ -34,7 +34,7 @@ public:
     virtual ~NapiAudioPreferredOutputDeviceChangeCallback();
     void SaveCallbackReference(AudioStreamType streamType, napi_value callback);
     void OnPreferredOutputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void RemoveCallbackReference(napi_env env, napi_value args);
+    void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveAllCallbacks();
 
 private:
@@ -59,7 +59,7 @@ public:
     virtual ~NapiAudioPreferredInputDeviceChangeCallback();
     void SaveCallbackReference(SourceType sourceType, napi_value callback);
     void OnPreferredInputDeviceUpdated(const std::vector<sptr<AudioDeviceDescriptor>> &desc) override;
-    void RemoveCallbackReference(napi_env env, napi_value args);
+    void RemoveCallbackReference(napi_env env, napi_value callback);
     void RemoveAllCallbacks();
 
 private:

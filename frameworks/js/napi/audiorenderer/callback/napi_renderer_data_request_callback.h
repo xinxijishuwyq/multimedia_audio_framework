@@ -27,7 +27,7 @@ class NapiRendererDataRequestCallback : public AudioRendererWriteCallback {
 public:
     NapiRendererDataRequestCallback(napi_env env, NapiAudioRenderer *napiRenderer);
     virtual ~NapiRendererDataRequestCallback();
-    void SaveCallbackReference(const std::string &callbackName, napi_value callback);
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
     void OnWriteData(size_t length) override;
 
 private:
