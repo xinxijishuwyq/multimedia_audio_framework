@@ -1481,7 +1481,7 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
     int32_t ret = -1;
     while (!result && tryCounter-- > 0) {
         usleep(sleepTime);
-        if (renderer_ == nullptr && renderer_->audioStream_ == nullptr &&
+        if (renderer_ == nullptr || renderer_->audioStream_ == nullptr ||
             renderer_->abortRestore_) {
             AUDIO_INFO_LOG("RendererPolicyServiceDiedCallback RestoreTheadLoop abort restore");
             break;

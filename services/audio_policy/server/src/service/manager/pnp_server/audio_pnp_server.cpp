@@ -104,7 +104,7 @@ void AudioPnpServer::OnPnpDeviceStatusChanged(const std::string &info)
 
 void AudioPnpServer::OpenAndReadInput()
 {
-    int32_t ret;
+    int32_t ret = -1;
     int32_t status = AudioInputThread::AudioPnpInputOpen();
     if (status != SUCCESS) {
         return;
@@ -129,7 +129,6 @@ void AudioPnpServer::OpenAndReadWithSocket()
     int32_t socketFd = -1;
     struct pollfd fd;
     char msg[UEVENT_MSG_LEN + 1] = {0};
-    std::string info;
 
     int32_t ret = AudioSocketThread::AudioPnpUeventOpen(&socketFd);
     if (ret != SUCCESS) {
@@ -242,7 +241,6 @@ void AudioPnpServer::DetectAudioDevice()
         OnPnpDeviceStatusChanged(eventInfo_);
     }
 #endif
-    return;
 }
 
 void AudioPnpServer::StopPnpServer()
