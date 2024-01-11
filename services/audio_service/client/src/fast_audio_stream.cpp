@@ -166,6 +166,11 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     return true;
 }
 
+bool FastAudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
+}
+
 int32_t FastAudioStream::GetBufferSize(size_t &bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "GetBufferSize failed: null process");

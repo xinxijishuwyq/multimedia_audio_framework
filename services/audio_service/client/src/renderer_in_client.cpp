@@ -88,6 +88,7 @@ public:
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
     State GetState() override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
+    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
     int32_t GetFrameCount(uint32_t &frameCount) override;
     int32_t GetLatency(uint64_t &latency) override;
@@ -760,6 +761,11 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
 
     return true;
+}
+
+bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    return GetAudioTime(timestamp, base);
 }
 
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)

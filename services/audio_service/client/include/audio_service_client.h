@@ -752,6 +752,8 @@ private:
     uint64_t lastPositionTimestamp_ = 0;
     uint64_t lastHdiPosition_ = 0;
     uint64_t lastOffloadStreamCorkedPosition_ = 0;
+    uint64_t preFrameNum_ = 0;
+
     int32_t ConnectStreamToPA();
     std::pair<const int32_t, const std::string> GetDeviceNameForConnect();
     int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
@@ -775,6 +777,8 @@ private:
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
     void WriteStateChangedSysEvents();
+    int32_t UpdateOffloadStreamPosition(UpdatePositionTimeNode node, uint64_t& frames,
+        int64_t& timeSec, int64_t& timeNanoSec);
 
     int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map,
         AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);

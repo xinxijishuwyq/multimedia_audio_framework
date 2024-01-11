@@ -341,7 +341,7 @@ int64_t OHAudioRenderer::GetFramesWritten()
 bool OHAudioRenderer::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
-    return audioRenderer_->GetAudioTime(timestamp, base);
+    return audioRenderer_->GetAudioPosition(timestamp, base);
 }
 
 int32_t OHAudioRenderer::GetFrameSizeInCallback()

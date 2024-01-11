@@ -580,6 +580,11 @@ bool AudioRendererPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
     return audioStream_->GetAudioTime(timestamp, base);
 }
 
+bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const
+{
+    return audioStream_->GetAudioPosition(timestamp, base);
+}
+
 bool AudioRendererPrivate::Drain() const
 {
     return audioStream_->DrainAudioStream();
