@@ -2871,9 +2871,7 @@ bool AudioPolicyServer::IsSpatializationEnabled()
     if (!hasSystemPermission) {
         return false;
     }
-    bool isSpatializationEnabled = audioSpatializationService_.IsSpatializationEnabled();
-    AUDIO_INFO_LOG("Spatialization enabled is %{public}d", isSpatializationEnabled);
-    return isSpatializationEnabled;
+    return audioSpatializationService_.IsSpatializationEnabled();
 }
 
 int32_t AudioPolicyServer::SetSpatializationEnabled(const bool enable)
@@ -2891,9 +2889,7 @@ bool AudioPolicyServer::IsHeadTrackingEnabled()
     if (!hasSystemPermission) {
         return false;
     }
-    bool isHeadTrackingEnabled = audioSpatializationService_.IsHeadTrackingEnabled();
-    AUDIO_INFO_LOG("Head tracking enabled is %{public}d", isHeadTrackingEnabled);
-    return isHeadTrackingEnabled;
+    return audioSpatializationService_.IsHeadTrackingEnabled();
 }
 
 int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
@@ -2954,9 +2950,7 @@ bool AudioPolicyServer::IsSpatializationSupportedForDevice(const std::string add
     if (!hasSystemPermission) {
         return false;
     }
-    bool isSpatializationSupportedForDevice = audioSpatializationService_.IsSpatializationSupportedForDevice(address);
-    AUDIO_INFO_LOG("Spatialization is supported for current device: %{public}d", isSpatializationSupportedForDevice);
-    return isSpatializationSupportedForDevice;
+    return audioSpatializationService_.IsSpatializationSupportedForDevice(address);
 }
 
 bool AudioPolicyServer::IsHeadTrackingSupported()
@@ -2974,9 +2968,7 @@ bool AudioPolicyServer::IsHeadTrackingSupportedForDevice(const std::string addre
     if (!hasSystemPermission) {
         return false;
     }
-    bool isHeadTrackingSupportedForDevice = audioSpatializationService_.IsHeadTrackingSupportedForDevice(address);
-    AUDIO_INFO_LOG("Head tracking is supported for current device: %{public}d", isHeadTrackingSupportedForDevice);
-    return isHeadTrackingSupportedForDevice;
+    return audioSpatializationService_.IsHeadTrackingSupportedForDevice(address);
 }
 
 int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
