@@ -119,6 +119,7 @@ private:
     float leftVolume_;
     float rightVolume_;
     int32_t routeHandle_ = -1;
+    int32_t logMode_ = 0;
     uint32_t openSpeaker_;
     uint32_t renderId_ = 0;
     std::string adapterNameCase_;
@@ -505,7 +506,7 @@ int32_t MultiChannelRendererSinkInner::Init(const IAudioSinkAttr &attr)
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
     openSpeaker_ = attr_.openMicSpeaker;
-
+    logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
     int32_t ret = InitAdapter();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter failed");
 
@@ -566,7 +567,9 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         return ERR_WRITE_FAILED;
     }
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
+    if (logMode_) {
+        AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
+    }
     return SUCCESS;
 }
 
