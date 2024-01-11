@@ -18,7 +18,6 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_device_parser.h"
-#include "parameter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -501,9 +500,6 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
 
 unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice()
 {
-    char devicesType[100] = {0};
-    (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-    string localDevicesType_ = devicesType;
     unique_ptr<AudioDeviceDescriptor> devDesc;
     if(localDevicesType_.compare("phone")) {
         devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
