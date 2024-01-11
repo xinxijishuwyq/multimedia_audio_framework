@@ -116,6 +116,7 @@ struct Microphone {
               _this.returnMsg = "setMicrophoneMute-callback SUCCESS"
             });
           })
+
         Button("setMicrophoneMute-promise")
           .fontSize(18)
           .height(60)
@@ -131,6 +132,20 @@ struct Microphone {
             });
           })
 
+        Button("setMicMute-promise")
+          .fontSize(18)
+          .height(60)
+          .width('80%')
+          .margin({ top: 10 })
+          .onClick(() => {
+            let _this = this;
+            this.audioVolumeGroupManager.setMicMute(this.mute)
+              .then(() => {
+                _this.returnMsg = "setMicMute-promise SUCCESS"
+              }).catch(err => {
+                _this.returnMsg = "setMicMute-promise err:" + JSON.stringify(err)
+              });
+          })
 
         Button("isMicrophoneMute-callback")
           .fontSize(18)
@@ -146,8 +161,8 @@ struct Microphone {
               }
               _this.returnMsg = "isMicrophoneMute-callback SUCCESS,返回值：" + value
             });
-
           })
+
         Button("isMicrophoneMute-promise")
           .fontSize(18)
           .height(60)
