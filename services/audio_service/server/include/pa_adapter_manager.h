@@ -86,9 +86,9 @@ private:
         const std::string &streamName, uint32_t sessionId);
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream);
     std::shared_ptr<ICapturerStream> CreateCapturerStream(AudioProcessConfig processConfig, pa_stream *paStream);
-    int32_t ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec);
+    int32_t ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, const std::string &deviceName = "");
     int32_t ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec);
-    int32_t ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec);
+    int32_t ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, const std::string &deviceName);
 
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
@@ -98,6 +98,9 @@ private:
 
     const std::string GetStreamName(AudioStreamType audioType);
     pa_sample_spec ConvertToPAAudioParams(AudioProcessConfig processConfig);
+
+    int32_t GetDeviceNameForConnect(AudioProcessConfig processConfig,
+        std::string &deviceName);
 
     std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;
