@@ -22,6 +22,7 @@
 #include "audio_info.h"
 #include "audio_device_info.h"
 #include "audio_system_manager.h"
+#include "parameter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -70,7 +71,11 @@ public:
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
 
 private:
-    AudioDeviceManager() {};
+    AudioDeviceManager() {
+        char devicesType[100] = {0};
+        (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
+        localDevicesType_ = devicesType;
+    }
     ~AudioDeviceManager() {};
     bool DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc, AudioDevicePrivacyType &privacyType,
         DeviceRole &devRole, DeviceUsage &devUsage);
@@ -138,6 +143,7 @@ private:
     sptr<AudioDeviceDescriptor> speaker_ = nullptr;
     sptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
     std::mutex connectedDevicesMutex_;
+    string localDevicesType_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
