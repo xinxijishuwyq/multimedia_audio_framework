@@ -5371,6 +5371,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     FetchDevice(true, reason);
 
     FetchDevice(false);
+    UpdateA2dpOffloadFlagForAllStream();
 }
 
 void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
