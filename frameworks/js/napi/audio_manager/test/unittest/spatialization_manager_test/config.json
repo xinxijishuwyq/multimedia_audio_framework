@@ -46,6 +46,12 @@
           "visible": true
         }
       ],
+      "reqPermissions":[
+        {
+          "name": "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+          "reason": "use ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS"
+        }
+      ],
       "js": [
         {
           "pages": [
