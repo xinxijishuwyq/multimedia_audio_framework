@@ -501,7 +501,7 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
 
 unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice()
 {
-    char devices[100] = {0};
+    char devicesType[100] = {0};
     (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
     string localDevicesType_ = devicesType;
     unique_ptr<AudioDeviceDescriptor> devDesc;
