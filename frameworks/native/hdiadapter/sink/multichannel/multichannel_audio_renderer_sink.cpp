@@ -34,6 +34,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "parameters.h"
 
 using namespace std;
 
@@ -95,7 +96,7 @@ public:
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
 private:
-    IAudioSinkAttr attr_;
+    IAudioSinkAttr attr_ = {};
     bool sinkInited_;
     bool adapterInited_;
     bool renderInited_;
@@ -104,6 +105,7 @@ private:
     float leftVolume_;
     float rightVolume_;
     int32_t routeHandle_ = -1;
+    int32_t logMode_ = 0;
     uint32_t openSpeaker_;
     uint32_t renderId_ = 0;
     std::string adapterNameCase_;
@@ -147,12 +149,12 @@ MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &
       leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
-    attr_ = {};
+    AUDIO_INFO_LOG("MultiChannelRendererSinkInner");
 }
 
 MultiChannelRendererSinkInner::~MultiChannelRendererSinkInner()
 {
-    AUDIO_ERR_LOG("~AudioRendererSinkInner");
+    AUDIO_INFO_LOG("~MultiChannelRendererSinkInner");
 }
 
 MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(std::string halName)
@@ -465,7 +467,7 @@ int32_t MultiChannelRendererSinkInner::Init(const IAudioSinkAttr &attr)
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
     openSpeaker_ = attr_.openMicSpeaker;
-
+    logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
     int32_t ret = InitAdapter();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter failed");
 
@@ -516,7 +518,6 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
 
     ret = audioRender_->SetVolume(audioRender_, 0.99f);
     if (ret) {
-        AUDIO_ERR_LOG("Mch setvolume failed!");
         return ERR_NOT_STARTED;
     }
 
@@ -527,6 +528,9 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         return ERR_WRITE_FAILED;
     }
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    if (logMode_) {
+        AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
+    }
     return SUCCESS;
 }
 
@@ -548,9 +552,8 @@ int32_t MultiChannelRendererSinkInner::Start(void)
 #endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
 
-    int32_t ret;
     if (!started_) {
-        ret = audioRender_->Start(audioRender_);
+        int32_t ret = audioRender_->Start(audioRender_);
         if (ret) {
             AUDIO_ERR_LOG("Mch Start failed!");
             return ERR_NOT_STARTED;
@@ -844,7 +847,6 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
         AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
     }
 #endif
-    int32_t ret;
 
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Stop failed audioRender_ null");
@@ -852,7 +854,7 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
     }
 
     if (started_) {
-        ret = audioRender_->Stop(audioRender_);
+        int32_t ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
             return SUCCESS;
@@ -867,8 +869,6 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
 
 int32_t MultiChannelRendererSinkInner::Pause(void)
 {
-    int32_t ret;
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
@@ -880,7 +880,7 @@ int32_t MultiChannelRendererSinkInner::Pause(void)
     }
 
     if (!paused_) {
-        ret = audioRender_->Pause(audioRender_);
+        int32_t ret = audioRender_->Pause(audioRender_);
         if (!ret) {
             paused_ = true;
             return SUCCESS;
@@ -895,8 +895,6 @@ int32_t MultiChannelRendererSinkInner::Pause(void)
 
 int32_t MultiChannelRendererSinkInner::Resume(void)
 {
-    int32_t ret;
-
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Resume failed audioRender_ null");
         return ERR_INVALID_HANDLE;
@@ -908,7 +906,7 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
     }
 
     if (paused_) {
-        ret = audioRender_->Resume(audioRender_);
+        int32_t ret = audioRender_->Resume(audioRender_);
         if (!ret) {
             paused_ = false;
             return SUCCESS;
@@ -923,10 +921,8 @@ int32_t MultiChannelRendererSinkInner::Resume(void)
 
 int32_t MultiChannelRendererSinkInner::Reset(void)
 {
-    int32_t ret;
-
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->Flush(audioRender_);
+        int32_t ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
@@ -940,10 +936,8 @@ int32_t MultiChannelRendererSinkInner::Reset(void)
 
 int32_t MultiChannelRendererSinkInner::Flush(void)
 {
-    int32_t ret;
-
     if (started_ && audioRender_ != nullptr) {
-        ret = audioRender_->Flush(audioRender_);
+        int32_t ret = audioRender_->Flush(audioRender_);
         if (!ret) {
             return SUCCESS;
         } else {
@@ -1062,18 +1056,6 @@ int32_t MultiChannelRendererSinkInner::InitRender()
     if (CreateRender(audioPort_) != 0) {
         AUDIO_ERR_LOG("Create render failed, Audio Port: %{public}d", audioPort_.portId);
         return ERR_NOT_STARTED;
-    }
-
-    if (openSpeaker_) {
-        int32_t ret = SUCCESS;
-        if (halName_ == "usb") {
-            ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
-        } else {
-            ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
-        }
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
-        }
     }
 
     renderInited_ = true;
