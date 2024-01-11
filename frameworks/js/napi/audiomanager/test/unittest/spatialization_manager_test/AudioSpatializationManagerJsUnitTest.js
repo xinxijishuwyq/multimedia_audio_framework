@@ -14,10 +14,10 @@
  */
 
 import audio from '@ohos.multimedia.audio';
-import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from '@ohos/hypium'
+import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from 'deccjsunit/index'
 
 const numberParameter = 12345678;
-describe("AudioSpatializationManagerJsUnitTest", function () {
+describe("AudioSpatializationManagerJsTest", function () {
   let audioManager = audio.getAudioManager();
   let audioSpatializationManager = audioManager.getSpatializationManager();
   const ERROR_NO_PERMISSION = '201';

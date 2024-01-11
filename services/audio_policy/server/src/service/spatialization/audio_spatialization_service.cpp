@@ -107,7 +107,7 @@ bool AudioSpatializationService::IsSpatializationEnabled()
 
 int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
 {
-    AUDIO_INFO_LOG("SetSpatializationEnabled Entered: %{public}d", enable);
+    AUDIO_INFO_LOG("Spatialization enabled is set to be: %{public}d", enable);
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (spatializationEnabledFlag_ == enable) {
         return SPATIALIZATION_SERVICE_OK;
@@ -128,7 +128,7 @@ bool AudioSpatializationService::IsHeadTrackingEnabled()
 
 int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
 {
-    AUDIO_INFO_LOG("SetHeadTrackingEnabled Entered: %{public}d", enable);
+    AUDIO_INFO_LOG("Head tracking enabled is set to be: %{public}d", enable);
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     if (headTrackingEnabledFlag_ == enable) {
         return SPATIALIZATION_SERVICE_OK;
@@ -195,6 +195,7 @@ int32_t AudioSpatializationService::UnregisterHeadTrackingEnabledEventListener(i
 
 void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &enabled)
 {
+    AUDIO_INFO_LOG("Spatialization enabled callback is triggered: state is %{public}d", enabled);
     std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
     for (auto it = spatializationEnabledCBMap_.begin(); it != spatializationEnabledCBMap_.end(); ++it) {
         std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCb = it->second;
@@ -209,6 +210,7 @@ void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &e
 
 void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &enabled)
 {
+    AUDIO_INFO_LOG("Head tracking enabled callback is triggered: state is %{public}d", enabled);
     std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
     for (auto it = headTrackingEnabledCBMap_.begin(); it != headTrackingEnabledCBMap_.end(); ++it) {
         std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> headTrackingEnabledChangeCb = it->second;
@@ -240,10 +242,9 @@ bool AudioSpatializationService::IsSpatializationSupported()
 bool AudioSpatializationService::IsSpatializationSupportedForDevice(const std::string address)
 {
     std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
-    if (!address.empty()) {
-        return true;
-    }
+
     if (!addressToSpatialDeviceStateMap_.count(address)) {
+        AUDIO_INFO_LOG("specified address for spatialization is not in memory");
         return false;
     }
     return addressToSpatialDeviceStateMap_[address].isSpatializationSupported;
@@ -257,10 +258,9 @@ bool AudioSpatializationService::IsHeadTrackingSupported()
 bool AudioSpatializationService::IsHeadTrackingSupportedForDevice(const std::string address)
 {
     std::lock_guard<std::mutex> lock(spatializationSupportedMutex_);
-    if (!address.empty()) {
-        return true;
-    }
+
     if (!addressToSpatialDeviceStateMap_.count(address)) {
+        AUDIO_INFO_LOG("specified address for head tracking is not in memory");
         return false;
     }
     return addressToSpatialDeviceStateMap_[address].isHeadTrackingSupported;
@@ -334,6 +334,7 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
     bool headTrackingEnabled = headTrackingEnabledFlag_ && IsHeadTrackingSupported() &&
         IsHeadTrackingSupportedForDevice(currentDeviceAddress_) && spatializationEnabled;
     if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled)) {
+        AUDIO_INFO_LOG("no need to update real spatialization state");
         return SUCCESS;
     }
     spatializationEnabledReal_ = spatializationEnabled;
@@ -362,6 +363,7 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
 
 void AudioSpatializationService::HandleSpatializationStateChange(bool outputDeviceChange)
 {
+    AUDIO_INFO_LOG("Spatialization State callback is triggered");
     std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
 
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_};
@@ -390,6 +392,7 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
     }
 
     if (!outputDeviceChange) {
+        AUDIO_INFO_LOG("notify offload entered");
         std::thread notifyOffloadThread = std::thread(std::bind(
             &AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService,
             &AudioPolicyService::GetAudioPolicyService(),

@@ -469,7 +469,7 @@ void NapiAudioSpatializationManager::RegisterSpatializationEnabledChangeCallback
         (napiAudioSpatializationManager->spatializationEnabledChangeCallbackNapi_);
     cb->SaveSpatializationEnabledChangeCallbackReference(args[PARAM1]);
 
-    AUDIO_INFO_LOG("OnSpatializationEnabledChangeCallback is successful");
+    AUDIO_INFO_LOG("Register spatialization enabled callback is successful");
 }
 
 void NapiAudioSpatializationManager::RegisterHeadTrackingEnabledChangeCallback(napi_env env, napi_value *args,
@@ -493,7 +493,7 @@ void NapiAudioSpatializationManager::RegisterHeadTrackingEnabledChangeCallback(n
         (napiAudioSpatializationManager->headTrackingEnabledChangeCallbackNapi_);
     cb->SaveHeadTrackingEnabledChangeCallbackReference(args[PARAM1]);
 
-    AUDIO_INFO_LOG("OnHeadTrackingEnabledChangeCallback is successful");
+    AUDIO_INFO_LOG("Register head tracking enabled callback is successful");
 }
 
 napi_value NapiAudioSpatializationManager::On(napi_env env, napi_callback_info info)

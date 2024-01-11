@@ -1075,13 +1075,13 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
 {
     AUDIO_INFO_LOG("UpdateSpatializationState entered, current state: %{public}d and %{public}d, previous state: \
         %{public}d and %{public}d", spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
-        spatializatonEnabled_, headTrackingEnabled_);
+        spatializationEnabled_, headTrackingEnabled_);
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     int32_t ret;
-    if (spatializatonEnabled_ != spatializationState.spatializationEnabled) {
-        spatializatonEnabled_ = spatializationState.spatializationEnabled;
+    if (spatializationEnabled_ != spatializationState.spatializationEnabled) {
+        spatializationEnabled_ = spatializationState.spatializationEnabled;
         memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
-        if (spatializatonEnabled_) {
+        if (spatializationEnabled_) {
             effectHdiInput[0] = HDI_INIT;
             ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
