@@ -461,10 +461,10 @@ int32_t BluetoothRendererSinkInner::Start(void)
     }
 
     if (keepRunningLock_ != nullptr) {
-        AUDIO_DEBUG_LOG("AudioRendBluetoothRendererSinkererSink call KeepRunningLock lock");
+        AUDIO_INFO_LOG("keepRunningLock lock");
         keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_BLUETOOTH_RENDER_SINK_FILENAME, &dumpFile_);
@@ -556,10 +556,10 @@ int32_t BluetoothRendererSinkInner::Stop(void)
     AUDIO_INFO_LOG("Stop in");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("BluetoothRendererSink call KeepRunningLock UnLock");
+        AUDIO_INFO_LOG("keepRunningLock unLock");
         keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
     int32_t ret;
