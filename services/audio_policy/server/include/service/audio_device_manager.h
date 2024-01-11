@@ -72,7 +72,7 @@ public:
 
 private:
     AudioDeviceManager() {
-        char devicesType[100] = {0};
+        char devicesType[100] = {0}; // 100 for system parameter usage
         (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
         localDevicesType_ = devicesType;
     }
