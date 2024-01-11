@@ -5429,13 +5429,13 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
 
 int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
-    AUDIO_INFO_LOG("SetCallDeviceActive: Device type[%{public}d] flag[%{public}d] address[%{public}s]",
+    AUDIO_INFO_LOG("Device type[%{public}d] flag[%{public}d] address[%{public}s]",
         deviceType, active, address.c_str());
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     // Activate new device if its already connected
     auto isPresent = [&deviceType, &address] (const unique_ptr<AudioDeviceDescriptor> &desc) {
-        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "SetCallDeviceActive::Invalid device descriptor");
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         return ((deviceType == desc->deviceType_) && (address == desc->macAddress_));
     };
 

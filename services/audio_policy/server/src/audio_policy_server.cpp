@@ -3298,8 +3298,20 @@ int32_t AudioPolicyServer::ReleaseAudioInterruptZone(const int32_t zoneID)
 
 int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
-        "SetCallDeviceActive: No system permission");
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_SYSTEM_PERMISSION_DENIED;
+    }
+    switch (deviceType) {
+        case EARPIECE:
+        case SPEAKER:
+        case BLUETOOTH_SCO:
+            break;
+        default:
+            AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
+            return ERR_NOT_SUPPORTED;
+    }
     return audioPolicyService_.SetCallDeviceActive(deviceType, active, address);
 }
 } // namespace AudioStandard

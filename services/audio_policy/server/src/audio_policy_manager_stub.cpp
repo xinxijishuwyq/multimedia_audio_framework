@@ -1048,10 +1048,7 @@ void AudioPolicyManagerStub::SetCallDeviceActiveInternal(MessageParcel &data, Me
     bool active = data.ReadBool();
     std::string address = data.ReadString();
     int32_t result = SetCallDeviceActive(deviceType, active, address);
-    if (result == SUCCESS)
-        reply.WriteInt32(AUDIO_OK);
-    else
-        reply.WriteInt32(AUDIO_ERR);
+    reply.WriteInt32(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

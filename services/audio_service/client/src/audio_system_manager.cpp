@@ -1346,18 +1346,7 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
 
 int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const
 {
-    AUDIO_INFO_LOG("SetCallDeviceActive device: %{public}d", deviceType);
-    switch (deviceType) {
-        case EARPIECE:
-        case SPEAKER:
-        case BLUETOOTH_SCO:
-            break;
-        default:
-            AUDIO_ERR_LOG("SetCallDeviceActive device=%{public}d not supported", deviceType);
-            return ERR_NOT_SUPPORTED;
-    }
-
-    /* Call Audio Policy SetCallDeviceActive */
+    AUDIO_INFO_LOG("device: %{public}d", deviceType);
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
         flag, address));
 }

@@ -1902,7 +1902,7 @@ int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, boo
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioPolicyProxy: WriteInterfaceToken failed");
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
         return -1;
     }
     data.WriteInt32(static_cast<int32_t>(deviceType));
