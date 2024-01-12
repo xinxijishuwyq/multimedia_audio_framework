@@ -147,13 +147,13 @@ public:
     void SetCapturerPositionCallback(int64_t markPosition,
         const std::shared_ptr<CapturerPositionCallback> &callback) override;
     void UnsetCapturerPositionCallback() override;
-    void SetCapturerPeriodPositionCallback(int64_t markPosition,
+    void SetCapturerPeriodPositionCallback(int64_t periodPosition,
         const std::shared_ptr<CapturerPeriodPositionCallback> &callback) override;
     void UnsetCapturerPeriodPositionCallback() override;
     void SetRendererPositionCallback(int64_t markPosition,
         const std::shared_ptr<RendererPositionCallback> &callback) override;
     void UnsetRendererPositionCallback() override;
-    void SetRendererPeriodPositionCallback(int64_t markPosition,
+    void SetRendererPeriodPositionCallback(int64_t periodPosition,
         const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
     void UnsetRendererPeriodPositionCallback() override;
 
@@ -1554,7 +1554,7 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
         std::lock_guard<std::mutex> lock(periodReachMutex_);
         capturerPeriodRead_ += (totalBytesRead_ / sizePerFrameInByte_);
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
-            static_cast<int64_t>(capturerPeriodSize_), static_cast<int64_t>(capturerPeriodRead_));
+            static_cast<int64_t>(capturerPeriodRead_), static_cast<int64_t>(totalBytesRead_));
         if (capturerPeriodRead_ >= capturerPeriodSize_) {
             capturerPeriodRead_ %= capturerPeriodSize_;
             AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRId64,
@@ -1589,13 +1589,13 @@ void CapturerInClientInner::UnsetCapturerPositionCallback()
     capturerMarkReached_ = false;
 }
 
-void CapturerInClientInner::SetCapturerPeriodPositionCallback(int64_t markPosition,
+void CapturerInClientInner::SetCapturerPeriodPositionCallback(int64_t periodPosition,
     const std::shared_ptr<CapturerPeriodPositionCallback> &callback)
 {
     std::lock_guard<std::mutex> lock(periodReachMutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr, "CapturerPeriodPositionCallback is nullptr");
     capturerPeriodPositionCallback_ = callback;
-    capturerPeriodSize_ = 0;
+    capturerPeriodSize_ = periodPosition;
     totalBytesRead_ = 0;
     capturerPeriodRead_ = 0;
 }
@@ -1622,7 +1622,7 @@ void CapturerInClientInner::UnsetRendererPositionCallback()
     return;
 }
 
-void CapturerInClientInner::SetRendererPeriodPositionCallback(int64_t markPosition,
+void CapturerInClientInner::SetRendererPeriodPositionCallback(int64_t periodPosition,
     const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
     AUDIO_ERR_LOG("SetRendererPeriodPositionCallback is not supported");
