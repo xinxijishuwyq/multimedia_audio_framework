@@ -557,8 +557,6 @@ typedef struct OH_AudioCapturer_Callbacks_Struct {
             void* userData,
             OH_AudioStream_Result error);
 } OH_AudioCapturer_Callbacks;
-#ifdef __cplusplus
-}
 
 /**
  * @brief Defines reason for device changes of one audio stream.
@@ -587,6 +585,10 @@ typedef enum {
  */
 typedef void (*OH_AudioRenderer_OutputDeviceChangeCallback)(OH_AudioRenderer* renderer, void* userData,
     OH_AudioStream_DeviceChangeReason reason);
+
+#ifdef __cplusplus
+}
+
 #endif
 
 #endif // NATIVE_AUDIOSTREAM_BASE_H
