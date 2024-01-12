@@ -19,7 +19,6 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
-#include "parameter.h"
 #include "audio_info.h"
 #include "audio_device_info.h"
 #include "audio_system_manager.h"
@@ -71,12 +70,7 @@ public:
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
 
 private:
-    AudioDeviceManager()
-    {
-        char devicesType[100] = {0}; // 100 for system parameter usage
-        (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-        localDevicesType_ = devicesType;
-    }
+    AudioDeviceManager();
     ~AudioDeviceManager() {};
     bool DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc, AudioDevicePrivacyType &privacyType,
         DeviceRole &devRole, DeviceUsage &devUsage);
