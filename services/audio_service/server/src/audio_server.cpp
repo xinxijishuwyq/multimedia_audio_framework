@@ -574,6 +574,15 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_RECORD || res, nullptr,
         "CreateAudioProcess for record failed:No permission.");
 
+    // Check MANAGE_INTELLIGENT_VOICE_PERMISSION and system permission
+    if (resetConfig.isWakeupCapturer == true) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION,
+            resetConfig.appInfo.appTokenId);
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, nullptr,
+            "Create wakeup record stream failed: no permission.");
+    }
+
     if ((resetConfig.audioMode == AUDIO_MODE_PLAYBACK && resetConfig.rendererInfo.rendererFlags == 0) ||
         (resetConfig.audioMode == AUDIO_MODE_RECORD && resetConfig.capturerInfo.capturerFlags == 0)) {
         AUDIO_INFO_LOG("Create normal ipc stream.");
