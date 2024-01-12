@@ -72,7 +72,7 @@ public:
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
 
 private:
-    AudioDeviceManager() 
+    AudioDeviceManager()
     {
         char devicesType[100] = {0}; // 100 for system parameter usage
         (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
