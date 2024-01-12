@@ -544,10 +544,10 @@ int32_t MultiChannelRendererSinkInner::Start(void)
     }
 
     if (keepRunningLock_ != nullptr) {
-        AUDIO_DEBUG_LOG("AudioRendererSink call KeepRunningLock lock");
+        AUDIO_INFO_LOG("keepRunningLock lock");
         keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
@@ -841,10 +841,10 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
     AUDIO_INFO_LOG("Stop.");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("AudioRendererSink call KeepRunningLock UnLock");
+        AUDIO_INFO_LOG("keepRunningLock unLock");
         keepRunningLock_->UnLock();
     } else {
-        AUDIO_ERR_LOG("keepRunningLock_ is null, playback can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
 

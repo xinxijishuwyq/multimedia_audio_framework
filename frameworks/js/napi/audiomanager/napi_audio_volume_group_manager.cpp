@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 #include "napi_audio_volume_group_manager.h"
+
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
-#include "audio_errors.h"
-#include "audio_log.h"
-#include "xpower_event_js.h"
 #include "napi_audio_ringermode_callback.h"
 #include "napi_audio_micstatechange_callback.h"
+#include "audio_errors.h"
+#include "audio_log.h"
+#include "audio_utils.h"
+#include "xpower_event_js.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -96,6 +98,7 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("setMicrophoneMute", SetMicrophoneMute),
         DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute),
         DECLARE_NAPI_FUNCTION("isMicrophoneMuteSync", IsMicrophoneMuteSync),
+        DECLARE_NAPI_FUNCTION("setMicMute", SetMicMute),
         DECLARE_NAPI_FUNCTION("isVolumeUnadjustable", IsVolumeUnadjustable),
         DECLARE_NAPI_FUNCTION("adjustVolumeByStep", AdjustVolumeByStep),
         DECLARE_NAPI_FUNCTION("adjustSystemVolumeByStep", AdjustSystemVolumeByStep),
@@ -704,6 +707,52 @@ napi_value NapiAudioVolumeGroupManager::IsMicrophoneMuteSync(napi_env env, napi_
     NapiParamUtils::SetValueBoolean(env, isMute, result);
 
     return result;
+}
+
+napi_value NapiAudioVolumeGroupManager::SetMicMute(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("no memory failed");
+        NapiAudioError::ThrowError(env, "failed no memory", NAPI_ERR_SYSTEM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "", NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetMicrophoneMute(context->isMute);
+        if (context->intValue != SUCCESS) {
+            if (context->intValue == ERR_PERMISSION_DENIED) {
+                context->SignError(NAPI_ERR_NO_PERMISSION);
+            } else {
+                context->SignError(NAPI_ERR_SYSTEM);
+            }
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetMicMute", executor, complete);
 }
 
 napi_value NapiAudioVolumeGroupManager::IsVolumeUnadjustable(napi_env env, napi_callback_info info)

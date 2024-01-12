@@ -438,10 +438,10 @@ int32_t FastAudioCapturerSourceInner::Start(void)
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
     if (keepRunningLock_ != nullptr) {
-        AUDIO_DEBUG_LOG("FastAudioCapturerSourceInner call KeepRunningLock lock");
+        AUDIO_INFO_LOG("keepRunningLock lock");
         keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_WARNING_LOG("keepRunningLock_ is null, start can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
     }
 #endif
 
@@ -524,13 +524,13 @@ void FastAudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallbac
 
 int32_t FastAudioCapturerSourceInner::Stop(void)
 {
-    AUDIO_INFO_LOG("FastAudioCapturerSourceInner::Stop");
+    AUDIO_INFO_LOG("Enter");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
-        AUDIO_DEBUG_LOG("FastAudioCapturerSourceInner call KeepRunningLock UnLock");
+        AUDIO_INFO_LOG("keepRunningLock unLock");
         keepRunningLock_->UnLock();
     } else {
-        AUDIO_WARNING_LOG("keepRunningLock_ is null, stop can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
     }
 #endif
 

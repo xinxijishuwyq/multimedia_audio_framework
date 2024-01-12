@@ -612,11 +612,11 @@ void FastAudioRendererSinkInner::KeepRunningLock()
     }
 
     if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock lock");
+        AUDIO_INFO_LOG("keepRunningLock lock");
         int32_t timeOut = -1; // -1 for lasting.
         keepRunningLock_->Lock(timeOut);
     } else {
-        AUDIO_ERR_LOG("Fast: keepRunningLock_ is null, playback can not work well!");
+        AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
 }
 #endif
@@ -625,10 +625,10 @@ void FastAudioRendererSinkInner::KeepRunningLock()
 void FastAudioRendererSinkInner::KeepRunningUnlock()
 {
     if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("FastAudioRendererSink call KeepRunningLock UnLock");
+        AUDIO_INFO_LOG("keepRunningLock unLock");
         keepRunningLock_->UnLock();
     } else {
-        AUDIO_WARNING_LOG("Fast: keepRunningLock_ is null, playback can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 }
 #endif

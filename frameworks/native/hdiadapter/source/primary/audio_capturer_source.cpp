@@ -558,7 +558,7 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
 
 int32_t AudioCapturerSourceInner::Start(void)
 {
-    AUDIO_INFO_LOG("Start.");
+    AUDIO_INFO_LOG("Enter");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         switch (attr_.sourceType) {
@@ -573,10 +573,10 @@ int32_t AudioCapturerSourceInner::Start(void)
         }
     }
     if (keepRunningLock_ != nullptr) {
-        AUDIO_DEBUG_LOG("AudioCapturerSourceInner call KeepRunningLock lock");
+        AUDIO_INFO_LOG("keepRunningLock lock");
         keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
-        AUDIO_WARNING_LOG("keepRunningLock_ is null, start can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
     }
 #endif
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_CAPTURER_SOURCE_FILENAME, &dumpFile_);
@@ -857,13 +857,13 @@ int32_t AudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames, int6
 
 int32_t AudioCapturerSourceInner::Stop(void)
 {
-    AUDIO_INFO_LOG("AudioCapturerSourceInner::Stop");
+    AUDIO_INFO_LOG("Enter");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
-        AUDIO_DEBUG_LOG("AudioCapturerSourceInner call KeepRunningLock UnLock");
+        AUDIO_INFO_LOG("keepRunningLock unlock");
         keepRunningLock_->UnLock();
     } else {
-        AUDIO_WARNING_LOG("keepRunningLock_ is null, stop can not work well!");
+        AUDIO_WARNING_LOG("keepRunningLock is null, stop can not work well!");
     }
 #endif
     int32_t ret;
