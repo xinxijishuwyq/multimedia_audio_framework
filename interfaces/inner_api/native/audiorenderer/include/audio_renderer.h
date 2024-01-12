@@ -369,6 +369,17 @@ public:
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
     /**
+     * @brief Obtains the position info.
+     *
+     * @param timestamp Indicates a {@link Timestamp} instance reference provided by the caller.
+     * @param base Indicates the time base, which can be {@link Timestamp.Timestampbase#BOOTTIME} or
+     * {@link Timestamp.Timestampbase#MONOTONIC}.
+     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
+     * @since 11
+     */
+    virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
+
+    /**
      * @brief Obtains the latency in microseconds.
      *
      * @param latency Indicates the reference variable into which latency value will be written.

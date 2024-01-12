@@ -123,6 +123,7 @@ public:
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
     virtual State GetState() = 0;
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
+    virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
     virtual int32_t GetFrameCount(uint32_t &frameCount) = 0;
     virtual int32_t GetLatency(uint64_t &latency) = 0;

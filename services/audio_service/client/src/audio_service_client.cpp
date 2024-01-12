@@ -186,7 +186,6 @@ void AudioServiceClient::PAStreamStartSuccessCb(pa_stream *stream, int32_t succe
     AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
-    asClient->UpdateStreamPosition(UpdatePositionTimeNode::START_NODE);
     asClient->state_ = RUNNING;
     asClient->breakingWritePa_ = false;
     asClient->offloadTsLast_ = 0;
@@ -1747,6 +1746,8 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
         prebufStream.bufferLen = writeLen;
     }
 
+    preFrameNum_ = prebufStream.bufferLen / mFrameSize;
+
     size_t bytesWritten {0};
     AUDIO_INFO_LOG("RenderPrebuf start");
     while (true) {
@@ -2168,6 +2169,19 @@ int32_t AudioServiceClient::GetAudioLatencyOffload(uint64_t &latency)
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::UpdateOffloadStreamPosition(UpdatePositionTimeNode node, uint64_t& frames,
+    int64_t& timeSec, int64_t& timeNanoSec)
+{
+    if (node == UpdatePositionTimeNode::CORKED_NODE) {
+        lastOffloadStreamCorkedPosition_ = mTotalBytesWritten / mFrameSize;
+        return AUDIO_CLIENT_SUCCESS;
+    }
+    frames = frames * HDI_OFFLOAD_SAMPLE_RATE / SECOND_TO_MICROSECOND;
+    lastStreamPosition_ = lastOffloadStreamCorkedPosition_ + frames;
+    lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
 {
     uint64_t frames;
@@ -2177,15 +2191,9 @@ int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK &&
         audioSystemManager_->GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec) == 0) {
         if (offloadEnable_) {
-            if (node == UpdatePositionTimeNode::CORKED_NODE) {
-                lastOffloadStreamCorkedPosition_ = mTotalBytesWritten / mFrameSize;
-                return AUDIO_CLIENT_SUCCESS;
-            }
-            frames = frames * HDI_OFFLOAD_SAMPLE_RATE / SECOND_TO_MICROSECOND;
-            lastStreamPosition_ = lastOffloadStreamCorkedPosition_ + frames;
-            lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
-            return AUDIO_CLIENT_SUCCESS;
+            return UpdateOffloadStreamPosition(node, frames, timeSec, timeNanoSec);
         }
+        frames = frames * sampleSpec.rate / HDI_OFFLOAD_SAMPLE_RATE; // revert hdi frame size to client size
         if (frames < lastHdiPosition_) {
             AUDIO_ERR_LOG("The frame position should be continuously increasing");
             return AUDIO_CLIENT_ERR;
@@ -2212,10 +2220,6 @@ int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
         return AUDIO_CLIENT_SUCCESS;
     } else {
         AUDIO_ERR_LOG("UpdateStreamPosition from hdi failed!");
-        if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK &&
-                !offloadEnable_ && node == UpdatePositionTimeNode::RUNNING_NODE) {
-            lastHdiPosition_ += 240000; // 240000 frame size for 5s,the state from suspend to running
-        }
         return AUDIO_CLIENT_ERR;
     }
 }
@@ -2227,7 +2231,19 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
     // This time will get an exception value, here will not return the exception to the application.Return the
     // last frame information instead
     UpdateStreamPosition(UpdatePositionTimeNode::USER_NODE);
-    framePosition = lastStreamPosition_;
+    if (lastStreamPosition_ > preFrameNum_) {
+        framePosition = lastStreamPosition_ - preFrameNum_;
+    } else {
+        framePosition = 0;
+    }
+    uint64_t latency = 0;
+    GetAudioLatency(latency);
+    latency = latency * sampleSpec.rate / SECOND_TO_MICROSECOND;
+    if (framePosition > latency) {
+        framePosition -= latency;
+    } else {
+        framePosition = 0;
+    }
     timeStamp = lastPositionTimestamp_;
     return AUDIO_CLIENT_SUCCESS;
 }
@@ -2330,6 +2346,7 @@ int32_t AudioServiceClient::SetRendererFirstFrameWritingCallback(
 
 void AudioServiceClient::OnFirstFrameWriting()
 {
+    UpdateStreamPosition(UpdatePositionTimeNode::START_NODE);
     hasFirstFrameWrited_ = true;
     CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;

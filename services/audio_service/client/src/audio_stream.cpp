@@ -188,7 +188,7 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
     return SUCCESS;
 }
 
-bool AudioStream::GetAudioTimeForDev(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     if (state_ == STOPPED) {
         return false;
@@ -221,12 +221,9 @@ bool AudioStream::GetAudioTimeForDev(Timestamp &timestamp, Timestamp::Timestampb
     return false;
 }
 
-bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool AudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    if (hdiPositionSwitch) {
-        return GetAudioTimeForDev(timestamp, base);
-    }
-    if (state_ == STOPPED) {
+    if (state_ != RUNNING) {
         return false;
     }
     uint64_t framePosition = 0;

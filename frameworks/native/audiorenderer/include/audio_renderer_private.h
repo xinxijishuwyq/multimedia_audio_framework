@@ -43,6 +43,7 @@ public:
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
+    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Drain() const override;
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
