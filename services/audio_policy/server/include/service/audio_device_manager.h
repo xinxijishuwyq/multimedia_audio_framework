@@ -24,7 +24,6 @@
 #include "audio_device_info.h"
 #include "audio_system_manager.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
