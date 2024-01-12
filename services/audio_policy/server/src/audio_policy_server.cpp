@@ -71,6 +71,7 @@ constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
+constexpr uid_t UID_POWER_THERMAL_MANAGER_SA = 3303;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
@@ -541,6 +542,11 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
 
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != UID_POWER_THERMAL_MANAGER_SA) {
+        AUDIO_DEBUG_LOG("SetLowPowerVolume callerUid is Error: not power thermal manager or efficiency manager");
+        return ERROR;
+    }
     return audioPolicyService_.SetLowPowerVolume(streamId, volume);
 }
 
@@ -561,6 +567,11 @@ bool AudioPolicyServer::IsVolumeUnadjustable()
 
 int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("AdjustVolumeByStep: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
     AudioStreamType streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
     if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
@@ -582,6 +593,11 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 
 int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("AdjustSystemVolumeByStep: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
     int32_t volumeLevelInInt = GetSystemVolumeLevel(volumeType);
     int32_t ret = ERROR;
 
