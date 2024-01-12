@@ -14,6 +14,8 @@
  */
 #include "audio_device_manager.h"
 
+#include "parameter.h"
+
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -24,6 +26,13 @@ namespace AudioStandard {
 using namespace std;
 constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
+
+AudioDeviceManager::AudioDeviceManager()
+{
+    char devicesType[100] = {0}; // 100 for system parameter usage
+    (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
+    localDevicesType_ = devicesType;
+}
 
 static int64_t GetCurrentTimeMS()
 {
