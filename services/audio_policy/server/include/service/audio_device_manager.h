@@ -70,7 +70,7 @@ public:
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
 
 private:
-    AudioDeviceManager() {};
+    AudioDeviceManager();
     ~AudioDeviceManager() {};
     bool DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc, AudioDevicePrivacyType &privacyType,
         DeviceRole &devRole, DeviceUsage &devUsage);
@@ -138,6 +138,7 @@ private:
     sptr<AudioDeviceDescriptor> speaker_ = nullptr;
     sptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
     std::mutex connectedDevicesMutex_;
+    string localDevicesType_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
