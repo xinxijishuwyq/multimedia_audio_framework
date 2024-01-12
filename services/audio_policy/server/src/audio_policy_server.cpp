@@ -544,7 +544,7 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callingUid != UID_POWER_THERMAL_MANAGER_SA || 
+    if (callingUid != UID_POWER_THERMAL_MANAGER_SA ||
         callingUid != UID_COMPONENT_SCHEDULE_SERVICE_SA) {
         AUDIO_DEBUG_LOG("SetLowPowerVolume callerUid is Error: not power_thermal_manager or component_schedule_service");
         return ERROR;
