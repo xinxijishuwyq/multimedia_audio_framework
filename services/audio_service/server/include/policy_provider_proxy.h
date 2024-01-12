@@ -29,6 +29,8 @@ public:
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 
+    int32_t SetWakeUpAudioCapturerFromAudioServer() override;
+
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;
 };

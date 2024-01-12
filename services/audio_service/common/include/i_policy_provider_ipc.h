@@ -35,7 +35,8 @@ public:
     enum IPolicyProviderMsg : uint32_t {
         GET_DEVICE_INFO = 0,
         INIT_VOLUME_MAP,
-        POLICY_PROVIDER_MAX_MSG
+        SET_WAKEUP_ADUIO_CAPTURER,
+        POLICY_PROVIDER_MAX_MSG,
     };
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IPolicyProviderIpc");

@@ -1266,7 +1266,7 @@ AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t wakeu
 
     audioModuleInfo.channels = "1";
     audioModuleInfo.rate = "16000";
-    audioModuleInfo.bufferSize = "1280";
+    audioModuleInfo.bufferSize = "640";
     audioModuleInfo.OpenMicSpeaker = "1";
 
     audioModuleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_WAKEUP);
@@ -1333,6 +1333,11 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer([[maybe_unused]] InternalAudi
 
     AUDIO_DEBUG_LOG("SetWakeUpAudioCapturer Active Success!");
     return wakeupNo;
+}
+
+int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer()
+{
+    return SetWakeUpAudioCapturer({});
 }
 
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()

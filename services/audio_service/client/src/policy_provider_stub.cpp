@@ -65,6 +65,14 @@ int32_t PolicyProviderStub::HandleInitSharedVolume(MessageParcel &data, MessageP
     return ret;
 }
 
+int32_t PolicyProviderStub::HandleSetWakeupCapturer(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    int32_t ret = SetWakeUpAudioCapturerFromAudioServer();
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -84,6 +92,12 @@ int32_t PolicyProviderWrapper::InitSharedVolume(std::shared_ptr<AudioSharedMemor
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->InitSharedVolume(buffer);
+}
+
+int32_t PolicyProviderWrapper::SetWakeUpAudioCapturerFromAudioServer()
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->SetWakeUpAudioCapturerFromAudioServer();
 }
 } // namespace AudioStandard
 } // namespace OHOS

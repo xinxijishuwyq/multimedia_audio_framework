@@ -162,5 +162,12 @@ DeviceType PolicyHandler::GetActiveOutPutDevice()
 {
     return deviceType_;
 }
+
+int32_t PolicyHandler::SetWakeUpAudioCapturerFromAudioServer()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    int32_t ret = iPolicyProvider_->SetWakeUpAudioCapturerFromAudioServer();
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

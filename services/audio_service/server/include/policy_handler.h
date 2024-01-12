@@ -50,6 +50,7 @@ public:
 
     DeviceType GetActiveOutPutDevice();
 
+    int32_t SetWakeUpAudioCapturerFromAudioServer();
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;

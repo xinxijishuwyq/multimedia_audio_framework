@@ -22,6 +22,8 @@
 #include "pa_renderer_stream_impl.h"
 #include "pa_capturer_stream_impl.h"
 #include "audio_utils.h"
+#include "audio_info.h"
+#include "policy_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -256,6 +258,29 @@ int32_t PaAdapterManager::HandleMainLoopStart()
     return SUCCESS;
 }
 
+int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConfig,
+    std::string &deviceName)
+{
+    deviceName = "";
+    if (processConfig.isWakeupCapturer) {
+        int32_t no = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer();
+        if (no < 0) {
+            AUDIO_ERR_LOG("ErrorCode: %{public}d", no);
+            return no;
+        }
+
+        if (no >= WAKEUP_LIMIT) {
+            AUDIO_ERR_LOG("no is greater then WAKEUP_LIMIT no=: %{public}d", no);
+            return ERROR;
+        }
+
+        if (no < WAKEUP_LIMIT) {
+            deviceName = WAKEUP_NAMES[no];
+        }
+    }
+    return SUCCESS;
+}
+
 pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId)
 {
     AUDIO_DEBUG_LOG("Enter InitPaStream");
@@ -293,7 +318,11 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     pa_stream_set_state_callback(paStream, PAStreamStateCb, (void *)this);
     pa_threaded_mainloop_unlock(mainLoop_);
 
-    int32_t ret = ConnectStreamToPA(paStream, sampleSpec);
+    std::string deviceName;
+    int32_t errorCode = GetDeviceNameForConnect(processConfig, deviceName);
+    CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "getdevicename err: %{public}d", errorCode);
+
+    int32_t ret = ConnectStreamToPA(paStream, sampleSpec, deviceName);
     if (ret < 0) {
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         return nullptr;
@@ -383,7 +412,8 @@ std::shared_ptr<ICapturerStream> PaAdapterManager::CreateCapturerStream(AudioPro
     return capturerStream;
 }
 
-int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
+int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
+    const std::string &deviceName)
 {
     AUDIO_DEBUG_LOG("Enter PaAdapterManager::ConnectStreamToPA");
     if (CheckReturnIfinvalid(mainLoop_ && context_ && paStream, ERROR) < 0) {
@@ -395,7 +425,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     } else {
-        int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec);
+        int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }
     while (true) {
@@ -444,7 +474,8 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec)
+int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec,
+    const std::string &deviceName)
 {
     uint32_t fragsize = 1; // 1 is frag size of recorder
     uint32_t maxlength = 4; // 4 is max buffer length of recorder
@@ -454,7 +485,8 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
     AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}d, fragsize: %{public}d",
         bufferAttr.maxlength, bufferAttr.fragsize);
 
-    int32_t result = pa_stream_connect_record(paStream, nullptr, &bufferAttr,
+    const char *cDeviceName = (deviceName == "") ? nullptr : deviceName.c_str();
+    int32_t result = pa_stream_connect_record(paStream, cDeviceName, &bufferAttr,
         (pa_stream_flags_t)(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE));
     // PA_STREAM_ADJUST_LATENCY exist, return peek length from server;
