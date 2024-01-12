@@ -19,10 +19,11 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include "parameter.h"
 #include "audio_info.h"
 #include "audio_device_info.h"
 #include "audio_system_manager.h"
-#include "parameter.h"
+
 
 namespace OHOS {
 namespace AudioStandard {
