@@ -570,9 +570,14 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     }
 
     // check MICROPHONE_PERMISSION
-    bool res = VerifyClientPermission(MICROPHONE_PERMISSION, resetConfig.appInfo.appTokenId);
-    CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_RECORD || res, nullptr,
+    constexpr uid_t UID_FOUNDATION_SA = 5523;
+    if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE && callerUid == UID_FOUNDATION_SA) {
+        AUIDO_INFO_LOG("sourcetype is virtual capture");
+    } else {
+        bool res = VerifyClientPermission(MICROPHONE_PERMISSION, resetConfig.appInfo.appTokenId);
+        CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_RECORD || res, nullptr,
         "CreateAudioProcess for record failed:No permission.");
+    }
 
     if ((resetConfig.audioMode == AUDIO_MODE_PLAYBACK && resetConfig.rendererInfo.rendererFlags == 0) ||
         (resetConfig.audioMode == AUDIO_MODE_RECORD && resetConfig.capturerInfo.capturerFlags == 0)) {
