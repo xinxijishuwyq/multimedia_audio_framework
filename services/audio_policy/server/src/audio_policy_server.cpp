@@ -71,7 +71,6 @@ constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
-constexpr uid_t UID_POWER_THERMAL_MANAGER_SA = 3303;
 constexpr uid_t UID_COMPONENT_SCHEDULE_SERVICE_SA = 1905;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 
@@ -544,9 +543,9 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != UID_POWER_THERMAL_MANAGER_SA ||
+    if (callerUid != UID_FOUNDATION_SA ||
         callerUid != UID_COMPONENT_SCHEDULE_SERVICE_SA) {
-        AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not power_thermal_manager or component_schedule_service");
+        AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not foundation or component_schedule_service");
         return ERROR;
     }
     return audioPolicyService_.SetLowPowerVolume(streamId, volume);
