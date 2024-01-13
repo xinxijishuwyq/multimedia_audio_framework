@@ -2032,9 +2032,7 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
     {
         std::unique_lock<std::mutex> lock(a2dpDeviceMapMutex_);
         A2dpDeviceConfigInfo configInfo = connectedA2dpDeviceMap_[activeBTDevice_];
-        if (configInfo.absVolumeSupport) {
-            audioPolicyManager_.SetAbsVolumeScene(true);
-        }
+        audioPolicyManager_.SetAbsVolumeScene(configInfo.absVolumeSupport);
     }
     if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
         result = LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -2764,12 +2762,7 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(DeviceType devType, const
 int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress)
 {
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        bool isActiveA2dpDevice = true;
-        UpdateActiveA2dpDeviceWhenDisconnecting(macAddress, isActiveA2dpDevice);
-        if (!isActiveA2dpDevice) {
-            // The disconnecting a2dp device is not active.
-            return SUCCESS;
-        }
+        UpdateActiveA2dpDeviceWhenDisconnecting(macAddress);
     }
 
     if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
@@ -2785,14 +2778,12 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(DeviceType devType, co
     return SUCCESS;
 }
 
-void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress,
-    bool& isActiveA2dpDevice)
+void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress)
 {
     std::unique_lock<std::mutex> lock(a2dpDeviceMapMutex_);
     connectedA2dpDeviceMap_.erase(macAddress);
 
     if (connectedA2dpDeviceMap_.size() == 0) {
-        isActiveA2dpDevice = true;
         activeBTDevice_ = "";
         if (IOHandles_.find(BLUETOOTH_SPEAKER) != IOHandles_.end()) {
             audioPolicyManager_.CloseAudioPort(IOHandles_[BLUETOOTH_SPEAKER]);
@@ -2800,13 +2791,6 @@ void AudioPolicyService::UpdateActiveA2dpDeviceWhenDisconnecting(const std::stri
         }
         audioPolicyManager_.SetAbsVolumeScene(false);
         return;
-    }
-
-    if (activeBTDevice_ != macAddress) {
-        // The disconnecting a2dp device is not active.
-        AUDIO_DEBUG_LOG("The disconnecting a2dp device is not active. No need to update active device");
-        audioPolicyManager_.SetAbsVolumeScene(false);
-        isActiveA2dpDevice = false;
     }
 }
 

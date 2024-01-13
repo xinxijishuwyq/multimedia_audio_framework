@@ -607,7 +607,7 @@ private:
 
     int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
 
-    void UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress, bool& isActiveA2dpDevice);
+    void UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress);
 
     void UpdateEffectDefaultSink(DeviceType deviceType);
 
