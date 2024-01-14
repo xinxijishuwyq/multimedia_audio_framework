@@ -55,6 +55,13 @@ std::map<std::string, std::string> AudioServer::audioParameters;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int SCHEDULE_REPORT_TIME_OUT_SECONDS = 2;
+static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
+    STREAM_USAGE_SYSTEM,
+    STREAM_USAGE_DTMF,
+    STREAM_USAGE_ENFORCED_TONE,
+    STREAM_USAGE_ULTRASONIC,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION
+};
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -569,19 +576,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
     }
 
-    // check MICROPHONE_PERMISSION
-    bool res = VerifyClientPermission(MICROPHONE_PERMISSION, resetConfig.appInfo.appTokenId);
-    CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_RECORD || res, nullptr,
-        "CreateAudioProcess for record failed:No permission.");
-
-    // Check MANAGE_INTELLIGENT_VOICE_PERMISSION and system permission
-    if (resetConfig.isWakeupCapturer == true) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION,
-            resetConfig.appInfo.appTokenId);
-        CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, nullptr,
-            "Create wakeup record stream failed: no permission.");
-    }
+    CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
     if ((resetConfig.audioMode == AUDIO_MODE_PLAYBACK && resetConfig.rendererInfo.rendererFlags == 0) ||
         (resetConfig.audioMode == AUDIO_MODE_RECORD && resetConfig.capturerInfo.capturerFlags == 0)) {
@@ -762,6 +757,47 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
         false, "Permission denied [tid:%{public}d]", clientTokenId);
 
+    return true;
+}
+
+bool AudioServer::PermissionChecker(const AudioProcessConfig &config)
+{
+    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+        return CheckPlaybackPermission(config.appInfo.appTokenId, config.rendererInfo.streamUsage);
+    } else {
+        return CheckRecorderPermission(config.appInfo.appTokenId, config.capturerInfo.sourceType);
+    }
+}
+
+bool AudioServer::CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage)
+{
+    bool needVerifyPermission = false;
+    for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
+        if (streamUsage == item) {
+            needVerifyPermission = true;
+            break;
+        }
+    }
+    if (needVerifyPermission == false) {
+        return true;
+    }
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false,
+        "Check playback permission failed, no system permission");
+    return true;
+}
+
+bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType)
+{
+    // All record streams should be checked for MICROPHONE_PERMISSION
+    bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
+    CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
+
+    if (sourceType == SOURCE_TYPE_WAKEUP) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
+            "Create wakeup record stream failed: no permission.");
+    }
     return true;
 }
 
