@@ -26,7 +26,7 @@ public:
     explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler);
     ~CallbackHandlerInner();
 
-    void SendCallbackEvent(uint32_t code, int64_t data) override;
+    void SendCallbackEvent(uint32_t eventCode, int64_t data) override;
 
     void ReleaseEventRunner() override;
 

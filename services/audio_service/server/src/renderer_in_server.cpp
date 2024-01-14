@@ -233,7 +233,7 @@ void RendererInServer::WriteEmptyData()
 int32_t RendererInServer::OnWriteData(size_t length)
 {
     Trace trace("RendererInServer::OnWriteData length " + std::to_string(length));
-    for (int32_t i = 0; i < length / totalSizeInFrame_; i++) {
+    for (size_t i = 0; i < length / totalSizeInFrame_; i++) {
         WriteData();
     }
     return SUCCESS;
@@ -242,7 +242,8 @@ int32_t RendererInServer::OnWriteData(size_t length)
 int32_t RendererInServer::UpdateWriteIndex()
 {
     Trace trace("RendererInServer::UpdateWriteIndex");
-    if (audioServerBuffer_->GetAvailableDataFrames() == spanSizeInFrame_ && needStart < 3) { // 3 is maxlength - 1
+    if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(spanSizeInFrame_)
+        && needStart < 3) { // 3 is maxlength - 1
         AUDIO_WARNING_LOG("Start write data");
         WriteData();
         needStart++;
