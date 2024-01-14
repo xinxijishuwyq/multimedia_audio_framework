@@ -1524,9 +1524,8 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
-            std::unique_lock<std::mutex> readDataLock(readDataMutex_);
-            std::cv_status stat = readDataCV_.wait_for(readDataLock,
-                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
+            std::unique_lock<std::mutex> readLock(readDataMutex_);
+            std::cv_status stat = readDataCV_.wait_for(readLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
             CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
         }
     }
