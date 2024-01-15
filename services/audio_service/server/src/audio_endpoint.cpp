@@ -1263,7 +1263,7 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
 
 void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 {
-    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+    ScheduleReportData(getpid(), gettid(), "audio_server");
     int64_t curTime = 0;
     uint64_t curReadPos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
@@ -1299,7 +1299,7 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 
 void AudioEndpointInner::EndpointWorkLoopFuc()
 {
-    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+    ScheduleReportData(getpid(), gettid(), "audio_server");
     int64_t curTime = 0;
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();

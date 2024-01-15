@@ -1,5 +1,5 @@
 {
-    "process": "audio_policy",
+    "process": "audio_server",
     "systemability": [
         {
             "name": 3009,

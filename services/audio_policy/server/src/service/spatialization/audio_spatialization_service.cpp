@@ -354,7 +354,9 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
         return -1;
     }
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_};
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->UpdateSpatializationState(spatializationState);
+    IPCSkeleton::SetCallingIdentity(identity);
     if (ret != 0) {
         AUDIO_WARNING_LOG("UpdateSpatializationState fail");
     }

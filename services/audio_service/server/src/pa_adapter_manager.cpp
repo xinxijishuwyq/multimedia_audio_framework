@@ -508,7 +508,7 @@ void PaAdapterManager::PAContextStateCb(pa_context *context, void *userdata)
 {
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
     AUDIO_INFO_LOG("Current Context State: %{public}d", pa_context_get_state(context));
-    ScheduleReportData(getpid(), gettid(), "pulseaudio");
+    ScheduleReportData(getpid(), gettid(), "audio_server");
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:
