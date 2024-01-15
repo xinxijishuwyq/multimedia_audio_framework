@@ -117,6 +117,10 @@ protected:
 private:
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
+    bool PermissionChecker(const AudioProcessConfig &config);
+    bool CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage);
+    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType);
+
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
