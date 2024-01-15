@@ -218,7 +218,7 @@ private:
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
-    uint32_t sessionId_ = -1;
+    uint32_t sessionId_ = 0;
     int32_t clientPid_ = -1;
     int32_t clientUid_ = -1;
     uint32_t appTokenId_ = 0;
