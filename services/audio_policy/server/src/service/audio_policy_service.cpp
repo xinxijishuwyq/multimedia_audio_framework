@@ -1609,6 +1609,9 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
     }
     SetVolumeForSwitchDevice(desc->deviceType_);
     currentActiveDevice_ = AudioDeviceDescriptor(*desc);
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        activeBTDevice_ = desc->macAddress_;
+    }
     AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
     OnPreferredOutputDeviceUpdated(currentActiveDevice_);
 }
@@ -1622,6 +1625,9 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
         return;
     }
     currentActiveInputDevice_ = AudioDeviceDescriptor(*desc);
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        activeBTDevice_ = desc->macAddress_;
+    }
     AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", currentActiveInputDevice_.deviceType_);
     OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, currentActiveInputDevice_.networkId_);
 }
