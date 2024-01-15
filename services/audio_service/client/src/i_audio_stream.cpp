@@ -28,6 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+    constexpr int32_t INTELL_VOICE_UID = 1042;
     constexpr int32_t MEDIA_UID = 1013;
     constexpr int32_t IPC_FOR_NOT_MEDIA = 1;
     constexpr int32_t IPC_FOR_ALL = 2;
@@ -237,7 +238,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
 
     int32_t ipcFlag = 0;
     GetSysPara("persist.multimedia.audiostream.ipc.capturer", ipcFlag);
-    if (ipcFlag == IPC_FOR_ALL || (ipcFlag == IPC_FOR_NOT_MEDIA && getuid() != MEDIA_UID)) {
+    if (ipcFlag == IPC_FOR_ALL || (ipcFlag == IPC_FOR_NOT_MEDIA && getuid() != MEDIA_UID &&
+        getuid() != INTELL_VOICE_UID)) {
         AUDIO_INFO_LOG("Create ipc record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
