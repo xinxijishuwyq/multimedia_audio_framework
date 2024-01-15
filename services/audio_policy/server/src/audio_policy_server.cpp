@@ -1370,6 +1370,7 @@ void AudioPolicyServer::HandleIncomingState(AudioFocuState incomingState, Interr
         }
 
         ProcessCurrentInterrupt(incomingInterrupt, zoneID, itZone, audioFocusInfoList);
+        itZone->second->audioFocusInfoList = audioFocusInfoList;
         audioInterruptZonesMap_[zoneID] = itZone->second;
     }
 }
