@@ -306,14 +306,8 @@ static void UpdateMinimumLatency(struct userdata *u, pa_sink *sink, bool printMs
 
 static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *latencyDifference)
 {
-    size_t buffer;
-    uint32_t oldRate;
-    pa_usec_t currentBufferLatency, snapshotDelay;
-    int64_t currentSourceSinkLatency, currentLatency, latencyAtOptimumRate;
-    pa_usec_t finalLatency, now, timePassed;
-
-    now = pa_rtclock_now();
-    timePassed = now - u->adjust_time_stamp;
+    pa_usec_t now = pa_rtclock_now();
+    pa_usec_t timePassed = now - u->adjust_time_stamp;
     if (!u->source_sink_changed && timePassed < u->adjust_time * SLEEP_ADJUST_TIME_MULTIPLE_TIMES) {
         u->adjust_counter++;
         u->real_adjust_time_sum += timePassed;
@@ -322,28 +316,28 @@ static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *
     u->adjust_time_stamp = now;
 
     /* Rates and latencies */
-    oldRate = u->sink_input->sample_spec.rate;
+    uint32_t oldRate = u->sink_input->sample_spec.rate;
     *baseRate = u->source_output->sample_spec.rate;
 
-    buffer = u->latency_snapshot.loopback_memblockq_length;
+    size_t buffer = u->latency_snapshot.loopback_memblockq_length;
     if (u->latency_snapshot.recv_counter <= u->latency_snapshot.send_counter) {
         buffer += (size_t) (u->latency_snapshot.send_counter - u->latency_snapshot.recv_counter);
     } else {
         buffer = PA_CLIP_SUB(buffer, (size_t) (u->latency_snapshot.recv_counter - u->latency_snapshot.send_counter));
     }
 
-    currentBufferLatency = pa_bytes_to_usec(buffer, &u->sink_input->sample_spec);
-    snapshotDelay = u->latency_snapshot.source_timestamp - u->latency_snapshot.sink_timestamp;
-    currentSourceSinkLatency = u->latency_snapshot.sink_latency +
+    pa_usec_t currentBufferLatency = pa_bytes_to_usec(buffer, &u->sink_input->sample_spec);
+    pa_usec_t snapshotDelay = u->latency_snapshot.source_timestamp - u->latency_snapshot.sink_timestamp;
+    int64_t currentSourceSinkLatency = u->latency_snapshot.sink_latency +
         u->latency_snapshot.source_latency - snapshotDelay;
 
     /* Current latency */
-    currentLatency = currentSourceSinkLatency + currentBufferLatency;
+    int64_t currentLatency = currentSourceSinkLatency + currentBufferLatency;
 
     /* Latency at base rate */
-    latencyAtOptimumRate = currentSourceSinkLatency + currentBufferLatency * oldRate / (*baseRate);
+    int64_t latencyAtOptimumRate = currentSourceSinkLatency + currentBufferLatency * oldRate / (*baseRate);
 
-    finalLatency = PA_MAX(u->latency, u->minimum_latency);
+    pa_usec_t finalLatency = PA_MAX(u->latency, u->minimum_latency);
     *latencyDifference = (int32_t)(latencyAtOptimumRate - finalLatency);
 
     AUDIO_DEBUG_LOG("Loopback overall latency is %0.2f ms + %0.2f ms + %0.2f ms = %0.2f ms",
@@ -372,7 +366,7 @@ static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *
 /* Called from main context */
 static void AdjustRates(struct userdata *u)
 {
-    uint32_t baseRate, newRate, runHours;
+    uint32_t baseRate;
     int32_t latencyDifference;
 
     pa_assert(u);
@@ -380,7 +374,7 @@ static void AdjustRates(struct userdata *u)
 
     /* Runtime and counters since last change of source or sink
      * or source/sink latency */
-    runHours = u->iteration_counter * u->real_adjust_time / PA_USEC_PER_SEC / TIME_HOUR_TO_SECOND_UNIT;
+    uint32_t runHours = u->iteration_counter * u->real_adjust_time / PA_USEC_PER_SEC / TIME_HOUR_TO_SECOND_UNIT;
     u->iteration_counter += 1;
 
     /* If we are seeing underruns then the latency is too small */
@@ -420,7 +414,7 @@ static void AdjustRates(struct userdata *u)
     }
 
     /* Calculate new rate */
-    newRate = RateController(baseRate, u->real_adjust_time, latencyDifference);
+    uint32_t newRate = RateController(baseRate, u->real_adjust_time, latencyDifference);
 
     u->source_sink_changed = false;
 
@@ -548,11 +542,9 @@ static void UpdateLatencyBoundaries(struct userdata *u, pa_source *source, pa_si
  * Sets the memblockq to the configured latency corrected by latency_offset_usec */
 static void MemblockqAdjust(struct userdata *u, int64_t latencyOffsetUsec, bool allowPush)
 {
-    size_t currentMemblockqLength, requestedMemblockqLength, bufferCorrection;
+    size_t bufferCorrection;
     int64_t requestedBufferLatency;
-    pa_usec_t finalLatency, requestedSinkLatency;
-
-    finalLatency = PA_MAX(u->latency, u->output_thread_info.minimum_latency);
+    pa_usec_t finalLatency = PA_MAX(u->latency, u->output_thread_info.minimum_latency);
 
     /* If source or sink have some large negative latency offset, we might want to
      * hold more than final_latency in the memblockq */
@@ -560,12 +552,12 @@ static void MemblockqAdjust(struct userdata *u, int64_t latencyOffsetUsec, bool 
 
     /* Keep at least one sink latency in the queue to make sure that the sink
      * never underruns initially */
-    requestedSinkLatency = pa_sink_get_requested_latency_within_thread(u->sink_input->sink);
+    pa_usec_t requestedSinkLatency = pa_sink_get_requested_latency_within_thread(u->sink_input->sink);
     if (requestedBufferLatency < (int64_t)requestedSinkLatency)
         requestedBufferLatency = requestedSinkLatency;
 
-    requestedMemblockqLength = pa_usec_to_bytes(requestedBufferLatency, &u->sink_input->sample_spec);
-    currentMemblockqLength = pa_memblockq_get_length(u->memblockq);
+    size_t requestedMemblockqLength = pa_usec_to_bytes(requestedBufferLatency, &u->sink_input->sample_spec);
+    size_t currentMemblockqLength = pa_memblockq_get_length(u->memblockq);
     if (currentMemblockqLength > requestedMemblockqLength) {
         /* Drop audio from queue */
         bufferCorrection = currentMemblockqLength - requestedMemblockqLength;
@@ -667,9 +659,9 @@ static void UpdateEffectiveSourceLatency(struct userdata *u, pa_source *source, 
  * latency which would quickly lead to underruns */
 static void SetSourceOutputLatency(struct userdata *u, pa_source *source)
 {
-    pa_usec_t latency, requestedLatency;
+    pa_usec_t latency;
 
-    requestedLatency = u->latency / TRIPLE_FACTOR;
+    pa_usec_t requestedLatency = u->latency / TRIPLE_FACTOR;
 
     /* Normally we try to configure sink and source latency equally. If the
      * sink latency cannot match the requested source latency try to set the
@@ -879,7 +871,7 @@ static void ProcessSinkInputMessagePost(struct userdata *u, void *data, int64_t 
             time_delta -= (int64_t)pa_bytes_to_usec(chunk->length, &u->sink_input->sample_spec);
         }
 
-        /* FIXME: We allow pushing silence here to fix up the latency. This
+        /* We allow pushing silence here to fix up the latency. This
             * might lead to a gap in the stream */
         MemblockqAdjust(u, time_delta, true);
 
@@ -984,9 +976,9 @@ static int SinkInputProcessMsgCb(pa_msgobject *obj, int code, void *data, int64_
  * latency which would quickly lead to underruns. */
 static void SetSinkInputLatency(struct userdata *u, pa_sink *sink)
 {
-    pa_usec_t latency, requestedLatency;
+    pa_usec_t latency;
 
-    requestedLatency = u->latency / TRIPLE_FACTOR;
+    pa_usec_t requestedLatency = u->latency / TRIPLE_FACTOR;
 
     /* Normally we try to configure sink and source latency equally. If the
      * source latency cannot match the requested sink latency try to set the
@@ -1240,7 +1232,7 @@ static int InitSampleSpecAndChannelMap(pa_modargs *ma, struct userdata *u, pa_si
         u->ss = sink->sample_spec;
         u->map = sink->channel_map;
     } else {
-        /* FIXME: Dummy stream format, needed because pa_sink_input_new()
+        /* Dummy stream format, needed because pa_sink_input_new()
          * requires valid sample spec and channel map even when all the FIX_*
          * stream flags are specified. pa_sink_input_new() should be changed
          * to ignore the sample spec and channel map when the FIX_* flags are

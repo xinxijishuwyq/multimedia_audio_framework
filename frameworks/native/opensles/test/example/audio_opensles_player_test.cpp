@@ -256,7 +256,7 @@ static void OpenSlTestConcurrent()
     (*pcmPlayerObject2)->GetInterface(pcmPlayerObject2, SL_IID_VOLUME, &volumeItf2);
     SLmillibel level2 = 0;
     (*volumeItf2)->GetMaxVolumeLevel(volumeItf2, &level2);
-    temp = 15;
+    temp = 15; // MaxVolumeLevel
     level2 = (SLmillibel) (level2 / temp);
     (*volumeItf2)->SetVolumeLevel(volumeItf2, level2);
 
