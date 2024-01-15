@@ -17,18 +17,23 @@
 #define ST_DEVICE_INIT_CALLBACK_H
 
 #include "audio_policy_service.h"
+#ifdef FEATURE_DEVICE_MANAGER
 #include "device_manager_callback.h"
 #include "device_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
+#ifdef FEATURE_DEVICE_MANAGER
 class DeviceInitCallBack : public DistributedHardware::DmInitCallback {
 public:
     explicit DeviceInitCallBack() = default;
     ~DeviceInitCallBack() override {};
     void OnRemoteDied() override {};
 };
+#endif
 
+#ifdef FEATURE_DEVICE_MANAGER
 class DeviceStatusCallbackImpl : public DistributedHardware::DeviceStatusCallback {
 public:
     explicit DeviceStatusCallbackImpl();
@@ -41,6 +46,7 @@ public:
 private:
     AudioPolicyService& audioPolicyService_;
 };
+#endif
 
 } // namespace AudioStandard
 } // namespace OHOS

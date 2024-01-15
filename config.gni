@@ -51,6 +51,13 @@ declare_args() {
     audio_framework_feature_power_manager = false
   }
 
+  if (!defined(global_parts_info) ||
+      defined(global_parts_info.distributedhardware_device_manager)) {
+    audio_framework_feature_device_manager = true
+  } else {
+    audio_framework_feature_device_manager = false
+  }
+
   audio_framework_feature_new_napi = true
   multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
 
