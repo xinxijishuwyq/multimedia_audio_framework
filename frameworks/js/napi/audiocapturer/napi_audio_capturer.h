@@ -40,23 +40,20 @@ public:
 
 private:
     struct AudioCapturerAsyncContext : public ContextBase {
+        virtual ~AudioCapturerAsyncContext()
+        {
+            AUDIO_DEBUG_LOG("~AudioCapturerAsyncContext enter");
+        }
         uint64_t time;
         int32_t intValue;
         uint32_t userSize;
         uint8_t *buffer = nullptr;
-        void *data;
-        size_t bufferLen;
         size_t bytesRead;
         size_t bufferSize;
         uint32_t audioStreamId;
         bool isBlocking;
         bool isTrue;
-        ContentType contentType;
-        StreamUsage usage;
-        DeviceRole deviceRole;
-        DeviceType deviceType;
         SourceType sourceType;
-        int32_t capturerFlags;
         AudioCapturerOptions capturerOptions;
         AudioCapturerInfo capturerInfo;
         AudioStreamInfo streamInfo;

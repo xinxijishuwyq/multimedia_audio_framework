@@ -466,6 +466,8 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
 
     auto complete = [env, context](napi_value &output) {
         NapiParamUtils::CreateArrayBuffer(env, context->bytesRead, context->buffer, output);
+        free(context->buffer);
+        context->buffer = nullptr;
     };
 
     return NapiAsyncWork::Enqueue(env, context, "Read", executor, complete);
