@@ -209,7 +209,7 @@ private:
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
-    uint32_t sessionId_;
+    uint32_t sessionId_ = 0;
     int32_t clientUid_ = -1;
     int32_t clientPid_ = -1;
     uint32_t appTokenId_ = 0;
@@ -333,7 +333,7 @@ CapturerInClientInner::CapturerInClientInner(AudioStreamType eStreamType, int32_
 CapturerInClientInner::~CapturerInClientInner()
 {
     AUDIO_INFO_LOG("~CapturerInClientInner()");
-    ReleaseAudioStream(true);
+    CapturerInClientInner::ReleaseAudioStream(true);
 }
 
 int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -788,7 +788,7 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
-    int64_t deltaPos = writePos >= currentReadPos ? writePos - currentReadPos : 0;
+    int64_t deltaPos = writePos >= static_cast<uint64_t>(currentReadPos) ? writePos - currentReadPos : 0;
     int64_t tempLatency = 25000000; // 25000000 -> 25 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 
@@ -1524,8 +1524,8 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
-            std::unique_lock<std::mutex> lock(readDataMutex_);
-            std::cv_status stat = readDataCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
+            std::unique_lock<std::mutex> readLock(readDataMutex_);
+            std::cv_status stat = readDataCV_.wait_for(readLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
             CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
         }
     }

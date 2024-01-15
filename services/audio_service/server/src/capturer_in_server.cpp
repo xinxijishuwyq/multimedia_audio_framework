@@ -184,7 +184,7 @@ void CapturerInServer::ReadData(size_t length)
     AUDIO_DEBUG_LOG("Current write frame: %{public}" PRIu64 ", read frame: %{public}" PRIu64 ","
         "avaliable frame:%{public}d, spanSizeInFrame:%{public}zu", currentWriteFrame, currentReadFrame,
         audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_);
-    if (audioServerBuffer_->GetAvailableDataFrames() <= spanSizeInFrame_) {
+    if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
         AUDIO_INFO_LOG("OverFlow!!!");
         stream_->DequeueBuffer(length);
         stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);

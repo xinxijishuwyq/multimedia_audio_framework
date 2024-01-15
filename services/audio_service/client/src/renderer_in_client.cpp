@@ -218,7 +218,7 @@ private:
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
-    uint32_t sessionId_;
+    uint32_t sessionId_ = 0;
     int32_t clientPid_ = -1;
     int32_t clientUid_ = -1;
     uint32_t appTokenId_ = 0;
@@ -322,7 +322,7 @@ private:
 
     float speed_ = 1.0;
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
-    size_t bufferSize_;
+    size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 
     enum {
@@ -365,7 +365,7 @@ RendererInClientInner::~RendererInClientInner()
 {
     AUDIO_INFO_LOG("~RendererInClientInner()");
     DumpFileUtil::CloseDumpFile(&dumpOutFd_);
-    ReleaseAudioStream(true);
+    RendererInClientInner::ReleaseAudioStream(true);
 }
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -752,7 +752,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
-    int64_t deltaPos = currentWritePos >= readPos ?  currentWritePos - readPos : 0;
+    int64_t deltaPos = static_cast<uint64_t>(currentWritePos) >= readPos ?  currentWritePos - readPos : 0;
     int64_t tempLatency = 45000000; // 45000000 -> 45 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 
@@ -1056,7 +1056,7 @@ void RendererInClientInner::WriteCallbackFunc()
             }
             // call write here.
             int32_t result = Write(temp.buffer, temp.bufLength);
-            if (result < 0 || result != temp.bufLength) {
+            if (result < 0 || result != static_cast<int32_t>(temp.bufLength)) {
                 AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
             }
         }
