@@ -363,9 +363,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioDeviceUsageMap = {
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioDeviceChangeReasonMap = {
-    {"UNKOWN", static_cast<int32_t>(AudioStreamDeviceChangeReason::UNKOWN)},
-    {"NEW_DEVICE_AVAILABLE", static_cast<int32_t>(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE)},
-    {"OLD_DEVICE_UNAVALIABLE", static_cast<int32_t>(AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE)},
+    {"REASON_UNKNOWN", static_cast<int32_t>(AudioStreamDeviceChangeReason::UNKOWN)},
+    {"REASON_NEW_DEVICE_AVAILABLE", static_cast<int32_t>(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE)},
+    {"REASON_OLD_DEVICE_UNAVAILABLE", static_cast<int32_t>(AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE)},
+    {"REASON_OVERRODE", static_cast<int32_t>(AudioStreamDeviceChangeReason::OVERRODE)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSpatialDeivceTypeMap = {
