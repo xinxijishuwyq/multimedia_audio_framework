@@ -187,9 +187,6 @@ struct Userdata {
         pa_usec_t timestamp;
         pa_thread *thread;
         pa_thread *thread_hdi;
-        pa_fdsem *fdsem;
-        pa_rtpoll_item *rtpollItem;
-        pa_rtpoll *rtpoll;
         bool isHDISinkStarted;
         bool isHDISinkInited;
         struct RendererSinkAdapter *sinkAdapter;
@@ -245,14 +242,14 @@ static void Write24Bit(uint8_t *p, uint32_t u)
     p[0] = (uint8_t) u;
 }
 
-void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b)
+static void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b)
 {
     for (; n > 0; n--) {
         *(b++) = *(a++) * (1.0f / (1 << (BIT_16 - 1)));
     }
 }
 
-void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
+static void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
 {
     for (; n > 0; n--) {
         int32_t s = Read24Bit(a) << BIT_8;
@@ -262,14 +259,14 @@ void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b)
     }
 }
 
-void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
+static void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 {
     for (; n > 0; n--) {
         *(b++) = *(a++) * (1.0f / (1U << (BIT_32 - 1)));
     }
 }
 
-float CapMax(float v)
+static float CapMax(float v)
 {
     float value = v;
     if (v > 1.0f) {
@@ -280,7 +277,7 @@ float CapMax(float v)
     return value;
 }
 
-void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
+static void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
 {
     for (; n > 0; n--) {
         float tmp = *a++;
@@ -289,7 +286,7 @@ void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
     }
 }
 
-void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
+static void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
 {
     for (; n > 0; n--) {
         float tmp = *a++;
@@ -299,7 +296,7 @@ void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
     }
 }
 
-void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
+static void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
 {
     for (; n > 0; n--) {
         float tmp = *a++;
@@ -374,34 +371,33 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
 
     pa_resampler *r;
     pa_sample_spec ss = sinkIn->thread_info.resampler->o_ss;
-    pa_channel_map cm = sinkIn->thread_info.resampler->o_cm;
     pa_channel_map processCm;
     ConvertChLayoutToPaChMap(processChannelLayout, &processCm);
     if (processChannels == sinkIn->thread_info.resampler->i_ss.channels) {
         ss.channels = sinkIn->thread_info.resampler->i_ss.channels;
-        cm          = sinkIn->thread_info.resampler->i_cm;
+        pa_channel_map cm = sinkIn->thread_info.resampler->i_cm;
         if (ss.channels == sinkIn->thread_info.resampler->o_ss.channels) {
             return;
         }
         r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
-                            &sinkIn->thread_info.resampler->i_ss,
-                            &sinkIn->thread_info.resampler->i_cm,
-                            &ss, &cm,
-                            sinkIn->core->lfe_crossover_freq,
-                            sinkIn->thread_info.resampler->method,
-                            sinkIn->thread_info.resampler->flags);
+                             &sinkIn->thread_info.resampler->i_ss,
+                             &sinkIn->thread_info.resampler->i_cm,
+                             &ss, &cm,
+                             sinkIn->core->lfe_crossover_freq,
+                             sinkIn->thread_info.resampler->method,
+                             sinkIn->thread_info.resampler->flags);
     } else {
         ss.channels = processChannels;
         if (ss.channels == sinkIn->thread_info.resampler->o_ss.channels) {
             return;
         }
         r = pa_resampler_new(sinkIn->thread_info.resampler->mempool,
-                            &sinkIn->thread_info.resampler->i_ss,
-                            &sinkIn->thread_info.resampler->i_cm,
-                            &ss, &processCm,
-                            sinkIn->core->lfe_crossover_freq,
-                            sinkIn->thread_info.resampler->method,
-                            sinkIn->thread_info.resampler->flags);
+                             &sinkIn->thread_info.resampler->i_ss,
+                             &sinkIn->thread_info.resampler->i_cm,
+                             &ss, &processCm,
+                             sinkIn->core->lfe_crossover_freq,
+                             sinkIn->thread_info.resampler->method,
+                             sinkIn->thread_info.resampler->flags);
     }
     pa_resampler_free(sinkIn->thread_info.resampler);
     sinkIn->thread_info.resampler = r;
@@ -410,7 +406,8 @@ static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool m
 
 static ssize_t RenderWrite(struct RendererSinkAdapter *sinkAdapter, pa_memchunk *pchunk)
 {
-    size_t index, length;
+    size_t index;
+    size_t length;
     ssize_t count = 0;
     void *p = NULL;
 
@@ -474,7 +471,8 @@ static void OffloadSetHdiVolumeBufferSize(pa_sink_input *i)
 }
 static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memchunk *pchunk)
 {
-    size_t index, length;
+    size_t index;
+    size_t length;
     void *p = NULL;
 
     pa_assert(pchunk);
@@ -515,7 +513,7 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
     return 0;
 }
 
-void OffloadCallback(const enum RenderCallbackType type, int8_t *userdata)
+static void OffloadCallback(const enum RenderCallbackType type, int8_t *userdata)
 {
     struct Userdata *u = (struct Userdata *)userdata;
     switch (type) {
@@ -553,7 +551,8 @@ static void RegOffloadCallback(struct Userdata *u)
 
 static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
 {
-    size_t index, length;
+    size_t index;
+    size_t length;
     ssize_t count = 0;
     void *p = NULL;
 
@@ -600,7 +599,7 @@ static ssize_t TestModeRenderWrite(struct Userdata *u, pa_memchunk *pchunk)
     return count;
 }
 
-bool IsInnerCapturer(pa_sink_input *sinkIn)
+static bool IsInnerCapturer(pa_sink_input *sinkIn)
 {
     pa_sink_input_assert_ref(sinkIn);
 
@@ -725,10 +724,10 @@ static void SinkRenderPrimaryMix(pa_sink *si, size_t length, pa_mix_info *infoIn
         ptr = pa_memblock_acquire(chunkIn->memblock);
 
         chunkIn->length = pa_mix(infoIn, n,
-                                (uint8_t*) ptr + chunkIn->index, length,
-                                &si->sample_spec,
-                                &si->thread_info.soft_volume,
-                                si->thread_info.soft_muted);
+                                 (uint8_t*) ptr + chunkIn->index, length,
+                                 &si->sample_spec,
+                                 &si->thread_info.soft_volume,
+                                 si->thread_info.soft_muted);
 
         pa_memblock_release(chunkIn->memblock);
     }
@@ -771,11 +770,12 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
     }
 }
 
-int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
+static int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
 {
     pa_mix_info infoIn[MAX_MIX_CHANNELS];
     unsigned n;
-    size_t length, blockSizeMax;
+    size_t length;
+    size_t blockSizeMax;
 
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
@@ -811,10 +811,11 @@ int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
     return n;
 }
 
-int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
+static int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
 {
     pa_memchunk chunk;
-    size_t l, d;
+    size_t l;
+    size_t d;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
@@ -1045,7 +1046,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
         bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
+        if (!existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
             pa_sink_input_assert_ref(sinkIn);
             updateResampler(sinkIn, NULL, true);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
@@ -1075,11 +1076,12 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     return n;
 }
 
-int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
+static int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
-    size_t length, blockSizeMax;
+    size_t length;
+    size_t blockSizeMax;
 
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
@@ -1116,11 +1118,12 @@ int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sceneType
     return n;
 }
 
-int32_t SinkRenderMultiChannelPeek(pa_sink *si, pa_memchunk *chunkIn)
+static int32_t SinkRenderMultiChannelPeek(pa_sink *si, pa_memchunk *chunkIn)
 {
     pa_mix_info info[MAX_MIX_CHANNELS];
     unsigned n;
-    size_t length, blockSizeMax;
+    size_t length;
+    size_t blockSizeMax;
 
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
@@ -1156,11 +1159,12 @@ int32_t SinkRenderMultiChannelPeek(pa_sink *si, pa_memchunk *chunkIn)
     return n;
 }
 
-int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
+static int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneType)
 {
     AUTO_CLEAR CTrace *trace = GetAndStart("hdi_sink::SinkRenderPrimaryGetData");
     pa_memchunk chunk;
-    size_t l, d;
+    size_t l;
+    size_t d;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
@@ -1199,10 +1203,11 @@ int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char *sceneT
     return nSinkInput;
 }
 
-int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
+static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
 {
     pa_memchunk chunk;
-    size_t l, d;
+    size_t l;
+    size_t d;
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
@@ -1330,7 +1335,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     pa_memblock_unref(capResult.memblock);
 }
 
-void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+static void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
@@ -1521,7 +1526,7 @@ static int32_t GetInputsType(pa_sink *s, unsigned *nPrimary, unsigned *nOffload,
     return n;
 }
 
-size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool *wait)
+static size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool *wait)
 {
     size_t length;
     playback_stream *ps = i->userdata;
@@ -1587,10 +1592,10 @@ static void InputsDropFromInputs2(pa_mix_info *info, unsigned n)
 static void InputsDropFromInputs(pa_mix_info *infoInputs, unsigned nInputs, pa_mix_info *info, unsigned n,
     pa_memchunk *result)
 {
-    unsigned p = 0, ii = 0, nUnreffed = 0;
-
+    unsigned p = 0;
+    unsigned ii = 0;
+    unsigned nUnreffed = 0;
     pa_assert(result && result->memblock && result->length > 0);
-
     /* We optimize for the case where the order of the inputs has not changed */
 
     for (ii = 0; ii < nInputs; ++ii) {
@@ -1645,10 +1650,11 @@ static void InputsDropFromInputs(pa_mix_info *infoInputs, unsigned nInputs, pa_m
 
 static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigned nInputs, pa_memchunk *target)
 {
-    size_t length, blockSizeMax;
-    unsigned n = 0, ii = 0;
+    size_t length;
+    size_t blockSizeMax;
+    unsigned n = 0;
+    unsigned ii = 0;
     pa_mix_info info[MAX_MIX_CHANNELS];
-
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
 
@@ -1706,7 +1712,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
     InputsDropFromInputs(infoInputs, nInputs, info, n, target);
 }
 
-void OffloadReset(struct Userdata *u)
+static void OffloadReset(struct Userdata *u)
 {
     u->offload.pos = 0;
     u->offload.hdiPos = 0;
@@ -1719,7 +1725,7 @@ void OffloadReset(struct Userdata *u)
     u->offload.fullTs = 0;
 }
 
-int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_info *infoInputs, unsigned nInputs,
+static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_info *infoInputs, unsigned nInputs,
     int32_t *writen)
 {
     pa_sink_input *i = infoInputs[0].userdata;
@@ -1728,7 +1734,8 @@ int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_info *i
     pa_memchunk *chunk = &(u->offload.chunk);
     chunk->index = 0;
     chunk->length = length;
-    int64_t l, d;
+    int64_t l;
+    int64_t d;
     l = chunk->length;
     size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
     blockSize = PA_MAX(blockSize, pa_usec_to_bytes(0.6 * OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC, // 0.6 40% is hdi limit
@@ -1766,7 +1773,7 @@ int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_info *i
     return ret;
 }
 
-int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int32_t *nInput, int32_t *writen)
+static int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int32_t *nInput, int32_t *writen)
 {
     *wait = true;
     pa_sink *s = u->sink;
@@ -1815,7 +1822,8 @@ int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int32_t *n
 static int32_t UpdatePresentationPosition(struct Userdata *u)
 {
     uint64_t frames;
-    int64_t timeSec, timeNanoSec;
+    int64_t timeSec;
+    int64_t timeNanoSec;
     int ret = u->offload.sinkAdapter->RendererSinkGetPresentationPosition(
         u->offload.sinkAdapter, &frames, &timeSec, &timeNanoSec);
     if (ret != 0) {
@@ -2021,7 +2029,9 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
         return;
     }
 
-    unsigned nPrimary, nOffload, nMultiChannel;
+    unsigned nPrimary;
+    unsigned nOffload;
+    unsigned nMultiChannel;
     GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (nPrimary == 0) {
         return;
@@ -2041,7 +2051,7 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
 static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels, uint64_t sinkChannelLayout)
 {
     if (u->multiChannel.isHDISinkInited) {
-        if (u->multiChannel.sample_attrs.channel != sinkChannels) {
+        if (u->multiChannel.sample_attrs.channel != (uint32_t)sinkChannels) {
             u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkStarted = false;
             u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
@@ -2245,7 +2255,9 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now
             flag = false;
             *sleepForUsec = delta;
         } else {
-            unsigned nPrimary, nOffload, nMultiChannel;
+            unsigned nPrimary;
+            unsigned nOffload;
+            unsigned nMultiChannel;
             GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
             if (nOffload == 0) {
                 flag = false;
@@ -2296,10 +2308,10 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
     OffloadReset(u);
 
     u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
-    int32_t ret;
     pthread_rwlock_rdlock(&u->rwlockSleep);
 
     while (true) {
+        int32_t ret;
         if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
             AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload pthread_mutex_unlock ret %d", ret);
         }
@@ -2333,9 +2345,9 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
 
         if (sleepForUsec != -1) {
             if (u->timestampSleep == -1) {
-                u->timestampSleep = pa_rtclock_now() + sleepForUsec;
+                u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
             } else {
-                u->timestampSleep = PA_MIN(u->timestampSleep, pa_rtclock_now() + sleepForUsec);
+                u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
             }
         }
     }
@@ -2363,7 +2375,7 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     chunkIn->length = tmpLength;
 }
 
-void SinkRenderMultiChannel(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+static void SinkRenderMultiChannel(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
@@ -2497,9 +2509,9 @@ static void ThreadFuncRendererTimerMultiChannel(void *userdata)
 
         if (sleepForUsec != -1) {
             if (u->timestampSleep == -1) {
-                u->timestampSleep = pa_rtclock_now() + sleepForUsec;
+                u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
             } else {
-                u->timestampSleep = PA_MIN(u->timestampSleep, pa_rtclock_now() + sleepForUsec);
+                u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
             }
         }
     }
@@ -2555,7 +2567,9 @@ static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUse
     bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
                 (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
-    unsigned nPrimary, nOffload, nHd;
+    unsigned nPrimary;
+    unsigned nOffload;
+    unsigned nHd;
     int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
     if (n != 0 && !monitorLinked(u->sink, true)) {
         flag &= nPrimary > 0;
@@ -2592,10 +2606,10 @@ static void ThreadFuncRendererTimer(void *userdata)
     pa_thread_mq_install(&u->thread_mq);
 
     u->primary.timestamp = pa_rtclock_now();
-    int32_t ret;
     pthread_rwlock_rdlock(&u->rwlockSleep);
 
     while (true) {
+        int32_t ret;
         if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
             AUDIO_WARNING_LOG("ThreadFuncRendererTimer pthread_mutex_unlock ret %d", ret);
         }
@@ -2612,9 +2626,9 @@ static void ThreadFuncRendererTimer(void *userdata)
 
         if (sleepForUsec != -1) {
             if (u->timestampSleep == -1) {
-                u->timestampSleep = pa_rtclock_now() + sleepForUsec;
+                u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
             } else {
-                u->timestampSleep = PA_MIN(u->timestampSleep, pa_rtclock_now() + sleepForUsec);
+                u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
             }
         }
     }
@@ -2669,7 +2683,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         unsigned nPrimary, nOffload, nMultiChannel;
         int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
 
-        if (u->timestampSleep < pa_rtclock_now()) {
+        if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
             u->timestampSleep = -1;
         }
 
@@ -2946,7 +2960,9 @@ static int32_t SinkSetStateInIoThreadCbStartPrimary(struct Userdata *u, pa_sink_
         return 0;
     }
 
-    unsigned nPrimary, nOffload, nMultiChannel;
+    unsigned nPrimary;
+    unsigned nOffload;
+    unsigned nMultiChannel;
     GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
     if (u->offload_enable && nPrimary == 0) {
         return 0;
@@ -3220,8 +3236,7 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
 
     AUDIO_INFO_LOG("Initializing HDI rendering device with rate: %{public}d, channels: %{public}d",
         u->ss.rate, u->ss.channels);
-    if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0)
-        goto fail;
+    if (PrepareDevice(u, pa_modargs_get_value(ma, "file_path", "")) < 0) { goto fail; }
 
     u->primary.prewrite = 0;
     if (u->offload_enable && !strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_PRIMARY)) {
@@ -3259,7 +3274,7 @@ fail:
     return NULL;
 }
 
-int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, struct Userdata *u)
+static int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
     int ret;
     char *paThreadName = NULL;
@@ -3289,7 +3304,7 @@ int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, struct 
     return 0;
 }
 
-int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
+static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
     char *paThreadName = NULL;
 
@@ -3346,7 +3361,7 @@ int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userdata *u)
     return 0;
 }
 
-int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Userdata *u)
+static int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
     u->core = m->core;
     u->module = m;
@@ -3405,7 +3420,7 @@ int32_t PaHdiSinkNewInitUserData(pa_module *m, pa_modargs *ma, struct Userdata *
     return 0;
 }
 
-int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, const char *driver, struct Userdata *u)
+static int32_t PaHdiSinkNewInitUserDataAndSink(pa_module *m, pa_modargs *ma, const char *driver, struct Userdata *u)
 {
     if (pa_modargs_get_value_boolean(ma, "offload_enable", &u->offload_enable) < 0) {
         AUDIO_ERR_LOG("Failed to parse offload_enable argument.");
@@ -3589,8 +3604,9 @@ static void UserdataFree(struct Userdata *u)
 {
     pa_assert(u);
 
-    if (u->sink)
+    if (u->sink) {
         pa_sink_unlink(u->sink);
+    }
 
     UserdataFreeThread(u);
 

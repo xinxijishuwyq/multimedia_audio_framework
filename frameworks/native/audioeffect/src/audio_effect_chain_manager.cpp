@@ -243,9 +243,32 @@ SessionInfoPack PackSessionInfo(const uint32_t channels, const char *channelLayo
 {
     SessionInfoPack pack;
     pack.channels = channels;
-    pack.channelLayout = (char *)channelLayout;
-    pack.sceneMode = (char *)sceneMode;
-    pack.spatializationEnabled = (char *)spatializationEnabled;
+    char buffer[50];
+
+    if (channelLayout != nullptr && sceneMode != nullptr && spatializationEnabled != nullptr) {
+        errno_t err = strcpy_s(buffer, sizeof(buffer), channelLayout);
+        if (err != 0) {
+            AUDIO_ERR_LOG("String copy channelLayout failed!");
+            return pack;
+        }
+        pack.channelLayout = buffer;
+
+        err = strcpy_s(buffer, sizeof(buffer), sceneMode);
+        if (err != 0) {
+            AUDIO_ERR_LOG("String copy sceneMode failed!");
+            return pack;
+        }
+        pack.sceneMode = buffer;
+        
+        err = strcpy_s(buffer, sizeof(buffer), spatializationEnabled);
+        if (err != 0) {
+            AUDIO_ERR_LOG("String copy spatializationEnabled failed!");
+            return pack;
+        }
+        pack.spatializationEnabled = buffer;
+    } else {
+        AUDIO_ERR_LOG("Session info pack failed!");
+    }
     return pack;
 }
 
@@ -1077,13 +1100,12 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
         %{public}d and %{public}d", spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
         spatializationEnabled_, headTrackingEnabled_);
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    int32_t ret;
     if (spatializationEnabled_ != spatializationState.spatializationEnabled) {
         spatializationEnabled_ = spatializationState.spatializationEnabled;
         memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
         if (spatializationEnabled_) {
             effectHdiInput[0] = HDI_INIT;
-            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+            int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
                 AUDIO_ERR_LOG("set hdi init failed, backup spatialization entered");
                 offloadEnabled_ = false;
@@ -1095,7 +1117,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
         } else {
             effectHdiInput[0] = HDI_DESTROY;
             AUDIO_INFO_LOG("set hdi destory.");
-            ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
+            int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
                 AUDIO_ERR_LOG("set hdi destory failed");
             }
