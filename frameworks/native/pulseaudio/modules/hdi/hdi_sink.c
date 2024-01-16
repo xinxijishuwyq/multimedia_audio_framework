@@ -2299,7 +2299,6 @@ static void ThreadFuncRendererTimerOffload(void *userdata)
 
     struct Userdata *u = userdata;
 
-
     pa_assert(u);
 
     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
