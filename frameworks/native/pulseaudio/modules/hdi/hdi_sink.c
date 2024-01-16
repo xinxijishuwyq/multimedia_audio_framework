@@ -2681,12 +2681,12 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         }
 
         unsigned nPrimary, nOffload, nMultiChannel;
-        
         int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
 
         if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
             u->timestampSleep = -1;
         }
+        
         pthread_rwlock_unlock(&u->rwlockSleep);
 
         bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
