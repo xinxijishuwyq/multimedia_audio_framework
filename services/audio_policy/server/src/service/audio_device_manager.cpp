@@ -510,7 +510,7 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
 unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice()
 {
     unique_ptr<AudioDeviceDescriptor> devDesc;
-    if (localDevicesType_.compare("phone")) {
+    if (localDevicesType_.compare("phone") == 0) {
         devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
     } else {
         devDesc = make_unique<AudioDeviceDescriptor>(speaker_);
