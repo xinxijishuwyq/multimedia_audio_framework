@@ -171,7 +171,6 @@ void AudioPnpServer::OpenAndReadWithSocket()
 #ifdef AUDIO_DOUBLE_PNP_DETECT
 void AudioPnpServer::UpdateUsbHeadset()
 {
-    OsalMSleep(AUDIO_DEVICE_WAIT_USB_HEADSET_ONLINE);
     char pnpInfo[AUDIO_EVENT_INFO_LEN_MAX] = {0};
     int32_t ret;
     bool status = AudioSocketThread::IsUpdatePnpDeviceState(&g_usbHeadset);
@@ -218,6 +217,7 @@ void AudioPnpServer::DetectAudioDevice()
         std::unique_ptr<std::thread> bootupThread_ = nullptr;
         bootupThread_ = std::make_unique<std::thread>(&AudioPnpServer::UpdateUsbHeadset, this);
         pthread_setname_np(bootupThread_->native_handle(), "OS_BootupEvent");
+        OsalMSleep(AUDIO_DEVICE_WAIT_USB_EVENT_UPDATE);
         if (AudioSocketThread::audioSocketEvent_.eventType != AUDIO_EVENT_UNKNOWN &&
             AudioSocketThread::audioSocketEvent_.deviceType != AUDIO_DEVICE_UNKNOWN) {
             eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
