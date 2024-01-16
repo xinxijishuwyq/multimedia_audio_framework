@@ -206,10 +206,6 @@ ohos_shared_library("audio_policy_service") {
     "../../../../drivers/peripheral/audio/interfaces/include",
     "../../../../drivers/peripheral/audio/hal/hdi_binder/server/include/",
     "../../../../drivers/peripheral/audio/hdi_service/primary_impl/include/",
-    "../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "../../../../foundation/systemabilitymgr/safwk/services/safwk/include",
-    "../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "../../../../foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include/",
     "//third_party/libxml2/include",
     "//third_party/pulseaudio/src",
     "//third_party/pulseaudio/confgure/src",
@@ -232,7 +228,6 @@ ohos_shared_library("audio_policy_service") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "device_manager:devicemanagersdk",
     "drivers_interface_audio:audio_idl_headers",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
@@ -271,6 +266,11 @@ ohos_shared_library("audio_policy_service") {
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
     external_deps += [ "input:libmmi-client" ]
+  }
+
+  if (audio_framework_feature_device_manager) {
+    defines += [ "FEATURE_DEVICE_MANAGER" ]
+    external_deps += [ "device_manager:devicemanagersdk" ]
   }
 
   subsystem_name = "multimedia"

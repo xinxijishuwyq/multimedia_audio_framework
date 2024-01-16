@@ -30,9 +30,11 @@
 #include "datashare_predicates.h"
 #include "datashare_result_set.h"
 #include "data_share_observer_callback.h"
-#include "device_manager.h"
 #include "device_init_callback.h"
+#ifdef FEATURE_DEVICE_MANAGER
+#include "device_manager.h"
 #include "device_manager_impl.h"
+#endif
 #include "uri.h"
 #include "audio_spatialization_service.h"
 
@@ -3200,12 +3202,14 @@ void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLo
 
 void AudioPolicyService::RegisterRemoteDevStatusCallback()
 {
+#ifdef FEATURE_DEVICE_MANAGER
     AUDIO_INFO_LOG("RegisterRemoteDevStatusCallback start");
     std::shared_ptr<DistributedHardware::DmInitCallback> initCallback = std::make_shared<DeviceInitCallBack>();
     int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, initCallback);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init device manage failed");
     std::shared_ptr<DistributedHardware::DeviceStatusCallback> callback = std::make_shared<DeviceStatusCallbackImpl>();
     DistributedHardware::DeviceManager::GetInstance().RegisterDevStatusCallback(AUDIO_SERVICE_PKG, "", callback);
+#endif
 }
 
 bool AudioPolicyService::CreateDataShareHelperInstance()
@@ -3267,6 +3271,7 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
         deviceDescriptor->displayName_ = devicesName;
     } else {
+#ifdef FEATURE_DEVICE_MANAGER
         std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
         int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "UpdateDisplayName init device failed");
@@ -3282,6 +3287,7 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
                 }
             }
         };
+#endif
     }
 }
 

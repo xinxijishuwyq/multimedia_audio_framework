@@ -20,12 +20,15 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+#ifdef FEATURE_DEVICE_MANAGER
 DeviceStatusCallbackImpl::DeviceStatusCallbackImpl()
     : audioPolicyService_(AudioPolicyService::GetAudioPolicyService())
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 }
+#endif
 
+#ifdef FEATURE_DEVICE_MANAGER
 void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo)
 {
     std::string strDeviceName(dmDeviceBasicInfo.deviceName);
@@ -34,5 +37,6 @@ void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDevi
     //OnDeviceChanged listeren did not report networkId information
     audioPolicyService_.SetDisplayName(strDeviceName, false);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
