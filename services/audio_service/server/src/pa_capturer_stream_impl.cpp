@@ -94,6 +94,10 @@ int32_t PaCapturerStreamImpl::InitParams()
         return ERR_OPERATION_FAILED;
     }
     minBufferSize_ = (size_t)bufferAttr->fragsize;
+    if (byteSizePerFrame_ == 0) {
+        AUDIO_ERR_LOG("byteSizePerFrame_ should not be zero.");
+        return ERR_INVALID_PARAM;
+    }
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
     AUDIO_INFO_LOG("byteSizePerFrame_ %{public}zu, spanSizeInFrame_ %{public}zu, minBufferSize_ %{public}zu",
         byteSizePerFrame_, spanSizeInFrame_, minBufferSize_);

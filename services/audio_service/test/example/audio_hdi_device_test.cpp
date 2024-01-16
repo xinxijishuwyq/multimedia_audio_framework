@@ -95,7 +95,7 @@ public:
         IAudioSinkAttr attr = {};
         attr.adapterName = "primary";
         attr.sampleRate = 48000; // 48000hz
-        attr.channel = 2;
+        attr.channel = 2; // two channel
         attr.format = HdiAdapterFormat::SAMPLE_S16;
 
         hdiRenderSink_->Init(attr);

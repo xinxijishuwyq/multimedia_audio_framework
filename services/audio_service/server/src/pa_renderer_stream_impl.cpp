@@ -94,6 +94,10 @@ int32_t PaRendererStreamImpl::InitParams()
         return ERR_OPERATION_FAILED;
     }
     minBufferSize_ = (size_t)bufferAttr->minreq;
+    if (byteSizePerFrame_ == 0) {
+        AUDIO_ERR_LOG("byteSizePerFrame_ should not be zero.");
+        return ERR_INVALID_PARAM;
+    }
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
 
     // In plan: Get data from xml

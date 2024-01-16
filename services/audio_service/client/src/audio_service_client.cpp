@@ -849,7 +849,6 @@ std::pair<const int32_t, const std::string> AudioServiceClient::GetDeviceNameFor
 int32_t AudioServiceClient::ConnectStreamToPA()
 {
     AUDIO_DEBUG_LOG("AudioServiceClient::ConnectStreamToPA");
-    int error, result;
 
     int32_t ret = CheckReturnIfinvalid(mainLoop && context && paStream, AUDIO_CLIENT_ERR);
     CHECK_AND_RETURN_RET(ret >= 0, AUDIO_CLIENT_ERR);
@@ -879,6 +878,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     }
     bufferAttr.minreq = bufferAttr.prebuf;
 
+    int result;
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         result = pa_stream_connect_playback(paStream, deviceName, &bufferAttr,
             (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
@@ -904,7 +904,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
                                           | PA_STREAM_AUTO_TIMING_UPDATE));
     }
     if (result < 0) {
-        error = pa_context_errno(context);
+        int error = pa_context_errno(context);
         AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
         pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
@@ -917,7 +917,7 @@ int32_t AudioServiceClient::ConnectStreamToPA()
             break;
 
         if (!PA_STREAM_IS_GOOD(state)) {
-            error = pa_context_errno(context);
+            int error = pa_context_errno(context);
             pa_threaded_mainloop_unlock(mainLoop);
             AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
             ResetPAAudioClient();
@@ -2067,7 +2067,8 @@ void AudioServiceClient::GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool be
     }
 
     uint64_t frames;
-    int64_t timeSec, timeNanoSec;
+    int64_t timeSec;
+    int64_t timeNanoSec;
     audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
     int64_t framesInt = static_cast<int64_t>(frames);
     int64_t timeStampInt = static_cast<int64_t>(timeStamp);
@@ -2185,7 +2186,8 @@ int32_t AudioServiceClient::UpdateOffloadStreamPosition(UpdatePositionTimeNode n
 int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
 {
     uint64_t frames;
-    int64_t timeSec, timeNanoSec;
+    int64_t timeSec;
+    int64_t timeNanoSec;
     unique_lock<mutex> positionLock(streamPositionMutex_);
     std::string deviceClass = offloadEnable_ ? "offload" : "primary";
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK &&
