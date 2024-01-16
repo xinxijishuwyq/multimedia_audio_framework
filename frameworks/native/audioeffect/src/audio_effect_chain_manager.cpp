@@ -245,12 +245,12 @@ SessionInfoPack PackSessionInfo(const uint32_t channels, const char *channelLayo
     pack.channels = channels;
     char buffer[50];
 
-    if (channelLayout != NULL && sceneMode != NULL && spatializationEnabled != NULL) {
-        strcpy(buffer, channelLayout);
+    if (channelLayout != nullptr && sceneMode != nullptr && spatializationEnabled != nullptr) {
+        strcpy_s(buffer, sizeof(buffer), channelLayout);
         pack.channelLayout = buffer;
-        strcpy(buffer, sceneMode);
+        strcpy_s(buffer, sizeof(buffer), sceneMode);
         pack.sceneMode = buffer;
-        strcpy(buffer, spatializationEnabled);
+        strcpy_s(buffer, sizeof(buffer), spatializationEnabled);
         pack.spatializationEnabled = buffer;
     } else {
         AUDIO_ERR_LOG("Session info pack failed!");
