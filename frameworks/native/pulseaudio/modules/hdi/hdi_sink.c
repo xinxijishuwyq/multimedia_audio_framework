@@ -2686,7 +2686,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
         if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
             u->timestampSleep = -1;
         }
-        
+
         pthread_rwlock_unlock(&u->rwlockSleep);
 
         bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
