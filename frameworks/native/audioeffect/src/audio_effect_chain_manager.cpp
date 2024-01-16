@@ -246,11 +246,25 @@ SessionInfoPack PackSessionInfo(const uint32_t channels, const char *channelLayo
     char buffer[50];
 
     if (channelLayout != nullptr && sceneMode != nullptr && spatializationEnabled != nullptr) {
-        strcpy_s(buffer, sizeof(buffer), channelLayout);
+        errno_t err = strcpy_s(buffer, sizeof(buffer), channelLayout);
+        if (err != 0) {
+            AUDIO_ERR_LOG("String copy channelLayout failed!");
+            return pack;
+        }
         pack.channelLayout = buffer;
-        strcpy_s(buffer, sizeof(buffer), sceneMode);
+
+        err = strcpy_s(buffer, sizeof(buffer), sceneMode);
+        if (err != 0) {
+            AUDIO_ERR_LOG("String copy sceneMode failed!");
+            return pack;
+        }
         pack.sceneMode = buffer;
-        strcpy_s(buffer, sizeof(buffer), spatializationEnabled);
+        
+        err = strcpy_s(buffer, sizeof(buffer), spatializationEnabled);
+        if (err != 0) {
+            AUDIO_ERR_LOG("String copy spatializationEnabled failed!");
+            return pack;
+        }
         pack.spatializationEnabled = buffer;
     } else {
         AUDIO_ERR_LOG("Session info pack failed!");
