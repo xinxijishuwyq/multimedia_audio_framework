@@ -1003,15 +1003,9 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
+int32_t AudioServiceClient::CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType)
 {
-    AUDIO_INFO_LOG("AudioServiceClient::CreateStream");
     int error;
-    lock_guard<mutex> lockdata(dataMutex_);
-    int32_t ret = CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR);
-    CHECK_AND_RETURN_RET(ret >= 0, AUDIO_CLIENT_ERR);
-
-    CHECK_AND_RETURN_RET(eAudioClientType != AUDIO_SERVICE_CLIENT_CONTROLLER, AUDIO_CLIENT_INVALID_PARAMS_ERR);
     pa_threaded_mainloop_lock(mainLoop);
     streamType_ = audioType;
     const std::string streamName = GetStreamName(audioType);
@@ -1058,7 +1052,24 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_stream_set_event_callback(paStream, PAStreamEventCb, (void *)this);
 
     pa_threaded_mainloop_unlock(mainLoop);
+    return AUDIO_CLIENT_SUCCESS;
+}
 
+int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
+{
+    AUDIO_INFO_LOG("AudioServiceClient::CreateStream");
+    int error;
+    lock_guard<mutex> lockdata(dataMutex_);
+    int32_t ret = CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR);
+    CHECK_AND_RETURN_RET(ret >= 0, AUDIO_CLIENT_ERR);
+
+    CHECK_AND_RETURN_RET(eAudioClientType != AUDIO_SERVICE_CLIENT_CONTROLLER, AUDIO_CLIENT_INVALID_PARAMS_ERR);
+
+    error = CreateStreamWithPa(audioParams, audioType);
+    if (error < 0) {
+        AUDIO_ERR_LOG("Create Stream With Pa Failed");
+        return AUDIO_CLIENT_CREATE_STREAM_ERR;
+    }
     error = ConnectStreamToPA();
     streamInfoUpdated_ = false;
     if (error < 0) {
