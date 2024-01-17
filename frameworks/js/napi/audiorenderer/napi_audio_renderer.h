@@ -90,6 +90,7 @@ private:
     static napi_value GetAudioTime(napi_env env, napi_callback_info info);
     static napi_value GetAudioTimeSync(napi_env env, napi_callback_info info);
     static napi_value Drain(napi_env env, napi_callback_info info);
+    static napi_value Flush(napi_env env, napi_callback_info info);
     static napi_value Pause(napi_env env, napi_callback_info info);
     static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Release(napi_env env, napi_callback_info info);
