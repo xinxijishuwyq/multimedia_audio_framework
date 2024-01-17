@@ -762,6 +762,7 @@ private:
     int32_t CheckOffloadPolicyChanged();
     int32_t GetAudioLatencyOffload(uint64_t &latency);
     void ResetOffload();
+    int32_t CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();

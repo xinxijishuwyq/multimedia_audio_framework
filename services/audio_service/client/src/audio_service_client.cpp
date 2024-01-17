@@ -1003,15 +1003,9 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
+int32_t AudioServiceClient::CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType)
 {
-    AUDIO_INFO_LOG("AudioServiceClient::CreateStream");
     int error;
-    lock_guard<mutex> lockdata(dataMutex_);
-    int32_t ret = CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR);
-    CHECK_AND_RETURN_RET(ret >= 0, AUDIO_CLIENT_ERR);
-
-    CHECK_AND_RETURN_RET(eAudioClientType != AUDIO_SERVICE_CLIENT_CONTROLLER, AUDIO_CLIENT_INVALID_PARAMS_ERR);
     pa_threaded_mainloop_lock(mainLoop);
     streamType_ = audioType;
     const std::string streamName = GetStreamName(audioType);
@@ -1026,6 +1020,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
     spatializationEnabled_ = std::to_string(spatializationState.spatializationEnabled);
     headTrackingEnabled_ = std::to_string(spatializationState.headTrackingEnabled);
+    if (mStreamUsage == STREAM_USAGE_SYSTEM || mStreamUsage == STREAM_USAGE_DTMF ||
+        mStreamUsage == STREAM_USAGE_ENFORCED_TONE || mStreamUsage == STREAM_USAGE_ULTRASONIC ||
+        mStreamUsage == STREAM_USAGE_NAVIGATION || mStreamUsage == STREAM_USAGE_NOTIFICATION) {
+        effectMode = EFFECT_NONE;
+    }
 
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;
@@ -1053,7 +1052,24 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
     pa_stream_set_event_callback(paStream, PAStreamEventCb, (void *)this);
 
     pa_threaded_mainloop_unlock(mainLoop);
+    return AUDIO_CLIENT_SUCCESS;
+}
 
+int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStreamType audioType)
+{
+    AUDIO_INFO_LOG("AudioServiceClient::CreateStream");
+    int error;
+    lock_guard<mutex> lockdata(dataMutex_);
+    int32_t ret = CheckReturnIfinvalid(mainLoop && context, AUDIO_CLIENT_ERR);
+    CHECK_AND_RETURN_RET(ret >= 0, AUDIO_CLIENT_ERR);
+
+    CHECK_AND_RETURN_RET(eAudioClientType != AUDIO_SERVICE_CLIENT_CONTROLLER, AUDIO_CLIENT_INVALID_PARAMS_ERR);
+
+    error = CreateStreamWithPa(audioParams, audioType);
+    if (error < 0) {
+        AUDIO_ERR_LOG("Create Stream With Pa Failed");
+        return AUDIO_CLIENT_CREATE_STREAM_ERR;
+    }
     error = ConnectStreamToPA();
     streamInfoUpdated_ = false;
     if (error < 0) {
@@ -3349,11 +3365,6 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
     pa_threaded_mainloop_lock(mainLoop);
 
     effectMode = audioEffectMode;
-    if (mStreamUsage == STREAM_USAGE_SYSTEM || mStreamUsage == STREAM_USAGE_DTMF ||
-        mStreamUsage == STREAM_USAGE_ENFORCED_TONE || mStreamUsage == STREAM_USAGE_ULTRASONIC ||
-        mStreamUsage == STREAM_USAGE_NAVIGATION || mStreamUsage == STREAM_USAGE_NOTIFICATION) {
-        audioEffectMode = EFFECT_NONE;
-    }
 
     const std::string effectModeName = GetEffectModeName(audioEffectMode);
 
