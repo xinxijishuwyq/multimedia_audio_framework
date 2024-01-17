@@ -1280,7 +1280,14 @@ int32_t AudioServiceClient::CorkStream()
     operation = pa_stream_cork(paStream, 1, PAStreamCorkSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        StartTimer(DRAIN_TIMEOUT_IN_SEC);
         pa_threaded_mainloop_wait(mainLoop);
+        StopTimer();
+        if (IsTimeOut()) {
+            pa_threaded_mainloop_unlock(mainLoop);
+            AUDIO_ERR_LOG("CorkStream timeout");
+            return AUDIO_CLIENT_ERR;
+        }
     }
     pa_operation_unref(operation);
     if (InitializePAProbListOffload() != AUDIO_CLIENT_SUCCESS) {
