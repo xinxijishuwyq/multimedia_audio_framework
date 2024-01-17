@@ -447,9 +447,19 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
 
 int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetRingerModeCallback");
+    AUDIO_DEBUG_LOG("Remove all ringer mode callbacks");
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveRingerModeCallback();
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetRingerModeCallback(const int32_t clientId,
+    const std::shared_ptr<AudioRingerModeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Remove one ringer mode callback");
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveRingerModeCallback(callback);
     }
     return SUCCESS;
 }

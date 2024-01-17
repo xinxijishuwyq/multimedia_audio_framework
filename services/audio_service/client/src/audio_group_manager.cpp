@@ -291,6 +291,12 @@ int32_t AudioGroupManager::UnsetRingerModeCallback(const int32_t clientId) const
     return AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId);
 }
 
+int32_t AudioGroupManager::UnsetRingerModeCallback(const int32_t clientId,
+    const std::shared_ptr<AudioRingerModeCallback> &callback) const
+{
+    return AudioPolicyManager::GetInstance().UnsetRingerModeCallback(clientId, callback);
+}
+
 int32_t AudioGroupManager::SetRingerMode(AudioRingerMode ringMode) const
 {
     CHECK_AND_RETURN_RET_LOG(netWorkId_ == LOCAL_NETWORK_ID, ERROR,

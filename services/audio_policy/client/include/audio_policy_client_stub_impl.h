@@ -36,6 +36,7 @@ public:
     int32_t RemoveDeviceChangeCallback();
     int32_t AddRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
     int32_t RemoveRingerModeCallback();
+    int32_t RemoveRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb);
     int32_t AddMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb);
     int32_t RemoveMicStateChangeCallback();
     int32_t AddPreferredOutputDeviceChangeCallback(

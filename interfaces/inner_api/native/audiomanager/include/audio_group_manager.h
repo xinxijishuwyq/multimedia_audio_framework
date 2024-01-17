@@ -65,8 +65,10 @@ public:
     bool IsAlived();
     int32_t GetGroupId();
     int32_t SetRingerModeCallback(const int32_t clientId,
-                                  const std::shared_ptr<AudioRingerModeCallback> &callback);
+        const std::shared_ptr<AudioRingerModeCallback> &callback);
     int32_t UnsetRingerModeCallback(const int32_t clientId) const;
+    int32_t UnsetRingerModeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioRingerModeCallback> &callback) const;
     int32_t SetRingerMode(AudioRingerMode ringMode) const;
     AudioRingerMode GetRingerMode() const;
     int32_t SetMicrophoneMute(bool isMute);

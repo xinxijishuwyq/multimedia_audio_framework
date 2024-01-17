@@ -117,8 +117,11 @@ public:
 
     int32_t UnsetRingerModeCallback(const int32_t clientId);
 
+    int32_t UnsetRingerModeCallback(const int32_t clientId,
+        const std::shared_ptr<AudioRingerModeCallback> &callback);
+
     int32_t SetMicStateChangeCallback(const int32_t clientId,
-                                  const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
+        const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const std::shared_ptr<AudioInterruptCallback> &callback, const int32_t zoneID = 0);
