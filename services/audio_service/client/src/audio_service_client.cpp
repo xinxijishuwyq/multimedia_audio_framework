@@ -1026,6 +1026,11 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
         AudioPolicyManager::GetInstance().GetSpatializationState(mStreamUsage);
     spatializationEnabled_ = std::to_string(spatializationState.spatializationEnabled);
     headTrackingEnabled_ = std::to_string(spatializationState.headTrackingEnabled);
+    if (mStreamUsage == STREAM_USAGE_SYSTEM || mStreamUsage == STREAM_USAGE_DTMF ||
+        mStreamUsage == STREAM_USAGE_ENFORCED_TONE || mStreamUsage == STREAM_USAGE_ULTRASONIC ||
+        mStreamUsage == STREAM_USAGE_NAVIGATION || mStreamUsage == STREAM_USAGE_NOTIFICATION) {
+        effectMode = EFFECT_NONE;
+    }
 
     pa_proplist *propList = pa_proplist_new();
     pa_channel_map map;
@@ -3349,11 +3354,6 @@ int32_t AudioServiceClient::SetStreamAudioEffectMode(AudioEffectMode audioEffect
     pa_threaded_mainloop_lock(mainLoop);
 
     effectMode = audioEffectMode;
-    if (mStreamUsage == STREAM_USAGE_SYSTEM || mStreamUsage == STREAM_USAGE_DTMF ||
-        mStreamUsage == STREAM_USAGE_ENFORCED_TONE || mStreamUsage == STREAM_USAGE_ULTRASONIC ||
-        mStreamUsage == STREAM_USAGE_NAVIGATION || mStreamUsage == STREAM_USAGE_NOTIFICATION) {
-        audioEffectMode = EFFECT_NONE;
-    }
 
     const std::string effectModeName = GetEffectModeName(audioEffectMode);
 
