@@ -171,6 +171,20 @@ int32_t AudioPolicyClientStubImpl::RemoveRingerModeCallback()
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::RemoveRingerModeCallback(const std::shared_ptr<AudioRingerModeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
+    auto iter = ringerModeCallbackList_.begin();
+    while (iter != ringerModeCallbackList_.end()) {
+        if (*iter == cb) {
+            iter = ringerModeCallbackList_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
 void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringerMode)
 {
     std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
