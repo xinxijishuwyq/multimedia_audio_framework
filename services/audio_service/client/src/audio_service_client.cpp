@@ -41,6 +41,7 @@ AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t INIT_TIMEOUT_IN_SEC = 3;
 const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
+const uint32_t CORK_TIMEOUT_IN_SEC = 3;
 const uint32_t WRITE_TIMEOUT_IN_SEC = 8;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
@@ -1280,7 +1281,7 @@ int32_t AudioServiceClient::CorkStream()
     operation = pa_stream_cork(paStream, 1, PAStreamCorkSuccessCb, (void *)this);
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-        StartTimer(DRAIN_TIMEOUT_IN_SEC);
+        StartTimer(CORK_TIMEOUT_IN_SEC);
         pa_threaded_mainloop_wait(mainLoop);
         StopTimer();
         if (IsTimeOut()) {
