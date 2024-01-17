@@ -38,6 +38,8 @@ public:
 
     static napi_value Init(napi_env env, napi_value exports);
 
+    std::unique_ptr<AudioCapturer> audioCapturer_;
+
 private:
     struct AudioCapturerAsyncContext : public ContextBase {
         virtual ~AudioCapturerAsyncContext()
@@ -97,6 +99,8 @@ private:
         NapiAudioCapturer *napiCapturer);
     static void RegisterAudioCapturerInfoChangeCallback(napi_env env, napi_value *argv,
         NapiAudioCapturer *napiCapturer);
+    static void RegisterCapturerReadDataCallback(napi_env env, napi_value *argv,
+        const std::string &cbName, NapiAudioCapturer *napiCapturer);
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *argv,
         const std::string &cbName);
     static void UnregisterCapturerCallback(napi_env env, const std::string &cbName,
@@ -105,6 +109,8 @@ private:
         napi_value *argv, NapiAudioCapturer *napiCapturer);
     static void UnregisterAudioCapturerInfoChangeCallback(napi_env env, size_t argc,
         napi_value *argv, NapiAudioCapturer *napiCapturer);
+    static void UnregisterCapturerReadDataCallback(napi_env env, size_t argc, napi_value *argv,
+        NapiAudioCapturer *napiCapturer);
 
     /* common interface in NapiAudioCapturer */
     static bool CheckContextStatus(std::shared_ptr<AudioCapturerAsyncContext> context);
@@ -122,12 +128,12 @@ private:
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
 
-    std::unique_ptr<AudioCapturer> audioCapturer_;
     std::shared_ptr<AudioCapturerCallback> callbackNapi_ = nullptr;
     std::shared_ptr<CapturerPositionCallback> positionCbNapi_ = nullptr;
     std::shared_ptr<CapturerPeriodPositionCallback> periodPositionCbNapi_ = nullptr;
     std::list<std::shared_ptr<NapiAudioCapturerDeviceChangeCallback>> deviceChangeCallbacks_;
     std::list<std::shared_ptr<NapiAudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacks_;
+    std::shared_ptr<AudioCapturerReadCallback> capturerReadDataCallbackNapi_ = nullptr;
 
     SourceType sourceType_;
     napi_env env_;
