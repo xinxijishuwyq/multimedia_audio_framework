@@ -2699,10 +2699,11 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     auto isPresent = [&deviceDescriptor](const sptr<AudioDeviceDescriptor>& descriptor) {
         if (descriptor->deviceType_ == deviceDescriptor.deviceType_ &&
             descriptor->networkId_ == deviceDescriptor.networkId_) {
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
+                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
                 return true;
             } else {
-                // if the disconnecting device is A2DP, need to compare mac address in addition.
+                // if the disconnecting device is SCO or A2DP, need to compare mac address in addition.
                 return descriptor->macAddress_ == deviceDescriptor.macAddress_;
             }
         }
