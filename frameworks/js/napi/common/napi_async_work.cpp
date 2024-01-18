@@ -154,6 +154,8 @@ void NapiAsyncWork::CommonCallbackRoutine(ContextBase *ctxt)
         AUDIO_DEBUG_LOG("call callback function");
         napi_call_function(ctxt->env, nullptr, callback, RESULT_ALL, result, &callbackResult);
     }
+    ctxt->hold->execute = nullptr;
+    ctxt->hold->complete = nullptr;
     ctxt->hold.reset(); // release ctxt.
 }
 } // namespace AudioStandard
