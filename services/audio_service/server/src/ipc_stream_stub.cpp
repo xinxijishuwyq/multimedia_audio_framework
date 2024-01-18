@@ -220,5 +220,38 @@ int32_t IpcStreamStub::HandleGetPrivacyType(MessageParcel &data, MessageParcel &
 
     return AUDIO_OK;
 }
+
+int32_t IpcStreamStub::HandleSetOffloadMode(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t state = data.ReadInt32();
+    bool isAppBack = data.ReadBool();
+    reply.WriteInt32(SetOffloadMode(state, isAppBack));
+
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleUnsetOffloadMode(MessageParcel &data, MessageParcel &reply)
+{
+    reply.WriteInt32(UnsetOffloadMode());
+
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleGetOffloadApproximatelyCacheTime(MessageParcel &data, MessageParcel &reply)
+{
+    uint64_t timeStamp = data.ReadUint64();
+    reply.WriteInt32(GetOffloadApproximatelyCacheTime(timeStamp));
+    reply.WriteUint64(timeStamp);
+
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply)
+{
+    float volume = data.ReadFloat();
+    reply.WriteInt32(OffloadSetVolume(volume));
+
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

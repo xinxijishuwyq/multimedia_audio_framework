@@ -50,6 +50,11 @@ private:
     int32_t HandleSetPrivacyType(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetPrivacyType(MessageParcel &data, MessageParcel &reply);
 
+    int32_t HandleSetOffloadMode(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleUnsetOffloadMode(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleGetOffloadApproximatelyCacheTime(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
+
     using HandlerFunc = int32_t(IpcStreamStub::*)(MessageParcel &data, MessageParcel &reply);
     // Using the same order in IpcStreamMsg::Code when add func!
     static inline HandlerFunc funcList_[IpcStreamMsg::IPC_STREAM_MAX_MSG] = {
@@ -73,6 +78,10 @@ private:
         &IpcStreamStub::HandleGetAudioEffectMode,
         &IpcStreamStub::HandleSetPrivacyType,
         &IpcStreamStub::HandleGetPrivacyType,
+        &IpcStreamStub::HandleSetOffloadMode,
+        &IpcStreamStub::HandleUnsetOffloadMode,
+        &IpcStreamStub::HandleGetOffloadApproximatelyCacheTime,
+        &IpcStreamStub::HandleOffloadSetVolume,
     };
 };
 } // namespace AudioStandard

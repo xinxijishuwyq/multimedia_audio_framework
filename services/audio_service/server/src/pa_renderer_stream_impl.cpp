@@ -14,15 +14,25 @@
  */
 
 #include "pa_renderer_stream_impl.h"
+
+#include <chrono>
+
 #include "pa_adapter_tools.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#ifdef FEATURE_POWER_MANAGER
+#include "power_mgr_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 const uint32_t DOUBLE_VALUE = 2;
-
+const uint32_t MAX_LENGTH_OFFLOAD = 500;
+const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
+const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
+const uint32_t OFFLOAD_BUFFER = 50;
+const uint64_t AUDIO_US_PER_MS = 1000;
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -40,6 +50,11 @@ PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
+
+    audioSystemManager_ = AudioSystemManager::GetInstance();
+    ResetOffload();
+
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDERER_STREAM_FILENAME, &dumpFile_);
 }
 
 inline uint32_t PcmFormatToBits(uint8_t format)
@@ -228,6 +243,7 @@ int32_t PaRendererStreamImpl::Release()
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
     }
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     return SUCCESS;
 }
 
@@ -466,6 +482,9 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     Trace trace("PaRendererStreamImpl::EnqueueBuffer " + std::to_string(bufferDesc.bufLength) + " totalBytesWritten" +
         std::to_string(totalBytesWritten_));
     int32_t error = 0;
+    error = UpdatePolicyOffloadInWrite();
+    CHECK_AND_RETURN_RET_LOG(error == SUCCESS, error, "UpdatePolicyOffloadInWrite failed");
+
     // EnqueueBuffer is called in mainloop in most cases and don't need lock.
     bool isInMainloop = pa_threaded_mainloop_in_thread(mainloop_) ? true : false;
     if (!isInMainloop) {
@@ -556,6 +575,7 @@ void PaRendererStreamImpl::PAStreamStartSuccessCb(pa_stream *stream, int32_t suc
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->state_ = RUNNING;
+    streamImpl->offloadTsLast_ = 0;
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STARTED);
@@ -569,6 +589,8 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->state_ = PAUSED;
+    streamImpl->offloadTsLast_ = 0;
+    streamImpl->ResetOffload();
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_PAUSED);
@@ -692,5 +714,205 @@ void PaRendererStreamImpl::AbortCallback(int32_t abortTimes)
 {
     abortFlag_ += abortTimes;
 }
+
+// offload
+
+size_t PaRendererStreamImpl::GetWritableSize()
+{
+    return pa_stream_writable_size(paStream_);
+}
+
+int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
+{
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
+    audioSystemManager_->OffloadSetVolume(volume);
+    return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
+{
+    if (!offloadEnable_) {
+        return ERR_OPERATION_FAILED;
+    }
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
+    }
+    pa_threaded_mainloop_lock(mainloop_);
+
+    pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
+    } else {
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+    }
+
+    const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
+    if (info == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
+        pa_threaded_mainloop_unlock(mainloop_);
+        return ERR_OPERATION_FAILED;
+    }
+
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    timeStamp = pa_bytes_to_usec(info->read_index, sampleSpec);
+    int64_t cacheTimeInPulse = pa_bytes_to_usec(info->write_index, sampleSpec) - timeStamp;
+    pa_threaded_mainloop_unlock(mainloop_);
+
+    bool first = offloadTsLast_ == 0;
+    offloadTsLast_ = timeStamp;
+
+    uint64_t frames;
+    int64_t timeSec, timeNanoSec;
+    audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
+    int64_t framesInt = static_cast<int64_t>(frames);
+    int64_t timeStampInt = static_cast<int64_t>(timeStamp);
+    if (framesInt + offloadTsOffset_ <
+        timeStampInt - static_cast<int64_t>(OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BUFFER) *
+                       static_cast<int64_t>(AUDIO_US_PER_MS) ||
+        framesInt + offloadTsOffset_ > timeStampInt || first) {
+        offloadTsOffset_ = timeStampInt - framesInt;
+    }
+    timeStamp = static_cast<uint64_t>(timeStampInt - (framesInt + offloadTsOffset_) + cacheTimeInPulse);
+    return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::UpdatePolicyOffloadInWrite()
+{
+    int error = 0;
+    if ((lastOffloadUpdateFinishTime_ != 0) &&
+        (std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) > lastOffloadUpdateFinishTime_)) {
+        AUDIO_INFO_LOG("PaWriteStream switching curTime %{public}" PRIu64 ", switchTime %{public}" PRIu64,
+            std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()), lastOffloadUpdateFinishTime_);
+        error = UpdatePolicyOffload(offloadNextStateTargetPolicy_);
+        lastOffloadUpdateFinishTime_ = 0;
+    }
+    return error;
+}
+
+void PaRendererStreamImpl::ResetOffload()
+{
+    offloadEnable_ = false;
+    offloadTsOffset_ = 0;
+    offloadTsLast_ = 0;
+    offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
+    lastOffloadUpdateFinishTime_ = 0;
+    pa_threaded_mainloop_lock(mainloop_);
+    UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
+    offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    pa_threaded_mainloop_unlock(mainloop_);
+}
+
+int32_t PaRendererStreamImpl::UpdatePolicyOffload(AudioOffloadType statePolicy)
+{
+    pa_proplist *propList = pa_proplist_new();
+    CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
+    if (offloadEnable_) {
+        pa_proplist_sets(propList, "stream.offload.enable", "1");
+    } else {
+        pa_proplist_sets(propList, "stream.offload.enable", "0");
+    }
+    pa_proplist_sets(propList, "stream.offload.statePolicy", std::to_string(statePolicy).c_str());
+
+    pa_operation *updatePropOperation =
+        pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList, nullptr, nullptr);
+    if (updatePropOperation == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_proplist_update failed!");
+        pa_proplist_free(propList);
+        return ERR_OPERATION_FAILED;
+    }
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
+    audioSystemManager_->OffloadSetBufferSize(bufLenMs);
+
+    offloadStatePolicy_ = statePolicy;
+
+    return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::UpdatePAProbListOffload(AudioOffloadType statePolicy)
+{
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        AUDIO_ERR_LOG("Set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
+        return ERR_ILLEGAL_STATE;
+    }
+    // if possible turn on the buffer immediately(long buffer -> short buffer), turn it at once.
+    if ((statePolicy < offloadStatePolicy_) || (offloadStatePolicy_ == OFFLOAD_DEFAULT)) {
+        AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
+        lastOffloadUpdateFinishTime_ = 0;
+        pa_threaded_mainloop_lock(mainloop_);
+        int32_t ret = UpdatePolicyOffload(statePolicy);
+        pa_threaded_mainloop_unlock(mainloop_);
+        offloadNextStateTargetPolicy_ = statePolicy; // Fix here if sometimes can't cut into state 3
+        return ret;
+    } else {
+        // Otherwise, hdi_sink.c's times detects the stateTarget change and switches later
+        // this time is checked the PaWriteStream to check if the switch has been made
+        AUDIO_DEBUG_LOG("Update statePolicy in 3 seconds: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
+        lastOffloadUpdateFinishTime_ = std::chrono::system_clock::to_time_t(
+            std::chrono::system_clock::now() + std::chrono::seconds(3)); // add 3s latency to change offload state
+        offloadNextStateTargetPolicy_ = statePolicy;
+    }
+
+    return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
+{
+#ifdef FEATURE_POWER_MANAGER
+    AudioOffloadType statePolicy = OFFLOAD_DEFAULT;
+    auto powerState = static_cast<PowerMgr::PowerState>(state);
+    if ((powerState != PowerMgr::PowerState::AWAKE) && (powerState != PowerMgr::PowerState::FREEZE)) {
+        statePolicy = OFFLOAD_INACTIVE_BACKGROUND;
+    } else if (isAppBack) {
+        statePolicy = OFFLOAD_ACTIVE_FOREGROUND;
+    } else if (!isAppBack) {
+        statePolicy = OFFLOAD_ACTIVE_FOREGROUND;
+    }
+
+    if (statePolicy == OFFLOAD_DEFAULT) {
+        AUDIO_ERR_LOG("impossible INPUT branch error");
+        return ERR_OPERATION_FAILED;
+    }
+
+    AUDIO_INFO_LOG("calling set stream offloadMode PowerState: %{public}d, isAppBack: %{public}d", state, isAppBack);
+
+    if (offloadNextStateTargetPolicy_ == statePolicy) {
+        return SUCCESS;
+    }
+
+    if ((offloadStatePolicy_ == offloadNextStateTargetPolicy_) && (offloadStatePolicy_ == statePolicy)) {
+        return SUCCESS;
+    }
+
+    offloadEnable_ = true;
+    if (UpdatePAProbListOffload(statePolicy) != SUCCESS) {
+        return ERR_OPERATION_FAILED;
+    }
+    if (statePolicy == OFFLOAD_ACTIVE_FOREGROUND) {
+        pa_threaded_mainloop_signal(mainloop_, 0);
+    }
+#else
+    AUDIO_INFO_LOG("SetStreamOffloadMode not available, FEATURE_POWER_MANAGER no define");
+#endif
+    return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::UnsetOffloadMode()
+{
+    lastOffloadUpdateFinishTime_ = 0;
+    offloadEnable_ = false;
+    pa_threaded_mainloop_lock(mainloop_);
+    int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
+    pa_threaded_mainloop_unlock(mainloop_);
+    offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
+    offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    return ret;
+}
+// offload end
 } // namespace AudioStandard
 } // namespace OHOS

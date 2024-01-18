@@ -58,7 +58,7 @@ const float AUDIO_VOLOMUE_EPSILON = 0.0001;
 const float AUDIO_MAX_VOLUME = 1.0f;
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
-static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
+static const int32_t OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 1;
@@ -215,6 +215,8 @@ private:
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t& timeStamp);
+    int32_t OffloadSetVolume(float volume);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -756,7 +758,10 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     int64_t tempLatency = 45000000; // 45000000 -> 45 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 
-    handleTime = handleTime + deltaTime + tempLatency;
+    uint64_t cacheTimeStamp = 0;
+    ipcStream_->GetOffloadApproximatelyCacheTime(cacheTimeStamp);
+
+    handleTime = handleTime + deltaTime + tempLatency - cacheTimeStamp * AUDIO_MS_PER_SECOND;
     timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
 
@@ -1175,14 +1180,22 @@ float RendererInClientInner::GetLowPowerVolume()
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    // in plan
-    return ERROR;
+    return ipcStream_->SetOffloadMode(state, isAppBack);
 }
 
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
-    // in plan
-    return ERROR;
+    return ipcStream_->UnsetOffloadMode();
+}
+
+int32_t RendererInClientInner::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
+{
+    return ipcStream_->GetOffloadApproximatelyCacheTime(timeStamp);
+}
+
+int32_t RendererInClientInner::OffloadSetVolume(float volume)
+{
+    return ipcStream_->OffloadSetVolume(volume);
 }
 
 float RendererInClientInner::GetSingleStreamVolume()
@@ -1623,11 +1636,12 @@ int32_t RendererInClientInner::WriteCacheData()
     Trace traceCache("RendererInClientInner::WriteCacheData");
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
-    if (sizeInFrame * sizePerFrameInByte_ < clientSpanSizeInByte_) {
+    while (sizeInFrame * sizePerFrameInByte_ < clientSpanSizeInByte_) {
         // wait for server read some data
         std::unique_lock<std::mutex> lock(writeDataMutex_);
         std::cv_status stat = writeDataCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
         CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
+        sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     }
     BufferDesc desc = {};
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
@@ -1637,8 +1651,6 @@ int32_t RendererInClientInner::WriteCacheData()
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
     AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
         "%{public}u", curWriteIndex, spanSizeInFrame_);
-    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
-    clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     // volume process in client
     if (volumeRamp_.IsActive()) {
@@ -1655,6 +1667,8 @@ int32_t RendererInClientInner::WriteCacheData()
             AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
         }
     }
+    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
+    clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
     ipcStream_->UpdatePosition(); // notiify server update position

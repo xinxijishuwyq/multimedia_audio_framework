@@ -89,6 +89,11 @@ public:
 
     int32_t GetPrivacyType(int32_t &privacyType) override; // renderer only
 
+    int32_t SetOffloadMode(int32_t state, bool isAppBack) override; // renderer only
+    int32_t UnsetOffloadMode() override; // renderer only
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t& timeStamp) override; // renderer only
+    int32_t OffloadSetVolume(float volume) override; // renderer only
+
 private:
     int32_t ConfigRenderer();
     int32_t ConfigCapturer();

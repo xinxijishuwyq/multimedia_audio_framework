@@ -51,12 +51,17 @@ public:
     int32_t SetPrivacyType(int32_t privacyType);
     int32_t GetPrivacyType(int32_t &privacyType);
 
+    int32_t SetOffloadMode(int32_t state, bool isAppBack);
+    int32_t UnsetOffloadMode();
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t& timeStamp);
+    int32_t OffloadSetVolume(float volume);
+
     int32_t Init();
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
     int32_t UpdateWriteIndex();
     BufferDesc DequeueBuffer(size_t length);
-    void WriteData();
+    int32_t WriteData();
     void WriteEmptyData();
     int32_t DrainAudioBuffer();
     int32_t GetInfo();
@@ -80,6 +85,7 @@ private:
     std::atomic<bool> isInited_ = false;
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
     int32_t needStart = 0;
+    bool requestFailed;
     bool afterDrain = false;
     std::mutex updateIndexLock_;
     bool resetTime_ = false;

@@ -190,7 +190,7 @@ BufferDesc RendererInServer::DequeueBuffer(size_t length)
     return stream_->DequeueBuffer(length);
 }
 
-void RendererInServer::WriteData()
+int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
@@ -200,9 +200,9 @@ void RendererInServer::WriteData()
         AUDIO_INFO_LOG("near underrun");
         Trace trace2("RendererInServer::Underrun");
         std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-        CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+        CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
         stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
-        return;
+        return ERR_OPERATION_FAILED;
     }
     BufferDesc bufferDesc = {nullptr, totalSizeInFrame_, totalSizeInFrame_};
 
@@ -216,8 +216,9 @@ void RendererInServer::WriteData()
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, SUCCESS, "IStreamListener is nullptr");
     stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
+    return SUCCESS;
 }
 
 void RendererInServer::WriteEmptyData()
@@ -233,9 +234,14 @@ void RendererInServer::WriteEmptyData()
 int32_t RendererInServer::OnWriteData(size_t length)
 {
     Trace trace("RendererInServer::OnWriteData length " + std::to_string(length));
+    requestFailed = false;
+    bool fail = true;
     for (size_t i = 0; i < length / totalSizeInFrame_; i++) {
-        WriteData();
+        if (WriteData() == SUCCESS) {
+            fail = false;
+        }
     }
+    requestFailed = fail;
     return SUCCESS;
 }
 
@@ -247,6 +253,9 @@ int32_t RendererInServer::UpdateWriteIndex()
         AUDIO_WARNING_LOG("Start write data");
         WriteData();
         needStart++;
+    }
+    if (stream_->GetWritableSize() >= spanSizeInFrame_ * byteSizePerFrame_ && requestFailed) {
+        WriteData();
     }
     if (afterDrain == true) {
         afterDrain = false;
@@ -454,6 +463,26 @@ int32_t RendererInServer::SetPrivacyType(int32_t privacyType)
 int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 {
     return stream_->GetPrivacyType(privacyType);
+}
+
+int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
+{
+    return stream_->SetOffloadMode(state, isAppBack);
+}
+
+int32_t RendererInServer::UnsetOffloadMode()
+{
+    return stream_->UnsetOffloadMode();
+}
+
+int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
+{
+    return stream_->GetOffloadApproximatelyCacheTime(timeStamp);
+}
+
+int32_t RendererInServer::OffloadSetVolume(float volume)
+{
+    return stream_->OffloadSetVolume(volume);
 }
 
 int32_t RendererInServer::WriteOneFrame()

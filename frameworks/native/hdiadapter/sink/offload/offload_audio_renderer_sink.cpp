@@ -141,6 +141,8 @@ private:
     std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
     bool runninglocked;
 #endif
+
+    FILE *dumpFile_ = nullptr;
 };
     
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
@@ -368,6 +370,8 @@ void OffloadAudioRendererSinkInner::DeInit()
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     callbackServ = {};
+
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
@@ -555,6 +559,9 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     Trace trace("RenderFrameOffload");
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
+    if (ret == 0 && writeLen != 0) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrameOffload failed! ret: %{public}x", ret);
     renderPos_ += writeLen;
     return SUCCESS;
@@ -564,6 +571,11 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
 {
     Trace trace("Sink::Start");
     if (started_) {
+        int32_t ret = audioRender_->Start(audioRender_);
+        if (ret) {
+            AUDIO_ERR_LOG("Start failed!");
+            return ERR_NOT_STARTED;
+        }
         if (isFlushing_) {
             AUDIO_ERR_LOG("start failed! during flushing");
             startDuringFlush_ = true;
@@ -573,6 +585,8 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
             return SUCCESS;
         }
     }
+
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_OFFLOAD_RENDER_SINK_FILENAME, &dumpFile_);
 
     started_ = true;
     renderPos_ = 0;
@@ -712,7 +726,14 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
 
     if (started_) {
         CHECK_AND_RETURN_RET_LOG(!Flush(), ERR_OPERATION_FAILED, "Flush failed!");
-        return SUCCESS;
+        int32_t ret = audioRender_->Stop(audioRender_);
+        if (!ret) {
+            started_ = false;
+            return SUCCESS;
+        } else {
+            AUDIO_ERR_LOG("Stop failed!");
+            return ERR_OPERATION_FAILED;
+        }
     }
     AUDIO_WARNING_LOG("Stop dumlicate");
 

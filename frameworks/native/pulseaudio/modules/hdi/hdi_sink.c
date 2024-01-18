@@ -1537,7 +1537,9 @@ static size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool 
                            OFFLOAD_HDI_CACHE2_PLUS : OFFLOAD_HDI_CACHE1_PLUS) * PA_USEC_PER_MSEC;
     size_t sizeFrame = pa_frame_align(pa_usec_to_bytes(OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC, &sampleSpecOut),
         &sampleSpecOut);
-    size_t sizeTgt = sizeFrame;
+    size_t tlengthHalfResamp = pa_frame_align(pa_usec_to_bytes(pa_bytes_to_usec(pa_memblockq_get_tlength(
+        ps->memblockq) / 2, &sampleSpecIn), &sampleSpecOut), &sampleSpecOut); // 2 for half
+    size_t sizeTgt = PA_MIN(sizeFrame, tlengthHalfResamp);
     const size_t bql = pa_memblockq_get_length(ps->memblockq);
     const size_t bqlResamp = pa_usec_to_bytes(pa_bytes_to_usec(bql, &sampleSpecIn), &sampleSpecOut);
     const size_t bqlRend = pa_memblockq_get_length(i->thread_info.render_memblockq);
@@ -2212,17 +2214,17 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         int32_t writen = -1;
         int ret = ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
         if (ret < 0) {
-            u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
+            u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 3ms for min wait
         } else if (wait) {
             if (u->offload.firstWrite == true) {
                 blockTime = -1;
             } else {
-                u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
+                u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 3ms for min wait
             }
         } else {
             blockTime = 0;
             if (writen >= size100ms) {
-                blockTime = 3 * PA_USEC_PER_MSEC; // 3ms for min wait
+                blockTime = 1 * PA_USEC_PER_MSEC; // 3ms for min wait
             }
         }
     } else if (hdistate == 1) {
@@ -2230,7 +2232,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         if (blockTime < 0) {
             blockTime = OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC; // block for one frame
         }
-        u->offload.minWait = now + 3 * PA_USEC_PER_MSEC; // 3ms for min wait
+        u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 3ms for min wait
     }
     if (pos < hdiPos) {
         AUDIO_INFO_LOG("ThreadFuncRendererTimerOffload hdiPos wrong need sync, pos %" PRIu64 ", hdiPos %" PRIu64,
@@ -3030,6 +3032,12 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
             u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
             AUDIO_INFO_LOG("Stopped HDI renderer");
             u->primary.isHDISinkStarted = false;
+        }
+        if (u->offload.isHDISinkStarted) {
+            u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
+            AUDIO_INFO_LOG("Stopped Offload HDI renderer");
+            u->offload.isHDISinkStarted = false;
+            OffloadReset(u);
         }
     }
 

@@ -18,6 +18,7 @@
 
 #include <pulse/pulseaudio.h>
 #include "i_renderer_stream.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,8 +53,31 @@ public:
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
     void AbortCallback(int32_t abortTimes) override;
+    // offload
+    int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
+    int32_t UnsetOffloadMode() override;
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t& timeStamp) override;
+    int32_t OffloadSetVolume(float volume) override;
+    size_t GetWritableSize() override;
+    // offload end
 
 private:
+    // offload
+    int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
+    int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
+    void ResetOffload();
+    int32_t UpdatePolicyOffloadInWrite();
+    bool offloadEnable_ = false;
+
+    int64_t offloadTsOffset_ = 0;
+    uint64_t offloadTsLast_ = 0;
+    std::timed_mutex offloadWaitWriteableMutex_;
+    AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
+    time_t lastOffloadUpdateFinishTime_ = 0;
+    AudioSystemManager *audioSystemManager_ = nullptr;
+    FILE *dumpFile_ = nullptr;
+    // offload end
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamMovedCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);

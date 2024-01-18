@@ -318,5 +318,41 @@ int32_t IpcStreamInServer::GetPrivacyType(int32_t &privacyType)
     AUDIO_ERR_LOG("GetPrivacyType failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;
 }
+
+int32_t IpcStreamInServer::SetOffloadMode(int32_t state, bool isAppBack)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetOffloadMode(state, isAppBack);
+    }
+    AUDIO_ERR_LOG("SetOffloadMode failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::UnsetOffloadMode()
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->UnsetOffloadMode();
+    }
+    AUDIO_ERR_LOG("UnsetOffloadMode failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->GetOffloadApproximatelyCacheTime(timeStamp);
+    }
+    AUDIO_ERR_LOG("GetOffloadApproximatelyCacheTime failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::OffloadSetVolume(float volume)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->OffloadSetVolume(volume);
+    }
+    AUDIO_ERR_LOG("OffloadSetVolume failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
 } // namespace AudioStandard
 } // namespace OHOS
