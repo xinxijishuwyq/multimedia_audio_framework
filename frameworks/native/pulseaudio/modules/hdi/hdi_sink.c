@@ -168,7 +168,6 @@ struct Userdata {
         pa_usec_t fullTs;
         bool runninglocked;
         pa_memchunk chunk;
-        pa_usec_t writeTime;
     } offload;
     struct {
         pa_usec_t timestamp;
