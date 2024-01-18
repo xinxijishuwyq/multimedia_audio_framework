@@ -157,13 +157,20 @@ void NapiAudioRendererDeviceChangeCallback::OnJsCallbackRendererDeviceInfo(napi_
     CHECK_AND_RETURN_LOG(work != nullptr, "OnJsCallbackRendererDeviceInfo: No memoryr");
 
     work->data = new AudioRendererDeviceChangeJsCallback {method, env_, deviceInfo};
-    CHECK_AND_RETURN_LOG(work->data != nullptr, "OnJsCallbackRendererDeviceInfo failed: No memory");
+    if (work->data == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallbackRendererDeviceInfo failed: No memory");
+        delete work;
+        return;
+    }
 
     AUDIO_ERR_LOG("OnJsCallbackRendererDeviceInfo");
     int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, WorkCallbackCompleted, uv_qos_default);
     if (ret != 0) {
         AUDIO_ERR_LOG("Failed to execute libuv work queue");
         if (work != nullptr) {
+            if (work->data != nullptr) {
+                delete reinterpret_cast<AudioRendererDeviceChangeJsCallback*>(work->data);
+            }
             delete work;
         }
     }
@@ -320,13 +327,20 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnJsCallbackOutputDevi
     CHECK_AND_RETURN_LOG(work != nullptr, "OnJsCallbackOutputDeviceInfo: No memoryr");
 
     work->data = new AudioRendererOutputDeviceChangeWithInfoJsCallback {method, env_, deviceInfo, reason};
-    CHECK_AND_RETURN_LOG(work->data != nullptr, "OnJsCallbackOutputDeviceInfo failed: No memory");
+    if (work->data == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallbackOutputDeviceInfo failed: No memory");
+        delete work;
+        return;
+    }
 
     AUDIO_INFO_LOG("OnJsCallback");
     int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, WorkCallbackCompleted, uv_qos_default);
     if (ret != 0) {
         AUDIO_ERR_LOG("Failed to execute libuv work queue");
         if (work != nullptr) {
+            if (work->data != nullptr) {
+                delete reinterpret_cast<AudioRendererOutputDeviceChangeWithInfoJsCallback*>(work->data);
+            }
             delete work;
         }
     }
