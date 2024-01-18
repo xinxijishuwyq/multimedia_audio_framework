@@ -283,10 +283,6 @@ ohos_shared_library("audio_process_service") {
   install_enable = true
 
   sources = [
-    "client/src/audio_group_manager.cpp",
-    "client/src/audio_manager_listener_stub.cpp",
-    "client/src/audio_manager_proxy.cpp",
-    "client/src/audio_system_manager.cpp",
     "server/src/audio_endpoint.cpp",
     "server/src/audio_endpoint_separate.cpp",
     "server/src/audio_process_in_server.cpp",
@@ -308,6 +304,7 @@ ohos_shared_library("audio_process_service") {
   configs = [ ":audio_service_config" ]
 
   deps = [
+    ":audio_client",
     ":audio_common",
     "$pulseaudio_build_path/src/pulse:pulse",
     "../../frameworks/native/audioschedule:audio_schedule",
@@ -317,20 +314,15 @@ ohos_shared_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
-    "../audio_policy:audio_policy_client",
   ]
 
   public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
 
   external_deps = [
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
   ]
 
   defines = []
