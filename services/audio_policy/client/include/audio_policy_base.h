@@ -257,6 +257,8 @@ public:
 
     virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
+    virtual int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) = 0;
+    
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

@@ -5437,5 +5437,50 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
     preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
     a2dpOffloadFlag_ = NO_A2DP_DEVICE;
 }
+
+int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+{
+    AUDIO_INFO_LOG("Device type[%{public}d] flag[%{public}d] address[%{public}s]",
+        deviceType, active, address.c_str());
+    CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
+
+    // Activate new device if its already connected
+    auto isPresent = [&deviceType, &address] (const unique_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+        return ((deviceType == desc->deviceType_) && (address == desc->macAddress_));
+    };
+
+    vector<unique_ptr<AudioDeviceDescriptor>> callDevices = GetAvailableDevices(CALL_OUTPUT_DEVICES);
+
+    auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
+    CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
+        "Requested device not available %{public}d ", deviceType);
+    if (active) {
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(**itr));
+#ifdef BLUETOOTH_ENABLE
+        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+                currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+        }
+        if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
+            deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+                (new(std::nothrow) AudioDeviceDescriptor(**itr))->macAddress_, USER_SELECT_BT);
+        }
+#endif
+    } else {
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+#ifdef BLUETOOTH_ENABLE
+        if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+                currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+        }
+#endif
+    }
+    FetchDevice(false);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

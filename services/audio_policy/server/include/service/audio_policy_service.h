@@ -412,6 +412,8 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByUsage(AudioDeviceUsage usage,
         const std::vector<sptr<AudioDeviceDescriptor>>& descs);
 
+    int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address);
+    
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

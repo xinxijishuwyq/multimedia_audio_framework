@@ -1343,5 +1343,12 @@ AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImp
 {
     AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
 }
+
+int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const
+{
+    AUDIO_INFO_LOG("device: %{public}d", deviceType);
+    return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
+        flag, address));
+}
 } // namespace AudioStandard
 } // namespace OHOS

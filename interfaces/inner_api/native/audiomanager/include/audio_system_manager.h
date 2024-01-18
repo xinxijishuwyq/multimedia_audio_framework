@@ -1096,6 +1096,18 @@ public:
      */
     int32_t UnsetDistributedRoutingRoleCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
 
+    /**
+     * @brief Set device address.
+     *
+     * @param deviceType device type.
+     * @param flag Device activation status.
+     * @param address Device address
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 11
+     */
+    int32_t SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const;
+    
     static void AudioServerDied(pid_t pid);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {

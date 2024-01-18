@@ -1894,5 +1894,27 @@ int32_t AudioPolicyProxy::ReleaseAudioInterruptZone(const int32_t zoneID)
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "ReleaseAudioInterruptZone failed, error: %d", error);
     return reply.ReadInt32();
 }
+
+int32_t AudioPolicyProxy::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return -1;
+    }
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    data.WriteBool(active);
+    data.WriteString(address);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALL_DEVICE_ACTIVE), data, reply, option);
+    if (error != ERR_NONE) {
+        AUDIO_ERR_LOG("set device active failed, error: %d", error);
+        return error;
+    }
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS
