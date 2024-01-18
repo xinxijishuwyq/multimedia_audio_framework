@@ -1500,6 +1500,7 @@ int32_t RendererInClientInner::DrainRingCache()
     result = ringCache_->Dequeue({desc.buffer, minSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is nullptr");
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(minSize);
     return SUCCESS;
