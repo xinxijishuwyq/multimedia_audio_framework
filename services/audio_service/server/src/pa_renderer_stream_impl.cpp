@@ -764,7 +764,8 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t& timeSta
     offloadTsLast_ = timeStamp;
 
     uint64_t frames;
-    int64_t timeSec, timeNanoSec;
+    int64_t timeSec;
+    int64_t timeNanoSec;
     audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
     int64_t framesInt = static_cast<int64_t>(frames);
     int64_t timeStampInt = static_cast<int64_t>(timeStamp);

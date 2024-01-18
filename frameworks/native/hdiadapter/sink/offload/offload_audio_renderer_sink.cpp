@@ -653,31 +653,6 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
     }
 }
 
-static AudioCategory GetAudioCategory(AudioScene audioScene)
-{
-    AudioCategory audioCategory;
-    switch (audioScene) {
-        case AUDIO_SCENE_DEFAULT:
-            audioCategory = AUDIO_IN_MEDIA;
-            break;
-        case AUDIO_SCENE_RINGING:
-            audioCategory = AUDIO_IN_RINGTONE;
-            break;
-        case AUDIO_SCENE_PHONE_CALL:
-            audioCategory = AUDIO_IN_CALL;
-            break;
-        case AUDIO_SCENE_PHONE_CHAT:
-            audioCategory = AUDIO_IN_COMMUNICATION;
-            break;
-        default:
-            audioCategory = AUDIO_IN_MEDIA;
-            break;
-    }
-    AUDIO_DEBUG_LOG("Audio category returned is: %{public}d", audioCategory);
-
-    return audioCategory;
-}
-
 int32_t OffloadAudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
 {
     AUDIO_WARNING_LOG("not supported.");
@@ -735,7 +710,7 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
-    AUDIO_WARNING_LOG("Stop dumlicate");
+    AUDIO_WARNING_LOG("Stop duplicate");
 
     return SUCCESS;
 }

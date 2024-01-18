@@ -2214,17 +2214,17 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         int32_t writen = -1;
         int ret = ProcessRenderUseTimingOffload(u, &wait, &nInput, &writen);
         if (ret < 0) {
-            u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 3ms for min wait
+            u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 1ms for min wait
         } else if (wait) {
             if (u->offload.firstWrite == true) {
                 blockTime = -1;
             } else {
-                u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 3ms for min wait
+                u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 1ms for min wait
             }
         } else {
             blockTime = 0;
             if (writen >= size100ms) {
-                blockTime = 1 * PA_USEC_PER_MSEC; // 3ms for min wait
+                blockTime = 1 * PA_USEC_PER_MSEC; // 1ms for min wait
             }
         }
     } else if (hdistate == 1) {
@@ -2232,7 +2232,7 @@ static void ThreadFuncRendererTimerOffloadProcess(struct Userdata *u, pa_usec_t 
         if (blockTime < 0) {
             blockTime = OFFLOAD_FRAME_SIZE * PA_USEC_PER_MSEC; // block for one frame
         }
-        u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 3ms for min wait
+        u->offload.minWait = now + 1 * PA_USEC_PER_MSEC; // 1ms for min wait
     }
     if (pos < hdiPos) {
         AUDIO_INFO_LOG("ThreadFuncRendererTimerOffload hdiPos wrong need sync, pos %" PRIu64 ", hdiPos %" PRIu64,
