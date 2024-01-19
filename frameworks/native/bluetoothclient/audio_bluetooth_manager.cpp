@@ -15,7 +15,6 @@
 
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
-#include "ipc_skeleton.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "bluetooth_device_manager.h"
@@ -285,11 +284,6 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     std::lock_guard<std::mutex> sceneLock(g_audioSceneLock);
     int8_t lastScoCategory = GetScoCategoryFromScene(scene_);
     int8_t newScoCategory = GetScoCategoryFromScene(scene);
-    int32_t uid = IPCSkeleton::GetCallingUid();
-    if (scene == AUDIO_SCENE_RINGING && uid == TELEPHONY_UID) {
-        AUDIO_INFO_LOG("Telephony call ring scene need set correct category.");
-        newScoCategory = ScoCategory::SCO_CALLULAR;
-    }
     if (lastScoCategory == newScoCategory) {
         AUDIO_DEBUG_LOG("AudioScene category is not changed, ignore ConnectScoWithAudioScene operation.");
         return SUCCESS;
@@ -315,9 +309,6 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "ConnectScoWithAudioScene failed, result: %{public}d", ret);
     }
     scene_ = scene;
-    if (newScoCategory == ScoCategory::SCO_CALLULAR) {
-        scene_ = AUDIO_SCENE_PHONE_CALL;
-    }
     return SUCCESS;
 }
 
@@ -341,10 +332,10 @@ int32_t AudioHfpManager::DisconnectSco()
 int8_t AudioHfpManager::GetScoCategoryFromScene(AudioScene scene)
 {
     switch (scene) {
+        case AUDIO_SCENE_RINGING:
         case AUDIO_SCENE_PHONE_CALL:
             return ScoCategory::SCO_CALLULAR;
         case AUDIO_SCENE_PHONE_CHAT:
-        case AUDIO_SCENE_RINGING:
             return ScoCategory::SCO_VIRTUAL;
         default:
             return ScoCategory::SCO_DEFAULT;
