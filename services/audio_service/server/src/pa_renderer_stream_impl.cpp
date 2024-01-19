@@ -14,6 +14,7 @@
  */
 
 #include "pa_renderer_stream_impl.h"
+#include "pa_adapter_tools.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -39,13 +40,6 @@ PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
-
-    pa_stream_set_moved_callback(paStream, PAStreamMovedCb, (void *)this); // used to notify sink/source moved
-    pa_stream_set_write_callback(paStream, PAStreamWriteCb, (void *)this);
-    pa_stream_set_underflow_callback(paStream, PAStreamUnderFlowCb, (void *)this);
-    pa_stream_set_started_callback(paStream, PAStreamSetStartedCb, (void *)this);
-
-    InitParams();
 }
 
 inline uint32_t PcmFormatToBits(uint8_t format)
@@ -68,9 +62,15 @@ inline uint32_t PcmFormatToBits(uint8_t format)
 
 int32_t PaRendererStreamImpl::InitParams()
 {
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
+
+    pa_stream_set_moved_callback(paStream_, PAStreamMovedCb, (void *)this); // used to notify sink/source moved
+    pa_stream_set_write_callback(paStream_, PAStreamWriteCb, (void *)this);
+    pa_stream_set_underflow_callback(paStream_, PAStreamUnderFlowCb, (void *)this);
+    pa_stream_set_started_callback(paStream_, PAStreamSetStartedCb, (void *)this);
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
@@ -100,6 +100,7 @@ int32_t PaRendererStreamImpl::InitParams()
     }
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
 
+    lock.Unlock();
     // In plan: Get data from xml
     effectSceneName_ = GetEffectSceneName(processConfig_.streamType);
     return SUCCESS;
@@ -107,7 +108,8 @@ int32_t PaRendererStreamImpl::InitParams()
 
 int32_t PaRendererStreamImpl::Start()
 {
-    AUDIO_DEBUG_LOG("Enter PaRendererStreamImpl::Start");
+    AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Start");
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -127,12 +129,7 @@ int32_t PaRendererStreamImpl::Start()
 int32_t PaRendererStreamImpl::Pause()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Pause");
-    PAStreamCorkSuccessCb = PAStreamPauseSuccessCb;
-    return CorkStream();
-}
-
-int32_t PaRendererStreamImpl::CorkStream()
-{
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -143,7 +140,7 @@ int32_t PaRendererStreamImpl::CorkStream()
         AUDIO_ERR_LOG("Stream Stop Failed");
         return ERR_OPERATION_FAILED;
     }
-    operation = pa_stream_cork(paStream_, 1, PAStreamCorkSuccessCb, (void *)this);
+    operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, (void *)this);
     pa_operation_unref(operation);
     return SUCCESS;
 }
@@ -151,6 +148,7 @@ int32_t PaRendererStreamImpl::CorkStream()
 int32_t PaRendererStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Flush");
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -175,6 +173,7 @@ int32_t PaRendererStreamImpl::Flush()
 int32_t PaRendererStreamImpl::Drain()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Drain");
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -196,6 +195,7 @@ int32_t PaRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Stop");
     state_ = STOPPING;
+    PaLockGuard lock(mainloop_);
 
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
@@ -215,12 +215,14 @@ int32_t PaRendererStreamImpl::Release()
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
     }
     state_ = RELEASED;
+    PaLockGuard lock(mainloop_);
     if (paStream_) {
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);
         pa_stream_set_write_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
         pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
         pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
 
         pa_stream_disconnect(paStream_);
         pa_stream_unref(paStream_);
@@ -238,10 +240,10 @@ int32_t PaRendererStreamImpl::GetStreamFramesWritten(uint64_t &framesWritten)
 
 int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    pa_threaded_mainloop_lock(mainloop_);
 
     pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
     if (operation != nullptr) {
@@ -256,18 +258,17 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
     if (info == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
-        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_OPERATION_FAILED;
     }
 
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     timeStamp = pa_bytes_to_usec(info->write_index, sampleSpec);
-    pa_threaded_mainloop_unlock(mainloop_);
     return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 {
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -276,7 +277,6 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     int32_t negative {0};
 
     // Get PA latency
-    pa_threaded_mainloop_lock(mainloop_);
     while (true) {
         pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
         if (operation != nullptr) {
@@ -287,7 +287,6 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
         if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
             if (negative) {
                 latency = 0;
-                pa_threaded_mainloop_unlock(mainloop_);
                 return ERR_OPERATION_FAILED;
             }
             break;
@@ -295,7 +294,7 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
         AUDIO_INFO_LOG("waiting for audio latency information");
         pa_threaded_mainloop_wait(mainloop_);
     }
-    pa_threaded_mainloop_unlock(mainloop_);
+    lock.Unlock();
     cacheLatency = 0;
     // In plan: Total latency will be sum of audio write cache latency plus PA latency
     uint64_t fwLatency = paLatency + cacheLatency;
@@ -314,6 +313,7 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
 int32_t PaRendererStreamImpl::SetRate(int32_t rate)
 {
     AUDIO_INFO_LOG("SetRate in");
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -332,21 +332,19 @@ int32_t PaRendererStreamImpl::SetRate(int32_t rate)
     }
     renderRate_ = rate;
 
-    pa_threaded_mainloop_lock(mainloop_);
     pa_operation *operation = pa_stream_update_sample_rate(paStream_, currentRate, nullptr, nullptr);
     if (operation != nullptr) {
         pa_operation_unref(operation);
     } else {
         AUDIO_ERR_LOG("SetRate: operation is nullptr");
     }
-    pa_threaded_mainloop_unlock(mainloop_);
     return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::SetLowPowerVolume(float powerVolume)
 {
     AUDIO_INFO_LOG("SetLowPowerVolume: %{public}f", powerVolume);
-
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -357,13 +355,10 @@ int32_t PaRendererStreamImpl::SetLowPowerVolume(float powerVolume)
         return -1;
     }
 
-    pa_threaded_mainloop_lock(mainloop_);
-
     powerVolumeFactor_ = powerVolume;
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
-        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_OPERATION_FAILED;
     }
 
@@ -374,7 +369,6 @@ int32_t PaRendererStreamImpl::SetLowPowerVolume(float powerVolume)
     pa_operation_unref(updatePropOperation);
 
     // In plan: Call reset volume
-    pa_threaded_mainloop_unlock(mainloop_);
 
     return SUCCESS;
 }
@@ -388,10 +382,10 @@ int32_t PaRendererStreamImpl::GetLowPowerVolume(float &powerVolume)
 int32_t PaRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
     AUDIO_INFO_LOG("SetAudioEffectMode: %{public}d", effectMode);
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    pa_threaded_mainloop_lock(mainloop_);
 
     effectMode_ = effectMode;
     const std::string effectModeName = GetEffectModeName(effectMode_);
@@ -399,7 +393,6 @@ int32_t PaRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed");
-        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_OPERATION_FAILED;
     }
 
@@ -408,8 +401,6 @@ int32_t PaRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
         nullptr, nullptr);
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
-
-    pa_threaded_mainloop_unlock(mainloop_);
 
     return SUCCESS;
 }
@@ -465,6 +456,7 @@ BufferDesc PaRendererStreamImpl::DequeueBuffer(size_t length)
 {
     BufferDesc bufferDesc;
     bufferDesc.bufLength = length;
+    // DequeueBuffer is called in PAStreamWriteCb which is running in mainloop, so don't need lock mainloop.
     pa_stream_begin_write(paStream_, reinterpret_cast<void **>(&bufferDesc.buffer), &bufferDesc.bufLength);
     return bufferDesc;
 }
@@ -473,16 +465,24 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
     Trace trace("PaRendererStreamImpl::EnqueueBuffer " + std::to_string(bufferDesc.bufLength) + " totalBytesWritten" +
         std::to_string(totalBytesWritten_));
-    pa_threaded_mainloop_lock(mainloop_);
     int32_t error = 0;
+    // EnqueueBuffer is called in mainloop in most cases and don't need lock.
+    bool isInMainloop = pa_threaded_mainloop_in_thread(mainloop_) ? true : false;
+    if (!isInMainloop) {
+        pa_threaded_mainloop_lock(mainloop_);
+    }
+
     error = pa_stream_write(paStream_, static_cast<void*>(bufferDesc.buffer), bufferDesc.bufLength, nullptr,
         0LL, PA_SEEK_RELATIVE);
     if (error < 0) {
         AUDIO_ERR_LOG("Write stream failed");
         pa_stream_cancel_write(paStream_);
     }
+
+    if (!isInMainloop) {
+        pa_threaded_mainloop_unlock(mainloop_);
+    }
     totalBytesWritten_ += bufferDesc.bufLength;
-    pa_threaded_mainloop_unlock(mainloop_);
     return SUCCESS;
 }
 

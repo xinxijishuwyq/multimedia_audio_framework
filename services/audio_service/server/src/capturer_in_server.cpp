@@ -220,7 +220,7 @@ int32_t CapturerInServer::OnReadData(size_t length)
 
 int32_t CapturerInServer::UpdateReadIndex()
 {
-    AUDIO_INFO_LOG("UpdateReadIndex: audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d",
+    AUDIO_DEBUG_LOG("audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d",
         audioServerBuffer_->GetAvailableDataFrames(), needStart);
     return SUCCESS;
 }

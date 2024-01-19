@@ -32,7 +32,6 @@ public:
     int32_t Drain() override { return 0; };
     int32_t Stop() override;
     int32_t Release() override;
-    int32_t CorkStream();
     int32_t GetStreamFramesRead(uint64_t &framesRead) override;
     int32_t GetCurrentTimeStamp(uint64_t &timeStamp) override;
     int32_t GetLatency(uint64_t &latency) override;
@@ -58,7 +57,6 @@ private:
     static void PAStreamPauseSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
-    pa_stream_success_cb_t PAStreamCorkSuccessCb;
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
