@@ -47,7 +47,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
         return SUCCESS;
     }
 
-    AUDIO_DEBUG_LOG("AudioSystemManager SetVolume volumeType=%{public}d ", volumeType);
+    AUDIO_INFO_LOG("SetVolume volumeType[%{public}d], volume[%{public}d]", volumeType, volume);
 
     /* Validate volume type and return INVALID_PARAMS error */
 
