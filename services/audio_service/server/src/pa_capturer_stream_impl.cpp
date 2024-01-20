@@ -14,6 +14,7 @@
  */
 
 #include "pa_capturer_stream_impl.h"
+#include "pa_adapter_tools.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 
@@ -66,6 +67,7 @@ inline uint32_t PcmFormatToBits(uint8_t format)
 
 int32_t PaCapturerStreamImpl::InitParams()
 {
+    PaLockGuard lock(mainloop_);
     pa_stream_set_moved_callback(paStream_, PAStreamMovedCb, (void *)this); // used to notify sink/source moved
     pa_stream_set_read_callback(paStream_, PAStreamReadCb, (void *)this);
     pa_stream_set_underflow_callback(paStream_, PAStreamUnderFlowCb, (void *)this);
@@ -110,7 +112,8 @@ int32_t PaCapturerStreamImpl::InitParams()
 
 int32_t PaCapturerStreamImpl::Start()
 {
-    AUDIO_DEBUG_LOG("Enter PaCapturerStreamImpl::Start");
+    AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Start");
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -129,23 +132,17 @@ int32_t PaCapturerStreamImpl::Start()
 int32_t PaCapturerStreamImpl::Pause()
 {
     AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Pause");
-    PAStreamCorkSuccessCb = PAStreamPauseSuccessCb;
-    return CorkStream();
-}
-
-int32_t PaCapturerStreamImpl::CorkStream()
-{
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    pa_operation *operation = nullptr;
 
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Stop Failed");
         return ERR_ILLEGAL_STATE;
     }
-    operation = pa_stream_cork(paStream_, 1, PAStreamCorkSuccessCb, (void *)this);
+    pa_operation *operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, (void *)this);
     pa_operation_unref(operation);
     return SUCCESS;
 }
@@ -162,10 +159,10 @@ int32_t PaCapturerStreamImpl::GetStreamFramesRead(uint64_t &framesRead)
 
 int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
 {
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    pa_threaded_mainloop_lock(mainloop_);
 
     pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
     if (operation != nullptr) {
@@ -180,13 +177,11 @@ int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
     if (info == nullptr) {
         AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
-        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_OPERATION_FAILED;
     }
 
     if (pa_stream_get_time(paStream_, &timeStamp)) {
         AUDIO_ERR_LOG("GetCurrentTimeStamp failed for AUDIO_SERVICE_CLIENT_RECORD");
-        pa_threaded_mainloop_unlock(mainloop_);
         return ERR_OPERATION_FAILED;
     }
     int32_t uid = static_cast<int32_t>(getuid());
@@ -197,12 +192,12 @@ int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
     if (uid == media_service) {
         timeStamp = pa_bytes_to_usec(totalBytesRead_, sampleSpec);
     }
-    pa_threaded_mainloop_unlock(mainloop_);
     return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 {
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -211,7 +206,6 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
     int32_t negative {0};
 
     // Get PA latency
-    pa_threaded_mainloop_lock(mainloop_);
     while (true) {
         pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
         if (operation != nullptr) {
@@ -222,7 +216,6 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
         if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
             if (negative) {
                 latency = 0;
-                pa_threaded_mainloop_unlock(mainloop_);
                 return ERR_OPERATION_FAILED;
             }
             break;
@@ -230,7 +223,6 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
         AUDIO_INFO_LOG("waiting for audio latency information");
         pa_threaded_mainloop_wait(mainloop_);
     }
-    pa_threaded_mainloop_unlock(mainloop_);
 
     // In plan, 怎么计算cacheLatency
     // Get audio read cache latency
@@ -246,6 +238,7 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
 int32_t PaCapturerStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Flush");
+    PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
         return ERR_ILLEGAL_STATE;
     }
@@ -269,8 +262,19 @@ int32_t PaCapturerStreamImpl::Flush()
 int32_t PaCapturerStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Enter PaCapturerStreamImpl::Stop");
-    PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
-    return CorkStream();
+    PaLockGuard lock(mainloop_);
+    if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
+        return ERR_ILLEGAL_STATE;
+    }
+
+    pa_stream_state_t state = pa_stream_get_state(paStream_);
+    if (state != PA_STREAM_READY) {
+        AUDIO_ERR_LOG("Stream Stop Failed");
+        return ERR_ILLEGAL_STATE;
+    }
+    pa_operation *operation = pa_stream_cork(paStream_, 1, PAStreamStopSuccessCb, (void *)this);
+    pa_operation_unref(operation);
+    return SUCCESS;
 }
 
 int32_t PaCapturerStreamImpl::Release()
@@ -281,12 +285,13 @@ int32_t PaCapturerStreamImpl::Release()
     }
     state_ = RELEASED;
     if (paStream_) {
+        PaLockGuard lock(mainloop_);
         pa_stream_set_state_callback(paStream_, nullptr, nullptr);
-        pa_stream_set_read_callback(paStream_, nullptr, nullptr);
         pa_stream_set_read_callback(paStream_, nullptr, nullptr);
         pa_stream_set_latency_update_callback(paStream_, nullptr, nullptr);
         pa_stream_set_underflow_callback(paStream_, nullptr, nullptr);
-
+        pa_stream_set_moved_callback(paStream_, nullptr, nullptr);
+        pa_stream_set_started_callback(paStream_, nullptr, nullptr);
         pa_stream_disconnect(paStream_);
         pa_stream_unref(paStream_);
         paStream_ = nullptr;

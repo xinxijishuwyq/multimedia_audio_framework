@@ -197,7 +197,7 @@ void RendererInServer::WriteData()
     Trace::Count("RendererInServer::WriteData", (currentWriteFrame - currentReadFrame) / spanSizeInFrame_);
     Trace trace1("RendererInServer::WriteData");
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
-        AUDIO_INFO_LOG("Underrun!!!");
+        AUDIO_INFO_LOG("near underrun");
         Trace trace2("RendererInServer::Underrun");
         std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
         CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");

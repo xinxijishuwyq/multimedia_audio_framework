@@ -31,7 +31,6 @@ public:
     int32_t Drain() override;
     int32_t Stop() override;
     int32_t Release() override;
-    int32_t CorkStream();
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
     int32_t GetCurrentTimeStamp(uint64_t &timeStamp) override;
     int32_t GetLatency(uint64_t &latency) override;
@@ -71,7 +70,6 @@ private:
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
-    pa_stream_success_cb_t PAStreamCorkSuccessCb;
     pa_stream *paStream_ = nullptr;
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
