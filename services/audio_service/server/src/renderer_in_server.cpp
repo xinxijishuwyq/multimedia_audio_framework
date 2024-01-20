@@ -241,11 +241,16 @@ int32_t RendererInServer::OnWriteData(size_t length)
 {
     Trace trace("RendererInServer::OnWriteData length " + std::to_string(length));
     requestFailed = false;
-    bool fail = true;
-    for (size_t i = 0; i < length / totalSizeInFrame_; i++) {
-        if (WriteData() == SUCCESS) {
-            fail = false;
+    bool fail = false;
+    if (writeLock_.try_lock()) {
+        for (size_t i = 0; i < length / totalSizeInFrame_; i++) {
+            if (WriteData() != SUCCESS) {
+                fail = true;
+            }
         }
+        writeLock_.unlock();
+    } else {
+        fail = true;
     }
     requestFailed = fail;
     return SUCCESS;

@@ -91,6 +91,7 @@ private:
     std::mutex updateIndexLock_;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
+    std::mutex writeLock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
