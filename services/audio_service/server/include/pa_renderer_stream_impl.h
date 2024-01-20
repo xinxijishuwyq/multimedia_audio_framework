@@ -56,7 +56,8 @@ public:
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
-    int32_t GetOffloadApproximatelyCacheTime(uint64_t& timeStamp) override;
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
     int32_t OffloadSetVolume(float volume) override;
     size_t GetWritableSize() override;
     // offload end

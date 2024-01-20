@@ -374,7 +374,8 @@ int32_t IpcStreamProxy::UnsetOffloadMode()
     return ret;
 }
 
-int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
+int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -382,12 +383,19 @@ int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
+    data.WriteUint64(timeStamp);
+    data.WriteUint64(paWriteIndex);
+    data.WriteUint64(cacheTimeDsp);
+    data.WriteUint64(cacheTimePa);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "GetOffloadApproximatelyCacheTime failed, ipc error: %{public}d",
         ret);
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetOffloadApproximatelyCacheTime failed, error: %{public}d", ret);
     timeStamp = reply.ReadUint64();
+    paWriteIndex = reply.ReadUint64();
+    cacheTimeDsp = reply.ReadUint64();
+    cacheTimePa = reply.ReadUint64();
 
     return ret;
 }

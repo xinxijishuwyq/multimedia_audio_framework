@@ -49,7 +49,8 @@ public:
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) = 0;
     virtual int32_t UnsetOffloadMode() = 0;
-    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t& timeStamp) = 0;
+    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0;
     virtual int32_t OffloadSetVolume(float volume) = 0;
     virtual size_t GetWritableSize() = 0;
 };

@@ -240,8 +240,14 @@ int32_t IpcStreamStub::HandleUnsetOffloadMode(MessageParcel &data, MessageParcel
 int32_t IpcStreamStub::HandleGetOffloadApproximatelyCacheTime(MessageParcel &data, MessageParcel &reply)
 {
     uint64_t timeStamp = data.ReadUint64();
-    reply.WriteInt32(GetOffloadApproximatelyCacheTime(timeStamp));
+    uint64_t paWriteIndex = data.ReadUint64();
+    uint64_t cacheTimeDsp = data.ReadUint64();
+    uint64_t cacheTimePa = data.ReadUint64();
+    reply.WriteInt32(GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa));
     reply.WriteUint64(timeStamp);
+    reply.WriteUint64(paWriteIndex);
+    reply.WriteUint64(cacheTimeDsp);
+    reply.WriteUint64(cacheTimePa);
 
     return AUDIO_OK;
 }

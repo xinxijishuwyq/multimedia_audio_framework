@@ -53,7 +53,8 @@ public:
 
     int32_t SetOffloadMode(int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode();
-    int32_t GetOffloadApproximatelyCacheTime(uint64_t& timeStamp);
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t OffloadSetVolume(float volume);
 
     int32_t Init();

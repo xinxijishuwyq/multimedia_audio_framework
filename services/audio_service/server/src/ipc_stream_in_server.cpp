@@ -337,10 +337,11 @@ int32_t IpcStreamInServer::UnsetOffloadMode()
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
+int32_t IpcStreamInServer::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->GetOffloadApproximatelyCacheTime(timeStamp);
+        return rendererInServer_->GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
     }
     AUDIO_ERR_LOG("GetOffloadApproximatelyCacheTime failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;

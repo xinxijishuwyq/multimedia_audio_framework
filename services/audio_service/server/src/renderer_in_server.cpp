@@ -481,9 +481,10 @@ int32_t RendererInServer::UnsetOffloadMode()
     return stream_->UnsetOffloadMode();
 }
 
-int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
+int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
-    return stream_->GetOffloadApproximatelyCacheTime(timeStamp);
+    return stream_->GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
 }
 
 int32_t RendererInServer::OffloadSetVolume(float volume)

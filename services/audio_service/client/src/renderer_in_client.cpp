@@ -51,6 +51,7 @@ namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
 const uint64_t AUDIO_US_PER_MS = 1000;
+const int64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 130; //ms
@@ -327,6 +328,8 @@ private:
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 
     bool offloadEnable_;
+    uint64_t offloadStartReadPos = 0;
+    int64_t offloadStartHandleTime = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -375,6 +378,9 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
 {
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_DEBUG_LOG("OnOperationHandled() SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
+        if (!offloadEnable_ && static_cast<bool>(result)) {
+            offloadStartReadPos = 0;
+        }
         offloadEnable_ = static_cast<bool>(result);
     }
     // read/write operation may print many log, use debug.
@@ -763,12 +769,37 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     int64_t tempLatency = 45000000; // 45000000 -> 45 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 
-    uint64_t cacheTimeStamp = 0;
-    ipcStream_->GetOffloadApproximatelyCacheTime(cacheTimeStamp);
+    int64_t audioTimeResult = handleTime + deltaTime + tempLatency;
 
-    handleTime = handleTime + deltaTime + tempLatency - cacheTimeStamp * AUDIO_MS_PER_SECOND;
-    timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
-    timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
+    if (offloadEnable_) {
+        uint64_t timeStamp = 0;
+        uint64_t paWriteIndex = 0;
+        uint64_t cacheTimeDsp = 0;
+        uint64_t cacheTimePa = 0;
+        ipcStream_->GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+        int64_t cacheTime = static_cast<int64_t>(cacheTimeDsp + cacheTimePa) * AUDIO_NS_PER_US;
+        int64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        int64_t deltaTimeStamp = (static_cast<int64_t>(timeNow) - static_cast<int64_t>(timeStamp)) * AUDIO_NS_PER_US;
+        int64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
+        uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
+
+        int64_t deltaPaWriteIndexNs = static_cast<int64_t>(readPosNs) - static_cast<int64_t>(paWriteIndexNs);
+        int64_t cacheTimeNow = cacheTime - deltaTimeStamp + deltaPaWriteIndexNs;
+        if (offloadStartReadPos == 0){
+            offloadStartReadPos = readPosNs;
+            offloadStartHandleTime = handleTime;
+        }
+        int64_t offloadDelta = 0;
+        if (offloadStartReadPos != 0) {
+            offloadDelta = (static_cast<int64_t>(readPosNs) - static_cast<int64_t>(offloadStartReadPos)) -
+                           (handleTime - offloadStartHandleTime) - cacheTimeNow;
+        }
+        audioTimeResult += offloadDelta;
+    }
+
+    timestamp.time.tv_sec = static_cast<time_t>(audioTimeResult / AUDIO_NS_PER_SECOND);
+    timestamp.time.tv_nsec = static_cast<time_t>(audioTimeResult % AUDIO_NS_PER_SECOND);
 
     return true;
 }
@@ -1285,6 +1316,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     waitLock.unlock();
 
     state_ = RUNNING; // change state_ to RUNNING, then notify cbThread
+    offloadStartReadPos = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         // start the callback-write thread
         cbThreadCv_.notify_all();

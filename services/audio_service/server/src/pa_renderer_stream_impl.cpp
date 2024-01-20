@@ -731,7 +731,8 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
+int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
@@ -750,32 +751,37 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t& timeSta
 
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
     if (info == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
+        AUDIO_WARNING_LOG("pa_stream_get_timing_info failed");
         pa_threaded_mainloop_unlock(mainloop_);
-        return ERR_OPERATION_FAILED;
+        return SUCCESS;
     }
 
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
-    timeStamp = pa_bytes_to_usec(info->read_index, sampleSpec);
-    int64_t cacheTimeInPulse = pa_bytes_to_usec(info->write_index, sampleSpec) - timeStamp;
+    uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
+    uint64_t writeIndex = pa_bytes_to_usec(info->write_index, sampleSpec);
+    timeStamp = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
     pa_threaded_mainloop_unlock(mainloop_);
 
+    int64_t cacheTimeInPulse = writeIndex > readIndex ? writeIndex - readIndex : 0;
+    cacheTimePa = static_cast<uint64_t>(cacheTimeInPulse);
+    paWriteIndex = writeIndex;
+
     bool first = offloadTsLast_ == 0;
-    offloadTsLast_ = timeStamp;
+    offloadTsLast_ = readIndex;
 
     uint64_t frames;
     int64_t timeSec;
     int64_t timeNanoSec;
     audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
     int64_t framesInt = static_cast<int64_t>(frames);
-    int64_t timeStampInt = static_cast<int64_t>(timeStamp);
+    int64_t readIndexInt = static_cast<int64_t>(readIndex);
     if (framesInt + offloadTsOffset_ <
-        timeStampInt - static_cast<int64_t>(OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BUFFER) *
+        readIndexInt - static_cast<int64_t>(OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BUFFER) *
                        static_cast<int64_t>(AUDIO_US_PER_MS) ||
-        framesInt + offloadTsOffset_ > timeStampInt || first) {
-        offloadTsOffset_ = timeStampInt - framesInt;
+        framesInt + offloadTsOffset_ > readIndexInt || first) {
+        offloadTsOffset_ = readIndexInt - framesInt;
     }
-    timeStamp = static_cast<uint64_t>(timeStampInt - (framesInt + offloadTsOffset_) + cacheTimeInPulse);
+    cacheTimeDsp = static_cast<uint64_t>(readIndexInt - (framesInt + offloadTsOffset_) + cacheTimeInPulse);
     return SUCCESS;
 }
 
