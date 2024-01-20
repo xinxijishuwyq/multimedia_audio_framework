@@ -58,7 +58,8 @@ const float AUDIO_VOLOMUE_EPSILON = 0.0001;
 const float AUDIO_MAX_VOLUME = 1.0f;
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
-static const int32_t OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
+static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
+static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 1;
@@ -215,8 +216,6 @@ private:
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
-    int32_t GetOffloadApproximatelyCacheTime(uint64_t& timeStamp);
-    int32_t OffloadSetVolume(float volume);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -327,6 +326,8 @@ private:
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 
+    bool offloadEnable_;
+
     enum {
         STATE_CHANGE_EVENT = 0,
         RENDERER_MARK_REACHED_EVENT,
@@ -372,6 +373,10 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
+    if (operation == SET_OFFLOAD_ENABLE) {
+        AUDIO_DEBUG_LOG("OnOperationHandled() SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
+        offloadEnable_ = static_cast<bool>(result);
+    }
     // read/write operation may print many log, use debug.
     if (operation == UPDATE_STREAM) {
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
@@ -1188,16 +1193,6 @@ int32_t RendererInClientInner::UnsetOffloadMode()
     return ipcStream_->UnsetOffloadMode();
 }
 
-int32_t RendererInClientInner::GetOffloadApproximatelyCacheTime(uint64_t& timeStamp)
-{
-    return ipcStream_->GetOffloadApproximatelyCacheTime(timeStamp);
-}
-
-int32_t RendererInClientInner::OffloadSetVolume(float volume)
-{
-    return ipcStream_->OffloadSetVolume(volume);
-}
-
 float RendererInClientInner::GetSingleStreamVolume()
 {
     // in plan
@@ -1639,7 +1634,8 @@ int32_t RendererInClientInner::WriteCacheData()
     while (sizeInFrame * sizePerFrameInByte_ < clientSpanSizeInByte_) {
         // wait for server read some data
         std::unique_lock<std::mutex> lock(writeDataMutex_);
-        std::cv_status stat = writeDataCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
+        int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : OPERATION_TIMEOUT_IN_MS;
+        std::cv_status stat = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout));
         CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     }

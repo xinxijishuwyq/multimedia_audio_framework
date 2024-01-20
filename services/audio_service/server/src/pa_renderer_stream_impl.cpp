@@ -792,9 +792,22 @@ int32_t PaRendererStreamImpl::UpdatePolicyOffloadInWrite()
     return error;
 }
 
+void PaRendererStreamImpl::SyncOffloadMode()
+{
+    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
+    if (statusCallback != nullptr) {
+        if (offloadEnable_) {
+            statusCallback->OnStatusUpdate(OPERATION_SET_OFFLOAD_ENABLE);
+        } else {
+            statusCallback->OnStatusUpdate(OPERATION_UNSET_OFFLOAD_ENABLE);
+        }
+    }
+}
+
 void PaRendererStreamImpl::ResetOffload()
 {
     offloadEnable_ = false;
+    SyncOffloadMode();
     offloadTsOffset_ = 0;
     offloadTsLast_ = 0;
     offloadStatePolicy_ = OFFLOAD_DEFAULT;
@@ -891,6 +904,7 @@ int32_t PaRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
     }
 
     offloadEnable_ = true;
+    SyncOffloadMode();
     if (UpdatePAProbListOffload(statePolicy) != SUCCESS) {
         return ERR_OPERATION_FAILED;
     }
@@ -907,6 +921,7 @@ int32_t PaRendererStreamImpl::UnsetOffloadMode()
 {
     lastOffloadUpdateFinishTime_ = 0;
     offloadEnable_ = false;
+    SyncOffloadMode();
     pa_threaded_mainloop_lock(mainloop_);
     int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
     pa_threaded_mainloop_unlock(mainloop_);

@@ -63,6 +63,7 @@ public:
 
 private:
     // offload
+    void SyncOffloadMode();
     int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
     int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
     void ResetOffload();

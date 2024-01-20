@@ -162,6 +162,12 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
             status_ = I_STATUS_RELEASED;
             break;
+        case OPERATION_SET_OFFLOAD_ENABLE:
+            stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, 1);
+            break;
+        case OPERATION_UNSET_OFFLOAD_ENABLE:
+            stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, 0);
+            break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
