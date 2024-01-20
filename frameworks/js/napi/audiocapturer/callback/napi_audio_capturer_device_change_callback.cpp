@@ -114,12 +114,21 @@ void NapiAudioCapturerDeviceChangeCallback::OnJsCallbackCapturerDeviceInfo(napi_
     CHECK_AND_RETURN_LOG(work != nullptr, "OnJsCallbackCapturerDeviceInfo: no memory");
 
     work->data = new AudioCapturerDeviceChangeJsCallback {method, env_, deviceInfo};
-    CHECK_AND_RETURN_LOG(work->data != nullptr, "New object failed: no memory");
+    if (work->data == nullptr) {
+        AUDIO_ERR_LOG("work data malloc failed: No memory");
+        delete work;
+        return;
+    }
 
     int ret = uv_queue_work(loop, work, [] (uv_work_t *work) {}, WorkCallbackCompleted);
     if (ret != 0) {
         AUDIO_ERR_LOG("Failed to execute libuv work queue");
-        delete work;
+        if (work != nullptr) {
+            if (work->data != nullptr) {
+                delete reinterpret_cast<AudioCapturerDeviceChangeJsCallback*>(work->data);
+            }
+            delete work;
+        }
     }
 }
 }  // namespace AudioStandard
