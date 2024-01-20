@@ -100,7 +100,7 @@ private:
     pa_sample_spec ConvertToPAAudioParams(AudioProcessConfig processConfig);
 
     int32_t GetDeviceNameForConnect(AudioProcessConfig processConfig,
-        std::string &deviceName);
+        uint32_t sessionId, std::string &deviceName);
 
     std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;

@@ -36,6 +36,7 @@ public:
         GET_DEVICE_INFO = 0,
         INIT_VOLUME_MAP,
         SET_WAKEUP_ADUIO_CAPTURER,
+        SET_AUDIO_CAPTURER,
         POLICY_PROVIDER_MAX_MSG,
     };
 

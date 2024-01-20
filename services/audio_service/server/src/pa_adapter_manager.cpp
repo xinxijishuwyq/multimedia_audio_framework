@@ -260,24 +260,30 @@ int32_t PaAdapterManager::HandleMainLoopStart()
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConfig,
+int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConfig, uint32_t sessionId,
     std::string &deviceName)
 {
     deviceName = "";
-    if (processConfig.isWakeupCapturer) {
-        int32_t no = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer();
-        if (no < 0) {
-            AUDIO_ERR_LOG("ErrorCode: %{public}d", no);
-            return no;
-        }
+    if (processConfig.audioMode == AUDIO_MODE_RECORD) {
+        if (processConfig.isWakeupCapturer) {
+            int32_t no = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer();
+            if (no < 0) {
+                AUDIO_ERR_LOG("ErrorCode: %{public}d", no);
+                return no;
+            }
 
-        if (no >= WAKEUP_LIMIT) {
-            AUDIO_ERR_LOG("no is greater then WAKEUP_LIMIT no=: %{public}d", no);
-            return ERROR;
-        }
+            if (no >= WAKEUP_LIMIT) {
+                AUDIO_ERR_LOG("no is greater then WAKEUP_LIMIT no=: %{public}d", no);
+                return ERROR;
+            }
 
-        if (no < WAKEUP_LIMIT) {
-            deviceName = WAKEUP_NAMES[no];
+            if (no < WAKEUP_LIMIT) {
+                deviceName = WAKEUP_NAMES[no];
+            }
+        } else {
+            int32_t res = PolicyHandler::GetInstance().SetAudioCaptuer(processConfig.capturerInfo,
+                processConfig.streamInfo, sessionId);
+            return res;
         }
     }
     return SUCCESS;
@@ -319,7 +325,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     palock.Unlock();
 
     std::string deviceName;
-    int32_t errorCode = GetDeviceNameForConnect(processConfig, deviceName);
+    int32_t errorCode = GetDeviceNameForConnect(processConfig, sessionId, deviceName);
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, nullptr, "getdevicename err: %{public}d", errorCode);
 
     int32_t ret = ConnectStreamToPA(paStream, sampleSpec, deviceName);

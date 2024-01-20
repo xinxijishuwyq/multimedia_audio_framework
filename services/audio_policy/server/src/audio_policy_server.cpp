@@ -1669,12 +1669,12 @@ int32_t AudioPolicyServer::DeactivateAudioInterruptEnable(const AudioInterrupt &
 
 void AudioPolicyServer::OnSessionRemoved(const uint64_t sessionID)
 {
+    audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
     sessionProcessor_.Post({SessionEvent::Type::REMOVE, sessionID});
 }
 
 void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneID)
 {
-    audioPolicyService_.OnCapturerSessionRemoved(sessionID);
     uint32_t removedSessionID = sessionID;
 
     auto isSessionPresent = [&removedSessionID] (const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
@@ -1707,7 +1707,14 @@ void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const in
 
 void AudioPolicyServer::OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo)
 {
-    sessionProcessor_.Post({SessionEvent::Type::ADD, sessionID, sessionInfo});
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = sessionInfo.sourceType;
+
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = static_cast<AudioSamplingRate>(sessionInfo.rate);
+    streamInfo.channels = static_cast<AudioChannel>(sessionInfo.channels);
+
+    audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionID, false);
 }
 
 void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
