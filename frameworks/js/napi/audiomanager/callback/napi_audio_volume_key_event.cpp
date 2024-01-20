@@ -35,8 +35,8 @@ NapiAudioVolumeKeyEvent::~NapiAudioVolumeKeyEvent()
 void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("OnVolumeKeyEvent is called volumeLevel=%{public}d, isUpdateUi=%{public}d",
-        volumeEvent.volume, volumeEvent.updateUi);
+    AUDIO_INFO_LOG("OnVolumeKeyEvent is called volumeType=%{public}d, volumeLevel=%{public}d, isUpdateUi=%{public}d",
+        volumeEvent.volumeType, volumeEvent.volume, volumeEvent.updateUi);
     CHECK_AND_RETURN_LOG(audioVolumeKeyEventJsCallback_ != nullptr,
         "NapiAudioVolumeKeyEvent:No JS callback registered return");
     std::unique_ptr<AudioVolumeKeyEventJsCallback> cb = std::make_unique<AudioVolumeKeyEventJsCallback>();
@@ -68,7 +68,7 @@ void NapiAudioVolumeKeyEvent::SaveCallbackReference(const std::string &callbackN
     }
 }
 
-void NapiAudioVolumeKeyEvent::WorkCallbackInterruptDone(uv_work_t *work, int status)
+void NapiAudioVolumeKeyEvent::WorkCallbackVolumeChangeDone(uv_work_t *work, int status)
 {
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioVolumeKeyEventJsCallback *event = reinterpret_cast<AudioVolumeKeyEventJsCallback *>(work->data);
@@ -80,7 +80,7 @@ void NapiAudioVolumeKeyEvent::WorkCallbackInterruptDone(uv_work_t *work, int sta
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-    AUDIO_DEBUG_LOG("JsCallBack %{public}s, uv_queue_work_with_qos start", request.c_str());
+    AUDIO_INFO_LOG("JsCallBack %{public}s, uv_queue_work_with_qos start", request.c_str());
     do {
         CHECK_AND_BREAK_LOG(status != UV_ECANCELED, "%{public}s canceled", request.c_str());
         napi_value jsCallback = nullptr;
@@ -90,12 +90,12 @@ void NapiAudioVolumeKeyEvent::WorkCallbackInterruptDone(uv_work_t *work, int sta
         napi_value args[ARGS_ONE] = { nullptr };
         NapiParamUtils::SetValueVolumeEvent(env, event->volumeEvent, args[PARAM0]);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-            "%{public}s fail to create Interrupt callback", request.c_str());
+            "%{public}s fail to create volumeChange callback", request.c_str());
 
         const size_t argCount = ARGS_ONE;
         napi_value result = nullptr;
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
-        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback",
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call volumeChange callback",
             request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
@@ -110,18 +110,18 @@ void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolum
     CHECK_AND_RETURN_LOG(loop != nullptr, "loop is nullptr");
 
     uv_work_t *work = new(std::nothrow) uv_work_t;
-    CHECK_AND_RETURN_LOG(work != nullptr, "OnJsCallBackInterrupt: No memory");
+    CHECK_AND_RETURN_LOG(work != nullptr, "OnJsCallbackVolumeEvent: No memory");
 
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallBackInterrupt: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallbackVolumeEvent: jsCb.get() is null");
         delete work;
         return;
     }
     work->data = reinterpret_cast<void *>(jsCb.get());
-    int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, WorkCallbackInterruptDone,
+    int ret = uv_queue_work_with_qos(loop, work, [] (uv_work_t *work) {}, WorkCallbackVolumeChangeDone,
         uv_qos_default);
     if (ret != 0) {
-        AUDIO_ERR_LOG("OnJsCallbackAudioManagerInterrupt: Failed to execute libuv work queue");
+        AUDIO_ERR_LOG("OnJsCallbackVolumeEvent: Failed to execute libuv work queue");
         delete work;
     } else {
         jsCb.release();
