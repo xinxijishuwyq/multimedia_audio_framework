@@ -38,7 +38,10 @@ void AudioPolicyClientStubImpl::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lockCbMap(volumeKeyEventMutex_);
     for (auto it = volumeKeyEventCallbackList_.begin(); it != volumeKeyEventCallbackList_.end(); ++it) {
-        (*it)->OnVolumeKeyEvent(volumeEvent);
+        std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallback = (*it).lock();
+        if (volumeKeyEventCallback != nullptr) {
+            volumeKeyEventCallback->OnVolumeKeyEvent(volumeEvent);
+        }
     }
 }
 
