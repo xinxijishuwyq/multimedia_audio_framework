@@ -210,7 +210,7 @@ public:
     void HandleOfflineDistributedDevice();
 
     int32_t HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
-        std::vector<sptr<AudioDeviceDescriptor>> &deviceChangeDescriptor);
+        std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 
@@ -546,11 +546,11 @@ private:
     void FetchDevice(bool isOutputDevice = true,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKOWN);
 
-    void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& deviceDescriptor,
-        std::vector<sptr<AudioDeviceDescriptor>>& desc);
+    void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& updatedDesc,
+        std::vector<sptr<AudioDeviceDescriptor>>& descForCb);
 
-    void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& deviceDescriptor,
-        std::vector<sptr<AudioDeviceDescriptor>> &desc);
+    void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
+        std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
     void TriggerDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
     
@@ -604,10 +604,9 @@ private:
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
         const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc);
 
-    int32_t HandleLocalDeviceConnected(DeviceType devType, const std::string& macAddress, const std::string& deviceName,
-        const DeviceStreamInfo& streamInfo);
+    int32_t HandleLocalDeviceConnected(const AudioDeviceDescriptor &updatedDesc);
 
-    int32_t HandleLocalDeviceDisconnected(DeviceType devType, const std::string& macAddress);
+    int32_t HandleLocalDeviceDisconnected(const AudioDeviceDescriptor &updatedDesc);
 
     void UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress);
 
@@ -670,11 +669,11 @@ private:
 
     void ResetToSpeaker(DeviceType devType);
 
-    void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &deviceDescriptor,
-        std::vector<sptr<AudioDeviceDescriptor>> &desc, sptr<AudioDeviceDescriptor> &audioDescriptor);
+    void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &updatedDesc,
+        std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
-    void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &deviceDescriptor,
-        std::vector<sptr<AudioDeviceDescriptor>> &desc, sptr<AudioDeviceDescriptor> &audioDescriptor);
+    void UpdateConnectedDevicesWhenConnectingForInputDevice(const AudioDeviceDescriptor &updatedDesc,
+        std::vector<sptr<AudioDeviceDescriptor>> &descForCb);
 
     bool IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, DeviceInfo &deviceInfo);
 
