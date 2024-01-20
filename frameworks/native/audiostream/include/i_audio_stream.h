@@ -53,6 +53,7 @@ public:
     enum StreamClass : uint32_t {
         PA_STREAM = 0,
         FAST_STREAM,
+        FORCED_PA_STREAM,
     };
 
     struct SwitchInfo {

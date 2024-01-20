@@ -211,6 +211,9 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
         (void)params;
         AUDIO_INFO_LOG("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
+    } else if (streamClass == FORCED_PA_STREAM) {
+        AUDIO_INFO_LOG("Forced create normal playback stream");
+        return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
     }
 
     int32_t ipcFlag = 0;

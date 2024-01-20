@@ -356,24 +356,19 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     Trace trace("AudioRenderer::SetParams");
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
-    AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType,
-        rendererInfo_.streamUsage);
+    AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
-    if (rendererInfo_.rendererFlags == STREAM_FLAG_FAST) {
-        if (IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams)) {
-            AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
-            streamClass = IAudioStream::FAST_STREAM;
-            isFastRenderer_ = true;
-            DeviceType deviceType = AudioPolicyManager::GetInstance().GetActiveOutputDevice();
-            if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-                streamClass = IAudioStream::PA_STREAM;
-            }
-        } else {
-            AUDIO_ERR_LOG("Unsupported parameter, try to create a normal stream");
-            streamClass = IAudioStream::PA_STREAM;
-            isFastRenderer_ = false;
-        }
+    if (rendererInfo_.rendererFlags == STREAM_FLAG_FORCED_NORMAL) {
+        AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FORCED_NORMAL");
+        streamClass = IAudioStream::FORCED_PA_STREAM;
+    } else if (rendererInfo_.rendererFlags == STREAM_FLAG_FAST &&
+        IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams) &&
+        AudioPolicyManager::GetInstance().GetActiveOutputDevice() != DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AUDIO_INFO_LOG("Create stream with STREAM_FLAG_FAST");
+        isFastRenderer_ = true;
+        streamClass = IAudioStream::FAST_STREAM;
     }
+
     // check AudioStreamParams for fast stream
     // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
     if (audioStream_ == nullptr) {

@@ -66,7 +66,7 @@ TonePlayerPrivate::TonePlayerPrivate(const std::string cachePath, const AudioRen
 
     // streamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.streamUsage = rendereInfo.streamUsage;
-    rendererOptions.rendererInfo.rendererFlags = rendereInfo.rendererFlags;
+    rendererOptions.rendererInfo.rendererFlags = STREAM_FLAG_FORCED_NORMAL;
     supportedTones_ = AudioPolicyManager::GetInstance().GetSupportedTones();
     volume_ = TRACK_VOLUME;
     toneInfo_ = NULL;
