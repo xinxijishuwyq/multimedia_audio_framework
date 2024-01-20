@@ -162,11 +162,18 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
             status_ = I_STATUS_RELEASED;
             break;
+        default:
+            OnStatusUpdateSub(operation);
+    }
+}
+
+void RendererInServer::OnStatusUpdateSub(IOperation operation)
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    switch (operation) {
         case OPERATION_SET_OFFLOAD_ENABLE:
-            stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, 1);
-            break;
         case OPERATION_UNSET_OFFLOAD_ENABLE:
-            stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, 0);
+            stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
@@ -265,8 +272,11 @@ int32_t RendererInServer::UpdateWriteIndex()
         WriteData();
         needStart++;
     }
-    if (stream_->GetWritableSize() >= spanSizeInFrame_ * byteSizePerFrame_ && requestFailed) {
-        WriteData();
+    if (requestFailed && stream_->GetWritableSize() >= spanSizeInFrame_ * byteSizePerFrame_) {
+        if (writeLock_.try_lock()) {
+            WriteData();
+            writeLock_.unlock();
+        }
     }
     if (afterDrain == true) {
         afterDrain = false;

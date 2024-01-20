@@ -70,6 +70,7 @@ public:
     std::shared_ptr<OHAudioBuffer> GetOHSharedBuffer();
 
 private:
+    void OnStatusUpdateSub(IOperation operation);
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<IRendererStream> stream_ = nullptr;

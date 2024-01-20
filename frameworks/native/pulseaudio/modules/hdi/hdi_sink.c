@@ -1987,6 +1987,8 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
         OffloadRewindAndFlush(u, i, false);
         OffloadUnlock(u);
+    } else if (stopping) {
+        OffloadUnlock(u);
     }
 }
 

@@ -781,7 +781,7 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
         framesInt + offloadTsOffset_ > readIndexInt || first) {
         offloadTsOffset_ = readIndexInt - framesInt;
     }
-    cacheTimeDsp = static_cast<uint64_t>(readIndexInt - (framesInt + offloadTsOffset_) + cacheTimeInPulse);
+    cacheTimeDsp = static_cast<uint64_t>(readIndexInt - (framesInt + offloadTsOffset_));
     return SUCCESS;
 }
 

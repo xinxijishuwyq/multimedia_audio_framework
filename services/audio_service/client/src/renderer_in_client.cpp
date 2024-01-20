@@ -786,7 +786,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
         int64_t deltaPaWriteIndexNs = static_cast<int64_t>(readPosNs) - static_cast<int64_t>(paWriteIndexNs);
         int64_t cacheTimeNow = cacheTime - deltaTimeStamp + deltaPaWriteIndexNs;
-        if (offloadStartReadPos == 0){
+        if (offloadStartReadPos == 0) {
             offloadStartReadPos = readPosNs;
             offloadStartHandleTime = handleTime;
         }
