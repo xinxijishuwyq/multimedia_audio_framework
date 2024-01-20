@@ -1987,21 +1987,12 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
         OffloadRewindAndFlush(u, i, false);
         OffloadUnlock(u);
-    } else if (stopping) {
-        if (u->offload.isHDISinkStarted) {
-            u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
-            AUDIO_INFO_LOG("PaInputStateChangeCb, Stopped offload HDI renderer, due to stop");
-            u->offload.isHDISinkStarted = false;
-            OffloadReset(u);
-        }
-        OffloadUnlock(u);
     }
 }
 
 static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa_sink_input_state_t state)
 {
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
-    const bool stopping = state == PA_SINK_INPUT_UNLINKED;
 
     if (starting) {
         u->primary.timestamp = pa_rtclock_now();
@@ -2019,8 +2010,6 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             u->renderCount = 0;
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
         }
-    } else if (stopping) {
-        StopPrimaryHdiIfNoRunning(u);
     }
 }
 
@@ -3038,6 +3027,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
             AUDIO_INFO_LOG("Stopped Offload HDI renderer");
             u->offload.isHDISinkStarted = false;
             OffloadReset(u);
+            OffloadUnlock(u);
         }
     }
 

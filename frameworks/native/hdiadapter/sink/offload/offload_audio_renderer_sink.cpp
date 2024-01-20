@@ -710,6 +710,7 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
             return ERR_OPERATION_FAILED;
         }
     }
+    OffloadRunningLockUnlock();
     AUDIO_WARNING_LOG("Stop duplicate");
 
     return SUCCESS;
