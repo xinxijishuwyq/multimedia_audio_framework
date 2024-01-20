@@ -1870,7 +1870,6 @@ static void OffloadRewindAndFlush(struct Userdata *u, pa_sink_input *i, bool aft
         }
     }
     u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
-    u->offload.isHDISinkStarted = false;
     OffloadReset(u);
 }
 
@@ -1988,6 +1987,8 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
         OffloadRewindAndFlush(u, i, false);
         OffloadUnlock(u);
     } else if (stopping) {
+        u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
+        OffloadReset(u);
         OffloadUnlock(u);
     }
 }
