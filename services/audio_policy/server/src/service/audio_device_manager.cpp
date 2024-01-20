@@ -198,7 +198,8 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
     auto isPresent = [&devDesc](const shared_ptr<AudioDeviceDescriptor> &descriptor) {
         if (descriptor->deviceType_ == devDesc->deviceType_ &&
             descriptor->networkId_ == devDesc->networkId_) {
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
                 return true;
             } else {
                 // if the disconnecting device is A2DP, need to compare mac address in addition.
