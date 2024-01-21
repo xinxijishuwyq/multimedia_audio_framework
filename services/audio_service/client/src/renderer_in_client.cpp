@@ -1567,9 +1567,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 
     if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 
-    std::unique_lock<std::mutex> statusLock(statusMutex_); // status check
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write: Illegal state:%{public}u", state_.load());
-    statusLock.unlock();
 
     // hold lock
     if (isBlendSet_) {
