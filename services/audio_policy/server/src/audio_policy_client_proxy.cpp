@@ -222,32 +222,6 @@ void AudioPolicyClientProxy::OnPreferredInputDeviceUpdated(const std::vector<spt
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::UpdateRendererDeviceInfo(
-    std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
-{
-    if (!hasBTPermission_) {
-        size_t rendererChangeInfoLength = rendererChangeInfos.size();
-        for (size_t i = 0; i < rendererChangeInfoLength; i++) {
-            if ((rendererChangeInfos[i]->outputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)
-                || (rendererChangeInfos[i]->outputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
-                rendererChangeInfos[i]->outputDeviceInfo.deviceName = "";
-                rendererChangeInfos[i]->outputDeviceInfo.macAddress = "";
-            }
-        }
-    }
-
-    if (!hasSystemPermission_) {
-        size_t rendererChangeInfoLength = rendererChangeInfos.size();
-        for (size_t i = 0; i < rendererChangeInfoLength; i++) {
-            rendererChangeInfos[i]->clientUID = 0;
-            rendererChangeInfos[i]->rendererState = RENDERER_INVALID;
-            rendererChangeInfos[i]->outputDeviceInfo.networkId = "";
-            rendererChangeInfos[i]->outputDeviceInfo.interruptGroupId = GROUP_ID_NONE;
-            rendererChangeInfos[i]->outputDeviceInfo.volumeGroupId = GROUP_ID_NONE;
-        }
-    }
-}
-
 void AudioPolicyClientProxy::OnRendererStateChange(
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
@@ -259,7 +233,6 @@ void AudioPolicyClientProxy::OnRendererStateChange(
         return;
     }
 
-    UpdateRendererDeviceInfo(audioRendererChangeInfos);
     size_t size = audioRendererChangeInfos.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RENDERERSTATE_CHANGE));
     data.WriteInt32(size);
@@ -268,7 +241,7 @@ void AudioPolicyClientProxy::OnRendererStateChange(
             AUDIO_ERR_LOG("Renderer change info null, something wrong!!");
             continue;
         }
-        rendererChangeInfo->Marshalling(data);
+        rendererChangeInfo->Marshalling(data, hasBTPermission_, hasSystemPermission_);
     }
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {

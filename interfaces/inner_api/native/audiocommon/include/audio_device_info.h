@@ -23,6 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr size_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 30;
+constexpr int32_t INVALID_GROUP_ID = -1;
 
 enum DeviceFlag {
     /**
@@ -340,6 +341,24 @@ public:
             && parcel.WriteString(displayName)
             && parcel.WriteInt32(interruptGroupId)
             && parcel.WriteInt32(volumeGroupId)
+            && parcel.WriteBool(isLowLatencyDevice);
+    }
+    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(deviceType))
+            && parcel.WriteInt32(static_cast<int32_t>(deviceRole))
+            && parcel.WriteInt32(deviceId)
+            && parcel.WriteInt32(channelMasks)
+            && parcel.WriteInt32(channelIndexMasks)
+            && parcel.WriteString((!hasBTPermission && (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP
+                || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : deviceName)
+            && parcel.WriteString((!hasBTPermission && (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP
+                || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : macAddress)
+            && audioStreamInfo.Marshalling(parcel)
+            && parcel.WriteString(hasSystemPermission ? networkId : "")
+            && parcel.WriteString(displayName)
+            && parcel.WriteInt32(hasSystemPermission ? interruptGroupId : INVALID_GROUP_ID)
+            && parcel.WriteInt32(hasSystemPermission ? volumeGroupId : INVALID_GROUP_ID)
             && parcel.WriteBool(isLowLatencyDevice);
     }
     void Unmarshalling(Parcel &parcel)
