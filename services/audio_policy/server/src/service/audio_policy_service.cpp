@@ -1697,6 +1697,14 @@ bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor
     return false;
 }
 
+void AudioPolicyService::MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc)
+{
+    int32_t duration = 300000; // us
+    string portName = GetSinkPortName(desc->deviceType_);
+    thread switchThread(&AudioPolicyService::KeepPortMute, this, duration, portName, desc->deviceType_);
+    switchThread.detach(); // add another sleep before switch local can avoid pop in some case
+}
+
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     bool isStreamStatusUpdated, const AudioStreamDeviceChangeReason reason)
 {
@@ -1734,6 +1742,9 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
                 isUpdateActiveDevice = true;
             }
             needUpdateActiveDevice = false;
+            if (reason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE) {
+                MuteSinkPort(desc);
+            }
         }
         SelectNewOutputDevice(rendererChangeInfo, desc, false, reason);
     }
@@ -2876,7 +2887,6 @@ void AudioPolicyService::OnDeviceStatusUpdated(DeviceType devType, bool isConnec
     } else {
         UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         result = HandleLocalDeviceDisconnected(updatedDesc);
-        ResetToSpeaker(devType);
         if (devType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
             isArmUsbDevice_ = false;
         }
