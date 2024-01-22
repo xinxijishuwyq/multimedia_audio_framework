@@ -1377,7 +1377,9 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
-    DrainAudioStream();
+    if (!offloadEnable_) {
+        DrainAudioStream();
+    }
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == STOPPED) {
         AUDIO_INFO_LOG("Renderer in client is already stopped");

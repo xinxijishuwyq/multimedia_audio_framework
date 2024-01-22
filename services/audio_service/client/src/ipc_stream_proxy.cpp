@@ -366,7 +366,7 @@ int32_t IpcStreamProxy::UnsetOffloadMode()
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
-    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_MODE, data, reply, option);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_UNSET_OFFLOAD_MODE, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);

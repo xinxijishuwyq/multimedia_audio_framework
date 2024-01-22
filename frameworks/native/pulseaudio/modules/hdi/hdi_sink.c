@@ -1803,7 +1803,7 @@ static int32_t ProcessRenderUseTimingOffload(struct Userdata *u, bool *wait, int
         pa_sink_unref(s);
         return 0;
     } else if (nInputs > 1) {
-        AUDIO_ERR_LOG("GetInputsInfo offload input != 1");
+        AUDIO_WARNING_LOG("GetInputsInfo offload input != 1");
     }
 
     pa_sink_input *i = infoInputs[0].userdata;
@@ -1954,14 +1954,13 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
     CheckInputChangeToOffload(u, i);
     int32_t sessionID = getSinkInputSessionID(i);
     if (u->offload.isHDISinkStarted) {
+        AUDIO_INFO_LOG("StartOffloadHdi, sessionID : %{public}d -> %{public}d", u->offload.sessionID, sessionID);
         if (sessionID != u->offload.sessionID) {
-            int32_t sessionIdOld = u->offload.sessionID;
-            u->offload.sessionID = sessionID;
-            if (sessionIdOld != -1) {
+            if (u->offload.sessionID != -1) {
                 u->offload.sinkAdapter->RendererSinkReset(u->offload.sinkAdapter);
-                AUDIO_INFO_LOG("StartOffloadHdi, Reset offload HDI renderer, due to sessionID change: "
-                               "%{public}d -> %{public}d", sessionIdOld, u->offload.sessionID);
+                OffloadReset(u);
             }
+            u->offload.sessionID = sessionID;
         }
     } else {
         AUDIO_INFO_LOG("StartOffloadHdi, Restart offload with rate:%{public}d, channels:%{public}d",
@@ -1988,7 +1987,6 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
 
     if (starting) {
         StartOffloadHdi(u, i);
-        OffloadReset(u);
     } else if (corking) {
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
         OffloadRewindAndFlush(u, i, false);
