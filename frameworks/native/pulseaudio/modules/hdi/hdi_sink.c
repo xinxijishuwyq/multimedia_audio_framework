@@ -2760,12 +2760,12 @@ static void ThreadFuncWriteHDI(void *userdata)
         switch (code) {
             case HDI_RENDER: {
                 pa_usec_t now = pa_rtclock_now();
-                if (!u->primary.isHDISinkStarted) {
+                if (!u->primary.isHDISinkStarted && now - u->timestampLastLog > USEC_PER_SEC) {
+                    u->timestampLastLog = now;
                     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-                    if (now - u->timestampLastLog > USEC_PER_SEC) {
-                        u->timestampLastLog = now;
-                        AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
-                    }
+                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
+                    pa_memblock_unref(chunk.memblock);
+                } else if (!u->primary.isHDISinkStarted) {
                     pa_memblock_unref(chunk.memblock);
                 } else if (RenderWrite(u->primary.sinkAdapter, &chunk) < 0) {
                     u->bytes_dropped += chunk.length;
