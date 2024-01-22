@@ -50,11 +50,6 @@ PaRendererStreamImpl::PaRendererStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
-
-    audioSystemManager_ = AudioSystemManager::GetInstance();
-    ResetOffload();
-
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDERER_STREAM_FILENAME, &dumpFile_);
 }
 
 inline uint32_t PcmFormatToBits(uint8_t format)
@@ -118,6 +113,10 @@ int32_t PaRendererStreamImpl::InitParams()
     lock.Unlock();
     // In plan: Get data from xml
     effectSceneName_ = GetEffectSceneName(processConfig_.streamType);
+
+    ResetOffload();
+
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDERER_STREAM_FILENAME, &dumpFile_);
     return SUCCESS;
 }
 
@@ -740,7 +739,7 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-    pa_threaded_mainloop_lock(mainloop_);
+    PaLockGuard lock(mainloop_);
 
     pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
     if (operation != nullptr) {
@@ -752,7 +751,6 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
     if (info == nullptr) {
         AUDIO_WARNING_LOG("pa_stream_get_timing_info failed");
-        pa_threaded_mainloop_unlock(mainloop_);
         return SUCCESS;
     }
 
@@ -760,7 +758,7 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
     uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
     uint64_t writeIndex = pa_bytes_to_usec(info->write_index, sampleSpec);
     timeStamp = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
-    pa_threaded_mainloop_unlock(mainloop_);
+    lock.Unlock();
 
     int64_t cacheTimeInPulse = writeIndex > readIndex ? writeIndex - readIndex : 0;
     cacheTimePa = static_cast<uint64_t>(cacheTimeInPulse);
@@ -819,14 +817,13 @@ void PaRendererStreamImpl::ResetOffload()
     offloadStatePolicy_ = OFFLOAD_DEFAULT;
     offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     lastOffloadUpdateFinishTime_ = 0;
-    pa_threaded_mainloop_lock(mainloop_);
     UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
     offloadStatePolicy_ = OFFLOAD_DEFAULT;
-    pa_threaded_mainloop_unlock(mainloop_);
 }
 
 int32_t PaRendererStreamImpl::UpdatePolicyOffload(AudioOffloadType statePolicy)
 {
+    PaLockGuard lock(mainloop_);
     pa_proplist *propList = pa_proplist_new();
     CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
     if (offloadEnable_) {
@@ -864,9 +861,7 @@ int32_t PaRendererStreamImpl::UpdatePAProbListOffload(AudioOffloadType statePoli
     if ((statePolicy < offloadStatePolicy_) || (offloadStatePolicy_ == OFFLOAD_DEFAULT)) {
         AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
         lastOffloadUpdateFinishTime_ = 0;
-        pa_threaded_mainloop_lock(mainloop_);
         int32_t ret = UpdatePolicyOffload(statePolicy);
-        pa_threaded_mainloop_unlock(mainloop_);
         offloadNextStateTargetPolicy_ = statePolicy; // Fix here if sometimes can't cut into state 3
         return ret;
     } else {
@@ -928,9 +923,7 @@ int32_t PaRendererStreamImpl::UnsetOffloadMode()
     lastOffloadUpdateFinishTime_ = 0;
     offloadEnable_ = false;
     SyncOffloadMode();
-    pa_threaded_mainloop_lock(mainloop_);
     int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
-    pa_threaded_mainloop_unlock(mainloop_);
     offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     offloadStatePolicy_ = OFFLOAD_DEFAULT;
     return ret;
