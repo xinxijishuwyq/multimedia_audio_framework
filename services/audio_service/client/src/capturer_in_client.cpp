@@ -1561,7 +1561,7 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
         capturerPeriodRead_ += (totalBytesRead_ / sizePerFrameInByte_);
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(capturerPeriodRead_), static_cast<int64_t>(totalBytesRead_));
-        if (capturerPeriodRead_ >= capturerPeriodSize_) {
+        if (capturerPeriodRead_ >= capturerPeriodSize_ && capturerPeriodSize_ > 0) {
             capturerPeriodRead_ %= capturerPeriodSize_;
             AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRId64,
                 static_cast<int64_t>(capturerPeriodRead_));

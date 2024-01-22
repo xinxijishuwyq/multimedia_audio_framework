@@ -1862,7 +1862,7 @@ void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
         mFramePeriodRead += (bytesRead / mFrameSize);
         AUDIO_DEBUG_LOG("frame period number: %{public}" PRIu64 ", Total frames read: %{public}" PRIu64,
             static_cast<uint64_t>(mFramePeriodNumber), static_cast<uint64_t>(readFrameNumber));
-        if (mFramePeriodRead >= mFramePeriodNumber) {
+        if (mFramePeriodRead >= mFramePeriodNumber && mFramePeriodNumber > 0) {
             mFramePeriodRead %= mFramePeriodNumber;
             AUDIO_DEBUG_LOG("audio service client OnPeriodReached, remaining frames: %{public}" PRIu64,
                 static_cast<uint64_t>(mFramePeriodRead));
