@@ -71,5 +71,23 @@ int32_t PolicyProviderProxy::SetWakeUpAudioCapturerFromAudioServer()
 
     return reply.ReadInt32();
 }
+
+int32_t PolicyProviderProxy::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+    uint32_t sessionId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    capturerInfo.Marshalling(data);
+    streamInfo.Marshalling(data);
+    data.WriteUint32(sessionId);
+
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::SET_AUDIO_CAPTURER, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

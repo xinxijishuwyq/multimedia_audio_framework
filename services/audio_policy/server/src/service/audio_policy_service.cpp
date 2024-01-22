@@ -1350,6 +1350,13 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer()
     return SetWakeUpAudioCapturer({});
 }
 
+int32_t AudioPolicyService::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+    uint32_t sessionId)
+{
+    audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionId, true);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 {
     AUDIO_INFO_LOG("CloseWakeUpAudioCapturer start");
@@ -5044,22 +5051,8 @@ void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo 
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
         auto [targetSourceType, targetRate, targetChannels] = FetchTargetInfoForSessionAdd(sessionInfo);
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
-        bool needReloadSource = (isSourceLoaded &&
-            ((targetSourceType != currentSourceType) || (currentRate != targetRate)));
         std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-        if (needReloadSource) {
-            AudioIOHandle activateDeviceIOHandle;
-            {
-                activateDeviceIOHandle = IOHandles_[PRIMARY_MIC];
-
-                int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-                CHECK_AND_RETURN_LOG(result == SUCCESS,
-                    "CapturerSessionAdded: CloseAudioPort failed %{public}d", result);
-
-                IOHandles_.erase(PRIMARY_MIC);
-            }
-        }
-        if (needReloadSource || !(isSourceLoaded)) {
+        if (!isSourceLoaded) {
             auto moduleInfo = primaryMicModuleInfo_;
             moduleInfo.rate = std::to_string(targetRate);
             moduleInfo.channels = std::to_string(targetChannels);

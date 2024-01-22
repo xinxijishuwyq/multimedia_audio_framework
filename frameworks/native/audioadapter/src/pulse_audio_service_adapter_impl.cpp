@@ -796,8 +796,11 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
 
     SourceType sourceType = static_cast<SourceType>(atoi(pa_proplist_gets(i->proplist, "stream.capturerSource")));
 
-    g_audioServiceAdapterCallback->OnCapturerSessionAdded(sessionID,
-        {sourceType, i->sample_spec.rate, i->sample_spec.channels});
+    auto isIpcCapturer = pa_proplist_gets(i->proplist, "stream.isIpcCapturer");
+    if ((!isIpcCapturer) || (!strcmp("0", isIpcCapturer))) {
+        g_audioServiceAdapterCallback->OnCapturerSessionAdded(sessionID,
+            {sourceType, i->sample_spec.rate, i->sample_spec.channels});
+    }
 
     const char *captureFlag = pa_proplist_gets(i->proplist, "stream.isInnerCapturer");
     if (captureFlag == nullptr) {

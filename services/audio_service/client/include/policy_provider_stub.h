@@ -30,12 +30,14 @@ private:
     int32_t HandleGetProcessDeviceInfo(MessageParcel &data, MessageParcel &reply);
     int32_t HandleInitSharedVolume(MessageParcel &data, MessageParcel &reply);
     int32_t HandleSetWakeupCapturer(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleSetCapturer(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int32_t(PolicyProviderStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc funcList_[IPolicyProviderMsg::POLICY_PROVIDER_MAX_MSG] = {
         &PolicyProviderStub::HandleGetProcessDeviceInfo,
         &PolicyProviderStub::HandleInitSharedVolume,
-        &PolicyProviderStub::HandleSetWakeupCapturer
+        &PolicyProviderStub::HandleSetWakeupCapturer,
+        &PolicyProviderStub::HandleSetCapturer
     };
 };
 
@@ -47,6 +49,8 @@ public:
     int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) override;
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
     int32_t SetWakeUpAudioCapturerFromAudioServer() override;
+    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+        uint32_t sessionId) override;
 private:
     IPolicyProvider *policyWorker_;
 };

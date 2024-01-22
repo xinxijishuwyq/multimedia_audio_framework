@@ -58,6 +58,8 @@ public:
         RENDERER_INFO_EVENT,
         CAPTURER_INFO_EVENT,
         RENDERER_DEVICE_CHANGE_EVENT,
+        ON_CAPTURER_CREATE,
+        ON_CAPTURER_REMOVED,
     };
     /* event data */
     class EventContextObj {
@@ -88,6 +90,17 @@ public:
         const uint32_t sessionId_;
         const DeviceInfo outputDeviceInfo_;
         const AudioStreamDeviceChangeReason reason_;
+    };
+
+    struct CapturerCreateEvent {
+        CapturerCreateEvent() = delete;
+        CapturerCreateEvent(const AudioCapturerInfo &capturerInfo, const AudioStreamInfo &streamInfo,
+            uint64_t sessionId)
+            : capturerInfo_(capturerInfo), streamInfo_(streamInfo), sessionId_(sessionId)
+        {}
+        AudioCapturerInfo capturerInfo_;
+        AudioStreamInfo streamInfo_;
+        uint64_t sessionId_;
     };
 
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
@@ -122,6 +135,9 @@ public:
     bool SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
         const DeviceInfo &outputDeviceInfo, const AudioStreamDeviceChangeReason reason);
+    bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+        uint64_t sessionId, bool isSync);
+    bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -145,6 +161,8 @@ private:
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

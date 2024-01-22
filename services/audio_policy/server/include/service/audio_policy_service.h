@@ -127,6 +127,8 @@ public:
 
     int32_t SetWakeUpAudioCapturerFromAudioServer();
 
+    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
+
     int32_t CloseWakeUpAudioCapturer();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
