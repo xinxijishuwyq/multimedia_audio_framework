@@ -22,6 +22,7 @@
 #include "napi_renderer_position_callback.h"
 #include "napi_renderer_data_request_callback.h"
 #include "napi_renderer_period_position_callback.h"
+#include "napi_audio_renderer_write_data_callback.h"
 #include "napi_audio_renderer_device_change_callback.h"
 #include "napi_audio_renderer_policy_service_died_callback.h"
 
@@ -1497,6 +1498,8 @@ napi_value NapiAudioRenderer::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterRendererDeviceChangeCallback(env, argv, napiRenderer);
     } else if (cbName == OUTPUT_DEVICECHANGE_WITH_INFO) {
         RegisterRendererOutputDeviceChangeWithInfoCallback(env, argv, napiRenderer);
+    } else if (!cbName.compare(WRITE_DATA_CALLBACK_NAME)) {
+        RegisterRendererWriteDataCallback(env, argv, cbName, napiRenderer);
     } else {
         bool unknownCallback = true;
         CHECK_AND_RETURN_RET_LOG(!unknownCallback, ThrowErrorAndReturn(env, NAPI_ERROR_INVALID_PARAM),
@@ -1529,6 +1532,8 @@ napi_value NapiAudioRenderer::UnregisterCallback(napi_env env, napi_value jsThis
         UnregisterRendererCallback(env, cbName, napiRenderer);
     } else if (cbName == OUTPUT_DEVICECHANGE_WITH_INFO) {
         UnregisterRendererOutputDeviceChangeWithInfoCallback(env, argc, argv, napiRenderer);
+    } else if (!cbName.compare(WRITE_DATA_CALLBACK_NAME)) {
+        UnregisterRendererWriteDataCallback(env, argc, argv, napiRenderer);
     } else {
         bool unknownCallback = true;
         CHECK_AND_RETURN_RET_LOG(!unknownCallback, ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
@@ -1766,6 +1771,41 @@ void NapiAudioRenderer::UnregisterRendererOutputDeviceChangeWithInfoCallback(nap
 
         napiRenderer->DestroyNAPICallbacks();
     }
+    AUDIO_INFO_LOG("Unregister Callback is successful");
+}
+
+void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_value *argv,
+    const std::string &cbName, NapiAudioRenderer *napiRenderer)
+{
+    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ == nullptr, "writeData already subscribed.");
+
+    napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(env, napiRenderer);
+    napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
+    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ != nullptr, "writeDataCbNapi_ is nullpur");
+    int32_t ret = napiRenderer->audioRenderer_->SetRendererWriteCallback(napiRenderer->rendererWriteDataCallbackNapi_);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetRendererWriteCallback failed");
+    std::shared_ptr<NapiRendererWriteDataCallback> cb =
+        std::static_pointer_cast<NapiRendererWriteDataCallback>(napiRenderer->rendererWriteDataCallbackNapi_);
+    cb->AddCallbackReference(cbName, argv[PARAM1]);
+
+    AUDIO_INFO_LOG("Register Callback is successful");
+}
+
+void NapiAudioRenderer::UnregisterRendererWriteDataCallback(napi_env env, size_t argc, napi_value *argv,
+    NapiAudioRenderer *napiRenderer)
+{
+    napi_value callback = nullptr;
+
+    if (argc == ARGS_TWO) {
+        callback = argv[PARAM1];
+    }
+    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ != nullptr,
+        "napiRendererWriteDataCallback is nullptr, return");
+
+    std::shared_ptr<NapiRendererWriteDataCallback> cb =
+        std::static_pointer_cast<NapiRendererWriteDataCallback>(napiRenderer->rendererWriteDataCallbackNapi_);
+    cb->RemoveCallbackReference(env, callback);
+
     AUDIO_INFO_LOG("Unregister Callback is successful");
 }
 
