@@ -79,10 +79,9 @@ private:
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
     int32_t OffloadSetBufferSize(uint32_t sizeMs);
     void SyncOffloadMode();
-    int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
-    int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
+    int32_t OffloadUpdatePolicy(AudioOffloadType statePolicy, bool force);
     void ResetOffload();
-    int32_t UpdatePolicyOffloadInWrite();
+    int32_t OffloadUpdatePolicyInWrite();
     // offload end
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index

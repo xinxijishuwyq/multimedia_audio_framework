@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+#ifdef FEATURE_POWER_MANAGER
+#include "power_mgr_client.h"
+#endif
+
 #include "pa_renderer_stream_impl.h"
 
 #include <chrono>
@@ -22,9 +26,6 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "i_audio_renderer_sink.h"
-#ifdef FEATURE_POWER_MANAGER
-#include "power_mgr_client.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -482,8 +483,8 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     Trace trace("PaRendererStreamImpl::EnqueueBuffer " + std::to_string(bufferDesc.bufLength) + " totalBytesWritten" +
         std::to_string(totalBytesWritten_));
     int32_t error = 0;
-    error = UpdatePolicyOffloadInWrite();
-    CHECK_AND_RETURN_RET_LOG(error == SUCCESS, error, "UpdatePolicyOffloadInWrite failed");
+    error = OffloadUpdatePolicyInWrite();
+    CHECK_AND_RETURN_RET_LOG(error == SUCCESS, error, "OffloadUpdatePolicyInWrite failed");
 
     // EnqueueBuffer is called in mainloop in most cases and don't need lock.
     bool isInMainloop = pa_threaded_mainloop_in_thread(mainloop_) ? true : false;
@@ -807,15 +808,14 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::UpdatePolicyOffloadInWrite()
+int32_t PaRendererStreamImpl::OffloadUpdatePolicyInWrite()
 {
     int error = 0;
     if ((lastOffloadUpdateFinishTime_ != 0) &&
         (std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) > lastOffloadUpdateFinishTime_)) {
         AUDIO_INFO_LOG("PaWriteStream switching curTime %{public}" PRIu64 ", switchTime %{public}" PRIu64,
             std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()), lastOffloadUpdateFinishTime_);
-        error = UpdatePolicyOffload(offloadNextStateTargetPolicy_);
-        lastOffloadUpdateFinishTime_ = 0;
+        error = OffloadUpdatePolicy(offloadNextStateTargetPolicy_, true);
     }
     return error;
 }
@@ -838,56 +838,45 @@ void PaRendererStreamImpl::ResetOffload()
     SyncOffloadMode();
     offloadTsOffset_ = 0;
     offloadTsLast_ = 0;
-    offloadStatePolicy_ = OFFLOAD_DEFAULT;
-    offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
-    lastOffloadUpdateFinishTime_ = 0;
-    UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
-    offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    OffloadUpdatePolicy(OFFLOAD_DEFAULT, true);
 }
 
-int32_t PaRendererStreamImpl::UpdatePolicyOffload(AudioOffloadType statePolicy)
-{
-    PaLockGuard lock(mainloop_);
-    pa_proplist *propList = pa_proplist_new();
-    CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
-    if (offloadEnable_) {
-        pa_proplist_sets(propList, "stream.offload.enable", "1");
-    } else {
-        pa_proplist_sets(propList, "stream.offload.enable", "0");
-    }
-    pa_proplist_sets(propList, "stream.offload.statePolicy", std::to_string(statePolicy).c_str());
-
-    pa_operation *updatePropOperation =
-        pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList, nullptr, nullptr);
-    if (updatePropOperation == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_proplist_update failed!");
-        pa_proplist_free(propList);
-        return ERR_OPERATION_FAILED;
-    }
-    pa_proplist_free(propList);
-    pa_operation_unref(updatePropOperation);
-
-    const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
-    OffloadSetBufferSize(bufLenMs);
-
-    offloadStatePolicy_ = statePolicy;
-
-    return SUCCESS;
-}
-
-int32_t PaRendererStreamImpl::UpdatePAProbListOffload(AudioOffloadType statePolicy)
+int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, bool force)
 {
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         AUDIO_ERR_LOG("Set offload mode: invalid stream state, quit SetStreamOffloadMode due err");
         return ERR_ILLEGAL_STATE;
     }
     // if possible turn on the buffer immediately(long buffer -> short buffer), turn it at once.
-    if ((statePolicy < offloadStatePolicy_) || (offloadStatePolicy_ == OFFLOAD_DEFAULT)) {
-        AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d", offloadStatePolicy_, statePolicy);
+    if (statePolicy < offloadStatePolicy_ || offloadStatePolicy_ == OFFLOAD_DEFAULT || force) {
+        AUDIO_DEBUG_LOG("Update statePolicy immediately: %{public}d -> %{public}d, force(%d)",
+            offloadStatePolicy_, statePolicy, force);
         lastOffloadUpdateFinishTime_ = 0;
-        int32_t ret = UpdatePolicyOffload(statePolicy);
+        PaLockGuard lock(mainloop_);
+        pa_proplist *propList = pa_proplist_new();
+        CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
+        if (offloadEnable_) {
+            pa_proplist_sets(propList, "stream.offload.enable", "1");
+        } else {
+            pa_proplist_sets(propList, "stream.offload.enable", "0");
+        }
+        pa_proplist_sets(propList, "stream.offload.statePolicy", std::to_string(statePolicy).c_str());
+
+        pa_operation *updatePropOperation =
+            pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList, nullptr, nullptr);
+        if (updatePropOperation == nullptr) {
+            AUDIO_ERR_LOG("pa_stream_proplist_update failed!");
+            pa_proplist_free(propList);
+            return ERR_OPERATION_FAILED;
+        }
+        pa_proplist_free(propList);
+        pa_operation_unref(updatePropOperation);
+
+        const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
+        OffloadSetBufferSize(bufLenMs);
+
+        offloadStatePolicy_ = statePolicy;
         offloadNextStateTargetPolicy_ = statePolicy; // Fix here if sometimes can't cut into state 3
-        return ret;
     } else {
         // Otherwise, hdi_sink.c's times detects the stateTarget change and switches later
         // this time is checked the PaWriteStream to check if the switch has been made
@@ -930,7 +919,7 @@ int32_t PaRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
 
     offloadEnable_ = true;
     SyncOffloadMode();
-    if (UpdatePAProbListOffload(statePolicy) != SUCCESS) {
+    if (OffloadUpdatePolicy(statePolicy, false) != SUCCESS) {
         return ERR_OPERATION_FAILED;
     }
     if (statePolicy == OFFLOAD_ACTIVE_FOREGROUND) {
@@ -944,13 +933,9 @@ int32_t PaRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
 
 int32_t PaRendererStreamImpl::UnsetOffloadMode()
 {
-    lastOffloadUpdateFinishTime_ = 0;
     offloadEnable_ = false;
     SyncOffloadMode();
-    int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
-    offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
-    offloadStatePolicy_ = OFFLOAD_DEFAULT;
-    return ret;
+    return OffloadUpdatePolicy(OFFLOAD_DEFAULT, true);
 }
 // offload end
 } // namespace AudioStandard
