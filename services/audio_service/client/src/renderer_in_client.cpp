@@ -1690,7 +1690,7 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
         rendererPeriodWritten_ += (totalBytesWritten_ / sizePerFrameInByte_);
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(rendererPeriodWritten_), static_cast<int64_t>(totalBytesWritten_));
-        if (rendererPeriodWritten_ >= rendererPeriodSize_) {
+        if (rendererPeriodWritten_ >= rendererPeriodSize_ && rendererPeriodSize_ > 0) {
             rendererPeriodWritten_ %= rendererPeriodSize_;
             AUDIO_DEBUG_LOG("OnPeriodReached, remaining frames: %{public}" PRId64,
                 static_cast<int64_t>(rendererPeriodWritten_));
