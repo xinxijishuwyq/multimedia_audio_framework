@@ -36,7 +36,15 @@ std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
 };
 
 AudioCapturer::~AudioCapturer() = default;
-AudioCapturerPrivate::~AudioCapturerPrivate() = default;
+
+AudioCapturerPrivate::~AudioCapturerPrivate()
+{
+    AUDIO_INFO_LOG("~AudioCapturerPrivate");
+    if (audioStream_ != nullptr) {
+        audioStream_->ReleaseAudioStream(true);
+        audioStream_ = nullptr;
+    }
+}
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
 {
