@@ -472,6 +472,14 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         pa_threaded_mainloop_lock(mainloop_);
     }
 
+    if (paStream_ == nullptr) {
+        AUDIO_ERR_LOG("paStream is nullptr");
+        if (!isInMainloop) {
+            pa_threaded_mainloop_unlock(mainloop_);
+        }
+        return ERR_ILLEGAL_STATE;
+    }
+
     error = pa_stream_write(paStream_, static_cast<void*>(bufferDesc.buffer), bufferDesc.bufLength, nullptr,
         0LL, PA_SEEK_RELATIVE);
     if (error < 0) {
