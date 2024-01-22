@@ -59,14 +59,20 @@ bool AudioRouterCenter::HasScoDevice()
 {
     vector<unique_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
-    bool hasScoDevice = false;
     for (auto &desc : descs) {
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            hasScoDevice = true;
-            break;
+            return true;
         }
     }
-    return hasScoDevice;
+
+    vector<unique_ptr<AudioDeviceDescriptor>> publicDescs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+    for (auto &desc : publicDescs) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->deviceCategory_ == BT_CAR) {
+            return true;
+        }
+    }
+    return false;
 }
 
 unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsage streamUsage, int32_t clientUID)
