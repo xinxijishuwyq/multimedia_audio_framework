@@ -243,15 +243,16 @@ public:
     {
         AudioStreamType streamForVolumeMap = audioAdapterManager_->GetStreamForVolumeMap(streamType);
         int32_t volumeLevel = audioAdapterManager_->volumeLevelMap_[streamForVolumeMap];
-        bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
-        if (muteStatus) {
-            return {0.0f, 0};
-        }
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
         if (activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
             return {1.0f, volumeLevel};
+        }
+
+        bool muteStatus = audioAdapterManager_->muteStatusMap_[streamForVolumeMap];
+        if (muteStatus) {
+            return {0.0f, 0};
         }
 
         float volumeDb = 1.0f;
