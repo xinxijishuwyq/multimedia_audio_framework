@@ -48,7 +48,6 @@ public:
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
 
-    void UpdateRendererDeviceInfo(std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     void UpdateCapturerDeviceInfo(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 };
 } // namespace AudioStandard

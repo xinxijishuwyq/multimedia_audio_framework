@@ -49,6 +49,7 @@ constexpr uint32_t STREAM_FLAG_FAST = 1;
 constexpr uint32_t STREAM_FLAG_NORMAL = 0;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.25f;
+constexpr int32_t EMPTY_UID = 0;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
@@ -684,6 +685,22 @@ public:
             && parcel.WriteInt32(rendererInfo.rendererFlags)
             && parcel.WriteInt32(static_cast<int32_t>(rendererState))
             && outputDeviceInfo.Marshalling(parcel);
+    }
+    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission) const
+    {
+        return parcel.WriteInt32(createrUID)
+            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
+            && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(callerPid)
+            && parcel.WriteInt32(clientPid)
+            && parcel.WriteInt32(tokenId)
+            && parcel.WriteInt32(channelCount)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
+                RENDERER_INVALID)
+            && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission);
     }
     void Unmarshalling(Parcel &parcel)
     {
