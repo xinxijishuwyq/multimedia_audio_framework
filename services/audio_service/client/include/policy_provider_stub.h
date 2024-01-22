@@ -49,7 +49,8 @@ public:
     int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo) override;
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
     int32_t SetWakeUpAudioCapturerFromAudioServer() override;
-    int32_t SetAudioCaptuer(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId) override;
+    int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+        uint32_t sessionId) override;
 private:
     IPolicyProvider *policyWorker_;
 };

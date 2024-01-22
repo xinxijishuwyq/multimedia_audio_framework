@@ -281,7 +281,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
                 deviceName = WAKEUP_NAMES[no];
             }
         } else {
-            int32_t res = PolicyHandler::GetInstance().SetAudioCaptuer(processConfig.capturerInfo,
+            int32_t res = PolicyHandler::GetInstance().NotifyCapturerAdded(processConfig.capturerInfo,
                 processConfig.streamInfo, sessionId);
             return res;
         }
@@ -372,6 +372,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
+        pa_proplist_sets(propList, "stream.isIpcCapturer", std::to_string(true).c_str());
         pa_proplist_sets(propList, "stream.capturerSource",
             std::to_string(processConfig.capturerInfo.sourceType).c_str());
     }

@@ -67,7 +67,7 @@ public:
 
     virtual int32_t SetWakeUpAudioCapturerFromAudioServer() = 0;
 
-    virtual int32_t SetAudioCaptuer(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+    virtual int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint32_t sessionId) = 0;
 
     virtual ~IPolicyProvider() = default;

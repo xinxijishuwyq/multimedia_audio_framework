@@ -795,7 +795,9 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     sourceIndexSessionIDMap[i->index] = sessionID;
 
     SourceType sourceType = static_cast<SourceType>(atoi(pa_proplist_gets(i->proplist, "stream.capturerSource")));
-    if (sessionID < 100000) { // Traditional channels for valusless than 100000;
+
+    auto isIpcCapturer = pa_proplist_gets(i->proplist, "stream.isIpcCapturer");
+    if ((!isIpcCapturer) || (!strcmp("0", isIpcCapturer))) {
         g_audioServiceAdapterCallback->OnCapturerSessionAdded(sessionID,
             {sourceType, i->sample_spec.rate, i->sample_spec.channels});
     }

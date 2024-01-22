@@ -1350,7 +1350,7 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer()
     return SetWakeUpAudioCapturer({});
 }
 
-int32_t AudioPolicyService::SetAudioCaptuer(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+int32_t AudioPolicyService::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
     audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionId, true);

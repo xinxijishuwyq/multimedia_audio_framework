@@ -72,7 +72,7 @@ int32_t PolicyProviderProxy::SetWakeUpAudioCapturerFromAudioServer()
     return reply.ReadInt32();
 }
 
-int32_t PolicyProviderProxy::SetAudioCaptuer(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
+int32_t PolicyProviderProxy::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
     MessageParcel data;
