@@ -151,6 +151,7 @@ struct Userdata {
     pthread_mutex_t mutexPa2;
     pthread_rwlock_t rwlockSleep;
     int64_t timestampSleep;
+    pa_usec_t timestampLastLog;
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -1715,6 +1716,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
 
 static void OffloadReset(struct Userdata *u)
 {
+    u->offload.sessionID = -1;
     u->offload.pos = 0;
     u->offload.hdiPos = 0;
     u->offload.hdiPosTs = pa_rtclock_now();
@@ -1953,8 +1955,13 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
     int32_t sessionID = getSinkInputSessionID(i);
     if (u->offload.isHDISinkStarted) {
         if (sessionID != u->offload.sessionID) {
+            int32_t sessionIdOld = u->offload.sessionID;
             u->offload.sessionID = sessionID;
-            u->offload.sinkAdapter->RendererSinkReset(u->offload.sinkAdapter);
+            if (sessionIdOld != -1) {
+                u->offload.sinkAdapter->RendererSinkReset(u->offload.sinkAdapter);
+                AUDIO_INFO_LOG("StartOffloadHdi, Reset offload HDI renderer, due to sessionID change: "
+                               "%{public}d -> %{public}d", sessionIdOld, u->offload.sessionID);
+            }
         }
     } else {
         AUDIO_INFO_LOG("StartOffloadHdi, Restart offload with rate:%{public}d, channels:%{public}d",
@@ -1980,8 +1987,8 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
 
     if (starting) {
-        OffloadReset(u);
         StartOffloadHdi(u, i);
+        OffloadReset(u);
     } else if (corking) {
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
         OffloadRewindAndFlush(u, i, false);
@@ -2157,7 +2164,8 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 
     char str[SPRINTF_STR_LEN] = {0};
     GetSinkInputName(i, str, SPRINTF_STR_LEN);
-    AUDIO_INFO_LOG("PaInputStateChangeCb, Sink[%s]->SinkInput[%s] state change:[%{public}s]-->[%{public}s]",
+    AUDIO_INFO_LOG(
+        "PaInputStateChangeCb, Sink[%{public}s]->SinkInput[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass(u->primary.sinkAdapter->deviceClass), str, GetInputStateInfo(i->thread_info.state),
         GetInputStateInfo(state));
 
@@ -2756,7 +2764,10 @@ static void ThreadFuncWriteHDI(void *userdata)
                 pa_usec_t now = pa_rtclock_now();
                 if (!u->primary.isHDISinkStarted) {
                     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-                    AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
+                    if (now - u->timestampLastLog > USEC_PER_SEC) {
+                        u->timestampLastLog = now;
+                        AUDIO_DEBUG_LOG("HDI not started, skip RenderWrite, wait sink[%s] suspend", deviceClass);
+                    }
                     pa_memblock_unref(chunk.memblock);
                 } else if (RenderWrite(u->primary.sinkAdapter, &chunk) < 0) {
                     u->bytes_dropped += chunk.length;

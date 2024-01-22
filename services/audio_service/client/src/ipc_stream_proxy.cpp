@@ -351,9 +351,9 @@ int32_t IpcStreamProxy::SetOffloadMode(int32_t state, bool isAppBack)
     data.WriteInt32(state);
     data.WriteBool(isAppBack);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_MODE, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "SetOffloadMode failed, ipc error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     ret = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetOffloadMode failed, error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
 
     return ret;
 }
@@ -367,9 +367,9 @@ int32_t IpcStreamProxy::UnsetOffloadMode()
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_MODE, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "UnsetOffloadMode failed, ipc error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     ret = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UnsetOffloadMode failed, error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
 
     return ret;
 }
@@ -388,10 +388,10 @@ int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, ui
     data.WriteUint64(cacheTimeDsp);
     data.WriteUint64(cacheTimePa);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "GetOffloadApproximatelyCacheTime failed, ipc error: %{public}d",
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d",
         ret);
     ret = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetOffloadApproximatelyCacheTime failed, error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
     timeStamp = reply.ReadUint64();
     paWriteIndex = reply.ReadUint64();
     cacheTimeDsp = reply.ReadUint64();
@@ -410,9 +410,9 @@ int32_t IpcStreamProxy::OffloadSetVolume(float volume)
 
     data.WriteFloat(volume);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_VOLUME, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "OffloadSetVolume failed, ipc error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     ret = reply.ReadInt32();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "OffloadSetVolume failed, error: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
 
     return ret;
 }

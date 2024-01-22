@@ -1170,7 +1170,7 @@ int32_t AudioServiceClient::StartStream(StateChangeCmdType cmdType)
 int32_t AudioServiceClient::PauseStream(StateChangeCmdType cmdType)
 {
     AUDIO_INFO_LOG("AudioServiceClient::PauseStream");
-    OffloadBreakWaitWrite();
+    CheckOffloadBreakWaitWrite();
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     PAStreamCorkSuccessCb = PAStreamPauseSuccessCb;
@@ -1257,7 +1257,7 @@ int32_t AudioServiceClient::StopStream()
 int32_t AudioServiceClient::OffloadStopStream()
 {
     AUDIO_INFO_LOG("AudioServiceClient::OffloadStopStream");
-    OffloadBreakWaitWrite();
+    CheckOffloadBreakWaitWrite();
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     state_ = STOPPING;
@@ -3211,10 +3211,12 @@ int32_t AudioServiceClient::SetCapturerReadCallback(const std::shared_ptr<AudioC
     return SUCCESS;
 }
 
-void AudioServiceClient::OffloadBreakWaitWrite()
+void AudioServiceClient::CheckOffloadBreakWaitWrite()
 {
-    breakingWritePa_ = true;
-    pa_threaded_mainloop_signal(mainLoop, 0);
+    if (offloadEnable_) {
+        breakingWritePa_ = true;
+        pa_threaded_mainloop_signal(mainLoop, 0);
+    }
 }
 
 void AudioServiceClient::SendWriteBufferRequestEvent()

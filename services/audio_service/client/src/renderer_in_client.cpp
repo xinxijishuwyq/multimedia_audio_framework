@@ -328,8 +328,8 @@ private:
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 
     bool offloadEnable_;
-    uint64_t offloadStartReadPos = 0;
-    int64_t offloadStartHandleTime = 0;
+    uint64_t offloadStartReadPos_ = 0;
+    int64_t offloadStartHandleTime_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -377,9 +377,9 @@ RendererInClientInner::~RendererInClientInner()
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     if (operation == SET_OFFLOAD_ENABLE) {
-        AUDIO_DEBUG_LOG("OnOperationHandled() SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
+        AUDIO_DEBUG_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
-            offloadStartReadPos = 0;
+            offloadStartReadPos_ = 0;
         }
         offloadEnable_ = static_cast<bool>(result);
     }
@@ -786,14 +786,14 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
         int64_t deltaPaWriteIndexNs = static_cast<int64_t>(readPosNs) - static_cast<int64_t>(paWriteIndexNs);
         int64_t cacheTimeNow = cacheTime - deltaTimeStamp + deltaPaWriteIndexNs;
-        if (offloadStartReadPos == 0) {
-            offloadStartReadPos = readPosNs;
-            offloadStartHandleTime = handleTime;
+        if (offloadStartReadPos_ == 0) {
+            offloadStartReadPos_ = readPosNs;
+            offloadStartHandleTime_ = handleTime;
         }
         int64_t offloadDelta = 0;
-        if (offloadStartReadPos != 0) {
-            offloadDelta = (static_cast<int64_t>(readPosNs) - static_cast<int64_t>(offloadStartReadPos)) -
-                           (handleTime - offloadStartHandleTime) - cacheTimeNow;
+        if (offloadStartReadPos_ != 0) {
+            offloadDelta = (static_cast<int64_t>(readPosNs) - static_cast<int64_t>(offloadStartReadPos_)) -
+                           (handleTime - offloadStartHandleTime_) - cacheTimeNow;
         }
         audioTimeResult += offloadDelta;
     }
@@ -1316,7 +1316,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     waitLock.unlock();
 
     state_ = RUNNING; // change state_ to RUNNING, then notify cbThread
-    offloadStartReadPos = 0;
+    offloadStartReadPos_ = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         // start the callback-write thread
         cbThreadCv_.notify_all();

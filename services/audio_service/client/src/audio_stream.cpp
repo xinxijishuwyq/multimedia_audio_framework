@@ -560,7 +560,7 @@ bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
     // Ends the WriteCb thread
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = false;
-        OffloadBreakWaitWrite();
+        CheckOffloadBreakWaitWrite();
         // wake write thread to make pause faster
         bufferQueueCV_.notify_all();
         if (writeThread_ && writeThread_->joinable()) {
@@ -610,7 +610,7 @@ bool AudioStream::StopAudioStream()
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = false;
-        OffloadBreakWaitWrite();
+        CheckOffloadBreakWaitWrite();
         if (writeThread_ && writeThread_->joinable()) {
             writeThread_->join();
         }

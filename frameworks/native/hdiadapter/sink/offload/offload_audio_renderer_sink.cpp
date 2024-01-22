@@ -759,9 +759,7 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
             AUDIO_ERR_LOG("Flush failed! timeout of 250ms");
         } else {
             int32_t ret = future.get();
-            if (!ret) {
-                started_ = false;
-            } else {
+            if (ret) {
                 AUDIO_ERR_LOG("Flush failed! ret %{public}d", ret);
             }
         }

@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "i_audio_renderer_sink.h"
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #endif
@@ -726,8 +727,31 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    audioSystemManager_->OffloadSetVolume(volume);
-    return SUCCESS;
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("offload", "");
+
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("Renderer is null.");
+        return ERROR;
+    }
+    return audioRendererSinkInstance->SetVolume(volume, 0);
+}
+
+int32_t PaRendererStreamImpl::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
+{
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "Renderer is null.");
+    return audioRendererSinkInstance->GetPresentationPosition(frames, timeSec, timeNanoSec);
+}
+
+int32_t PaRendererStreamImpl::OffloadSetBufferSize(uint32_t sizeMs)
+{
+    auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(
+        "offload", ""));
+
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "Renderer is null.");
+    return audioRendererSinkInstance->SetBufferSize(sizeMs);
 }
 
 int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
@@ -770,7 +794,7 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
     uint64_t frames;
     int64_t timeSec;
     int64_t timeNanoSec;
-    audioSystemManager_->OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
+    OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
     int64_t framesInt = static_cast<int64_t>(frames);
     int64_t readIndexInt = static_cast<int64_t>(readIndex);
     if (framesInt + offloadTsOffset_ <
@@ -844,7 +868,7 @@ int32_t PaRendererStreamImpl::UpdatePolicyOffload(AudioOffloadType statePolicy)
     pa_operation_unref(updatePropOperation);
 
     const uint32_t bufLenMs = statePolicy > 1 ? OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1;
-    audioSystemManager_->OffloadSetBufferSize(bufLenMs);
+    OffloadSetBufferSize(bufLenMs);
 
     offloadStatePolicy_ = statePolicy;
 

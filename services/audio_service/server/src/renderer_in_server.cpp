@@ -247,7 +247,7 @@ void RendererInServer::WriteEmptyData()
 int32_t RendererInServer::OnWriteData(size_t length)
 {
     Trace trace("RendererInServer::OnWriteData length " + std::to_string(length));
-    requestFailed = false;
+    requestFailed_ = false;
     bool fail = false;
     if (writeLock_.try_lock()) {
         for (size_t i = 0; i < length / totalSizeInFrame_; i++) {
@@ -259,7 +259,7 @@ int32_t RendererInServer::OnWriteData(size_t length)
     } else {
         fail = true;
     }
-    requestFailed = fail;
+    requestFailed_ = fail;
     return SUCCESS;
 }
 
@@ -272,7 +272,7 @@ int32_t RendererInServer::UpdateWriteIndex()
         WriteData();
         needStart++;
     }
-    if (requestFailed && stream_->GetWritableSize() >= spanSizeInFrame_ * byteSizePerFrame_) {
+    if (requestFailed_ && stream_->GetWritableSize() >= spanSizeInFrame_ * byteSizePerFrame_) {
         if (writeLock_.try_lock()) {
             WriteData();
             writeLock_.unlock();

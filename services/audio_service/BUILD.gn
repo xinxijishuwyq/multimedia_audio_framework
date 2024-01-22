@@ -304,7 +304,6 @@ ohos_shared_library("audio_process_service") {
   configs = [ ":audio_service_config" ]
 
   deps = [
-    ":audio_client",
     ":audio_common",
     "$pulseaudio_build_path/src/pulse:pulse",
     "../../frameworks/native/audioschedule:audio_schedule",
@@ -312,6 +311,7 @@ ohos_shared_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
   ]

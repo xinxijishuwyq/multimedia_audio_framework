@@ -87,7 +87,7 @@ private:
     std::atomic<bool> isInited_ = false;
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
     int32_t needStart = 0;
-    bool requestFailed;
+    bool requestFailed_;
     bool afterDrain = false;
     std::mutex updateIndexLock_;
     bool resetTime_ = false;

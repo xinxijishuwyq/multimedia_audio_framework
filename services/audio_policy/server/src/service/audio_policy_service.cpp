@@ -4299,10 +4299,12 @@ int32_t AudioPolicyService::GetA2dpDeviceVolume(const std::string& macAddress, i
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
     if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
-        AUDIO_ERR_LOG("GetA2dpDeviceVolume failed for macAddress:[%{public}s]", macAddress.c_str());
+        AUDIO_ERR_LOG("failed for macAddress:[%{public}s]", macAddress.c_str());
         return ERROR;
     }
     volumeLevel = configInfoPos->second.volumeLevel;
+    AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
+        macAddress.c_str(), volumeLevel);
     return SUCCESS;
 }
 

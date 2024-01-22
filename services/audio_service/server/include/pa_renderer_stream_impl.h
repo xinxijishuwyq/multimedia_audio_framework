@@ -18,7 +18,6 @@
 
 #include <pulse/pulseaudio.h>
 #include "i_renderer_stream.h"
-#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,23 +62,6 @@ public:
     // offload end
 
 private:
-    // offload
-    void SyncOffloadMode();
-    int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
-    int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
-    void ResetOffload();
-    int32_t UpdatePolicyOffloadInWrite();
-    bool offloadEnable_ = false;
-
-    int64_t offloadTsOffset_ = 0;
-    uint64_t offloadTsLast_ = 0;
-    std::timed_mutex offloadWaitWriteableMutex_;
-    AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
-    AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
-    time_t lastOffloadUpdateFinishTime_ = 0;
-    AudioSystemManager *audioSystemManager_ = nullptr;
-    FILE *dumpFile_ = nullptr;
-    // offload end
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamMovedCb(pa_stream *stream, void *userdata);
     static void PAStreamUnderFlowCb(pa_stream *stream, void *userdata);
@@ -93,6 +75,15 @@ private:
 
     const std::string GetEffectModeName(int32_t effectMode);
     const std::string GetEffectSceneName(AudioStreamType audioType);
+    // offload
+    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
+    int32_t OffloadSetBufferSize(uint32_t sizeMs);
+    void SyncOffloadMode();
+    int32_t UpdatePAProbListOffload(AudioOffloadType statePolicy);
+    int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
+    void ResetOffload();
+    int32_t UpdatePolicyOffloadInWrite();
+    // offload end
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
@@ -125,6 +116,15 @@ private:
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
     // Only for debug
     int32_t abortFlag_ = 0;
+    // offload
+    bool offloadEnable_ = false;
+    int64_t offloadTsOffset_ = 0;
+    uint64_t offloadTsLast_ = 0;
+    AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
+    time_t lastOffloadUpdateFinishTime_ = 0;
+    FILE *dumpFile_ = nullptr;
+    // offload end
 };
 } // namespace AudioStandard
 } // namespace OHOS
