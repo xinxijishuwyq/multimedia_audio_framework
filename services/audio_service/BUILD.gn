@@ -387,6 +387,7 @@ ohos_shared_library("audio_service") {
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hicollie:libhicollie",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

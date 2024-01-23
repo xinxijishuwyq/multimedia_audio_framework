@@ -24,6 +24,7 @@
 
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "hisysevent.h"
 
 #include "audio_capturer_source.h"
 #include "remote_audio_capturer_source.h"
@@ -169,6 +170,8 @@ void AudioServer::SetAudioParameter(const std::string &key, const std::string &v
 
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+        HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SMATPA_LOWPOWER",
+            HiviewDFX::HiSysEvent::EventType::BEHAVIOR, "STATE", value == "SmartPA_lowpower=on" ? 1 : 0);
     } else if (key == "bt_headset_nrec") {
         parmKey = AudioParamKey::BT_HEADSET_NREC;
     } else if (key == "bt_wbs") {
