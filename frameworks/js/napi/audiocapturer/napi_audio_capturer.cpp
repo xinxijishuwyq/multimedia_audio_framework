@@ -23,6 +23,7 @@
 #include "napi_audio_capturer_callbacks.h"
 #include "napi_capturer_position_callback.h"
 #include "napi_capturer_period_position_callback.h"
+#include "napi_audio_capturer_read_data_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -833,6 +834,8 @@ napi_value NapiAudioCapturer::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterAudioCapturerDeviceChangeCallback(env, argv, napiCapturer);
     } else if (!cbName.compare(AUDIO_CAPTURER_CHANGE_CALLBACK_NAME)) {
         RegisterAudioCapturerInfoChangeCallback(env, argv, napiCapturer);
+    } else if (!cbName.compare(READ_DATA_CALLBACK_NAME)) {
+        RegisterCapturerReadDataCallback(env, argv, cbName, napiCapturer);
     } else {
         bool unknownCallback = true;
         CHECK_AND_RETURN_RET_LOG(!unknownCallback, ThrowErrorAndReturn(env, NAPI_ERROR_INVALID_PARAM),
@@ -991,6 +994,23 @@ void NapiAudioCapturer::RegisterAudioCapturerInfoChangeCallback(napi_env env, na
     AUDIO_DEBUG_LOG("RegisterAudioCapturerInfoChangeCallback is successful");
 }
 
+void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_value *argv, const std::string &cbName,
+    NapiAudioCapturer *napiCapturer)
+{
+    CHECK_AND_RETURN_LOG(napiCapturer->capturerReadDataCallbackNapi_ == nullptr, "readData already subscribed.");
+
+    napiCapturer->capturerReadDataCallbackNapi_ = std::make_shared<NapiCapturerReadDataCallback>(env, napiCapturer);
+    napiCapturer->audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+    CHECK_AND_RETURN_LOG(napiCapturer->capturerReadDataCallbackNapi_ != nullptr, "readDataNapi_ is nullptr");
+    int32_t ret = napiCapturer->audioCapturer_->SetCapturerReadCallback(napiCapturer->capturerReadDataCallbackNapi_);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetCapturerCallback failed");
+    std::shared_ptr<NapiCapturerReadDataCallback> cb =
+        std::static_pointer_cast<NapiCapturerReadDataCallback>(napiCapturer->capturerReadDataCallbackNapi_);
+    cb->AddCallbackReference(cbName, argv[PARAM1]);
+
+    AUDIO_INFO_LOG("Register Callback is successful");
+}
+
 napi_value NapiAudioCapturer::Off(napi_env env, napi_callback_info info)
 {
     const size_t minArgCount = ARGS_ONE;
@@ -1039,6 +1059,8 @@ napi_value NapiAudioCapturer::UnregisterCallback(napi_env env, napi_value jsThis
         UnregisterAudioCapturerDeviceChangeCallback(env, argc, argv, napiCapturer);
     } else if (!cbName.compare(AUDIO_CAPTURER_CHANGE_CALLBACK_NAME)) {
         UnregisterAudioCapturerInfoChangeCallback(env, argc, argv, napiCapturer);
+    } else if (!cbName.compare(READ_DATA_CALLBACK_NAME)) {
+        UnregisterCapturerReadDataCallback(env, argc, argv, napiCapturer);
     } else {
         bool unknownCallback = true;
         CHECK_AND_RETURN_RET_LOG(!unknownCallback, ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
@@ -1118,6 +1140,24 @@ void NapiAudioCapturer::UnregisterAudioCapturerInfoChangeCallback(napi_env env, 
     }
     napiCapturer->capturerInfoChangeCallbacks_.clear();
     AUDIO_DEBUG_LOG("UnregisterAudioCapturerInfoChangeCallback is successful");
+}
+
+void NapiAudioCapturer::UnregisterCapturerReadDataCallback(napi_env env, size_t argc, napi_value *argv,
+    NapiAudioCapturer *napiCapturer)
+{
+    napi_value callback = nullptr;
+
+    if (argc == ARGS_TWO) {
+        callback = argv[PARAM1];
+    }
+    CHECK_AND_RETURN_LOG(napiCapturer->capturerReadDataCallbackNapi_ != nullptr,
+        "napiCapturerReadDataCallback is nullptr, return");
+
+    std::shared_ptr<NapiCapturerReadDataCallback> cb =
+        std::static_pointer_cast<NapiCapturerReadDataCallback>(napiCapturer->capturerReadDataCallbackNapi_);
+    cb->RemoveCallbackReference(env, callback);
+
+    AUDIO_INFO_LOG("Unregister Callback is successful");
 }
 } // namespace AudioStandard
 } // namespace OHOS

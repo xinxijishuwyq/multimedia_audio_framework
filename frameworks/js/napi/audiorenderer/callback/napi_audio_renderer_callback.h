@@ -32,6 +32,7 @@ const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
 const std::string DATA_REQUEST_CALLBACK_NAME = "dataRequest";
 const std::string DEVICECHANGE_CALLBACK_NAME = "outputDeviceChange";
 const std::string OUTPUT_DEVICECHANGE_WITH_INFO = "outputDeviceChangeWithInfo";
+const std::string WRITE_DATA_CALLBACK_NAME = "writeData";
 
 class NapiAudioRendererCallback : public AudioRendererCallback {
 public:
