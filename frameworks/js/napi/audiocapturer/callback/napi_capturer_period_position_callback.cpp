@@ -95,6 +95,12 @@ void NapiCapturerPeriodPositionCallback::OnJsCapturerPeriodPositionCallback(
 void NapiCapturerPeriodPositionCallback::WorkCapturerPeriodPositionCallbackDone(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<CapturerPeriodPositionJsCallback> context(
+        static_cast<CapturerPeriodPositionJsCallback*>(work->data),
+        [work](CapturerPeriodPositionJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     CapturerPeriodPositionJsCallback *event = reinterpret_cast<CapturerPeriodPositionJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -129,8 +135,6 @@ void NapiCapturerPeriodPositionCallback::WorkCapturerPeriodPositionCallbackDone(
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

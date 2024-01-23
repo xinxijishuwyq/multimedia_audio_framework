@@ -64,6 +64,12 @@ void NapiRendererPeriodPositionCallback::OnPeriodReached(const int64_t &frameNum
 void NapiRendererPeriodPositionCallback::WorkCallbackRendererPeriodPosition(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<RendererPeriodPositionJsCallback> context(
+        static_cast<RendererPeriodPositionJsCallback*>(work->data),
+        [work](RendererPeriodPositionJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "WorkCallbackRendererPeriodPosition work is nullptr");
     RendererPeriodPositionJsCallback *event = reinterpret_cast<RendererPeriodPositionJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "WorkCallbackRendererPeriodPosition event is nullptr");

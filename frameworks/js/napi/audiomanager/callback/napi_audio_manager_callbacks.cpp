@@ -203,6 +203,12 @@ void NapiAudioManagerCallback::RemoveAllAudioManagerDeviceChangeCb()
 
 void NapiAudioManagerCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioManagerJsCallback> context(
+        static_cast<AudioManagerJsCallback*>(work->data),
+        [work](AudioManagerJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioManagerJsCallback *event = reinterpret_cast<AudioManagerJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -231,8 +237,6 @@ void NapiAudioManagerCallback::WorkCallbackInterruptDone(uv_work_t *work, int st
             request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioManagerCallback::OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb)

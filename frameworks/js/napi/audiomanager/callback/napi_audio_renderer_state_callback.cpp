@@ -79,6 +79,12 @@ void NapiAudioRendererStateCallback::OnRendererStateChange(
 
 void NapiAudioRendererStateCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioRendererStateJsCallback> context(
+        static_cast<AudioRendererStateJsCallback*>(work->data),
+        [work](AudioRendererStateJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioRendererStateJsCallback *event = reinterpret_cast<AudioRendererStateJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -103,8 +109,6 @@ void NapiAudioRendererStateCallback::WorkCallbackInterruptDone(uv_work_t *work, 
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call Interrupt callback");
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioRendererStateCallback::OnJsCallbackRendererState(std::unique_ptr<AudioRendererStateJsCallback> &jsCb)

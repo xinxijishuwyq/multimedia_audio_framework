@@ -82,6 +82,12 @@ void NapiRendererDataRequestCallback::OnWriteData(size_t length)
 void NapiRendererDataRequestCallback::WorkCallbackRendererDataRequest(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<RendererDataRequestJsCallback> context(
+        static_cast<RendererDataRequestJsCallback*>(work->data),
+        [work](RendererDataRequestJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "WorkCallbackRendererDataRequest work is nullptr");
     RendererDataRequestJsCallback *event = reinterpret_cast<RendererDataRequestJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "WorkCallbackRendererDataRequest event is nullptr");
@@ -114,8 +120,6 @@ void NapiRendererDataRequestCallback::WorkCallbackRendererDataRequest(uv_work_t 
             CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiRendererDataRequestCallback::OnJsRendererDataRequestCallback(

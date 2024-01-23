@@ -64,6 +64,12 @@ void NapiCapturerPositionCallback::OnMarkReached(const int64_t &framePosition)
 void NapiCapturerPositionCallback::WorkPositionCallbackDone(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<CapturerPositionJsCallback> context(
+        static_cast<CapturerPositionJsCallback*>(work->data),
+        [work](CapturerPositionJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     CapturerPositionJsCallback *event = reinterpret_cast<CapturerPositionJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -95,8 +101,6 @@ void NapiCapturerPositionCallback::WorkPositionCallbackDone(uv_work_t *work, int
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiCapturerPositionCallback::OnJsCapturerPositionCallback(std::unique_ptr<CapturerPositionJsCallback> &jsCb)

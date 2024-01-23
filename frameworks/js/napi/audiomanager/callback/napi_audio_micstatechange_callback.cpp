@@ -59,6 +59,12 @@ void NapiAudioManagerMicStateChangeCallback::OnMicStateUpdated(const MicStateCha
 
 void NapiAudioManagerMicStateChangeCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioManagerMicStateChangeJsCallback> context(
+        static_cast<AudioManagerMicStateChangeJsCallback*>(work->data),
+        [work](AudioManagerMicStateChangeJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioManagerMicStateChangeJsCallback *event = reinterpret_cast<AudioManagerMicStateChangeJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -87,8 +93,6 @@ void NapiAudioManagerMicStateChangeCallback::WorkCallbackInterruptDone(uv_work_t
             request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioManagerMicStateChangeCallback::OnJsCallbackMicStateChange

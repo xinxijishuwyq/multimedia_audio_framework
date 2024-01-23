@@ -118,6 +118,12 @@ void NapiAudioManagerInterruptCallback::OnInterrupt(const InterruptAction &inter
 
 void NapiAudioManagerInterruptCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioManagerInterruptJsCallback> context(
+        static_cast<AudioManagerInterruptJsCallback*>(work->data),
+        [work](AudioManagerInterruptJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioManagerInterruptJsCallback *event = reinterpret_cast<AudioManagerInterruptJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -147,8 +153,6 @@ void NapiAudioManagerInterruptCallback::WorkCallbackInterruptDone(uv_work_t *wor
             request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioManagerInterruptCallback::OnJsCallbackAudioManagerInterrupt(

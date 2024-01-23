@@ -70,6 +70,12 @@ void NapiAudioVolumeKeyEvent::SaveCallbackReference(const std::string &callbackN
 
 void NapiAudioVolumeKeyEvent::WorkCallbackVolumeChangeDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioVolumeKeyEventJsCallback> context(
+        static_cast<AudioVolumeKeyEventJsCallback*>(work->data),
+        [work](AudioVolumeKeyEventJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioVolumeKeyEventJsCallback *event = reinterpret_cast<AudioVolumeKeyEventJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -99,8 +105,6 @@ void NapiAudioVolumeKeyEvent::WorkCallbackVolumeChangeDone(uv_work_t *work, int 
             request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb)

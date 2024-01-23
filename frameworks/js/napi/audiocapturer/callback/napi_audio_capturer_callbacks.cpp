@@ -143,6 +143,12 @@ void NapiAudioCapturerCallback::OnJsCallbackStateChange(std::unique_ptr<AudioCap
 void NapiAudioCapturerCallback::WorkCallbackStateChangeDone(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<AudioCapturerJsCallback> context(
+        static_cast<AudioCapturerJsCallback*>(work->data),
+        [work](AudioCapturerJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioCapturerJsCallback *event = reinterpret_cast<AudioCapturerJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -175,13 +181,17 @@ void NapiAudioCapturerCallback::WorkCallbackStateChangeDone(uv_work_t *work, int
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioCapturerCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<AudioCapturerJsCallback> context(
+        static_cast<AudioCapturerJsCallback*>(work->data),
+        [work](AudioCapturerJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioCapturerJsCallback *event = reinterpret_cast<AudioCapturerJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -215,8 +225,6 @@ void NapiAudioCapturerCallback::WorkCallbackInterruptDone(uv_work_t *work, int s
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -109,6 +109,12 @@ void NapiAudioRountingAvailableDeviceChangeCallback::OnAvailableDeviceChange(
 void NapiAudioRountingAvailableDeviceChangeCallback::WorkAvailbleDeviceChangeDone(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<AudioRountingJsCallback> context(
+        static_cast<AudioRountingJsCallback*>(work->data),
+        [work](AudioRountingJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioRountingJsCallback *event = reinterpret_cast<AudioRountingJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -139,8 +145,6 @@ void NapiAudioRountingAvailableDeviceChangeCallback::WorkAvailbleDeviceChangeDon
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call DeviceChange callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioRountingAvailableDeviceChangeCallback::OnJsCallbackAvailbleDeviceChange(
