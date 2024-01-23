@@ -43,6 +43,21 @@ AudioEffectConfigParser::~AudioEffectConfigParser()
 {
 }
 
+static int32_t ParseEffectConfigFile(xmlDoc* &doc)
+{
+    if (access(AUDIO_EFFECT_CONFIG_FILE, R_OK) == 0) {
+        AUDIO_INFO_LOG("load audio effect config");
+        doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
+        CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load audio effect config fail");
+    } else {
+        AUDIO_INFO_LOG("load default audio effect config");
+        doc = xmlReadFile(DEFAULT_AUDIO_EFFECT_CONFIG_FILE,
+            nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
+        CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load default audio effect config fail");
+    }
+    return 0;
+}
+
 static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
 {
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, FILE_PARSE_ERROR, "error: could not parse file");
@@ -546,15 +561,8 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
 
-    if (access(AUDIO_EFFECT_CONFIG_FILE, R_OK) == 0) {
-        AUDIO_INFO_LOG("load audio effect config");
-        doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
-    } else {
-        AUDIO_INFO_LOG("load default audio effect config");
-        doc = xmlReadFile(DEFAULT_AUDIO_EFFECT_CONFIG_FILE,
-            nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
-    }
-    CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "error: could not parse audio effect config file");
+    int32_t ret = ParseEffectConfigFile(doc);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "error: could not parse audio effect config file");
 
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
