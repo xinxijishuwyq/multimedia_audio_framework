@@ -610,6 +610,8 @@ public:
 
     float GetStreamSpeed();
 
+    uint32_t GetAppTokenId() const;
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();

@@ -604,6 +604,7 @@ struct AudioRegisterTrackerInfo {
     AudioRendererInfo rendererInfo;
     AudioCapturerInfo capturerInfo;
     int32_t channelCount;
+    uint32_t appTokenId;
 };
 
 enum StateChangeCmdType {
@@ -732,6 +733,7 @@ public:
     CapturerState capturerState;
     DeviceInfo inputDeviceInfo;
     bool muted;
+    uint32_t appTokenId;
 
     AudioCapturerChangeInfo(const AudioCapturerChangeInfo &audioCapturerChangeInfo)
     {
@@ -749,7 +751,8 @@ public:
             && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(capturerState))
             && inputDeviceInfo.Marshalling(parcel)
-            && parcel.WriteBool(muted);
+            && parcel.WriteBool(muted)
+            && parcel.WriteUint32(appTokenId);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -762,6 +765,7 @@ public:
         capturerState = static_cast<CapturerState>(parcel.ReadInt32());
         inputDeviceInfo.Unmarshalling(parcel);
         muted = parcel.ReadBool();
+        appTokenId = parcel.ReadUint32();
     }
 };
 

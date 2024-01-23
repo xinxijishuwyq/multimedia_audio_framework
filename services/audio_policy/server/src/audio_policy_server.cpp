@@ -1930,6 +1930,8 @@ void AudioPolicyServer::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionSta
         if (res != 0) {
             AUDIO_WARNING_LOG("notice stop using perm error");
         }
+
+        saveAppCapTokenIdThroughMS.erase(targetTokenId);
     }
 }
 
@@ -2156,6 +2158,10 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
+    } else {
+        if (mode == AUDIO_MODE_RECORD) {
+            saveAppCapTokenIdThroughMS.insert(streamChangeInfo.audioCapturerChangeInfo.appTokenId);
+        }
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
     return audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object);
@@ -2253,6 +2259,17 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, uid %{public}d", uid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     audioPolicyService_.RegisteredTrackerClientDied(uid);
+
+    if (uid == MEDIA_SERVICE_UID) {
+        for (auto iter = saveAppCapTokenIdThroughMS.begin(); iter != saveAppCapTokenIdThroughMS.end(); iter++) {
+            AUDIO_DEBUG_LOG("RegisteredTrackerClient died, stop permis for appTokenId: %{public}u", *iter);
+            int res = PrivacyKit::StopUsingPermission(*iter, MICROPHONE_PERMISSION);
+            if (res != 0) {
+                AUDIO_WARNING_LOG("media server died, notice stop using perm error");
+            }
+        }
+        saveAppCapTokenIdThroughMS.clear();
+    }
     auto filter = [&uid](int val) {
         return uid == val;
     };

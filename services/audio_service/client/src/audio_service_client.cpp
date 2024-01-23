@@ -3530,6 +3530,11 @@ float AudioServiceClient::GetStreamSpeed()
     return speed_;
 }
 
+uint32_t AudioServiceClient::GetAppTokenId() const
+{
+    return appTokenId_;
+}
+
 AudioSpatializationStateChangeCallbackImpl::AudioSpatializationStateChangeCallbackImpl()
 {
     AUDIO_INFO_LOG("AudioSpatializationStateChangeCallbackImpl instance create");
