@@ -86,6 +86,12 @@ static NapiAudioEnum::AudioRingMode GetJsAudioRingMode(int32_t ringerMode)
 
 void NapiAudioRingerModeCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioRingerModeJsCallback> context(
+        static_cast<AudioRingerModeJsCallback*>(work->data),
+        [work](AudioRingerModeJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioRingerModeJsCallback *event = reinterpret_cast<AudioRingerModeJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -115,8 +121,6 @@ void NapiAudioRingerModeCallback::WorkCallbackInterruptDone(uv_work_t *work, int
             request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioRingerModeCallback::OnJsCallbackRingerMode(std::unique_ptr<AudioRingerModeJsCallback> &jsCb)

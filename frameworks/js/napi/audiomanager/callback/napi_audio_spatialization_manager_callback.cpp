@@ -108,6 +108,12 @@ void NapiAudioSpatializationEnabledChangeCallback::OnSpatializationEnabledChange
 
 void NapiAudioSpatializationEnabledChangeCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioSpatializationEnabledJsCallback> context(
+        static_cast<AudioSpatializationEnabledJsCallback*>(work->data),
+        [work](AudioSpatializationEnabledJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioSpatializationEnabledJsCallback *event = reinterpret_cast<AudioSpatializationEnabledJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -131,8 +137,6 @@ void NapiAudioSpatializationEnabledChangeCallback::WorkCallbackInterruptDone(uv_
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call spatialization enabled callback");
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEnabled(
@@ -242,6 +246,12 @@ void NapiAudioHeadTrackingEnabledChangeCallback::OnHeadTrackingEnabledChange(con
 
 void NapiAudioHeadTrackingEnabledChangeCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioHeadTrackingEnabledJsCallback> context(
+        static_cast<AudioHeadTrackingEnabledJsCallback*>(work->data),
+        [work](AudioHeadTrackingEnabledJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioHeadTrackingEnabledJsCallback *event = reinterpret_cast<AudioHeadTrackingEnabledJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -265,8 +275,6 @@ void NapiAudioHeadTrackingEnabledChangeCallback::WorkCallbackInterruptDone(uv_wo
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call head tracking enabled callback");
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioHeadTrackingEnabledChangeCallback::OnJsCallbackHeadTrackingEnabled(

@@ -66,6 +66,12 @@ void NapiRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
 void NapiRendererPositionCallback::WorkCallbackRendererPositionDone(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<RendererPositionJsCallback> context(
+        static_cast<RendererPositionJsCallback*>(work->data),
+        [work](RendererPositionJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     RendererPositionJsCallback *event = reinterpret_cast<RendererPositionJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -98,8 +104,6 @@ void NapiRendererPositionCallback::WorkCallbackRendererPositionDone(uv_work_t *w
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiRendererPositionCallback::OnJsRendererPositionCallback(std::unique_ptr<RendererPositionJsCallback> &jsCb)

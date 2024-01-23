@@ -94,6 +94,12 @@ void NapiAudioRendererCallback::RemoveCallbackReference(const std::string &callb
 void NapiAudioRendererCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<AudioRendererJsCallback> context(
+        static_cast<AudioRendererJsCallback*>(work->data),
+        [work](AudioRendererJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioRendererJsCallback *event = reinterpret_cast<AudioRendererJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -126,8 +132,6 @@ void NapiAudioRendererCallback::WorkCallbackInterruptDone(uv_work_t *work, int s
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRendererJsCallback> &jsCb)
@@ -157,6 +161,12 @@ void NapiAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRende
 void NapiAudioRendererCallback::WorkCallbackStateChangeDone(uv_work_t *work, int status)
 {
     // Js Thread
+    std::shared_ptr<AudioRendererJsCallback> context(
+        static_cast<AudioRendererJsCallback*>(work->data),
+        [work](AudioRendererJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioRendererJsCallback *event = reinterpret_cast<AudioRendererJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -190,8 +200,6 @@ void NapiAudioRendererCallback::WorkCallbackStateChangeDone(uv_work_t *work, int
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call Interrupt callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioRendererCallback::OnJsCallbackStateChange(std::unique_ptr<AudioRendererJsCallback> &jsCb)

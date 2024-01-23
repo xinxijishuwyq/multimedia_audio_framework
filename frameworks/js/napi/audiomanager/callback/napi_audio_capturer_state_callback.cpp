@@ -70,6 +70,12 @@ void NapiAudioCapturerStateCallback::OnCapturerStateChange(
 
 void NapiAudioCapturerStateCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioCapturerStateJsCallback> context(
+        static_cast<AudioCapturerStateJsCallback*>(work->data),
+        [work](AudioCapturerStateJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioCapturerStateJsCallback *event = reinterpret_cast<AudioCapturerStateJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
@@ -94,8 +100,6 @@ void NapiAudioCapturerStateCallback::WorkCallbackInterruptDone(uv_work_t *work, 
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call Interrupt callback");
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioCapturerStateCallback::OnJsCallbackCapturerState(std::unique_ptr<AudioCapturerStateJsCallback> &jsCb)

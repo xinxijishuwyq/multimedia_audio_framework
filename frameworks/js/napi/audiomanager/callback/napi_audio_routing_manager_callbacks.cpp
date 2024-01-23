@@ -112,6 +112,12 @@ void NapiAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdate
 
 void NapiAudioPreferredOutputDeviceChangeCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioActiveOutputDeviceChangeJsCallback> context(
+        static_cast<AudioActiveOutputDeviceChangeJsCallback*>(work->data),
+        [work](AudioActiveOutputDeviceChangeJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioActiveOutputDeviceChangeJsCallback *event =
         reinterpret_cast<AudioActiveOutputDeviceChangeJsCallback *>(work->data);
@@ -144,8 +150,6 @@ void NapiAudioPreferredOutputDeviceChangeCallback::WorkCallbackInterruptDone(uv_
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call ringer mode callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDeviceChange(
@@ -261,6 +265,12 @@ void NapiAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
 
 void NapiAudioPreferredInputDeviceChangeCallback::WorkCallbackInterruptDone(uv_work_t *work, int status)
 {
+    std::shared_ptr<AudioActiveInputDeviceChangeJsCallback> context(
+        static_cast<AudioActiveInputDeviceChangeJsCallback*>(work->data),
+        [work](AudioActiveInputDeviceChangeJsCallback* ptr) {
+            delete ptr;
+            delete work;
+    });
     CHECK_AND_RETURN_LOG(work != nullptr, "work is nullptr");
     AudioActiveInputDeviceChangeJsCallback *event =
         reinterpret_cast<AudioActiveInputDeviceChangeJsCallback *>(work->data);
@@ -293,8 +303,6 @@ void NapiAudioPreferredInputDeviceChangeCallback::WorkCallbackInterruptDone(uv_w
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call ringer mode callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDeviceChange(
