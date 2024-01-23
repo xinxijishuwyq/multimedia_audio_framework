@@ -2283,20 +2283,23 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
 
     // Get PA latency
     pa_threaded_mainloop_lock(mainLoop);
-    pa_operation *operation = pa_stream_update_timing_info(
-        paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
+    pa_operation *operation = pa_stream_update_timing_info(paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
     if (operation != nullptr) {
         pa_operation_unref(operation);
     } else {
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
     AUDIO_INFO_LOG("waiting for audio latency information");
+    StartTimer(INIT_TIMEOUT_IN_SEC);
     pa_threaded_mainloop_wait(mainLoop);
-    pa_threaded_mainloop_unlock(mainLoop);
-    if (isGetLatencySuccess_ == false) {
-        AUDIO_ERR_LOG("Get audio latency failed");
+    StopTimer();
+    if (IsTimeOut()) {
+        AUDIO_ERR_LOG("Get audio latency timeout");
+        pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
     }
+    pa_threaded_mainloop_unlock(mainLoop);
+    CHECK_AND_RETURN_RET_LOG(isGetLatencySuccess_ != false, AUDIO_CLIENT_ERR, "Get audio latency failed");
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         // Get audio write cache latency
