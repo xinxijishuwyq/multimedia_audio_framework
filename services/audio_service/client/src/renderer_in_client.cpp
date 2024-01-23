@@ -51,6 +51,7 @@ namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
 const uint64_t AUDIO_US_PER_MS = 1000;
+const int64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 130; //ms
@@ -59,6 +60,7 @@ const float AUDIO_MAX_VOLUME = 1.0f;
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
+static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 1;
@@ -325,6 +327,10 @@ private:
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 
+    bool offloadEnable_;
+    uint64_t offloadStartReadPos_ = 0;
+    int64_t offloadStartHandleTime_ = 0;
+
     enum {
         STATE_CHANGE_EVENT = 0,
         RENDERER_MARK_REACHED_EVENT,
@@ -370,6 +376,13 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
+    if (operation == SET_OFFLOAD_ENABLE) {
+        AUDIO_DEBUG_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
+        if (!offloadEnable_ && static_cast<bool>(result)) {
+            offloadStartReadPos_ = 0;
+        }
+        offloadEnable_ = static_cast<bool>(result);
+    }
     // read/write operation may print many log, use debug.
     if (operation == UPDATE_STREAM) {
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
@@ -756,9 +769,37 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     int64_t tempLatency = 45000000; // 45000000 -> 45 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 
-    handleTime = handleTime + deltaTime + tempLatency;
-    timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
-    timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
+    int64_t audioTimeResult = handleTime + deltaTime + tempLatency;
+
+    if (offloadEnable_) {
+        uint64_t timeStamp = 0;
+        uint64_t paWriteIndex = 0;
+        uint64_t cacheTimeDsp = 0;
+        uint64_t cacheTimePa = 0;
+        ipcStream_->GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+        int64_t cacheTime = static_cast<int64_t>(cacheTimeDsp + cacheTimePa) * AUDIO_NS_PER_US;
+        int64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        int64_t deltaTimeStamp = (static_cast<int64_t>(timeNow) - static_cast<int64_t>(timeStamp)) * AUDIO_NS_PER_US;
+        int64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
+        uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
+
+        int64_t deltaPaWriteIndexNs = static_cast<int64_t>(readPosNs) - static_cast<int64_t>(paWriteIndexNs);
+        int64_t cacheTimeNow = cacheTime - deltaTimeStamp + deltaPaWriteIndexNs;
+        if (offloadStartReadPos_ == 0) {
+            offloadStartReadPos_ = readPosNs;
+            offloadStartHandleTime_ = handleTime;
+        }
+        int64_t offloadDelta = 0;
+        if (offloadStartReadPos_ != 0) {
+            offloadDelta = (static_cast<int64_t>(readPosNs) - static_cast<int64_t>(offloadStartReadPos_)) -
+                           (handleTime - offloadStartHandleTime_) - cacheTimeNow;
+        }
+        audioTimeResult += offloadDelta;
+    }
+
+    timestamp.time.tv_sec = static_cast<time_t>(audioTimeResult / AUDIO_NS_PER_SECOND);
+    timestamp.time.tv_nsec = static_cast<time_t>(audioTimeResult % AUDIO_NS_PER_SECOND);
 
     return true;
 }
@@ -1175,14 +1216,12 @@ float RendererInClientInner::GetLowPowerVolume()
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    // in plan
-    return ERROR;
+    return ipcStream_->SetOffloadMode(state, isAppBack);
 }
 
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
-    // in plan
-    return ERROR;
+    return ipcStream_->UnsetOffloadMode();
 }
 
 float RendererInClientInner::GetSingleStreamVolume()
@@ -1277,6 +1316,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     waitLock.unlock();
 
     state_ = RUNNING; // change state_ to RUNNING, then notify cbThread
+    offloadStartReadPos_ = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         // start the callback-write thread
         cbThreadCv_.notify_all();
@@ -1337,7 +1377,9 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
-    DrainAudioStream();
+    if (!offloadEnable_) {
+        DrainAudioStream();
+    }
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == STOPPED) {
         AUDIO_INFO_LOG("Renderer in client is already stopped");
@@ -1623,11 +1665,13 @@ int32_t RendererInClientInner::WriteCacheData()
     Trace traceCache("RendererInClientInner::WriteCacheData");
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
-    if (sizeInFrame * sizePerFrameInByte_ < clientSpanSizeInByte_) {
+    while (sizeInFrame * sizePerFrameInByte_ < clientSpanSizeInByte_) {
         // wait for server read some data
         std::unique_lock<std::mutex> lock(writeDataMutex_);
-        std::cv_status stat = writeDataCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
+        int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : OPERATION_TIMEOUT_IN_MS;
+        std::cv_status stat = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout));
         CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
+        sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     }
     BufferDesc desc = {};
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
@@ -1637,8 +1681,6 @@ int32_t RendererInClientInner::WriteCacheData()
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
     AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
         "%{public}u", curWriteIndex, spanSizeInFrame_);
-    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
-    clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     // volume process in client
     if (volumeRamp_.IsActive()) {
@@ -1655,6 +1697,8 @@ int32_t RendererInClientInner::WriteCacheData()
             AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
         }
     }
+    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
+    clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
     ipcStream_->UpdatePosition(); // notiify server update position

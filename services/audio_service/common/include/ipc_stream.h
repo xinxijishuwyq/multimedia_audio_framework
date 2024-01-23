@@ -74,6 +74,15 @@ public:
 
     virtual int32_t GetPrivacyType(int32_t &privacyType) = 0; // renderer only
 
+    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) = 0; // renderer only
+
+    virtual int32_t UnsetOffloadMode() = 0; // renderer only
+
+    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0; // renderer only
+
+    virtual int32_t OffloadSetVolume(float volume) = 0; // renderer only
+
     // IPC code.
     enum IpcStreamMsg : uint32_t {
         ON_REGISTER_STREAM_LISTENER = 0,
@@ -96,6 +105,10 @@ public:
         ON_GET_EFFECT_MODE,
         ON_SET_PRIVACY_TYPE,
         ON_GET_PRIVACY_TYPE,
+        ON_SET_OFFLOAD_MODE,
+        ON_UNSET_OFFLOAD_MODE,
+        ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME,
+        ON_SET_OFFLOAD_VOLUME,
         IPC_STREAM_MAX_MSG
     };
 

@@ -66,6 +66,15 @@ public:
     int32_t SetPrivacyType(int32_t privacyType) override; // renderer only
 
     int32_t GetPrivacyType(int32_t &privacyType) override; // renderer only
+
+    int32_t SetOffloadMode(int32_t state, bool isAppBack) override; // renderer only
+
+    int32_t UnsetOffloadMode() override; // renderer only
+
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override; // renderer only
+
+    int32_t OffloadSetVolume(float volume) override; // renderer only
 private:
     static inline BrokerDelegator<IpcStreamProxy> delegator_;
 };

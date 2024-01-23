@@ -46,6 +46,13 @@ public:
     virtual void GetByteSizePerFrame(size_t &byteSizePerFrame) const = 0;
     virtual void GetSpanSizePerFrame(size_t &spanSizeInFrame) const = 0;
     virtual void AbortCallback(int32_t abortTimes) = 0;
+
+    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) = 0;
+    virtual int32_t UnsetOffloadMode() = 0;
+    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0;
+    virtual int32_t OffloadSetVolume(float volume) = 0;
+    virtual size_t GetWritableSize() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

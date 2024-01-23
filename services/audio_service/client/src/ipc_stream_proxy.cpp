@@ -339,5 +339,82 @@ int32_t IpcStreamProxy::GetPrivacyType(int32_t &privacyType)
 
     return ret;
 }
+
+int32_t IpcStreamProxy::SetOffloadMode(int32_t state, bool isAppBack)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteInt32(state);
+    data.WriteBool(isAppBack);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_MODE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
+
+    return ret;
+}
+
+int32_t IpcStreamProxy::UnsetOffloadMode()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_UNSET_OFFLOAD_MODE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
+
+    return ret;
+}
+
+int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteUint64(timeStamp);
+    data.WriteUint64(paWriteIndex);
+    data.WriteUint64(cacheTimeDsp);
+    data.WriteUint64(cacheTimePa);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d",
+        ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
+    timeStamp = reply.ReadUint64();
+    paWriteIndex = reply.ReadUint64();
+    cacheTimeDsp = reply.ReadUint64();
+    cacheTimePa = reply.ReadUint64();
+
+    return ret;
+}
+
+int32_t IpcStreamProxy::OffloadSetVolume(float volume)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteFloat(volume);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_OFFLOAD_VOLUME, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
+
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -311,6 +311,7 @@ ohos_shared_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
   ]
@@ -323,6 +324,12 @@ ohos_shared_library("audio_process_service") {
     "hilog:libhilog",
     "ipc:ipc_single",
   ]
+
+  defines = []
+  if (audio_framework_feature_power_manager) {
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

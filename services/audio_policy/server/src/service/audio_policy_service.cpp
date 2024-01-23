@@ -66,6 +66,7 @@ const uint32_t USER_SELECT_BT = 2;
 #endif
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
 const uint32_t MEDIA_SERVICE_UID = 1013;
+const uint32_t UID_AUDIO = 1041;
 std::shared_ptr<DataShare::DataShareHelper> g_dataShareHelper = nullptr;
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 #ifdef BLUETOOTH_ENABLE
@@ -440,7 +441,7 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         AUDIO_DEBUG_LOG("offloadUID not valid, Skipped");
         return;
     }
-    if (offloadUID == MEDIA_SERVICE_UID) { // not support avplayer in current version
+    if (offloadUID == MEDIA_SERVICE_UID || offloadUID == UID_AUDIO) { // not support avplayer in current version
         AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
         return;
     }
@@ -4308,10 +4309,12 @@ int32_t AudioPolicyService::GetA2dpDeviceVolume(const std::string& macAddress, i
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
     if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
-        AUDIO_ERR_LOG("SetA2dpDeviceVolume failed for macAddress:[%{public}s]", macAddress.c_str());
+        AUDIO_ERR_LOG("failed for macAddress:[%{public}s]", macAddress.c_str());
         return ERROR;
     }
     volumeLevel = configInfoPos->second.volumeLevel;
+    AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
+        macAddress.c_str(), volumeLevel);
     return SUCCESS;
 }
 

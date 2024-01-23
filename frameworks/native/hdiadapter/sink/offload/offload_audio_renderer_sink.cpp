@@ -107,7 +107,6 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetOutputRoute(DeviceType outputDevice) override;
 
-    int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
 private:
@@ -119,8 +118,6 @@ private:
     uint64_t renderPos_;
     float leftVolume_;
     float rightVolume_;
-    int32_t routeHandle_ = -1;
-    uint32_t openSpeaker_;
     uint32_t renderId_ = 0;
     std::string adapterNameCase_;
     struct IAudioManager *audioManager_;
@@ -144,11 +141,13 @@ private:
     std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
     bool runninglocked;
 #endif
+
+    FILE *dumpFile_ = nullptr;
 };
     
 OffloadAudioRendererSinkInner::OffloadAudioRendererSinkInner()
     : rendererInited_(false), started_(false), isFlushing_(false), startDuringFlush_(false), renderPos_(0),
-      leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
+      leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr)
 {
     attr_ = {};
@@ -371,6 +370,8 @@ void OffloadAudioRendererSinkInner::DeInit()
     audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     callbackServ = {};
+
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void InitAttrs(struct AudioSampleAttributes &attrs)
@@ -506,7 +507,6 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName; // Set sound card information
-    openSpeaker_ = attr_.openMicSpeaker;
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_NOT_STARTED, "Init audio manager Fail.");
@@ -536,12 +536,6 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
     int32_t tmp = CreateRender(audioPort_);
     CHECK_AND_RETURN_RET_LOG(tmp == 0, ERR_NOT_STARTED,
         "Create render failed, Audio Port: %{public}d", audioPort_.portId);
-    if (openSpeaker_) {
-        ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
-        }
-    }
     rendererInited_ = true;
 
     return SUCCESS;
@@ -565,6 +559,9 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     Trace trace("RenderFrameOffload");
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
+    if (ret == 0 && writeLen != 0) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrameOffload failed! ret: %{public}x", ret);
     renderPos_ += writeLen;
     return SUCCESS;
@@ -574,6 +571,11 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
 {
     Trace trace("Sink::Start");
     if (started_) {
+        int32_t ret = audioRender_->Start(audioRender_);
+        if (ret) {
+            AUDIO_ERR_LOG("Start failed!");
+            return ERR_NOT_STARTED;
+        }
         if (isFlushing_) {
             AUDIO_ERR_LOG("start failed! during flushing");
             startDuringFlush_ = true;
@@ -583,6 +585,8 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
             return SUCCESS;
         }
     }
+
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_OFFLOAD_RENDER_SINK_FILENAME, &dumpFile_);
 
     started_ = true;
     renderPos_ = 0;
@@ -649,139 +653,16 @@ int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
     }
 }
 
-static AudioCategory GetAudioCategory(AudioScene audioScene)
-{
-    AudioCategory audioCategory;
-    switch (audioScene) {
-        case AUDIO_SCENE_DEFAULT:
-            audioCategory = AUDIO_IN_MEDIA;
-            break;
-        case AUDIO_SCENE_RINGING:
-            audioCategory = AUDIO_IN_RINGTONE;
-            break;
-        case AUDIO_SCENE_PHONE_CALL:
-            audioCategory = AUDIO_IN_CALL;
-            break;
-        case AUDIO_SCENE_PHONE_CHAT:
-            audioCategory = AUDIO_IN_COMMUNICATION;
-            break;
-        default:
-            audioCategory = AUDIO_IN_MEDIA;
-            break;
-    }
-    AUDIO_DEBUG_LOG("Audio category returned is: %{public}d", audioCategory);
-
-    return audioCategory;
-}
-
-static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
-{
-    int32_t ret = SUCCESS;
-
-    switch (outputDevice) {
-        case DEVICE_TYPE_EARPIECE:
-            sink.ext.device.type = PIN_OUT_EARPIECE;
-            sink.ext.device.desc = (char *)"pin_out_earpiece";
-            break;
-        case DEVICE_TYPE_SPEAKER:
-            sink.ext.device.type = PIN_OUT_SPEAKER;
-            sink.ext.device.desc = (char *)"pin_out_speaker";
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-            sink.ext.device.type = PIN_OUT_HEADSET;
-            sink.ext.device.desc = (char *)"pin_out_headset";
-            break;
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            sink.ext.device.type = PIN_OUT_USB_HEADSET;
-            sink.ext.device.desc = (char *)"pin_out_usb_headset";
-            break;
-        case DEVICE_TYPE_USB_HEADSET:
-            sink.ext.device.type = PIN_OUT_USB_EXT;
-            sink.ext.device.desc = (char *)"pin_out_usb_ext";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
-            sink.ext.device.desc = (char *)"pin_out_bluetooth_sco";
-            break;
-        default:
-            ret = ERR_NOT_SUPPORTED;
-            break;
-    }
-
-    return ret;
-}
-
 int32_t OffloadAudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
 {
-    AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
-    return SetOutputRoute(outputDevice, outputPortPin);
-}
-
-int32_t OffloadAudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin)
-{
-    AudioRouteNode source = {};
-    AudioRouteNode sink = {};
-
-    int32_t ret = SetOutputPortPin(outputDevice, sink);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
-
-    outputPortPin = sink.ext.device.type;
-    AUDIO_INFO_LOG("Output PIN is : 0x%{public}X", outputPortPin);
-    source.portId = 0;
-    source.role = AUDIO_PORT_SOURCE_ROLE;
-    source.type = AUDIO_PORT_MIX_TYPE;
-    source.ext.mix.moduleId = 0;
-    source.ext.mix.streamId = OFFLOAD_OUTPUT_STREAM_ID;
-    source.ext.device.desc = (char *)"";
-
-    sink.portId = static_cast<int32_t>(audioPort_.portId);
-    sink.role = AUDIO_PORT_SINK_ROLE;
-    sink.type = AUDIO_PORT_DEVICE_TYPE;
-    sink.ext.device.moduleId = 0;
-    sink.ext.device.desc = (char *)"";
-
-    AudioRoute route = {
-        .sources = &source,
-        .sourcesLen = 1,
-        .sinks = &sink,
-        .sinksLen = 1,
-    };
-
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
-        "failed, audioAdapter_ is null.");
-    ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
-        "UpdateAudioRoute failed");
-
-    return SUCCESS;
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t OffloadAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
-    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
-        ERR_INVALID_PARAM, "invalid audioScene");
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
-        "failed audio render handle is null");
-    if (openSpeaker_) {
-        AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
-        int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
-        }
-
-        AUDIO_INFO_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
-        struct AudioSceneDescriptor scene;
-        scene.scene.id = GetAudioCategory(audioScene);
-        scene.desc.pins = audioSceneOutPort;
-        scene.desc.desc = (char *)"";
-
-        ret = audioRender_->SelectScene(audioRender_, &scene);
-        CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
-            "Select scene FAILED: %{public}d", ret);
-    }
-
-    AUDIO_INFO_LOG("Select audio scene SUCCESS: %{public}d", audioScene);
-    return SUCCESS;
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t OffloadAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
@@ -820,9 +701,17 @@ int32_t OffloadAudioRendererSinkInner::Stop(void)
 
     if (started_) {
         CHECK_AND_RETURN_RET_LOG(!Flush(), ERR_OPERATION_FAILED, "Flush failed!");
-        return SUCCESS;
+        int32_t ret = audioRender_->Stop(audioRender_);
+        if (!ret) {
+            started_ = false;
+            return SUCCESS;
+        } else {
+            AUDIO_ERR_LOG("Stop failed!");
+            return ERR_OPERATION_FAILED;
+        }
     }
-    AUDIO_WARNING_LOG("Stop dumlicate");
+    OffloadRunningLockUnlock();
+    AUDIO_WARNING_LOG("Stop duplicate");
 
     return SUCCESS;
 }
@@ -870,9 +759,7 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
             AUDIO_ERR_LOG("Flush failed! timeout of 250ms");
         } else {
             int32_t ret = future.get();
-            if (!ret) {
-                started_ = false;
-            } else {
+            if (ret) {
                 AUDIO_ERR_LOG("Flush failed! ret %{public}d", ret);
             }
         }

@@ -52,6 +52,14 @@ public:
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
     void AbortCallback(int32_t abortTimes) override;
+    // offload
+    int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
+    int32_t UnsetOffloadMode() override;
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
+    int32_t OffloadSetVolume(float volume) override;
+    size_t GetWritableSize() override;
+    // offload end
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -67,6 +75,14 @@ private:
 
     const std::string GetEffectModeName(int32_t effectMode);
     const std::string GetEffectSceneName(AudioStreamType audioType);
+    // offload
+    int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
+    int32_t OffloadSetBufferSize(uint32_t sizeMs);
+    void SyncOffloadMode();
+    int32_t OffloadUpdatePolicy(AudioOffloadType statePolicy, bool force);
+    void ResetOffload();
+    int32_t OffloadUpdatePolicyInWrite();
+    // offload end
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
 
@@ -99,6 +115,15 @@ private:
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
     // Only for debug
     int32_t abortFlag_ = 0;
+    // offload
+    bool offloadEnable_ = false;
+    int64_t offloadTsOffset_ = 0;
+    uint64_t offloadTsLast_ = 0;
+    AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
+    AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
+    time_t lastOffloadUpdateFinishTime_ = 0;
+    FILE *dumpFile_ = nullptr;
+    // offload end
 };
 } // namespace AudioStandard
 } // namespace OHOS

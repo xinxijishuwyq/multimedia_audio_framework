@@ -318,5 +318,46 @@ int32_t IpcStreamInServer::GetPrivacyType(int32_t &privacyType)
     AUDIO_ERR_LOG("GetPrivacyType failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;
 }
+
+int32_t IpcStreamInServer::SetOffloadMode(int32_t state, bool isAppBack)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->SetOffloadMode(state, isAppBack);
+}
+
+int32_t IpcStreamInServer::UnsetOffloadMode()
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->UnsetOffloadMode();
+}
+
+int32_t IpcStreamInServer::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+}
+
+int32_t IpcStreamInServer::OffloadSetVolume(float volume)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->OffloadSetVolume(volume);
+}
 } // namespace AudioStandard
 } // namespace OHOS
