@@ -212,8 +212,6 @@ void CapturerInServer::ReadData(size_t length)
 
 int32_t CapturerInServer::OnReadData(size_t length)
 {
-    AUDIO_INFO_LOG("CapturerInServer::OnReadData, length: %{public}zu", length);
-
     ReadData(length);
     return SUCCESS;
 }

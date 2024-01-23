@@ -162,6 +162,7 @@ private:
 
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
+    static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t WRITE_TO_HDI_AHEAD_TIME = -1000000; // ahead 1ms
     static constexpr int32_t UPDATE_THREAD_TIMEOUT = 1000; // 1000ms
     enum ThreadStatus : uint32_t {
@@ -1281,8 +1282,10 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         }
         curTime = ClockTime::GetCurNano();
         Trace loopTrace("Record_loop_trace");
-        if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("Wake up too late!");
+        if (curTime - wakeUpTime > THREE_MILLISECOND_DURATION) {
+            AUDIO_WARNING_LOG("Wake up cost %{public}" PRId64" ms!", (curTime - wakeUpTime) / AUDIO_US_PER_SECOND);
+        } else if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
+            AUDIO_DEBUG_LOG("Wake up cost %{public}" PRId64" ms!", (curTime - wakeUpTime) / AUDIO_US_PER_SECOND);
         }
 
         curReadPos = dstAudioBuffer_->GetCurReadFrame();
@@ -1319,8 +1322,10 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             needReSyncPosition_ = false;
             continue;
         }
-        if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("Wake up too late!");
+        if (curTime - wakeUpTime > THREE_MILLISECOND_DURATION) {
+            AUDIO_WARNING_LOG("Wake up cost %{public}" PRId64" ms!", (curTime - wakeUpTime) / AUDIO_US_PER_SECOND);
+        } else if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
+            AUDIO_DEBUG_LOG("Wake up cost %{public}" PRId64" ms!", (curTime - wakeUpTime) / AUDIO_US_PER_SECOND);
         }
 
         // First, wake up at client may-write-done time, and check if all process write done.

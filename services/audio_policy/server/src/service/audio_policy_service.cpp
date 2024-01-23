@@ -2547,7 +2547,7 @@ std::string AudioPolicyService::GetLocalDevicesType()
 
 AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
 {
-    AUDIO_INFO_LOG("GetAudioScene return value: %{public}d", audioScene_);
+    AUDIO_DEBUG_LOG("GetAudioScene return value: %{public}d", audioScene_);
     if (!hasSystemPermission) {
         switch (audioScene_) {
             case AUDIO_SCENE_RINGING:
@@ -3869,7 +3869,7 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 
 int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService UpdateTracker");
+    AUDIO_DEBUG_LOG("Entered AudioPolicyService UpdateTracker");
     if (mode == AUDIO_MODE_PLAYBACK) {
         if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
             vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
