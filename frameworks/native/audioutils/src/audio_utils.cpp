@@ -428,7 +428,7 @@ FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, Au
         g_lastPara[para] = dumpPara;
         return dumpFile;
     }
-    AUDIO_INFO_LOG("%{public}s = %{public}s", para.c_str(), dumpPara.c_str());
+    AUDIO_DEBUG_LOG("%{public}s = %{public}s", para.c_str(), dumpPara.c_str());
     if (dumpPara == "w") {
         dumpFile = fopen(filePath.c_str(), "wb+");
         CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,

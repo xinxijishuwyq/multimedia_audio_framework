@@ -817,7 +817,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
 
 int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 {
-    AUDIO_INFO_LOG("GetTransactionId in");
+    AUDIO_DEBUG_LOG("GetTransactionId in");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetTransactionId failed audio render null");
     CHECK_AND_RETURN_RET_LOG(transactionId, ERR_INVALID_PARAM,

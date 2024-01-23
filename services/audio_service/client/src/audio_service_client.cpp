@@ -2289,7 +2289,7 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
     } else {
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
-    AUDIO_INFO_LOG("waiting for audio latency information");
+    AUDIO_DEBUG_LOG("waiting for audio latency information");
     StartTimer(INIT_TIMEOUT_IN_SEC);
     pa_threaded_mainloop_wait(mainLoop);
     StopTimer();
