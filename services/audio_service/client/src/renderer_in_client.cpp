@@ -182,6 +182,7 @@ public:
 
     void OnHandle(uint32_t code, int64_t data) override;
     void InitCallbackHandler();
+    void SafeSendCallbackEvent(uint32_t eventCode, int64_t data);
 
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
@@ -595,6 +596,14 @@ void RendererInClientInner::HandleRenderPeriodReachedEvent(int64_t rendererPerio
     }
 }
 
+void RendererInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
+{
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}" PRId64 "", eventCode, data);
+    CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
+    callbackHandler_->SendCallbackEvent(eventCode, data);
+}
+
 void RendererInClientInner::InitCallbackHandler()
 {
     if (callbackHandler_ == nullptr) {
@@ -942,7 +951,7 @@ int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStre
     if (state_ != PREPARED) {
         return SUCCESS;
     }
-    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, PREPARED);
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, PREPARED);
     return SUCCESS;
 }
 
@@ -1325,7 +1334,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     // in plan: call HiSysEventWrite
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
-    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, param);
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
 
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
@@ -1365,7 +1374,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     // in plan: call HiSysEventWrite
     int64_t param = -1;
     StateCmdTypeToParams(param, state_, cmdType);
-    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, param);
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
 
     AUDIO_INFO_LOG("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
         clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
@@ -1419,7 +1428,7 @@ bool RendererInClientInner::StopAudioStream()
     statusLock.unlock();
 
     // in plan: call HiSysEventWrite
-    callbackHandler_->SendCallbackEvent(STATE_CHANGE_EVENT, state_);
+    SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
     AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
@@ -1428,10 +1437,14 @@ bool RendererInClientInner::StopAudioStream()
 
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 {
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");
         return true;
     }
+    state_ = RELEASED;
+    statusLock.unlock();
+
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
         ipcStream_->Release();
@@ -1463,7 +1476,6 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
         }
     }
     paramsIsSet_ = false;
-    state_ = RELEASED;
 
     std::unique_lock<std::mutex> lock(streamCbMutex_);
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
@@ -1746,23 +1758,13 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 // OnRenderMarkReach by eventHandler
 void RendererInClientInner::SendRenderMarkReachedEvent(int64_t rendererMarkPosition)
 {
-    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
-    if (runnerReleased_) {
-        AUDIO_WARNING_LOG("SendRenderMarkReachedEvent runner released");
-        return;
-    }
-    callbackHandler_->SendCallbackEvent(RENDERER_MARK_REACHED_EVENT, rendererMarkPosition);
+    SafeSendCallbackEvent(RENDERER_MARK_REACHED_EVENT, rendererMarkPosition);
 }
 
 // OnRenderPeriodReach by eventHandler
 void RendererInClientInner::SendRenderPeriodReachedEvent(int64_t rendererPeriodSize)
 {
-    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
-    if (runnerReleased_) {
-        AUDIO_WARNING_LOG("SendRenderPeriodReachedEvent runner released");
-        return;
-    }
-    callbackHandler_->SendCallbackEvent(RENDERER_PERIOD_REACHED_EVENT, rendererPeriodSize);
+    SafeSendCallbackEvent(RENDERER_PERIOD_REACHED_EVENT, rendererPeriodSize);
 }
 
 int32_t RendererInClientInner::ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType)
