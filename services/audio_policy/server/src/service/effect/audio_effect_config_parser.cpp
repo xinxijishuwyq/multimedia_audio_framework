@@ -18,7 +18,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "system/etc/audio/audio_effect_config.xml";
+static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "sys_prod/etc/audio/audio_effect_config.xml";
+static constexpr char DEFAULT_AUDIO_EFFECT_CONFIG_FILE[] = "system/etc/audio/audio_effect_config.xml";
 static const std::string EFFECT_CONFIG_NAME[5] = {"libraries", "effects", "effectChains", "preProcess", "postProcess"};
 static constexpr int32_t FILE_CONTENT_ERROR = -2;
 static constexpr int32_t FILE_PARSE_ERROR = -3;
@@ -30,6 +31,8 @@ static constexpr int32_t INDEX_POSTPROCESS = 4;
 static constexpr int32_t INDEX_EXCEPTION = 5;
 static constexpr int32_t NODE_SIZE = 6;
 static constexpr int32_t MODULE_SIZE = 5;
+static constexpr int32_t XML_READ_PARAM_FIVE = 5;
+static constexpr int32_t XML_READ_PARAM_SIX = 6;
 
 AudioEffectConfigParser::AudioEffectConfigParser()
 {
@@ -42,10 +45,9 @@ AudioEffectConfigParser::~AudioEffectConfigParser()
 
 static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
 {
-    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, FILE_PARSE_ERROR,
-        "error: could not parse file %{public}s", AUDIO_EFFECT_CONFIG_FILE);
+    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, FILE_PARSE_ERROR, "error: could not parse file");
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_effects_conf"))) {
-        AUDIO_ERR_LOG("Missing tag - audio_effects_conf: %{public}s", AUDIO_EFFECT_CONFIG_FILE);
+        AUDIO_ERR_LOG("Missing tag - audio_effects_conf");
         xmlFreeDoc(doc);
         xmlCleanupParser();
         return FILE_CONTENT_ERROR;
@@ -54,7 +56,7 @@ static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
     if (currNode->xmlChildrenNode) {
         return 0;
     } else {
-        AUDIO_ERR_LOG("Missing node - audio_effects_conf: %s", AUDIO_EFFECT_CONFIG_FILE);
+        AUDIO_ERR_LOG("Missing node - audio_effects_conf");
         xmlFreeDoc(doc);
         xmlCleanupParser();
         return FILE_CONTENT_ERROR;
@@ -541,14 +543,18 @@ static void LoadEffectConfigException(OriginalEffectConfig &result, const xmlNod
 int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
 {
     int32_t countFirstNode[NODE_SIZE] = {0};
-    int32_t i = 0;
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
-    AUDIO_INFO_LOG("AudioEffectParser::LoadConfig");
-    // 5, 6: arguments
-    doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1 << 5) | (1 << 6));
-    CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR,
-        "error: could not parse file %{public}s", AUDIO_EFFECT_CONFIG_FILE);
+
+    if (access(AUDIO_EFFECT_CONFIG_FILE, R_OK) == 0) {
+        AUDIO_INFO_LOG("load audio effect config");
+        doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
+    } else {
+        AUDIO_INFO_LOG("load default audio effect config");
+        doc = xmlReadFile(DEFAULT_AUDIO_EFFECT_CONFIG_FILE,
+            nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
+    }
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "error: could not parse audio effect config file");
 
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
@@ -583,7 +589,7 @@ int32_t AudioEffectConfigParser::LoadEffectConfig(OriginalEffectConfig &result)
         currNode = currNode->next;
     }
 
-    for (i = 0; i < MODULE_SIZE; i++) {
+    for (int32_t i = 0; i < MODULE_SIZE; i++) {
         if (countFirstNode[i] == 0) {
             AUDIO_WARNING_LOG("missing information: %{public}s", EFFECT_CONFIG_NAME[i].c_str());
         }
