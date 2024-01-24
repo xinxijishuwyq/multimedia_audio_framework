@@ -58,7 +58,7 @@ const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_S_TO_NS = 1000000000;
 const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
-const uint64_t AUDIO_FIRST_FRAME_LATENCY = 130; //ms
+const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
 
 static const string INNER_CAPTURER_SOURCE = "Speaker.monitor";
 
