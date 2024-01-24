@@ -18,8 +18,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "sys_prod/etc/audio/audio_effect_config.xml";
-static constexpr char DEFAULT_AUDIO_EFFECT_CONFIG_FILE[] = "system/etc/audio/audio_effect_config.xml";
+static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "etc/audio/audio_effect_config.xml";
 static const std::string EFFECT_CONFIG_NAME[5] = {"libraries", "effects", "effectChains", "preProcess", "postProcess"};
 static constexpr int32_t FILE_CONTENT_ERROR = -2;
 static constexpr int32_t FILE_PARSE_ERROR = -3;
@@ -45,16 +44,21 @@ AudioEffectConfigParser::~AudioEffectConfigParser()
 
 static int32_t ParseEffectConfigFile(xmlDoc* &doc)
 {
-    if (access(AUDIO_EFFECT_CONFIG_FILE, R_OK) == 0) {
-        AUDIO_INFO_LOG("load audio effect config");
-        doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
-        CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load audio effect config fail");
-    } else {
-        AUDIO_INFO_LOG("load default audio effect config");
-        doc = xmlReadFile(DEFAULT_AUDIO_EFFECT_CONFIG_FILE,
-            nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
-        CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load default audio effect config fail");
+    CfgFiles *cfgFiles = GetCfgFiles(AUDIO_EFFECT_CONFIG_FILE);
+    if (cfgFiles == nullptr) {
+        AUDIO_ERR_LOG("Not found audio_effect_config.xml!");
+        return FILE_PARSE_ERROR;
     }
+
+    for (int32_t i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; i--) {
+        if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
+            AUDIO_INFO_LOG("effect config file path:%{public}s", cfgFiles->paths[i]);
+            doc = xmlReadFile(cfgFiles->paths[i], nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
+            break;
+        }
+    }
+    FreeCfgFiles(cfgFiles);
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load audio effect config fail");
     return 0;
 }
 
