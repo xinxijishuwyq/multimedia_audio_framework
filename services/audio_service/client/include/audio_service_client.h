@@ -186,8 +186,6 @@ public:
 
     int32_t StopStreamPlayback();
 
-    int32_t OffloadStopStream();
-
     /**
     * Flushes the stream created using CreateStream. This is applicable for
     * playback only
@@ -282,8 +280,6 @@ public:
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
     int32_t UpdateStreamPosition(UpdatePositionTimeNode node);
-
-    void GetOffloadCurrentTimeStamp(uint64_t& timeStamp, bool beforeLocked);
 
     /**
     * Provides the current latency for playback/record stream created using CreateStream
@@ -744,6 +740,11 @@ private:
     uint32_t underFlowCount;
     int64_t offloadTsOffset_ = 0;
     uint64_t offloadTsLast_ = 0;
+    uint64_t offloadWriteIndex_ = 0;
+    uint64_t offloadReadIndex_ = 0;
+    uint64_t offloadTimeStamp_ = 0;
+    uint64_t offloadLastHdiPosFrames_ = 0;
+    uint64_t offloadLastHdiPosTs_ = 0;
     std::timed_mutex offloadWaitWriteableMutex_;
     AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
@@ -763,8 +764,11 @@ private:
     int32_t UpdatePolicyOffload(AudioOffloadType statePolicy);
     int32_t InitializePAProbListOffload();
     int32_t CheckOffloadPolicyChanged();
-    int32_t GetAudioLatencyOffload(uint64_t &latency);
+    void GetAudioLatencyOffload(uint64_t &latency);
     void ResetOffload();
+    int32_t OffloadStopStream();
+    void GetOffloadCurrentTimeStamp(uint64_t paTimeStamp, uint64_t paWriteIndex, uint64_t &outTimeStamp);
+    void GetOffloadApproximatelyCacheTime(uint64_t timeStamp, uint64_t paWriteIndex, uint64_t &cacheTimePaDsp);
     int32_t CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
