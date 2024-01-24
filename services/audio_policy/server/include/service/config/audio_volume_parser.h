@@ -29,7 +29,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-#ifdef USB_CONFIG_POLICY
+#ifdef USE_CONFIG_POLICY
 static constexpr char AUDIO_VOLUME_CONFIG_FILE[] = "etc/audio/audio_volume_config.xml";
 #else
 static constexpr char AUDIO_VOLUME_CONFIG_FILE[] = "system/etc/audio/audio_volume_config.xml";

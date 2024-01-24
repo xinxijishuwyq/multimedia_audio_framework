@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "audio_focus_parser.h"
-#ifdef USB_CONFIG_POLICY
+#ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
 #endif
 
@@ -115,7 +115,7 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
 {
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
-#ifdef USB_CONFIG_POLICY
+#ifdef USE_CONFIG_POLICY
     char buf[MAX_PATH_LEN];
     char *path = GetOneCfgFile(AUDIO_FOCUS_CONFIG_FILE, buf, MAX_PATH_LEN);
 #else
