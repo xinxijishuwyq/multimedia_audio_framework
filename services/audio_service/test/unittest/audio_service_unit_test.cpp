@@ -379,7 +379,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceClient_002, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = audioServiceClient->SetStreamOffloadMode(2, true);
     EXPECT_EQ(SUCCESS, ret);
-    ret = audioServiceClient->OffloadStopStream();
+    ret = audioServiceClient->StopStream();
     EXPECT_EQ(SUCCESS, ret);
     ret = audioServiceClient->UnsetStreamOffloadMode();
     EXPECT_EQ(SUCCESS, ret);
