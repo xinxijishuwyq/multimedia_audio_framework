@@ -15,6 +15,7 @@
 #include "audio_effect_config_parser.h"
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include "config_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
