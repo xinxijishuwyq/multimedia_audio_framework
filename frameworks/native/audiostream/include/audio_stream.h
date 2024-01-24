@@ -169,6 +169,7 @@ private:
     std::mutex bufferQueueLock_;
     std::condition_variable bufferQueueCV_;
     AudioStreamParams streamParams_;
+    AudioStreamParams streamOriginParams_;
     AudioBlend audioBlend_;
     VolumeRamp volumeRamp_;
     FILE *pfd_;
