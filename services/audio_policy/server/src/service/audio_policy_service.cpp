@@ -2485,18 +2485,6 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     audioScene_ = audioScene;
 
-    int32_t result = SUCCESS;
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        result = gsp->SetAudioScene(audioScene, DEVICE_TYPE_USB_ARM_HEADSET);
-        IPCSkeleton::SetCallingIdentity(identity);
-    } else {
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
-        IPCSkeleton::SetCallingIdentity(identity);
-    }
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
-
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
         audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
@@ -2508,6 +2496,18 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     // fetch input&output device
     FetchDevice(true);
     FetchDevice(false);
+
+    int32_t result = SUCCESS;
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
+        result = gsp->SetAudioScene(audioScene, DEVICE_TYPE_USB_ARM_HEADSET);
+        IPCSkeleton::SetCallingIdentity(identity);
+    } else {
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
+        result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
+        IPCSkeleton::SetCallingIdentity(identity);
+    }
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "SetAudioScene failed [%{public}d]", result);
 
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
