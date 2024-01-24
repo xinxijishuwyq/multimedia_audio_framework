@@ -764,6 +764,7 @@ void AudioPolicyService::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor
         audioDeviceDescriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
             currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+        Bluetooth::AudioHfpManager::DisconnectSco();
     }
     if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -2426,6 +2427,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+            Bluetooth::AudioHfpManager::DisconnectSco();
         }
 #endif
     } else {
@@ -2435,6 +2437,7 @@ int32_t AudioPolicyService::SetDeviceActive(InternalDeviceType deviceType, bool 
             deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+            Bluetooth::AudioHfpManager::DisconnectSco();
         }
         if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -5421,6 +5424,7 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
             deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+            Bluetooth::AudioHfpManager::DisconnectSco();
         }
         if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -5435,6 +5439,7 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
             deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
                 currentActiveDevice_.macAddress_, USER_NOT_SELECT_BT);
+            Bluetooth::AudioHfpManager::DisconnectSco();
         }
 #endif
     }
