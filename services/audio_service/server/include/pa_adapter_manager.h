@@ -112,6 +112,7 @@ private:
     bool isContextConnected_;
     bool isMainLoopStarted_;
     ManagerType managerType_ = PLAYBACK;
+    bool waitConnect_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS
