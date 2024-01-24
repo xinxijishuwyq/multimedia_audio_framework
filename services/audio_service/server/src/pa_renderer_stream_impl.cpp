@@ -35,6 +35,7 @@ const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink
 const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sink.c
 const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_US_PER_MS = 1000;
+const uint64_t AUDIO_NS_PER_US = 1000;
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -796,11 +797,13 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
     int64_t timeSec;
     int64_t timeNanoSec;
     OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
-    int64_t framesInt = static_cast<int64_t>(frames);
+    int64_t timeDelta = static_cast<int64_t>(timeStamp) -
+                        static_cast<int64_t>(timeSec * AUDIO_US_PER_SECOND + timeNanoSec / AUDIO_NS_PER_US);
+    int64_t framesInt = static_cast<int64_t>(frames) + timeDelta;
+    framesInt = framesInt > 0 ? framesInt : 0;
     int64_t readIndexInt = static_cast<int64_t>(readIndex);
-    if (framesInt + offloadTsOffset_ <
-        readIndexInt - static_cast<int64_t>(OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BUFFER) *
-                       static_cast<int64_t>(AUDIO_US_PER_MS) ||
+    if (framesInt + offloadTsOffset_ < readIndexInt - static_cast<int64_t>(
+        (OFFLOAD_HDI_CACHE2 + MAX_LENGTH_OFFLOAD + OFFLOAD_BUFFER) * AUDIO_US_PER_MS) ||
         framesInt + offloadTsOffset_ > readIndexInt || first) {
         offloadTsOffset_ = readIndexInt - framesInt;
     }

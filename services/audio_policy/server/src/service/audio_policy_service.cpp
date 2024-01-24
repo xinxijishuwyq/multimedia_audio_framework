@@ -452,8 +452,8 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         return;
     }
 
-    AUDIO_INFO_LOG("sessionId[%{public}d] UID[%{public}d] StreamType[%{public}d] Getting offload stream",
-        sessionId, offloadUID, streamType);
+    AUDIO_INFO_LOG("sessionId[%{public}d] UID[%{public}d] CallingUid[%{public}d] StreamType[%{public}d] "
+                   "Getting offload stream", sessionId, offloadUID, CallingUid, streamType);
     lock_guard<mutex> lock(offloadMutex_);
 
     if (!offloadSessionID_.has_value()) {

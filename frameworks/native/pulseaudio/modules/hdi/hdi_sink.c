@@ -1990,11 +1990,9 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
     } else if (corking) {
         pa_atomic_store(&u->offload.hdistate, 2); // 2 indicates corking
         OffloadRewindAndFlush(u, i, false);
-        OffloadUnlock(u);
     } else if (stopping) {
         u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
         OffloadReset(u);
-        OffloadUnlock(u);
     }
 }
 
@@ -2260,10 +2258,9 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now
             GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
             if (nOffload == 0) {
                 flag = false;
-                OffloadUnlock(u);
             }
         }
-    } else {
+    } else if (!PA_SINK_IS_OPENED(u->sink->thread_info.state)) {
         OffloadUnlock(u);
     }
     *flagOut = flag;
@@ -2962,14 +2959,6 @@ static int32_t SinkSetStateInIoThreadCbStartPrimary(struct Userdata *u, pa_sink_
         return 0;
     }
 
-    unsigned nPrimary;
-    unsigned nOffload;
-    unsigned nMultiChannel;
-    GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, true);
-    if (u->offload_enable && nPrimary == 0) {
-        return 0;
-    }
-
     if (u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter)) {
         AUDIO_ERR_LOG("audiorenderer control start failed!");
         u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
@@ -2977,6 +2966,7 @@ static int32_t SinkSetStateInIoThreadCbStartPrimary(struct Userdata *u, pa_sink_
         u->primary.isHDISinkStarted = true;
         u->writeCount = 0;
         u->renderCount = 0;
+        AUDIO_INFO_LOG("SinkSetStateInIoThreadCbStartPrimary, Successfully restarted HDI renderer");
     }
     return 0;
 }
@@ -3053,7 +3043,6 @@ static pa_hook_result_t SinkInputMoveStartCb(pa_core *core, pa_sink_input *i, st
         const bool maybeOffload = pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) != 0;
         if (maybeOffload || InputIsOffload(i)) {
             OffloadRewindAndFlush(u, i, false);
-            OffloadUnlock(u);
             pa_sink_input_update_max_rewind(i, 0);
         }
     }
