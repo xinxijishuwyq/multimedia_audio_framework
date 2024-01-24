@@ -343,7 +343,7 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         ReleaseAudioStream(false);
     }
     AudioStreamParams param = info;
-
+    streamOriginParams_ = info;
     int32_t ret = 0;
 
     if ((ret = InitFromParams(param)) != SUCCESS) {
@@ -1142,7 +1142,7 @@ void AudioStream::SetStreamTrackerState(bool trackerRegisteredState)
 
 void AudioStream::GetSwitchInfo(SwitchInfo& info)
 {
-    GetAudioStreamParams(info.params);
+    info.params = streamOriginParams_;
 
     info.rendererInfo = rendererInfo_;
     info.capturerInfo = capturerInfo_;
@@ -1298,7 +1298,7 @@ bool AudioStream::RestoreAudioStream()
     state_ = NEW;
     SetStreamTrackerState(false);
 
-    int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
+    int32_t ret = SetAudioStreamInfo(streamOriginParams_, proxyObj_);
     if (ret != SUCCESS) {
         goto error;
     }
