@@ -538,6 +538,7 @@ private:
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool isAvSessionSetVoipStart = false;
+    std::set<uint32_t> saveAppCapTokenIdThroughMS;
 };
 } // namespace AudioStandard
 } // namespace OHOS

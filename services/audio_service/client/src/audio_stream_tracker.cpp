@@ -51,6 +51,7 @@ void AudioStreamTracker::RegisterTracker(const AudioRegisterTrackerInfo &registe
         streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(registerTrackerInfo.state);
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo = registerTrackerInfo.capturerInfo;
         streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceRole = INPUT_DEVICE;
+        streamChangeInfo.audioCapturerChangeInfo.appTokenId = registerTrackerInfo.appTokenId;
     }
     AudioPolicyManager::GetInstance().RegisterTracker(eMode_, streamChangeInfo, clientTrackerObj);
 }
