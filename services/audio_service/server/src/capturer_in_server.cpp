@@ -25,7 +25,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
-    static const size_t CAPTURER_BUFFER_MAX_NUM = 4;
+    static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
+    static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
 }
 
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -49,7 +50,9 @@ int32_t CapturerInServer::ConfigServerBuffer()
     }
 
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    totalSizeInFrame_ = spanSizeInFrame_ * CAPTURER_BUFFER_MAX_NUM; // 4 frames
+    const size_t bufferNum = ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP)
+        ? CAPTURER_BUFFER_WAKE_UP_NUM : CAPTURER_BUFFER_DEFAULT_NUM);
+    totalSizeInFrame_ = spanSizeInFrame_ * bufferNum;
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     spanSizeInBytes_ = byteSizePerFrame_ * spanSizeInFrame_;
     AUDIO_INFO_LOG("ConfigProcessBuffer: totalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu,"
@@ -186,7 +189,8 @@ void CapturerInServer::ReadData(size_t length)
         audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_);
     if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
         AUDIO_INFO_LOG("OverFlow!!!");
-        stream_->DequeueBuffer(length);
+        BufferDesc dstBuffer = stream_->DequeueBuffer(length);
+        stream_->EnqueueBuffer(dstBuffer);
         stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
         return;
     }

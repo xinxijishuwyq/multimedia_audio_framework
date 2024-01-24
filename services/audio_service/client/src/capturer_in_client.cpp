@@ -1525,8 +1525,15 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
             }
             // wait for server read some data
             std::unique_lock<std::mutex> readLock(readDataMutex_);
-            std::cv_status stat = readDataCV_.wait_for(readLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
-            CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
+            bool isTimeout = !readDataCV_.wait_for(readLock,
+                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+                int32_t currentSizeInFrame = clientBuffer_->GetAvailableDataFrames();
+                CHECK_AND_RETURN_RET_LOG(currentSizeInFrame >= 0, true, "invalid");
+                return ((currentSizeInFrame * sizePerFrameInByte_) >= clientSpanSizeInByte_);
+            });
+            if (isTimeout) {
+                AUDIO_WARNING_LOG("timeout");
+            }
         }
     }
     HandleCapturerPositionChanges(readSize);
