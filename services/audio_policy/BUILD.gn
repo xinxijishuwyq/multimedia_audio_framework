@@ -247,7 +247,7 @@ ohos_shared_library("audio_policy_service") {
   ]
 
   if (audio_framework_config_policy_enable) {
-    defines += [ "USB_CONFIG_POLICY" ]
+    defines += [ "USE_CONFIG_POLICY" ]
     external_deps += [ "config_policy:configpolicy_util" ]
   }
 

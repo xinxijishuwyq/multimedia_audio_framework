@@ -15,11 +15,17 @@
 #include "audio_effect_config_parser.h"
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
+#ifdef USE_CONFIG_POLICY
 static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "etc/audio/audio_effect_config.xml";
+#else
+static constexpr char AUDIO_EFFECT_CONFIG_FILE[] = "system/etc/audio/audio_effect_config.xml";
+#endif
 static const std::string EFFECT_CONFIG_NAME[5] = {"libraries", "effects", "effectChains", "preProcess", "postProcess"};
 static constexpr int32_t FILE_CONTENT_ERROR = -2;
 static constexpr int32_t FILE_PARSE_ERROR = -3;
@@ -45,6 +51,7 @@ AudioEffectConfigParser::~AudioEffectConfigParser()
 
 static int32_t ParseEffectConfigFile(xmlDoc* &doc)
 {
+#ifdef USE_CONFIG_POLICY
     CfgFiles *cfgFiles = GetCfgFiles(AUDIO_EFFECT_CONFIG_FILE);
     if (cfgFiles == nullptr) {
         AUDIO_ERR_LOG("Not found audio_effect_config.xml!");
@@ -59,6 +66,10 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
         }
     }
     FreeCfgFiles(cfgFiles);
+#else
+    AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_EFFECT_CONFIG_FILE);
+    doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
+#endif
     CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load audio effect config fail");
     return 0;
 }

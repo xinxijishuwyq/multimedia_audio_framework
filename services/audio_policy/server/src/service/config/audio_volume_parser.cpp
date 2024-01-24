@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "audio_volume_parser.h"
-#ifdef USB_CONFIG_POLICY
+#ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
 #endif
 
@@ -87,7 +87,7 @@ int32_t AudioVolumeParser::LoadConfig(StreamVolumeInfoMap &streamVolumeInfoMap)
 {
     AUDIO_INFO_LOG("Load Volume Config xml");
     int ret = ERROR;
-#ifdef USB_CONFIG_POLICY
+#ifdef USE_CONFIG_POLICY
     CfgFiles *cfgFiles = GetCfgFiles(AUDIO_VOLUME_CONFIG_FILE);
     if (cfgFiles == nullptr) {
         AUDIO_ERR_LOG("Not found audio_volume_config.xml!");
