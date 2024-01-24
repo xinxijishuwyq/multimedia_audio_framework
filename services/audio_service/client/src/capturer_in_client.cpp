@@ -207,6 +207,8 @@ private:
     void ReadCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
+
+    int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -1472,6 +1474,53 @@ int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t bufferSize)
     return ERR_INVALID_OPERATION;
 }
 
+int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer,
+    bool isBlockingRead)
+{
+    AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
+    OptResult result = ringCache_->GetReadableSize();
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "GetReadableSize err %{public}d", result.ret);
+    size_t readableSize = std::min(result.size, userSize - readSize);
+    if (readSize + result.size >= userSize) { // If ringCache is sufficient
+        result = ringCache_->Dequeue({&buffer + (readSize), readableSize});
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "DequeueCache err %{public}d", result.ret);
+        readSize += readableSize;
+        HandleCapturerPositionChanges(readSize);
+        return readSize; // data size
+    }
+    if (result.size != 0) {
+        result = ringCache_->Dequeue({&buffer + readSize, result.size});
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "Dequeue failed %{public}d", result.ret);
+        readSize += result.size;
+    }
+    uint64_t availableSizeInFrame = clientBuffer_->GetCurWriteFrame() - clientBuffer_->GetCurReadFrame();
+    AUDIO_DEBUG_LOG("availableSizeInFrame %{public}" PRId64 "", availableSizeInFrame);
+    if (availableSizeInFrame > 0) { // If OHAudioBuffer has data
+        BufferDesc currentOHBuffer_ = {};
+        clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
+        BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
+        ringCache_->Enqueue(bufferWrap);
+        clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
+    } else {
+        if (!isBlockingRead) {
+            HandleCapturerPositionChanges(readSize);
+            return readSize; // Return buffer immediately
+        }
+        // wait for server read some data
+        std::unique_lock<std::mutex> readLock(readDataMutex_);
+        bool isTimeout = !readDataCV_.wait_for(readLock,
+            std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+            int32_t currentSizeInFrame = clientBuffer_->GetAvailableDataFrames();
+            CHECK_AND_RETURN_RET_LOG(currentSizeInFrame >= 0, true, "invalid");
+            return ((currentSizeInFrame * sizePerFrameInByte_) >= clientSpanSizeInByte_);
+        });
+        if (isTimeout) {
+            AUDIO_WARNING_LOG("timeout");
+        }
+    }
+    return readSize;
+}
+
 int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 {
     Trace trace("CapturerInClientInner::Read " + std::to_string(userSize));
@@ -1491,41 +1540,8 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     statusLock.unlock();
     size_t readSize = 0;
     while (readSize < userSize) {
-        AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
-        OptResult result = ringCache_->GetReadableSize();
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "GetReadableSize err %{public}d", result.ret);
-        size_t readableSize = std::min(result.size, userSize - readSize);
-        if (readSize + result.size >= userSize) { // If ringCache is sufficient
-            result = ringCache_->Dequeue({&buffer + (readSize), readableSize});
-            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "DequeueCache err %{public}d", result.ret);
-            readSize += readableSize;
-            HandleCapturerPositionChanges(readSize);
-            return readSize; // data size
-        }
-
-        if (result.size != 0) {
-            result = ringCache_->Dequeue({&buffer + readSize, result.size});
-            CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "Dequeue failed %{public}d", result.ret);
-            readSize += result.size;
-        }
-        uint64_t availableSizeInFrame = clientBuffer_->GetCurWriteFrame() - clientBuffer_->GetCurReadFrame();
-        AUDIO_DEBUG_LOG("availableSizeInFrame %{public}" PRId64 "", availableSizeInFrame);
-        if (availableSizeInFrame > 0) { // If OHAudioBuffer has data
-            BufferDesc currentOHBuffer_ = {};
-            clientBuffer_->GetReadbuffer(clientBuffer_->GetCurReadFrame(), currentOHBuffer_);
-            BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
-            ringCache_->Enqueue(bufferWrap);
-            clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
-        } else {
-            if (!isBlockingRead) {
-                HandleCapturerPositionChanges(readSize);
-                return readSize; // Return buffer immediately
-            }
-            // wait for server read some data
-            std::unique_lock<std::mutex> readLock(readDataMutex_);
-            std::cv_status stat = readDataCV_.wait_for(readLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS));
-            CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
-        }
+        int32_t res = HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
+        CHECK_AND_RETURN_RET_LOG(res >= 0, ERROR, "HandleCapturerRead err : %{public}d", res);
     }
     HandleCapturerPositionChanges(readSize);
     return readSize;
