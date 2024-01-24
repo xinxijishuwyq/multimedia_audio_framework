@@ -129,7 +129,8 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_UNDERRUN:
             AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
                 audioServerBuffer_->GetAvailableDataFrames());
-            if (audioServerBuffer_->GetAvailableDataFrames() == 4 * spanSizeInFrame_) { //In plan, maxlength is 4
+            // In plan, maxlength is 4
+            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
                 AUDIO_INFO_LOG("Buffer is empty");
                 needStart = 0;
             } else {

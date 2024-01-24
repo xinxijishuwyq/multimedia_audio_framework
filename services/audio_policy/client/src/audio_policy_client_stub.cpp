@@ -67,7 +67,7 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
     std::list<std::pair<AudioInterrupt, AudioFocuState>> infoList;
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
     int32_t size = data.ReadInt32();
-    for (uint32_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         focusInfo.first.Unmarshalling(data);
         focusInfo.second = static_cast<AudioFocuState>(data.ReadInt32());
         infoList.emplace_back(focusInfo);
