@@ -101,8 +101,6 @@ void NapiRendererPeriodPositionCallback::WorkCallbackRendererPeriodPosition(uv_w
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s fail to call position callback", request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-    delete event;
-    delete work;
 }
 
 void NapiRendererPeriodPositionCallback::OnJsRendererPeriodPositionCallback(
