@@ -1142,7 +1142,7 @@ void AudioStream::SetStreamTrackerState(bool trackerRegisteredState)
 
 void AudioStream::GetSwitchInfo(SwitchInfo& info)
 {
-    GetAudioStreamParams(info.params);
+    info.params = streamOriginParams_;
 
     info.rendererInfo = rendererInfo_;
     info.capturerInfo = capturerInfo_;
