@@ -374,6 +374,18 @@ bool AudioPolicyServerHandler::SendCapturerRemovedEvent(uint64_t sessionId, bool
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendWakeupCloseEvent(bool isSync)
+{
+    bool ret;
+    if (isSync) {
+        ret = SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::ON_WAKEUP_CLOSE));
+    } else {
+        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::ON_WAKEUP_CLOSE));
+    }
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "failed");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -630,6 +642,11 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
     AudioPolicyService::GetAudioPolicyService().OnCapturerSessionRemoved(sessionID);
 }
 
+void AudioPolicyServerHandler::HandleWakeupCloaseEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    AudioPolicyService::GetAudioPolicyService().CloseWakeUpAudioCapturer();
+}
+
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -660,6 +677,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::ON_CAPTURER_REMOVED:
             HandleCapturerRemovedEvent(event);
+            break;
+        case EventAudioServerCmd::ON_WAKEUP_CLOSE:
+            HandleWakeupCloaseEvent(event);
             break;
         default:
             break;

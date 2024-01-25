@@ -37,8 +37,6 @@ std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSe
 std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
 int32_t g_playbackCapturerSourceOutputIndex = -1;
 
-std::set<uint32_t> g_wakeupCapturerSourceOutputIndexs;
-
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
     {"music", STREAM_MUSIC},
@@ -811,11 +809,6 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
             g_playbackCapturerSourceOutputIndex = i->index;
         }
     }
-
-    auto isWakeup = pa_proplist_gets(i->proplist, "stream.isWakeupCapturer");
-    if (isWakeup && !strcmp("1", isWakeup)) {
-        g_wakeupCapturerSourceOutputIndexs.insert(i->index);
-    }
 }
 
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
@@ -932,12 +925,6 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
             idx == static_cast<uint32_t>(g_playbackCapturerSourceOutputIndex)) {
             g_audioServiceAdapterCallback->OnPlaybackCapturerStop();
             g_playbackCapturerSourceOutputIndex = -1;
-        }
-
-        auto it = g_wakeupCapturerSourceOutputIndexs.find(idx);
-        if (it != g_wakeupCapturerSourceOutputIndexs.end()) {
-            g_wakeupCapturerSourceOutputIndexs.erase(it);
-            g_audioServiceAdapterCallback->OnWakeupCapturerStop(sessionID);
         }
     }
 }

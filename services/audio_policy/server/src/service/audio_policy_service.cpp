@@ -1359,6 +1359,12 @@ int32_t AudioPolicyService::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, 
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::NotifyWakeUpCapturerRemoved()
+{
+    audioPolicyServerHandler_->SendWakeupCloseEvent(false);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 {
     AUDIO_INFO_LOG("CloseWakeUpAudioCapturer start");
