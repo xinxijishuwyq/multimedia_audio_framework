@@ -2467,9 +2467,9 @@ static void ThreadFuncRendererTimerMultiChannel(void *userdata)
 
     u->multiChannel.timestamp = pa_rtclock_now();
     const uint64_t pw = u->multiChannel.prewrite;
-    int ret;
     pthread_rwlock_rdlock(&u->rwlockSleep);
     while (true) {
+        int32_t ret;
         if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
             AUDIO_WARNING_LOG("ThreadFuncRendererTimerMultiChannel pthread_mutex_unlock ret %d", ret);
         }

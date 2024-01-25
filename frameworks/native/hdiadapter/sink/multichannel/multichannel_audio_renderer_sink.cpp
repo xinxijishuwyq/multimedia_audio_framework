@@ -157,13 +157,13 @@ MultiChannelRendererSinkInner::~MultiChannelRendererSinkInner()
     AUDIO_INFO_LOG("~MultiChannelRendererSinkInner");
 }
 
-MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(std::string halName)
+MultiChannelRendererSink *MultiChannelRendererSink::GetInstance(const std::string &halName)
 {
     static MultiChannelRendererSinkInner audioRenderer;
     return &audioRenderer;
 }
 
-static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, const string adapterNameCase,
+static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, const string &adapterNameCase,
     enum AudioPortDirection portFlag, struct AudioPort &renderPort, uint32_t size)
 {
     if (descs == nullptr) {
