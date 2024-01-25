@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 class MultiChannelRendererSink : public IAudioRendererSink {
 public:
-    static MultiChannelRendererSink *GetInstance(std::string halName);
+    static MultiChannelRendererSink *GetInstance(const std::string &halName);
 
     MultiChannelRendererSink() = default;
     ~MultiChannelRendererSink() = default;
