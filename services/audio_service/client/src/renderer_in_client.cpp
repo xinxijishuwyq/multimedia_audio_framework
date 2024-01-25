@@ -1536,7 +1536,7 @@ int32_t RendererInClientInner::DrainRingCache()
 {
     // send all data in ringCache_ to server even if GetReadableSize() < clientSpanSizeInByte_.
     Trace trace("RendererInClientInner::DrainRingCache " + std::to_string(sessionId_));
-    std::lock_guard<std::mutex> lock(writeMutex_);
+
     OptResult result = ringCache_->GetReadableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
     size_t readableSize = result.size;
@@ -1570,7 +1570,7 @@ bool RendererInClientInner::DrainAudioStream()
         AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
         return false;
     }
-
+    std::lock_guard<std::mutex> lock(writeMutex_);
     CHECK_AND_RETURN_RET_LOG(DrainRingCache() == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");

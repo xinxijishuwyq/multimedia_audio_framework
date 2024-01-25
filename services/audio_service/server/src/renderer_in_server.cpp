@@ -402,7 +402,7 @@ int32_t RendererInServer::Stop()
 {
     {
         std::unique_lock<std::mutex> lock(statusLock_);
-        if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
+        if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING) {
             AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_);
             return ERR_ILLEGAL_STATE;
         }
