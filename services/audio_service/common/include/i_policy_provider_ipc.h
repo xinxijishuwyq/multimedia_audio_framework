@@ -37,6 +37,7 @@ public:
         INIT_VOLUME_MAP,
         SET_WAKEUP_ADUIO_CAPTURER,
         SET_AUDIO_CAPTURER,
+        REMOVE_WAKEUP_CAPUTER,
         POLICY_PROVIDER_MAX_MSG,
     };
 

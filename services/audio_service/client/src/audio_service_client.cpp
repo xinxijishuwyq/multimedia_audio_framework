@@ -833,21 +833,8 @@ std::pair<const int32_t, const std::string> AudioServiceClient::GetDeviceNameFor
         }
 
         if (isWakeupCapturerStream_) {
-            int32_t no = AudioPolicyManager::GetInstance().SetWakeUpAudioCapturer({});
-            if (no < 0) {
-                AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error! ErrorCode: %{public}d", no);
-                return {no, ""};
-            }
-
-            if (no >= WAKEUP_LIMIT) {
-                AUDIO_ERR_LOG("SetWakeUpAudioCapturer Error! client no>=WAKEUP_LIMIT no=: %{public}d", no);
-                return {AUDIO_CLIENT_CREATE_STREAM_ERR, ""};
-            }
-
-            if (no < WAKEUP_LIMIT) {
-                deviceName = WAKEUP_NAMES[no];
-                return {AUDIO_CLIENT_SUCCESS, deviceName};
-            }
+            AUDIO_ERR_LOG("non-IPC channels will no longer support voice wakeup");
+            return {AUDIO_CLIENT_ERR, deviceName};
         }
     }
     return {AUDIO_CLIENT_SUCCESS, deviceName};

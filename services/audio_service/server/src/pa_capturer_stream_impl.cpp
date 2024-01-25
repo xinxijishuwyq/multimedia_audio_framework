@@ -17,6 +17,7 @@
 #include "pa_adapter_tools.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "policy_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -295,6 +296,9 @@ int32_t PaCapturerStreamImpl::Release()
         pa_stream_disconnect(paStream_);
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
+    }
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) {
+        PolicyHandler::GetInstance().NotifyWakeUpCapturerRemoved();
     }
     return SUCCESS;
 }

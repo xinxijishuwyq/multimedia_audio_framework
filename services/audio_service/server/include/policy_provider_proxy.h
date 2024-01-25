@@ -34,6 +34,8 @@ public:
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint32_t sessionId) override;
 
+    int32_t NotifyWakeUpCapturerRemoved() override;
+
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;
 };

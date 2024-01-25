@@ -86,6 +86,13 @@ int32_t PolicyProviderStub::HandleSetCapturer(MessageParcel &data, MessageParcel
     return AUDIO_OK;
 }
 
+int32_t PolicyProviderStub::HandleWakeupCapturerRemoved(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t ret = NotifyWakeUpCapturerRemoved();
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -118,6 +125,12 @@ int32_t PolicyProviderWrapper::NotifyCapturerAdded(AudioCapturerInfo capturerInf
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
+}
+
+int32_t PolicyProviderWrapper::NotifyWakeUpCapturerRemoved()
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->NotifyWakeUpCapturerRemoved();
 }
 } // namespace AudioStandard
 } // namespace OHOS

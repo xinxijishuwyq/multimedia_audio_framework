@@ -60,6 +60,7 @@ public:
         RENDERER_DEVICE_CHANGE_EVENT,
         ON_CAPTURER_CREATE,
         ON_CAPTURER_REMOVED,
+        ON_WAKEUP_CLOSE,
     };
     /* event data */
     class EventContextObj {
@@ -138,6 +139,7 @@ public:
     bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint64_t sessionId, bool isSync);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
+    bool SendWakeupCloseEvent(bool isSync);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -163,6 +165,7 @@ private:
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleWakeupCloaseEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

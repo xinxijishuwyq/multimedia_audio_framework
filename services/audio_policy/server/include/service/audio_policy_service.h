@@ -131,6 +131,8 @@ public:
 
     int32_t CloseWakeUpAudioCapturer();
 
+    int32_t NotifyWakeUpCapturerRemoved();
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType) const;

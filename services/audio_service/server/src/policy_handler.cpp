@@ -176,5 +176,11 @@ int32_t PolicyHandler::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, Audio
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 }
+
+int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
+}
 } // namespace AudioStandard
 } // namespace OHOS
