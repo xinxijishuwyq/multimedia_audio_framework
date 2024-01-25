@@ -128,7 +128,7 @@ Trace::~Trace()
 AudioXCollie::AudioXCollie(const std::string &tag, uint32_t timeoutSeconds,
     std::function<void(void *)> func, void *arg, uint32_t flag)
 {
-    AUDIO_DEBUG_LOG("Start AudioXCollie, tag: %{public}s, timeoutSeconds: %{public}u, flag: %{public}u"
+    AUDIO_DEBUG_LOG("Start AudioXCollie, tag: %{public}s, timeoutSeconds: %{public}u, flag: %{public}u",
         tag.c_str(), timeoutSeconds, flag);
     id_ = HiviewDFX::XCollie::GetInstance().SetTimer(tag, timeoutSeconds, func, arg, flag);
     tag_ = tag;
