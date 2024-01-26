@@ -2633,6 +2633,29 @@ static void ThreadFuncRendererTimer(void *userdata)
     }
 }
 
+static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
+{
+    unsigned nPrimary, nOffload, nMultiChannel;
+    int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
+
+    if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
+        u->timestampSleep = -1;
+    }
+
+    pthread_rwlock_unlock(&u->rwlockSleep);
+
+    bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
+    if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
+        pa_asyncmsgq_send(u->primary.msgq, NULL, 0, NULL, 0, NULL);
+    }
+    if (u->offload_enable && nOffload > 0 && u->offload.msgq) {
+        pa_asyncmsgq_send(u->offload.msgq, NULL, 0, NULL, 0, NULL);
+    }
+    if (nMultiChannel > 0 && u->multiChannel.msgq) {
+        pa_asyncmsgq_send(u->multiChannel.msgq, NULL, 0, NULL, 0, NULL);
+    }
+}
+
 static void ThreadFuncRendererTimerBus(void *userdata)
 {
     // set audio thread priority
@@ -2681,25 +2704,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         SetHdiParam(u);
 
-        unsigned nPrimary, nOffload, nMultiChannel;
-        int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
-
-        if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
-            u->timestampSleep = -1;
-        }
-
-        pthread_rwlock_unlock(&u->rwlockSleep);
-
-        bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
-        if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
-            pa_asyncmsgq_send(u->primary.msgq, NULL, 0, NULL, 0, NULL);
-        }
-        if (u->offload_enable && nOffload > 0 && u->offload.msgq) {
-            pa_asyncmsgq_send(u->offload.msgq, NULL, 0, NULL, 0, NULL);
-        }
-        if (nMultiChannel > 0 && u->multiChannel.msgq) {
-            pa_asyncmsgq_send(u->multiChannel.msgq, NULL, 0, NULL, 0, NULL);
-        }
+        ThreadFuncRendererTimerBusSendMsgq(u);
     }
 }
 
