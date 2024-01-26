@@ -2545,7 +2545,7 @@ static void SetHdiParam(struct Userdata *userdata)
     }
 
     if (userdata == NULL || userdata->sinkSceneType == NULL || userdata->sinkSceneMode == NULL) {
-        AUDIO_ERR_LOG("SetHdiParam userdata null pointer");
+        AUDIO_DEBUG_LOG("SetHdiParam userdata null pointer");
         return;
     }
 
