@@ -2635,7 +2635,9 @@ static void ThreadFuncRendererTimer(void *userdata)
 
 static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
 {
-    unsigned nPrimary, nOffload, nMultiChannel;
+    unsigned nPrimary;
+    unsigned nOffload;
+    unsigned nMultiChannel;
     int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
 
     if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
