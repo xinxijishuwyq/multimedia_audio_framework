@@ -5481,8 +5481,8 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDev
                 }
         }
         std::unique_ptr<AudioDeviceDescriptor> descs = std::move(BtprivacyDeviceDescriptors[index]);
+        return descs;
     }
-    return descs;
 }
 } // namespace AudioStandard
 } // namespace OHOS
