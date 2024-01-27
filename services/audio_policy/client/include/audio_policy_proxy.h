@@ -246,7 +246,7 @@ public:
 
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) override;
 
-    std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothbleDevice() override;
+    std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
     
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
