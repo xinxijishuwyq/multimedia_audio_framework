@@ -1922,11 +1922,11 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyProxy::GetActiveBluetoothDevic
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<std::unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptor;
+    std::unique_ptr<AudioDeviceDescriptor> audioDeviceDescriptor;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()),
         audioDeviceDescriptor, "WriteInterfaceToken failed");
-
+    
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_BLUETOOTH_DESCRIPTOR), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioDeviceDescriptor,
