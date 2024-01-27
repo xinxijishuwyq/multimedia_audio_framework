@@ -351,11 +351,6 @@ void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void
         return;
     }
     auto streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
-    if (streamImpl->abortFlag_ != 0) {
-        AUDIO_ERR_LOG("PAStreamReadCb: Abort pa stream read callback");
-        streamImpl->abortFlag_--;
-        return ;
-    }
     std::shared_ptr<IReadCallback> readCallback = streamImpl->readCallback_.lock();
     if (readCallback != nullptr) {
         readCallback->OnReadData(length);
@@ -494,11 +489,6 @@ void PaCapturerStreamImpl::SetStreamIndex(uint32_t index)
 uint32_t PaCapturerStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
-}
-
-void PaCapturerStreamImpl::AbortCallback(int32_t abortTimes)
-{
-    abortFlag_ += abortTimes;
 }
 } // namespace AudioStandard
 } // namespace OHOS

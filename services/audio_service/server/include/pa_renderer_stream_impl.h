@@ -51,7 +51,6 @@ public:
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
-    void AbortCallback(int32_t abortTimes) override;
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
@@ -113,8 +112,7 @@ private:
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;
-    // Only for debug
-    int32_t abortFlag_ = 0;
+
     // offload
     bool offloadEnable_ = false;
     int64_t offloadTsOffset_ = 0;
