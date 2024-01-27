@@ -36,10 +36,10 @@ typedef struct BufferAttr {
 } BufferAttr;
 
 typedef struct SessionInfoPack {
-    uint32_t channels;
-    char *channelLayout;
-    char *sceneMode;
-    char *spatializationEnabled;
+    const uint32_t channels;
+    const char *channelLayout;
+    const char *sceneMode;
+    const char *spatializationEnabled;
 } SessionInfoPack;
 
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
