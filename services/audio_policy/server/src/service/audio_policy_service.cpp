@@ -5470,7 +5470,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDev
     }
 
     if (btdevices == 1) {
-        unique_ptr<AudioDeviceDescriptor> desc = std::move(BtprivacyDeviceDescriptors[0]);
+        std::unique_ptr<AudioDeviceDescriptor> desc = std::move(BtprivacyDeviceDescriptors[0]);
         return desc;
     } else {
         uint32_t index = 0;
@@ -5480,7 +5480,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDev
                     index = i;
                 }
         }
-        unique_ptr<AudioDeviceDescriptor> desc = std::move(BtprivacyDeviceDescriptors[index]);
+        std::unique_ptr<AudioDeviceDescriptor> desc = std::move(BtprivacyDeviceDescriptors[index]);
     }
     return desc;
 }
