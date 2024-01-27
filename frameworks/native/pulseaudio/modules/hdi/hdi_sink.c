@@ -2521,6 +2521,11 @@ static void SetHdiParam(struct Userdata *userdata)
     bool spatialEnabledMax = false;
     while ((i = pa_hashmap_iterate(userdata->sink->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(i);
+        const char *clientUid = pa_proplist_gets(i->proplist, "stream.client.uid");
+        const char *bootUpMusic = "1003";
+        if (pa_safe_streq(clientUid, bootUpMusic)) {
+            return;
+        }
         const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
         const char *sinkSpatialization = pa_proplist_gets(i->proplist, "spatialization.enabled");
@@ -2529,7 +2534,7 @@ static void SetHdiParam(struct Userdata *userdata)
         bool effectEnabled = pa_safe_streq(sinkSceneMode, "EFFECT_DEFAULT") ? true : false;
         bool spatialEnabled = spatializationEnabled && effectEnabled;
         int sessionID = atoi(sinkSessionStr == NULL ? "-1" : sinkSessionStr);
-        if (sessionID > sessionIDMax && !sinkSceneType && !sinkSceneMode && !sinkSpatialization) {
+        if (sessionID > sessionIDMax && sinkSceneType && sinkSceneMode && sinkSpatialization) {
             sessionIDMax = sessionID;
             sinkSceneTypeMax = (char *)sinkSceneType;
             sinkSceneModeMax = (char *)sinkSceneMode;
@@ -2538,7 +2543,7 @@ static void SetHdiParam(struct Userdata *userdata)
     }
 
     if (userdata == NULL || userdata->sinkSceneType == NULL || userdata->sinkSceneMode == NULL) {
-        AUDIO_ERR_LOG("SetHdiParam userdata null pointer");
+        AUDIO_DEBUG_LOG("SetHdiParam userdata null pointer");
         return;
     }
 
@@ -2555,8 +2560,6 @@ static void SetHdiParam(struct Userdata *userdata)
 static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUsec)
 {
     pa_usec_t now = 0;
-
-    SetHdiParam(u);
 
     bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
@@ -2628,6 +2631,31 @@ static void ThreadFuncRendererTimer(void *userdata)
     }
 }
 
+static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
+{
+    unsigned nPrimary;
+    unsigned nOffload;
+    unsigned nMultiChannel;
+    int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
+
+    if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
+        u->timestampSleep = -1;
+    }
+
+    pthread_rwlock_unlock(&u->rwlockSleep);
+
+    bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
+    if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
+        pa_asyncmsgq_send(u->primary.msgq, NULL, 0, NULL, 0, NULL);
+    }
+    if (u->offload_enable && nOffload > 0 && u->offload.msgq) {
+        pa_asyncmsgq_send(u->offload.msgq, NULL, 0, NULL, 0, NULL);
+    }
+    if (nMultiChannel > 0 && u->multiChannel.msgq) {
+        pa_asyncmsgq_send(u->multiChannel.msgq, NULL, 0, NULL, 0, NULL);
+    }
+}
+
 static void ThreadFuncRendererTimerBus(void *userdata)
 {
     // set audio thread priority
@@ -2674,25 +2702,9 @@ static void ThreadFuncRendererTimerBus(void *userdata)
             break;
         }
 
-        unsigned nPrimary, nOffload, nMultiChannel;
-        int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
+        SetHdiParam(u);
 
-        if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
-            u->timestampSleep = -1;
-        }
-
-        pthread_rwlock_unlock(&u->rwlockSleep);
-
-        bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
-        if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
-            pa_asyncmsgq_send(u->primary.msgq, NULL, 0, NULL, 0, NULL);
-        }
-        if (u->offload_enable && nOffload > 0 && u->offload.msgq) {
-            pa_asyncmsgq_send(u->offload.msgq, NULL, 0, NULL, 0, NULL);
-        }
-        if (nMultiChannel > 0 && u->multiChannel.msgq) {
-            pa_asyncmsgq_send(u->multiChannel.msgq, NULL, 0, NULL, 0, NULL);
-        }
+        ThreadFuncRendererTimerBusSendMsgq(u);
     }
 }
 
