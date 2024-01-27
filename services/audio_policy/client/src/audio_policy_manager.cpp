@@ -1398,7 +1398,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDev
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-        return make_unique_ptr<AudioDeviceDescriptor>();
+        return make_unique<AudioDeviceDescriptor>();
     }
     return gsp->GetActiveBluetoothDevice();
 }
