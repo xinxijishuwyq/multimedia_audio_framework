@@ -1092,10 +1092,10 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
             }
         } else {
             effectHdiInput[0] = HDI_DESTROY;
-            AUDIO_INFO_LOG("set hdi destory.");
+            AUDIO_INFO_LOG("set hdi destroy.");
             int32_t ret = audioEffectHdi_->UpdateHdiState(effectHdiInput);
             if (ret != 0) {
-                AUDIO_ERR_LOG("set hdi destory failed");
+                AUDIO_ERR_LOG("set hdi destroy failed");
             }
             offloadEnabled_ = false;
             RecoverAllChains();
