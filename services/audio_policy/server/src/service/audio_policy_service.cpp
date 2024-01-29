@@ -5456,33 +5456,25 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
 
 std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDevice()
 {
-    auto audioPrivacyDeviceDescriptors = audioDeviceManager_.GetCommRenderPrivacyDevices();
-    std::vector<unique_ptr<AudioDeviceDescriptor>> BtprivacyDeviceDescriptors;
-    for (auto &desc : audioPrivacyDeviceDescriptors) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            BtprivacyDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
+    std::vector<unique_ptr<AudioDeviceDescriptor>> audioPrivacyDeviceDescriptors =
+        audioDeviceManager_.GetCommRenderPrivacyDevices();
+    std::unique_ptr<AudioDeviceDescriptor> result = nullptr;
+
+    for (size_t i = 0; i < audioPrivacyDeviceDescriptors.size(); i++) {
+        if (audioPrivacyDeviceDescriptors[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            if (result == nullptr) {
+                result = std::move(audioPrivacyDeviceDescriptors[i]);
+            }
+            if (audioPrivacyDeviceDescriptors[i]->connectTimeStamp_ > result->connectTimeStamp_) {
+                result = std::move(audioPrivacyDeviceDescriptors[i]);
+            }
         }
     }
 
-    uint32_t btdevices =  BtprivacyDeviceDescriptors.size();
-    if (btdevices == 0) {
+    if (result == nullptr) {
         return make_unique<AudioDeviceDescriptor>();
     }
-
-    if (btdevices == 1) {
-        std::unique_ptr<AudioDeviceDescriptor> descs = std::move(BtprivacyDeviceDescriptors[0]);
-        return descs;
-    } else {
-        uint32_t index = 0;
-        for (uint32_t i = 1; i < btdevices; ++i) {
-            if (BtprivacyDeviceDescriptors[index]->connectTimeStamp_ <
-                BtprivacyDeviceDescriptors[i]->connectTimeStamp_) {
-                    index = i;
-                }
-        }
-        std::unique_ptr<AudioDeviceDescriptor> descs = std::move(BtprivacyDeviceDescriptors[index]);
-        return descs;
-    }
+    return result;
 }
 } // namespace AudioStandard
 } // namespace OHOS
