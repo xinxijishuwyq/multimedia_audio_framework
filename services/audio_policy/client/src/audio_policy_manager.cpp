@@ -117,6 +117,10 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
 {
+    if(g_apProxy == nullptr) {
+    AUDIO_ERR_LOG("AudioRenderPolicyService has already died!");
+    return;
+    }
     {
         std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
         AUDIO_INFO_LOG("Audio policy server died: reestablish connection");
