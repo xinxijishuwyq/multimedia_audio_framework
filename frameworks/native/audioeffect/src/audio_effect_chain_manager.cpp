@@ -241,13 +241,6 @@ bool EffectChainManagerCheckA2dpOffload()
     return false;
 }
 
-SessionInfoPack PackSessionInfo(const uint32_t channels, const char *channelLayout, const char *sceneMode,
-    const char *spatializationEnabled)
-{
-    SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled};
-    return pack;
-}
-
 int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
