@@ -129,7 +129,6 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
             cb = it->second.lock();
             if (cb != nullptr) {
                 cb->OnAudioPolicyServiceDied();
-                rendererCBMap_.erase(getpid());
             }
         }
     }
