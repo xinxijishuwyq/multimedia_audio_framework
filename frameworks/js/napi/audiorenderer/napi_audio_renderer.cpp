@@ -1741,8 +1741,7 @@ void NapiAudioRenderer::UnregisterRendererOutputDeviceChangeWithInfoCallback(nap
 
 void NapiAudioRenderer::DestroyCallbacks()
 {
-    CHECK_AND_RETURN_LOG(rendererDeviceChangeCallbackNapi_ != nullptr, "rendererDeviceChangeCallbackNapi_ is not nullptr",
-        rendererDeviceChangeCallbackNapi_);
+    CHECK_AND_RETURN_LOG(rendererDeviceChangeCallbackNapi_ != nullptr, "rendererDeviceChangeCallbackNapi_ is nullptr");
     rendererDeviceChangeCallbackNapi_->RemoveAllCallbacks();
     audioRenderer_->DestroyAudioRendererStateCallback();
     DestroyNAPICallbacks();
