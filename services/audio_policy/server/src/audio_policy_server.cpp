@@ -1925,6 +1925,10 @@ void AudioPolicyServer::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionSta
         if (res != 0) {
             AUDIO_WARNING_LOG("notice start using perm error");
         }
+        res = AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
+        if (res != 0) {
+            AUDIO_WARNING_LOG("add mic record error");
+        }
     } else {
         int res = PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         if (res != 0) {
