@@ -16,6 +16,7 @@
 #define AUDIO_CONVERTER_PARSER_H
 
 #include <map>
+#include <mutex>
 #include <memory>
 #include <string>
 #include <vector>
@@ -29,15 +30,22 @@ namespace AudioStandard {
 
 struct ConverterConfig {
     float version;
+    float latency;
     Library library;
     AudioChannelLayout outChannelLayout;
 };
 
 class AudioConverterParser {
 public:
-    explicit AudioConverterParser();
-    ~AudioConverterParser();
+    static AudioConverterParser &GetInstance();
+    AudioConverterParser(const AudioConverterParser &) = delete;
+    AudioConverterParser &operator=(const AudioConverterParser &) = delete;
     int32_t LoadConfig(ConverterConfig &result);
+
+private:
+    AudioConverterParser();
+    std::unique_ptr<ConverterConfig> result_;
+    std::mutex loadConfigMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

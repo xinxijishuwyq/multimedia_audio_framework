@@ -89,10 +89,6 @@ AudioConverterParser::AudioConverterParser()
 {
     AUDIO_INFO_LOG("AudioConverterParser created");
 }
-AudioConverterParser::~AudioConverterParser()
-{
-    AUDIO_INFO_LOG("AudioConverterParser released");
-}
 
 static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
 {
@@ -137,7 +133,21 @@ static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode* currNode)
     }
 }
 
-static void LoadConfigVersion(ConverterConfig &result, xmlNode* currNode)
+static void LoadConfigLatency(ConverterConfig &result, xmlNode *currNode)
+{
+    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("latency"))) {
+        AUDIO_ERR_LOG("missing information: config has no latency attribute");
+    } else {
+        char *cLatency = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("latency")));
+        char *end;
+        result.latency = std::strtod(cLatency, &end);
+        if (end == cLatency) {
+            AUDIO_ERR_LOG("get latency error: expected float but received %{public}s", cLatency);
+        }
+    }
+}
+
+static void LoadConfigVersion(ConverterConfig &result, xmlNode *currNode)
 {
     bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("version"));
     CHECK_AND_RETURN_LOG(ret, "missing information: audio_converter_conf node has no version attribute");
@@ -147,19 +157,30 @@ static void LoadConfigVersion(ConverterConfig &result, xmlNode* currNode)
     result.version = pVersion;
 }
 
+AudioConverterParser &AudioConverterParser::GetInstance()
+{
+    static AudioConverterParser instance;
+    return instance;
+}
+
 int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
 {
+    std::lock_guard<std::mutex> lock(loadConfigMutex_);
+    int32_t ret = 0;
+    AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
+    if (result_ != nullptr) {
+        result = *(result_);
+        return ret;
+    }
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
-    AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
+    result_ = std::make_unique<ConverterConfig>(result);
     doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
     CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR,
         "error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
 
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
-
-    int32_t ret = 0;
 
     if ((ret = LoadConfigCheck(doc, currNode)) != 0) {
         xmlFreeDoc(doc);
@@ -180,12 +201,14 @@ int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
             LoadConfigLibrary(result, currNode);
         } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("converter_conf"))) {
             LoadConfigChannelLayout(result, currNode);
+            LoadConfigLatency(result, currNode);
         }
 
         currNode = currNode->next;
     }
     xmlFreeDoc(doc);
     xmlCleanupParser();
+    *result_ = result;
     return ret;
 }
 
