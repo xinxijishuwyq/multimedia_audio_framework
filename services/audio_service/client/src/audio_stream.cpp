@@ -387,6 +387,9 @@ bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         isReadyToWrite_ = true;
+        if (writeThread_ && writeThread_->joinable()) {
+            writeThread_->join();
+        }
         writeThread_ = std::make_unique<std::thread>(&AudioStream::WriteCbTheadLoop, this);
         pthread_setname_np(writeThread_->native_handle(), "OS_AudioWriteCb");
     } else if (captureMode_ == CAPTURE_MODE_CALLBACK) {
