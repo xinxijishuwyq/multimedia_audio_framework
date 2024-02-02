@@ -66,6 +66,7 @@ private:
 
     int32_t inChannel_;
     int32_t outChannel_;
+    int32_t sampleRate_;
 
     uint8_t bps_;
     uint8_t encoding_;

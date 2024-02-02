@@ -80,6 +80,7 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info)
     outChannel_ = info.channels;
 
     encoding_ = info.encoding;
+    sampleRate_ = info.samplingRate;
 
     bps_ = GetBps(info.format);
     CHECK_AND_RETURN_RET_LOG(bps_ > 0, false, "channel converter: Unsupported sample format");
@@ -98,7 +99,7 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info)
     }
     if (!loadSuccess_) {
         outChannel_ = info.channels;
-        outChannelLayout_ = CH_LAYOUT_UNKNOWN; // can not convert
+        outChannelLayout_ = info.channelLayout; // can not convert
     }
     return true;
 }
@@ -171,7 +172,7 @@ bool AudioSpatialChannelConverter::Flush()
 
 float AudioSpatialChannelConverter::GetLatency()
 {
-    return loadSuccess_ ? latency_ : 0;
+    return loadSuccess_ ? latency_ * SAMPLE_RATE_48000 / sampleRate_ : 0;
 }
 
 static bool ResolveLibrary(const std::string &path, std::string &resovledPath)
