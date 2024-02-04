@@ -72,7 +72,7 @@ private:
     uint8_t encoding_;
     float latency_;
 
-    AudioChannelLayout outChannelLayout_;
+    uint64_t outChannelLayout_;
 
     bool loadSuccess_;
 

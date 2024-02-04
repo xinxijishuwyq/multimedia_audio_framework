@@ -41,7 +41,7 @@ static int8_t GetBps(uint8_t format)
     return format2bps.count(format) > 0 ? format2bps[format] : INVALID_FORMAT;
 }
 
-static bool LoadFromXML(Library &lib, AudioChannelLayout &layout, float &latency)
+static bool LoadFromXML(Library &lib, uint64_t &layout, float &latency)
 {
     AudioConverterParser &parser = AudioConverterParser::GetInstance();
     ConverterConfig result;
