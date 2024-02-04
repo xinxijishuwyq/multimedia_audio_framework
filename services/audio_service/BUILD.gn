@@ -134,7 +134,6 @@ ohos_shared_library("audio_client") {
   sources = [
     "client/src/audio_converter_parser.cpp",
     "client/src/audio_device_descriptor.cpp",
-    "client/src/audio_spatial_channel_converter.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
@@ -142,6 +141,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_process_proxy.cpp",
     "client/src/audio_routing_manager.cpp",
     "client/src/audio_service_client.cpp",
+    "client/src/audio_spatial_channel_converter.cpp",
     "client/src/audio_spatialization_manager.cpp",
     "client/src/audio_stream.cpp",
     "client/src/audio_stream_manager.cpp",
