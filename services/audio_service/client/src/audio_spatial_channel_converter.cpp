@@ -23,7 +23,6 @@ namespace AudioStandard {
 static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;
 static constexpr int32_t AVS3METADATA_SIZE = 19824;
 static constexpr int32_t INVALID_FORMAT = -1;
-static constexpr AudioChannelLayout DEFAULT_LAYOUT = CH_LAYOUT_UNKNOWN;
 
 #if (defined(__aarch64__) || defined(__x86_64__))
 constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
@@ -31,29 +30,12 @@ constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
 constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
 #endif
 
-static std::map<uint8_t, int8_t> format2bps = {{SAMPLE_U8, sizeof(uint8_t)},
-                                               {SAMPLE_S16LE, sizeof(int16_t)},
-                                               {SAMPLE_S24LE, sizeof(int16_t) + sizeof(int8_t)},
-                                               {SAMPLE_S32LE, sizeof(int32_t)}};
+static std::map<uint8_t, int8_t> format2bps = {{SAMPLE_U8, sizeof(uint8_t)}, {SAMPLE_S16LE, sizeof(int16_t)},
+    {SAMPLE_S24LE, sizeof(int16_t) + sizeof(int8_t)}, {SAMPLE_S32LE, sizeof(int32_t)}};
 
 static int8_t GetBps(uint8_t format)
 {
     return format2bps.count(format) > 0 ? format2bps[format] : INVALID_FORMAT;
-}
-
-static bool LoadFromXML(Library &lib, uint64_t &layout, float &latency)
-{
-    AudioConverterParser &parser = AudioConverterParser::GetInstance();
-    ConverterConfig result;
-    layout = DEFAULT_LAYOUT;
-    if (parser.LoadConfig(result) != 0) {
-        return false;
-    }
-    lib = result.library;
-    layout = result.outChannelLayout;
-    latency = result.latency;
-    AUDIO_INFO_LOG("<log info> lib %{public}s %{public}s successful from xml", lib.path.c_str(), lib.name.c_str());
-    return true;
 }
 
 int32_t AudioSpatialChannelConverter::GetPcmLength(int32_t channels, int8_t bps)
@@ -74,7 +56,7 @@ int32_t AudioSpatialChannelConverter::GetMetaLength()
     return 0;
 }
 
-bool AudioSpatialChannelConverter::Init(const AudioStreamParams info)
+bool AudioSpatialChannelConverter::Init(const AudioStreamParams info, const ConverterConfig cfg)
 {
     inChannel_ = info.channels;
     outChannel_ = info.channels;
@@ -85,16 +67,17 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info)
     bps_ = GetBps(info.format);
     CHECK_AND_RETURN_RET_LOG(bps_ > 0, false, "channel converter: Unsupported sample format");
 
-    Library library;
+    Library library = cfg.library;
+    outChannelLayout_ = cfg.outChannelLayout;
+    latency_ = cfg.latency;
+
     loadSuccess_ = false;
-    if (LoadFromXML(library, outChannelLayout_, latency_)) {
-        if (externalLoader_.AddAlgoHandle(library)) {
-            outChannel_ = __builtin_popcountll(outChannelLayout_);
-            externalLoader_.SetIOBufferConfig(true, info.format, inChannel_, info.channelLayout);
-            externalLoader_.SetIOBufferConfig(false, info.format, outChannel_, outChannelLayout_);
-            if (externalLoader_.Init()) {
-                loadSuccess_ = true;
-            }
+    if (externalLoader_.AddAlgoHandle(library)) {
+        outChannel_ = __builtin_popcountll(outChannelLayout_);
+        externalLoader_.SetIOBufferConfig(true, info.format, inChannel_, info.channelLayout);
+        externalLoader_.SetIOBufferConfig(false, info.format, outChannel_, outChannelLayout_);
+        if (externalLoader_.Init()) {
+            loadSuccess_ = true;
         }
     }
     if (!loadSuccess_) {
@@ -124,12 +107,12 @@ bool AudioSpatialChannelConverter::CheckInputValid(const BufferDesc pcmBuffer, c
     }
     if (pcmBuffer.bufLength - GetPcmLength(inChannel_, bps_) != 0) {
         AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}zu, excepted %{public}d", pcmBuffer.bufLength,
-                      GetPcmLength(inChannel_, bps_));
+            GetPcmLength(inChannel_, bps_));
         return false;
     }
     if (metaBuffer.bufLength - GetMetaLength() != 0) {
         AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}zu, excepted %{public}d",
-                      metaBuffer.bufLength, GetMetaLength());
+            metaBuffer.bufLength, GetMetaLength());
         return false;
     }
     return true;
@@ -154,11 +137,11 @@ void AudioSpatialChannelConverter::Process(const BufferDesc pcmBuffer, const Buf
         std::copy(pcmBuffer.buffer, pcmBuffer.buffer + n, outPcmBuf_.get());
     } else {
         AudioBuffer inBuffer = {.frameLength = AUDIO_VIVID_SAMPLES,
-                                .raw = pcmBuffer.buffer,
-                                .metaData = metaBuffer.buffer};
+            .raw = pcmBuffer.buffer,
+            .metaData = metaBuffer.buffer};
         AudioBuffer outBuffer = {.frameLength = AUDIO_VIVID_SAMPLES,
-                                 .raw = outPcmBuf_.get(),
-                                 .metaData = metaBuffer.buffer};
+            .raw = outPcmBuf_.get(),
+            .metaData = metaBuffer.buffer};
         if (externalLoader_.ApplyAlgo(inBuffer, outBuffer) != 0) {
             std::fill(outPcmBuf_.get(), outPcmBuf_.get() + n, 0);
         }
@@ -204,7 +187,7 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
     // find library in adsolutePath
     bool ret = ResolveLibrary(relativePath, absolutePath);
     CHECK_AND_RETURN_RET_LOG(ret, false, "<log error> find library falied in effect directories: %{public}s",
-                             relativePath.c_str());
+        relativePath.c_str());
 
     libHandle_ = dlopen(absolutePath.c_str(), 1);
     CHECK_AND_RETURN_RET_LOG(libHandle_, false, "<log error> dlopen lib %{public}s Fail", relativePath.c_str());
@@ -253,10 +236,10 @@ bool LibLoader::Init()
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_INIT fail", libEntry_->libraryName.c_str());
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_ENABLE fail",
-                             libEntry_->libraryName.c_str());
+        libEntry_->libraryName.c_str());
     ret = (*handle_)->command(handle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_SET_CONFIG fail",
-                             libEntry_->libraryName.c_str());
+        libEntry_->libraryName.c_str());
     return true;
 }
 
@@ -275,7 +258,7 @@ bool LibLoader::FlushAlgo()
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_ENABLE fail",
-                             libEntry_->libraryName.c_str());
+        libEntry_->libraryName.c_str());
     return true;
 }
 } // namespace AudioStandard

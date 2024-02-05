@@ -1227,8 +1227,9 @@ int32_t AudioStream::InitFromParams(AudioStreamParams &info)
         ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
 
         if (info.encoding == ENCODING_AUDIOVIVID) {
+            ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
             converter_ = std::make_unique<AudioSpatialChannelConverter>();
-            if (converter_ == nullptr || !converter_->Init(info) || !converter_->AllocateMem()) {
+            if (converter_ == nullptr || !converter_->Init(info, cfg) || !converter_->AllocateMem()) {
                 AUDIO_ERR_LOG("AudioStream: converter construct error");
                 return ERR_NOT_SUPPORTED;
             }

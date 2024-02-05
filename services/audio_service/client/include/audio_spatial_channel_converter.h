@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include "audio_info.h"
 #include "audio_effect.h"
-#include "audio_converter_parser.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,7 +48,7 @@ private:
 class AudioSpatialChannelConverter {
 public:
     AudioSpatialChannelConverter() = default;
-    bool Init(const AudioStreamParams info);
+    bool Init(const AudioStreamParams info, const ConverterConfig cfg);
     bool GetInputBufferSize(size_t &bufferSize);
     bool CheckInputValid(const BufferDesc pcmBuf, const BufferDesc metaBuf);
     bool AllocateMem();

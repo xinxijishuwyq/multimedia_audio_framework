@@ -273,6 +273,12 @@ struct AudioSpatializationState {
     bool headTrackingEnabled;
 };
 
+struct ConverterConfig {
+    float version;
+    uint32_t latency;
+    Library library;
+    uint64_t outChannelLayout;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

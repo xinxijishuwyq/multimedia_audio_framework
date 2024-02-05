@@ -1910,7 +1910,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyProxy::GetActiveBluetoothDevic
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()),
         audioDeviceDescriptor, "WriteInterfaceToken failed");
-    
+
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_ACTIVE_BLUETOOTH_DESCRIPTOR), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, audioDeviceDescriptor,
@@ -1937,6 +1937,24 @@ int32_t AudioPolicyProxy::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, Au
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_WAKEUP_AUDIOCAPTURER), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed, error: %d", error);
     return reply.ReadInt32();
+}
+
+ConverterConfig AudioPolicyProxy::GetConverterConfig()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    ConverterConfig result;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), result, "WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_CONVERTER_CONFIG),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, result, "failed, error: %d", error);
+
+    result.latency = reply.ReadUint32();
+    result.library = {reply.ReadString(), reply.ReadString()};
+    result.outChannelLayout = reply.ReadUint64();
+    return result;
 }
 } // namespace AudioStandard
 } // namespace OHOS

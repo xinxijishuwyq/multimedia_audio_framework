@@ -28,13 +28,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-struct ConverterConfig {
-    float version;
-    float latency;
-    Library library;
-    AudioChannelLayout outChannelLayout;
-};
-
 class AudioConverterParser {
 public:
     static AudioConverterParser &GetInstance();
