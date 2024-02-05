@@ -22,6 +22,8 @@
 #include <map>
 #include <pwd.h>
 #include "securec.h"
+#include "audio_adapter_info.h"
+#include "audio_log.h"
 #include "nocopyable.h"
 
 #include <pulse/pulseaudio.h>
@@ -98,6 +100,9 @@ typedef struct {
     StreamVolumeInfoMap streamVolumeInfos;
     std::vector<sptr<MicrophoneDescriptor>> availableMicrophones;
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZoneDump>> audioInterruptZonesMapDump;
+    std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<std::string, std::string> volumeGroupData;
+    std::unordered_map<std::string, std::string> interruptGroupData;
 } PolicyData;
 
 typedef struct {
@@ -139,6 +144,7 @@ private:
     void DevicesInfoDump(std::string &dumpString);
     void AudioFocusInfoDump(std::string &dumpString);
     void AudioInterruptZoneDump(std::string &dumpString);
+    void AudioPolicyParserDump(std::string &dumpString);
     void GroupInfoDump(std::string& dumpString);
     void EffectManagerInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);
