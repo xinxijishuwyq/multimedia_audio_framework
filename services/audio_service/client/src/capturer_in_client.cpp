@@ -1545,10 +1545,11 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
             readLogTimes_++;
             AUDIO_ERR_LOG("Illegal state:%{public}u", state_.load());
         } else {
-            readLogTimes_ = 0;
             AUDIO_DEBUG_LOG("Illegal state:%{public}u", state_.load());
         }
         return ERR_ILLEGAL_STATE;
+    } else {
+        readLogTimes_ = 0;
     }
 
     statusLock.unlock();
