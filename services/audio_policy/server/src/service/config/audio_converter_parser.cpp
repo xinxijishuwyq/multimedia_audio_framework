@@ -165,13 +165,13 @@ ConverterConfig AudioConverterParser::LoadConfig()
     std::lock_guard<std::mutex> lock(loadConfigMutex_);
     int32_t ret = 0;
     AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
-    CHECK_AND_RETURN_RET(result_ == nullptr, result_);
+    CHECK_AND_RETURN_RET(result_ == nullptr, *result_);
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
     result_ = std::make_unique<ConverterConfig>();
     ConverterConfig &result = *result_;
     doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-    CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "error: could not parse file %{public}s",
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, result, "error: could not parse file %{public}s",
         AUDIO_CONVERTER_CONFIG_FILE);
 
     rootElement = xmlDocGetRootElement(doc);

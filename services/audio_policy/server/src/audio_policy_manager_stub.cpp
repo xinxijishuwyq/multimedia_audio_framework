@@ -1066,8 +1066,8 @@ void AudioPolicyManagerStub::GetConverterConfigInternal(MessageParcel &data, Mes
 {
     ConverterConfig result = GetConverterConfig();
     reply.WriteUint32(result.latency);
-    reply.WriteString(result.name);
-    reply.WriteString(result.path);
+    reply.WriteString(result.library.name);
+    reply.WriteString(result.library.path);
     reply.WriteUint64(result.outChannelLayout);
 }
 } // namespace audio_policy

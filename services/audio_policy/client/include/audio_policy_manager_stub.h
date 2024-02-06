@@ -131,7 +131,7 @@ private:
     void RemoveAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
     void ReleaseAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply);
     void SetCallDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
-    void GetConverterConfig(MessageParcel &data, MessageParcel &reply);
+    void GetConverterConfigInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveBluetoothDeviceInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
