@@ -649,7 +649,6 @@ AudioEffectChainManager::AudioEffectChainManager()
 
     audioEffectHdi_ = std::make_shared<AudioEffectHdi>();
     memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
-    logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
