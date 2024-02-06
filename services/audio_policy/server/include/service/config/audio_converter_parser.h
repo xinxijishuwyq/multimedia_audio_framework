@@ -33,7 +33,7 @@ public:
     static AudioConverterParser &GetInstance();
     AudioConverterParser(const AudioConverterParser &) = delete;
     AudioConverterParser &operator=(const AudioConverterParser &) = delete;
-    int32_t LoadConfig(ConverterConfig &result);
+    ConverterConfig LoadConfig();
 
 private:
     AudioConverterParser();

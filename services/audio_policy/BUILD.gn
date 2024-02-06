@@ -20,6 +20,7 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 group("audio_policy_packages") {
   deps = [
+    ":audio_converter_config",
     ":audio_device_config",
     ":audio_dump",
     ":audio_effect_config",
@@ -28,7 +29,6 @@ group("audio_policy_packages") {
     ":audio_strategy_router",
     ":audio_usage_strategy",
     ":audio_volume_config",
-    ":audio_converter_config",
   ]
 
   if (audio_framework_feature_dtmf_tone) {

@@ -180,7 +180,7 @@ ConverterConfig AudioConverterParser::LoadConfig()
     if ((ret = LoadConfigCheck(doc, currNode)) != 0) {
         xmlFreeDoc(doc);
         xmlCleanupParser();
-        return ret;
+        return result;
     }
 
     LoadConfigVersion(result, currNode);

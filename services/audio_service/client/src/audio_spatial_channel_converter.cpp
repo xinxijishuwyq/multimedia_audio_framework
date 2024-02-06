@@ -153,7 +153,7 @@ bool AudioSpatialChannelConverter::Flush()
     return loadSuccess_ ? externalLoader_.FlushAlgo() : true;
 }
 
-float AudioSpatialChannelConverter::GetLatency()
+uint32_t AudioSpatialChannelConverter::GetLatency()
 {
     return loadSuccess_ ? latency_ * SAMPLE_RATE_48000 / sampleRate_ : 0;
 }

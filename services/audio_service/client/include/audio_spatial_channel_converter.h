@@ -53,7 +53,7 @@ public:
     bool CheckInputValid(const BufferDesc pcmBuf, const BufferDesc metaBuf);
     bool AllocateMem();
     bool Flush();
-    float GetLatency();
+    uint32_t GetLatency();
     void Process(const BufferDesc pcmBuf, const BufferDesc metaBuf);
     void ConverterChannels(uint8_t &channel, uint64_t &channelLayout);
     void GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen);
@@ -70,7 +70,7 @@ private:
 
     uint8_t bps_;
     uint8_t encoding_;
-    float latency_;
+    uint32_t latency_;
 
     uint64_t outChannelLayout_;
 
