@@ -1068,7 +1068,7 @@ void AudioPolicyManagerStub::GetConverterConfigInternal(MessageParcel &data, Mes
     reply.WriteUint32(result.latency);
     reply.WriteString(result.name);
     reply.WriteString(result.path);
-    reply.WriteUint64(static_cast<uint64_t>(result.outChannelLayout));
+    reply.WriteUint64(result.outChannelLayout);
 }
 } // namespace audio_policy
 } // namespace OHOS
