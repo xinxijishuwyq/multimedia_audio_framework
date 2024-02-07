@@ -676,7 +676,7 @@ static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink,
     if (!isInitialized) {
         deviceType = (DeviceType)device;
         deviceSink = sinkName;
-        AUDIO_INFO_LOG("AudioEffectChainManager has not beed initialized yet");
+        AUDIO_INFO_LOG("has not beed initialized");
         return ERROR;
     }
 
@@ -841,7 +841,7 @@ bool AudioEffectChainManager::CheckAndAddSessionID(std::string sessionID)
 int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(std::string sceneType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
     AudioEffectChain *audioEffectChain;
@@ -943,7 +943,7 @@ bool AudioEffectChainManager::CheckAndRemoveSessionID(std::string sessionID)
 int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(std::string sceneType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
     AudioEffectChain *audioEffectChain;
@@ -971,7 +971,14 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     std::string spatializationEnabled)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_RET_LOG(isInitialized_, false, "AudioEffectChainManager has not been initialized");
+    if (!isInitialized_) {
+        if (initializedLogFlag_) {
+            AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
+            initializedLogFlag_ = false;
+        }
+        return false;
+    }
+    initializedLogFlag_ = true;
     CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
     CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
 
@@ -1056,7 +1063,7 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
 int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(std::string sceneType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
     AudioEffectChain *audioEffectChain = nullptr;
@@ -1203,7 +1210,13 @@ int32_t AudioEffectChainManager::SessionInfoMapDelete(std::string sceneType, std
 int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string effectMode, bool enabled)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "AudioEffectChainManager has not been initialized");
+    if (!isInitialized_) {
+        if (initializedLogFlag_) {
+            AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
+            initializedLogFlag_ = false;
+        }
+        return ERROR;
+    }
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
     memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
     effectHdiInput[0] = HDI_BYPASS;
