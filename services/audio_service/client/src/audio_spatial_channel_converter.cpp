@@ -23,6 +23,7 @@ namespace AudioStandard {
 static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;
 static constexpr int32_t AVS3METADATA_SIZE = 19824;
 static constexpr int32_t INVALID_FORMAT = -1;
+static constexpr uint64_t DEFAULT_LAYOUT = CH_LAYOUT_UNKNOWN;
 
 #if (defined(__aarch64__) || defined(__x86_64__))
 constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
@@ -85,7 +86,7 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info, const Conv
     }
     if (!loadSuccess_) {
         outChannel_ = info.channels;
-        outChannelLayout_ = info.channelLayout; // can not convert
+        outChannelLayout_ = DEFAULT_LAYOUT; // can not convert
     }
     return true;
 }
