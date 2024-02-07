@@ -1204,6 +1204,9 @@ int32_t AudioEffectChainManager::SessionInfoMapDelete(std::string sceneType, std
     if (!SessionIDToEffectInfoMap_.erase(sessionID)) {
         return ERROR;
     }
+    if (!SessionIDToLatency_.erase(sessionID)) {
+        return ERROR;
+    }
     return SUCCESS;
 }
 
