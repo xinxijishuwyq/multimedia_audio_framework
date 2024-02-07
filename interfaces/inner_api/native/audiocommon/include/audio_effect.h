@@ -95,7 +95,7 @@ struct Postprocess {
 };
 
 struct OriginalEffectConfig {
-    float version;
+    std::string version;
     std::vector<Library> libraries;
     std::vector<Effect> effects;
     std::vector<EffectChain> effectChains;
@@ -274,7 +274,7 @@ struct AudioSpatializationState {
 };
 
 struct ConverterConfig {
-    float version;
+    std::string version;
     uint32_t latency;
     Library library;
     uint64_t outChannelLayout;

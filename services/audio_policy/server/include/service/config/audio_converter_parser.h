@@ -37,7 +37,7 @@ public:
 
 private:
     AudioConverterParser();
-    std::unique_ptr<ConverterConfig> result_;
+    std::unique_ptr<ConverterConfig> cfg_;
     std::mutex loadConfigMutex_;
 };
 } // namespace AudioStandard

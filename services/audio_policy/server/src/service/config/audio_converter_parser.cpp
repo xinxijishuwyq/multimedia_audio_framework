@@ -150,8 +150,7 @@ static void LoadConfigVersion(ConverterConfig &result, xmlNode *currNode)
     bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("version"));
     CHECK_AND_RETURN_LOG(ret, "missing information: audio_converter_conf node has no version attribute");
 
-    float pVersion = atof(reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("version"))));
-    result.version = pVersion;
+    result.version = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("version")));
 }
 
 AudioConverterParser &AudioConverterParser::GetInstance()
@@ -165,11 +164,11 @@ ConverterConfig AudioConverterParser::LoadConfig()
     std::lock_guard<std::mutex> lock(loadConfigMutex_);
     int32_t ret = 0;
     AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
-    CHECK_AND_RETURN_RET(result_ == nullptr, *result_);
+    CHECK_AND_RETURN_RET(cfg_ == nullptr, *cfg_);
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
-    result_ = std::make_unique<ConverterConfig>();
-    ConverterConfig &result = *result_;
+    cfg_ = std::make_unique<ConverterConfig>();
+    ConverterConfig &result = *cfg_;
     doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
     CHECK_AND_RETURN_RET_LOG(doc != nullptr, result, "error: could not parse file %{public}s",
         AUDIO_CONVERTER_CONFIG_FILE);

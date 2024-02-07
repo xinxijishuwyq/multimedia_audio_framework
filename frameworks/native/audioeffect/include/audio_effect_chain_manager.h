@@ -119,10 +119,13 @@ public:
     AudioEffectConfig GetIoBufferConfig();
     void InitEffectChain();
     void SetHeadTrackingDisabled();
+    uint32_t GetLatency();
+
 private:
     std::mutex reloadMutex;
     std::string sceneType;
     std::string effectMode;
+    uint32_t latency_;
     std::vector<AudioEffectHandle> standByEffectHandles;
     std::vector<AudioEffectLibrary*> libHandles;
     AudioEffectConfig ioBufferConfig;
@@ -165,11 +168,14 @@ public:
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
     int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
     void RegisterEffectChainCountBackupMap(std::string sceneType, std::string operation);
+    uint32_t GetLatency(std::string sessionId);
+
 private:
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
-    std::map<std::string, AudioEffectLibEntry*> EffectToLibraryEntryMap_;
+    void SetLatency(std::string sceneType, uint32_t latency);
+    std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
     std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap_;
@@ -179,6 +185,7 @@ private:
     std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
     std::map<std::string, sessionEffectInfo> SessionIDToEffectInfoMap_;
     std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
+    std::map<std::string, uint32_t> SessionIDToLatency_;
     uint32_t frameLen_ = DEFAULT_FRAMELEN;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
