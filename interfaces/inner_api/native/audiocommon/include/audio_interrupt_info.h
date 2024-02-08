@@ -154,7 +154,7 @@ public:
     StreamUsage streamUsage;
     ContentType contentType;
     AudioFocusType audioFocusType;
-    uint32_t sessionID;
+    uint32_t sessionId;
     bool pauseWhenDucked = false;
     int32_t pid { -1 };
     InterruptMode mode { SHARE_MODE };
@@ -162,8 +162,8 @@ public:
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
-        uint32_t sessionID_) : streamUsage(streamUsage_), contentType(contentType_), audioFocusType(audioFocusType_),
-        sessionID(sessionID_) {}
+        uint32_t sessionId_) : streamUsage(streamUsage_), contentType(contentType_), audioFocusType(audioFocusType_),
+        sessionId(sessionId_) {}
     ~AudioInterrupt() = default;
     bool Marshalling(Parcel &parcel) const override
     {
@@ -172,7 +172,7 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(audioFocusType.streamType))
             && parcel.WriteInt32(static_cast<int32_t>(audioFocusType.sourceType))
             && parcel.WriteBool(audioFocusType.isPlay)
-            && parcel.WriteUint32(sessionID)
+            && parcel.WriteUint32(sessionId)
             && parcel.WriteBool(pauseWhenDucked)
             && parcel.WriteInt32(pid)
             && parcel.WriteInt32(static_cast<int32_t>(mode))
@@ -185,7 +185,7 @@ public:
         audioFocusType.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
         audioFocusType.sourceType = static_cast<SourceType>(parcel.ReadInt32());
         audioFocusType.isPlay = parcel.ReadBool();
-        sessionID = parcel.ReadUint32();
+        sessionId = parcel.ReadUint32();
         pauseWhenDucked = parcel.ReadBool();
         pid = parcel.ReadInt32();
         mode = static_cast<InterruptMode>(parcel.ReadInt32());

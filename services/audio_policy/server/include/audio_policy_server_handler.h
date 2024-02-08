@@ -26,10 +26,10 @@
 #include "audio_policy_client.h"
 #include "i_standard_audio_policy_manager_listener.h"
 #include "i_standard_audio_routing_manager_listener.h"
+#include "i_audio_interrupt_event_dispatcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace std;
 
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
@@ -72,7 +72,7 @@ public:
         AudioRingerMode ringMode;
         MicStateChangeEvent micStateChangeEvent;
         InterruptEventInternal interruptEvent;
-        uint32_t sessionID;
+        uint32_t sessionId;
         int32_t clientId;
         sptr<AudioDeviceDescriptor> descriptor;
         CastType type;
@@ -105,10 +105,10 @@ public:
         int32_t error_;
     };
 
+    void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
+
     void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
     void RemoveAudioPolicyClientProxyMap(pid_t clientPid);
-    void AddInterruptCbsMap(uint32_t sessionID, const std::shared_ptr<AudioInterruptCallback> &callback);
-    int32_t RemoveInterruptCbsMap(uint32_t sessionID);
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);
     int32_t RemoveExternInterruptCbsMap(int32_t clientId);
     void AddAvailableDeviceChangeMap(int32_t clientId, const AudioDeviceUsage usage,
@@ -117,17 +117,17 @@ public:
     void AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
-    bool SendDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
-    bool SendAvailableDeviceChange(const vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendAvailableDeviceChange(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent);
-    bool SendAudioFocusInfoChangeCallBack(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
+    bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
-    bool SendRingerModeUpdatedCallBack(const AudioRingerMode &ringMode);
-    bool SendMicStateUpdatedCallBack(const MicStateChangeEvent &micStateChangeEvent);
-    bool SendInterruptEventInternalCallBack(const InterruptEventInternal &interruptEvent);
-    bool SendInterruptEventWithSeesionIdCallBack(const InterruptEventInternal &interruptEvent,
-        const uint32_t &sessionID);
-    bool SendInterruptEventWithClientIdCallBack(const InterruptEventInternal &interruptEvent,
+    bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
+    bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
+    bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
+    bool SendInterruptEventWithSessionIdCallback(const InterruptEventInternal &interruptEvent,
+        const uint32_t &sessionId);
+    bool SendInterruptEventWithClientIdCallback(const InterruptEventInternal &interruptEvent,
         const int32_t &clientId);
     bool SendPreferredOutputDeviceUpdated();
     bool SendPreferredInputDeviceUpdated();
@@ -171,8 +171,9 @@ private:
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     std::mutex runnerMutex_;
+    std::weak_ptr<IAudioInterruptEventDispatcher> interruptEventDispatcher_;
+
     std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
-    std::unordered_map<uint32_t, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;

@@ -20,13 +20,18 @@ namespace AudioStandard {
 AudioPolicyServerHandler::AudioPolicyServerHandler() : AppExecFwk::EventHandler(
     AppExecFwk::EventRunner::Create("OS_APAsyncRunner"))
 {
-    AUDIO_DEBUG_LOG("AudioPolicyServerHandler created");
+    AUDIO_DEBUG_LOG("ctor");
 }
 
 AudioPolicyServerHandler::~AudioPolicyServerHandler()
 {
-    AUDIO_WARNING_LOG("AudioPolicyServerHandler destroyed");
+    AUDIO_WARNING_LOG("dtor should not happen");
 };
+
+void AudioPolicyServerHandler::Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher)
+{
+    interruptEventDispatcher_ = dispatcher;
+}
 
 void AudioPolicyServerHandler::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
 {
@@ -42,24 +47,6 @@ void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
     audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
     AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu]",
         audioPolicyClientProxyAPSCbsMap_.size());
-}
-
-void AudioPolicyServerHandler::AddInterruptCbsMap(uint32_t sessionID,
-    const std::shared_ptr<AudioInterruptCallback> &callback)
-{
-    std::lock_guard<std::mutex> lock(runnerMutex_);
-    interruptCbsMap_[sessionID] = callback;
-    AUDIO_INFO_LOG("AddInterruptCbsMap, group data num [%{public}zu]", interruptCbsMap_.size());
-}
-
-int32_t AudioPolicyServerHandler::RemoveInterruptCbsMap(uint32_t sessionID)
-{
-    std::lock_guard<std::mutex> lock(runnerMutex_);
-    if (interruptCbsMap_.erase(sessionID) == 0) {
-        AUDIO_ERR_LOG("RemoveInterruptCbsMap session %{public}d not present", sessionID);
-        return ERR_INVALID_OPERATION;
-    }
-    return SUCCESS;
 }
 
 void AudioPolicyServerHandler::AddExternInterruptCbsMap(int32_t clientId,
@@ -133,7 +120,7 @@ int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32
     return SUCCESS;
 }
 
-bool AudioPolicyServerHandler::SendDeviceChangedCallback(const vector<sptr<AudioDeviceDescriptor>> &desc,
+bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
     bool isConnected)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -147,7 +134,7 @@ bool AudioPolicyServerHandler::SendDeviceChangedCallback(const vector<sptr<Audio
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendAvailableDeviceChange(const vector<sptr<AudioDeviceDescriptor>> &desc,
+bool AudioPolicyServerHandler::SendAvailableDeviceChange(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
     bool isConnected)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -173,7 +160,7 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendAudioFocusInfoChangeCallBack(int32_t callbackCategory,
+bool AudioPolicyServerHandler::SendAudioFocusInfoChangeCallback(int32_t callbackCategory,
     const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -196,7 +183,7 @@ bool AudioPolicyServerHandler::SendAudioFocusInfoChangeCallBack(int32_t callback
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendRingerModeUpdatedCallBack(const AudioRingerMode &ringMode)
+bool AudioPolicyServerHandler::SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
@@ -207,7 +194,7 @@ bool AudioPolicyServerHandler::SendRingerModeUpdatedCallBack(const AudioRingerMo
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendMicStateUpdatedCallBack(const MicStateChangeEvent &micStateChangeEvent)
+bool AudioPolicyServerHandler::SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
@@ -218,7 +205,7 @@ bool AudioPolicyServerHandler::SendMicStateUpdatedCallBack(const MicStateChangeE
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendInterruptEventInternalCallBack(const InterruptEventInternal &interruptEvent)
+bool AudioPolicyServerHandler::SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
@@ -229,13 +216,13 @@ bool AudioPolicyServerHandler::SendInterruptEventInternalCallBack(const Interrup
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendInterruptEventWithSeesionIdCallBack(const InterruptEventInternal &interruptEvent,
-    const uint32_t &sessionID)
+bool AudioPolicyServerHandler::SendInterruptEventWithSessionIdCallback(const InterruptEventInternal &interruptEvent,
+    const uint32_t &sessionId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->interruptEvent = interruptEvent;
-    eventContextObj->sessionID = sessionID;
+    eventContextObj->sessionId = sessionId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_SESSIONID,
         eventContextObj));
@@ -243,7 +230,7 @@ bool AudioPolicyServerHandler::SendInterruptEventWithSeesionIdCallBack(const Int
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendInterruptEventWithClientIdCallBack(const InterruptEventInternal &interruptEvent,
+bool AudioPolicyServerHandler::SendInterruptEventWithClientIdCallback(const InterruptEventInternal &interruptEvent,
     const int32_t &clientId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -508,11 +495,12 @@ void AudioPolicyServerHandler::HandleInterruptEvent(const AppExecFwk::InnerEvent
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(runnerMutex_);
-    for (auto it : interruptCbsMap_) {
-        if (it.second != nullptr) {
-            it.second->OnInterrupt(eventContextObj->interruptEvent);
-        }
+
+    std::unique_lock<std::mutex> lock(runnerMutex_);
+    std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher = interruptEventDispatcher_.lock();
+    lock.unlock();
+    if (dispatcher != nullptr) {
+        dispatcher->DispatchInterruptEventWithSessionId(0, eventContextObj->interruptEvent);
     }
 }
 
@@ -521,10 +509,13 @@ void AudioPolicyServerHandler::HandleInterruptEventWithSessionId(const AppExecFw
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
-    std::lock_guard<std::mutex> lock(runnerMutex_);
-    std::shared_ptr<AudioInterruptCallback> policyListenerCb = interruptCbsMap_[eventContextObj->sessionID];
-    CHECK_AND_RETURN_LOG(policyListenerCb != nullptr, "policyListenerCb get nullptr");
-    policyListenerCb->OnInterrupt(eventContextObj->interruptEvent);
+    std::unique_lock<std::mutex> lock(runnerMutex_);
+    std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher = interruptEventDispatcher_.lock();
+    lock.unlock();
+    if (dispatcher != nullptr) {
+        dispatcher->DispatchInterruptEventWithSessionId(eventContextObj->sessionId,
+            eventContextObj->interruptEvent);
+    }
 }
 
 void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event)
@@ -627,11 +618,11 @@ void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::Inner
     std::shared_ptr<CapturerCreateEvent> eventContextObj = event->GetSharedObject<CapturerCreateEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
-    uint64_t sessionID = eventContextObj->sessionId_;
+    uint64_t sessionId = eventContextObj->sessionId_;
     SessionInfo sessionInfo{eventContextObj->capturerInfo_.sourceType, eventContextObj->streamInfo_.samplingRate,
         eventContextObj->streamInfo_.channels};
 
-    eventContextObj->error_ = AudioPolicyService::GetAudioPolicyService().OnCapturerSessionAdded(sessionID,
+    eventContextObj->error_ = AudioPolicyService::GetAudioPolicyService().OnCapturerSessionAdded(sessionId,
         sessionInfo);
 }
 
@@ -640,9 +631,9 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
     std::shared_ptr<uint64_t> eventContextObj = event->GetSharedObject<uint64_t>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
 
-    uint64_t sessionID = *eventContextObj;
+    uint64_t sessionId = *eventContextObj;
 
-    AudioPolicyService::GetAudioPolicyService().OnCapturerSessionRemoved(sessionID);
+    AudioPolicyService::GetAudioPolicyService().OnCapturerSessionRemoved(sessionId);
 }
 
 void AudioPolicyServerHandler::HandleWakeupCloaseEvent(const AppExecFwk::InnerEvent::Pointer &event)

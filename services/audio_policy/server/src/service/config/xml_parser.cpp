@@ -271,12 +271,7 @@ void XMLParser::ParseAudioInterrupt(xmlNode &node)
     xmlNode *child = node.children;
     xmlChar *enableFlag = xmlNodeGetContent(child);
 
-    if (!xmlStrcmp(enableFlag, reinterpret_cast<const xmlChar*>("true"))) {
-        mPortObserver.OnAudioInterruptEnable(true);
-    } else {
-        mPortObserver.OnAudioInterruptEnable(false);
-    }
-
+    xmlStrcmp(enableFlag, reinterpret_cast<const xmlChar*>("true"));
     xmlFree(enableFlag);
 }
 

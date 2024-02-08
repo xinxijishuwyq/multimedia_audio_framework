@@ -62,6 +62,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
 class AudioPolicyService : public IPortObserver, public IDeviceStatusObserver,
     public IAudioAccessibilityConfigObserver, public IPolicyProvider {
 public:
@@ -144,13 +145,6 @@ public:
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
 
-    bool IsAudioInterruptEnabled() const;
-
-    auto& GetAudioFocusMap() const
-    {
-        return focusMap_;
-    }
-
     AudioRingerMode GetRingerMode() const;
 
     int32_t SetMicrophoneMute(bool isMute);
@@ -177,8 +171,6 @@ public:
     void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData);
 
     void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData);
-
-    void OnAudioInterruptEnable(bool enable);
 
     void OnUpdateRouteSupport(bool isSupported);
 
@@ -697,7 +689,6 @@ private:
 
     void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc);
 
-    bool interruptEnabled_ = true;
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
@@ -750,7 +741,6 @@ private:
     std::string lastBTDevice_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
-    std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusMap_ = {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
 
     std::mutex ioHandlesMutex_;

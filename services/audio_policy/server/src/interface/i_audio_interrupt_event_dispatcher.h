@@ -13,18 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef I_AUDIO_INTERRUPT_INTERFACE_H
-#define I_AUDIO_INTERRUPT_INTERFACE_H
+#ifndef I_AUDIO_INTERRUPT_EVENT_DISPATCHER_H
+#define I_AUDIO_INTERRUPT_EVENT_DISPATCHER_H
+
+#include "audio_interrupt_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-// define interfaces for other policy services
-class IAudioInterruptInterface {
+// define interfaces for handler to call
+class IAudioInterruptEventDispatcher {
 public:
-    virtual func() = 0;
+    virtual void DispatchInterruptEventWithSessionId(
+        uint32_t sessionId, const InterruptEventInternal &interruptEvent) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // I_AUDIO_INTERRUPT_INTERFACE_H
+#endif // I_AUDIO_INTERRUPT_EVENT_DISPATCHER_H

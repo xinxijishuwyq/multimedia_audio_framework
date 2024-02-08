@@ -24,7 +24,6 @@ namespace AudioStandard {
 class IPortObserver {
 public:
     virtual void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata) = 0;
-    virtual void OnAudioInterruptEnable(bool enable) = 0;
     virtual void OnUpdateRouteSupport(bool isSupported) = 0;
     virtual void OnAudioLatencyParsed(uint64_t latency) = 0;
     virtual void OnSinkLatencyParsed(uint32_t latency) = 0;

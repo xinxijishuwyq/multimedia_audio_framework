@@ -16,18 +16,20 @@
 #ifndef AUDIO_SERVICE_DUMP_H
 #define AUDIO_SERVICE_DUMP_H
 
-#include <pulse/pulseaudio.h>
-#include <audio_info.h>
-#include <audio_timer.h>
-#include <audio_errors.h>
 #include <vector>
 #include <list>
-#include <pwd.h>
 #include <queue>
 #include <map>
+#include <pwd.h>
 #include "securec.h"
-#include "audio_log.h"
 #include "nocopyable.h"
+
+#include <pulse/pulseaudio.h>
+
+#include "audio_log.h"
+#include "audio_timer.h"
+#include "audio_errors.h"
+#include "audio_info.h"
 #include "audio_effect_manager.h"
 #include "audio_volume_config.h"
 #include "microphone_descriptor.h"
@@ -73,9 +75,9 @@ typedef struct {
 } GroupInfo;
 
 typedef struct {
-    int32_t zoneID; // Zone ID value should 0 on local device.
+    int32_t zoneId; // Zone ID value should 0 on local device.
     std::set<int32_t> pids; // When Zone ID is 0, there does not need to be a value.
-    std::set<uint32_t> interruptCbSessionIDsMap;
+    std::set<uint32_t> interruptCbSessionIdsMap;
     std::set<int32_t> audioPolicyClientProxyCBClientPidMap;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
 } AudioInterruptZoneDump;

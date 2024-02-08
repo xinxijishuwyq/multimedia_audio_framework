@@ -94,7 +94,7 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_INTERNAL_FORCE_STOP;
     audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
     audioInterrupt.audioFocusType.isPlay = true;
-    audioInterrupt.sessionID = AUDIO_INTERRUPT_SESSION_ID;
+    audioInterrupt.sessionId = AUDIO_INTERRUPT_SESSION_ID;
     audioInterrupt.pid = getpid();
 
     int32_t result = -1;

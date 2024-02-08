@@ -75,7 +75,7 @@ int32_t AudioRendererGateway::SetParams(const AudioRendererParams params)
 
     int32_t audioSessionID = audioStream_->GetAudioSessionID(sessionID_);
     CHECK_AND_RETURN_RET_LOG(audioSessionID == 0, ERR_INVALID_INDEX, "GetAudioSessionID Failed");
-    audioInterrupt_.sessionID = sessionID_;
+    audioInterrupt_.sessionId = sessionID_;
 
     if (audioInterruptCallback_ == nullptr) {
         audioInterruptCallback_ = std::make_shared<AudioInterruptCallbackGateway>(audioStream_, audioInterrupt_);
@@ -200,7 +200,7 @@ bool AudioRendererGateway::Start(StateChangeCmdType cmdType) const
             break;
     }
 
-    if (audioInterrupt_.streamType == STREAM_DEFAULT || audioInterrupt_.sessionID == INVALID_SESSION) {
+    if (audioInterrupt_.streamType == STREAM_DEFAULT || audioInterrupt_.sessionId == INVALID_SESSION) {
         return false;
     }
 
