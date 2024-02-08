@@ -109,6 +109,9 @@ const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
+#ifdef FACTOR_INTERRUPT
+      interruptService_(AudioInterruptService::GetService()),
+#endif
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
@@ -1070,16 +1073,19 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID,
 int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* clientId */,
                                                             const sptr<IRemoteObject> &object)
 {
+#ifdef FACTOR_INTERRUPT
+    return interruptService_.SetAudioManagerInterruptCallback(object);
+#else
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "SetAudioManagerInterruptCallback object is nullptr");
+        "object is nullptr");
 
     sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
-        "SetAudioManagerInterruptCallback obj cast failed");
+        "obj cast failed");
 
     std::shared_ptr<AudioInterruptCallback> callback = std::make_shared<AudioPolicyManagerListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "SetAudioManagerInterruptCallback create cb failed");
+        "create cb failed");
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
 
@@ -1087,24 +1093,32 @@ int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* cli
         audioPolicyServerHandler_->AddExternInterruptCbsMap(clientPid, callback);
     }
 
-    AUDIO_INFO_LOG("SetAudioManagerInterruptCallback for client id %{public}d done", clientPid);
+    AUDIO_INFO_LOG("for client id %{public}d done", clientPid);
 
     return SUCCESS;
+#endif
 }
 
 int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* clientId */)
 {
+#ifdef FACTOR_INTERRUPT
+    return interruptService_.UnsetAudioManagerInterruptCallback();
+#else
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     if (audioPolicyServerHandler_ != nullptr) {
         return audioPolicyServerHandler_->RemoveExternInterruptCbsMap(clientPid);
     }
 
     return SUCCESS;
+#endif
 }
 
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
-    AUDIO_INFO_LOG("RequestAudioFocus in");
+#ifdef FACTOR_INTERRUPT
+    return interruptService_.RequestAudioFocus(clientId, audioInterrupt);
+#else
+    AUDIO_INFO_LOG("in");
     std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (clientOnFocus_ == clientId) {
         AUDIO_INFO_LOG("client already has focus");
@@ -1122,21 +1136,26 @@ int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const Audio
     NotifyFocusGranted(clientId, audioInterrupt);
 
     return SUCCESS;
+#endif
 }
 
 int32_t AudioPolicyServer::AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
-    AUDIO_INFO_LOG("AudioPolicyServer: AbandonAudioFocus in");
+#ifdef FACTOR_INTERRUPT
+    return interruptService_.AbandonAudioFocus(clientId, audioInterrupt);
+#else
+    AUDIO_INFO_LOG("in");
 
     std::lock_guard<std::recursive_mutex> lock(focussedAudioInterruptInfoMutex_);
     if (clientId == clientOnFocus_) {
-        AUDIO_DEBUG_LOG("AudioPolicyServer: remove app focus");
+        AUDIO_DEBUG_LOG("remove app focus");
         focussedAudioInterruptInfo_.reset();
         focussedAudioInterruptInfo_ = nullptr;
         clientOnFocus_ = 0;
     }
 
     return SUCCESS;
+#endif
 }
 
 void AudioPolicyServer::NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt)
