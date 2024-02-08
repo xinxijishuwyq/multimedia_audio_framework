@@ -711,6 +711,10 @@ const std::string PaRendererStreamImpl::GetEffectSceneName(AudioStreamType audio
 // offload
 size_t PaRendererStreamImpl::GetWritableSize()
 {
+    PaLockGuard lock(mainloop_);
+    if (paStream_ == nullptr) {
+        return 0;
+    }
     return pa_stream_writable_size(paStream_);
 }
 
