@@ -1409,6 +1409,7 @@ void AudioEffectChainManager::RegisterEffectChainCountBackupMap(std::string scen
 
 void AudioEffectChainManager::SetLatency(std::string sceneType, uint32_t latency)
 {
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     for (auto sessionId : SceneTypeToSessionIDMap_[sceneType]) {
         SessionIDToLatency_[sessionId] = latency;
     }
@@ -1417,13 +1418,15 @@ void AudioEffectChainManager::SetLatency(std::string sceneType, uint32_t latency
 uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
 {
     if (offloadEnabled_) {
-        AUDIO_INFO_LOG("offload enabled, return 0");
+        AUDIO_DEBUG_LOG("offload enabled, return 0");
         return 0;
     }
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(SessionIDToLatency_.count(sessionId), 0, "no such sessionId in map");
     if (SessionIDToEffectInfoMap_[sessionId].sceneMode == "" ||
         SessionIDToEffectInfoMap_[sessionId].sceneMode == "None") {
-        AUDIO_INFO_LOG("seceneMode is None, return 0");
+        AUDIO_DEBUG_LOG("seceneMode is None, return 0");
+        return 0;
     }
     return SessionIDToLatency_[sessionId];
 }
