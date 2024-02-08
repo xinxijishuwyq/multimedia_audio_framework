@@ -60,6 +60,13 @@ private:
     AudioInterruptService();
     virtual ~AudioInterruptService();
 
+    // deprecated interrupt interfaces
+    void NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt);
+    int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
+    int32_t AbandonAudioFocusInternal(const int32_t clientId, const AudioInterrupt &audioInterrupt);
+
+    // modern interrupt interfaces
+
     std::mutex mutex_;
 };
 } // namespace AudioStandard

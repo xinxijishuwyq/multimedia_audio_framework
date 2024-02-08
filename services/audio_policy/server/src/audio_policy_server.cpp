@@ -1025,6 +1025,9 @@ AudioScene AudioPolicyServer::GetAudioScene()
 int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
     const int32_t zoneID)
 {
+#ifdef FACTOR_INTERRUPT
+    return interruptService_.SetAudioInterruptCallback(zoneID, sessionID, object);
+#else
     auto callerUid = IPCSkeleton::GetCallingUid();
     bool ret = audioPolicyService_.IsSessionIdValid(callerUid, sessionID);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM,
@@ -1051,10 +1054,14 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(const uint32_t sessionID, c
     }
 
     return SUCCESS;
+#endif
 }
 
 int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID)
 {
+#ifdef FACTOR_INTERRUPT
+    return interruptService_.UnsetAudioInterruptCallback(zoneID, sessionID);
+#else
     if (audioPolicyServerHandler_ != nullptr) {
         {
             std::lock_guard<std::mutex> lock(audioInterruptZoneMutex_);
@@ -1068,6 +1075,7 @@ int32_t AudioPolicyServer::UnsetAudioInterruptCallback(const uint32_t sessionID,
         return audioPolicyServerHandler_->RemoveInterruptCbsMap(sessionID);
     }
     return SUCCESS;
+#endif
 }
 
 int32_t AudioPolicyServer::SetAudioManagerInterruptCallback(const int32_t /* clientId */,
@@ -1416,6 +1424,9 @@ AudioScene AudioPolicyServer::GetHighestPriorityAudioSceneFromAudioFocusInfoList
 
 int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
+#ifdef FACTOR_INTERRUPT
+    return interruptService_.ActivateAudioInterrupt(zoneID, audioInterrupt);
+#else
     std::lock_guard<std::mutex> lock(audioInterruptZoneMutex_);
     AudioStreamType streamType = audioInterrupt.audioFocusType.streamType;
     uint32_t incomingSessionID = audioInterrupt.sessionID;
@@ -1442,6 +1453,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(const AudioInterrupt &audioInt
     AudioScene targetAudioScene = GetHighestPriorityAudioSceneFromAudioFocusInfoList(zoneID);
     UpdateAudioScene(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
+#endif
 }
 
 void AudioPolicyServer::UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType)
@@ -1581,6 +1593,9 @@ void AudioPolicyServer::ResumeAudioFocusList(const int32_t zoneID)
 
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
+#ifdef FACTOR_INTERRUPT
+    return interruptService_.DeactivateAudioInterrupt(zoneID, audioInterrupt);
+#else
     std::lock_guard<std::mutex> lock(audioInterruptZoneMutex_);
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
 
@@ -1591,7 +1606,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     }
 
     if (!audioPolicyService_.IsAudioInterruptEnabled()) {
-        AUDIO_WARNING_LOG("AudioInterrupt is not enabled. No need to DeactivateAudioInterrupt");
+        AUDIO_WARNING_LOG("audio interrupt is not enabled, no need to deactivate");
         uint32_t exitSessionID = audioInterrupt.sessionID;
         int32_t exitPid = audioInterrupt.pid;
         audioFocusInfoList.remove_if([&](std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo) {
@@ -1619,15 +1634,16 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         return SUCCESS;
     }
 
-    AUDIO_INFO_LOG("DeactivateAudioInterrupt::sessionID: %{public}u, streamType: %{public}d, streamUsage: %{public}d, "\
+    AUDIO_INFO_LOG("sessionID: %{public}u, streamType: %{public}d, streamUsage: %{public}d, "\
         "sourceType: %{public}d, pid: %{public}d", audioInterrupt.sessionID, (audioInterrupt.audioFocusType).streamType,
         audioInterrupt.streamUsage, (audioInterrupt.audioFocusType).sourceType, audioInterrupt.pid);
 
     if (audioInterrupt.parallelPlayFlag) {
-        AUDIO_INFO_LOG("DeactivateAudioInterrupt::parallelPlayFlag is true.");
+        AUDIO_INFO_LOG("parallelPlayFlag is true.");
         return SUCCESS;
     }
     return DeactivateAudioInterruptEnable(audioInterrupt, zoneID);
+#endif
 }
 
 int32_t AudioPolicyServer::DeactivateAudioInterruptEnable(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
