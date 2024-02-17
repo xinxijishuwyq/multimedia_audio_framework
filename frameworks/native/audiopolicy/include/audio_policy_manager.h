@@ -327,6 +327,8 @@ public:
 
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
+    ConverterConfig GetConverterConfig();
+
 private:
     AudioPolicyManager()
     {

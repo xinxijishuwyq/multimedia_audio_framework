@@ -3390,5 +3390,10 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevi
 
     return btdevice;
 }
+
+ConverterConfig AudioPolicyServer::GetConverterConfig()
+{
+    return audioPolicyService_.GetConverterConfig();
+}
 } // namespace AudioStandard
 } // namespace OHOS

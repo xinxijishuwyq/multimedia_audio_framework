@@ -697,7 +697,7 @@ void AudioServiceDump::EffectManagerInfoDump(string& dumpString)
 {
     int count = 0;
     dumpString += "\nEffect Manager INFO\n";
-    AppendFormat(dumpString, "  XML version:%f \n", audioData_.policyData.oriEffectConfig.version);
+    AppendFormat(dumpString, "  XML version:%s \n", audioData_.policyData.oriEffectConfig.version.c_str());
     // xml -- Library
     AppendFormat(dumpString, "- %d library (s) available :\n", audioData_.policyData.oriEffectConfig.libraries.size());
     for (Library x : audioData_.policyData.oriEffectConfig.libraries) {

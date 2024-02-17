@@ -349,7 +349,9 @@ public:
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) override;
 
     std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
-        
+
+    ConverterConfig GetConverterConfig() override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

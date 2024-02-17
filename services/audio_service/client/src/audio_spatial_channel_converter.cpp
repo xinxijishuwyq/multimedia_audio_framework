@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "audio_format_converter_3DA.h"
+#include "audio_spatial_channel_converter.h"
+
 #include <cstdint>
 #include <string>
 #include <iostream>
@@ -22,44 +23,26 @@ namespace AudioStandard {
 static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;
 static constexpr int32_t AVS3METADATA_SIZE = 19824;
 static constexpr int32_t INVALID_FORMAT = -1;
-static constexpr AudioChannelLayout DEFAULT_LAYOUT = CH_LAYOUT_5POINT1POINT2;
+static constexpr uint64_t DEFAULT_LAYOUT = CH_LAYOUT_UNKNOWN;
 
 #if (defined(__aarch64__) || defined(__x86_64__))
-    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
+constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib64/"};
 #else
-    constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
+constexpr const char *LD_EFFECT_LIBRARY_PATH[] = {"/system/lib/"};
 #endif
 
-std::map<uint8_t, int8_t> format2bps = {{SAMPLE_U8, sizeof(uint8_t)},
-                                        {SAMPLE_S16LE, sizeof(int16_t)},
-                                        {SAMPLE_S24LE, sizeof(int16_t) + sizeof(int8_t)},
-                                        {SAMPLE_S32LE, sizeof(int32_t)}};
+static std::map<uint8_t, int8_t> format2bps = {
+    {SAMPLE_U8, sizeof(uint8_t)},
+    {SAMPLE_S16LE, sizeof(int16_t)},
+    {SAMPLE_S24LE, sizeof(int16_t) + sizeof(int8_t)},
+    {SAMPLE_S32LE, sizeof(int32_t)}};
 
 static int8_t GetBps(uint8_t format)
 {
     return format2bps.count(format) > 0 ? format2bps[format] : INVALID_FORMAT;
 }
 
-static int32_t GetBits(uint64_t x)
-{
-    return x == 0 ? 0 : (x & 1) + GetBits(x >> 1);
-}
-
-static bool LoadFromXML(Library &lib, AudioChannelLayout &layout)
-{
-    AudioConverterParser parser;
-    ConverterConfig result;
-    layout = DEFAULT_LAYOUT;
-    if (parser.LoadConfig(result) != 0) {
-        return false;
-    }
-    lib = result.library;
-    layout = result.outChannelLayout;
-    AUDIO_INFO_LOG("<log info> lib %{public}s %{public}s successful from xml", lib.path.c_str(), lib.name.c_str());
-    return true;
-}
-
-int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps)
+int32_t AudioSpatialChannelConverter::GetPcmLength(int32_t channels, int8_t bps)
 {
     if (encoding_ == ENCODING_AUDIOVIVID) {
         return channels * AUDIO_VIVID_SAMPLES * bps;
@@ -68,7 +51,7 @@ int32_t AudioFormatConverter3DA::GetPcmLength(int32_t channels, int8_t bps)
     return 0;
 }
 
-int32_t AudioFormatConverter3DA::GetMetaLength()
+int32_t AudioSpatialChannelConverter::GetMetaLength()
 {
     if (encoding_ == ENCODING_AUDIOVIVID) {
         return AVS3METADATA_SIZE;
@@ -77,59 +60,58 @@ int32_t AudioFormatConverter3DA::GetMetaLength()
     return 0;
 }
 
-int32_t AudioFormatConverter3DA::Init(const AudioStreamParams info)
+bool AudioSpatialChannelConverter::Init(const AudioStreamParams info, const ConverterConfig cfg)
 {
     inChannel_ = info.channels;
     outChannel_ = info.channels;
 
     encoding_ = info.encoding;
+    sampleRate_ = info.samplingRate;
 
     bps_ = GetBps(info.format);
-    if (bps_ < 0) {
-        AUDIO_ERR_LOG("converter: Unsupported sample format");
-        return INVALID_FORMAT;
-    }
+    CHECK_AND_RETURN_RET_LOG(bps_ > 0, false, "channel converter: Unsupported sample format");
 
-    Library library;
+    Library library = cfg.library;
+    outChannelLayout_ = cfg.outChannelLayout;
+    latency_ = cfg.latency;
+
     loadSuccess_ = false;
-    if (LoadFromXML(library, outChannelLayout_)) {
-        if (externalLoader_.AddAlgoHandle(library)) {
-            outChannel_ = GetBits(outChannelLayout_);
-            externalLoader_.SetIOBufferConfig(true, info.format, inChannel_, info.channelLayout);
-            externalLoader_.SetIOBufferConfig(false, info.format, outChannel_, outChannelLayout_);
-            if (externalLoader_.Init()) {
-                loadSuccess_ = true;
-            }
+    if (externalLoader_.AddAlgoHandle(library)) {
+        outChannel_ = __builtin_popcountll(outChannelLayout_);
+        externalLoader_.SetIOBufferConfig(true, info.format, inChannel_, info.channelLayout);
+        externalLoader_.SetIOBufferConfig(false, info.format, outChannel_, outChannelLayout_);
+        if (externalLoader_.Init()) {
+            loadSuccess_ = true;
         }
     }
     if (!loadSuccess_) {
         outChannel_ = info.channels;
-        outChannelLayout_ = CH_LAYOUT_UNKNOWN; // can not convert
+        outChannelLayout_ = DEFAULT_LAYOUT; // can not convert
     }
-    return 0;
+    return true;
 }
 
-void AudioFormatConverter3DA::ConverterChannels(uint8_t &channels, uint64_t &channelLayout)
+void AudioSpatialChannelConverter::ConverterChannels(uint8_t &channels, uint64_t &channelLayout)
 {
     channels = outChannel_;
     channelLayout = outChannelLayout_;
 }
 
-bool AudioFormatConverter3DA::GetInputBufferSize(size_t &bufferSize)
+bool AudioSpatialChannelConverter::GetInputBufferSize(size_t &bufferSize)
 {
     bufferSize = GetPcmLength(inChannel_, bps_);
     return bufferSize > 0;
 }
 
-bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const BufferDesc metaBuffer)
+bool AudioSpatialChannelConverter::CheckInputValid(const BufferDesc pcmBuffer, const BufferDesc metaBuffer)
 {
     if (pcmBuffer.buffer == nullptr || metaBuffer.buffer == nullptr) {
         AUDIO_ERR_LOG("pcm or metadata buffer is nullptr");
         return false;
     }
     if (pcmBuffer.bufLength - GetPcmLength(inChannel_, bps_) != 0) {
-        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}zu, excepted %{public}d",
-            pcmBuffer.bufLength, GetPcmLength(inChannel_, bps_));
+        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}zu, excepted %{public}d", pcmBuffer.bufLength,
+            GetPcmLength(inChannel_, bps_));
         return false;
     }
     if (metaBuffer.bufLength - GetMetaLength() != 0) {
@@ -140,47 +122,49 @@ bool AudioFormatConverter3DA::CheckInputValid(const BufferDesc pcmBuffer, const 
     return true;
 }
 
-bool AudioFormatConverter3DA::AllocateMem()
+bool AudioSpatialChannelConverter::AllocateMem()
 {
     outPcmBuf_ = std::make_unique<uint8_t[]>(GetPcmLength(outChannel_, bps_));
     return outPcmBuf_ != nullptr;
 }
 
-void AudioFormatConverter3DA::GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen)
+void AudioSpatialChannelConverter::GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen)
 {
     buffer = outPcmBuf_.get();
     bufferLen = GetPcmLength(outChannel_, bps_);
 }
 
-int32_t AudioFormatConverter3DA::Process(const BufferDesc pcmBuffer, const BufferDesc metaBuffer)
+void AudioSpatialChannelConverter::Process(const BufferDesc pcmBuffer, const BufferDesc metaBuffer)
 {
-    int32_t ret = 0;
+    size_t n = GetPcmLength(outChannel_, bps_);
     if (!loadSuccess_) {
-        size_t n = GetPcmLength(outChannel_, bps_);
-        for (size_t i = 0; i < pcmBuffer.bufLength && i < n; i++)
-            outPcmBuf_[i] = pcmBuffer.buffer[i];
+        std::copy(pcmBuffer.buffer, pcmBuffer.buffer + n, outPcmBuf_.get());
     } else {
-        AudioBuffer inBuffer = {
-            .frameLength = AUDIO_VIVID_SAMPLES,
+        AudioBuffer inBuffer = {.frameLength = AUDIO_VIVID_SAMPLES,
             .raw = pcmBuffer.buffer,
             .metaData = metaBuffer.buffer};
-        AudioBuffer outBuffer = {
-            .frameLength = AUDIO_VIVID_SAMPLES,
+        AudioBuffer outBuffer = {.frameLength = AUDIO_VIVID_SAMPLES,
             .raw = outPcmBuf_.get(),
             .metaData = metaBuffer.buffer};
-        ret = externalLoader_.ApplyAlgo(inBuffer, outBuffer);
+        if (externalLoader_.ApplyAlgo(inBuffer, outBuffer) != 0) {
+            std::fill(outPcmBuf_.get(), outPcmBuf_.get() + n, 0);
+        }
     }
-    return ret;
 }
 
-bool AudioFormatConverter3DA::Flush()
+bool AudioSpatialChannelConverter::Flush()
 {
     return loadSuccess_ ? externalLoader_.FlushAlgo() : true;
 }
 
+uint32_t AudioSpatialChannelConverter::GetLatency()
+{
+    return loadSuccess_ ? latency_ * SAMPLE_RATE_48000 / sampleRate_ : 0;
+}
+
 static bool ResolveLibrary(const std::string &path, std::string &resovledPath)
 {
-    for (auto *libDir: LD_EFFECT_LIBRARY_PATH) {
+    for (auto *libDir : LD_EFFECT_LIBRARY_PATH) {
         std::string candidatePath = std::string(libDir) + "/" + path;
         if (access(candidatePath.c_str(), R_OK) == 0) {
             resovledPath = std::move(candidatePath);
@@ -213,9 +197,9 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
     CHECK_AND_RETURN_RET_LOG(libHandle_, false, "<log error> dlopen lib %{public}s Fail", relativePath.c_str());
     AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
 
-    AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(libHandle_,
-        AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
-    const char* error = dlerror();
+    AudioEffectLibrary *audioEffectLibHandle =
+        static_cast<AudioEffectLibrary *>(dlsym(libHandle_, AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
+    const char *error = dlerror();
     if (error) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s, %{public}p", error, audioEffectLibHandle);
         dlclose(libHandle_);
@@ -230,17 +214,8 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
 
 void LibLoader::SetIOBufferConfig(bool isInput, uint8_t format, uint32_t channels, uint64_t channelLayout)
 {
-    if (isInput) {
-        ioBufferConfig_.inputCfg.channels = channels;
-        ioBufferConfig_.inputCfg.format = format;
-        ioBufferConfig_.inputCfg.channelLayout = channelLayout;
-        ioBufferConfig_.inputCfg.encoding = ENCODING_AUDIOVIVID;
-    } else {
-        ioBufferConfig_.outputCfg.channels = channels;
-        ioBufferConfig_.outputCfg.format = format;
-        ioBufferConfig_.outputCfg.channelLayout = channelLayout;
-        ioBufferConfig_.outputCfg.encoding = ENCODING_AUDIOVIVID;
-    }
+    AudioBufferConfig &target = isInput ? ioBufferConfig_.inputCfg : ioBufferConfig_.outputCfg;
+    target = {.channels = channels, .format = format, .channelLayout = channelLayout, .encoding = ENCODING_AUDIOVIVID};
 }
 
 bool LibLoader::AddAlgoHandle(Library library)
@@ -249,8 +224,7 @@ bool LibLoader::AddAlgoHandle(Library library)
     libEntry_ = std::make_unique<AudioEffectLibEntry>();
     libEntry_->libraryName = library.name;
     bool loadLibrarySuccess = LoadLibrary(library.path);
-    CHECK_AND_RETURN_RET_LOG(loadLibrarySuccess, false,
-        "<log error> loadLibrary fail, please check logs!");
+    CHECK_AND_RETURN_RET_LOG(loadLibrarySuccess, false, "<log error> loadLibrary fail, please check logs!");
     int32_t ret = libEntry_->audioEffectLibHandle->createEffect(descriptor, &handle_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "%{public}s create fail", library.name.c_str());
     return true;
@@ -263,14 +237,13 @@ bool LibLoader::Init()
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, false,
-        "[%{public}s] lib EFFECT_CMD_INIT fail", libEntry_->libraryName.c_str());
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_INIT fail", libEntry_->libraryName.c_str());
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, false,
-        "[%{public}s] lib EFFECT_CMD_ENABLE fail", libEntry_->libraryName.c_str());
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_ENABLE fail",
+        libEntry_->libraryName.c_str());
     ret = (*handle_)->command(handle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, false,
-        "[%{public}s] lib EFFECT_CMD_SET_CONFIG fail", libEntry_->libraryName.c_str());
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_SET_CONFIG fail",
+        libEntry_->libraryName.c_str());
     return true;
 }
 
@@ -288,8 +261,8 @@ bool LibLoader::FlushAlgo()
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, false,
-        "[%{public}s] lib EFFECT_CMD_ENABLE fail", libEntry_->libraryName.c_str());
+    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_ENABLE fail",
+        libEntry_->libraryName.c_str());
     return true;
 }
 } // namespace AudioStandard

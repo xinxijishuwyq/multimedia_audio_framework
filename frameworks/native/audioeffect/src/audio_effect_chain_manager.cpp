@@ -437,6 +437,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         sceneType.c_str(), effectMode.c_str());
     standByEffectHandles.emplace_back(handle);
     libHandles.emplace_back(libHandle);
+    latency_ += static_cast<uint32_t>(replyData);
 }
 
 void AudioEffectChain::AddEffectHandleEnd()
@@ -552,6 +553,11 @@ void AudioEffectChain::StoreOldEffectChainInfo(std::string &sceneMode, AudioEffe
     sceneMode = GetEffectMode();
     ioBufferConfig = GetIoBufferConfig();
     return;
+}
+
+uint32_t AudioEffectChain::GetLatency()
+{
+    return latency_;
 }
 
 #ifdef SENSOR_ENABLE
@@ -917,6 +923,10 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string sceneTyp
         AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
     }
 
+    for (auto sessionId : SceneTypeToSessionIDMap_[sceneType]) {
+        SetLatency(sessionId, audioEffectChain->GetLatency());
+    }
+
     return SUCCESS;
 }
 
@@ -1194,6 +1204,9 @@ int32_t AudioEffectChainManager::SessionInfoMapDelete(std::string sceneType, std
     if (!SessionIDToEffectInfoMap_.erase(sessionID)) {
         return ERROR;
     }
+    if (!SessionIDToLatency_.erase(sessionID)) {
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -1392,6 +1405,30 @@ void AudioEffectChainManager::RegisterEffectChainCountBackupMap(std::string scen
         AUDIO_ERR_LOG("Wrong operation to SceneTypeToEffectChainCountBackupMap.");
     }
     return;
+}
+
+void AudioEffectChainManager::SetLatency(std::string sceneType, uint32_t latency)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    for (auto sessionId : SceneTypeToSessionIDMap_[sceneType]) {
+        SessionIDToLatency_[sessionId] = latency;
+    }
+}
+
+uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
+{
+    if (offloadEnabled_) {
+        AUDIO_DEBUG_LOG("offload enabled, return 0");
+        return 0;
+    }
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_RET_LOG(SessionIDToLatency_.count(sessionId), 0, "no such sessionId in map");
+    if (SessionIDToEffectInfoMap_[sessionId].sceneMode == "" ||
+        SessionIDToEffectInfoMap_[sessionId].sceneMode == "None") {
+        AUDIO_DEBUG_LOG("seceneMode is None, return 0");
+        return 0;
+    }
+    return SessionIDToLatency_[sessionId];
 }
 }
 }

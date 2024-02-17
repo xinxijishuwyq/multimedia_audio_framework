@@ -37,6 +37,7 @@
 #endif
 #include "uri.h"
 #include "audio_spatialization_service.h"
+#include "audio_converter_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -5524,6 +5525,12 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDev
     }
     unique_ptr<AudioDeviceDescriptor> res = std::move(activeDeviceDescriptors[index]);
     return res;
+}
+
+ConverterConfig AudioPolicyService::GetConverterConfig()
+{
+    AudioConverterParser &converterParser = AudioConverterParser::GetInstance();
+    return converterParser.LoadConfig();
 }
 } // namespace AudioStandard
 } // namespace OHOS

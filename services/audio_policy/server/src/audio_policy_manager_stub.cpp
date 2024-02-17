@@ -1061,5 +1061,14 @@ void AudioPolicyManagerStub::GetActiveBluetoothDeviceInternal(MessageParcel &dat
     std::unique_ptr<AudioDeviceDescriptor> desc = GetActiveBluetoothDevice();
     desc->Marshalling(reply);
 }
+
+void AudioPolicyManagerStub::GetConverterConfigInternal(MessageParcel &data, MessageParcel &reply)
+{
+    ConverterConfig result = GetConverterConfig();
+    reply.WriteUint32(result.latency);
+    reply.WriteString(result.library.name);
+    reply.WriteString(result.library.path);
+    reply.WriteUint64(result.outChannelLayout);
+}
 } // namespace audio_policy
 } // namespace OHOS

@@ -22,7 +22,6 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 group("audio_service_packages") {
   deps = [
     ":audio_common",
-    ":audio_converter_config",
     ":audio_server_init",
     ":audio_service",
   ]
@@ -132,9 +131,7 @@ ohos_shared_library("audio_client") {
   }
   install_enable = true
   sources = [
-    "client/src/audio_converter_parser.cpp",
     "client/src/audio_device_descriptor.cpp",
-    "client/src/audio_format_converter_3DA.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub.cpp",
     "client/src/audio_manager_proxy.cpp",
@@ -142,6 +139,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_process_proxy.cpp",
     "client/src/audio_routing_manager.cpp",
     "client/src/audio_service_client.cpp",
+    "client/src/audio_spatial_channel_converter.cpp",
     "client/src/audio_spatialization_manager.cpp",
     "client/src/audio_stream.cpp",
     "client/src/audio_stream_manager.cpp",
@@ -212,14 +210,6 @@ ohos_shared_library("audio_client") {
   innerapi_tags = [ "platformsdk" ]
 
   subsystem_name = "multimedia"
-  part_name = "audio_framework"
-}
-
-ohos_prebuilt_etc("audio_converter_config") {
-  source = "client/config/audio_converter_config.xml"
-
-  subsystem_name = "multimedia"
-  relative_install_dir = "audio"
   part_name = "audio_framework"
 }
 

@@ -20,6 +20,7 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 group("audio_policy_packages") {
   deps = [
+    ":audio_converter_config",
     ":audio_device_config",
     ":audio_dump",
     ":audio_effect_config",
@@ -149,6 +150,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/audio_device_manager.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/audio_state_manager.cpp",
+    "server/src/service/config/audio_converter_parser.cpp",
     "server/src/service/config/audio_device_parser.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
     "server/src/service/config/audio_strategy_router_parser.cpp",
@@ -329,6 +331,14 @@ if (audio_framework_feature_dtmf_tone) {
 
 ohos_prebuilt_etc("audio_effect_config") {
   source = "server/config/audio_effect_config.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_converter_config") {
+  source = "server/config/audio_converter_config.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"

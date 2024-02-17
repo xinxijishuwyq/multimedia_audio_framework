@@ -1409,5 +1409,15 @@ int32_t AudioPolicyManager::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, 
     }
     return gsp->NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 }
+
+ConverterConfig AudioPolicyManager::GetConverterConfig()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        return ConverterConfig();
+    }
+    return gsp->GetConverterConfig();
+}
 } // namespace AudioStandard
 } // namespace OHOS

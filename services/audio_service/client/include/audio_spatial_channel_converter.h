@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include "audio_info.h"
 #include "audio_effect.h"
-#include "audio_converter_parser.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,20 +42,21 @@ private:
     std::unique_ptr<AudioEffectLibEntry> libEntry_;
     AudioEffectHandle handle_;
     AudioEffectConfig ioBufferConfig_;
-    void* libHandle_;
+    void *libHandle_;
 };
 
-class AudioFormatConverter3DA {
+class AudioSpatialChannelConverter {
 public:
-    AudioFormatConverter3DA() = default;
-    int32_t Init(const AudioStreamParams info);
+    AudioSpatialChannelConverter() = default;
+    bool Init(const AudioStreamParams info, const ConverterConfig cfg);
     bool GetInputBufferSize(size_t &bufferSize);
     bool CheckInputValid(const BufferDesc pcmBuf, const BufferDesc metaBuf);
     bool AllocateMem();
-    int32_t Process(const BufferDesc pcmBuf, const BufferDesc metaBuf);
+    bool Flush();
+    uint32_t GetLatency();
+    void Process(const BufferDesc pcmBuf, const BufferDesc metaBuf);
     void ConverterChannels(uint8_t &channel, uint64_t &channelLayout);
     void GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen);
-    bool Flush();
 
 private:
     int32_t GetPcmLength(int32_t channels, int8_t bps);
@@ -65,11 +66,13 @@ private:
 
     int32_t inChannel_;
     int32_t outChannel_;
+    int32_t sampleRate_;
 
     uint8_t bps_;
     uint8_t encoding_;
+    uint32_t latency_;
 
-    AudioChannelLayout outChannelLayout_;
+    uint64_t outChannelLayout_;
 
     bool loadSuccess_;
 

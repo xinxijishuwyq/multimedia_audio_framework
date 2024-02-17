@@ -95,7 +95,7 @@ struct Postprocess {
 };
 
 struct OriginalEffectConfig {
-    float version;
+    std::string version;
     std::vector<Library> libraries;
     std::vector<Effect> effects;
     std::vector<EffectChain> effectChains;
@@ -273,6 +273,12 @@ struct AudioSpatializationState {
     bool headTrackingEnabled;
 };
 
+struct ConverterConfig {
+    std::string version;
+    uint32_t latency;
+    Library library;
+    uint64_t outChannelLayout;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

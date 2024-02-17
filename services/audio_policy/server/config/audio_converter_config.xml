@@ -16,5 +16,5 @@
 <audio_converter_conf version="1.0">
     <library name="mcr" path="libaudio_integration_mcr.z.so"/>
 
-    <converter_conf out_channel_layout="CH_LAYOUT_5POINT1POINT2"/>
+    <converter_conf out_channel_layout="CH_LAYOUT_5POINT1POINT2" latency="21"/>
 </audio_converter_conf>

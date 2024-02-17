@@ -99,9 +99,7 @@ static void LoadConfigVersion(OriginalEffectConfig &result, xmlNode* currNode)
     bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("version"));
     CHECK_AND_RETURN_LOG(ret, "missing information: audio_effects_conf node has no version attribute");
 
-    float pVersion = atof(reinterpret_cast<char*>
-    (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("version"))));
-    result.version = pVersion;
+    result.version = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("version")));
 }
 
 static void LoadLibrary(OriginalEffectConfig &result, xmlNode* secondNode)

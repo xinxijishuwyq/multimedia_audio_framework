@@ -512,11 +512,10 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
         return ERR_NOT_SUPPORTED;
     }
 
+    CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_WRITE_FAILED, "Write: converter isn't init.");
+
     BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
     BufferDesc metaDesc = {metaBuffer, metaBufferSize};
-
-    CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_WRITE_FAILED,
-        "Write: converter isn't init.");
 
     bool ret = converter_->CheckInputValid(pcmDesc, metaDesc);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "Write: Invalid input.");
@@ -1228,10 +1227,9 @@ int32_t AudioStream::InitFromParams(AudioStreamParams &info)
         ret = Initialize(AUDIO_SERVICE_CLIENT_PLAYBACK);
 
         if (info.encoding == ENCODING_AUDIOVIVID) {
-            converter_ = std::make_unique<AudioFormatConverter3DA>();
-            if (converter_ == nullptr ||
-                converter_->Init(info) != SUCCESS ||
-                !converter_->AllocateMem()) {
+            ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
+            converter_ = std::make_unique<AudioSpatialChannelConverter>();
+            if (converter_ == nullptr || !converter_->Init(info, cfg) || !converter_->AllocateMem()) {
                 AUDIO_ERR_LOG("AudioStream: converter construct error");
                 return ERR_NOT_SUPPORTED;
             }

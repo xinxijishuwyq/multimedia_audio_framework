@@ -89,46 +89,40 @@ AudioConverterParser::AudioConverterParser()
 {
     AUDIO_INFO_LOG("AudioConverterParser created");
 }
-AudioConverterParser::~AudioConverterParser()
-{
-    AUDIO_INFO_LOG("AudioConverterParser released");
-}
 
-static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
+static int32_t LoadConfigCheck(xmlDoc *doc, xmlNode *currNode)
 {
-    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, FILE_PARSE_ERROR,
-        "error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-    bool ret = xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_converter_conf"));
-    CHECK_AND_RETURN_RET_LOG(!ret, FILE_CONTENT_ERROR,
-        "Missing tag - audio_converter_conf: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
+    CHECK_AND_RETURN_RET_LOG(currNode != nullptr, FILE_PARSE_ERROR, "error: could not parse file %{public}s",
+        AUDIO_CONVERTER_CONFIG_FILE);
+    bool ret = xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar *>("audio_converter_conf"));
+    CHECK_AND_RETURN_RET_LOG(!ret, FILE_CONTENT_ERROR, "Missing tag - audio_converter_conf: %{public}s",
+        AUDIO_CONVERTER_CONFIG_FILE);
     CHECK_AND_RETURN_RET_LOG(currNode->xmlChildrenNode != nullptr, FILE_CONTENT_ERROR,
         "Missing node - audio_converter_conf: %s", AUDIO_CONVERTER_CONFIG_FILE);
 
     return 0;
 }
 
-static void LoadConfigLibrary(ConverterConfig &result, xmlNode* currNode)
+static void LoadConfigLibrary(ConverterConfig &result, xmlNode *currNode)
 {
-    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("name"))) {
+    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("name"))) {
         AUDIO_WARNING_LOG("missing information: library has no name attribute");
-    } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("path"))) {
+    } else if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("path"))) {
         AUDIO_WARNING_LOG("missing information: library has no path attribute");
     } else {
-        std::string libName = reinterpret_cast<char*>
-                              (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
-        std::string libPath = reinterpret_cast<char*>
-                              (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("path")));
+        std::string libName = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("name")));
+        std::string libPath = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("path")));
         result.library = {libName, libPath};
     }
 }
 
-static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode* currNode)
+static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode *currNode)
 {
-    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("out_channel_layout"))) {
+    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("out_channel_layout"))) {
         AUDIO_ERR_LOG("missing information: config has no out_channel_layout attribute");
     } else {
-        std::string strChannelLayout = reinterpret_cast<char*>
-            (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("out_channel_layout")));
+        std::string strChannelLayout =
+            reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("out_channel_layout")));
         if (str2layout.count(strChannelLayout) == 0) {
             AUDIO_ERR_LOG("unsupported format: invalid channel layout");
         } else {
@@ -137,34 +131,55 @@ static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode* currNode)
     }
 }
 
-static void LoadConfigVersion(ConverterConfig &result, xmlNode* currNode)
+static void LoadConfigLatency(ConverterConfig &result, xmlNode *currNode)
 {
-    bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("version"));
-    CHECK_AND_RETURN_LOG(ret, "missing information: audio_converter_conf node has no version attribute");
-
-    float pVersion = atof(reinterpret_cast<char*>
-        (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("version"))));
-    result.version = pVersion;
+    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("latency"))) {
+        AUDIO_ERR_LOG("missing information: config has no latency attribute");
+    } else {
+        char *cLatency = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("latency")));
+        char *end;
+        result.latency = std::strtod(cLatency, &end);
+        if (end == cLatency) {
+            AUDIO_ERR_LOG("get latency error: expected float but received %{public}s", cLatency);
+        }
+    }
 }
 
-int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
+static void LoadConfigVersion(ConverterConfig &result, xmlNode *currNode)
 {
+    bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("version"));
+    CHECK_AND_RETURN_LOG(ret, "missing information: audio_converter_conf node has no version attribute");
+
+    result.version = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("version")));
+}
+
+AudioConverterParser &AudioConverterParser::GetInstance()
+{
+    static AudioConverterParser instance;
+    return instance;
+}
+
+ConverterConfig AudioConverterParser::LoadConfig()
+{
+    std::lock_guard<std::mutex> lock(loadConfigMutex_);
+    int32_t ret = 0;
+    AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
+    CHECK_AND_RETURN_RET(cfg_ == nullptr, *cfg_);
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
-    AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
+    cfg_ = std::make_unique<ConverterConfig>();
+    ConverterConfig &result = *cfg_;
     doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-    CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR,
-        "error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
+    CHECK_AND_RETURN_RET_LOG(doc != nullptr, result, "error: could not parse file %{public}s",
+        AUDIO_CONVERTER_CONFIG_FILE);
 
     rootElement = xmlDocGetRootElement(doc);
     xmlNode *currNode = rootElement;
 
-    int32_t ret = 0;
-
     if ((ret = LoadConfigCheck(doc, currNode)) != 0) {
         xmlFreeDoc(doc);
         xmlCleanupParser();
-        return ret;
+        return result;
     }
 
     LoadConfigVersion(result, currNode);
@@ -176,17 +191,18 @@ int32_t AudioConverterParser::LoadConfig(ConverterConfig &result)
             continue;
         }
 
-        if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("library"))) {
+        if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar *>("library"))) {
             LoadConfigLibrary(result, currNode);
-        } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("converter_conf"))) {
+        } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar *>("converter_conf"))) {
             LoadConfigChannelLayout(result, currNode);
+            LoadConfigLatency(result, currNode);
         }
 
         currNode = currNode->next;
     }
     xmlFreeDoc(doc);
     xmlCleanupParser();
-    return ret;
+    return result;
 }
 
 } // namespace AudioStandard

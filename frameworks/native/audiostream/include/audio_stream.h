@@ -25,7 +25,7 @@
 #include "audio_service_client.h"
 #include "audio_stream_tracker.h"
 #include "volume_ramp.h"
-#include "audio_format_converter_3DA.h"
+#include "audio_spatial_channel_converter.h"
 #ifdef SONIC_ENABLE
 #include "sonic.h"
 #include "audio_speed.h"
@@ -184,7 +184,7 @@ private:
     size_t bufferSize_;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 #endif
-    std::unique_ptr<AudioFormatConverter3DA> converter_;
+    std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
     std::shared_ptr<AudioStreamPolicyServiceDiedCallbackImpl> audioStreamPolicyServiceDiedCB_ = nullptr;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;

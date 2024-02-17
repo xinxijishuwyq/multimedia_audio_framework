@@ -131,6 +131,7 @@ private:
     void RemoveAudioInterruptZonePidsInternal(MessageParcel &data, MessageParcel &reply);
     void ReleaseAudioInterruptZoneInternal(MessageParcel &data, MessageParcel &reply);
     void SetCallDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
+    void GetConverterConfigInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveBluetoothDeviceInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
@@ -237,6 +238,7 @@ private:
         &AudioPolicyManagerStub::RemoveAudioInterruptZonePidsInternal,
         &AudioPolicyManagerStub::ReleaseAudioInterruptZoneInternal,
         &AudioPolicyManagerStub::SetCallDeviceActiveInternal,
+        &AudioPolicyManagerStub::GetConverterConfigInternal,
         &AudioPolicyManagerStub::GetActiveBluetoothDeviceInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
