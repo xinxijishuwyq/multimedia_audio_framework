@@ -29,18 +29,21 @@
 #include <mutex>
 #include <set>
 
-#include "v1_0/ieffect_model.h"
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
 
 #ifdef SENSOR_ENABLE
 #include "audio_head_tracker.h"
 #endif
+#include "audio_effect_hdi_param.h"
+#include "audio_effect_rotation.h"
+#include "audio_effect_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM = 3;
+const uint32_t NUM_SET_EFFECT_PARAM_TWO = 2;
+const uint32_t NUM_SET_EFFECT_PARAM_THREE = 3;
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
@@ -51,8 +54,6 @@ const uint32_t FACTOR_TWO = 2;
 const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
-const uint32_t SEND_HDI_COMMAND_LEN = 20;
-const uint32_t GET_HDI_BUFFER_LEN = 10;
 const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 
 typedef struct sessionEffectInfo {
@@ -60,6 +61,7 @@ typedef struct sessionEffectInfo {
     uint32_t channels;
     uint64_t channelLayout;
     std::string spatializationEnabled;
+    uint32_t volume;
 } sessionEffectInfo;
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
@@ -72,22 +74,6 @@ const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_7POINT1POINT4,
     CH_LAYOUT_9POINT1POINT4,
     CH_LAYOUT_9POINT1POINT6
-};
-
-class AudioEffectHdi {
-public:
-    AudioEffectHdi();
-    ~AudioEffectHdi();
-    void InitHdi();
-    int32_t UpdateHdiState(int8_t *effectHdiInput);
-private:
-    std::string libName;
-    std::string effectId;
-    int8_t input[SEND_HDI_COMMAND_LEN];
-    int8_t output[GET_HDI_BUFFER_LEN];
-    uint32_t replyLen;
-    IEffectModel *hdiModel_ = nullptr;
-    IEffectControl *hdiControl_ = nullptr;
 };
 
 struct AudioEffectProcInfo {
@@ -119,8 +105,8 @@ public:
     AudioEffectConfig GetIoBufferConfig();
     void InitEffectChain();
     void SetHeadTrackingDisabled();
-    uint32_t GetLatency();
-
+    int32_t SetVolume(uint32_t volume);
+    int32_t SetRotation(uint32_t rotation);
 private:
     std::mutex reloadMutex;
     std::string sceneType;
@@ -168,6 +154,8 @@ public:
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
     int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
     void RegisterEffectChainCountBackupMap(std::string sceneType, std::string operation);
+    int32_t EffectRotationUpdate(const uint32_t rotationState);
+    int32_t EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume);
     uint32_t GetLatency(std::string sessionId);
 
 private:
@@ -200,7 +188,9 @@ private:
     std::shared_ptr<HeadTracker> headTracker_;
 #endif
 
-    std::shared_ptr<AudioEffectHdi> audioEffectHdi_;
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam_;
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume_;
+    std::shared_ptr<AudioEffectRotation> audioEffectRotation_;
     int8_t effectHdiInput[SEND_HDI_COMMAND_LEN];
 };
 }  // namespace AudioStandard

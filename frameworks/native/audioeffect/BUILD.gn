@@ -59,6 +59,9 @@ ohos_shared_library("audio_effect") {
   sources = [
     "src/audio_effect_chain_manager.cpp",
     "src/audio_head_tracker.cpp",
+    "src/audio_effect_hdi_param.cpp",
+    "src/audio_effect_rotation.cpp",
+    "src/audio_effect_volume.cpp",
   ]
 
   deps = [ "$pulseaudio_build_path/src/pulse:pulse" ]
@@ -69,6 +72,7 @@ ohos_shared_library("audio_effect") {
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "window_manager:libdm",
   ]
 
   if (sensor_enable == true) {
