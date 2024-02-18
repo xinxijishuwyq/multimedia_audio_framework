@@ -1228,12 +1228,17 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType)
         return false;
     }
 
+    if (audioStreamTracker_ && audioStreamTracker_.get()) {
+        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, clientPid_, capturerInfo_);
+    }
+
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Start call server failed: %{public}u", ret);
         return false;
     }
+
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return notifiedOperation_ == START_STREAM; // will be false when got notified.
