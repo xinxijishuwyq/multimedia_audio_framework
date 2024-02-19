@@ -19,12 +19,14 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioEffectRotation::AudioEffectRotation() {
+AudioEffectRotation::AudioEffectRotation()
+{
     AUDIO_INFO_LOG("AudioEffectRotation created!");
     rotationState_ = 0;
 }
 
-AudioEffectRotation::~AudioEffectRotation() {
+AudioEffectRotation::~AudioEffectRotation()
+{
     AUDIO_INFO_LOG("AudioEffectRotation destroyed!");
 }
 
@@ -34,7 +36,8 @@ AudioEffectRotation *AudioEffectRotation::GetInstance()
     return &audioEffectRotation;
 }
 
-void AudioEffectRotation::Init() {
+void AudioEffectRotation::Init()
+{
     AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
     audioRotationListener_ = new AudioRotationListener();
     Rosen::DisplayManager::GetInstance().RegisterDisplayListener(audioRotationListener_);
@@ -50,15 +53,18 @@ uint32_t AudioEffectRotation::GetRotation()
     return rotationState_;
 }
 
-void AudioEffectRotation::OnCreate(Rosen::DisplayId displayId) {
+void AudioEffectRotation::OnCreate(Rosen::DisplayId displayId)
+{
     AUDIO_DEBUG_LOG("Onchange displayId: %{public}llu.", displayId);
 }
 
-void AudioEffectRotation::OnDestroy(Rosen::DisplayId displayId) {
+void AudioEffectRotation::OnDestroy(Rosen::DisplayId displayId)
+{
     AUDIO_DEBUG_LOG("OnDestroy displayId: %{public}llu.", displayId);
 }
 
-void AudioEffectRotation::OnChange(Rosen::DisplayId displayId) {
+void AudioEffectRotation::OnChange(Rosen::DisplayId displayId)
+{
     AUDIO_DEBUG_LOG("Onchange displayId: %{public}llu.", displayId);
     // get display
     auto display = Rosen::DisplayManager::GetInstance().GetDisplayById(displayId);
@@ -67,7 +73,7 @@ void AudioEffectRotation::OnChange(Rosen::DisplayId displayId) {
         return;
     }
     // get rotation
-    Rosen::Rotation newRotationState= display->GetRotation();
+    Rosen::Rotation newRotationState = display->GetRotation();
     AUDIO_DEBUG_LOG("Onchange rotationState: %{public}u.", static_cast<uint32_t>(newRotationState));
     EffectChainManagerRotationUpdate(static_cast<uint32_t>(newRotationState));
 }

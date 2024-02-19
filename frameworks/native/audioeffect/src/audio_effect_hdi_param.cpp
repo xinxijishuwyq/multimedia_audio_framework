@@ -78,7 +78,8 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
         }
         memcpy_s(static_cast<void *>(input), sizeof(input), static_cast<void *>(effectHdiInput), sizeof(input));
         uint32_t replyLen = GET_HDI_BUFFER_LEN;
-        int32_t ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN, output, &replyLen);
+        int32_t ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN,
+            output, &replyLen);
         if (ret != 0) {
             AUDIO_WARNING_LOG("hdi send command failed");
             return ret;

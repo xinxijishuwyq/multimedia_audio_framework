@@ -499,7 +499,8 @@ int32_t AudioEffectChain::SetRotation(uint32_t rotation)
         *data++ = EFFECT_SET_PARAM;
         *data++ = static_cast<int32_t>(rotation);
         int32_t replyData = 0;
-        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_TWO, effectParam};
+        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_TWO,
+            effectParam};
         AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
         delete[] effectParam;
@@ -1130,7 +1131,7 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
             SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
         }
     }
-    if (offloadEnabled_){
+    if (offloadEnabled_) {
         // update dsp volume
         AUDIO_DEBUG_LOG("send volume to dsp.");
         uint32_t volumeMax = 0;

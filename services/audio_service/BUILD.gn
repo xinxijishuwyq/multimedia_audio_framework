@@ -384,6 +384,7 @@ ohos_shared_library("audio_service") {
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "window_manager:libdm",
   ]
 
   if (sensor_enable == true) {
