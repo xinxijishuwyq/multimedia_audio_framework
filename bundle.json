@@ -48,6 +48,7 @@
             "device_manager",
             "distributed_audio",
             "drivers_interface_audio",
+            "drivers_interface_distributed_audio",
             "drivers_peripheral_audio",
             "eventhandler",
             "hdf_core",
@@ -123,10 +124,11 @@
               "name": "//foundation/multimedia/audio_framework/frameworks/native/audiocapturer:audio_capturer",
               "header": {
                 "header_files": [
-                  "audio_capturer.h"
+                  "./audiocapturer/include/audio_capturer.h",
+				  "./audiocommon/include/audio_info.h"
                 ],
                 "header_base": [
-                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocapturer/include"
+                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
                  ]
               }
             },
