@@ -105,6 +105,7 @@ public:
     AudioEffectConfig GetIoBufferConfig();
     void InitEffectChain();
     void SetHeadTrackingDisabled();
+    uint32_t GetLatency();
     int32_t SetVolume(uint32_t volume);
     int32_t SetRotation(uint32_t rotation);
 private:
