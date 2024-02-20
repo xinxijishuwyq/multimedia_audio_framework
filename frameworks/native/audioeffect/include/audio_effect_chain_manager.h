@@ -189,8 +189,6 @@ private:
 #endif
 
     std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam_;
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume_;
-    std::shared_ptr<AudioEffectRotation> audioEffectRotation_;
     int8_t effectHdiInput[SEND_HDI_COMMAND_LEN];
 };
 }  // namespace AudioStandard

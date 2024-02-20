@@ -38,7 +38,7 @@ AudioEffectHdiParam::~AudioEffectHdiParam()
 
 void AudioEffectHdiParam::CreateHdiControl()
 {
-    // todo read from vendor/huawei/...
+    // todo read from vendor/...
     libName = strdup("libspatialization_processing_dsp");
     effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966gg");
     EffectInfo info = {

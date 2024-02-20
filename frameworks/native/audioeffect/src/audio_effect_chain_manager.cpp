@@ -709,8 +709,6 @@ AudioEffectChainManager::AudioEffectChainManager()
 #endif
 
     audioEffectHdiParam_ = std::make_shared<AudioEffectHdiParam>();
-    audioEffectVolume_ = std::make_shared<AudioEffectVolume>();
-    // audioEffectRotation_ = std::make_shared<AudioEffectRotation>();
     memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
 }
 
@@ -888,7 +886,6 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
     }
-    // audioEffectRotation_->Init();
     AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
     audioEffectRotation->Init();
@@ -1106,6 +1103,59 @@ void AudioEffectChainManager::Dump()
     }
 }
 
+int32_t AudioEffectChainManager::EffectDspVolumeUpdate()
+{
+    // update dsp volume
+    AUDIO_DEBUG_LOG("send volume to dsp.");
+    uint32_t volumeMax = 0;
+    for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
+        std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
+        for (auto s = sessions.begin(); s != sessions.end(); s++) {
+            sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+            volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
+        }
+    }
+    // send volume to dsp
+    if (audioEffectVolume->GetDspVolume() != volumeMax) {
+        audioEffectVolume->SetDspVolume(volumeMax);
+        effectHdiInput[0] = HDI_VOLUME;
+        effectHdiInput[1] = volumeMax;
+        AUDIO_INFO_LOG("set hdi volume: %{public}d", effectHdiInput[1]);
+        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi volume failed");
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::EffectApVolumeUpdate()
+{
+    // send to ap
+    AUDIO_DEBUG_LOG("send volume to ap.");
+    for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
+        uint32_t volumeMax = 0;
+        std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
+        for (auto s = sessions.begin(); s != sessions.end(); s++) {
+            sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+            volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
+        }
+        if (audioEffectVolume->GetApVolume(it->first) != volumeMax) {
+            audioEffectVolume->SetApVolume(it->first, volumeMax);
+            std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
+            if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+                return ERROR;
+            }
+            auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+            if (audioEffectChain == nullptr) {
+                return ERROR;
+            }
+            AUDIO_INFO_LOG("set ap volume: %{public}d sceneType: %{public}s", volumeMax, it->first.c_str());
+            int32_t ret = audioEffectChain->SetEffectParam();
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
@@ -1115,54 +1165,53 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
             SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
         }
     }
+    int32_t ret;
     AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
     if (offloadEnabled_) {
-        // update dsp volume
-        AUDIO_DEBUG_LOG("send volume to dsp.");
-        uint32_t volumeMax = 0;
-        for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
-            std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
-            for (auto s = sessions.begin(); s != sessions.end(); s++) {
-                sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
-                volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
-            }
-        }
-        // send volume to dsp
-        if (audioEffectVolume->GetDspVolume() != volumeMax) {
-            audioEffectVolume->SetDspVolume(volumeMax);
-            effectHdiInput[0] = HDI_VOLUME;
-            effectHdiInput[1] = volumeMax;
-            AUDIO_INFO_LOG("set hdi volume: %{public}d", effectHdiInput[1]);
-            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi volume failed");
-        }
+        ret = EffectDspVolumeUpdate();
     } else {
-        // send to ap
-        AUDIO_DEBUG_LOG("send volume to ap.");
-        for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
-            uint32_t volumeMax = 0;
-            std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
-            for (auto s = sessions.begin(); s != sessions.end(); s++) {
-                sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
-                volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
-            }
-            if (audioEffectVolume->GetApVolume(it->first) != volumeMax) {
-                audioEffectVolume->SetApVolume(it->first, volumeMax);
-                std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
-                if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-                    return ERROR;
-                }
-                auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-                if (audioEffectChain == nullptr) {
-                    return ERROR;
-                }
-                AUDIO_INFO_LOG("set ap volume: %{public}d sceneType: %{public}s", volumeMax, it->first.c_str());
-                int32_t ret = audioEffectChain->SetEffectParam();
-                CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
-            }
-        }
+        ret = EffectApVolumeUpdate();
     }
     return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::EffectDspRotationUpdate()
+{
+    // send rotation to dsp
+    if (audioEffectRotation->GetRotation() != rotationState) {
+        AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
+            rotationState, audioEffectRotation->GetRotation());
+        audioEffectRotation->SetRotation(rotationState);
+        effectHdiInput[0] = HDI_ROTATION;
+        effectHdiInput[1] = rotationState;
+        AUDIO_INFO_LOG("set hdi rotation: %{public}d", effectHdiInput[1]);
+        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi rotation failed");
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::EffectApRotationUpdate()
+{
+    // send rotation to ap
+    if (audioEffectRotation->GetRotation() != rotationState) {
+        AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
+            rotationState, audioEffectRotation->GetRotation());
+        audioEffectRotation->SetRotation(rotationState);
+        for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
+            std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
+            if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+                return ERROR;
+            }
+            auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+            if (audioEffectChain == nullptr) {
+                return ERROR;
+            }
+            int32_t ret = audioEffectChain->SetEffectParam();
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
+        }
+    }
+    return ret;
 }
 
 int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationState)
@@ -1170,39 +1219,13 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectRotation != nullptr, ERROR, "null audioEffectRotation");
+    int32_t ret;
     if (offloadEnabled_) {
-        // send rotation to dsp
-        if (audioEffectRotation->GetRotation() != rotationState) {
-            AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
-                rotationState, audioEffectRotation->GetRotation());
-            audioEffectRotation->SetRotation(rotationState);
-            effectHdiInput[0] = HDI_ROTATION;
-            effectHdiInput[1] = rotationState;
-            AUDIO_INFO_LOG("set hdi rotation: %{public}d", effectHdiInput[1]);
-            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi rotation failed");
-        }
+        ret = EffectDspRotationUpdate;
     } else {
-        // send rotation to ap
-        if (audioEffectRotation->GetRotation() != rotationState) {
-            AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
-                rotationState, audioEffectRotation->GetRotation());
-            audioEffectRotation->SetRotation(rotationState);
-            for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
-                std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
-                if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-                    return ERROR;
-                }
-                auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-                if (audioEffectChain == nullptr) {
-                    return ERROR;
-                }
-                int32_t ret = audioEffectChain->SetEffectParam();
-                CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
-            }
-        }
+        ret = EffectApRotationUpdate;
     }
-    return SUCCESS;
+    return ret;
 }
 
 int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sceneType)
