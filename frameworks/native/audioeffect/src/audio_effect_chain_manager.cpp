@@ -479,10 +479,10 @@ int32_t AudioEffectChain::SetEffectParam()
         *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
         *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
         AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
+        CHECK_AND_CONTINUE_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
         *data++ = audioEffectRotation->GetRotation();
         AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
+        CHECK_AND_CONTINUE_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
         *data++ = audioEffectVolume->GetApVolume(sceneType);
         int32_t replyData = 0;
         AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_FIVE,
@@ -1103,7 +1103,7 @@ void AudioEffectChainManager::Dump()
     }
 }
 
-int32_t AudioEffectChainManager::EffectDspVolumeUpdate()
+int32_t AudioEffectChainManager::EffectDspVolumeUpdate(AudioEffectVolume *audioEffectVolume)
 {
     // update dsp volume
     AUDIO_DEBUG_LOG("send volume to dsp.");
@@ -1127,7 +1127,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate()
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::EffectApVolumeUpdate()
+int32_t AudioEffectChainManager::EffectApVolumeUpdate(AudioEffectVolume *audioEffectVolume)
 {
     // send to ap
     AUDIO_DEBUG_LOG("send volume to ap.");
@@ -1165,19 +1165,22 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
             SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
         }
     }
-    int32_t ret;
     AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    int32_t ret;
     if (offloadEnabled_) {
-        ret = EffectDspVolumeUpdate();
+        ret = EffectDspVolumeUpdate(audioEffectVolume);
     } else {
-        ret = EffectApVolumeUpdate();
+        ret = EffectApVolumeUpdate(audioEffectVolume);
     }
-    return SUCCESS;
+    return ret;
 }
 
-int32_t AudioEffectChainManager::EffectDspRotationUpdate()
+int32_t AudioEffectChainManager::EffectDspRotationUpdate(AudioEffectRotation *audioEffectRotation,
+    const uint32_t rotationState)
 {
     // send rotation to dsp
+    AUDIO_DEBUG_LOG("send rotation to dsp.");
     if (audioEffectRotation->GetRotation() != rotationState) {
         AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
             rotationState, audioEffectRotation->GetRotation());
@@ -1191,9 +1194,11 @@ int32_t AudioEffectChainManager::EffectDspRotationUpdate()
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::EffectApRotationUpdate()
+int32_t AudioEffectChainManager::EffectApRotationUpdate(AudioEffectRotation *audioEffectRotation,
+    const uint32_t rotationState)
 {
     // send rotation to ap
+    AUDIO_DEBUG_LOG("send rotation to ap.");
     if (audioEffectRotation->GetRotation() != rotationState) {
         AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
             rotationState, audioEffectRotation->GetRotation());
@@ -1211,7 +1216,7 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate()
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
         }
     }
-    return ret;
+    return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationState)
@@ -1221,9 +1226,9 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
     CHECK_AND_RETURN_RET_LOG(audioEffectRotation != nullptr, ERROR, "null audioEffectRotation");
     int32_t ret;
     if (offloadEnabled_) {
-        ret = EffectDspRotationUpdate;
+        ret = EffectDspRotationUpdate(audioEffectRotation);
     } else {
-        ret = EffectApRotationUpdate;
+        ret = EffectApRotationUpdate(audioEffectRotation);
     }
     return ret;
 }

@@ -108,7 +108,7 @@ public:
     void InitEffectChain();
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
-    int32_t SetEffectPararm();
+    int32_t SetEffectParam();
 private:
     std::mutex reloadMutex;
     std::string sceneType;
@@ -164,10 +164,10 @@ private:
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
-    int32_t EffectDspVolumeUpdate();
-    int32_t EffectApVolumeUpdate();
-    int32_t EffectDspRotationUpdate();
-    int32_t EffectApRotationUpdate();
+    int32_t EffectDspVolumeUpdate(AudioEffectVolume *audioEffectVolume);
+    int32_t EffectApVolumeUpdate(AudioEffectVolume *audioEffectVolume);
+    int32_t EffectDspRotationUpdate(AudioEffectRotation *audioEffectRotation, const uint32_t rotationState);
+    int32_t EffectApRotationUpdate(AudioEffectRotation *audioEffectRotation, const uint32_t rotationState);
     std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
