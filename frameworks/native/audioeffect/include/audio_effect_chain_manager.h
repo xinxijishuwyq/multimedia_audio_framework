@@ -44,6 +44,7 @@ namespace AudioStandard {
 
 const uint32_t NUM_SET_EFFECT_PARAM_TWO = 2;
 const uint32_t NUM_SET_EFFECT_PARAM_THREE = 3;
+const uint32_t NUM_SET_EFFECT_PARAM_FIVE = 5;
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
@@ -106,8 +107,7 @@ public:
     void InitEffectChain();
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
-    int32_t SetVolume(uint32_t volume);
-    int32_t SetRotation(uint32_t rotation);
+    int32_t SetEffectPararm();
 private:
     std::mutex reloadMutex;
     std::string sceneType;

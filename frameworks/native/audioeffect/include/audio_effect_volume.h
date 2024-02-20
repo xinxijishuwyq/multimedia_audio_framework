@@ -26,6 +26,7 @@ class AudioEffectVolume {
 public:
     AudioEffectVolume();
     ~AudioEffectVolume();
+    static AudioEffectRotation *GetInstance();
     void SetApVolume(std::string sceneType, uint32_t volume);
     uint32_t GetApVolume(std::string sceneType);
     void SetDspVolume(uint32_t volume);

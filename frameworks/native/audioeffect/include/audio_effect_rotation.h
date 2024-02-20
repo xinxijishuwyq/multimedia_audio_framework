@@ -34,10 +34,6 @@ public:
 private:
     class AudioRotationListener : public OHOS::Rosen::DisplayManager::IDisplayListener {
     public:
-        // AudioRotationListener(const std::shared_ptr<AudioEffectRotation> &audioEffectRotation) 
-        // {
-        //     audioEffectRotation_ = audioEffectRotation;
-        // }
         void OnCreate(Rosen::DisplayId displayId) override
         {
             AudioEffectRotation *audioEffectRotation = GetInstance();

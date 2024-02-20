@@ -29,6 +29,12 @@ AudioEffectVolume::~AudioEffectVolume()
     AUDIO_INFO_LOG("AudioEffectVolume destructor!");
 }
 
+AudioEffectVolume *AudioEffectVolume::GetInstance()
+{
+    static AudioEffectVolume audioEffectVolume;
+    return &audioEffectVolume;
+}
+
 void AudioEffectVolume::SetApVolume(std::string sceneType, uint32_t volume)
 {
     if (!SceneTypeToVolumeMap_.count(sceneType)) {

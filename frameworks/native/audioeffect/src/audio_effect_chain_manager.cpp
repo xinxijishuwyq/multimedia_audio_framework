@@ -464,42 +464,27 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     libHandles.emplace_back(libHandle);
 }
 
-int32_t AudioEffectChain::SetVolume(uint32_t volume)
+int32_t AudioEffectChain::SetEffectParam(uint32_t rotation)
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
     for (AudioEffectHandle handle: standByEffectHandles) {
         AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
-            NUM_SET_EFFECT_PARAM_TWO * sizeof(int32_t)];
+            NUM_SET_EFFECT_PARAM_FIVE * sizeof(int32_t)];
         effectParam->status = 0;
         effectParam->paramSize = sizeof(int32_t);
         effectParam->valueSize = 0;
         int32_t *data = &(effectParam->data[0]);
         *data++ = EFFECT_SET_PARAM;
-        *data++ = static_cast<int32_t>(volume);
+        *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
+        *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
+        AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
+        *data++ = audioEffectRotation->GetRotation();
+        AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
+        CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
+        *data++ = audioEffectVolume->GetApVolume(sceneType);
         int32_t replyData = 0;
-        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_TWO, effectParam};
-        AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-        int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-        delete[] effectParam;
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set volume EFFECT_CMD_SET_PARAM fail");
-    }
-    return SUCCESS;
-}
-
-int32_t AudioEffectChain::SetRotation(uint32_t rotation)
-{
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    for (AudioEffectHandle handle: standByEffectHandles) {
-        AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
-            NUM_SET_EFFECT_PARAM_TWO * sizeof(int32_t)];
-        effectParam->status = 0;
-        effectParam->paramSize = sizeof(int32_t);
-        effectParam->valueSize = 0;
-        int32_t *data = &(effectParam->data[0]);
-        *data++ = EFFECT_SET_PARAM;
-        *data++ = static_cast<int32_t>(rotation);
-        int32_t replyData = 0;
-        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_TWO,
+        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_FIVE,
             effectParam};
         AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
@@ -1131,6 +1116,7 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
             SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
         }
     }
+    AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
     if (offloadEnabled_) {
         // update dsp volume
         AUDIO_DEBUG_LOG("send volume to dsp.");
@@ -1143,8 +1129,8 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
             }
         }
         // send volume to dsp
-        if (audioEffectVolume_->GetDspVolume() != volumeMax) {
-            audioEffectVolume_->SetDspVolume(volumeMax);
+        if (audioEffectVolume->GetDspVolume() != volumeMax) {
+            audioEffectVolume->SetDspVolume(volumeMax);
             effectHdiInput[0] = HDI_VOLUME;
             effectHdiInput[1] = volumeMax;
             AUDIO_INFO_LOG("set hdi volume: %{public}d", effectHdiInput[1]);
@@ -1161,8 +1147,8 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
                 sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
                 volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
             }
-            if (audioEffectVolume_->GetApVolume(it->first) != volumeMax) {
-                audioEffectVolume_->SetApVolume(it->first, volumeMax);
+            if (audioEffectVolume->GetApVolume(it->first) != volumeMax) {
+                audioEffectVolume->SetApVolume(it->first, volumeMax);
                 std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
                 if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
                     return ERROR;
@@ -1172,7 +1158,7 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
                     return ERROR;
                 }
                 AUDIO_INFO_LOG("set ap volume: %{public}d sceneType: %{public}s", volumeMax, it->first.c_str());
-                int32_t ret = audioEffectChain->SetVolume(audioEffectVolume_->GetApVolume(it->first));
+                int32_t ret = audioEffectChain->SetEffectParam();
                 CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
             }
         }
@@ -1188,7 +1174,7 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
     if (offloadEnabled_) {
         // send rotation to dsp
         if (audioEffectRotation->GetRotation() != rotationState) {
-            AUDIO_DEBUG_LOG("rotationState change, previous state: %{public}d, new state: %{public}d",
+            AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
                 rotationState, audioEffectRotation->GetRotation());
             audioEffectRotation->SetRotation(rotationState);
             effectHdiInput[0] = HDI_ROTATION;
@@ -1200,20 +1186,21 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
     } else {
         // send rotation to ap
         if (audioEffectRotation->GetRotation() != rotationState) {
-            AUDIO_DEBUG_LOG("rotationState change, previous state: %{public}d, new state: %{public}d",
+            AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
                 rotationState, audioEffectRotation->GetRotation());
-        }
-        for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
-            std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
-            if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-                return ERROR;
+            audioEffectRotation->SetRotation(rotationState);
+            for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
+                std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
+                if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+                    return ERROR;
+                }
+                auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+                if (audioEffectChain == nullptr) {
+                    return ERROR;
+                }
+                int32_t ret = audioEffectChain->SetEffectParam();
+                CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
             }
-            auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-            if (audioEffectChain == nullptr) {
-                return ERROR;
-            }
-            int32_t ret = audioEffectChain->SetRotation(audioEffectRotation->GetRotation());
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
         }
     }
     return SUCCESS;
