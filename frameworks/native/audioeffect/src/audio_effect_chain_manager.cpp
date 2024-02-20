@@ -288,11 +288,12 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
 
     sessionEffectInfo info;
     info.sceneMode = sceneModeString;
+    info.sceneType = sceneTypeString;
     info.channels = pack.channels;
     info.channelLayout = channelLayoutNum;
     info.spatializationEnabled = spatializationEnabledString;
     info.volume = pack.volume;
-    return audioEffectChainManager->SessionInfoMapAdd(sceneTypeString, sessionIDString, info);
+    return audioEffectChainManager->SessionInfoMapAdd(sessionIDString, info);
 }
 
 int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *sessionID)
