@@ -133,6 +133,8 @@ private:
     void SetCallDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
     void GetConverterConfigInternal(MessageParcel &data, MessageParcel &reply);
     void GetActiveBluetoothDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void FetchOutputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply);
+    void FetchInputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -240,6 +242,8 @@ private:
         &AudioPolicyManagerStub::SetCallDeviceActiveInternal,
         &AudioPolicyManagerStub::GetConverterConfigInternal,
         &AudioPolicyManagerStub::GetActiveBluetoothDeviceInternal,
+        &AudioPolicyManagerStub::FetchOutputDeviceForTrackInternal,
+        &AudioPolicyManagerStub::FetchInputDeviceForTrackInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),

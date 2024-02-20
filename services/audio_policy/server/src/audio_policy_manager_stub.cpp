@@ -1065,10 +1065,23 @@ void AudioPolicyManagerStub::GetActiveBluetoothDeviceInternal(MessageParcel &dat
 void AudioPolicyManagerStub::GetConverterConfigInternal(MessageParcel &data, MessageParcel &reply)
 {
     ConverterConfig result = GetConverterConfig();
-    reply.WriteUint32(result.latency);
     reply.WriteString(result.library.name);
     reply.WriteString(result.library.path);
     reply.WriteUint64(result.outChannelLayout);
+}
+
+void AudioPolicyManagerStub::FetchOutputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
+    FetchOutputDeviceForTrack(streamChangeInfo);
+}
+
+void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
+    FetchInputDeviceForTrack(streamChangeInfo);
 }
 } // namespace audio_policy
 } // namespace OHOS

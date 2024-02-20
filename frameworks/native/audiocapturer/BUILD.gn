@@ -77,8 +77,10 @@ ohos_shared_library("audio_capturer") {
 }
 
 config("audio_external_library_config") {
-  include_dirs =
-      [ "../../../interfaces/inner_api/native/audiocapturer/include" ]
+  include_dirs = [
+    "../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+  ]
 }
 
 group("audio_capturer_test_packages") {
