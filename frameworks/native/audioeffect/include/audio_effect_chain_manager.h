@@ -57,6 +57,7 @@ const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 
 typedef struct sessionEffectInfo {
     std::string sceneMode;
+    std::string sceneType;
     uint32_t channels;
     uint64_t channelLayout;
     std::string spatializationEnabled;
@@ -163,7 +164,7 @@ public:
     int32_t InitAudioEffectChainDynamic(std::string sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
-    int32_t SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info);
+    int32_t SessionInfoMapAdd(std::string sessionID, sessionEffectInfo info);
     int32_t SessionInfoMapDelete(std::string sceneType, std::string sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
     int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
@@ -174,7 +175,6 @@ private:
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
-    void SetLatency(std::string sceneType, uint32_t latency);
     std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
@@ -185,7 +185,6 @@ private:
     std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
     std::map<std::string, sessionEffectInfo> SessionIDToEffectInfoMap_;
     std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
-    std::map<std::string, uint32_t> SessionIDToLatency_;
     uint32_t frameLen_ = DEFAULT_FRAMELEN;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;

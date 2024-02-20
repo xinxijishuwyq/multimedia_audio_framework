@@ -1993,7 +1993,6 @@ ConverterConfig AudioPolicyProxy::GetConverterConfig()
         data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, result, "failed, error: %d", error);
 
-    result.latency = reply.ReadUint32();
     result.library = {reply.ReadString(), reply.ReadString()};
     result.outChannelLayout = reply.ReadUint64();
     return result;

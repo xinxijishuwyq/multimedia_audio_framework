@@ -264,10 +264,11 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
 
     sessionEffectInfo info;
     info.sceneMode = sceneModeString;
+    info.sceneType = sceneTypeString;
     info.channels = pack.channels;
     info.channelLayout = channelLayoutNum;
     info.spatializationEnabled = spatializationEnabledString;
-    return audioEffectChainManager->SessionInfoMapAdd(sceneTypeString, sessionIDString, info);
+    return audioEffectChainManager->SessionInfoMapAdd(sessionIDString, info);
 }
 
 int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *sessionID)
@@ -923,10 +924,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string sceneTyp
         AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
     }
 
-    for (auto sessionId : SceneTypeToSessionIDMap_[sceneType]) {
-        SetLatency(sessionId, audioEffectChain->GetLatency());
-    }
-
+    AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u", sceneType.c_str(),
+        audioEffectChain->GetLatency());
     return SUCCESS;
 }
 
@@ -1173,11 +1172,11 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sceneType, std::string sessionID, sessionEffectInfo info)
+int32_t AudioEffectChainManager::SessionInfoMapAdd(std::string sessionID, sessionEffectInfo info)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (!SessionIDToEffectInfoMap_.count(sessionID)) {
-        SceneTypeToSessionIDMap_[sceneType].insert(sessionID);
+        SceneTypeToSessionIDMap_[info.sceneType].insert(sessionID);
         SessionIDToEffectInfoMap_[sessionID] = info;
     } else if (SessionIDToEffectInfoMap_[sessionID].sceneMode != info.sceneMode ||
         SessionIDToEffectInfoMap_[sessionID].spatializationEnabled != info.spatializationEnabled) {
@@ -1202,9 +1201,6 @@ int32_t AudioEffectChainManager::SessionInfoMapDelete(std::string sceneType, std
         return ERROR;
     }
     if (!SessionIDToEffectInfoMap_.erase(sessionID)) {
-        return ERROR;
-    }
-    if (!SessionIDToLatency_.erase(sessionID)) {
         return ERROR;
     }
     return SUCCESS;
@@ -1407,14 +1403,6 @@ void AudioEffectChainManager::RegisterEffectChainCountBackupMap(std::string scen
     return;
 }
 
-void AudioEffectChainManager::SetLatency(std::string sceneType, uint32_t latency)
-{
-    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    for (auto sessionId : SceneTypeToSessionIDMap_[sceneType]) {
-        SessionIDToLatency_[sessionId] = latency;
-    }
-}
-
 uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
 {
     if (offloadEnabled_) {
@@ -1422,13 +1410,14 @@ uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
         return 0;
     }
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_RET_LOG(SessionIDToLatency_.count(sessionId), 0, "no such sessionId in map");
+    CHECK_AND_RETURN_RET_LOG(SessionIDToEffectInfoMap_.count(sessionId), 0, "no such sessionId in map");
     if (SessionIDToEffectInfoMap_[sessionId].sceneMode == "" ||
         SessionIDToEffectInfoMap_[sessionId].sceneMode == "None") {
         AUDIO_DEBUG_LOG("seceneMode is None, return 0");
         return 0;
     }
-    return SessionIDToLatency_[sessionId];
+    std::string sceneType = SessionIDToEffectInfoMap_[sessionId].sceneType;
+    return SceneTypeToEffectChainMap_[sceneType]->GetLatency();
 }
 }
 }
