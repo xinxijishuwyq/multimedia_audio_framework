@@ -2190,6 +2190,40 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
     return audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
 }
 
+void AudioPolicyServer::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
+{
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    streamChangeInfo.audioRendererChangeInfo.callerPid = callerPid;
+
+    // update the clientUid
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
+    AUDIO_DEBUG_LOG("[caller uid: %{public}d]", callerUid);
+    if (callerUid != MEDIA_SERVICE_UID) {
+        streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
+        AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
+            streamChangeInfo.audioRendererChangeInfo.clientUID);
+    }
+    audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo);
+}
+
+void AudioPolicyServer::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
+{
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    streamChangeInfo.audioCapturerChangeInfo.callerPid = callerPid;
+
+    // update the clientUid
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
+    AUDIO_DEBUG_LOG("[caller uid: %{public}d]", callerUid);
+    if (callerUid != MEDIA_SERVICE_UID) {
+        streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
+        AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
+            streamChangeInfo.audioCapturerChangeInfo.clientUID);
+    }
+    audioPolicyService_.FetchInputDeviceForTrack(streamChangeInfo);
+}
+
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {

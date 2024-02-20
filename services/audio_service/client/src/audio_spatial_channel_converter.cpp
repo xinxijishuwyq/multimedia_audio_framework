@@ -73,13 +73,12 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info, const Conv
 
     Library library = cfg.library;
     outChannelLayout_ = cfg.outChannelLayout;
-    latency_ = cfg.latency;
 
     loadSuccess_ = false;
     if (externalLoader_.AddAlgoHandle(library)) {
         outChannel_ = __builtin_popcountll(outChannelLayout_);
-        externalLoader_.SetIOBufferConfig(true, info.format, inChannel_, info.channelLayout);
-        externalLoader_.SetIOBufferConfig(false, info.format, outChannel_, outChannelLayout_);
+        externalLoader_.SetIOBufferConfig(true, sampleRate_, info.format, inChannel_, info.channelLayout);
+        externalLoader_.SetIOBufferConfig(false, sampleRate_, info.format, outChannel_, outChannelLayout_);
         if (externalLoader_.Init()) {
             loadSuccess_ = true;
         }
@@ -159,7 +158,7 @@ bool AudioSpatialChannelConverter::Flush()
 
 uint32_t AudioSpatialChannelConverter::GetLatency()
 {
-    return loadSuccess_ ? latency_ * SAMPLE_RATE_48000 / sampleRate_ : 0;
+    return loadSuccess_ ? externalLoader_.GetLatency() : 0;
 }
 
 static bool ResolveLibrary(const std::string &path, std::string &resovledPath)
@@ -212,10 +211,11 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
     return true;
 }
 
-void LibLoader::SetIOBufferConfig(bool isInput, uint8_t format, uint32_t channels, uint64_t channelLayout)
+void LibLoader::SetIOBufferConfig(bool isInput, uint32_t sampleRate, uint8_t format, uint32_t channels,
+    uint64_t channelLayout)
 {
     AudioBufferConfig &target = isInput ? ioBufferConfig_.inputCfg : ioBufferConfig_.outputCfg;
-    target = {.channels = channels, .format = format, .channelLayout = channelLayout, .encoding = ENCODING_AUDIOVIVID};
+    target = {sampleRate, channels, format, channelLayout, ENCODING_AUDIOVIVID};
 }
 
 bool LibLoader::AddAlgoHandle(Library library)
@@ -244,7 +244,14 @@ bool LibLoader::Init()
     ret = (*handle_)->command(handle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_SET_CONFIG fail",
         libEntry_->libraryName.c_str());
+    latency_ = replyData;
+    AUDIO_INFO_LOG("The delay of [%{public}s] lib is %{public}u", libEntry_->libraryName.c_str(), latency_);
     return true;
+}
+
+uint32_t LibLoader::GetLatency()
+{
+    return latency_;
 }
 
 int32_t LibLoader::ApplyAlgo(AudioBuffer &inputBuffer, AudioBuffer &outputBuffer)
