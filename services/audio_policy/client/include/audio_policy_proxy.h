@@ -251,6 +251,10 @@ public:
 
     ConverterConfig GetConverterConfig() override;
 
+    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
+
+    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,
