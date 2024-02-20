@@ -31,7 +31,8 @@ class LibLoader {
 public:
     LibLoader() = default;
     ~LibLoader();
-    bool Init(uint32_t &latency);
+    bool Init();
+    uint32_t GetLatency();
     bool AddAlgoHandle(Library lib);
     void SetIOBufferConfig(bool isInput, uint32_t sampleRate, uint8_t format, uint32_t channels,
         uint64_t channelLayout);
@@ -41,6 +42,7 @@ public:
 private:
     bool LoadLibrary(const std::string &relativePath) noexcept;
     std::unique_ptr<AudioEffectLibEntry> libEntry_;
+    uint32_t latency_;
     AudioEffectHandle handle_;
     AudioEffectConfig ioBufferConfig_;
     void *libHandle_;
@@ -71,7 +73,6 @@ private:
 
     uint8_t bps_;
     uint8_t encoding_;
-    uint32_t latency_;
 
     uint64_t outChannelLayout_;
 

@@ -79,7 +79,7 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info, const Conv
         outChannel_ = __builtin_popcountll(outChannelLayout_);
         externalLoader_.SetIOBufferConfig(true, sampleRate_, info.format, inChannel_, info.channelLayout);
         externalLoader_.SetIOBufferConfig(false, sampleRate_, info.format, outChannel_, outChannelLayout_);
-        if (externalLoader_.Init(latency_)) {
+        if (externalLoader_.Init()) {
             loadSuccess_ = true;
         }
     }
@@ -158,7 +158,7 @@ bool AudioSpatialChannelConverter::Flush()
 
 uint32_t AudioSpatialChannelConverter::GetLatency()
 {
-    return loadSuccess_ ? latency_ : 0;
+    return loadSuccess_ ? externalLoader_.GetLatency() : 0;
 }
 
 static bool ResolveLibrary(const std::string &path, std::string &resovledPath)
@@ -230,7 +230,7 @@ bool LibLoader::AddAlgoHandle(Library library)
     return true;
 }
 
-bool LibLoader::Init(uint32_t &latency)
+bool LibLoader::Init()
 {
     int32_t ret = 0;
     int32_t replyData = 0;
@@ -244,9 +244,14 @@ bool LibLoader::Init(uint32_t &latency)
     ret = (*handle_)->command(handle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_SET_CONFIG fail",
         libEntry_->libraryName.c_str());
-    latency = replyData;
-    AUDIO_INFO_LOG("The delay of [%{public}s] lib is %{public}u", libEntry_->libraryName.c_str(), latency);
+    latency_ = replyData;
+    AUDIO_INFO_LOG("The delay of [%{public}s] lib is %{public}u", libEntry_->libraryName.c_str(), latency_);
     return true;
+}
+
+uint32_t LibLoader::GetLatency()
+{
+    return latency_;
 }
 
 int32_t LibLoader::ApplyAlgo(AudioBuffer &inputBuffer, AudioBuffer &outputBuffer)
