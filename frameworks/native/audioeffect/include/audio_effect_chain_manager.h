@@ -164,6 +164,10 @@ private:
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
+    int32_t EffectDspVolumeUpdate();
+    int32_t EffectApVolumeUpdate();
+    int32_t EffectDspRotationUpdate();
+    int32_t EffectApRotationUpdate();
     std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;

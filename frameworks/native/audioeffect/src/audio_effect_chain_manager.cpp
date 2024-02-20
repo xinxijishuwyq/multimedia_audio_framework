@@ -465,7 +465,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     libHandles.emplace_back(libHandle);
 }
 
-int32_t AudioEffectChain::SetEffectParam(uint32_t rotation)
+int32_t AudioEffectChain::SetEffectParam()
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
     for (AudioEffectHandle handle: standByEffectHandles) {
