@@ -31,9 +31,10 @@ class LibLoader {
 public:
     LibLoader() = default;
     ~LibLoader();
-    bool Init();
+    bool Init(uint32_t &latency);
     bool AddAlgoHandle(Library lib);
-    void SetIOBufferConfig(bool isInput, uint8_t format, uint32_t channels, uint64_t channelLayout);
+    void SetIOBufferConfig(bool isInput, uint32_t sampleRate, uint8_t format, uint32_t channels,
+        uint64_t channelLayout);
     int32_t ApplyAlgo(AudioBuffer &inputBuffer, AudioBuffer &outputBuffer);
     bool FlushAlgo();
 

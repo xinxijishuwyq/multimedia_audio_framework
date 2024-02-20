@@ -131,20 +131,6 @@ static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode *currNode)
     }
 }
 
-static void LoadConfigLatency(ConverterConfig &result, xmlNode *currNode)
-{
-    if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("latency"))) {
-        AUDIO_ERR_LOG("missing information: config has no latency attribute");
-    } else {
-        char *cLatency = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("latency")));
-        char *end;
-        result.latency = std::strtod(cLatency, &end);
-        if (end == cLatency) {
-            AUDIO_ERR_LOG("get latency error: expected float but received %{public}s", cLatency);
-        }
-    }
-}
-
 static void LoadConfigVersion(ConverterConfig &result, xmlNode *currNode)
 {
     bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("version"));
@@ -195,7 +181,6 @@ ConverterConfig AudioConverterParser::LoadConfig()
             LoadConfigLibrary(result, currNode);
         } else if (!xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar *>("converter_conf"))) {
             LoadConfigChannelLayout(result, currNode);
-            LoadConfigLatency(result, currNode);
         }
 
         currNode = currNode->next;

@@ -275,7 +275,6 @@ struct AudioSpatializationState {
 
 struct ConverterConfig {
     std::string version;
-    uint32_t latency;
     Library library;
     uint64_t outChannelLayout;
 };
