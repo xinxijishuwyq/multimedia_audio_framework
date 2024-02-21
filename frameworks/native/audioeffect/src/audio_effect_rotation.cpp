@@ -20,15 +20,37 @@
 namespace OHOS {
 namespace AudioStandard {
 #ifdef WINDOW_MANAGER_ENABLE
+void AudioRotationListener::OnCreate(Rosen::DisplayId displayId) override
+{
+    AudioEffectRotation *audioEffectRotation = GetInstance();
+    if (audioEffectRotation != nullptr) {
+        audioEffectRotation->OnCreate(displayId);
+    }
+}
+void AudioRotationListener::OnDestroy(Rosen::DisplayId displayId) override
+{
+    AudioEffectRotation *audioEffectRotation = GetInstance();
+    if (audioEffectRotation != nullptr) {
+        audioEffectRotation->OnDestroy(displayId);
+    }
+}
+void AudioRotationListener::OnChange(Rosen::DisplayId displayId) override
+{
+    AudioEffectRotation *audioEffectRotation = GetInstance();
+    if (audioEffectRotation != nullptr) {
+        audioEffectRotation->OnChange(displayId);
+    }
+}
+
 AudioEffectRotation::AudioEffectRotation()
 {
-    AUDIO_INFO_LOG("AudioEffectRotation created!");
+    AUDIO_DEBUG_LOG("created!");
     rotationState_ = 0;
 }
 
 AudioEffectRotation::~AudioEffectRotation()
 {
-    AUDIO_INFO_LOG("AudioEffectRotation destroyed!");
+    AUDIO_DEBUG_LOG("destroyed!");
 }
 
 AudioEffectRotation *AudioEffectRotation::GetInstance()
@@ -56,26 +78,27 @@ uint32_t AudioEffectRotation::GetRotation()
 
 void AudioEffectRotation::OnCreate(Rosen::DisplayId displayId)
 {
-    AUDIO_DEBUG_LOG("Onchange displayId: %{public}llu.", displayId);
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d.", static_cast<int32_t>displayId);
 }
 
 void AudioEffectRotation::OnDestroy(Rosen::DisplayId displayId)
 {
-    AUDIO_DEBUG_LOG("OnDestroy displayId: %{public}llu.", displayId);
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d.", static_cast<int32_t>displayId);
 }
 
 void AudioEffectRotation::OnChange(Rosen::DisplayId displayId)
 {
-    AUDIO_DEBUG_LOG("Onchange displayId: %{public}llu.", displayId);
     // get display
     auto display = Rosen::DisplayManager::GetInstance().GetDisplayById(displayId);
     if (!display) {
-        AUDIO_WARNING_LOG("Get display by displayId: %{public}llu failed.", displayId);
+        AUDIO_WARNING_LOG("Get display by displayId: %{public}d failed.",
+            static_cast<int32_t>displayIddisplayId);
         return;
     }
     // get rotation
     Rosen::Rotation newRotationState = display->GetRotation();
-    AUDIO_DEBUG_LOG("Onchange rotationState: %{public}u.", static_cast<uint32_t>(newRotationState));
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d rotationState: %{public}u.",
+        static_cast<int32_t>displayId, static_cast<uint32_t>(newRotationState));
     EffectChainManagerRotationUpdate(static_cast<uint32_t>(newRotationState));
 }
 #endif

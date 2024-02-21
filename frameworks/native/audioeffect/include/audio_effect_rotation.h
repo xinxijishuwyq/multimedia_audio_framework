@@ -37,34 +37,17 @@ public:
 private:
     class AudioRotationListener : public OHOS::Rosen::DisplayManager::IDisplayListener {
     public:
-        void OnCreate(Rosen::DisplayId displayId) override
-        {
-            AudioEffectRotation *audioEffectRotation = GetInstance();
-            if (audioEffectRotation != nullptr) {
-                audioEffectRotation->OnCreate(displayId);
-            }
-        }
-        void OnDestroy(Rosen::DisplayId displayId) override
-        {
-            AudioEffectRotation *audioEffectRotation = GetInstance();
-            if (audioEffectRotation != nullptr) {
-                audioEffectRotation->OnDestroy(displayId);
-            }
-        }
-        void OnChange(Rosen::DisplayId displayId) override
-        {
-            AudioEffectRotation *audioEffectRotation = GetInstance();
-            if (audioEffectRotation != nullptr) {
-                audioEffectRotation->OnChange(displayId);
-            }
-        }
+        void OnCreate(Rosen::DisplayId displayId) override;
+        void OnDestroy(Rosen::DisplayId displayId) override;
+        void OnChange(Rosen::DisplayId displayId) override;
     };
 
-    sptr<AudioRotationListener> audioRotationListener_;
-    uint32_t rotationState_;
     void OnCreate(Rosen::DisplayId displayId);
     void OnDestroy(Rosen::DisplayId displayId);
     void OnChange(Rosen::DisplayId displayId);
+
+    sptr<AudioRotationListener> audioRotationListener_;
+    uint32_t rotationState_;
 };
 #endif
 }  // namespace AudioStandard

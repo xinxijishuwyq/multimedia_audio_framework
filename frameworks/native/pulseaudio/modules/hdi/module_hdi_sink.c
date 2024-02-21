@@ -200,7 +200,6 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, v
 static pa_hook_result_t SinkInputVolumeChangedCb(pa_core *c, pa_sink_input *si, void *u)
 {
     AUDIO_DEBUG_LOG("volume changed.");
-    // todo test if work when stream create
     const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
     const uint32_t volume = si->volume.values[0];
     EffectChainManagerVolumeUpdate(sessionID, volume);

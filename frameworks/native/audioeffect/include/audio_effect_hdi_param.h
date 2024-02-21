@@ -21,23 +21,23 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const uint32_t SEND_HDI_COMMAND_LEN = 20;
-const uint32_t GET_HDI_BUFFER_LEN = 10;
 class AudioEffectHdiParam {
 public:
+    static const uint32_t SEND_HDI_COMMAND_LEN = 20;
+    static const uint32_t GET_HDI_BUFFER_LEN = 10;
     AudioEffectHdiParam();
     ~AudioEffectHdiParam();
     void InitHdi();
     int32_t UpdateHdiState(int8_t *effectHdiInput);
 private:
-    int8_t input[SEND_HDI_COMMAND_LEN];
-    int8_t output[GET_HDI_BUFFER_LEN];
-    uint32_t replyLen;
-    std::string libName;
-    std::string effectId;
+    void CreateHdiControl();
+    int8_t input_[SEND_HDI_COMMAND_LEN];
+    int8_t output_[GET_HDI_BUFFER_LEN];
+    uint32_t replyLen_;
+    std::string libName_;
+    std::string effectId_;
     IEffectModel *hdiModel_;
     std::vector<IEffectControl *> libHdiControls_;
-    void CreateHdiControl();
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

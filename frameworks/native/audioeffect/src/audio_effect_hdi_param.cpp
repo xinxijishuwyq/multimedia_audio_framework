@@ -23,17 +23,17 @@ namespace OHOS {
 namespace AudioStandard {
 AudioEffectHdiParam::AudioEffectHdiParam()
 {
-    AUDIO_INFO_LOG("AudioEffectHdiParam constructor.");
+    AUDIO_DEBUG_LOG("constructor.");
     libHdiControls_.clear();
-    memset_s(static_cast<void *>(input), sizeof(input), 0, sizeof(input));
-    memset_s(static_cast<void *>(output), sizeof(output), 0, sizeof(output));
-    replyLen = GET_HDI_BUFFER_LEN;
+    memset_s(static_cast<void *>(input_), sizeof(input_), 0, sizeof(input_));
+    memset_s(static_cast<void *>(output_), sizeof(output_), 0, sizeof(output_));
+    replyLen_ = GET_HDI_BUFFER_LEN;
     hdiModel_ = nullptr;
 }
 
 AudioEffectHdiParam::~AudioEffectHdiParam()
 {
-    AUDIO_INFO_LOG("AudioEffectHdiParam destructor!");
+    AUDIO_DEBUG_LOG("destructor!");
 }
 
 void AudioEffectHdiParam::CreateHdiControl()
@@ -62,7 +62,7 @@ void AudioEffectHdiParam::InitHdi()
 {
     hdiModel_ = IEffectModelGet(false);
     if (hdiModel_ == nullptr) {
-        AUDIO_WARNING_LOG("IEffectModelGet failed");
+        AUDIO_ERR_LOG("IEffectModelGet failed");
         return;
     }
 
@@ -71,21 +71,26 @@ void AudioEffectHdiParam::InitHdi()
 
 int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
 {
+    int32_t ret;
     for (IEffectControl *hdiControl : libHdiControls_) {
         if (hdiControl == nullptr) {
             AUDIO_WARNING_LOG("hdiControl is nullptr.");
-            return ERROR;
+            continue;
         }
-        memcpy_s(static_cast<void *>(input), sizeof(input), static_cast<void *>(effectHdiInput), sizeof(input));
+        ret = memcpy_s(static_cast<void *>(input), sizeof(input), static_cast<void *>(effectHdiInput), sizeof(input));
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("hdi memcpy failed");
+            continue;
+        }
         uint32_t replyLen = GET_HDI_BUFFER_LEN;
-        int32_t ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN,
+        ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN,
             output, &replyLen);
         if (ret != 0) {
             AUDIO_WARNING_LOG("hdi send command failed");
-            return ret;
+            continue;
         }
     }
-    return SUCCESS;
+    return ret;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -44,9 +44,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t NUM_SET_EFFECT_PARAM_TWO = 2;
-const uint32_t NUM_SET_EFFECT_PARAM_THREE = 3;
-const uint32_t NUM_SET_EFFECT_PARAM_FIVE = 5;
+const uint32_t NUM_SET_EFFECT_PARAM = 5;
 const uint32_t DEFAULT_FRAMELEN = 1440;
 const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;

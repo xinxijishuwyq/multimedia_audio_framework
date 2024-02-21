@@ -165,8 +165,6 @@ int32_t EffectChainManagerMultichannelUpdate(const char *sceneType)
     return SUCCESS;
 }
 
-// todo tranmit effectMode&sceneType
-// todo tranmit bypass
 int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t volume)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -450,7 +448,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         sceneType.c_str(), effectMode.c_str());
     // Set param
     AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
-        NUM_SET_EFFECT_PARAM_FIVE * sizeof(int32_t)];
+        NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
     effectParam->status = 0;
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;
@@ -470,13 +468,14 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     CHECK_AND_CONTINUE_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
     *data++ = audioEffectVolume->GetApVolume(sceneType);
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
-    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_FIVE, effectParam};
+    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
         sceneType.c_str(), effectMode.c_str());
     standByEffectHandles.emplace_back(handle);
     libHandles.emplace_back(libHandle);
+    latency_ += static_cast<uint32_t>(replyData);
 }
 
 int32_t AudioEffectChain::SetEffectParam()
@@ -484,7 +483,7 @@ int32_t AudioEffectChain::SetEffectParam()
     std::lock_guard<std::mutex> lock(reloadMutex);
     for (AudioEffectHandle handle: standByEffectHandles) {
         AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
-            NUM_SET_EFFECT_PARAM_FIVE * sizeof(int32_t)];
+            NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
         effectParam->status = 0;
         effectParam->paramSize = sizeof(int32_t);
         effectParam->valueSize = 0;
@@ -505,7 +504,7 @@ int32_t AudioEffectChain::SetEffectParam()
         *data++ = audioEffectVolume->GetApVolume(sceneType);
         AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
         int32_t replyData = 0;
-        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_FIVE,
+        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM,
             effectParam};
         AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);

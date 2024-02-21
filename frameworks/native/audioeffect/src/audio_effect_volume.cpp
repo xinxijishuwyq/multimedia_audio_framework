@@ -20,13 +20,14 @@ namespace OHOS {
 namespace AudioStandard {
 AudioEffectVolume::AudioEffectVolume()
 {
+    AUDIO_DEBUG_LOG("created!");
     SceneTypeToVolumeMap_.clear();
     dspVolume_ = 0;
 }
 
 AudioEffectVolume::~AudioEffectVolume()
 {
-    AUDIO_INFO_LOG("AudioEffectVolume destructor!");
+    AUDIO_DEBUG_LOG("destructor!");
 }
 
 AudioEffectVolume *AudioEffectVolume::GetInstance()
