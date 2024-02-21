@@ -25,11 +25,8 @@ AudioEffectHdiParam::AudioEffectHdiParam()
 {
     AUDIO_DEBUG_LOG("constructor.");
     libHdiControls_.clear();
-    int32_t ret;
-    ret = memset_s(static_cast<void *>(input_), sizeof(input_), 0, sizeof(input_));
-    CHECK_AND_CONTINUE_LOG(ret == 0, "hdi constructor memcpy input failed");
-    ret = memset_s(static_cast<void *>(output_), sizeof(output_), 0, sizeof(output_));
-    CHECK_AND_CONTINUE_LOG(ret == 0, "hdi constructor memcpy output failed");
+    memset_s(static_cast<void *>(input_), sizeof(input_), 0, sizeof(input_));
+    memset_s(static_cast<void *>(output_), sizeof(output_), 0, sizeof(output_));
     replyLen_ = GET_HDI_BUFFER_LEN;
     hdiModel_ = nullptr;
 }
