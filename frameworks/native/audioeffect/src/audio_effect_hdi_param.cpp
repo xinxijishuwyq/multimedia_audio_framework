@@ -77,7 +77,8 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
             AUDIO_WARNING_LOG("hdiControl is nullptr.");
             continue;
         }
-        ret = memcpy_s(static_cast<void *>(input_), sizeof(input_), static_cast<void *>(effectHdiInput), sizeof(input_));
+        ret = memcpy_s(static_cast<void *>(input_), sizeof(input_),
+            static_cast<void *>(effectHdiInput), sizeof(input_));
         CHECK_AND_CONTINUE_LOG(ret == 0, "hdi memcpy failed");
         uint32_t replyLen = GET_HDI_BUFFER_LEN;
         ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input_, SEND_HDI_COMMAND_LEN,
