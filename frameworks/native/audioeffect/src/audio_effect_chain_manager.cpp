@@ -450,7 +450,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         sceneType.c_str(), effectMode.c_str());
     // Set param
     AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
-        NUM_SET_EFFECT_PARAM_THREE * sizeof(int32_t)];
+        NUM_SET_EFFECT_PARAM_FIVE * sizeof(int32_t)];
     effectParam->status = 0;
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;
@@ -458,7 +458,19 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     *data++ = EFFECT_SET_PARAM;
     *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
     *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_THREE, effectParam};
+#ifdef WINDOW_MANAGER_ENABLE
+    AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
+    CHECK_AND_CONTINUE_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
+    *data++ = audioEffectRotation->GetRotation();
+#else
+    *data++ = 0;
+#endif
+    AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
+    AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_CONTINUE_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
+    *data++ = audioEffectVolume->GetApVolume(sceneType);
+    AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
+    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_FIVE, effectParam};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
@@ -487,9 +499,11 @@ int32_t AudioEffectChain::SetEffectParam()
 #else
         *data++ = 0;
 #endif
+        AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
         AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
         CHECK_AND_CONTINUE_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
         *data++ = audioEffectVolume->GetApVolume(sceneType);
+        AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
         int32_t replyData = 0;
         AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM_FIVE,
             effectParam};
