@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if (defined(global_parts_info) && defined(global_parts_info.window_window_manager)) {
+if (defined(global_parts_info) &&
+    defined(global_parts_info.window_window_manager)) {
   window_manager_enable = true
 } else {
   window_manager_enable = false
