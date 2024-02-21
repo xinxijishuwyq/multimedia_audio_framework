@@ -896,7 +896,6 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
     AUDIO_DEBUG_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         SceneTypeAndModeToEffectChainNameMap_.size());
-
     audioEffectHdiParam_->InitHdi();
     effectHdiInput[0] = HDI_BLUETOOTH_MODE;
     effectHdiInput[1] = 1;
@@ -905,9 +904,11 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
     }
+#ifdef WINDOW_MANAGER_ENABLE
     AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
     audioEffectRotation->Init();
+#endif
     isInitialized_ = true;
 }
 
