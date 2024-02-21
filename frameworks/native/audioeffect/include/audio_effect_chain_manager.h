@@ -36,7 +36,9 @@
 #include "audio_head_tracker.h"
 #endif
 #include "audio_effect_hdi_param.h"
+#ifdef WINDOW_MANAGER_ENABLE
 #include "audio_effect_rotation.h"
+#endif
 #include "audio_effect_volume.h"
 
 namespace OHOS {
@@ -166,8 +168,10 @@ private:
     void RecoverAllChains();
     int32_t EffectDspVolumeUpdate(AudioEffectVolume *audioEffectVolume);
     int32_t EffectApVolumeUpdate(AudioEffectVolume *audioEffectVolume);
+#ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(AudioEffectRotation *audioEffectRotation, const uint32_t rotationState);
     int32_t EffectApRotationUpdate(AudioEffectRotation *audioEffectRotation, const uint32_t rotationState);
+#endif
     std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;

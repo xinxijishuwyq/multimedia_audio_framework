@@ -19,6 +19,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+#ifdef WINDOW_MANAGER_ENABLE
 AudioEffectRotation::AudioEffectRotation()
 {
     AUDIO_INFO_LOG("AudioEffectRotation created!");
@@ -77,7 +78,6 @@ void AudioEffectRotation::OnChange(Rosen::DisplayId displayId)
     AUDIO_DEBUG_LOG("Onchange rotationState: %{public}u.", static_cast<uint32_t>(newRotationState));
     EffectChainManagerRotationUpdate(static_cast<uint32_t>(newRotationState));
 }
-
-
+#endif
 }  // namespace AudioStandard
 }  // namespace OHOS

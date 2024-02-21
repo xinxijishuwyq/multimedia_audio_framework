@@ -18,11 +18,14 @@
 
 #include <cstdint>
 #include <mutex>
+#ifdef WINDOW_MANAGER_ENABLE
 #include "display_manager.h"
 #include "dm_common.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
+#ifdef WINDOW_MANAGER_ENABLE
 class AudioEffectRotation {
 public:
     AudioEffectRotation();
@@ -63,6 +66,7 @@ private:
     void OnDestroy(Rosen::DisplayId displayId);
     void OnChange(Rosen::DisplayId displayId);
 };
+#endif
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_EFFECT_ROTATION_H

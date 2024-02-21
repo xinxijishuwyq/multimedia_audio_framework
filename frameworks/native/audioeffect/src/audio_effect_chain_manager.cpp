@@ -179,6 +179,7 @@ int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t vol
     return SUCCESS;
 }
 
+#ifdef WINDOW_MANAGER_ENABLE
 int32_t EffectChainManagerRotationUpdate(const uint32_t rotationState)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -188,6 +189,7 @@ int32_t EffectChainManagerRotationUpdate(const uint32_t rotationState)
     }
     return SUCCESS;
 }
+#endif
 
 bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
 {
@@ -478,9 +480,13 @@ int32_t AudioEffectChain::SetEffectParam()
         *data++ = EFFECT_SET_PARAM;
         *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType);
         *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
+#ifdef WINDOW_MANAGER_ENABLE
         AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
         CHECK_AND_CONTINUE_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
         *data++ = audioEffectRotation->GetRotation();
+#else
+        *data++ = 0;
+#endif
         AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
         CHECK_AND_CONTINUE_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
         *data++ = audioEffectVolume->GetApVolume(sceneType);
@@ -1107,6 +1113,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(AudioEffectVolume *audioE
 {
     // update dsp volume
     AUDIO_DEBUG_LOG("send volume to dsp.");
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     uint32_t volumeMax = 0;
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
@@ -1131,6 +1138,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(AudioEffectVolume *audioEf
 {
     // send to ap
     AUDIO_DEBUG_LOG("send volume to ap.");
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
         uint32_t volumeMax = 0;
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
@@ -1166,7 +1174,6 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
         }
     }
     AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     int32_t ret;
     if (offloadEnabled_) {
         ret = EffectDspVolumeUpdate(audioEffectVolume);
@@ -1176,11 +1183,13 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
     return ret;
 }
 
+#ifdef WINDOW_MANAGER_ENABLE
 int32_t AudioEffectChainManager::EffectDspRotationUpdate(AudioEffectRotation *audioEffectRotation,
     const uint32_t rotationState)
 {
     // send rotation to dsp
     AUDIO_DEBUG_LOG("send rotation to dsp.");
+    CHECK_AND_RETURN_RET_LOG(audioEffectRotation != nullptr, ERROR, "null audioEffectRotation");
     if (audioEffectRotation->GetRotation() != rotationState) {
         AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
             rotationState, audioEffectRotation->GetRotation());
@@ -1199,6 +1208,7 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(AudioEffectRotation *aud
 {
     // send rotation to ap
     AUDIO_DEBUG_LOG("send rotation to ap.");
+    CHECK_AND_RETURN_RET_LOG(audioEffectRotation != nullptr, ERROR, "null audioEffectRotation");
     if (audioEffectRotation->GetRotation() != rotationState) {
         AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
             rotationState, audioEffectRotation->GetRotation());
@@ -1223,15 +1233,15 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectRotation != nullptr, ERROR, "null audioEffectRotation");
     int32_t ret;
     if (offloadEnabled_) {
-        ret = EffectDspRotationUpdate(audioEffectRotation);
+        ret = EffectDspRotationUpdate(audioEffectRotation, rotationState);
     } else {
-        ret = EffectApRotationUpdate(audioEffectRotation);
+        ret = EffectApRotationUpdate(audioEffectRotation, rotationState);
     }
     return ret;
 }
+#endif
 
 int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sceneType)
 {
