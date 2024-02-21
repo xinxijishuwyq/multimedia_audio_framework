@@ -25,8 +25,11 @@ AudioEffectHdiParam::AudioEffectHdiParam()
 {
     AUDIO_DEBUG_LOG("constructor.");
     libHdiControls_.clear();
-    memset_s(static_cast<void *>(input_), sizeof(input_), 0, sizeof(input_));
-    memset_s(static_cast<void *>(output_), sizeof(output_), 0, sizeof(output_));
+    int32_t ret;
+    ret = memset_s(static_cast<void *>(input_), sizeof(input_), 0, sizeof(input_));
+    CHECK_AND_CONTINUE_LOG(ret == 0, "hdi constructor memcpy input failed");
+    ret = memset_s(static_cast<void *>(output_), sizeof(output_), 0, sizeof(output_));
+    CHECK_AND_CONTINUE_LOG(ret == 0, "hdi constructor memcpy output failed");
     replyLen_ = GET_HDI_BUFFER_LEN;
     hdiModel_ = nullptr;
 }
@@ -39,11 +42,11 @@ AudioEffectHdiParam::~AudioEffectHdiParam()
 void AudioEffectHdiParam::CreateHdiControl()
 {
     // todo read from vendor/...
-    libName = strdup("libspatialization_processing_dsp");
-    effectId = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966gg");
+    libName_ = strdup("libspatialization_processing_dsp");
+    effectId_ = strdup("aaaabbbb-8888-9999-6666-aabbccdd9966gg");
     EffectInfo info = {
-        .libName = &libName[0],
-        .effectId = &effectId[0],
+        .libName = &libName_[0],
+        .effectId = &effectId_[0],
         .ioDirection = 1,
     };
     ControllerId controllerId;
@@ -77,18 +80,12 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
             AUDIO_WARNING_LOG("hdiControl is nullptr.");
             continue;
         }
-        ret = memcpy_s(static_cast<void *>(input), sizeof(input), static_cast<void *>(effectHdiInput), sizeof(input));
-        if (ret != 0) {
-            AUDIO_WARNING_LOG("hdi memcpy failed");
-            continue;
-        }
+        ret = memcpy_s(static_cast<void *>(input_), sizeof(input_), static_cast<void *>(effectHdiInput), sizeof(input_));
+        CHECK_AND_CONTINUE_LOG(ret == 0, "hdi memcpy failed");
         uint32_t replyLen = GET_HDI_BUFFER_LEN;
-        ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input, SEND_HDI_COMMAND_LEN,
-            output, &replyLen);
-        if (ret != 0) {
-            AUDIO_WARNING_LOG("hdi send command failed");
-            continue;
-        }
+        ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input_, SEND_HDI_COMMAND_LEN,
+            output_, &replyLen);
+        CHECK_AND_CONTINUE_LOG(ret == 0, "hdi send command failed");
     }
     return ret;
 }

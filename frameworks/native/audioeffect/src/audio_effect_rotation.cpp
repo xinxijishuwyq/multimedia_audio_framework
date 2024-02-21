@@ -20,21 +20,21 @@
 namespace OHOS {
 namespace AudioStandard {
 #ifdef WINDOW_MANAGER_ENABLE
-void AudioRotationListener::OnCreate(Rosen::DisplayId displayId) override
+void AudioEffectRotation::AudioRotationListener::OnCreate(Rosen::DisplayId displayId)
 {
     AudioEffectRotation *audioEffectRotation = GetInstance();
     if (audioEffectRotation != nullptr) {
         audioEffectRotation->OnCreate(displayId);
     }
 }
-void AudioRotationListener::OnDestroy(Rosen::DisplayId displayId) override
+void AudioEffectRotation::AudioRotationListener::OnDestroy(Rosen::DisplayId displayId)
 {
     AudioEffectRotation *audioEffectRotation = GetInstance();
     if (audioEffectRotation != nullptr) {
         audioEffectRotation->OnDestroy(displayId);
     }
 }
-void AudioRotationListener::OnChange(Rosen::DisplayId displayId) override
+void AudioEffectRotation::AudioRotationListener::OnChange(Rosen::DisplayId displayId)
 {
     AudioEffectRotation *audioEffectRotation = GetInstance();
     if (audioEffectRotation != nullptr) {
