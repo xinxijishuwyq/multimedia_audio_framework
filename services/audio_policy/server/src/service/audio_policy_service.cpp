@@ -1340,8 +1340,9 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer()
 int32_t AudioPolicyService::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
-    audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionId, true);
-    return SUCCESS;
+    int32_t error = SUCCESS;
+    audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionId, true, error);
+    return error;
 }
 
 int32_t AudioPolicyService::NotifyWakeUpCapturerRemoved()
@@ -5007,9 +5008,12 @@ void AudioPolicyService::RemoveAudioCapturerMicrophoneDescriptor(int32_t uid)
     }
 }
 
-std::tuple<SourceType, uint32_t, uint32_t> AudioPolicyService::FetchTargetInfoForSessionAdd(
-    const SessionInfo sessionInfo)
+int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, SourceInfo &targetInfo)
 {
+    if (primaryMicModuleInfo_.supportedRate_.empty() || primaryMicModuleInfo_.supportedChannels_.empty()) {
+        AUDIO_ERR_LOG("supportedRate or supportedChannels is empty");
+        return ERROR;
+    }
     uint32_t highestSupportedRate = *(primaryMicModuleInfo_.supportedRate_.rbegin());
     uint32_t highestSupportedChannels = *(primaryMicModuleInfo_.supportedChannels_.rbegin());
     SourceType targetSourceType;
@@ -5040,7 +5044,8 @@ std::tuple<SourceType, uint32_t, uint32_t> AudioPolicyService::FetchTargetInfoFo
         targetRate = highestSupportedRate;
         targetChannels = highestSupportedChannels;
     }
-    return {targetSourceType, targetRate, targetChannels};
+    targetInfo = {targetSourceType, targetRate, targetChannels};
+    return SUCCESS;
 }
 
 void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
@@ -5073,24 +5078,28 @@ void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
     sessionIdisRemovedSet_.insert(sessionID);
 }
 
-void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo)
+int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo)
 {
     if (sessionIdisRemovedSet_.count(sessionID) > 0) {
         sessionIdisRemovedSet_.erase(sessionID);
         AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
-        return;
+        return SUCCESS;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
-        auto [targetSourceType, targetRate, targetChannels] = FetchTargetInfoForSessionAdd(sessionInfo);
+        SourceInfo targetInfo;
+        int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo);
+        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
+            "FetchTargetInfoForSessionAdd error, maybe device not support recorder");
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
         std::lock_guard<std::mutex> lck(ioHandlesMutex_);
         if (!isSourceLoaded) {
             auto moduleInfo = primaryMicModuleInfo_;
+            auto [targetSourceType, targetRate, targetChannels] = targetInfo;
             moduleInfo.rate = std::to_string(targetRate);
             moduleInfo.channels = std::to_string(targetChannels);
             moduleInfo.sourceType = std::to_string(targetSourceType);
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
-            CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE,
+            CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERROR,
                 "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
 
             IOHandles_[PRIMARY_MIC] = ioHandle;
@@ -5107,6 +5116,7 @@ void AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo 
         sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     }
     AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " OnCapturerSessionAdded end", sessionID);
+    return SUCCESS;
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsage(AudioDeviceUsage usage,
