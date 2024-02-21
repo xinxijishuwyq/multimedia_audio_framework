@@ -458,14 +458,14 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
 #ifdef WINDOW_MANAGER_ENABLE
     AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
-    CHECK_AND_CONTINUE_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
+    CHECK_AND_RETURN_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
     *data++ = audioEffectRotation->GetRotation();
 #else
     *data++ = 0;
 #endif
     AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
     AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
-    CHECK_AND_CONTINUE_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
+    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
     *data++ = audioEffectVolume->GetApVolume(sceneType);
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
