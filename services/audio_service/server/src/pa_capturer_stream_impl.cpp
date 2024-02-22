@@ -39,7 +39,6 @@ PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConf
     mainloop_ = mainloop;
     paStream_ = paStream;
     processConfig_ = processConfig;
-    paCapturerMap_.Insert(this, true);
 }
 
 PaCapturerStreamImpl::~PaCapturerStreamImpl()
@@ -49,6 +48,7 @@ PaCapturerStreamImpl::~PaCapturerStreamImpl()
         fclose(capturerServerDumpFile_);
         capturerServerDumpFile_ = nullptr;
     }
+    std::lock_guard<std::mutex> lock(streamImplLock_);
     paCapturerMap_.Erase(this);
 }
 
@@ -72,6 +72,7 @@ inline uint32_t PcmFormatToBits(uint8_t format)
 
 int32_t PaCapturerStreamImpl::InitParams()
 {
+    paCapturerMap_.Insert(this, true);
     PaLockGuard lock(mainloop_);
     pa_stream_set_moved_callback(paStream_, PAStreamMovedCb,
         reinterpret_cast<void *>(this)); // used to notify sink/source moved
@@ -463,12 +464,12 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
     }
 
     PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
-    std::lock_guard<std::mutex> lock(streamImpl->streamImplLock_);
     bool tempBool = true;
     if (paCapturerMap_.Find(streamImpl, tempBool) == false) {
         AUDIO_ERR_LOG("PAStreamStopSuccessCb: streamImpl is not find");
         return;
     }
+    std::lock_guard<std::mutex> lock(streamImpl->streamImplLock_);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
