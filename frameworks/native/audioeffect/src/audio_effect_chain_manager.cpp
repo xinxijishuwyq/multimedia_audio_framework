@@ -1597,8 +1597,8 @@ uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
         AUDIO_DEBUG_LOG("seceneMode is None, return 0");
         return 0;
     }
-    std::string sceneType = SessionIDToEffectInfoMap_[sessionId].sceneType;
-    return SceneTypeToEffectChainMap_[sceneType]->GetLatency();
+    std::string sceneTypeAndDeviceKey = SessionIDToEffectInfoMap_[sessionId].sceneType + "_&_" + GetDeviceTypeName();
+    return SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->GetLatency();
 }
 }
 }

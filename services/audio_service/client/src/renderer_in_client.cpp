@@ -1649,6 +1649,8 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     size_t metaBufferSize)
 {
     Trace trace("RendererInClient::Write with meta " + std::to_string(pcmBufferSize));
+    CHECK_AND_RETURN_RET_LOG(streamParams_.encoding == ENCODING_AUDIOVIVID, ERR_NOT_SUPPORTED,
+        "Write: Write not supported. encoding doesnot match.");
     BufferDesc bufDesc = {pcmBuffer, pcmBufferSize, pcmBufferSize, metaBuffer, metaBufferSize};
     CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_WRITE_FAILED, "Write: converter isn't init.");
     CHECK_AND_RETURN_RET_LOG(converter_->CheckInputValid(bufDesc), ERR_INVALID_PARAM, "Write: Invalid input.");
