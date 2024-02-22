@@ -25,12 +25,12 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioEffectHdiParam {
 public:
-    static const uint32_t GET_HDI_BUFFER_LEN = 10;
     AudioEffectHdiParam();
     ~AudioEffectHdiParam();
     void InitHdi();
     int32_t UpdateHdiState(int8_t *effectHdiInput);
 private:
+    static const uint32_t GET_HDI_BUFFER_LEN = 10;
     void CreateHdiControl();
     int8_t input_[SEND_HDI_COMMAND_LEN];
     int8_t output_[GET_HDI_BUFFER_LEN];

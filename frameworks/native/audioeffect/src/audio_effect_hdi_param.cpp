@@ -27,11 +27,11 @@ AudioEffectHdiParam::AudioEffectHdiParam()
     libHdiControls_.clear();
     int32_t ret = memset_s(static_cast<void *>(input_), sizeof(input_), 0, sizeof(input_));
     if (ret == 0) {
-        AUDIO_DEBUG_LOG("hdi constructor memset input failed");
+        AUDIO_ERR_LOG("hdi constructor memset input failed");
     }
     ret = memset_s(static_cast<void *>(output_), sizeof(output_), 0, sizeof(output_));
     if (ret == 0) {
-        AUDIO_DEBUG_LOG("hdi constructor memset output failed");
+        AUDIO_ERR_LOG("hdi constructor memset output failed");
     }
     replyLen_ = GET_HDI_BUFFER_LEN;
     hdiModel_ = nullptr;
