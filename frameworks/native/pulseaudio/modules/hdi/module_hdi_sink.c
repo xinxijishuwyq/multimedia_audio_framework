@@ -25,6 +25,7 @@
 #include <pulsecore/core.h>
 #include <pulsecore/namereg.h>
 #include "audio_effect_chain_adapter.h"
+#include "audio_log.h"
 #include "playback_capturer_adapter.h"
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver);
@@ -89,6 +90,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     const uint32_t channels = si->sample_spec.channels;
     const char *channelLayout = pa_proplist_gets(si->proplist, "stream.channelLayout");
     const char *spatializationEnabled = pa_proplist_gets(si->proplist, "spatialization.enabled");
+    uint32_t volume = si->volume.values[0];
     if (pa_safe_streq(deviceString, "remote")) {
         EffectChainManagerReleaseCb(sceneType, sessionID);
         return PA_HOOK_OK;
@@ -106,7 +108,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
             EffectChainManagerInitCb(sceneType);
         }
         EffectChainManagerCreateCb(sceneType, sessionID);
-        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled};
+        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, volume};
         if (si->state == PA_SINK_INPUT_RUNNING && !EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
         }
@@ -114,7 +116,7 @@ static pa_hook_result_t SinkInputNewCb(pa_core *c, pa_sink_input *si)
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si)
+static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u)
 {
     pa_assert(c);
 
@@ -141,7 +143,7 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si)
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output *so)
+static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output *so, void *u)
 {
     pa_assert(c);
     pa_assert(so);
@@ -164,7 +166,7 @@ static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output 
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si)
+static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, void *u)
 {
     pa_assert(c);
     pa_sink_input_assert_ref(si);
@@ -177,9 +179,10 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si)
     const char *spatializationEnabled = pa_proplist_gets(si->proplist, "spatialization.enabled");
     const char *clientUid = pa_proplist_gets(si->proplist, "stream.client.uid");
     const char *bootUpMusic = "1003";
+    uint32_t volume = si->volume.values[0];
 
     if (si->state == PA_SINK_INPUT_RUNNING && si->sink && !pa_safe_streq(clientUid, bootUpMusic)) {
-        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled};
+        SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, volume};
         if (!EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
         }
@@ -191,6 +194,15 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si)
             EffectChainManagerMultichannelUpdate(sceneType);
         }
     }
+    return PA_HOOK_OK;
+}
+
+static pa_hook_result_t SinkInputVolumeChangedCb(pa_core *c, pa_sink_input *si, void *u)
+{
+    AUDIO_DEBUG_LOG("volume changed.");
+    const char *sessionID = pa_proplist_gets(si->proplist, "stream.sessionID");
+    const uint32_t volume = si->volume.values[0];
+    EffectChainManagerVolumeUpdate(sessionID, volume);
     return PA_HOOK_OK;
 }
 
@@ -216,6 +228,8 @@ int pa__init(pa_module *m)
         (pa_hook_cb_t)SourceOutputStateChangedCb, NULL);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputStateChangedCb, NULL);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_VOLUME_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)SinkInputVolumeChangedCb, NULL);
 
     pa_modargs_free(ma);
 

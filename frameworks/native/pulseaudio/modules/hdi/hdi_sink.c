@@ -149,7 +149,7 @@ struct Userdata {
     size_t processSize;
     char *sinkSceneType;
     char *sinkSceneMode;
-    bool spatialEnabled;
+    bool hdiEffectEnabled;
     pthread_mutex_t mutexPa;
     pthread_mutex_t mutexPa2;
     pthread_rwlock_t rwlockSleep;
@@ -2590,7 +2590,7 @@ static void SetHdiParam(struct Userdata *userdata)
     int sessionIDMax = -1;
     char *sinkSceneTypeMax = "";
     char *sinkSceneModeMax = "";
-    bool spatialEnabledMax = false;
+    bool hdiEffectEnabledMax = false;
     while ((i = pa_hashmap_iterate(userdata->sink->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(i);
         const char *clientUid = pa_proplist_gets(i->proplist, "stream.client.uid");
@@ -2604,13 +2604,15 @@ static void SetHdiParam(struct Userdata *userdata)
         const char *sinkSessionStr = pa_proplist_gets(i->proplist, "stream.sessionID");
         bool spatializationEnabled = pa_safe_streq(sinkSpatialization, "1") ? true : false;
         bool effectEnabled = pa_safe_streq(sinkSceneMode, "EFFECT_DEFAULT") ? true : false;
-        bool spatialEnabled = spatializationEnabled && effectEnabled;
+        bool hdiEffectEnabled = spatializationEnabled && effectEnabled;
         int sessionID = atoi(sinkSessionStr == NULL ? "-1" : sinkSessionStr);
-        if (sessionID > sessionIDMax && sinkSceneType && sinkSceneMode && sinkSpatialization) {
-            sessionIDMax = sessionID;
-            sinkSceneTypeMax = (char *)sinkSceneType;
-            sinkSceneModeMax = (char *)sinkSceneMode;
-            spatialEnabledMax = spatialEnabled;
+        if (sinkSceneType && sinkSceneMode && sinkSpatialization) {
+            if (sessionID > sessionIDMax) {
+                sessionIDMax = sessionID;
+                sinkSceneTypeMax = (char *)sinkSceneType;
+                sinkSceneModeMax = (char *)sinkSceneMode;
+                hdiEffectEnabledMax = hdiEffectEnabled;
+            }
         }
     }
 
@@ -2621,12 +2623,12 @@ static void SetHdiParam(struct Userdata *userdata)
 
     if (!pa_safe_streq(userdata->sinkSceneType, sinkSceneTypeMax) ||
         !pa_safe_streq(userdata->sinkSceneMode, sinkSceneModeMax) ||
-        (userdata->spatialEnabled != spatialEnabledMax)) {
-            userdata->sinkSceneMode = sinkSceneModeMax;
-            userdata->sinkSceneType = sinkSceneTypeMax;
-            userdata->spatialEnabled = spatialEnabledMax;
-            EffectChainManagerSetHdiParam(userdata->sinkSceneType, userdata->sinkSceneMode, userdata->spatialEnabled);
-        }
+        (userdata->hdiEffectEnabled != hdiEffectEnabledMax)) {
+        userdata->sinkSceneMode = sinkSceneModeMax;
+        userdata->sinkSceneType = sinkSceneTypeMax;
+        userdata->hdiEffectEnabled = hdiEffectEnabledMax;
+        EffectChainManagerSetHdiParam(userdata->sinkSceneType, userdata->sinkSceneMode, userdata->hdiEffectEnabled);
+    }
 }
 
 static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUsec)
@@ -3355,7 +3357,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->bufferAttr->numChanOut = u->ss.channels;
     u->sinkSceneMode = "";
     u->sinkSceneType = "";
-    u->spatialEnabled = false;
+    u->hdiEffectEnabled = false;
 }
 
 static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *driver)

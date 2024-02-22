@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("../../config.gni")
 import("../../ressche_part.gni")
 import("../../sensor.gni")
+import("../../window_manager.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -388,6 +389,10 @@ ohos_shared_library("audio_service") {
 
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
+  }
+
+  if (window_manager_enable == true) {
+    external_deps += [ "window_manager:libdm" ]
   }
 
   if (ressche_enable == true) {
