@@ -480,9 +480,11 @@ const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
 };
 
 struct BufferDesc {
-    uint8_t* buffer;
+    uint8_t *buffer;
     size_t bufLength;
     size_t dataLength;
+    uint8_t *metaBuffer;
+    size_t metaLength;
 };
 
 class AudioStreamInfo {

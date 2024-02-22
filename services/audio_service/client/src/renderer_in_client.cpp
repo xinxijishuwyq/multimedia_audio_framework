@@ -31,6 +31,7 @@
 #include "safe_block_queue.h"
 
 #include "audio_errors.h"
+#include "audio_policy_manager.h"
 #include "audio_manager_base.h"
 #include "audio_log.h"
 #include "audio_ring_cache.h"
@@ -45,6 +46,7 @@
 #include "volume_tools.h"
 #include "callback_handler.h"
 #include "audio_speed.h"
+#include "audio_spatial_channel_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -331,6 +333,8 @@ private:
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
 
+    std::unique_ptr<AudioSpatialChannelConverter> converter_;
+
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
@@ -482,7 +486,18 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         return ERR_NOT_SUPPORTED;
     }
 
-    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+    streamParams_ = info; // keep it for later use
+    if (streamParams_.encoding == ENCODING_AUDIOVIVID) {
+        ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
+        converter_ = std::make_unique<AudioSpatialChannelConverter>();
+        if (converter_ == nullptr || !converter_->Init(streamParams_, cfg) || !converter_->AllocateMem()) {
+            AUDIO_ERR_LOG("AudioStream: converter construct error");
+            return ERR_NOT_SUPPORTED;
+        }
+        converter_->ConverterChannels(streamParams_.channels, streamParams_.channelLayout);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(streamParams_, sizePerFrameInByte_) == SUCCESS,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
 
     if (state_ != NEW) {
@@ -490,8 +505,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         int32_t ret = DeinitIpcStream();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
     }
-
-    streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
     int32_t initRet = InitIpcStream();
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
@@ -829,6 +842,11 @@ int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
     }
+
+    if (streamParams_.encoding == ENCODING_AUDIOVIVID) {
+        CHECK_AND_RETURN_RET(converter_ != nullptr && converter_->GetInputBufferSize(bufferSize), ERR_OPERATION_FAILED);
+    }
+
     AUDIO_INFO_LOG("Buffer size is %{public}zu, mode is %{public}s", bufferSize, renderMode_ == RENDER_MODE_NORMAL ?
         "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     return SUCCESS;
@@ -1630,8 +1648,15 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
-    AUDIO_ERR_LOG("Write with metaBuffer is not supported");
-    return ERR_INVALID_OPERATION;
+    Trace trace("RendererInClient::Write with meta " + std::to_string(pcmBufferSize));
+    BufferDesc bufDesc = {pcmBuffer, pcmBufferSize, pcmBufferSize, metaBuffer, metaBufferSize};
+    CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_WRITE_FAILED, "Write: converter isn't init.");
+    CHECK_AND_RETURN_RET_LOG(converter_->CheckInputValid(bufDesc), ERR_INVALID_PARAM, "Write: Invalid input.");
+    converter_->Process(bufDesc);
+    uint8_t *buffer;
+    size_t bufferSize;
+    converter_->GetOutputBufferStream(buffer, bufferSize);
+    return Write(buffer, bufferSize);
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)

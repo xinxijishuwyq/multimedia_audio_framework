@@ -487,7 +487,8 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 int32_t AudioEffectChain::SetEffectParam()
 {
     std::lock_guard<std::mutex> lock(reloadMutex);
-    for (AudioEffectHandle handle: standByEffectHandles) {
+    latency_ = 0;
+    for (AudioEffectHandle handle : standByEffectHandles) {
         AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
             NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
         effectParam->status = 0;
@@ -524,6 +525,7 @@ int32_t AudioEffectChain::SetEffectParam()
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
         delete[] effectParam;
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set rotation EFFECT_CMD_SET_PARAM fail");
+        latency_ += replyData;
     }
     return SUCCESS;
 }
@@ -1187,9 +1189,11 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(AudioEffectVolume *audioEf
             if (audioEffectChain == nullptr) {
                 return ERROR;
             }
-            AUDIO_INFO_LOG("set ap volume: %{public}d sceneType: %{public}s", volumeMax, it->first.c_str());
             int32_t ret = audioEffectChain->SetEffectParam();
+            AUDIO_INFO_LOG("set ap volume: %{public}d sceneType: %{public}s", volumeMax, it->first.c_str());
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
+            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u", it->first.c_str(),
+                audioEffectChain->GetLatency());
         }
     }
     return SUCCESS;
@@ -1255,6 +1259,8 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(AudioEffectRotation *aud
             }
             int32_t ret = audioEffectChain->SetEffectParam();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
+            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u", it->first.c_str(),
+                audioEffectChain->GetLatency());
         }
     }
     return SUCCESS;
