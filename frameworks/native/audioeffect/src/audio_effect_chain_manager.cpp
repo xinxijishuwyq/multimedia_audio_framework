@@ -459,7 +459,6 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 #ifdef WINDOW_MANAGER_ENABLE
     AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
     if (audioEffectRotation == nullptr) {
-        AUDIO_DEBUG_LOG("null audioEffectRotation");
         *data++ = 0;
     } else {
         *data++ = audioEffectRotation->GetRotation();
@@ -470,7 +469,6 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
     AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
     if (audioEffectVolume == nullptr) {
-        AUDIO_DEBUG_LOG("null audioEffectVolume");
         *data++ = 0;
     } else {
         *data++ = audioEffectVolume->GetApVolume(sceneType);
