@@ -561,10 +561,11 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
 
         if (removeFocusInfo) {
             // execute remove from list, iter move to next by erase
-            iterActive = tmpFocusInfoList.erase(iterActive);
-            if (targetZoneIt->second->pids.find((iterActive->first).pid) != targetZoneIt->second->pids.end()) {
-                targetZoneIt->second->pids.erase(targetZoneIt->second->pids.find((iterActive->first).pid));
+            auto pidIt = targetZoneIt->second->pids.find((iterActive->first).pid);
+            if (pidIt != targetZoneIt->second->pids.end()) {
+                targetZoneIt->second->pids.erase(pidIt);
             }
+            iterActive = tmpFocusInfoList.erase(iterActive);
             targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
         } else {
             ++iterActive;

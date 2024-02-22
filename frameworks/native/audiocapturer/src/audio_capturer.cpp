@@ -233,6 +233,12 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
 int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
 {
+    if (audioInterrupt_.sessionId != 0) {
+        AUDIO_INFO_LOG("old session already has interrupt, need to reset");
+        (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.sessionId);
+    }
+
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("GetAudioSessionID failed for INDEPENDENT_MODE");
         return ERR_INVALID_INDEX;

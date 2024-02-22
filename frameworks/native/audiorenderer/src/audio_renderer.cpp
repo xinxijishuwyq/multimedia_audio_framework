@@ -269,7 +269,14 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
 
 int32_t AudioRendererPrivate::InitAudioInterruptCallback()
 {
-    AUDIO_DEBUG_LOG("InitAudioInterruptCallback in");
+    AUDIO_DEBUG_LOG("in");
+
+    if (audioInterrupt_.sessionId != 0) {
+        AUDIO_INFO_LOG("old session already has interrupt, need to reset");
+        (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.sessionId);
+    }
+
     CHECK_AND_RETURN_RET_LOG(audioInterrupt_.mode == SHARE_MODE || audioInterrupt_.mode == INDEPENDENT_MODE,
         ERR_INVALID_PARAM, "Invalid interrupt mode!");
     CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(audioInterrupt_.sessionId) == 0, ERR_INVALID_INDEX,
