@@ -460,8 +460,10 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
     if (audioEffectRotation == nullptr) {
         AUDIO_DEBUG_LOG("null audioEffectRotation");
+        *data++ = 0;
+    } else {
+        *data++ = audioEffectRotation->GetRotation();
     }
-    *data++ = audioEffectRotation->GetRotation();
 #else
     *data++ = 0;
 #endif
@@ -469,8 +471,10 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
     if (audioEffectVolume == nullptr) {
         AUDIO_DEBUG_LOG("null audioEffectVolume");
+        *data++ = 0;
+    } else {
+        *data++ = audioEffectVolume->GetApVolume(sceneType);
     }
-    *data++ = audioEffectVolume->GetApVolume(sceneType);
     AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
@@ -499,8 +503,10 @@ int32_t AudioEffectChain::SetEffectParam()
         AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
         if (audioEffectRotation == nullptr) {
             AUDIO_DEBUG_LOG("null audioEffectRotation");
+            *data++ = 0;
+        } else {
+            *data++ = audioEffectRotation->GetRotation();
         }
-        *data++ = audioEffectRotation->GetRotation();
 #else
         *data++ = 0;
 #endif
@@ -508,8 +514,10 @@ int32_t AudioEffectChain::SetEffectParam()
         AudioEffectVolume *audioEffectVolume = AudioEffectVolume::GetInstance();
         if (audioEffectVolume == nullptr) {
             AUDIO_DEBUG_LOG("null audioEffectVolume");
+            *data++ = 0;
+        } else {
+            *data++ = audioEffectVolume->GetApVolume(sceneType);
         }
-        *data++ = audioEffectVolume->GetApVolume(sceneType);
         AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
         int32_t replyData = 0;
         AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM,
@@ -914,8 +922,11 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     }
 #ifdef WINDOW_MANAGER_ENABLE
     AudioEffectRotation *audioEffectRotation = AudioEffectRotation::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectRotation != nullptr, "null audioEffectRotation");
-    audioEffectRotation->Init();
+    if (audioEffectRotation == nullptr) {
+        AUDIO_DEBUG_LOG("null audioEffectRotation");
+    } else {
+        audioEffectRotation->Init();
+    }
 #endif
     isInitialized_ = true;
 }
