@@ -77,6 +77,8 @@ OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer)
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
     if (audioRenderer->Release()) {
+        delete audioRenderer;
+        audioRenderer = nullptr;
         return AUDIOSTREAM_SUCCESS;
     } else {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
@@ -383,7 +385,7 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
                 (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererWriteCallback(callback);
     } else {
-        AUDIO_ERR_LOG("write callback is nullptr");
+        AUDIO_WARNING_LOG("The write callback function is not set");
     }
 
     if (callbacks.OH_AudioRenderer_OnStreamEvent != nullptr) {
@@ -392,7 +394,7 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
         int32_t clientPid = getpid();
         audioRenderer_->RegisterAudioRendererEventListener(clientPid, callback);
     } else {
-        AUDIO_ERR_LOG("stream event callback is nullptr");
+        AUDIO_WARNING_LOG("The stream event callback function is not set");
     }
 
     if (callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
@@ -400,7 +402,7 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
             std::make_shared<OHAudioRendererCallback>(callbacks, (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(audioRendererCallback_);
     } else {
-        AUDIO_ERR_LOG("audio renderer callback is nullptr");
+        AUDIO_WARNING_LOG("The audio renderer interrupt callback function is not set");
     }
 
     if (callbacks.OH_AudioRenderer_OnError != nullptr) {
@@ -413,7 +415,7 @@ void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, 
             std::make_shared<OHAudioRendererErrorCallback>(callbacks, (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetAudioRendererErrorCallback(errorCallback);
     } else {
-        AUDIO_ERR_LOG("audio error callback is nullptr");
+        AUDIO_WARNING_LOG("The audio renderer error callback function is not set");
     }
 }
 
