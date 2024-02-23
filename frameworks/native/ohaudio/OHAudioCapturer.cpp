@@ -30,6 +30,8 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
     if (audioCapturer->Release()) {
+        delete audioCapturer;
+        audioCapturer = nullptr;
         return AUDIOSTREAM_SUCCESS;
     } else {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
@@ -325,7 +327,7 @@ void OHAudioCapturer::SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, 
             (OH_AudioCapturer*)this, userData);
         audioCapturer_->SetCapturerReadCallback(callback);
     } else {
-        AUDIO_ERR_LOG("read callback is nullptr");
+        AUDIO_WARNING_LOG("The read callback function is not set");
     }
 
     if (callbacks.OH_AudioCapturer_OnInterruptEvent != nullptr) {
@@ -333,7 +335,7 @@ void OHAudioCapturer::SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, 
             (OH_AudioCapturer*)this, userData);
         audioCapturer_->SetCapturerCallback(audioCapturerCallback_);
     } else {
-        AUDIO_ERR_LOG("capturer interrupt event callback is nullptr");
+        AUDIO_WARNING_LOG("The capturer interrupt event callback function is not set");
     }
 }
 
