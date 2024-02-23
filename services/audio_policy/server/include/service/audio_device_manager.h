@@ -85,6 +85,8 @@ private:
     void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void MakePairedDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
     void MakePairedDefaultDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole);
+    void MakePairedDefaultDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+        const shared_ptr<AudioDeviceDescriptor> &connectedDesc);
     void UpdateConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
     void AddConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void RemoveConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
