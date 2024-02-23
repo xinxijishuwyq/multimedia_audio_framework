@@ -102,20 +102,20 @@ bool AudioSpatialChannelConverter::GetInputBufferSize(size_t &bufferSize)
     return bufferSize > 0;
 }
 
-bool AudioSpatialChannelConverter::CheckInputValid(const BufferDesc pcmBuffer, const BufferDesc metaBuffer)
+bool AudioSpatialChannelConverter::CheckInputValid(const BufferDesc bufDesc)
 {
-    if (pcmBuffer.buffer == nullptr || metaBuffer.buffer == nullptr) {
+    if (bufDesc.buffer == nullptr || bufDesc.metaBuffer == nullptr) {
         AUDIO_ERR_LOG("pcm or metadata buffer is nullptr");
         return false;
     }
-    if (pcmBuffer.bufLength - GetPcmLength(inChannel_, bps_) != 0) {
-        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}zu, excepted %{public}d", pcmBuffer.bufLength,
+    if (bufDesc.bufLength - GetPcmLength(inChannel_, bps_) != 0) {
+        AUDIO_ERR_LOG("pcm bufLength invalid, pcmBufferSize = %{public}zu, excepted %{public}d", bufDesc.bufLength,
             GetPcmLength(inChannel_, bps_));
         return false;
     }
-    if (metaBuffer.bufLength - GetMetaLength() != 0) {
+    if (bufDesc.metaLength - GetMetaLength() != 0) {
         AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}zu, excepted %{public}d",
-            metaBuffer.bufLength, GetMetaLength());
+            bufDesc.metaLength, GetMetaLength());
         return false;
     }
     return true;
@@ -133,18 +133,18 @@ void AudioSpatialChannelConverter::GetOutputBufferStream(uint8_t *&buffer, uint3
     bufferLen = GetPcmLength(outChannel_, bps_);
 }
 
-void AudioSpatialChannelConverter::Process(const BufferDesc pcmBuffer, const BufferDesc metaBuffer)
+void AudioSpatialChannelConverter::Process(const BufferDesc bufDesc)
 {
     size_t n = GetPcmLength(outChannel_, bps_);
     if (!loadSuccess_) {
-        std::copy(pcmBuffer.buffer, pcmBuffer.buffer + n, outPcmBuf_.get());
+        std::copy(bufDesc.buffer, bufDesc.buffer + n, outPcmBuf_.get());
     } else {
         AudioBuffer inBuffer = {.frameLength = AUDIO_VIVID_SAMPLES,
-            .raw = pcmBuffer.buffer,
-            .metaData = metaBuffer.buffer};
+            .raw = bufDesc.buffer,
+            .metaData = bufDesc.metaBuffer};
         AudioBuffer outBuffer = {.frameLength = AUDIO_VIVID_SAMPLES,
             .raw = outPcmBuf_.get(),
-            .metaData = metaBuffer.buffer};
+            .metaData = bufDesc.metaBuffer};
         if (externalLoader_.ApplyAlgo(inBuffer, outBuffer) != 0) {
             std::fill(outPcmBuf_.get(), outPcmBuf_.get() + n, 0);
         }

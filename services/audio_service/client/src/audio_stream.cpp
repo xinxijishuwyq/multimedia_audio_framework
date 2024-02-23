@@ -517,16 +517,15 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
 
     CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_WRITE_FAILED, "Write: converter isn't init.");
 
-    BufferDesc pcmDesc = {pcmBuffer, pcmBufferSize};
-    BufferDesc metaDesc = {metaBuffer, metaBufferSize};
+    BufferDesc bufDesc = {pcmBuffer, pcmBufferSize, pcmBufferSize, metaBuffer, metaBufferSize};
 
-    bool ret = converter_->CheckInputValid(pcmDesc, metaDesc);
+    bool ret = converter_->CheckInputValid(bufDesc);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "Write: Invalid input.");
 
     int32_t writeError;
     StreamBuffer stream;
 
-    converter_->Process(pcmDesc, metaDesc);
+    converter_->Process(bufDesc);
 
     converter_->GetOutputBufferStream(stream.buffer, stream.bufferLen);
 

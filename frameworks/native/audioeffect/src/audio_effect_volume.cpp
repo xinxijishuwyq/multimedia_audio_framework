@@ -30,10 +30,10 @@ AudioEffectVolume::~AudioEffectVolume()
     AUDIO_DEBUG_LOG("destructor!");
 }
 
-AudioEffectVolume *AudioEffectVolume::GetInstance()
+std::shared_ptr<AudioEffectVolume> AudioEffectVolume::GetInstance()
 {
-    static AudioEffectVolume audioEffectVolume;
-    return &audioEffectVolume;
+    static std::shared_ptr<AudioEffectVolume> effectVolume = std::make_shared<AudioEffectVolume>();
+    return effectVolume;
 }
 
 void AudioEffectVolume::SetApVolume(std::string sceneType, uint32_t volume)

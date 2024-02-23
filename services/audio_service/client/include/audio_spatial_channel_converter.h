@@ -53,11 +53,11 @@ public:
     AudioSpatialChannelConverter() = default;
     bool Init(const AudioStreamParams info, const ConverterConfig cfg);
     bool GetInputBufferSize(size_t &bufferSize);
-    bool CheckInputValid(const BufferDesc pcmBuf, const BufferDesc metaBuf);
+    bool CheckInputValid(const BufferDesc bufDesc);
     bool AllocateMem();
     bool Flush();
     uint32_t GetLatency();
-    void Process(const BufferDesc pcmBuf, const BufferDesc metaBuf);
+    void Process(const BufferDesc bufDesc);
     void ConverterChannels(uint8_t &channel, uint64_t &channelLayout);
     void GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen);
 

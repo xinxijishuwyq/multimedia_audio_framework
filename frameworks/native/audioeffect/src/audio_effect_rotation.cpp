@@ -22,21 +22,21 @@ namespace AudioStandard {
 #ifdef WINDOW_MANAGER_ENABLE
 void AudioEffectRotation::AudioRotationListener::OnCreate(Rosen::DisplayId displayId)
 {
-    AudioEffectRotation *audioEffectRotation = GetInstance();
+    std::shared_ptr<AudioEffectRotation> audioEffectRotation = GetInstance();
     if (audioEffectRotation != nullptr) {
         audioEffectRotation->OnCreate(displayId);
     }
 }
 void AudioEffectRotation::AudioRotationListener::OnDestroy(Rosen::DisplayId displayId)
 {
-    AudioEffectRotation *audioEffectRotation = GetInstance();
+    std::shared_ptr<AudioEffectRotation> audioEffectRotation = GetInstance();
     if (audioEffectRotation != nullptr) {
         audioEffectRotation->OnDestroy(displayId);
     }
 }
 void AudioEffectRotation::AudioRotationListener::OnChange(Rosen::DisplayId displayId)
 {
-    AudioEffectRotation *audioEffectRotation = GetInstance();
+    std::shared_ptr<AudioEffectRotation> audioEffectRotation = GetInstance();
     if (audioEffectRotation != nullptr) {
         audioEffectRotation->OnChange(displayId);
     }
@@ -53,10 +53,10 @@ AudioEffectRotation::~AudioEffectRotation()
     AUDIO_DEBUG_LOG("destroyed!");
 }
 
-AudioEffectRotation *AudioEffectRotation::GetInstance()
+std::shared_ptr<AudioEffectRotation> AudioEffectRotation::GetInstance()
 {
-    static AudioEffectRotation audioEffectRotation;
-    return &audioEffectRotation;
+    static std::shared_ptr<AudioEffectRotation> effectRotation = std::make_shared<AudioEffectRotation>();
+    return effectRotation;
 }
 
 void AudioEffectRotation::Init()

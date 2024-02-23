@@ -35,8 +35,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
-    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/test_48k_5.1.2+2_32bit.pcm";  // need manually push
-    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/test_48k_5.1.2+2.metadata";  // need manually push
+    const string AUDIORENDER_TEST_PCMFILE_PATH = "/data/avs3_16.wav";
+    const string AUDIORENDER_TEST_METAFILE_PATH = "/data/avs3_bitstream.bin";
     const int32_t VALUE_NEGATIVE = -1;
     const int32_t VALUE_ZERO = 0;
     const int32_t VALUE_HUNDRED = 100;
@@ -94,12 +94,12 @@ void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rend
     return;
 }
 
-void AudioRendererUnitTest::Initialize3DRendererOptions(AudioRendererOptions &rendererOptions)
+void AudioRendererUnitTest::InitializeRendererSpatialOptions(AudioRendererOptions &rendererOptions)
 {
     rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    rendererOptions.streamInfo.channels = AudioChannel::CHANNEL_10;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    rendererOptions.streamInfo.channels = AudioChannel::CHANNEL_8;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_FLAG;
@@ -2078,13 +2078,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_009, TestSize.Level1)
 
     free(buffer);
     fclose(wavFile);
-}/**
- * @tc.name  : Test Write API.
- * @tc.number: Audio_Renderer_Write_3D_001
- * @tc.desc  : Test Write interface. Returns number of bytes written, if the write is successful.
- */
+} /**
+   * @tc.name  : Test Write API.
+   * @tc.number: Audio_Renderer_Write_With_Meta_001
+   * @tc.desc  : Test Write interface. Returns number of bytes written, if the write is successful.
+   */
 
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_001, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2093,7 +2093,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
         ASSERT_NE(nullptr, metaFile);
 
         AudioRendererOptions rendererOptions;
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2129,11 +2129,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegl state, RENDERER_NEW : without Initializing the renderer.
- * @tc.number: Audio_Renderer_Write_3D_002
+ * @tc.number: Audio_Renderer_Write_With_Meta_002
  * @tc.desc  : Test Write interface. Returns error code, if the renderer state is RENDERER_NEW.
  *           : bufferLen is invalid here, firstly bufferLen is validated in Write. So it returns ERR_INVALID_PARAM.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_002, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2170,10 +2170,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_002, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegl state, RENDERER_PREPARED : Write without Start.
- * @tc.number: Audio_Renderer_Write_3D_003
+ * @tc.number: Audio_Renderer_Write_With_Meta_003
  * @tc.desc  : Test Write interface. Returns error code, if the renderer state is not RENDERER_RUNNING.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_003, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2183,7 +2183,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2206,10 +2206,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_003, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegal input, bufferLength = 0.
- * @tc.number: Audio_Renderer_Write_3D_004
+ * @tc.number: Audio_Renderer_Write_With_Meta_004
  * @tc.desc  : Test Write interface. Returns error code, if the bufferLength != samples * inchs * bps.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_004, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2219,7 +2219,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2248,10 +2248,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_004, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegal input, metaLength = 0.
- * @tc.number: Audio_Renderer_Write_3D_005
+ * @tc.number: Audio_Renderer_Write_With_Meta_005
  * @tc.desc  : Test Write interface. Returns error code, if the metaLength != sizeoof(avs3metadata).
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_005, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2261,7 +2261,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2292,10 +2292,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_005, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegal input, buffer = nullptr.
- * @tc.number: Audio_Renderer_Write_3D_006
+ * @tc.number: Audio_Renderer_Write_With_Meta_006
  * @tc.desc  : Test Write interface. Returns error code, if the buffer = nullptr.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_006, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2305,7 +2305,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2333,10 +2333,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_006, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegal input, metaBuffer = nullptr.
- * @tc.number: Audio_Renderer_Write_3D_007
+ * @tc.number: Audio_Renderer_Write_With_Meta_007
  * @tc.desc  : Test Write interface. Returns error code, if the metaBuffer = nullptr.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_007, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2346,7 +2346,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2374,10 +2374,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_007, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegal state, RENDERER_STOPPED: Write after Stop
- * @tc.number: Audio_Renderer_Write_3D_008
+ * @tc.number: Audio_Renderer_Write_With_Meta_008
  * @tc.desc  : Test Write interface. Returns error code, if the renderer state is not RENDERER_RUNNING
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_008, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2387,7 +2387,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2416,10 +2416,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_008, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegal state, RENDERER_RELEASED: Write after Release
- * @tc.number: Audio_Renderer_Write_3D_009
+ * @tc.number: Audio_Renderer_Write_With_Meta_009
  * @tc.desc  : Test Write interface. Returns error code, if the renderer state is not RENDERER_RUNNING
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_009, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2429,7 +2429,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2457,11 +2457,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_009, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API.
- * @tc.number: Audio_Renderer_Write_3D_010
+ * @tc.number: Audio_Renderer_Write_With_Meta_010
  * @tc.desc  : Test Write interface after pause and resume. Returns number of bytes written, if the write is successful.
  */
 
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_010, TestSize.Level1)
 {
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
     FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
@@ -2471,7 +2471,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 
@@ -2524,11 +2524,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_010, TestSize.Level1)
 
 /**
  * @tc.name  : Test Write API via illegl render mode, RENDER_MODE_CALLBACK.
- * @tc.number: Audio_Renderer_Write_3D_011
+ * @tc.number: Audio_Renderer_Write_With_Meta_011
  * @tc.desc  : Test Write interface. Returns error code, if the render mode is RENDER_MODE_CALLBACK.
  *           : In RENDER_MODE_CALLBACK Write API call not supported. By default render mode is RENDER_MODE_NORMAL.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_011, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_011, TestSize.Level1)
 {
     int32_t ret = -1;
     FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
@@ -2539,7 +2539,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_3D_011, TestSize.Level1)
 
         AudioRendererOptions rendererOptions;
 
-        AudioRendererUnitTest::Initialize3DRendererOptions(rendererOptions);
+        AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
         unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
         ASSERT_NE(nullptr, audioRenderer);
 

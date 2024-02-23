@@ -31,6 +31,7 @@
 #include "safe_block_queue.h"
 
 #include "audio_errors.h"
+#include "audio_policy_manager.h"
 #include "audio_manager_base.h"
 #include "audio_log.h"
 #include "audio_ring_cache.h"
@@ -45,6 +46,7 @@
 #include "volume_tools.h"
 #include "callback_handler.h"
 #include "audio_speed.h"
+#include "audio_spatial_channel_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -239,7 +241,8 @@ private:
 
     bool needSetThreadPriority_ = true;
 
-    AudioStreamParams streamParams_; // in plan next: replace it with AudioRendererParams
+    AudioStreamParams curStreamParams_; // in plan next: replace it with AudioRendererParams
+    AudioStreamParams streamParams_;
 
     // for data process
     bool isBlendSet_ = false;
@@ -330,6 +333,8 @@ private:
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
+
+    std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
@@ -450,7 +455,7 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         registerTrackerInfo.state = state_;
         registerTrackerInfo.rendererInfo = rendererInfo_;
         registerTrackerInfo.capturerInfo = capturerInfo_;
-        registerTrackerInfo.channelCount = streamParams_.channels;
+        registerTrackerInfo.channelCount = curStreamParams_.channels;
 
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
@@ -482,7 +487,18 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         return ERR_NOT_SUPPORTED;
     }
 
-    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+    streamParams_ = curStreamParams_ = info; // keep it for later use
+    if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
+        converter_ = std::make_unique<AudioSpatialChannelConverter>();
+        if (converter_ == nullptr || !converter_->Init(curStreamParams_, cfg) || !converter_->AllocateMem()) {
+            AUDIO_ERR_LOG("AudioStream: converter construct error");
+            return ERR_NOT_SUPPORTED;
+        }
+        converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
 
     if (state_ != NEW) {
@@ -490,16 +506,14 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         int32_t ret = DeinitIpcStream();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
     }
-
-    streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
     int32_t initRet = InitIpcStream();
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
 
     // eg: 48000_2_1_out.pcm
-    dumpOutFile_ = std::to_string(streamParams_.samplingRate) + "_" + std::to_string(streamParams_.channels) +
-        "_" + std::to_string(streamParams_.format) + "_out.pcm";
+    dumpOutFile_ = std::to_string(curStreamParams_.samplingRate) + "_" + std::to_string(curStreamParams_.channels) +
+        "_" + std::to_string(curStreamParams_.format) + "_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
 
@@ -633,10 +647,10 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.appInfo.appUid = clientUid_;
     config.appInfo.appTokenId = appTokenId_;
 
-    config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
-    config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
-    config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
-    config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
+    config.streamInfo.channels = static_cast<AudioChannel>(curStreamParams_.channels);
+    config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);
+    config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
+    config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
@@ -780,7 +794,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
     int64_t deltaPos = static_cast<uint64_t>(currentWritePos) >= readPos ?  currentWritePos - readPos : 0;
     int64_t tempLatency = 45000000; // 45000000 -> 45 ms
-    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
+    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / curStreamParams_.samplingRate * AUDIO_US_PER_S;
 
     int64_t audioTimeResult = handleTime + deltaTime + tempLatency;
 
@@ -795,7 +809,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
             std::chrono::system_clock::now().time_since_epoch()).count());
         int64_t deltaTimeStamp = (static_cast<int64_t>(timeNow) - static_cast<int64_t>(timeStamp)) * AUDIO_NS_PER_US;
         int64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
-        uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
+        uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / curStreamParams_.samplingRate * AUDIO_US_PER_S;
 
         int64_t deltaPaWriteIndexNs = static_cast<int64_t>(readPosNs) - static_cast<int64_t>(paWriteIndexNs);
         int64_t cacheTimeNow = cacheTime - deltaTimeStamp + deltaPaWriteIndexNs;
@@ -829,6 +843,11 @@ int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
     }
+
+    if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        CHECK_AND_RETURN_RET(converter_ != nullptr && converter_->GetInputBufferSize(bufferSize), ERR_OPERATION_FAILED);
+    }
+
     AUDIO_INFO_LOG("Buffer size is %{public}zu, mode is %{public}s", bufferSize, renderMode_ == RENDER_MODE_NORMAL ?
         "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     return SUCCESS;
@@ -895,8 +914,8 @@ int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
     if (audioSpeed_ == nullptr) {
-        audioSpeed_ = std::make_unique<AudioSpeed>(streamParams_.samplingRate,
-            streamParams_.format, streamParams_.channels);
+        audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
+            curStreamParams_.channels);
         GetBufferSize(bufferSize_);
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
     }
@@ -986,8 +1005,8 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     }
     // Calculate buffer size based on duration.
 
-    cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * streamParams_.samplingRate / AUDIO_US_PER_S) *
-        sizePerFrameInByte_;
+    cbBufferSize_ =
+        static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64", size: %{public}zu", bufferDurationInUs,
         cbBufferSize_);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
@@ -1614,10 +1633,10 @@ bool RendererInClientInner::DrainAudioStream()
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
-    size_t maxCbBufferSize = static_cast<size_t>(MAX_CBBUF_IN_USEC * streamParams_.samplingRate / AUDIO_US_PER_S) *
-        sizePerFrameInByte_;
-    size_t minCbBufferSize = static_cast<size_t>(MIN_CBBUF_IN_USEC * streamParams_.samplingRate / AUDIO_US_PER_S) *
-        sizePerFrameInByte_;
+    size_t maxCbBufferSize =
+        static_cast<size_t>(MAX_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
+    size_t minCbBufferSize =
+        static_cast<size_t>(MIN_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     cbBufferSize_ = (preferredCbBufferSize > maxCbBufferSize || preferredCbBufferSize < minCbBufferSize) ?
@@ -1630,8 +1649,17 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
-    AUDIO_ERR_LOG("Write with metaBuffer is not supported");
-    return ERR_INVALID_OPERATION;
+    Trace trace("RendererInClient::Write with meta " + std::to_string(pcmBufferSize));
+    CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding == ENCODING_AUDIOVIVID, ERR_NOT_SUPPORTED,
+        "Write: Write not supported. encoding doesnot match.");
+    BufferDesc bufDesc = {pcmBuffer, pcmBufferSize, pcmBufferSize, metaBuffer, metaBufferSize};
+    CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_WRITE_FAILED, "Write: converter isn't init.");
+    CHECK_AND_RETURN_RET_LOG(converter_->CheckInputValid(bufDesc), ERR_INVALID_PARAM, "Write: Invalid input.");
+    converter_->Process(bufDesc);
+    uint8_t *buffer;
+    size_t bufferSize;
+    converter_->GetOutputBufferStream(buffer, bufferSize);
+    return Write(buffer, bufferSize);
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
@@ -1945,7 +1973,7 @@ int32_t RendererInClientInner::SetRendererSamplingRate(uint32_t sampleRate)
 
 uint32_t RendererInClientInner::GetRendererSamplingRate()
 {
-    return streamParams_.samplingRate;
+    return curStreamParams_.samplingRate;
 }
 
 int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
@@ -1973,7 +2001,7 @@ int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
         return ERR_ILLEGAL_STATE;
     }
     isBlendSet_ = true;
-    audioBlend_.SetParams(blendMode, streamParams_.format, streamParams_.channels);
+    audioBlend_.SetParams(blendMode, curStreamParams_.format, curStreamParams_.channels);
     return SUCCESS;
 }
 

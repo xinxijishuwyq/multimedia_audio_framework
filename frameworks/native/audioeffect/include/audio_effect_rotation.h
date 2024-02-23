@@ -30,7 +30,7 @@ class AudioEffectRotation {
 public:
     AudioEffectRotation();
     ~AudioEffectRotation();
-    static AudioEffectRotation *GetInstance();
+    static std::shared_ptr<AudioEffectRotation> GetInstance();
     void Init();
     void SetRotation(uint32_t rotationState);
     uint32_t GetRotation();

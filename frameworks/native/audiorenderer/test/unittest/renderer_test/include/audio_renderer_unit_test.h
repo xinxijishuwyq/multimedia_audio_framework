@@ -68,7 +68,7 @@ public:
     // Init Renderer Options
     static void InitializeRendererOptions(AudioRendererOptions &rendererOptions);
     // Init 3DRenderer Options
-    static void Initialize3DRendererOptions(AudioRendererOptions &rendererOptions);
+    static void InitializeRendererSpatialOptions(AudioRendererOptions &rendererOptions);
     // Allocate memory
     static void GetBuffersAndLen(std::unique_ptr<AudioRenderer> &audioRenderer,
         uint8_t *&buffer, uint8_t *&metaBuffer, size_t &bufferLen);

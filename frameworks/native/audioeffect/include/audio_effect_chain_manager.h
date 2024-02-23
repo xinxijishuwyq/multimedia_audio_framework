@@ -164,11 +164,13 @@ private:
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
-    int32_t EffectDspVolumeUpdate(AudioEffectVolume *audioEffectVolume);
-    int32_t EffectApVolumeUpdate(AudioEffectVolume *audioEffectVolume);
+    int32_t EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
+    int32_t EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
 #ifdef WINDOW_MANAGER_ENABLE
-    int32_t EffectDspRotationUpdate(AudioEffectRotation *audioEffectRotation, const uint32_t rotationState);
-    int32_t EffectApRotationUpdate(AudioEffectRotation *audioEffectRotation, const uint32_t rotationState);
+    int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
+        const uint32_t rotationState);
+    int32_t EffectApRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
+        const uint32_t rotationState);
 #endif
     std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
