@@ -1019,7 +1019,6 @@ napi_status NapiParamUtils::GetExtraParametersVector(const napi_env &env,
 {
     uint32_t arrayLen = 0;
     napi_get_array_length(env, in, &arrayLen);
-    CHECK_AND_RETURN_RET_LOG(arrayLen != 0, napi_invalid_arg, "subKeys is empty");
 
     for (uint32_t i = 0; i < arrayLen; i++) {
         napi_value element;

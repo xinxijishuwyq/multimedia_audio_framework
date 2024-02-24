@@ -609,20 +609,23 @@ public:
      *
      * @param mainKey Main key of audio parameters to be obtained.
      * @param subKeys subKeys of audio parameters to be obtained.
-     * @return Returns the value of the obtained audio parameter
+     * @param result value of sub key parameters.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * @since 11
      */
-    const std::vector<std::pair<std::string, std::string>> GetExtraParameters(const std::string mainKey,
-        const std::vector<std::string> subKeys);
+    int32_t GetExtraParameters(const std::string &mainKey,
+        const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result);
 
     /**
      * @brief Set audio parameters.
      *
      * @param key The main key of the set audio parameter.
      * @param kvpairs The pairs with sub keys and values of the set audio parameter.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
      * @since 11
      */
-    void SetExtraParameters(const std::string &key, const std::vector<std::pair<std::string, std::string>> &kvpairs);
+    int32_t SetExtraParameters(const std::string &key,
+        const std::vector<std::pair<std::string, std::string>> &kvpairs);
 
     /**
      * @brief Get transaction Id.

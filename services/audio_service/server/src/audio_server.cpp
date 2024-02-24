@@ -146,31 +146,44 @@ void AudioServer::OnStop()
     AUDIO_DEBUG_LOG("OnStop");
 }
 
-void AudioServer::SetExtraParameters(const std::string& key,
+int32_t AudioServer::SetExtraParameters(const std::string& key,
     const std::vector<std::pair<std::string, std::string>>& kvpairs)
 {
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    bool hasSettingsPermission = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
-    CHECK_AND_RETURN_LOG(hasSystemPermission && hasSettingsPermission, "set extra parameters failed: no permission.");
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "set extra parameters failed: not system app.");
+    ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
 
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
+        return ERROR;
     }
 
     auto mainKeyIt = audioParameterKeys.find(key);
     if (mainKeyIt == audioParameterKeys.end()) {
-        return;
+        return ERR_INVALID_PARAM;
     }
 
     std::unordered_map<std::string, std::set<std::string>> subKeyMap = mainKeyIt->second;
     std::string value;
+    bool match = true;
     for (auto it = kvpairs.begin(); it != kvpairs.end(); it++) {
         auto subKeyIt = subKeyMap.find(it->first);
         if (subKeyIt != subKeyMap.end()) {
             value += it->first + "=" + it->second + ";";
+        } else {
+            match = false;
+            break;
         }
     }
-    SetAudioParameter(key, value);
+    if (!match) {
+        return ERR_INVALID_PARAM;
+    }
+
+    IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
+    audioRendererSinkInstance->SetAudioParameter(AudioParamKey::NONE, "", value);
+    return SUCCESS;
 }
 
 void AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
@@ -239,28 +252,45 @@ void AudioServer::SetAudioParameter(const std::string& networkId, const AudioPar
     audioRendererSinkInstance->SetAudioParameter(key, condition, value);
 }
 
-const std::vector<std::pair<std::string, std::string>> AudioServer::GetExtraParameters(const std::string &mainKey,
-    const std::vector<std::string> &subKeys)
+int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
+    const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
     if (audioParameterKeys.empty()) {
         AUDIO_ERR_LOG("audio extra parameters mainKey and subKey is empty");
+        return ERROR;
     }
 
     auto mainKeyIt = audioParameterKeys.find(mainKey);
     if (mainKeyIt == audioParameterKeys.end()) {
-        return {};
+        return ERR_INVALID_PARAM;
     }
 
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     std::unordered_map<std::string, std::set<std::string>> subKeyMap = mainKeyIt->second;
-    std::vector<std::pair<std::string, std::string>> values;
+    if (subKeys.empty()) {
+        for (auto it = subKeyMap.begin(); it != subKeyMap.end(); it++) {
+            std::string value = audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, it->first);
+            result.emplace_back(std::make_pair(it->first, value));
+        }
+        return SUCCESS;
+    }
+
+    bool match = true;
     for (auto it = subKeys.begin(); it != subKeys.end(); it++) {
         auto subKeyIt = subKeyMap.find(*it);
         if (subKeyIt != subKeyMap.end()) {
-            std::string value = GetAudioParameter(mainKey + "_" + *it);
-            values.emplace_back(std::make_pair(*it, value));
+            std::string value = audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, *it);
+            result.emplace_back(std::make_pair(*it, value));
+        } else {
+            match = false;
+            break;
         }
     }
-    return values;
+    if (!match) {
+        result.clear();
+        return ERR_INVALID_PARAM;
+    }
+    return SUCCESS;
 }
 
 bool AudioServer::CheckAndPrintStacktrace(const std::string &key)

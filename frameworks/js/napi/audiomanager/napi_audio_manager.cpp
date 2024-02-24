@@ -888,6 +888,9 @@ napi_value NapiAudioManager::GetAudioParameter(napi_env env, napi_callback_info 
 
 napi_value NapiAudioManager::SetExtraParameters(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     auto context = std::make_shared<AudioManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("set extra parameters failed : no memory");
@@ -896,17 +899,24 @@ napi_value NapiAudioManager::SetExtraParameters(napi_env env, napi_callback_info
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
-        context->key = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->key.empty(), "get main key failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INPUT_INVALID);
 
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[PARAM0], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_string, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->key = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
+
+        napi_typeof(env, argv[PARAM1], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_object, "invalid arguments", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetExtraParametersSubKV(env, context->subKvpairs, argv[PARAM1]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get sub key and value failed",
-            NAPI_ERR_INVALID_PARAM);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->subKvpairs.empty(), "sub key and value is empty",
-            NAPI_ERR_INVALID_PARAM);
+            NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
@@ -915,7 +925,14 @@ napi_value NapiAudioManager::SetExtraParameters(napi_env env, napi_callback_info
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context), "audio manager state is error.");
 
-        napiAudioManager->audioMngr_->SetExtraParameters(context->key, context->subKvpairs);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->key.empty(), "get main key failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->subKvpairs.empty(), "sub key and value is empty",
+            NAPI_ERR_INVALID_PARAM);
+        context->intValue = napiAudioManager->audioMngr_->SetExtraParameters(context->key, context->subKvpairs);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue != ERR_PERMISSION_DENIED, "permission denied",
+            NAPI_ERR_NO_PERMISSION);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetExtraParameters failed",
+            NAPI_ERR_INVALID_PARAM);
     };
 
     auto complete = [env](napi_value &output) {
@@ -926,6 +943,9 @@ napi_value NapiAudioManager::SetExtraParameters(napi_env env, napi_callback_info
 
 napi_value NapiAudioManager::GetExtraParameters(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
     auto context = std::make_shared<AudioManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("get extra parameters failed : no memory");
@@ -934,15 +954,26 @@ napi_value NapiAudioManager::GetExtraParameters(napi_env env, napi_callback_info
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
-        context->key = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->key.empty(), "get main key failed", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
 
-        context->status = NapiParamUtils::GetExtraParametersVector(env, context->subKeys, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get sub key failed", NAPI_ERR_INVALID_PARAM);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->subKeys.empty(), "sub key is empty", NAPI_ERR_INVALID_PARAM);
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[PARAM0], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_string, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->key = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
+        
+        if (argc > ARGS_ONE) {
+            napi_typeof(env, argv[PARAM1], &valueType);
+            NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_object, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+            context->status = NapiParamUtils::GetExtraParametersVector(env, context->subKeys, argv[PARAM1]);
+            NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get sub key failed",
+                NAPI_ERR_INPUT_INVALID);
+        }
     };
     context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
@@ -951,7 +982,11 @@ napi_value NapiAudioManager::GetExtraParameters(napi_env env, napi_callback_info
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context), "audio manager state is error.");
 
-        context->subKvpairs = napiAudioManager->audioMngr_->GetExtraParameters(context->key, context->subKeys);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, !context->key.empty(), "get main key failed", NAPI_ERR_INVALID_PARAM);
+        context->intValue = napiAudioManager->audioMngr_->GetExtraParameters(
+            context->key, context->subKeys, context->subKvpairs);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "GetExtraParameters failed",
+            NAPI_ERR_INVALID_PARAM);
     };
 
     auto complete = [env, context](napi_value &output) {

@@ -58,13 +58,13 @@ public:
     int32_t OffloadSetVolume(float volume) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     static void *paDaemonThread(void *arg);
-    void SetExtraParameters(const std::string& key,
+    int32_t SetExtraParameters(const std::string& key,
         const std::vector<std::pair<std::string, std::string>>& kvpairs) override;
     void SetAudioParameter(const std::string& key, const std::string& value) override;
     void SetAudioParameter(const std::string& networkId, const AudioParamKey key, const std::string& condition,
         const std::string& value) override;
-    const std::vector<std::pair<std::string, std::string>> GetExtraParameters(const std::string &mainKey,
-        const std::vector<std::string> &subKeys) override;
+    int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result) override;
     const std::string GetAudioParameter(const std::string &key) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
