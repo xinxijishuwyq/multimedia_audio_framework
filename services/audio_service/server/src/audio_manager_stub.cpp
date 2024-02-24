@@ -74,12 +74,14 @@ int AudioManagerStub::HandleGetExtraAudioParameters(MessageParcel &data, Message
         subKeys.push_back(subKey);
     }
 
-    const std::vector<std::pair<std::string, std::string>> value = GetExtraParameters(mainKey, subKeys);
-    reply.WriteInt32(static_cast<int32_t>(value.size()));
-    for (auto it = value.begin(); it != value.end(); it++) {
+    std::vector<std::pair<std::string, std::string>> values;
+    int32_t result = GetExtraParameters(mainKey, subKeys, values);
+    reply.WriteInt32(static_cast<int32_t>(values.size()));
+    for (auto it = values.begin(); it != values.end(); it++) {
         reply.WriteString(static_cast<std::string>(it->first));
         reply.WriteString(static_cast<std::string>(it->second));
     }
+    reply.WriteInt32(result);
     return AUDIO_OK;
 }
 
@@ -93,7 +95,8 @@ int AudioManagerStub::HandleSetExtraAudioParameters(MessageParcel &data, Message
         std::string value = data.ReadString();
         audioParametersSubKVPairs.push_back(std::make_pair(subKey, value));
     }
-    SetExtraParameters(mainKey, audioParametersSubKVPairs);
+    int32_t result = SetExtraParameters(mainKey, audioParametersSubKVPairs);
+    reply.WriteInt32(result);
     return AUDIO_OK;
 }
 

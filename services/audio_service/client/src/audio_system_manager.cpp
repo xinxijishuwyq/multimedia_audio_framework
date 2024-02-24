@@ -283,19 +283,19 @@ void AudioSystemManager::SetAudioParameter(const std::string &key, const std::st
     gasp->SetAudioParameter(key, value);
 }
 
-const std::vector<std::pair<std::string, std::string>> AudioSystemManager::GetExtraParameters(
-    const std::string mainKey, const std::vector<std::string> subKeys)
+int32_t AudioSystemManager::GetExtraParameters(const std::string &mainKey,
+    const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, {}, "Audio service unavailable.");
-    return gasp->GetExtraParameters(mainKey, subKeys);
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->GetExtraParameters(mainKey, subKeys, result);
 }
 
-void AudioSystemManager::SetExtraParameters(const std::string &key,
+int32_t AudioSystemManager::SetExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     return gasp->SetExtraParameters(key, kvpairs);
 }
 

@@ -109,9 +109,9 @@ public:
      *
      * @param key main key for the extra audio parameter to be set
      * @param kvpairs associated with the sub keys and values for the extra audio parameter to be set
-     * @return none.
+     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual void SetExtraParameters(const std::string &key,
+    virtual int32_t SetExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs) = 0;
 
     /**
@@ -119,10 +119,11 @@ public:
      *
      * @param mainKey main key for the extra audio parameter to be get
      * @param subKeys associated with the key for the extra audio parameter to be get
-     * @return Returns value associated to the key requested.
+     * @param result value of sub key parameters
+     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual const std::vector<std::pair<std::string, std::string>> GetExtraParameters(const std::string &mainKey,
-        const std::vector<std::string> &subKyes) = 0;
+    virtual int32_t GetExtraParameters(const std::string &mainKey,
+        const std::vector<std::string> &subKyes, std::vector<std::pair<std::string, std::string>> &result) = 0;
 
     /**
      * Update the audio route after device is detected and route is decided
