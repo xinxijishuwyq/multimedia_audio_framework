@@ -846,6 +846,11 @@ int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
     }
+
+    if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        CHECK_AND_RETURN_RET(converter_ != nullptr && converter_->GetInputBufferSize(bufferSize), ERR_OPERATION_FAILED);
+    }
+
     AUDIO_INFO_LOG("Buffer size is %{public}zu, mode is %{public}s", bufferSize, renderMode_ == RENDER_MODE_NORMAL ?
         "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     return SUCCESS;
