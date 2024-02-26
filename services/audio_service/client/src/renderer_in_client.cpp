@@ -846,11 +846,6 @@ int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
     }
-
-    if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
-        CHECK_AND_RETURN_RET(converter_ != nullptr && converter_->GetInputBufferSize(bufferSize), ERR_OPERATION_FAILED);
-    }
-
     AUDIO_INFO_LOG("Buffer size is %{public}zu, mode is %{public}s", bufferSize, renderMode_ == RENDER_MODE_NORMAL ?
         "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     return SUCCESS;
@@ -1010,6 +1005,7 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
 
     size_t tmpSize = 0;
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        CHECK_AND_RETURN_LOG(converter_ != nullptr, "converter is not inited");
         tmpSize = converter_->GetMetaSize();
         converter_->GetInputBufferSize(cbBufferSize_);
     } else {
@@ -1196,6 +1192,7 @@ int32_t RendererInClientInner::GetBufferDesc(BufferDesc &bufDesc)
     bufDesc.bufLength = cbBufferSize_;
     bufDesc.dataLength = cbBufferSize_;
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_INVALID_OPERATION, "converter is not inited");
         bufDesc.metaBuffer = bufDesc.buffer + cbBufferSize_;
         bufDesc.metaLength = converter_->GetMetaSize();
     }
@@ -1223,7 +1220,8 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
         return ERR_INCORRECT_MODE;
     }
     CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERR_INVALID_PARAM, "Invalid buffer");
-    CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID || converter_->CheckInputValid(bufDesc),
+    CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
+            converter_ != nullptr && converter_->CheckInputValid(bufDesc),
         ERR_INVALID_PARAM, "Invalid buffer desc");
     if (bufDesc.bufLength > cbBufferSize_ || bufDesc.dataLength > cbBufferSize_) {
         AUDIO_WARNING_LOG("Invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
