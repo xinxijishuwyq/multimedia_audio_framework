@@ -466,7 +466,7 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
     PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
     bool tempBool = true;
     if (paCapturerMap_.Find(streamImpl, tempBool) == false) {
-        AUDIO_ERR_LOG("PAStreamStopSuccessCb: streamImpl is not find");
+        AUDIO_ERR_LOG("streamImpl is null");
         return;
     }
     std::lock_guard<std::mutex> lock(streamImpl->streamImplLock_);
