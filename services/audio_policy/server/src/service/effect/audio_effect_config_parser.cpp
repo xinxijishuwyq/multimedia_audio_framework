@@ -37,8 +37,8 @@ static constexpr int32_t INDEX_POSTPROCESS = 4;
 static constexpr int32_t INDEX_EXCEPTION = 5;
 static constexpr int32_t NODE_SIZE = 6;
 static constexpr int32_t MODULE_SIZE = 5;
-static constexpr int32_t XML_READ_PARAM_FIVE = 5;
-static constexpr int32_t XML_READ_PARAM_SIX = 6;
+static constexpr int32_t XML_PARSE_NOERROR = 1 << 5;
+static constexpr int32_t XML_PARSE_NOWARNING = 1 << 6;
 
 AudioEffectConfigParser::AudioEffectConfigParser()
 {
@@ -61,14 +61,14 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
     for (int32_t i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; i--) {
         if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
             AUDIO_INFO_LOG("effect config file path:%{public}s", cfgFiles->paths[i]);
-            doc = xmlReadFile(cfgFiles->paths[i], nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
+            doc = xmlReadFile(cfgFiles->paths[i], nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
             break;
         }
     }
     FreeCfgFiles(cfgFiles);
 #else
     AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_EFFECT_CONFIG_FILE);
-    doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, (1 << XML_READ_PARAM_FIVE) | (1 << XML_READ_PARAM_SIX));
+    doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
 #endif
     CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load audio effect config fail");
     return 0;
