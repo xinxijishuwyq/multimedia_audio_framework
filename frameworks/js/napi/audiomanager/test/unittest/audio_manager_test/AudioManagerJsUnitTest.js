@@ -178,4 +178,212 @@ describe("AudioManagerJsUnitTest", function () {
             }
         })
     })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_001
+     * @tc.desc:setExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_001", 0, async function (done) {
+        try {
+            await audioManager.setExtraParameters('mmi');
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_001 SUCCESS: ${err}.`);
+            expect(err.code).assertEqual('401');
+        }
+        done();
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_002
+     * @tc.desc:setExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_002", 0, async function (done) {
+        try {
+            await audioManager.setExtraParameters('mmi', 1);
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_002 SUCCESS: ${err}.`);
+            expect(err.code).assertEqual('401');
+        }
+        done();
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_003
+     * @tc.desc:setExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_003", 0, function (done) {
+        try {
+            audioManager.setExtraParameters('mmi', { 'test': 'on' }).then(() => {
+                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_003 FAIL`);
+                expect(false).assertTrue();
+                done();
+            }).catch(err => {
+                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_003 SUCCESS: ${err}.`);
+                expect(err.code).assertEqual(6800101);
+                done();
+            });
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_003 FAIL: ${err}.`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004
+     * @tc.desc:setExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004", 0, function (done) {
+        try {
+            audioManager.setExtraParameters('mmi', { }).then(() => {
+                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004 FAIL`);
+                expect(false).assertTrue();
+                done();
+            }).catch(err => {
+                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004 SUCCESS: ${err}.`);
+                expect(err.code).assertEqual(6800101);
+                done();
+            });
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004 FAIL: ${err}.`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005
+     * @tc.desc:setExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005", 0, function (done) {
+        try {
+            audioManager.setExtraParameters('mmi', { 'mmi_test': 'on' }).then(() => {
+                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005 SUCCESS`);
+                expect(true).assertTrue();
+                done();
+            }).catch(err => {
+                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005 FAIL: ${err}.`);
+                expect(false).assertTrue();
+                done();
+            });
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005 try-catch FAIL: ${err}.`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_001
+     * @tc.desc:getExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_001", 0, async function (done) {
+        try {
+            await audioManager.getExtraParameters();
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_001 SUCCESS: ${err}.`);
+            expect(err.code).assertEqual('401');
+        }
+        done();
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_002
+     * @tc.desc:getExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_002", 0, async function (done) {
+        try {
+            await audioManager.getExtraParameters('mmi', 1);
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_002 SUCCESS: ${err}.`);
+            expect(err.code).assertEqual('401');
+        }
+        done();
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_003
+     * @tc.desc:getExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_003", 0, function (done) {
+        try {
+            audioManager.getExtraParameters('mmi', ['unittest']).then((value) => {
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_003 FAIL`);
+                expect(false).assertTrue();
+                done();
+            }).catch(err => {
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_003 SUCCESS: ${err}.`);
+                expect(err.code).assertEqual(6800101);
+                done();
+            });
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_003 FAIL try-catch`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004
+     * @tc.desc:getExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004", 0, function (done) {
+        try {
+            audioManager.getExtraParameters('mmi').then((value) => {
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 SUCCESS ` + value.length);
+                expect(value.length).assertEqual(16);
+                done();
+            }).catch(err => {
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 FAIL: ${err.code}.`);
+                expect(false).assertTrue();
+                done();
+            });
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 FAIL try-catch: ${err.code}.`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005
+     * @tc.desc:getExtraParameters - Promise
+     * @tc.type: FUNC
+     * @tc.require: SR20231218728353
+     */
+    it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005", 0, function (done) {
+        try {
+            audioManager.getExtraParameters('mmi', ['getSmartPANV']).then((value) => {
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 SUCCESS ` + value.length);
+                expect(value.length).assertEqual(1);
+                done();
+            }).catch(err => {
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 FAIL: ${err.code}.`);
+                expect(false).assertTrue();
+                done();
+            });
+        } catch (err) {
+            console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 FAIL try-catch: ${err}.`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
 })
