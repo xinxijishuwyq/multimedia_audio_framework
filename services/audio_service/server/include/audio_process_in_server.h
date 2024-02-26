@@ -52,6 +52,8 @@ public:
     // override for AudioProcess
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
 
+    int32_t GetSessionId(uint32_t &sessionId) override;
+
     int32_t Start() override;
 
     int32_t Pause(bool isFlush) override;
@@ -88,6 +90,7 @@ private:
     AudioProcessConfig processConfig_;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 
+    uint32_t sessionId_ = 0;
     bool isInited_ = false;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;

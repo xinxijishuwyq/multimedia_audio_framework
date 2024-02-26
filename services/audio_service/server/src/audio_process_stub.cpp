@@ -78,6 +78,16 @@ int32_t AudioProcessStub::HandleResolveBuffer(MessageParcel &data, MessageParcel
     return AUDIO_OK;
 }
 
+int32_t AudioProcessStub::HandleGetSessionId(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    uint32_t sessionId = 0;
+    int32_t ret = GetSessionId(sessionId);
+    reply.WriteInt32(ret);
+    reply.WriteUint32(sessionId);
+    return AUDIO_OK;
+}
+
 int32_t AudioProcessStub::HandleStart(MessageParcel &data, MessageParcel &reply)
 {
     (void)data;

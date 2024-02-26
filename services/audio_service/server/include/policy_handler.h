@@ -48,6 +48,8 @@ public:
 
     void SetActiveOutputDevice(DeviceType deviceType);
 
+    uint32_t GenerateSessionId(int32_t uid);
+
     DeviceType GetActiveOutPutDevice();
 
     int32_t SetWakeUpAudioCapturerFromAudioServer();

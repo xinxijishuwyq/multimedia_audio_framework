@@ -70,6 +70,22 @@ int32_t AudioProcessProxy::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
     return SUCCESS;
 }
 
+int32_t AudioProcessProxy::GetSessionId(uint32_t &sessionId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IAudioProcessMsg::OH_GET_SESSIONID, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "Start failed, error: %{public}d", ret);
+
+    ret = reply.ReadInt32();
+    sessionId = reply.ReadUint32();
+    return ret;
+}
+
 int32_t AudioProcessProxy::Start()
 {
     MessageParcel data;

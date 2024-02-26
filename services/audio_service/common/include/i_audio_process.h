@@ -33,6 +33,8 @@ class AudioProcess {
 public:
     virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) = 0;
 
+    virtual int32_t GetSessionId(uint32_t &sessionId) = 0;
+
     virtual int32_t Start() = 0;
 
     virtual int32_t Pause(bool isFlush) = 0;
@@ -71,6 +73,7 @@ public:
     // IPC code.
     enum IAudioProcessMsg : uint32_t {
         ON_RESOLVE_BUFFER = 0,
+        OH_GET_SESSIONID,
         ON_START,
         ON_PAUSE,
         ON_RESUME,
