@@ -135,7 +135,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_NAVIGATION", STREAM_USAGE_NAVIGATION},
     {"STREAM_USAGE_DTMF", STREAM_USAGE_DTMF},
     {"STREAM_USAGE_ENFORCED_TONE", STREAM_USAGE_ENFORCED_TONE},
-    {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC}
+    {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC},
+    {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceRoleMap = {
@@ -1245,6 +1246,7 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
         case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
             result = true;
             break;
         default:
