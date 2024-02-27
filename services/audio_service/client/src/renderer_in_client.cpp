@@ -1008,19 +1008,19 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     }
     // Calculate buffer size based on duration.
 
-    size_t tmpSize = 0;
+    size_t metaSize = 0;
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         CHECK_AND_RETURN_LOG(converter_ != nullptr, "converter is not inited");
-        tmpSize = converter_->GetMetaSize();
+        metaSize = converter_->GetMetaSize();
         converter_->GetInputBufferSize(cbBufferSize_);
     } else {
         cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
-    AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu",
-        bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_);
+    AUDIO_INFO_LOG("duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu, metaSize: %{public}zu",
+        bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_, metaSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
-    cbBuffer_ = std::make_unique<uint8_t[]>(cbBufferSize_ + tmpSize);
+    cbBuffer_ = std::make_unique<uint8_t[]>(cbBufferSize_ + metaSize);
 }
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
