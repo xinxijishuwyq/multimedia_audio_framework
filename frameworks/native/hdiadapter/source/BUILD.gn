@@ -110,14 +110,17 @@ ohos_shared_library("remote_audio_capturer_source") {
     "../../audioutils/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
-  include_dirs += [ multimedia_audio_framework_drivers ]
 
   deps = [
     "../../audioutils:audio_utils",
     "../devicemanager:audio_device_manager",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
+    "hilog:libhilog"
+  ]
   defines = []
   if (audio_framework_feature_daudio_enable) {
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
@@ -149,8 +152,6 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   deps = [
     "../../audioutils:audio_utils",
     "../devicemanager:audio_device_manager",
@@ -158,7 +159,8 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
 
   external_deps = [
     "c_utils:utils",
-    "hilog:libhilog",
+    "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
+    "hilog:libhilog"
   ]
   defines = []
   if (audio_framework_feature_daudio_enable) {

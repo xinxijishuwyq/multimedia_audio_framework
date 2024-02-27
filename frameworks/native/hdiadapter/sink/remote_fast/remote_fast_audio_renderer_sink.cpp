@@ -25,11 +25,34 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "audio_info.h"
-#include "audio_manager.h"
+#include <v1_0/iaudio_manager.h>
+#include <v1_0/iaudio_callback.h>
+#include <v1_0/audio_types.h>
 #include "ashmem.h"
 #include "i_audio_renderer_sink.h"
 #include "i_audio_device_adapter.h"
 #include "i_audio_device_manager.h"
+
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioAdapterDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPort;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortDirection;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioManager;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioRender;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCategory;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRouteNode;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioExtParamKey;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRoute;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSceneDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCallback;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortPin;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortType;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortRole;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioMmapBufferDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioTimeStamp;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -107,7 +130,7 @@ private:
     std::shared_ptr<IAudioDeviceManager> audioManager_ = nullptr;
     std::shared_ptr<IAudioDeviceAdapter> audioAdapter_ = nullptr;
     IAudioSinkCallback *callback_ = nullptr;
-    struct AudioRender *audioRender_ = nullptr;
+    sptr<IAudioRender> audioRender_ = nullptr;
     struct AudioPort audioPort_;
     IAudioSinkAttr attr_ = {};
     std::string deviceNetworkId_;
@@ -116,6 +139,7 @@ private:
     int32_t bufferFd_ = INVALID_FD;
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
+    uint32_t renderId_ = 0;
 
 #ifdef DEBUG_DIRECT_USE_HDI
     sptr<Ashmem> ashmemSink_ = nullptr;
@@ -180,7 +204,7 @@ void RemoteFastAudioRendererSinkInner::ClearRender()
     }
 
     if (audioAdapter_ != nullptr) {
-        audioAdapter_->DestroyRender(audioRender_);
+        audioAdapter_->DestroyRender(audioRender_, renderId_);
         audioAdapter_->Release();
     }
     audioRender_ = nullptr;
@@ -217,12 +241,12 @@ int32_t RemoteFastAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
     struct AudioAdapterDescriptor *desc = audioManager_->GetTargetAdapterDesc(deviceNetworkId_, true);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NOT_STARTED, "Get target adapters descriptor fail.");
-    for (uint32_t port = 0; port < desc->portNum; port++) {
-        if (desc->ports[port].portId == PIN_OUT_SPEAKER) {
+    for (uint32_t port = 0; port < desc->ports.size(); port++) {
+        if (desc->ports[port].portId == AudioPortPin::PIN_OUT_SPEAKER) {
             audioPort_ = desc->ports[port];
             break;
         }
-        CHECK_AND_RETURN_RET_LOG(port != (desc->portNum - 1), ERR_INVALID_INDEX,
+        CHECK_AND_RETURN_RET_LOG(port != (desc->ports.size() - 1), ERR_INVALID_INDEX,
             "Not found the audio spk port.");
     }
 
@@ -256,15 +280,15 @@ int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &r
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
-    deviceDesc.pins = PIN_OUT_SPEAKER;
-    deviceDesc.desc = nullptr;
+    deviceDesc.pins = AudioPortPin::PIN_OUT_SPEAKER;
+    deviceDesc.desc = "";
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateRender: Audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateRender(&deviceDesc, &param, &audioRender_, this);
+    int32_t ret = audioAdapter_->CreateRender(deviceDesc, param, audioRender_, this, renderId_);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioRender_ != nullptr, ret,
         "AudioDeviceCreateRender failed");
-    if (param.type == AUDIO_MMAP_NOIRQ) {
+    if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ) {
         PrepareMmapBuffer();
     }
     isRenderCreated_.store(true);
@@ -281,13 +305,13 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
     int32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
 
-    struct AudioMmapBufferDescriptor desc = {0};
-    int32_t ret = audioRender_->attr.ReqMmapBuffer((AudioHandle)audioRender_, reqBufferFrameSize, &desc);
+    struct AudioMmapBufferDescriptor desc;
+    int32_t ret = audioRender_->ReqMmapBuffer(reqBufferFrameSize, desc);
     CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), ERR_OPERATION_FAILED,
         "PrepareMmapBuffer require mmap buffer failed, ret:%{public}d.", ret);
 
-    AUDIO_INFO_LOG("AudioMmapBufferDescriptor memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"
-        "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]", desc.memoryAddress,
+    AUDIO_INFO_LOG("AudioMmapBufferDescriptor  memoryFd[%{public}d] totalBufferFrames"
+        "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]",
         desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
 
     bufferFd_ = desc.memoryFd; // fcntl(fd, 1030,3) after dup?
@@ -330,8 +354,8 @@ int32_t RemoteFastAudioRendererSinkInner::GetMmapHandlePosition(uint64_t &frames
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetMmapHandlePosition: Audio render is null.");
 
-    struct AudioTimeStamp timestamp = {};
-    int32_t ret = audioRender_->attr.GetMmapPosition((AudioHandle)audioRender_, &frames, &timestamp);
+    struct AudioTimeStamp timestamp;
+    int32_t ret = audioRender_->GetMmapPosition(frames, timestamp);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
         "Hdi GetMmapPosition filed, ret:%{public}d!", ret);
 
@@ -369,19 +393,19 @@ AudioFormat RemoteFastAudioRendererSinkInner::ConvertToHdiFormat(HdiAdapterForma
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_U8:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_8_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_8_BIT;
             break;
         case SAMPLE_S16:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
         case SAMPLE_S24:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_24_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_24_BIT;
             break;
         case SAMPLE_S32:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_32_BIT;
             break;
         default:
-            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+            hdiFormat = AudioFormat::AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
     }
 
@@ -395,7 +419,7 @@ void RemoteFastAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &a
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.streamId = REMOTE_FAST_OUTPUT_STREAM_ID;
-    attrs.type = AUDIO_MMAP_NOIRQ;
+    attrs.type = AudioCategory::AUDIO_MMAP_NOIRQ;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
@@ -459,7 +483,7 @@ int32_t RemoteFastAudioRendererSinkInner::Start(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Start: Audio render is null.");
-    int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "Start fail, ret %{public}d.", ret);
     ret = CheckPositionTime();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "CheckPositionTime failed, ret %{public}d.", ret);
@@ -477,7 +501,7 @@ int32_t RemoteFastAudioRendererSinkInner::Stop(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Stop: Audio render is null.");
-    int32_t ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Stop fail, ret %{public}d.", ret);
     started_.store(false);
     AUDIO_DEBUG_LOG("Stop ok.");
@@ -495,7 +519,7 @@ int32_t RemoteFastAudioRendererSinkInner::Pause(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Pause: Audio render is null.");
-    int32_t ret = audioRender_->control.Pause(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Pause fail, ret %{public}d.", ret);
     paused_.store(true);
     return SUCCESS;
@@ -512,7 +536,7 @@ int32_t RemoteFastAudioRendererSinkInner::Resume(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Resume: Audio render is null.");
-    int32_t ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Resume();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Resume fail, ret %{public}d.", ret);
     paused_.store(false);
     return SUCCESS;
@@ -524,7 +548,7 @@ int32_t RemoteFastAudioRendererSinkInner::Reset(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Reset invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Reset: Audio render is null.");
-    int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Reset fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -535,7 +559,7 @@ int32_t RemoteFastAudioRendererSinkInner::Flush(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Flush invalid state!");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Flush: Audio render is null.");
-    int32_t ret = audioRender_->control.Flush(reinterpret_cast<AudioHandle>(audioRender_));
+    int32_t ret = audioRender_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Flush fail, ret %{public}d.", ret);
     return SUCCESS;
 }
@@ -555,7 +579,7 @@ int32_t RemoteFastAudioRendererSinkInner::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
-    int32_t ret = audioRender_->volume.SetVolume(reinterpret_cast<AudioHandle>(audioRender_), volume);
+    int32_t ret = audioRender_->SetVolume(volume);
     if (ret) {
         AUDIO_ERR_LOG("Set volume failed!");
     }
@@ -578,7 +602,7 @@ int32_t RemoteFastAudioRendererSinkInner::GetLatency(uint32_t *latency)
         "GetLatency failed latency null");
 
     uint32_t hdiLatency = 0;
-    int32_t ret = audioRender_->GetLatency(audioRender_, &hdiLatency);
+    int32_t ret = audioRender_->GetLatency(hdiLatency);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
         "GetLatency failed.");
 
