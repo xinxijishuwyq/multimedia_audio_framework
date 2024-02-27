@@ -51,7 +51,7 @@ int32_t AudioSpatialChannelConverter::GetPcmLength(int32_t channels, int8_t bps)
     return 0;
 }
 
-int32_t AudioSpatialChannelConverter::GetMetaLength()
+int32_t AudioSpatialChannelConverter::GetMetaSize()
 {
     if (encoding_ == ENCODING_AUDIOVIVID) {
         return AVS3METADATA_SIZE;
@@ -113,9 +113,9 @@ bool AudioSpatialChannelConverter::CheckInputValid(const BufferDesc bufDesc)
             GetPcmLength(inChannel_, bps_));
         return false;
     }
-    if (bufDesc.metaLength - GetMetaLength() != 0) {
+    if (bufDesc.metaLength - GetMetaSize() != 0) {
         AUDIO_ERR_LOG("metadata bufLength invalid, metadataBufferSize = %{public}zu, excepted %{public}d",
-            bufDesc.metaLength, GetMetaLength());
+            bufDesc.metaLength, GetMetaSize());
         return false;
     }
     return true;

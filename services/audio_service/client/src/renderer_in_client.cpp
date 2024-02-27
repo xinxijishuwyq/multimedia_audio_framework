@@ -1008,12 +1008,19 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     }
     // Calculate buffer size based on duration.
 
-    cbBufferSize_ =
-        static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
-    AUDIO_INFO_LOG("InitCallbackBuffer with duration %{public}" PRIu64", size: %{public}zu", bufferDurationInUs,
-        cbBufferSize_);
+    size_t metaSize = 0;
+    if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        CHECK_AND_RETURN_LOG(converter_ != nullptr, "converter is not inited");
+        metaSize = converter_->GetMetaSize();
+        converter_->GetInputBufferSize(cbBufferSize_);
+    } else {
+        cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) *
+            sizePerFrameInByte_;
+    }
+    AUDIO_INFO_LOG("duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu, metaSize: %{public}zu",
+        bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_, metaSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
-    cbBuffer_ = std::make_unique<uint8_t[]>(cbBufferSize_);
+    cbBuffer_ = std::make_unique<uint8_t[]>(cbBufferSize_ + metaSize);
 }
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
@@ -1132,8 +1139,10 @@ void RendererInClientInner::WriteCallbackFunc()
                 continue;
             }
             // call write here.
-            int32_t result = Write(temp.buffer, temp.bufLength);
-            if (result < 0 || result != static_cast<int32_t>(temp.bufLength)) {
+            int32_t result = curStreamParams_.encoding == ENCODING_PCM
+                ? Write(temp.buffer, temp.bufLength)
+                : Write(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
+            if (result < 0) {
                 AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
             }
         }
@@ -1187,6 +1196,11 @@ int32_t RendererInClientInner::GetBufferDesc(BufferDesc &bufDesc)
     bufDesc.buffer = cbBuffer_.get();
     bufDesc.bufLength = cbBufferSize_;
     bufDesc.dataLength = cbBufferSize_;
+    if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_INVALID_OPERATION, "converter is not inited");
+        bufDesc.metaBuffer = bufDesc.buffer + cbBufferSize_;
+        bufDesc.metaLength = converter_->GetMetaSize();
+    }
     return SUCCESS;
 }
 
@@ -1211,6 +1225,9 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
         return ERR_INCORRECT_MODE;
     }
     CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERR_INVALID_PARAM, "Invalid buffer");
+    CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
+            converter_ != nullptr && converter_->CheckInputValid(bufDesc),
+        ERR_INVALID_PARAM, "Invalid buffer desc");
     if (bufDesc.bufLength > cbBufferSize_ || bufDesc.dataLength > cbBufferSize_) {
         AUDIO_WARNING_LOG("Invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
             bufDesc.bufLength, bufDesc.dataLength, cbBufferSize_);
@@ -1636,6 +1653,8 @@ bool RendererInClientInner::DrainAudioStream()
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
+    CHECK_AND_RETURN_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID,
+        "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
         static_cast<size_t>(MAX_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t minCbBufferSize =
