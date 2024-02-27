@@ -5325,7 +5325,12 @@ int32_t AudioPolicyService::HandleA2dpDeviceOutOffload()
     FetchStreamForA2dpOffload(rendererChangeInfos);
 
     preA2dpOffloadFlag_ = a2dpOffloadFlag_;
-    return HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        return HandleActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
+    } else {
+        return SUCCESS;
+    }
+    
 #else
     return ERROR;
 #endif
