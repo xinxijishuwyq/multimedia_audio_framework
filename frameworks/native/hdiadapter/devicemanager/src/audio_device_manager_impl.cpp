@@ -104,9 +104,10 @@ int32_t AudioDeviceManagerImpl::GetAllAdapters()
     CHECK_AND_RETURN_RET_LOG((audioMgr_ != nullptr), ERR_INVALID_HANDLE,
         "Audio manager is null, audioMgrType %{public}d.", audioMgrType_);
     int32_t ret = audioMgr_->GetAllAdapters(descriptors_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Get adapters failed");
     CHECK_AND_RETURN_RET_LOG(descriptors_.data() != nullptr, ERR_OPERATION_FAILED,
         "Get target adapters descriptor fail.");
-    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}lu", descriptors_.size());
+    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}u", descriptors_.size());
     return SUCCESS;
 }
 
@@ -116,7 +117,7 @@ struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(cons
     int32_t ret = GetAllAdapters();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr,
         "Get all adapters fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
-    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}lu, audioMgrType %{public}d, isMmap %{public}d.",
+    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}u, audioMgrType %{public}d, isMmap %{public}d.",
         descriptors_.size(), audioMgrType_, isMmap);
 
     int32_t targetIdx = INVALID_INDEX;
@@ -131,7 +132,7 @@ struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(cons
         }
         targetIdx = index;
         if (desc.ports.size() <= 0) {
-            AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %{public}d.", index, desc->portNum);
+            AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %{public}d.", index, desc.ports.size());
         }
     }
     CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), nullptr, "can not find target adapter.");
@@ -154,12 +155,12 @@ std::shared_ptr<IAudioDeviceAdapter> AudioDeviceManagerImpl::LoadAdapters(const 
     sptr<IAudioAdapter> audioAdapter = nullptr;
     AudioAdapterDescriptor descriptor = {
         .adapterName = desc->adapterName,
-    }
+    };
     int32_t ret = audioMgr_->LoadAdapter(descriptor, audioAdapter);
     CHECK_AND_RETURN_RET_LOG(ret == 0 && audioAdapter != nullptr,
         nullptr, "Load audio adapter fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
     auto audioDevAdp = std::make_shared<AudioDeviceAdapterImpl>(std::string(desc->adapterName), audioAdapter);
-    audioDevAdp->SetparamCallback(audioDevAdp);
+    audioDevAdp->SetParamCallback(audioDevAdp);
     ret = audioDevAdp->Init();
     CHECK_AND_RETURN_RET_LOG((ret == SUCCESS), nullptr, "LoadAdapters: Init all ports fail, ret %{public}d.", ret);
 

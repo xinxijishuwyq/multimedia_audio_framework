@@ -544,7 +544,7 @@ int32_t RemoteAudioRendererSinkInner::OpenOutput(DeviceType outputDevice)
 
     AudioRoute route;
     route.sources.push_back(source);
-    route.sink.push_back(sink);
+    route.sinks.push_back(sink);
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "OpenOutput: Audio adapter is null.");
     ret = audioAdapter_->UpdateAudioRoute(route);

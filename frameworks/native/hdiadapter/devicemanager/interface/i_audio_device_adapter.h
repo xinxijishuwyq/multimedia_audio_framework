@@ -48,7 +48,7 @@ public:
 
     virtual int32_t Init() = 0;
     virtual int32_t RegExtraParamObserver() = 0;
-    virtual int32_t CreateRender(onst AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
+    virtual int32_t CreateRender(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
         sptr<IAudioRender> &audioRender, IAudioDeviceAdapterCallback *renderCb, uint32_t &renderId) = 0;
     virtual void DestroyRender(sptr<IAudioRender> audioRender, uint32_t &renderId) = 0;
     virtual int32_t CreateCapture(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,

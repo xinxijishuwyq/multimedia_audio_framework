@@ -19,6 +19,7 @@
 #include <dlfcn.h>
 #include <string>
 #include <mutex>
+#include "securec.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -507,7 +508,7 @@ int32_t RemoteAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
 
     AudioRoute route;
     route.sources.push_back(source);
-    route.sink.push_back(sink);
+    route.sinks.push_back(sink);
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "SetInputRoute: Audio adapter is null.");
     ret = audioAdapter_->UpdateAudioRoute(route);
