@@ -163,13 +163,12 @@ ClassType AudioPolicyParser::GetClassTypeByAdapterType(AdaptersType adapterType)
 }
 
 void AudioPolicyParser::GetOffloadAndOpenMicState(AudioAdapterInfo &adapterInfo,
-    bool &shouldEnableOffload, bool &shouldOpenMicSpeaker)
+    bool &shouldEnableOffload)
 {
     for (auto &moduleInfo : adapterInfo.moduleInfos_) {
         if (moduleInfo.moduleType_ == MODULE_TYPE_SINK &&
             moduleInfo.name_.find(MODULE_SINK_OFFLOAD) != std::string::npos) {
             shouldEnableOffload = true;
-            shouldOpenMicSpeaker = true;
         }
     }
 }
@@ -181,9 +180,8 @@ void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo(
     for (auto &[adapterType, adapterInfo] : adapterInfoMap_) {
         std::list<AudioModuleInfo> audioModuleList = {};
         bool shouldEnableOffload = false;
-        bool shouldOpenMicSpeaker = false;
         if (adapterType == AdaptersType::TYPE_PRIMARY) {
-            GetOffloadAndOpenMicState(adapterInfo, shouldEnableOffload, shouldOpenMicSpeaker);
+            GetOffloadAndOpenMicState(adapterInfo, shouldEnableOffload);
         }
 
         for (auto &moduleInfo : adapterInfo.moduleInfos_) {
@@ -201,18 +199,9 @@ void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo(
                 audioModuleInfo.className = FILE_CLASS;
             }
 
-            shouldOpenMicSpeaker ? audioModuleInfo.OpenMicSpeaker = "1" : audioModuleInfo.OpenMicSpeaker = "0";
             if (adapterType == AdaptersType::TYPE_PRIMARY &&
                 shouldEnableOffload && moduleInfo.moduleType_ == MODULE_TYPE_SINK) {
                 audioModuleInfo.offloadEnable = "1";
-            }
-            if (adapterType == AdaptersType::TYPE_PRIMARY &&
-                !shouldEnableOffload && moduleInfo.moduleType_ == MODULE_TYPE_SINK) {
-                audioModuleInfo.bufferSize = "4096";
-            }
-            if (adapterType == AdaptersType::TYPE_PRIMARY &&
-                !shouldEnableOffload && moduleInfo.moduleType_ == MODULE_TYPE_SOURCE) {
-                audioModuleInfo.bufferSize = "8192";
             }
             audioModuleList.push_back(audioModuleInfo);
         }
