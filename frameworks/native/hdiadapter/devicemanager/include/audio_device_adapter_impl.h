@@ -59,10 +59,10 @@ public:
 private:
     static int32_t HandleStateChangeEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter, const AudioParamKey key,
         const char *condition, const char *value);
-    static int32_t HandleRenderParamEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter, const AudioParamKey audioKey,
-        const char *condition, const char *value);
-    static int32_t HandleCaptureParamEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter, const AudioParamKey audioKey,
-        const char *condition, const char *value);
+    static int32_t HandleRenderParamEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter,
+        const AudioParamKey audioKey, const char *condition, const char *value);
+    static int32_t HandleCaptureParamEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter,
+        const AudioParamKey audioKey, const char *condition, const char *value);
     size_t GetRenderPortsNum();
     size_t GetCapturePortsNum();
 

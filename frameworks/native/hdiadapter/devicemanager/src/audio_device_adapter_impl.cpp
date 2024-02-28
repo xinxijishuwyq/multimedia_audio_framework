@@ -53,7 +53,7 @@ int32_t AudioParamCallbackImpl::ParamCallback(AudioExtParamKey key, const std::s
     AUDIO_INFO_LOG("key %{public}d, condition %{public}s, value %{public}s", key, condition.c_str(), value.c_str());
     std::shared_ptr<AudioDeviceAdapterImpl> cookies = AudioDeviceAdapterImpl::GetParamCallback();
     AudioDeviceAdapterImpl::ParamEventCallback(static_cast<::AudioExtParamKey>(key), condition.c_str(),
-            value.c_str(), static_cast<void *>(&reserved), cookies);
+        value.c_str(), static_cast<void *>(&reserved), cookies);
     return SUCCESS;
 }
 
@@ -244,7 +244,7 @@ int32_t AudioDeviceAdapterImpl::RegExtraParamObserver()
 }
 
 int32_t AudioDeviceAdapterImpl::CreateRender(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
-        sptr<IAudioRender> &audioRender, IAudioDeviceAdapterCallback *renderCb, uint32_t &renderId)
+    sptr<IAudioRender> &audioRender, IAudioDeviceAdapterCallback *renderCb, uint32_t &renderId)
 {
     AUDIO_INFO_LOG("Create render start.");
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
@@ -287,7 +287,7 @@ void AudioDeviceAdapterImpl::DestroyRender(sptr<IAudioRender> audioRender, uint3
 }
 
 int32_t AudioDeviceAdapterImpl::CreateCapture(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
-        sptr<IAudioCapture> &audioCapture, IAudioDeviceAdapterCallback *captureCb, uint32_t &captureId)
+    sptr<IAudioCapture> &audioCapture, IAudioDeviceAdapterCallback *captureCb, uint32_t &captureId)
 {
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "audio adapter is null.");
