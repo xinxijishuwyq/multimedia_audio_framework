@@ -1696,6 +1696,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
         "invalid size is %{public}zu", bufferSize);
 
     std::lock_guard<std::mutex> lock(writeMutex_);
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
 
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
