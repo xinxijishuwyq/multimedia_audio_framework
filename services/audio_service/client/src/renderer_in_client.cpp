@@ -1689,7 +1689,7 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
-    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, "Write with callback is not supported");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE, "Write with callback is not supported");
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
