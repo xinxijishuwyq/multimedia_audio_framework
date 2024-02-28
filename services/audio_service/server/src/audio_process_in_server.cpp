@@ -14,6 +14,7 @@
  */
 
 #include "audio_process_in_server.h"
+#include "policy_handler.h"
 
 #include "securec.h"
 
@@ -37,12 +38,18 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    AUDIO_INFO_LOG("AudioProcessInServer()");
+    sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
 {
     AUDIO_INFO_LOG("~AudioProcessInServer()");
+}
+
+int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
+{
+    sessionId = sessionId_;
+    return SUCCESS;
 }
 
 int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)

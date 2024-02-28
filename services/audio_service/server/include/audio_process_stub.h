@@ -41,6 +41,7 @@ private:
     static bool CheckInterfaceToken(MessageParcel &data);
 
     int32_t HandleResolveBuffer(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleGetSessionId(MessageParcel &data, MessageParcel &reply);
     int32_t HandleStart(MessageParcel &data, MessageParcel &reply);
     int32_t HandlePause(MessageParcel &data, MessageParcel &reply);
     int32_t HandleResume(MessageParcel &data, MessageParcel &reply);
@@ -52,6 +53,7 @@ private:
     using HandlerFunc = int32_t(AudioProcessStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc funcList_[IAudioProcessMsg::PROCESS_MAX_MSG] = {
         &AudioProcessStub::HandleResolveBuffer,
+        &AudioProcessStub::HandleGetSessionId,
         &AudioProcessStub::HandleStart,
         &AudioProcessStub::HandlePause,
         &AudioProcessStub::HandleResume,

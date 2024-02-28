@@ -160,6 +160,7 @@ private:
     size_t clientSpanSizeInFrame_ = 240;
     sptr<IAudioProcess> processProxy_ = nullptr;
     std::shared_ptr<OHAudioBuffer> audioBuffer_ = nullptr;
+    uint32_t sessionId_ = 0;
 
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;
@@ -223,7 +224,8 @@ sptr<IStandardAudioService> gAudioServerProxy = nullptr;
 
 AudioProcessInClientInner::AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy) : processProxy_(ipcProxy)
 {
-    AUDIO_INFO_LOG("AudioProcessInClient construct.");
+    processProxy_->GetSessionId(sessionId_);
+    AUDIO_INFO_LOG("Construct with sessionId: %{public}d", sessionId_);
 }
 
 const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy()
@@ -305,10 +307,7 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
 
 int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
 {
-    // note: Get the session id from server.
-    int32_t pid = processConfig_.appInfo.appPid;
-    CHECK_AND_RETURN_RET_LOG(pid >= 0, ERR_OPERATION_FAILED, "GetSessionID failed:%{public}d", pid);
-    sessionID = static_cast<uint32_t>(pid); // using pid as sessionID temporarily
+    sessionID = sessionId_;
     return SUCCESS;
 }
 
@@ -431,6 +430,7 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     processCbImpl_ = sptr<ProcessCbImpl>::MakeSptr(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(processProxy_->RegisterProcessCb(processCbImpl_) == SUCCESS, false,
         "RegisterProcessCb failed.");
+
     int32_t ret = processProxy_->ResolveBuffer(audioBuffer_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioBuffer_ != nullptr, false,
         "Init failed to call ResolveBuffer");
