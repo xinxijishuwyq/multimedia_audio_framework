@@ -1554,6 +1554,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner)
 bool RendererInClientInner::FlushAudioStream()
 {
     Trace trace("RendererInClientInner::FlushAudioStream " + std::to_string(sessionId_));
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::lock_guard<std::mutex>lock(writeMutex_);
     if ((state_ != RUNNING) && (state_ != PAUSED) && (state_ != STOPPED)) {
         AUDIO_ERR_LOG("Flush failed. Illegal state:%{public}u", state_.load());
@@ -1696,7 +1697,6 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
         "invalid size is %{public}zu", bufferSize);
 
     std::lock_guard<std::mutex> lock(writeMutex_);
-    std::unique_lock<std::mutex> statusLock(statusMutex_);
 
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
