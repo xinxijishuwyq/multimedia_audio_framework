@@ -172,18 +172,33 @@ void AudioDeviceManager::MakePairedDefaultDeviceDescriptor(const shared_ptr<Audi
 
     auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (it != connectedDevices_.end()) {
-        devDesc->pairDeviceDescriptor_ = *it;
-        if (devDesc->deviceType_ == DEVICE_TYPE_EARPIECE && earpiece_ != NULL) {
-            earpiece_->pairDeviceDescriptor_ = *it;
-        } else if (devDesc->deviceType_ == DEVICE_TYPE_SPEAKER && speaker_ != NULL && defalutMic_ != NULL) {
-            speaker_->pairDeviceDescriptor_ = *it;
-            defalutMic_->pairDeviceDescriptor_ = devDesc;
-            (*it)->pairDeviceDescriptor_ = devDesc;
-        } else if (devDesc->deviceType_ == DEVICE_TYPE_MIC && defalutMic_ != NULL && speaker_ != NULL) {
-            defalutMic_->pairDeviceDescriptor_ = *it;
-            speaker_->pairDeviceDescriptor_ = devDesc;
-            (*it)->pairDeviceDescriptor_ = devDesc;
+        MakePairedDefaultDeviceImpl(devDesc, *it);
+    }
+}
+
+void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    const shared_ptr<AudioDeviceDescriptor> &connectedDesc)
+{
+    devDesc->pairDeviceDescriptor_ = connectedDesc;
+    if (devDesc->deviceType_ == DEVICE_TYPE_EARPIECE && earpiece_ != NULL &&
+        earpiece_->networkId_ == connectedDesc->networkId_) {
+        earpiece_->pairDeviceDescriptor_ = connectedDesc;
+    } else if (devDesc->deviceType_ == DEVICE_TYPE_SPEAKER && speaker_ != NULL && defalutMic_ != NULL) {
+        if (speaker_->networkId_ == connectedDesc->networkId_) {
+            speaker_->pairDeviceDescriptor_ = connectedDesc;
         }
+        if (defalutMic_->networkId_ == devDesc->networkId_) {
+            defalutMic_->pairDeviceDescriptor_ = devDesc;
+        }
+        connectedDesc->pairDeviceDescriptor_ = devDesc;
+    } else if (devDesc->deviceType_ == DEVICE_TYPE_MIC && defalutMic_ != NULL && speaker_ != NULL) {
+        if (defalutMic_->networkId_ == connectedDesc->networkId_) {
+            defalutMic_->pairDeviceDescriptor_ = connectedDesc;
+        }
+        if (speaker_->networkId_ == devDesc->networkId_) {
+            speaker_->pairDeviceDescriptor_ = devDesc;
+        }
+        connectedDesc->pairDeviceDescriptor_ = devDesc;
     }
 }
 
