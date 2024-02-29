@@ -781,8 +781,6 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
-    int64_t currentWritePos = totalBytesWritten_ / sizePerFrameInByte_;
-    timestamp.framePosition = currentWritePos;
 
     uint64_t readPos = 0;
     int64_t handleTime = 0;
@@ -792,14 +790,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
-    int64_t deltaPos = static_cast<uint64_t>(currentWritePos) >= readPos ?  currentWritePos - readPos : 0;
-    int64_t tempLatency = 0;
-    if (GetState() == RUNNING) {
-        tempLatency = 45000000; // 45000000 -> 45 ms
-    }
-    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / curStreamParams_.samplingRate * AUDIO_US_PER_S;
-
-    int64_t audioTimeResult = handleTime + deltaTime + tempLatency;
+    int64_t audioTimeResult = handleTime;
 
     if (offloadEnable_) {
         uint64_t timeStamp = 0;
