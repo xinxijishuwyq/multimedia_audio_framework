@@ -113,6 +113,7 @@ int32_t AudioDeviceManagerImpl::GetAllAdapters()
 struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(const std::string &adapterName,
     bool isMmap)
 {
+    (void) isMmap;
     int32_t ret = GetAllAdapters();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr,
         "Get all adapters fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
