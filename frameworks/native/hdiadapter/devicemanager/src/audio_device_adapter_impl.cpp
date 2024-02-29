@@ -389,6 +389,7 @@ int32_t AudioDeviceAdapterImpl::Release()
         audioAdapter_->ReleaseAudioRoute(routeHandle_);
     }
     audioAdapter_ = nullptr;
+    AudioDeviceAdapterImpl::paramCallback_ = nullptr;
     AUDIO_DEBUG_LOG("Release end.");
     return SUCCESS;
 }
