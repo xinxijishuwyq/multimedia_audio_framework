@@ -2196,7 +2196,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_003, TestSize.Level
         fread(buffer, 1, bufferLen, wavFile);
         fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-        EXPECT_EQ(ERR_NOT_SUPPORTED, bytesWritten);
+        EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
 
         audioRenderer->Release();
 
