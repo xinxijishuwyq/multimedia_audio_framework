@@ -44,13 +44,23 @@
 #include "session_processor.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
+#include "audio_interrupt_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
 constexpr uint64_t DSTATUS_SESSION_ID = 4294967296;
 constexpr uint32_t DSTATUS_DEFAULT_RATE = 48000;
-class AudioPolicyServer : public SystemAbility, public AudioPolicyManagerStub, public AudioSessionCallback {
+
+class AudioPolicyService;
+class AudioInterruptService;
+class AudioPolicyServerHandler;
+
+class AudioPolicyServer : public SystemAbility,
+                          public AudioPolicyManagerStub,
+                          public AudioSessionCallback {
     DECLARE_SYSTEM_ABILITY(AudioPolicyServer);
+
 public:
     DISALLOW_COPY_AND_MOVE(AudioPolicyServer);
 
@@ -78,16 +88,8 @@ public:
 
     virtual ~AudioPolicyServer()
     {
-        AUDIO_WARNING_LOG("AudioPolicyServer destroyed");
+        AUDIO_WARNING_LOG("dtor should not happen");
     };
-
-    typedef struct {
-        int32_t zoneID; // Zone ID value should 0 on local device.
-        std::set<int32_t> pids; // When Zone ID is 0, there does not need to be a value.
-        std::unordered_map<uint32_t /* sessionID */, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap;
-        std::unordered_map<int32_t /* clientPid */, sptr<IAudioPolicyClient>> audioPolicyClientProxyCBMap;
-        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
-    } AudioInterruptZone;
 
     void OnDump() override;
     void OnStart() override;
@@ -165,13 +167,13 @@ public:
     AudioScene GetAudioScene() override;
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
-        const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
+        const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
 
-    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneID = 0) override;
+    int32_t UnsetAudioInterruptCallback(const uint32_t sessionID, const int32_t zoneId = 0) override;
 
-    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
+    int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
-    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
+    int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
 
@@ -181,13 +183,13 @@ public:
 
     int32_t AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
 
-    AudioStreamType GetStreamInFocus(const int32_t zoneID = 0) override;
+    AudioStreamType GetStreamInFocus(const int32_t zoneId = 0) override;
 
-    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0) override;
+    int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
     void OnSessionRemoved(const uint64_t sessionID) override;
 
-    void ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneID = 0);
+    void ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneId = 0);
 
     void ProcessSessionAdded(SessionEvent sessionEvent);
 
@@ -248,7 +250,7 @@ public:
         AudioCapturerInfo &captureInfo) override;
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
-        const int32_t zoneID = 0) override;
+        const int32_t zoneId = 0) override;
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) override;
 
@@ -271,9 +273,9 @@ public:
     
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc) override;
 
-    vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
+    std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId) override;
 
-    vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
+    std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones() override;
 
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
 
@@ -336,16 +338,16 @@ public:
 
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID) override;
 
-    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
+    int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
 
-    int32_t CreateAudioInterruptZone(const set<int32_t> pids, const int32_t zoneID) override;
+    int32_t CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneId) override;
 
-    int32_t AddAudioInterruptZonePids(const set<int32_t> pids, const int32_t zoneID) override;
+    int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneId) override;
 
-    int32_t RemoveAudioInterruptZonePids(const set<int32_t> pids, const int32_t zoneID) override;
+    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneId) override;
 
-    int32_t ReleaseAudioInterruptZone(const int32_t zoneID) override;
-    
+    int32_t ReleaseAudioInterruptZone(const int32_t zoneId) override;
+
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address) override;
 
     std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice() override;
@@ -394,6 +396,8 @@ protected:
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
 private:
+    friend class AudioInterruptService;
+
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t VOLUME_CHANGE_FACTOR = 1;
@@ -401,17 +405,11 @@ private:
     static constexpr int32_t VOLUME_MUTE_KEY_DURATION = 1;
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t EDM_SERVICE_UID = 3057;
-    static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
-    static constexpr int32_t DEFAULT_ZONEID = 0;
 
-    static const std::map<InterruptHint, AudioFocuState> HINTSTATEMAP;
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
-    static std::map<InterruptHint, AudioFocuState> CreateStateMap();
-
-    int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
 
     class AudioPolicyServerPowerStateCallback : public PowerMgr::PowerStateCallbackStub {
     public:
@@ -422,35 +420,12 @@ private:
         AudioPolicyServer *policyServer_;
     };
 
+    int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
+
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
         int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
-
-    // for audio interrupt
-    bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activateInterrupt);
-    void ProcessAudioScene(const AudioInterrupt &audioInterrupt, const uint32_t &incomingSessionID,
-        const int32_t &zoneID, bool &shouldReturnSuccess);
-    int32_t ProcessFocusEntry(const AudioInterrupt &incomingInterrupt, const int32_t zoneID);
-    void HandleIncomingState(AudioFocuState incomingState, InterruptEventInternal &interruptEvent,
-        const AudioInterrupt &incomingInterrupt, const int32_t zoneID);
-    void ProcessCurrentInterrupt(const AudioInterrupt &incomingInterrupt, const int32_t zoneID,
-        std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>>::iterator &itZone,
-        std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
-    void ResumeAudioFocusList(const int32_t zoneID);
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry(const int32_t zoneID);
-    void NotifyStateChangedEvent(AudioFocuState oldState, AudioFocuState newState,
-        std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
-    void NotifyFocusGranted(const int32_t clientId, const AudioInterrupt &audioInterrupt);
-    int32_t NotifyFocusAbandoned(const int32_t clientId, const AudioInterrupt &audioInterrupt);
-    void OnAudioFocusInfoChange(int32_t callbackCategory,
-        const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
-    void OnAudioFocusRequested(const AudioInterrupt &audioInterrupt);
-    void OnAudioFocusAbandoned(const AudioInterrupt &audioInterrupt);
-    void UpdateAudioScene(const AudioScene audioScene, AudioInterruptChangeType changeType);
-    void ProcessInterrupt(const InterruptHint& hint);
-    AudioScene GetHighestPriorityAudioSceneFromAudioFocusInfoList(const int32_t zoneID) const;
-    int32_t DeactivateAudioInterruptEnable(const AudioInterrupt &audioInterrupt, const int32_t zoneID);
 
     // for audio volume and mute status
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
@@ -479,21 +454,7 @@ private:
     void GetGroupInfo(PolicyData &policyData);
 
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
-
-    int32_t HitZoneID(const set<int32_t> &pids, const std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
-        const int32_t &zoneID, int32_t &hitZoneID, bool &haveSamePids);
-    int32_t HitZoneIDHaveTheSamePidsZone(const set<int32_t> &pids, int32_t &hitZoneID);
-
-    int32_t DealAudioInterruptZoneData(const int32_t pid,
-        const std::shared_ptr<AudioInterruptZone> &audioInterruptZoneTmp,
-        std::shared_ptr<AudioInterruptZone> &audioInterruptZone);
-
-    int32_t NewAudioInterruptZoneByPids(std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
-        const set<int32_t> &pids, const int32_t &zoneID);
-
-    int32_t ArchiveToNewAudioInterruptZone(const int32_t &fromZoneID, const int32_t &archiveToZoneID);
-
-    bool CheckAudioInterruptZonePermission();
+    int32_t SetAudioSceneInternal(AudioScene audioScene);
 
     AppExecFwk::BundleInfo GetBundleInfoFromUid();
     int32_t GetApiTargerVersion();
@@ -518,24 +479,21 @@ private:
 
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
-    bool powerStateCallbackRegister_;
     AudioPolicyService& audioPolicyService_;
-    int32_t clientOnFocus_;
+    std::shared_ptr<AudioInterruptService> interruptService_;
+
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
-    std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
-    std::recursive_mutex focussedAudioInterruptInfoMutex_;
     std::vector<pid_t> clientDiedListenerState_;
     std::vector<pid_t> spatializationEnabledListenerState_;
     std::vector<pid_t> headTrackingEnabledListenerState_;
     sptr<PowerStateListener> powerStateListener_;
-    std::unordered_map<int32_t /* zone id */, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMap_;
+    bool powerStateCallbackRegister_;
 
     std::mutex keyEventMutex_;
-    std::mutex audioInterruptZoneMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
     std::mutex spatializationEnabledListenerStateMutex_;

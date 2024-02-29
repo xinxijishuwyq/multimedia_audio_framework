@@ -421,37 +421,6 @@ enum AudioDeviceUsage : int32_t {
     D_ALL_DEVICES = 15,
 };
 
-inline AudioScene GetAudioSceneFromStreamType(AudioStreamType streamType, StreamUsage streamUsage)
-{
-    if (streamType == STREAM_RING) {
-        return AUDIO_SCENE_RINGING;
-    } else if (streamType == STREAM_VOICE_CALL) {
-        return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ?
-            AUDIO_SCENE_PHONE_CALL : AUDIO_SCENE_PHONE_CHAT;
-    }
-    return AUDIO_SCENE_DEFAULT;
-}
-
-inline AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt)
-{
-    return GetAudioSceneFromStreamType(audioInterrupt.audioFocusType.streamType, audioInterrupt.streamUsage);
-}
-
-inline const std::unordered_map<const AudioScene, const int> audioScenePriority = {
-    {AUDIO_SCENE_PHONE_CALL, 4}, // highest priority
-    {AUDIO_SCENE_PHONE_CHAT, 3},
-    {AUDIO_SCENE_RINGING, 2},
-    {AUDIO_SCENE_DEFAULT, 1}
-};
-
-inline int GetAudioScenePriority(const AudioScene audioScene)
-{
-    if (audioScenePriority.count(audioScene) == 0) {
-        return audioScenePriority.at(AUDIO_SCENE_DEFAULT);
-    }
-    return audioScenePriority.at(audioScene);
-}
-
 struct CaptureFilterOptions {
     std::vector<StreamUsage> usages;
 };

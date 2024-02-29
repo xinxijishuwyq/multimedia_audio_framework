@@ -233,11 +233,17 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
 int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
 {
+    if (audioInterrupt_.sessionId != 0) {
+        AUDIO_INFO_LOG("old session already has interrupt, need to reset");
+        (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.sessionId);
+    }
+
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("GetAudioSessionID failed for INDEPENDENT_MODE");
         return ERR_INVALID_INDEX;
     }
-    audioInterrupt_.sessionID = sessionID_;
+    audioInterrupt_.sessionId = sessionID_;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
@@ -362,10 +368,10 @@ bool AudioCapturerPrivate::Start() const
     CHECK_AND_RETURN_RET_LOG(recordingStateChange, false, "recording start check failed");
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        audioInterrupt_.sessionID != INVALID_SESSION_ID, false);
+        audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
 
     AUDIO_INFO_LOG("sourceType: %{public}d, sessionID: %{public}d",
-        audioInterrupt_.audioFocusType.sourceType, audioInterrupt_.sessionID);
+        audioInterrupt_.audioFocusType.sourceType, audioInterrupt_.sessionId);
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
 

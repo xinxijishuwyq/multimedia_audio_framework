@@ -269,17 +269,24 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
 
 int32_t AudioRendererPrivate::InitAudioInterruptCallback()
 {
-    AUDIO_DEBUG_LOG("InitAudioInterruptCallback in");
+    AUDIO_DEBUG_LOG("in");
+
+    if (audioInterrupt_.sessionId != 0) {
+        AUDIO_INFO_LOG("old session already has interrupt, need to reset");
+        (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.sessionId);
+    }
+
     CHECK_AND_RETURN_RET_LOG(audioInterrupt_.mode == SHARE_MODE || audioInterrupt_.mode == INDEPENDENT_MODE,
         ERR_INVALID_PARAM, "Invalid interrupt mode!");
-    CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(audioInterrupt_.sessionID) == 0, ERR_INVALID_INDEX,
+    CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(audioInterrupt_.sessionId) == 0, ERR_INVALID_INDEX,
         "GetAudioSessionID failed");
-    sessionID_ = audioInterrupt_.sessionID;
+    sessionID_ = audioInterrupt_.sessionId;
     audioInterrupt_.streamUsage = rendererInfo_.streamUsage;
     audioInterrupt_.contentType = rendererInfo_.contentType;
 
     AUDIO_INFO_LOG("interruptMode %{public}d, streamType %{public}d, sessionID %{public}d",
-        audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionID);
+        audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionId);
 
     if (audioInterruptCallback_ == nullptr) {
         audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream_, audioInterrupt_);
@@ -516,10 +523,10 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         "Start failed. Switching state: %{public}d", isSwitching_);
 
     AUDIO_INFO_LOG("interruptMode: %{public}d, streamType: %{public}d, sessionID: %{public}d",
-        audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionID);
+        audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionId);
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
-        audioInterrupt_.sessionID == INVALID_SESSION_ID) {
+        audioInterrupt_.sessionId == INVALID_SESSION_ID) {
         return false;
     }
 

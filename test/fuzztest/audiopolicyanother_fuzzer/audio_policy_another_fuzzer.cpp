@@ -128,7 +128,7 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     focusInfo.first.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
     focusInfo.first.audioFocusType.sourceType = *reinterpret_cast<const SourceType *>(rawData);
     focusInfo.first.audioFocusType.isPlay = *reinterpret_cast<const bool *>(rawData);
-    focusInfo.first.sessionID = *reinterpret_cast<const int32_t *>(rawData);
+    focusInfo.first.sessionId = *reinterpret_cast<const int32_t *>(rawData);
     focusInfo.first.pauseWhenDucked = *reinterpret_cast<const bool *>(rawData);
     focusInfo.first.pid = *reinterpret_cast<const int32_t *>(rawData);
     focusInfo.first.mode = *reinterpret_cast<const InterruptMode *>(rawData);

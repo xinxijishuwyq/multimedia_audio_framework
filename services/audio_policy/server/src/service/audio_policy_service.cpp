@@ -24,7 +24,6 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
-#include "audio_focus_parser.h"
 #include "audio_manager_listener_stub.h"
 #include "datashare_helper.h"
 #include "datashare_predicates.h"
@@ -112,14 +111,6 @@ bool AudioPolicyService::Init(void)
         return false;
     }
 #endif
-
-    std::unique_ptr<AudioFocusParser> audioFocusParser = make_unique<AudioFocusParser>();
-    CHECK_AND_RETURN_RET_LOG(audioFocusParser != nullptr, false, "Failed to create AudioFocusParser");
-    std::string AUDIO_FOCUS_CONFIG_FILE = "system/etc/audio/audio_interrupt_policy_config.xml";
-
-    CHECK_AND_RETURN_RET_LOG(!audioFocusParser->LoadConfig(focusMap_), false,
-        "Failed to load audio interrupt configuration!");
-    AUDIO_DEBUG_LOG("Audio interrupt configuration has been loaded. FocusMap.size: %{public}zu", focusMap_.size());
 
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, false, "[Policy Service] Register for device status events failed");
@@ -2561,16 +2552,6 @@ AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
         }
     }
     return audioScene_;
-}
-
-bool AudioPolicyService::IsAudioInterruptEnabled() const
-{
-    return interruptEnabled_;
-}
-
-void AudioPolicyService::OnAudioInterruptEnable(bool enable)
-{
-    interruptEnabled_ = enable;
 }
 
 void AudioPolicyService::OnUpdateRouteSupport(bool isSupported)

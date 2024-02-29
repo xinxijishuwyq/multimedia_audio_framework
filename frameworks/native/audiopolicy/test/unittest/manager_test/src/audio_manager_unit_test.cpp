@@ -2205,7 +2205,7 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
         EXPECT_EQ(g_audioFocusInfoList.size(), 1);
         for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
             if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
-                sessionID1 = it->first.sessionID;
+                sessionID1 = it->first.sessionId;
                 EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
             } else {
                 EXPECT_TRUE(false);
@@ -2228,7 +2228,7 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
         for (auto it = g_audioFocusInfoList.begin(); it != g_audioFocusInfoList.end(); ++it) {
             if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
                 EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
-                EXPECT_TRUE(sessionID1 != it->first.sessionID);
+                EXPECT_TRUE(sessionID1 != it->first.sessionId);
             }
         }
     }

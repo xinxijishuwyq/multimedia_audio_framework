@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -540,16 +540,16 @@ void AudioServiceDump::StreamVolumesDump (string &dumpString)
 void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
 {
     dumpString += "\nAudio In Focus Info:\n";
-    uint32_t invalidSessionID = static_cast<uint32_t>(-1);
+    uint32_t invalidSessionId = static_cast<uint32_t>(-1);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = audioData_.policyData.audioFocusInfoList;
 
     AppendFormat(dumpString, "- %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
-        if ((iter->first).sessionID == invalidSessionID) {
+        if ((iter->first).sessionId == invalidSessionId) {
             continue;
         }
-        AppendFormat(dumpString, "  - Session Id: %d\n", (iter->first).sessionID);
+        AppendFormat(dumpString, "  - Session Id: %d\n", (iter->first).sessionId);
         AppendFormat(dumpString, "  - AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
         AppendFormat(dumpString, "  - Stream Name: %s\n",
             GetStreamName((iter->first).audioFocusType.streamType).c_str());
@@ -577,10 +577,10 @@ void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
         }
 
         AppendFormat(dumpString, "  - Interrupt callback size: %d\n",
-            audioInterruptZoneDump->interruptCbSessionIDsMap.size());
-        AppendFormat(dumpString, "    - The sessionIDs as follow:\n");
-        for (auto sessionID : audioInterruptZoneDump->interruptCbSessionIDsMap) {
-            AppendFormat(dumpString, "      - SessionID: %d -- have interrupt callback.\n", sessionID);
+            audioInterruptZoneDump->interruptCbSessionIdsMap.size());
+        AppendFormat(dumpString, "    - The sessionIds as follow:\n");
+        for (auto sessionId : audioInterruptZoneDump->interruptCbSessionIdsMap) {
+            AppendFormat(dumpString, "      - SessionId: %d -- have interrupt callback.\n", sessionId);
         }
 
         AppendFormat(dumpString, "  - Audio policy client proxy callback size: %d\n",
@@ -593,13 +593,13 @@ void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList
             = audioInterruptZoneDump->audioFocusInfoList;
         AppendFormat(dumpString, "  - %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
-        uint32_t invalidSessionID = static_cast<uint32_t>(-1);
+        uint32_t invalidSessionId = static_cast<uint32_t>(-1);
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
-            if ((iter->first).sessionID == invalidSessionID) {
+            if ((iter->first).sessionId == invalidSessionId) {
                 continue;
             }
             AppendFormat(dumpString, "    - Pid: %d\n", (iter->first).pid);
-            AppendFormat(dumpString, "    - Session ID: %d\n", (iter->first).sessionID);
+            AppendFormat(dumpString, "    - SessionId: %d\n", (iter->first).sessionId);
             AppendFormat(dumpString, "    - AudioFocus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
             AppendFormat(dumpString, "    - Stream Name: %s\n",
                 GetStreamName((iter->first).audioFocusType.streamType).c_str());

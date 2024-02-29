@@ -326,7 +326,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSessionInfoInFocus_001, Test
     ASSERT_NE(nullptr, audioStream);
 
     uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
-    audioInterrupt.sessionID = sessionID_;
+    audioInterrupt.sessionId = sessionID_;
     int32_t ret = AudioPolicyManager::GetInstance().GetSessionInfoInFocus(audioInterrupt);
     EXPECT_EQ(SUCCESS, ret);
 }

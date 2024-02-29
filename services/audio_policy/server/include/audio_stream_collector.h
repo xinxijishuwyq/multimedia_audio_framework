@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
 class AudioStreamCollector {
 public:
     static AudioStreamCollector& GetAudioStreamCollector()
@@ -43,8 +44,8 @@ public:
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
     int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &inputDeviceInfo);
-    int32_t GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
-    int32_t GetCurrentCapturerChangeInfos(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    int32_t GetCurrentRendererChangeInfos(std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
+    int32_t GetCurrentCapturerChangeInfos(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
     void RegisteredTrackerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     bool IsStreamActive(AudioStreamType volumeType);
@@ -82,9 +83,9 @@ private:
     void WriteRenderStreamReleaseSysEvent(const std::unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo);
     void WriteCaptureStreamReleaseSysEvent(const std::unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo);
     void SetRendererStreamParam(AudioStreamChangeInfo &streamChangeInfo,
-        unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+        std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
-        unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+        std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
 };
