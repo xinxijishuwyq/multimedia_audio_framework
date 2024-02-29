@@ -21,7 +21,6 @@
 #include "ashmem.h"
 
 #include "audio_info.h"
-#include "audio_manager.h"
 #include "i_audio_capturer_source.h"
 
 namespace OHOS {

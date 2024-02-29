@@ -27,16 +27,16 @@ namespace OHOS {
 namespace AudioStandard {
 struct DeviceAdapterInfo {
     std::shared_ptr<IAudioDeviceAdapter> devAdp = nullptr;
-    struct AudioAdapter *audioAdapter = nullptr;
+    sptr<IAudioAdapter> audioAdapter = nullptr;
 };
 
 class AudioDeviceManagerImpl : public IAudioDeviceManager {
 public:
-    AudioDeviceManagerImpl(const AudioDeviceManagerType devMgrType, struct AudioManager *audioMgr)
+    AudioDeviceManagerImpl(const AudioDeviceManagerType devMgrType, sptr<IAudioManager> audioMgr)
         : audioMgrType_(devMgrType), audioMgr_(audioMgr) {};
     ~AudioDeviceManagerImpl() = default;
 
-    int32_t GetAllAdapters(AudioAdapterDescriptor **descs, int32_t *size) override;
+    int32_t GetAllAdapters() override;
     struct AudioAdapterDescriptor *GetTargetAdapterDesc(const std::string &adapterName, bool isMmap) override;
     std::shared_ptr<IAudioDeviceAdapter> LoadAdapters(const std::string &adapterName, bool isMmap) override;
     int32_t UnloadAdapter(const std::string &adapterName) override;
@@ -46,9 +46,10 @@ private:
     static constexpr int32_t INVALID_INDEX = -1;
 
     AudioDeviceManagerType audioMgrType_;
-    AudioManager *audioMgr_;
+    sptr<IAudioManager> audioMgr_;
     std::mutex mtx_;
     std::map<std::string, DeviceAdapterInfo> enableAdapters_;
+    std::vector<AudioAdapterDescriptor> descriptors_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

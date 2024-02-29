@@ -19,7 +19,7 @@
 #include <map>
 #include <mutex>
 
-#include "audio_manager.h"
+#include <v1_0/iaudio_manager.h>
 
 #include "audio_info.h"
 #include "audio_utils.h"
@@ -34,33 +34,35 @@ struct DevicePortInfo {
 
 class AudioDeviceAdapterImpl : public IAudioDeviceAdapter {
 public:
-    AudioDeviceAdapterImpl(const std::string &adapterName, struct AudioAdapter *audioAdapter)
+    AudioDeviceAdapterImpl(const std::string &adapterName, sptr<IAudioAdapter> audioAdapter)
         : adapterName_(adapterName), audioAdapter_(audioAdapter) {}
     ~AudioDeviceAdapterImpl() = default;
 
     static int32_t ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value, void *reserved,
-        void *cookie);
+        std::shared_ptr<AudioDeviceAdapterImpl> cookie);
+    void SetParamCallback(std::shared_ptr<AudioDeviceAdapterImpl> callback);
+    static std::shared_ptr<AudioDeviceAdapterImpl> GetParamCallback();
 
     int32_t Init() override;
     int32_t RegExtraParamObserver() override;
-    int32_t CreateRender(const struct AudioDeviceDescriptor *devDesc, const struct AudioSampleAttributes *attr,
-        struct AudioRender **audioRender, IAudioDeviceAdapterCallback *renderCb) override;
-    void DestroyRender(struct AudioRender *audioRender) override;
-    int32_t CreateCapture(const struct AudioDeviceDescriptor *devDesc, const struct AudioSampleAttributes *attr,
-        struct AudioCapture **audioCapture, IAudioDeviceAdapterCallback *captureCb) override;
-    void DestroyCapture(struct AudioCapture *audioCapture) override;
+    int32_t CreateRender(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
+        sptr<IAudioRender> &audioRender, IAudioDeviceAdapterCallback *renderCb, uint32_t &renderId) override;
+    void DestroyRender(sptr<IAudioRender> audioRender, uint32_t &renderId) override;
+    int32_t CreateCapture(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
+        sptr<IAudioCapture> &audioCapture, IAudioDeviceAdapterCallback *captureCb, uint32_t &captureId) override;
+    void DestroyCapture(sptr<IAudioCapture> audioCapture, uint32_t &captureId) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-    int32_t UpdateAudioRoute(const struct AudioRoute *route, int32_t *routeHandle_) override;
+    int32_t UpdateAudioRoute(const AudioRoute &route) override;
     int32_t Release() override;
 
 private:
-    static int32_t HandleStateChangeEvent(AudioDeviceAdapterImpl* devAdapter, const AudioParamKey key,
+    static int32_t HandleStateChangeEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter, const AudioParamKey key,
         const char *condition, const char *value);
-    static int32_t HandleRenderParamEvent(AudioDeviceAdapterImpl* devAdapter, const AudioParamKey audioKey,
-        const char *condition, const char *value);
-    static int32_t HandleCaptureParamEvent(AudioDeviceAdapterImpl* devAdapter, const AudioParamKey audioKey,
-        const char *condition, const char *value);
+    static int32_t HandleRenderParamEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter,
+        const AudioParamKey audioKey, const char *condition, const char *value);
+    static int32_t HandleCaptureParamEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter,
+        const AudioParamKey audioKey, const char *condition, const char *value);
     size_t GetRenderPortsNum();
     size_t GetCapturePortsNum();
 
@@ -74,7 +76,7 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
 
     std::string adapterName_;
-    struct AudioAdapter *audioAdapter_;
+    sptr<IAudioAdapter> audioAdapter_;
     int32_t routeHandle_ = INVALID_ROUT_HANDLE;
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     std::mutex regParamCbMtx_;
@@ -82,8 +84,10 @@ private:
 #endif
     std::mutex renderPortsMtx_;
     std::mutex capturePortsMtx_;
-    std::map<struct AudioRender *, DevicePortInfo> renderPorts_;
-    std::map<struct AudioCapture *, DevicePortInfo> capturePorts_;
+    std::map<sptr<IAudioRender>, DevicePortInfo> renderPorts_;
+    std::map<sptr<IAudioCapture>, DevicePortInfo> capturePorts_;
+    sptr<IAudioCallback> callbackStub_ = nullptr;
+    static std::shared_ptr<AudioDeviceAdapterImpl> paramCallback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

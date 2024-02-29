@@ -20,8 +20,6 @@
 #include <list>
 #include <map>
 
-#include "audio_manager.h"
-
 #include "audio_info.h"
 #include "i_audio_capturer_source.h"
 

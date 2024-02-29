@@ -22,13 +22,48 @@
 
 namespace OHOS {
 namespace AudioStandard {
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCallback;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCallbackType;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioExtParamKey;
+
+std::shared_ptr<AudioDeviceAdapterImpl> AudioDeviceAdapterImpl::paramCallback_ = nullptr;
+
+class AudioParamCallbackImpl final : public IAudioCallback {
+public:
+    AudioParamCallbackImpl() {}
+    ~AudioParamCallbackImpl() override {}
+
+    int32_t RenderCallback(AudioCallbackType type, int8_t &reserved, int8_t &cookie) override;
+    int32_t ParamCallback(AudioExtParamKey key, const std::string &condition, const std::string &value,
+        int8_t &reserved, int8_t cookie) override;
+};
+
+int32_t AudioParamCallbackImpl::RenderCallback(AudioCallbackType type, int8_t &reserved, int8_t &cookie)
+{
+    (void) type;
+    (void) reserved;
+    (void) cookie;
+    return SUCCESS;
+}
+
+int32_t AudioParamCallbackImpl::ParamCallback(AudioExtParamKey key, const std::string &condition,
+    const std::string &value, int8_t &reserved, int8_t cookie)
+{
+    (void) cookie;
+    AUDIO_INFO_LOG("key %{public}d, condition %{public}s, value %{public}s", key, condition.c_str(), value.c_str());
+    std::shared_ptr<AudioDeviceAdapterImpl> cookies = AudioDeviceAdapterImpl::GetParamCallback();
+    AudioDeviceAdapterImpl::ParamEventCallback(static_cast<::AudioExtParamKey>(key), condition.c_str(),
+        value.c_str(), static_cast<void *>(&reserved), cookies);
+    return SUCCESS;
+}
+
 int32_t AudioDeviceAdapterImpl::Init()
 {
     AUDIO_INFO_LOG("Init start.");
 
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "Init: audio adapter is null.");
-    int32_t ret = audioAdapter_->InitAllPorts(audioAdapter_);
+    int32_t ret = audioAdapter_->InitAllPorts();
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_DEVICE_INIT, "InitAllPorts fail, ret %{public}d.", ret);
 
     ret = RegExtraParamObserver();
@@ -49,7 +84,7 @@ size_t AudioDeviceAdapterImpl::GetCapturePortsNum()
     return capturePorts_.size();
 }
 
-int32_t AudioDeviceAdapterImpl::HandleRenderParamEvent(AudioDeviceAdapterImpl* devAdapter,
+int32_t AudioDeviceAdapterImpl::HandleRenderParamEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter,
     const AudioParamKey audioKey, const char *condition, const char *value)
 {
     CHECK_AND_RETURN_RET_LOG(devAdapter != nullptr && condition != nullptr && value != nullptr,
@@ -78,7 +113,7 @@ int32_t AudioDeviceAdapterImpl::HandleRenderParamEvent(AudioDeviceAdapterImpl* d
     return SUCCESS;
 }
 
-int32_t AudioDeviceAdapterImpl::HandleCaptureParamEvent(AudioDeviceAdapterImpl* devAdapter,
+int32_t AudioDeviceAdapterImpl::HandleCaptureParamEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter,
     const AudioParamKey audioKey, const char *condition, const char *value)
 {
     CHECK_AND_RETURN_RET_LOG(devAdapter != nullptr && condition != nullptr && value != nullptr,
@@ -107,7 +142,7 @@ int32_t AudioDeviceAdapterImpl::HandleCaptureParamEvent(AudioDeviceAdapterImpl* 
     return SUCCESS;
 }
 
-int32_t AudioDeviceAdapterImpl::HandleStateChangeEvent(AudioDeviceAdapterImpl* devAdapter,
+int32_t AudioDeviceAdapterImpl::HandleStateChangeEvent(std::shared_ptr<AudioDeviceAdapterImpl> devAdapter,
     const AudioParamKey audioKey, const char *condition, const char *value)
 {
     CHECK_AND_RETURN_RET_LOG(devAdapter != nullptr && condition != nullptr && value == nullptr,
@@ -151,20 +186,19 @@ int32_t AudioDeviceAdapterImpl::HandleStateChangeEvent(AudioDeviceAdapterImpl* d
 }
 
 int32_t AudioDeviceAdapterImpl::ParamEventCallback(AudioExtParamKey key, const char *condition, const char *value,
-    void *reserved, void *cookie)
+    void *reserved, std::shared_ptr<AudioDeviceAdapterImpl> cookie)
 {
     AUDIO_INFO_LOG("key %{public}d, condition %{public}s, value %{public}s",
         key, condition, value);
-    AudioDeviceAdapterImpl *devAdapter = reinterpret_cast<AudioDeviceAdapterImpl *>(cookie);
     AudioParamKey audioKey = AudioParamKey(key);
     int32_t ret = SUCCESS;
     switch (audioKey) {
         case AudioParamKey::PARAM_KEY_STATE:
-            ret = HandleStateChangeEvent(devAdapter, audioKey, condition, value);
+            ret = HandleStateChangeEvent(cookie, audioKey, condition, value);
             break;
         case AudioParamKey::VOLUME:
         case AudioParamKey::INTERRUPT:
-            HandleRenderParamEvent(devAdapter, audioKey, condition, value);
+            HandleRenderParamEvent(cookie, audioKey, condition, value);
             break;
         default:
             AUDIO_ERR_LOG("Audio param key %{public}d is not supported.", audioKey);
@@ -173,6 +207,16 @@ int32_t AudioDeviceAdapterImpl::ParamEventCallback(AudioExtParamKey key, const c
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "Handle audio param key %{public}d fail, ret %{public}d.", audioKey, ret);
     return SUCCESS;
+}
+
+void AudioDeviceAdapterImpl::SetParamCallback(std::shared_ptr<AudioDeviceAdapterImpl> callback)
+{
+    AudioDeviceAdapterImpl::paramCallback_ = callback;
+}
+
+std::shared_ptr<AudioDeviceAdapterImpl> AudioDeviceAdapterImpl::GetParamCallback()
+{
+    return AudioDeviceAdapterImpl::paramCallback_;
 }
 
 int32_t AudioDeviceAdapterImpl::RegExtraParamObserver()
@@ -185,11 +229,11 @@ int32_t AudioDeviceAdapterImpl::RegExtraParamObserver()
         return SUCCESS;
     }
 
-    ParamCallback adapterCallback = &AudioDeviceAdapterImpl::ParamEventCallback;
+    callbackStub_ = new AudioParamCallbackImpl();
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "audio adapter is null.");
 
-    int32_t ret = audioAdapter_->RegExtraParamObserver(audioAdapter_, adapterCallback, this);
+    int32_t ret = audioAdapter_->RegExtraParamObserver(callbackStub_, 0);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED,
         "Register extra param observer fail, ret %{public}d", ret);
 
@@ -199,18 +243,17 @@ int32_t AudioDeviceAdapterImpl::RegExtraParamObserver()
     return SUCCESS;
 }
 
-int32_t AudioDeviceAdapterImpl::CreateRender(const struct AudioDeviceDescriptor *devDesc,
-    const struct AudioSampleAttributes *attr, struct AudioRender **audioRender, IAudioDeviceAdapterCallback *renderCb)
+int32_t AudioDeviceAdapterImpl::CreateRender(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
+    sptr<IAudioRender> &audioRender, IAudioDeviceAdapterCallback *renderCb, uint32_t &renderId)
 {
     AUDIO_INFO_LOG("Create render start.");
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateRender(audioAdapter_, devDesc, attr, audioRender);
-    CHECK_AND_RETURN_RET_LOG(ret == 0 && audioRender != nullptr && *audioRender != nullptr,
-        ERR_NOT_STARTED, "AudioDeviceCreateRender failed");
+    int32_t ret = audioAdapter_->CreateRender(devDesc, attr, audioRender, renderId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0 && audioRender != nullptr, ERR_NOT_STARTED, "AudioDeviceCreateRender failed");
 
     std::lock_guard<std::mutex> lock(renderPortsMtx_);
-    if (renderPorts_.find(*audioRender) != renderPorts_.end()) {
+    if (renderPorts_.find(audioRender) != renderPorts_.end()) {
         AUDIO_DEBUG_LOG("Audio render already exit in renderPorts, will replace new port info.");
     }
 
@@ -218,11 +261,11 @@ int32_t AudioDeviceAdapterImpl::CreateRender(const struct AudioDeviceDescriptor 
         .devAdpCb = renderCb,
         .portId = 0,
     };
-    renderPorts_[*audioRender] = renderPortInfo;
+    renderPorts_[audioRender] = renderPortInfo;
     return SUCCESS;
 }
 
-void AudioDeviceAdapterImpl::DestroyRender(struct AudioRender *audioRender)
+void AudioDeviceAdapterImpl::DestroyRender(sptr<IAudioRender> audioRender, uint32_t &renderId)
 {
     CHECK_AND_RETURN_LOG(audioRender != nullptr, "DestroyRender: Audio render is null.");
     {
@@ -235,7 +278,7 @@ void AudioDeviceAdapterImpl::DestroyRender(struct AudioRender *audioRender)
     }
 
     CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "DestroyRender: Audio adapter is null.");
-    audioAdapter_->DestroyRender(audioAdapter_, audioRender);
+    audioAdapter_->DestroyRender(renderId);
 
     {
         std::lock_guard<std::mutex> lock(renderPortsMtx_);
@@ -243,18 +286,17 @@ void AudioDeviceAdapterImpl::DestroyRender(struct AudioRender *audioRender)
     }
 }
 
-int32_t AudioDeviceAdapterImpl::CreateCapture(const struct AudioDeviceDescriptor *devDesc,
-    const struct AudioSampleAttributes *attr, struct AudioCapture **audioCapture,
-    IAudioDeviceAdapterCallback *captureCb)
+int32_t AudioDeviceAdapterImpl::CreateCapture(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
+    sptr<IAudioCapture> &audioCapture, IAudioDeviceAdapterCallback *captureCb, uint32_t &captureId)
 {
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "audio adapter is null.");
-    int32_t ret = audioAdapter_->CreateCapture(audioAdapter_, devDesc, attr, audioCapture);
-    CHECK_AND_RETURN_RET_LOG(ret == 0 && audioCapture != nullptr && *audioCapture != nullptr,
+    int32_t ret = audioAdapter_->CreateCapture(devDesc, attr, audioCapture, captureId);
+    CHECK_AND_RETURN_RET_LOG(ret == 0 && audioCapture != nullptr,
         ERR_NOT_STARTED, "Create capture failed, error code %{public}d.", ret);
 
     std::lock_guard<std::mutex> lock(capturePortsMtx_);
-    if (capturePorts_.find(*audioCapture) != capturePorts_.end()) {
+    if (capturePorts_.find(audioCapture) != capturePorts_.end()) {
         AUDIO_INFO_LOG("Audio capture already exit in capturePorts, will replace new port info.");
     }
 
@@ -262,11 +304,11 @@ int32_t AudioDeviceAdapterImpl::CreateCapture(const struct AudioDeviceDescriptor
         .devAdpCb = captureCb,
         .portId = 0,
     };
-    capturePorts_[*audioCapture] = capturePortInfo;
+    capturePorts_[audioCapture] = capturePortInfo;
     return SUCCESS;
 }
 
-void AudioDeviceAdapterImpl::DestroyCapture(struct AudioCapture *audioCapture)
+void AudioDeviceAdapterImpl::DestroyCapture(sptr<IAudioCapture> audioCapture, uint32_t &captureId)
 {
     CHECK_AND_RETURN_LOG(audioCapture != nullptr, "Audio capture is null.");
     {
@@ -279,7 +321,7 @@ void AudioDeviceAdapterImpl::DestroyCapture(struct AudioCapture *audioCapture)
     }
 
     CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "Audio adapter is null.");
-    audioAdapter_->DestroyCapture(audioAdapter_, audioCapture);
+    audioAdapter_->DestroyCapture(captureId);
 
     {
         std::lock_guard<std::mutex> lock(capturePortsMtx_);
@@ -296,7 +338,7 @@ void AudioDeviceAdapterImpl::SetAudioParameter(const AudioParamKey key, const st
     CHECK_AND_RETURN_LOG(audioAdapter_ != nullptr, "Audio adapter is null.");
 
     enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    int32_t ret = audioAdapter_->SetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value.c_str());
+    int32_t ret = audioAdapter_->SetExtraParams(hdiKey, condition, value);
     CHECK_AND_RETURN_LOG(ret == 0, "Set audio parameter fail, ret %{public}d.", ret);
 #else
     AUDIO_INFO_LOG("SetAudioParameter is not supported.");
@@ -310,9 +352,8 @@ std::string AudioDeviceAdapterImpl::GetAudioParameter(const AudioParamKey key, c
         condition.c_str());
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "", "Audio adapter is null.");
     enum AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    char value[PARAM_VALUE_LENTH];
-
-    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
+    std::string value;
+    int32_t ret = audioAdapter_->GetExtraParams(hdiKey, condition.c_str(), value);
     CHECK_AND_RETURN_RET_LOG(ret == 0, "", "Get audio parameter fail, ret %{public}d", ret);
     return value;
 #else
@@ -321,12 +362,12 @@ std::string AudioDeviceAdapterImpl::GetAudioParameter(const AudioParamKey key, c
 #endif
 }
 
-int32_t AudioDeviceAdapterImpl::UpdateAudioRoute(const struct AudioRoute *route, int32_t *routeHandle_)
+int32_t AudioDeviceAdapterImpl::UpdateAudioRoute(const AudioRoute &route)
 {
     AUDIO_INFO_LOG("UpdateAudioRoute enter.");
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE,
         "UpdateAudioRoute: Audio adapter is null.");
-    int32_t ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, route, routeHandle_);
+    int32_t ret = audioAdapter_->UpdateAudioRoute(route, routeHandle_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Update audio route fail, ret %{public}d", ret);
     return SUCCESS;
 }
@@ -345,9 +386,10 @@ int32_t AudioDeviceAdapterImpl::Release()
         "Audio adapter has some ports busy, capturePortsNum %zu, renderPortsNum %zu.",
         capturePortsNum, renderPortsNum);
     if (routeHandle_ != INVALID_ROUT_HANDLE) {
-        audioAdapter_->ReleaseAudioRoute(audioAdapter_, routeHandle_);
+        audioAdapter_->ReleaseAudioRoute(routeHandle_);
     }
     audioAdapter_ = nullptr;
+    AudioDeviceAdapterImpl::paramCallback_ = nullptr;
     AUDIO_DEBUG_LOG("Release end.");
     return SUCCESS;
 }

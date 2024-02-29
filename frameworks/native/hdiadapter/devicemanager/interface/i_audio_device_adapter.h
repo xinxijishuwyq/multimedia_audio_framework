@@ -16,7 +16,19 @@
 #ifndef I_AUDIO_DEVICE_ADAPTER_H
 #define I_AUDIO_DEVICE_ADAPTER_H
 
-#include "audio_manager.h"
+#include <v1_0/iaudio_manager.h>
+#include <v1_0/iaudio_callback.h>
+#include <v1_0/audio_types.h>
+
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioManager;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioRender;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCapture;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCallback;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRoute;
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioExtParamKey;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,18 +48,16 @@ public:
 
     virtual int32_t Init() = 0;
     virtual int32_t RegExtraParamObserver() = 0;
-    virtual int32_t CreateRender(const struct AudioDeviceDescriptor *devDesc,
-        const struct AudioSampleAttributes *attr, struct AudioRender **audioRender,
-        IAudioDeviceAdapterCallback *renderCb) = 0;
-    virtual void DestroyRender(struct AudioRender *audioRender) = 0;
-    virtual int32_t CreateCapture(const struct AudioDeviceDescriptor *devDesc,
-        const struct AudioSampleAttributes *attr, struct AudioCapture **audioCapture,
-        IAudioDeviceAdapterCallback *captureCb) = 0;
-    virtual void DestroyCapture(struct AudioCapture *audioCapture) = 0;
+    virtual int32_t CreateRender(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
+        sptr<IAudioRender> &audioRender, IAudioDeviceAdapterCallback *renderCb, uint32_t &renderId) = 0;
+    virtual void DestroyRender(sptr<IAudioRender> audioRender, uint32_t &renderId) = 0;
+    virtual int32_t CreateCapture(const AudioDeviceDescriptor &devDesc, const AudioSampleAttributes &attr,
+        sptr<IAudioCapture> &audioCapture, IAudioDeviceAdapterCallback *captureCb, uint32_t &captureId) = 0;
+    virtual void DestroyCapture(sptr<IAudioCapture> audioCapture, uint32_t &captureId) = 0;
     virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition,
         const std::string &value) = 0;
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
-    virtual int32_t UpdateAudioRoute(const struct AudioRoute *route, int32_t *routeHandle_) = 0;
+    virtual int32_t UpdateAudioRoute(const AudioRoute &route) = 0;
     virtual int32_t Release() = 0;
 };
 }  // namespace AudioStandard

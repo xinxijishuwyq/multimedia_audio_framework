@@ -19,9 +19,11 @@
 #include <map>
 #include <mutex>
 
-#include "audio_manager.h"
+#include <v1_0/iaudio_manager.h>
 
 #include "i_audio_device_adapter.h"
+
+using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioAdapterDescriptor;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,7 +32,7 @@ public:
     IAudioDeviceManager() = default;
     virtual ~IAudioDeviceManager() = default;
 
-    virtual int32_t GetAllAdapters(AudioAdapterDescriptor **descs, int32_t *size) = 0;
+    virtual int32_t GetAllAdapters() = 0;
     virtual struct AudioAdapterDescriptor *GetTargetAdapterDesc(const std::string &adapterName, bool isMmap) = 0;
     virtual std::shared_ptr<IAudioDeviceAdapter> LoadAdapters(const std::string &adapterName, bool isMmap) = 0;
     virtual int32_t UnloadAdapter(const std::string &adapterName) = 0;
