@@ -107,18 +107,16 @@ int32_t AudioDeviceManagerImpl::GetAllAdapters()
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_NOT_STARTED, "Get adapters failed");
     CHECK_AND_RETURN_RET_LOG(descriptors_.data() != nullptr, ERR_OPERATION_FAILED,
         "Get target adapters descriptor fail.");
-    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}u", descriptors_.size());
     return SUCCESS;
 }
 
 struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(const std::string &adapterName,
     bool isMmap)
 {
+    (void) isMmap;
     int32_t ret = GetAllAdapters();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr,
         "Get all adapters fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
-    AUDIO_INFO_LOG("Get audioMgrType total adapters num: %{public}u, audioMgrType %{public}d, isMmap %{public}d.",
-        descriptors_.size(), audioMgrType_, isMmap);
 
     int32_t targetIdx = INVALID_INDEX;
     for (uint32_t index = 0; index < descriptors_.size(); index++) {
@@ -131,9 +129,6 @@ struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(cons
             continue;
         }
         targetIdx = index;
-        if (desc.ports.size() <= 0) {
-            AUDIO_WARNING_LOG("The ports number of audio adapter %{public}d is %{public}d.", index, desc.ports.size());
-        }
     }
     CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), nullptr, "can not find target adapter.");
     return &descriptors_[targetIdx];
