@@ -113,7 +113,7 @@ private:
     std::mutex reloadMutex;
     std::string sceneType;
     std::string effectMode;
-    uint32_t latency_;
+    uint32_t latency_ = 0;
     std::vector<AudioEffectHandle> standByEffectHandles;
     std::vector<AudioEffectLibrary*> libHandles;
     AudioEffectConfig ioBufferConfig;

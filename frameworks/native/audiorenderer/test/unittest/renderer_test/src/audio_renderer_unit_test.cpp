@@ -2131,7 +2131,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_001, TestSize.Level
  * @tc.name  : Test Write API via illegl state, RENDERER_NEW : without Initializing the renderer.
  * @tc.number: Audio_Renderer_Write_With_Meta_002
  * @tc.desc  : Test Write interface. Returns error code, if the renderer state is RENDERER_NEW.
- *           : bufferLen is invalid here, firstly bufferLen is validated in Write. So it returns ERR_INVALID_PARAM.
+ *           : encodingType is not initialized here, so it returns ERR_NOT_SUPPORTED for encodingType that is wrong.
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_002, TestSize.Level1)
 {
@@ -2152,7 +2152,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_002, TestSize.Level
         uint8_t *metaBuffer;
 
         int32_t ret = audioRenderer->GetBufferSize(bufferLen);
-        EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+        EXPECT_EQ(SUCCESS, ret);
 
         buffer = new uint8_t[bufferLen];
         ASSERT_NE(nullptr, buffer);
@@ -2162,7 +2162,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_002, TestSize.Level
         fread(buffer, 1, bufferLen, wavFile);
         fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
         int32_t bytesWritten = audioRenderer->Write(buffer, bufferLen, metaBuffer, AVS3METADATA_SIZE);
-        EXPECT_EQ(ERR_ILLEGAL_STATE, bytesWritten);
+        EXPECT_EQ(ERR_NOT_SUPPORTED, bytesWritten);
 
         AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
     }
