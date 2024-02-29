@@ -124,7 +124,6 @@ ohos_shared_library("remote_audio_capturer_source") {
   defines = []
   if (audio_framework_feature_daudio_enable) {
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
-    external_deps += [ "distributed_audio:daudio_client" ]
   }
 
   part_name = "audio_framework"
@@ -165,7 +164,6 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   defines = []
   if (audio_framework_feature_daudio_enable) {
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
-    external_deps += [ "distributed_audio:daudio_client" ]
   }
 
   part_name = "audio_framework"
