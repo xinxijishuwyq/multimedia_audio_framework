@@ -352,6 +352,7 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
     ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     headTracker_ = headTracker;
+    latency_ = 0;
 }
 #else
 AudioEffectChain::AudioEffectChain(std::string scene)
@@ -368,6 +369,7 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    latency_ = 0;
 }
 #endif
 
