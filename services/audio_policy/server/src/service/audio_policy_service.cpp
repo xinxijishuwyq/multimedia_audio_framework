@@ -1471,32 +1471,6 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
     return deviceList;
 }
 
-DeviceType AudioPolicyService::FetchHighPriorityDevice(bool isOutputDevice = true)
-{
-    AUDIO_DEBUG_LOG("Start");
-    DeviceType priorityDevice = isOutputDevice ? DEVICE_TYPE_SPEAKER : DEVICE_TYPE_MIC;
-    std::vector<DeviceType> priorityList = isOutputDevice ? outputPriorityList_ : inputPriorityList_;
-    for (const auto &device : priorityList) {
-        auto isPresent = [&device, this] (const sptr<AudioDeviceDescriptor> &desc) {
-            CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-            if ((audioScene_ != AUDIO_SCENE_DEFAULT) && (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP)) {
-                return false;
-            } else {
-                return desc->deviceType_ == device;
-            }
-        };
-
-        auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
-        if (itr != connectedDevices_.end()) {
-            priorityDevice = (*itr)->deviceType_;
-            break;
-        }
-    }
-    AUDIO_DEBUG_LOG("priorityDevice: %{public}d, currentActiveDevice_.deviceType_: %{public}d",
-        priorityDevice, currentActiveDevice_.deviceType_);
-    return priorityDevice;
-}
-
 void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 {
     Trace trace("AudioPolicyService::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
@@ -5085,10 +5059,8 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
                 "CapturerSessionAdded: OpenAudioPort failed %{public}d", ioHandle);
 
             IOHandles_[PRIMARY_MIC] = ioHandle;
-            if (FetchHighPriorityDevice(false) == DEVICE_TYPE_MIC &&
-                currentActiveInputDevice_.deviceType_ == DEVICE_TYPE_MIC) {
-                audioPolicyManager_.SetDeviceActive(ioHandle, DEVICE_TYPE_MIC, moduleInfo.name, true);
-            }
+            audioPolicyManager_.SetDeviceActive(ioHandle, currentActiveInputDevice_.deviceType_,
+                moduleInfo.name, true);
 
             currentRate = targetRate;
             currentSourceType = targetSourceType;

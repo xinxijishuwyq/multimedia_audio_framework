@@ -528,8 +528,6 @@ private:
 
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
-    DeviceType FetchHighPriorityDevice(bool isOutputDevice);
-
     int32_t HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated);
 
