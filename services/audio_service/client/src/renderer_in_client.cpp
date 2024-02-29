@@ -241,8 +241,8 @@ private:
 
     bool needSetThreadPriority_ = true;
 
-    AudioStreamParams curStreamParams_; // in plan next: replace it with AudioRendererParams
-    AudioStreamParams streamParams_;
+    AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
+    AudioStreamParams streamParams_ = {0};
 
     // for data process
     bool isBlendSet_ = false;
