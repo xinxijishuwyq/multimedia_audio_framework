@@ -185,6 +185,7 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, v
         SessionInfoPack pack = {channels, channelLayout, sceneMode, spatializationEnabled, volume};
         if (!EffectChainManagerAddSessionInfo(sceneType, sessionID, pack)) {
             EffectChainManagerMultichannelUpdate(sceneType);
+            EffectChainManagerVolumeUpdate(sessionID, volume);
         }
     }
 
