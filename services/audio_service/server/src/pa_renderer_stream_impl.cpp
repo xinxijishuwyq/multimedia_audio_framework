@@ -64,7 +64,7 @@ PaRendererStreamImpl::~PaRendererStreamImpl()
     rendererStreamInstanceMap_.Erase(this);
 }
 
-inline uint32_t PcmFormatToBits(uint8_t format)
+__attribute__((unused)) static uint32_t PcmFormatToBits(uint8_t format)
 {
     switch (format) {
         case SAMPLE_U8:
