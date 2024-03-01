@@ -2729,6 +2729,51 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_006, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetAudioTime API via legal state, RENDERER_PAUSED.
+ * @tc.number: Audio_Renderer_GetAudioTime_007
+ * @tc.desc  : Test GetAudioTime interface. Timestamp should be larger after pause 1s.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_007, TestSize.Level2)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferSize = 3528; // 44.1 khz, 20ms
+    std::unique_ptr<uint8_t[]> tempBuffer = std::make_unique<uint8_t[]>(bufferSize);
+    int loopCount = 20; // 400ms
+    while (loopCount-- > 0) {
+        audioRenderer->Write(tempBuffer.get(), bufferSize);
+    }
+    Timestamp timeStamp1;
+    audioRenderer->GetAudioTime(timeStamp1, Timestamp::Timestampbase::MONOTONIC);
+
+    bool isPaused = audioRenderer->Pause();
+    EXPECT_EQ(true, isPaused);
+
+    size_t sleepTime = 1000000; // sleep 1s
+    usleep(sleepTime);
+
+    loopCount = 10; // 200ms
+    while (loopCount-- > 0) {
+        audioRenderer->Write(tempBuffer.get(), bufferSize);
+    }
+    Timestamp timeStamp2;
+    audioRenderer->GetAudioTime(timeStamp2, Timestamp::Timestampbase::MONOTONIC);
+
+    int64_t duration = (timeStamp2.time.tv_sec - timeStamp1.time.tv_sec) * 1000000 + (timeStamp2.time.tv_nsec -
+        timeStamp1.time.tv_nsec) / VALUE_THOUSAND; // ns -> us
+    EXPECT_GE(duration, sleepTime);
+
+    audioRenderer->Release();
+}
+
+/**
  * @tc.name  : Test Drain API.
  * @tc.number: Audio_Renderer_Drain_001
  * @tc.desc  : Test Drain interface. Returns true, if the flush is successful.

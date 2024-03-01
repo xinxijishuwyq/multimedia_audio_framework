@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+    static const int64_t MOCK_LATENCY = 45000000; // 45000000 -> 45ms
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -243,7 +244,6 @@ int32_t RendererInServer::WriteData()
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
-        audioServerBuffer_->SetHandleInfo(currentReadFrame, ClockTime::GetCurNano());
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
@@ -284,6 +284,9 @@ int32_t RendererInServer::OnWriteData(size_t length)
         needForceWrite_ =
             writableSize / spanSizeInByte_ > 3 ? 0 : 3 - writableSize / spanSizeInByte_; // 3 is maxlength - 1
     }
+
+    uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
+    audioServerBuffer_->SetHandleInfo(currentReadFrame, ClockTime::GetCurNano() + MOCK_LATENCY);
     return SUCCESS;
 }
 
@@ -337,6 +340,11 @@ int32_t RendererInServer::Start()
     status_ = I_STATUS_STARTING;
     int ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
+
+    uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
+    int64_t tempTime = ClockTime::GetCurNano() + MOCK_LATENCY;
+    audioServerBuffer_->SetHandleInfo(currentReadFrame, tempTime);
+    AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
     resetTime_ = true;
     return SUCCESS;
 }
