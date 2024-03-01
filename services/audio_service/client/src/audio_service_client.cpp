@@ -691,6 +691,7 @@ AudioServiceClient::~AudioServiceClient()
     UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
     ResetPAAudioClient();
     StopTimer();
+    std::lock_guard<std::mutex> lock(serviceClientLock_);
     serviceClientInstanceMap_.Erase(this);
 }
 
