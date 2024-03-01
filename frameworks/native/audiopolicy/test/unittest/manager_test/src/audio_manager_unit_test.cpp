@@ -2832,7 +2832,6 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_001, TestSize.Leve
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
     auto ret = audioDeviceDescriptors.size();
     EXPECT_GE(ret, MIN_DEVICE_NUM);
-    
     CastType castType = CAST_TYPE_ALL;
     ret = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDeviceDescriptors[0], castType);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
@@ -2849,7 +2848,6 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_002, TestSize.Leve
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto ret = audioDeviceDescriptors.size();
     EXPECT_GE(ret, MIN_DEVICE_NUM);
-
     CastType castType = CAST_TYPE_ALL;
     ret = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDeviceDescriptors[0], castType);
     EXPECT_EQ(SUCCESS, ret);
@@ -2866,7 +2864,6 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Leve
     auto audioDeviceDescriptors = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::OUTPUT_DEVICES_FLAG);
     auto ret = audioDeviceDescriptors.size();
     EXPECT_GE(ret, MIN_DEVICE_NUM);
-
     CastType castType = CAST_TYPE_ALL;
     audioDeviceDescriptors[0]->networkId_ = REMOTE_NETWORK_ID;
     ret = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDeviceDescriptors[0], castType);
