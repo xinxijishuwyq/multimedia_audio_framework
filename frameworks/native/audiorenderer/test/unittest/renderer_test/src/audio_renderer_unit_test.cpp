@@ -114,7 +114,7 @@ void AudioRendererUnitTest::GetBuffersAndLen(unique_ptr<AudioRenderer> &audioRen
     EXPECT_EQ(SUCCESS, ret);
     buffer = new uint8_t[bufferLen];
     ASSERT_NE(nullptr, buffer);
-    EXPECT_GE(MAX_BUFFER_SIZE, bufferLen);  
+    EXPECT_GE(MAX_BUFFER_SIZE, bufferLen);
     metaBuffer = new uint8_t[AVS3METADATA_SIZE];
     ASSERT_NE(nullptr, metaBuffer);
 }
