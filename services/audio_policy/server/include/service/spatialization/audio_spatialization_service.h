@@ -86,6 +86,7 @@ private:
     bool headTrackingEnabledFlag_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
+    bool isFirstQuery_ = true;
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;
