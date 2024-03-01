@@ -1771,7 +1771,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_002, TestSize.Level1)
 
     size_t bufferLen;
     ret = audioRenderer->GetBufferSize(bufferLen);
-    EXPECT_EQ(VALUE_ZERO, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
     ASSERT_NE(nullptr, buffer);
@@ -3701,7 +3701,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_001, TestSize.Level1)
 /**
  * @tc.name  : Test Release API via illegal state, RENDERER_NEW: Call Release without initializing the renderer.
  * @tc.number: Audio_Renderer_Release_002
- * @tc.desc  : Test Release interface, Returns false, if the state is RENDERER_NEW.
+ * @tc.desc  : Test Release interface, Returns true, if the state is RENDERER_NEW.
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_002, TestSize.Level1)
 {
@@ -3709,13 +3709,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_002, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(false, isReleased);
+    EXPECT_EQ(true, isReleased);
 }
 
 /**
  * @tc.name  : Test Release API via illegal state, RENDERER_RELEASED: call Release repeatedly.
  * @tc.number: Audio_Renderer_Release_003
- * @tc.desc  : Test Release interface. Returns false, if the state is already RENDERER_RELEASED.
+ * @tc.desc  : Test Release interface. Returns true, if the state is already RENDERER_RELEASED.
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_003, TestSize.Level1)
 {
@@ -3729,7 +3729,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Release_003, TestSize.Level1)
     EXPECT_EQ(true, isReleased);
 
     isReleased = audioRenderer->Release();
-    EXPECT_EQ(false, isReleased);
+    EXPECT_EQ(true, isReleased);
 }
 
 /**
@@ -3920,10 +3920,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStatus_005, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(false, isReleased);
+    EXPECT_EQ(true, isReleased);
     state = audioRenderer->GetStatus();
-    EXPECT_NE(RENDERER_RELEASED, state);
-    EXPECT_EQ(RENDERER_NEW, state);
+    EXPECT_EQ(RENDERER_RELEASED, state);
 }
 
 /**

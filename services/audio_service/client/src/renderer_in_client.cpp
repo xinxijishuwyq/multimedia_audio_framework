@@ -223,6 +223,7 @@ private:
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
+    int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -1131,7 +1132,7 @@ void RendererInClientInner::WriteCallbackFunc()
             }
             // call write here.
             int32_t result = curStreamParams_.encoding == ENCODING_PCM
-                ? Write(temp.buffer, temp.bufLength)
+                ? WriteInner(temp.buffer, temp.bufLength)
                 : Write(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
             if (result < 0) {
                 AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
@@ -1546,6 +1547,7 @@ bool RendererInClientInner::FlushAudioStream()
 {
     Trace trace("RendererInClientInner::FlushAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
+    std::lock_guard<std::mutex>lock(writeMutex_);
     if ((state_ != RUNNING) && (state_ != PAUSED) && (state_ != STOPPED)) {
         AUDIO_ERR_LOG("Flush failed. Illegal state:%{public}u", state_.load());
         return false;
@@ -1566,8 +1568,10 @@ bool RendererInClientInner::FlushAudioStream()
     if (notifiedOperation_ != FLUSH_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Flush failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        notifiedOperation_ = MAX_OPERATION_CODE;
         return false;
     }
+    notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
@@ -1634,6 +1638,7 @@ bool RendererInClientInner::DrainAudioStream()
     if (notifiedOperation_ != DRAIN_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Drain failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        notifiedOperation_ = MAX_OPERATION_CODE;
         return false;
     }
     notifiedOperation_ = MAX_OPERATION_CODE;
@@ -1672,13 +1677,20 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     uint8_t *buffer;
     uint32_t bufferSize;
     converter_->GetOutputBufferStream(buffer, bufferSize);
-    return Write(buffer, bufferSize);
+    return WriteInner(buffer, bufferSize);
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
+        "Write with callback is not supported");
+    return WriteInner(buffer, bufferSize);
+}
+
+int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
+{
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
 
     std::lock_guard<std::mutex> lock(writeMutex_);
