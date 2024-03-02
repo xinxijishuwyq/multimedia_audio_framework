@@ -58,7 +58,7 @@ int32_t PolicyProviderProxy::InitSharedVolume(std::shared_ptr<AudioSharedMemory>
     return SUCCESS;
 }
 
-int32_t PolicyProviderProxy::SetWakeUpAudioCapturerFromAudioServer()
+int32_t PolicyProviderProxy::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -66,6 +66,7 @@ int32_t PolicyProviderProxy::SetWakeUpAudioCapturerFromAudioServer()
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
+    ProcessConfig::WriteConfigToParcel(config, data);
     int ret = Remote()->SendRequest(IPolicyProviderMsg::SET_WAKEUP_ADUIO_CAPTURER, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
 

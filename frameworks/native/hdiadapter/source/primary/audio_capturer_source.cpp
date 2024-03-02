@@ -502,6 +502,8 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
         param.channelLayout = CH_LAYOUT_MONO;
     } else if (param.channelCount == STEREO) {
         param.channelLayout = CH_LAYOUT_STEREO;
+    } else if (param.channelCount == CHANNEL_4) {
+        param.channelLayout = CH_LAYOUT_QUAD;
     }
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;

@@ -67,8 +67,10 @@ int32_t PolicyProviderStub::HandleInitSharedVolume(MessageParcel &data, MessageP
 
 int32_t PolicyProviderStub::HandleSetWakeupCapturer(MessageParcel &data, MessageParcel &reply)
 {
-    (void)data;
-    int32_t ret = SetWakeUpAudioCapturerFromAudioServer();
+    AudioProcessConfig config;
+    int32_t ret = ProcessConfig::ReadConfigFromParcel(config, data);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ReadConfigFromParcel failed %{public}d", ret);
+    ret = SetWakeUpAudioCapturerFromAudioServer(config);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
@@ -114,10 +116,10 @@ int32_t PolicyProviderWrapper::InitSharedVolume(std::shared_ptr<AudioSharedMemor
     return policyWorker_->InitSharedVolume(buffer);
 }
 
-int32_t PolicyProviderWrapper::SetWakeUpAudioCapturerFromAudioServer()
+int32_t PolicyProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->SetWakeUpAudioCapturerFromAudioServer();
+    return policyWorker_->SetWakeUpAudioCapturerFromAudioServer(config);
 }
 
 int32_t PolicyProviderWrapper::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
