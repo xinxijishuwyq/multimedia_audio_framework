@@ -125,7 +125,7 @@ public:
 
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
-    int32_t SetWakeUpAudioCapturerFromAudioServer();
+    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
 
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
@@ -465,7 +465,7 @@ private:
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
 
-    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo);
+    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo, const AudioStreamInfo &streamInfo);
 
     AudioIOHandle GetSinkIOHandle(InternalDeviceType deviceType);
 

@@ -82,6 +82,77 @@ mutex g_btProxyMutex;
 #endif
 bool AudioPolicyService::isBtListenerRegistered = false;
 
+
+static string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
+{
+    switch (sampleFormat) {
+        case SAMPLE_U8:
+            return "u8";
+        case SAMPLE_S16LE:
+            return "s16le";
+        case SAMPLE_S24LE:
+            return "s24le";
+        case SAMPLE_S32LE:
+            return "s32le";
+        default:
+            return "";
+    }
+}
+
+static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
+{
+    switch (sampleFormat) {
+        case SAMPLE_U8:
+            return PCM_8_BIT;
+        case SAMPLE_S16LE:
+            return PCM_16_BIT;
+        case SAMPLE_S24LE:
+            return PCM_24_BIT;
+        case SAMPLE_S32LE:
+            return PCM_32_BIT;
+        default:
+            return PCM_16_BIT;
+    }
+}
+
+static string ParseAudioFormat(string format)
+{
+    if (format == "AUDIO_FORMAT_PCM_16_BIT") {
+        return "s16";
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+        return "s24";
+    } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
+        return "s32";
+    } else {
+        return "";
+    }
+}
+
+static void GetUsbModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
+{
+    if (moduleInfo.role == "sink") {
+        auto sinkRate_begin = deviceInfo.find("sink_rate:");
+        auto sinkRate_end = deviceInfo.find_first_of(";", sinkRate_begin);
+        moduleInfo.rate = deviceInfo.substr(sinkRate_begin + std::strlen("sink_rate:"),
+            sinkRate_end - sinkRate_begin - std::strlen("sink_rate:"));
+        auto sinkFormat_begin = deviceInfo.find("sink_format:");
+        auto sinkFormat_end = deviceInfo.find_first_of(";", sinkFormat_begin);
+        string format = deviceInfo.substr(sinkFormat_begin + std::strlen("sink_format:"),
+            sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
+        moduleInfo.format = ParseAudioFormat(format);
+    } else {
+        auto sourceRate_begin = deviceInfo.find("source_rate:");
+        auto sourceRate_end = deviceInfo.find_first_of(";", sourceRate_begin);
+        moduleInfo.rate = deviceInfo.substr(sourceRate_begin + std::strlen("source_rate:"),
+            sourceRate_end - sourceRate_begin - std::strlen("source_rate:"));
+        auto sourceFormat_begin = deviceInfo.find("source_format:");
+        auto sourceFormat_end = deviceInfo.find_first_of(";", sourceFormat_begin);
+        string format = deviceInfo.substr(sourceFormat_begin + std::strlen("source_format:"),
+            sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
+        moduleInfo.format = ParseAudioFormat(format);
+    }
+}
+
 AudioPolicyService::~AudioPolicyService()
 {
     AUDIO_DEBUG_LOG("~AudioPolicyService()");
@@ -1241,11 +1312,14 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
 }
 
 // private method
-AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t wakeupNo)
+AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t wakeupNo, const AudioStreamInfo &streamInfo)
 {
+    uint32_t bufferSize = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
+        * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+
     AudioModuleInfo audioModuleInfo = {};
     audioModuleInfo.lib = "libmodule-hdi-source.z.so";
-    audioModuleInfo.format = "s16le";
+    audioModuleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
 
     audioModuleInfo.name = WAKEUP_NAMES[wakeupNo];
     audioModuleInfo.networkId = "LocalDevice";
@@ -1254,9 +1328,9 @@ AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t wakeu
     audioModuleInfo.className = "primary";
     audioModuleInfo.fileName = "";
 
-    audioModuleInfo.channels = "1";
-    audioModuleInfo.rate = "16000";
-    audioModuleInfo.bufferSize = "640";
+    audioModuleInfo.channels = std::to_string(streamInfo.channels);
+    audioModuleInfo.rate = std::to_string(streamInfo.samplingRate);
+    audioModuleInfo.bufferSize = std::to_string(bufferSize);
     audioModuleInfo.OpenMicSpeaker = "1";
 
     audioModuleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_WAKEUP);
@@ -1293,7 +1367,7 @@ void AudioPolicyService::OnPreferredDeviceUpdated(const AudioDeviceDescriptor& a
     OnPreferredInputDeviceUpdated(activeInputDevice, LOCAL_NETWORK_ID);
 }
 
-int32_t AudioPolicyService::SetWakeUpAudioCapturer([[maybe_unused]] InternalAudioCapturerOptions options)
+int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
     AUDIO_INFO_LOG("Start");
 
@@ -1311,7 +1385,7 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer([[maybe_unused]] InternalAudi
         wakeupCount_++;
     }
 
-    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(wakeupNo);
+    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(wakeupNo, options.streamInfo);
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
@@ -1325,9 +1399,11 @@ int32_t AudioPolicyService::SetWakeUpAudioCapturer([[maybe_unused]] InternalAudi
     return wakeupNo;
 }
 
-int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer()
+int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
 {
-    return SetWakeUpAudioCapturer({});
+    InternalAudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo = config.streamInfo;
+    return SetWakeUpAudioCapturer(capturerOptions);
 }
 
 int32_t AudioPolicyService::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
@@ -1886,76 +1962,6 @@ bool AudioPolicyService::IsSessionIdValid(int32_t callerUid, int32_t sessionId)
     }
 
     return true;
-}
-
-static string ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
-{
-    switch (sampleFormat) {
-        case SAMPLE_U8:
-            return "u8";
-        case SAMPLE_S16LE:
-            return "s16le";
-        case SAMPLE_S24LE:
-            return "s24le";
-        case SAMPLE_S32LE:
-            return "s32le";
-        default:
-            return "";
-    }
-}
-
-static uint32_t GetSampleFormatValue(AudioSampleFormat sampleFormat)
-{
-    switch (sampleFormat) {
-        case SAMPLE_U8:
-            return PCM_8_BIT;
-        case SAMPLE_S16LE:
-            return PCM_16_BIT;
-        case SAMPLE_S24LE:
-            return PCM_24_BIT;
-        case SAMPLE_S32LE:
-            return PCM_32_BIT;
-        default:
-            return PCM_16_BIT;
-    }
-}
-
-static string ParseAudioFormat(string format)
-{
-    if (format == "AUDIO_FORMAT_PCM_16_BIT") {
-        return "s16";
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
-        return "s24";
-    } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
-        return "s32";
-    } else {
-        return "";
-    }
-}
-
-static void GetUsbModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
-{
-    if (moduleInfo.role == "sink") {
-        auto sinkRate_begin = deviceInfo.find("sink_rate:");
-        auto sinkRate_end = deviceInfo.find_first_of(";", sinkRate_begin);
-        moduleInfo.rate = deviceInfo.substr(sinkRate_begin + std::strlen("sink_rate:"),
-            sinkRate_end - sinkRate_begin - std::strlen("sink_rate:"));
-        auto sinkFormat_begin = deviceInfo.find("sink_format:");
-        auto sinkFormat_end = deviceInfo.find_first_of(";", sinkFormat_begin);
-        string format = deviceInfo.substr(sinkFormat_begin + std::strlen("sink_format:"),
-            sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
-        moduleInfo.format = ParseAudioFormat(format);
-    } else {
-        auto sourceRate_begin = deviceInfo.find("source_rate:");
-        auto sourceRate_end = deviceInfo.find_first_of(";", sourceRate_begin);
-        moduleInfo.rate = deviceInfo.substr(sourceRate_begin + std::strlen("source_rate:"),
-            sourceRate_end - sourceRate_begin - std::strlen("source_rate:"));
-        auto sourceFormat_begin = deviceInfo.find("source_format:");
-        auto sourceFormat_end = deviceInfo.find_first_of(";", sourceFormat_begin);
-        string format = deviceInfo.substr(sourceFormat_begin + std::strlen("source_format:"),
-            sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
-        moduleInfo.format = ParseAudioFormat(format);
-    }
 }
 
 int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -4979,6 +4985,10 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
         }
     } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_CALL) {
         targetSourceType = SOURCE_TYPE_VOICE_CALL;
+        targetRate = highestSupportedRate;
+        targetChannels = highestSupportedChannels;
+    } else if (sessionInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        targetSourceType = SOURCE_TYPE_VOICE_RECOGNITION;
         targetRate = highestSupportedRate;
         targetChannels = highestSupportedChannels;
     } else {
