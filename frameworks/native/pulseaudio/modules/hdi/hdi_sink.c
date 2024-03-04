@@ -819,7 +819,7 @@ static int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
 
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
-    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     pa_assert(chunkIn);
     pa_assert(chunkIn->memblock);
     pa_assert(chunkIn->length > 0);
@@ -1126,7 +1126,7 @@ static int32_t SinkRenderPrimaryPeek(pa_sink *si, pa_memchunk *chunkIn, char *sc
 
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
-    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     pa_assert(chunkIn);
     pa_assert(chunkIn->memblock);
     pa_assert(chunkIn->length > 0);
@@ -1168,7 +1168,7 @@ static int32_t SinkRenderMultiChannelPeek(pa_sink *si, pa_memchunk *chunkIn)
 
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
-    pa_assert(PA_SINK_IS_LINKED(s->thread_info.state));
+    pa_assert(PA_SINK_IS_LINKED(si->thread_info.state));
     pa_assert(chunkIn);
     pa_assert(chunkIn->memblock);
     pa_assert(chunkIn->length > 0);
@@ -1489,7 +1489,7 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
-    pa_assert(is);
+    pa_assert(s);
 
     while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL)) && maxinfo > 0) {
         pa_sink_input_assert_ref(i);
@@ -1545,7 +1545,7 @@ static int32_t GetInputsType(pa_sink *s, unsigned *nPrimary, unsigned *nOffload,
 
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
-    pa_assert(is);
+    pa_assert(s);
     while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(i);
         if (isRunning && i->thread_info.state != PA_SINK_INPUT_RUNNING) {
