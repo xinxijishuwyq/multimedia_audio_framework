@@ -286,7 +286,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
     return SUCCESS;
 }
 
-pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool idRecording)
+pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool isRecording)
 {
     AUDIO_DEBUG_LOG("Enter InitPaStream");
     std::lock_guard<std::mutex> lock(paElementsMutex_);
@@ -309,7 +309,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         "set pa proplist failed");
 
     pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec,
-        idRecording ? nullptr : &map, propList);
+        isRecording ? nullptr : &map, propList);
     if (!paStream) {
         int32_t error = pa_context_errno(context_);
         pa_proplist_free(propList);
