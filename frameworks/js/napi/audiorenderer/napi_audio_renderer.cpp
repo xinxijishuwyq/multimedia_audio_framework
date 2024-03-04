@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRenderer"
+
 #include "napi_audio_renderer.h"
 #include "audio_utils.h"
 #include "xpower_event_js.h"

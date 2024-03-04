@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamCollector"
+
 #include "audio_stream_collector.h"
 
 #include "audio_errors.h"

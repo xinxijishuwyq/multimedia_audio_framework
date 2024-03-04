@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioOpenslesPlayerUnitTest"
 
 #include "audio_opensles_player_unit_test.h"
 

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiCapturerPositionCallback"
 
 #include "napi_capturer_position_callback.h"
 #include "napi_audio_capturer_callbacks.h"

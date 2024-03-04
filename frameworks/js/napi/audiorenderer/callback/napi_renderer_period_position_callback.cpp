@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiRendererPeriodPositionCallback"
+
 #include "napi_renderer_period_position_callback.h"
 #include "audio_errors.h"
 #include "audio_log.h"
