@@ -224,7 +224,6 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
 #ifdef BLUETOOTH_ENABLE
         if (result == SUCCESS) {
             // set to avrcp device
-            SetOffloadVolume(volumeLevel);
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
         } else {
             AUDIO_ERR_LOG("AudioPolicyService::SetSystemVolumeLevel set abs volume failed");
@@ -242,7 +241,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
 
     if (result == SUCCESS) {
-        SetOffloadVolume(volumeLevel);
+        SetOffloadVolume(streamType, volumeLevel);
     }
     return result;
 }
@@ -262,8 +261,11 @@ void AudioPolicyService::SetVoiceCallVolume(int32_t volumeLevel)
     AUDIO_INFO_LOG("SetVoiceVolume: %{public}f", volumeDb);
 }
 
-void AudioPolicyService::SetOffloadVolume(int32_t volume)
+void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t volume)
 {
+    if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
+        return;
+    }
     DeviceType dev = GetActiveOutputDevice();
     if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP)) {
         return;
@@ -272,11 +274,16 @@ void AudioPolicyService::SetOffloadVolume(int32_t volume)
     CHECK_AND_RETURN_LOG(gsp != nullptr, "gsp null");
     float volumeDb;
     if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        volumeDb = static_cast<float>(volume) / static_cast<float>(audioPolicyManager_.GetMaxVolumeLevel(STREAM_MUSIC));
+        volumeDb = 1;
     } else {
-        volumeDb = GetSystemVolumeInDb(STREAM_MUSIC, volume, currentActiveDevice_.deviceType_);
+        volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
     }
     gsp->OffloadSetVolume(volumeDb);
+}
+
+AudioStreamType AudioPolicyService::OffloadStreamType()
+{
+    return offloadSessionID_.has_value() ? GetStreamType(*offloadSessionID_) : STREAM_MUSIC;
 }
 
 void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
@@ -290,14 +297,9 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
     if (deviceType == DEVICE_TYPE_SPEAKER) {
-        SetOffloadVolume(GetSystemVolumeLevel(STREAM_MUSIC));
+        SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        int32_t volume;
-        if (GetA2dpDeviceVolume(activeBTDevice_, volume)) {
-            SetOffloadVolume(volume);
-        } else {
-            SetOffloadVolume(GetSystemVolumeLevel(STREAM_MUSIC));
-        }
+        SetOffloadVolume(OffloadStreamType(), audioPolicyManager_.GetMaxVolumeLevel(OffloadStreamType()));
     }
 }
 
@@ -4270,25 +4272,10 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     CHECK_AND_RETURN_RET_LOG(configInfoPos != connectedA2dpDeviceMap_.end() && configInfoPos->second.absVolumeSupport,
         ERROR, "failed for macAddress:[%{public}s]", macAddress.c_str());
     configInfoPos->second.volumeLevel = volumeLevel;
-    SetOffloadVolume(volumeLevel);
     if (volumeLevel > 0) {
         configInfoPos->second.mute = false;
     }
     AUDIO_DEBUG_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
-        macAddress.c_str(), volumeLevel);
-    return SUCCESS;
-}
-
-int32_t AudioPolicyService::GetA2dpDeviceVolume(const std::string& macAddress, int32_t& volumeLevel)
-{
-    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
-    auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
-    if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
-        AUDIO_ERR_LOG("failed for macAddress:[%{public}s]", macAddress.c_str());
-        return ERROR;
-    }
-    volumeLevel = configInfoPos->second.volumeLevel;
-    AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
         macAddress.c_str(), volumeLevel);
     return SUCCESS;
 }
