@@ -565,8 +565,8 @@ int32_t AudioRendererSinkInner::Start(void)
     }
 
     if (keepRunningLock_ != nullptr) {
-        AUDIO_INFO_LOG("keepRunningLock lock");
-        keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+        AUDIO_INFO_LOG("keepRunningLock lock result: %{public}d",
+            keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }

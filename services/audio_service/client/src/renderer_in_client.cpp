@@ -1368,6 +1368,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Start failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        ipcStream_->Stop();
         return false;
     }
     waitLock.unlock();
