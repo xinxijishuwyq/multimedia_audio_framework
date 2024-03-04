@@ -130,6 +130,7 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    std::mutex renderMutex_;
 
     int32_t CreateRender(const struct AudioPort &renderPort);
     int32_t InitAudioManager();
@@ -361,6 +362,7 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
 
 void OffloadAudioRendererSinkInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(renderMutex_);
     AUDIO_DEBUG_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
@@ -760,7 +762,12 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
         "failed state is not started");
     isFlushing_ = true;
     thread([&] {
-        auto future = async(launch::async, [&] { return audioRender_->Flush(audioRender_); });
+        auto future = async(launch::async, [&] {
+            std::lock_guard<std::mutex> lock(renderMutex_);
+            CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+                "failed audio render null");
+            return audioRender_->Flush(audioRender_);
+        });
         if (future.wait_for(250ms) == future_status::timeout) { // max wait 250ms
             AUDIO_ERR_LOG("Flush failed! timeout of 250ms");
         } else {
