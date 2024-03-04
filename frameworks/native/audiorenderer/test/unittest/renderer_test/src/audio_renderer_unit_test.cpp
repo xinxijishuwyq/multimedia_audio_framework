@@ -45,6 +45,7 @@ namespace {
     const int32_t RENDERER_FLAG = 0;
     // Writing only 500 buffers of data for test
     const int32_t WRITE_BUFFERS_COUNT = 500;
+    const int32_t MAX_BUFFER_SIZE = 10000;
     constexpr int32_t PAUSE_BUFFER_POSITION = 400000;
     constexpr int32_t PAUSE_RENDER_TIME_SECONDS = 1;
 
@@ -113,6 +114,7 @@ void AudioRendererUnitTest::GetBuffersAndLen(unique_ptr<AudioRenderer> &audioRen
     EXPECT_EQ(SUCCESS, ret);
     buffer = new uint8_t[bufferLen];
     ASSERT_NE(nullptr, buffer);
+    EXPECT_GE(MAX_BUFFER_SIZE, bufferLen);
     metaBuffer = new uint8_t[AVS3METADATA_SIZE];
     ASSERT_NE(nullptr, metaBuffer);
 }
