@@ -489,11 +489,11 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
             source.ext.device.type = PIN_IN_MIC;
-            source.ext.device.desc = (char *)"pin_in_mic";
+            source.ext.device.desc = const_cast<char*>("pin_in_mic");
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
             source.ext.device.type = PIN_IN_HS_MIC;
-            source.ext.device.desc = (char *)"pin_in_hs_mic";
+            source.ext.device.desc = const_cast<char*>("pin_in_hs_mic");
             break;
         default:
             ret = ERR_NOT_SUPPORTED;
@@ -523,14 +523,14 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
     source.role = AUDIO_PORT_SOURCE_ROLE;
     source.type = AUDIO_PORT_DEVICE_TYPE;
     source.ext.device.moduleId = 0;
-    source.ext.device.desc = (char *)"";
+    source.ext.device.desc = const_cast<char*>("");
 
     sink.portId = 0;
     sink.role = AUDIO_PORT_SINK_ROLE;
     sink.type = AUDIO_PORT_MIX_TYPE;
     sink.ext.mix.moduleId = 0;
     sink.ext.mix.streamId = FAST_INPUT_STREAM_ID;
-    sink.ext.device.desc = (char *)"";
+    sink.ext.device.desc = const_cast<char*>("");
 
     AudioRoute route = {
         .sources = &source,
