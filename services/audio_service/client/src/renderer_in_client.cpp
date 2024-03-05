@@ -1216,7 +1216,7 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
         AUDIO_ERR_LOG("Enqueue is not supported. Render mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
-    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERR_INVALID_PARAM, "Invalid buffer");
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr && bufDesc.bufLength != 0, ERR_INVALID_PARAM, "Invalid buffer");
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
             converter_ != nullptr && converter_->CheckInputValid(bufDesc),
         ERR_INVALID_PARAM, "Invalid buffer desc");
