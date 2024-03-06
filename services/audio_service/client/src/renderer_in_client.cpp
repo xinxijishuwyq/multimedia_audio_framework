@@ -1715,9 +1715,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write: Illegal state:%{public}u", state_.load());
 
     // hold lock
-    if (isBlendSet_) {
-        audioBlend_.Process(buffer, bufferSize);
-    }
+    if (isBlendSet_) { audioBlend_.Process(buffer, bufferSize); }
 
     size_t targetSize = bufferSize;
     size_t offset = 0;
