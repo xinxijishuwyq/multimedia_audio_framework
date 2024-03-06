@@ -298,6 +298,7 @@ int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
         params.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
         params.audioChannel = static_cast<AudioChannel>(audioStreamParams.channels);
         params.audioEncoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
+        params.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
     }
 
     return result;

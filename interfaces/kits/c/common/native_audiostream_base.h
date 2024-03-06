@@ -429,6 +429,26 @@ typedef enum {
 } OH_AudioStream_SourceType;
 
 /**
+ * @brief Defines the audio effect mode.
+ *
+ * @since 12
+ */
+typedef enum {
+    /**
+     * Audio Effect Mode effect none.
+     *
+     * @since 12
+     */
+    EFFECT_NONE = 0,
+    /**
+     * Audio Effect Mode effect default.
+     *
+     * @since 12
+     */
+    EFFECT_DEFAULT = 1,
+} OH_AudioStream_AudioEffectMode;
+
+/**
  * Declaring the audio stream builder.
  * The instance of builder is used for creating audio stream.
  *
@@ -586,6 +606,20 @@ typedef enum {
 typedef void (*OH_AudioRenderer_OutputDeviceChangeCallback)(OH_AudioRenderer* renderer, void* userData,
     OH_AudioStream_DeviceChangeReason reason);
 
+/**
+ * @brief This function pointer will point to the callback function that
+ * is used to write audio data with metadata
+ *
+ * @param renderer AudioRenderer where this event occurs.
+ * @param userData User data which is passed by user.
+ * @param audioData Audio data which is written by user.
+ * @param audioDataSize Audio data size which is the size of audio data written by user.
+ * @param metadata Metadata which is written by user.
+ * @param metadataSize Metadata size which is the size of metadata written by user.
+ * @since 12
+ */
+typedef OH_AudioStream_Result (*OH_AudioRenderer_WriteDataWithMetadataCallback)(OH_AudioRenderer* renderer,
+    void* userData, void* audioData, int32_t audioDataSize, void* metadata, int32_t metadataSize);
 #ifdef __cplusplus
 }
 

@@ -24,8 +24,15 @@ namespace OHOS {
 namespace AudioStandard {
 class OHAudioRendererModeCallback : public AudioRendererWriteCallback {
 public:
-    OHAudioRendererModeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer, void* userData)
-        : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    OHAudioRendererModeCallback(OH_AudioRenderer_Callbacks callbacks,
+        OH_AudioRenderer* audioRenderer, void* userData, AudioEncodingType encodingType)
+        : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData), encodingType_(encodingType)
+    {
+    }
+    OHAudioRendererModeCallback(OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback,
+        OH_AudioRenderer* audioRenderer, void* metadataUserData, AudioEncodingType encodingType)
+        : metadataCallback_(metadataCallback), ohAudioRenderer_(audioRenderer), metadataUserData_(metadataUserData),
+        encodingType_(encodingType)
     {
     }
 
@@ -33,8 +40,11 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback_;
     OH_AudioRenderer* ohAudioRenderer_;
     void* userData_;
+    void* metadataUserData_;
+    AudioEncodingType encodingType_;
 };
 
 class OHAudioRendererDeviceChangeCallback : public AudioRendererDeviceChangeCallback {
@@ -140,6 +150,9 @@ class OHAudioRenderer {
         int32_t Enqueue(const BufferDesc &bufDesc) const;
         int32_t SetSpeed(float speed);
         float GetSpeed();
+        AudioChannelLayout GetChannelLayout();
+        AudioEffectMode GetEffectMode();
+        int32_t SetEffectMode(AudioEffectMode effectMode);
 
         void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
         void SetPreferredFrameSize(int32_t frameSize);

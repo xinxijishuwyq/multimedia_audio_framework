@@ -211,6 +211,33 @@ OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer* renderer, floa
     audioRenderer->SetSpeed(speed);
     return AUDIOSTREAM_SUCCESS;
 }
+
+OH_AudioStream_Result OH_AudioRenderer_GetChannelLayout(OH_AudioRenderer* renderer,
+    OH_AudioChannelLayout* channelLayout)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    *channelLayout = (OH_AudioChannelLayout)audioRenderer->GetChannelLayout();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetEffectMode(OH_AudioRenderer* renderer,
+    OH_AudioStream_AudioEffectMode* effectMode)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    *effectMode = (OH_AudioStream_AudioEffectMode)audioRenderer->GetEffectMode();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_SetEffectMode(OH_AudioRenderer* renderer,
+    OH_AudioStream_AudioEffectMode effectMode)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    audioRenderer->SetEffectMode((AudioEffectMode)effectMode);
+    return AUDIOSTREAM_SUCCESS;
+}
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -375,15 +402,43 @@ float OHAudioRenderer::GetSpeed()
     return audioRenderer_->GetSpeed();
 }
 
-void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)
+AudioChannelLayout OHAudioRenderer::GetChannelLayout()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, CH_LAYOUT_UNKNOWN, "renderer client is nullptr");
+    AudioRendererParams params;
+    audioRenderer_->GetParams(params);
+    return params.channelLayout;
+}
+
+AudioEffectMode OHAudioRenderer::GetEffectMode()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, EFFECT_NONE, "renderer client is nullptr");
+    return audioRenderer_->GetAudioEffectMode();
+}
+
+int32_t OHAudioRenderer::SetEffectMode(AudioEffectMode effectMode)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->SetAudioEffectMode(effectMode);
+}
+
+void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData,
+    OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback, void* metadataUserData)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
 
-    if (callbacks.OH_AudioRenderer_OnWriteData != nullptr) {
-        std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(callbacks,
-                (OH_AudioRenderer*)this, userData);
+    AudioEncodingType encodingType = GetEncodingType();
+    if ((encodingType == ENCODING_AUDIOVIVID) && (metadataCallback != nullptr)) {
+        std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
+            metadataCallback, (OH_AudioRenderer*)this, metadataUserData, encodingType);
         audioRenderer_->SetRendererWriteCallback(callback);
+        AUDIO_INFO_LOG("The write callback function is for AudioVivid type");
+    } else if ((encodingType == ENCODING_PCM) && (callbacks.OH_AudioRenderer_OnWriteData != nullptr)) {
+        std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
+            callbacks, (OH_AudioRenderer*)this, userData, encodingType);
+        audioRenderer_->SetRendererWriteCallback(callback);
+        AUDIO_INFO_LOG("The write callback function is for PCM type");
     } else {
         AUDIO_WARNING_LOG("The write callback function is not set");
     }
@@ -447,10 +502,12 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnWriteData != nullptr, "pointer to the fuction is nullptr");
     BufferDesc bufDesc;
     audioRenderer->GetBufferDesc(bufDesc);
-    callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_,
-        userData_,
-        (void*)bufDesc.buffer,
-        bufDesc.bufLength);
+    if (encodingType_ == ENCODING_AUDIOVIVID) {
+        metadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
+            (void*)bufDesc.metaBuffer, bufDesc.metaLength)
+    } else {
+        callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_, (void*)bufDesc.buffer, bufDesc.bufLength);
+    }
     audioRenderer->Enqueue(bufDesc);
 }
 
