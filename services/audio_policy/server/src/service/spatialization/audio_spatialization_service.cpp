@@ -101,17 +101,11 @@ const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProx
 
 bool AudioSpatializationService::IsSpatializationEnabled()
 {
-    if (isFirstQuery_) {
-        isFirstQuery_ = false;
-        AudioSpatializationState tmpState = audioPolicyManager_.GetSpatializationState();
-        SetSpatializationEnabled(tmpState.spatializationEnabled);
-        SetHeadTrackingEnabled(tmpState.headTrackingEnabled);
-    }
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     return spatializationEnabledFlag_;
 }
 
-int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
+int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable, const bool passToDatabase)
 {
     AUDIO_INFO_LOG("Spatialization enabled is set to be: %{public}d", enable);
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
@@ -120,9 +114,11 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
     }
     spatializationEnabledFlag_ = enable;
     HandleSpatializationEnabledChange(enable);
-    audioPolicyManager_.SetSpatializationState({enable, headTrackingEnabledFlag_});
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
+    }
+    if (passToDatabase) {
+        audioPolicyManager_.SetSpatializationState({enable, headTrackingEnabledFlag_});
     }
     return SPATIALIZATION_SERVICE_OK;
 }
@@ -133,7 +129,7 @@ bool AudioSpatializationService::IsHeadTrackingEnabled()
     return headTrackingEnabledFlag_;
 }
 
-int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
+int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable, const bool passToDatabase)
 {
     AUDIO_INFO_LOG("Head tracking enabled is set to be: %{public}d", enable);
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
@@ -142,9 +138,11 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
     }
     headTrackingEnabledFlag_ = enable;
     HandleHeadTrackingEnabledChange(enable);
-    audioPolicyManager_.SetSpatializationState({spatializationEnabledFlag_, enable});
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
+    }
+    if (passToDatabase) {
+        audioPolicyManager_.SetSpatializationState({spatializationEnabledFlag_, enable});
     }
     return SPATIALIZATION_SERVICE_OK;
 }

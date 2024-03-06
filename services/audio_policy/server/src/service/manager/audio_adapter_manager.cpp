@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "audio_adapter_manager.h"
+#include "audio_spatialization_service.h"
 
 #include <memory>
 #include <unistd.h>
@@ -1173,30 +1174,29 @@ float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
 
 void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
 {
+    int32_t pack = 0;
     if (isFirstBoot) {
         SetSpatializationState({0, 0});
     } else {
         const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
         PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         const std::string settingKey = "spatialization_state";
-        int32_t pack;
         ErrCode ret = settingProvider.GetIntValue(settingKey, pack);
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
-        } else {
-            pack = {0};
         }
-        spatializationState_ = {pack & 1, pack >> 1};
+        spatializationState_ = {pack >> 1, pack & 1};
     }
-}
-
-AudioSpatializationState AudioAdapterManager::GetSpatializationState()
-{
-    return spatializationState_;
+    AudioSpatializationService::GetAudioSpatializationService().SetSpatializationEnabled(pack & 1, false);
+    AudioSpatializationService::GetAudioSpatializationService().SetHeadTrackingEnabled(pack >> 1, false);
 }
 
 void AudioAdapterManager::SetSpatializationState(AudioSpatializationState state)
 {
+    if (spatializationState_.headTrackingEnabled == state.headTrackingEnabled &&
+        spatializationState_.spatializationEnabled == state.spatializationEnabled) {
+        return;
+    }
     const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "spatialization_state";

@@ -136,8 +136,6 @@ public:
 
     bool IsAbsVolumeScene() const;
 
-    AudioSpatializationState GetSpatializationState();
-
     void SetSpatializationState(AudioSpatializationState state);
 
 private:

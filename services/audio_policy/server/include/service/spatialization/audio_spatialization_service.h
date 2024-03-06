@@ -48,9 +48,9 @@ public:
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
     bool IsSpatializationEnabled();
-    int32_t SetSpatializationEnabled(const bool enable);
+    int32_t SetSpatializationEnabled(const bool enable, const bool passToDatabase = true);
     bool IsHeadTrackingEnabled();
-    int32_t SetHeadTrackingEnabled(const bool enable);
+    int32_t SetHeadTrackingEnabled(const bool enable, const bool passToDatabase = true);
     int32_t RegisterSpatializationEnabledEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasSystemPermission);
     int32_t RegisterHeadTrackingEnabledEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
@@ -86,7 +86,6 @@ private:
     bool headTrackingEnabledFlag_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
-    bool isFirstQuery_ = true;
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;
