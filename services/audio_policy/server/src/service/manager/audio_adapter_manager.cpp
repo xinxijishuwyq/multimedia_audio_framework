@@ -1185,7 +1185,7 @@ void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
         }
-        spatializationState_ = {pack >> 1, pack & 1};
+        spatializationState_ = {pack & 1, pack << 1};
     }
     AudioSpatializationService::GetAudioSpatializationService().SetSpatializationEnabled(pack & 1, false);
     AudioSpatializationService::GetAudioSpatializationService().SetHeadTrackingEnabled(pack >> 1, false);
@@ -1200,7 +1200,8 @@ void AudioAdapterManager::SetSpatializationState(AudioSpatializationState state)
     const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "spatialization_state";
-    ErrCode ret = settingProvider.PutIntValue(settingKey, state.headTrackingEnabled << 1 | state.spatializationEnabled);
+    ErrCode ret =
+        settingProvider.PutIntValue(settingKey, (state.headTrackingEnabled << 1) | state.spatializationEnabled);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
     }
