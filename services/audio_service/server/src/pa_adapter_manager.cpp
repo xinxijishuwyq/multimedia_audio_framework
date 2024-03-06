@@ -84,7 +84,7 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
 
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
-    pa_stream *paStream = InitPaStream(processConfig, sessionId);
+    pa_stream *paStream = InitPaStream(processConfig, sessionId, false);
     CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init render");
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
@@ -126,7 +126,7 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
 
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
-    pa_stream *paStream = InitPaStream(processConfig, sessionId);
+    pa_stream *paStream = InitPaStream(processConfig, sessionId, true);
     CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init capture");
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
     CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
@@ -263,7 +263,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
     deviceName = "";
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         if (processConfig.isWakeupCapturer) {
-            int32_t no = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer();
+            int32_t no = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
             if (no < 0) {
                 AUDIO_ERR_LOG("ErrorCode: %{public}d", no);
                 return no;
@@ -286,7 +286,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
     return SUCCESS;
 }
 
-pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId)
+pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool isRecording)
 {
     AUDIO_DEBUG_LOG("Enter InitPaStream");
     std::lock_guard<std::mutex> lock(paElementsMutex_);
@@ -308,7 +308,8 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     CHECK_AND_RETURN_RET_LOG(SetPaProplist(propList, map, processConfig, streamName, sessionId) == 0, nullptr,
         "set pa proplist failed");
 
-    pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec, &map, propList);
+    pa_stream *paStream = pa_stream_new_with_proplist(context_, streamName.c_str(), &sampleSpec,
+        isRecording ? nullptr : &map, propList);
     if (!paStream) {
         int32_t error = pa_context_errno(context_);
         pa_proplist_free(propList);

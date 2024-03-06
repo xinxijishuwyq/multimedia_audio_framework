@@ -125,7 +125,7 @@ public:
 
     int32_t SetWakeUpAudioCapturer(InternalAudioCapturerOptions options);
 
-    int32_t SetWakeUpAudioCapturerFromAudioServer();
+    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
 
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
@@ -354,8 +354,6 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
-    int32_t GetA2dpDeviceVolume(const std::string& macAddress, int32_t& volume);
-
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
 
     void OnCapturerSessionRemoved(uint64_t sessionID);
@@ -467,7 +465,7 @@ private:
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
 
-    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo);
+    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo, const AudioStreamInfo &streamInfo);
 
     AudioIOHandle GetSinkIOHandle(InternalDeviceType deviceType);
 
@@ -527,8 +525,6 @@ private:
     void KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType);
 
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
-
-    DeviceType FetchHighPriorityDevice(bool isOutputDevice);
 
     int32_t HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated);
@@ -593,7 +589,9 @@ private:
 
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo);
 
-    void SetOffloadVolume(int32_t volume);
+    void SetOffloadVolume(AudioStreamType streamType, int32_t volume);
+
+    AudioStreamType OffloadStreamType();
 
     void RemoveDeviceInRouterMap(std::string networkId);
 

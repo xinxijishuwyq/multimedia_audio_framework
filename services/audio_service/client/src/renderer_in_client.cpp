@@ -223,6 +223,7 @@ private:
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
+    int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -781,8 +782,6 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
-    int64_t currentWritePos = totalBytesWritten_ / sizePerFrameInByte_;
-    timestamp.framePosition = currentWritePos;
 
     uint64_t readPos = 0;
     int64_t handleTime = 0;
@@ -792,14 +791,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
-    int64_t deltaPos = static_cast<uint64_t>(currentWritePos) >= readPos ?  currentWritePos - readPos : 0;
-    int64_t tempLatency = 0;
-    if (GetState() == RUNNING) {
-        tempLatency = 45000000; // 45000000 -> 45 ms
-    }
-    int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / curStreamParams_.samplingRate * AUDIO_US_PER_S;
-
-    int64_t audioTimeResult = handleTime + deltaTime + tempLatency;
+    int64_t audioTimeResult = handleTime;
 
     if (offloadEnable_) {
         uint64_t timeStamp = 0;
@@ -1140,7 +1132,7 @@ void RendererInClientInner::WriteCallbackFunc()
             }
             // call write here.
             int32_t result = curStreamParams_.encoding == ENCODING_PCM
-                ? Write(temp.buffer, temp.bufLength)
+                ? WriteInner(temp.buffer, temp.bufLength)
                 : Write(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
             if (result < 0) {
                 AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
@@ -1224,7 +1216,7 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
         AUDIO_ERR_LOG("Enqueue is not supported. Render mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
-    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERR_INVALID_PARAM, "Invalid buffer");
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr && bufDesc.bufLength != 0, ERR_INVALID_PARAM, "Invalid buffer");
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
             converter_ != nullptr && converter_->CheckInputValid(bufDesc),
         ERR_INVALID_PARAM, "Invalid buffer desc");
@@ -1376,6 +1368,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType)
     if (notifiedOperation_ != START_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Start failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), notifiedOperation_, notifiedResult_);
+        ipcStream_->Stop();
         return false;
     }
     waitLock.unlock();
@@ -1685,13 +1678,18 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     uint8_t *buffer;
     uint32_t bufferSize;
     converter_->GetOutputBufferStream(buffer, bufferSize);
-    return Write(buffer, bufferSize);
+    return WriteInner(buffer, bufferSize);
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
+    return WriteInner(buffer, bufferSize);
+}
+
+int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
+{
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);

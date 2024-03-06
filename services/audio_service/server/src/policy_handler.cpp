@@ -181,10 +181,10 @@ DeviceType PolicyHandler::GetActiveOutPutDevice()
     return deviceType_;
 }
 
-int32_t PolicyHandler::SetWakeUpAudioCapturerFromAudioServer()
+int32_t PolicyHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
-    int32_t ret = iPolicyProvider_->SetWakeUpAudioCapturerFromAudioServer();
+    int32_t ret = iPolicyProvider_->SetWakeUpAudioCapturerFromAudioServer(config);
     return ret;
 }
 

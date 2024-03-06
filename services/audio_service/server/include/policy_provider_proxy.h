@@ -29,7 +29,7 @@ public:
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 
-    int32_t SetWakeUpAudioCapturerFromAudioServer() override;
+    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
 
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint32_t sessionId) override;
