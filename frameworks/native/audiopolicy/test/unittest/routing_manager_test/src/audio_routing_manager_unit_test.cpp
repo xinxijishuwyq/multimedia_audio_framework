@@ -32,9 +32,9 @@ void AudioRoutingManagerUnitTest::SetUp(void) {}
 void AudioRoutingManagerUnitTest::TearDown(void) {}
 
 /**
- * @tc.name  : Test Audio_Routing_Manager_SetMicStateChangeCallback_001 via legal state
- * @tc.number: Audio_Routing_Manager_SetMicStateChangeCallback_001
- * @tc.desc  : Test SetMicStateChangeCallback interface. Returns success.
+ * @tc.name   : Test Audio_Routing_Manager_SetMicStateChangeCallback_001 via legal state
+ * @tc.number : Audio_Routing_Manager_SetMicStateChangeCallback_001
+ * @tc.desc   : Test SetMicStateChangeCallback interface. Returns success.
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetMicStateChangeCallback_001, TestSize.Level1)
 {
@@ -46,9 +46,9 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetMicStateChangeCallb
 }
 
 /**
- * @tc.name  : Test Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_001 via legal state
- * @tc.number: Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_001
- * @tc.desc  : Test getPreferredOutputDeviceForRendererInfo interface. Returns success.
+ * @tc.name   : Test Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_001 via legal state
+ * @tc.number : Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_001
+ * @tc.desc   : Test getPreferredOutputDeviceForRendererInfo interface. Returns success.
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_001, TestSize.Level1)
 {
@@ -60,9 +60,9 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredOutputDevi
 }
 
 /**
- * @tc.name  : Test Audio_Routing_Manager_PreferredOutputDeviceChangeCallback_001 via legal state
- * @tc.number: Audio_Routing_Manager_PreferredOutputDeviceChangeCallback_001
- * @tc.desc  : Test PreferredOutputDeviceChangeCallback interface. Returns success.
+ * @tc.name   : Test Audio_Routing_Manager_PreferredOutputDeviceChangeCallback_001 via legal state
+ * @tc.number : Audio_Routing_Manager_PreferredOutputDeviceChangeCallback_001
+ * @tc.desc   : Test PreferredOutputDeviceChangeCallback interface. Returns success.
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredOutputDeviceChangeCallback_001, TestSize.Level1)
 {
@@ -78,9 +78,9 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredOutputDeviceC
 }
 
 /**
- * @tc.name  : Test Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_001 via legal state
- * @tc.number: Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_001
- * @tc.desc  : Test getPreferredInputDeviceForCapturerInfo interface. Returns success.
+ * @tc.name   : Test Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_001 via legal state
+ * @tc.number : Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_001
+ * @tc.desc   : Test getPreferredInputDeviceForCapturerInfo interface. Returns success.
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_001, TestSize.Level1)
 {
@@ -92,9 +92,9 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredInputDevic
 }
 
 /**
- * @tc.name  : Test Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001 via legal state
- * @tc.number: Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001
- * @tc.desc  : Test PreferredInputDeviceChangeCallback interface. Returns success.
+ * @tc.name   : Test Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001 via legal state
+ * @tc.number : Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001
+ * @tc.desc   : Test PreferredInputDeviceChangeCallback interface. Returns success.
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001, TestSize.Level1)
 {
@@ -110,9 +110,9 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_PreferredInputDeviceCh
 }
 
 /**
- * @tc.name  : Test Audio_Routing_Manager_GetAvailableMicrophones_001 via legal state
- * @tc.number: Audio_Routing_Manager_GetAvailableMicrophones_001
- * @tc.desc  : Test GetAvailableMicrophones interface.
+ * @tc.name   : Test Audio_Routing_Manager_GetAvailableMicrophones_001 via legal state
+ * @tc.number : Audio_Routing_Manager_GetAvailableMicrophones_001
+ * @tc.desc   : Test GetAvailableMicrophones interface.
  */
 HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophones_001, TestSize.Level1)
 {
@@ -133,6 +133,19 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetAvailableMicrophone
         }
     }
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name   : Test Audio_Routing_Manager_GetActiveBluetoothDevice_001 via legal state
+ * @tc.number : Audio_Routing_Manager_GetActiveBluetoothDevice_001
+ * @tc.desc   : Test GetActiveBluetoothDevice interface.When BluetoothDevice is zero return default value.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_GetActiveBluetoothDevice_001, TestSize.Level1)
+{
+    //On bootup sco won't be connected. Hence Get should fail.
+    auto activeDescriptor = AudioRoutingManager::GetInstance()->GetActiveBluetoothDevice();
+    EXPECT_NE(nullptr, activeDescriptor);
+    EXPECT_EQ(DEVICE_TYPE_NONE, activeDescriptor->deviceType_);
 }
 } // namespace AudioStandard
 } // namespace OHOS
