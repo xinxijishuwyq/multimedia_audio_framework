@@ -1274,6 +1274,11 @@ napi_value NapiAudioRenderer::SetAudioEffectMode(napi_env env, napi_callback_inf
     };
     context->GetCbInfo(env, info, inputParser);
 
+    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+        NapiAudioError::ThrowError(env, context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
