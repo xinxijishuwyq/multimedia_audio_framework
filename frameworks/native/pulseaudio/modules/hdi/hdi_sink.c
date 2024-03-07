@@ -3038,7 +3038,6 @@ static int32_t RemoteSinkStateChange(pa_sink *s, pa_sink_state_t newState)
 
 static int32_t SinkSetStateInIoThreadCbStartPrimary(struct Userdata *u, pa_sink_state_t newState)
 {
-    u->primary.previousState = u->sink->thread_info.state;
     if (!PA_SINK_IS_OPENED(newState)) {
         return 0;
     }
@@ -3138,6 +3137,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
     AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass(u->primary.sinkAdapter->deviceClass), GetStateInfo(s->thread_info.state),
         GetStateInfo(newState));
+    u->primary.previousState = u->sink->thread_info.state;
 
     if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
         return RemoteSinkStateChange(s, newState);
