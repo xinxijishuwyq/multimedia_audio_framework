@@ -25,6 +25,7 @@ using OHOS::AudioStandard::StreamUsage;
 using OHOS::AudioStandard::AudioEncodingType;
 using OHOS::AudioStandard::ContentType;
 using OHOS::AudioStandard::SourceType;
+using OHOS::AudioStandard::AudioChannelLayout;
 
 static const int32_t RENDERER_TYPE = 1;
 static const int32_t CAPTURER_TYPE = 2;

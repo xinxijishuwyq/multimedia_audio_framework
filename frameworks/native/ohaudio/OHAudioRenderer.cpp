@@ -235,7 +235,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetEffectMode(OH_AudioRenderer* renderer,
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    audioRenderer->SetEffectMode((AudioEffectMode)effectMode);
+    audioRenderer->SetEffectMode((OHOS::AudioStandard::AudioEffectMode)effectMode);
     return AUDIOSTREAM_SUCCESS;
 }
 namespace OHOS {
