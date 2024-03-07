@@ -135,7 +135,6 @@ public:
     void SetAbsVolumeScene(bool isAbsVolumeScene);
 
     bool IsAbsVolumeScene() const;
-
 private:
     friend class PolicyCallbackImpl;
 

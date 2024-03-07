@@ -42,6 +42,7 @@ public:
         static AudioSpatializationService audioSpatializationService;
         return audioSpatializationService;
     }
+
     void Init(const std::vector<EffectChain> &effectChains);
     void Deinit(void);
 

@@ -47,7 +47,10 @@ static const std::string SPATIALIZATION_SETTINGKEY = "spatialization_state";
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 mutex g_adSpatializationProxyMutex;
 
-enum SpatializationStateOffset { SPATIALIZATION_OFFSET, HEADTRACKING_OFFSET };
+enum SpatializationStateOffset {
+    SPATIALIZATION_OFFSET,
+    HEADTRACKING_OFFSET
+};
 
 static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
 {

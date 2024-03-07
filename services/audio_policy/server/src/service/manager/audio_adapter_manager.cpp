@@ -1023,7 +1023,7 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
         AUDIO_WARNING_LOG("WriteRingerModeToKvStore Writing RingerMode:%{public}d to kvStore failed!", ringerMode);
     }
 
-    static const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
+    const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
     PowerMgr::SettingProvider& settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "ringer_mode";
     ErrCode ret = settingProvider.PutIntValue(settingKey, static_cast<int32_t>(ringerMode));
