@@ -35,10 +35,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum SpatializationStateOffset {
-    SPATIALIZATION_OFFSET,
-    HEADTRACKING_OFFSET
-};
 class AudioSpatializationService {
 public:
     static AudioSpatializationService& GetAudioSpatializationService()
@@ -46,24 +42,14 @@ public:
         static AudioSpatializationService audioSpatializationService;
         return audioSpatializationService;
     }
-    static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
-    {
-        state = {.spatializationEnabled = pack >> SPATIALIZATION_OFFSET & 1,
-            .headTrackingEnabled = pack >> HEADTRACKING_OFFSET & 1};
-    }
-    static uint32_t PackSpatializationState(AudioSpatializationState state)
-    {
-        return (state.spatializationEnabled << SPATIALIZATION_OFFSET) |
-            (state.headTrackingEnabled << HEADTRACKING_OFFSET);
-    }
     void Init(const std::vector<EffectChain> &effectChains);
     void Deinit(void);
 
     const sptr<IStandardAudioService> GetAudioServerProxy();
     bool IsSpatializationEnabled();
-    int32_t SetSpatializationEnabled(const bool enable, const bool passToDatabase = true);
+    int32_t SetSpatializationEnabled(const bool enable);
     bool IsHeadTrackingEnabled();
-    int32_t SetHeadTrackingEnabled(const bool enable, const bool passToDatabase = true);
+    int32_t SetHeadTrackingEnabled(const bool enable);
     int32_t RegisterSpatializationEnabledEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
         bool hasSystemPermission);
     int32_t RegisterHeadTrackingEnabledEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
@@ -91,14 +77,16 @@ private:
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange);
     int32_t UpdateSpatializationState();
     void HandleSpatializationStateChange(bool outputDeviceChange);
-    IAudioPolicyInterface& audioPolicyManager_;
+    void InitSpatializationState();
+    void WriteSpatializationStateToDb(AudioSpatializationState state);
+    IAudioPolicyInterface &audioPolicyManager_;
     std::string currentDeviceAddress_ = "";
     bool isSpatializationSupported_ = false;
     bool isHeadTrackingSupported_ = false;
-    bool spatializationEnabledFlag_ = false;
-    bool headTrackingEnabledFlag_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
+    bool isFirstBoot_ = false;
+    AudioSpatializationState spatializationStateFlag_ = {false};
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;

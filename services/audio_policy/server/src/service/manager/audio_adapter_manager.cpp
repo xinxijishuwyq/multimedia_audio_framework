@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "audio_adapter_manager.h"
-#include "audio_spatialization_service.h"
 
 #include <memory>
 #include <unistd.h>
@@ -81,9 +80,6 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
     "system_tone_for_notification"
 };
 
-static const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
-static const std::string SPATIALIZATION_SETTINGKEY = "spatialization_state";
-
 bool AudioAdapterManager::Init()
 {
     char testMode[10] = {0}; // 10 for system parameter usage
@@ -141,7 +137,6 @@ void AudioAdapterManager::InitKVStore()
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
-    InitSpatializationState(isFirstBoot);
 }
 
 void AudioAdapterManager::Deinit(void)
@@ -1028,6 +1023,7 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
         AUDIO_WARNING_LOG("WriteRingerModeToKvStore Writing RingerMode:%{public}d to kvStore failed!", ringerMode);
     }
 
+    static const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
     PowerMgr::SettingProvider& settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "ringer_mode";
     ErrCode ret = settingProvider.PutIntValue(settingKey, static_cast<int32_t>(ringerMode));
@@ -1172,38 +1168,6 @@ float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
     float roundValue = static_cast<int>(value * CONST_FACTOR);
 
     return static_cast<float>(roundValue) / CONST_FACTOR;
-}
-
-void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
-{
-    int32_t pack = 0;
-    if (isFirstBoot) {
-        WriteSpatializationStateToDb({0, 0});
-    } else {
-        PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_SETTINGKEY, pack);
-        if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
-        }
-        AudioSpatializationService::UnpackSpatializationState(pack, spatializationState_);
-        AudioSpatializationService::GetAudioSpatializationService().SetSpatializationEnabled(
-            spatializationState_.spatializationEnabled, false);
-        AudioSpatializationService::GetAudioSpatializationService().SetHeadTrackingEnabled(
-            spatializationState_.headTrackingEnabled, false);
-    }
-}
-
-void AudioAdapterManager::WriteSpatializationStateToDb(AudioSpatializationState state)
-{
-    CHECK_AND_RETURN_RET(AudioSpatializationService::PackSpatializationState(state) ==
-            AudioSpatializationService::PackSpatializationState(spatializationState_),);
-    PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY,
-        AudioSpatializationService::PackSpatializationState(state));
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
-    }
-    spatializationState_ = state;
 }
 
 void AudioAdapterManager::InitSystemSoundUriMap()

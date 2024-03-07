@@ -136,8 +136,6 @@ public:
 
     bool IsAbsVolumeScene() const;
 
-    void WriteSpatializationStateToDb(AudioSpatializationState state);
-
 private:
     friend class PolicyCallbackImpl;
 
@@ -195,7 +193,6 @@ private:
     void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
-    void InitSpatializationState(bool isFirstBoot);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -232,7 +229,6 @@ private:
     float getSystemVolumeInDb_;
     bool useNonlinearAlgo_;
     bool isAbsVolumeScene_ = false;
-    AudioSpatializationState spatializationState_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
