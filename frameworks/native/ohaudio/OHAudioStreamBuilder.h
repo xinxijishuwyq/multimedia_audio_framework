@@ -44,7 +44,7 @@ public:
     OH_AudioStream_Result SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
     void* userData);
     OH_AudioStream_Result SetWriteDataWithMetadataCallback(OH_AudioRenderer_WriteDataWithMetadataCallback callback,
-        void* userData)
+        void* userData);
 
     OH_AudioStream_Result SetSourceType(SourceType type);
     OH_AudioStream_Result SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);

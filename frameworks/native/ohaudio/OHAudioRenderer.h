@@ -154,7 +154,8 @@ class OHAudioRenderer {
         AudioEffectMode GetEffectMode();
         int32_t SetEffectMode(AudioEffectMode effectMode);
 
-        void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
+        void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData,
+            OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback, void* metadataUserData);
         void SetPreferredFrameSize(int32_t frameSize);
 
         void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
