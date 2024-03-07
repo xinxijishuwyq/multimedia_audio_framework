@@ -1173,17 +1173,6 @@ float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
     return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
-static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
-{
-    state = {.spatializationEnabled = pack >> SPATIALIZATION_OFFSET & 1,
-        .headTrackingEnabled = pack >> HEADTRACKING_OFFSET & 1};
-}
-
-static uint32_t PackSpatializationState(AudioSpatializationState state)
-{
-    return (state.spatializationEnabled << SPATIALIZATION_OFFSET) | (state.headTrackingEnabled << HEADTRACKING_OFFSET);
-}
-
 void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
 {
     int32_t pack = 0;
@@ -1196,7 +1185,7 @@ void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
         }
-        UnpackSpatializationState(pack, spatializationState_);
+        AudioSpatializationService::UnpackSpatializationState(pack, spatializationState_);
         AudioSpatializationService::GetAudioSpatializationService().SetSpatializationEnabled(
             spatializationState_.spatializationEnabled, false);
         AudioSpatializationService::GetAudioSpatializationService().SetHeadTrackingEnabled(
@@ -1206,10 +1195,11 @@ void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
 
 void AudioAdapterManager::WriteSpatializationStateToDb(AudioSpatializationState state)
 {
-    CHECK_AND_RETURN_RET(PackSpatializationState(state) == PackSpatializationState(spatializationState_), );
+    CHECK_AND_RETURN_RET(AudioSpatializationService::PackSpatializationState(state) ==
+            AudioSpatializationService::PackSpatializationState(spatializationState_), );
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "spatialization_state";
-    ErrCode ret = settingProvider.PutIntValue(settingKey, PackSpatializationState(state));
+    ErrCode ret = settingProvider.PutIntValue(settingKey, AudioSpatializationService::PackSpatializationState(state));
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
     }

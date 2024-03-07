@@ -36,6 +36,7 @@
 namespace OHOS {
 namespace AudioStandard {
 enum SpatializationStateOffset { SPATIALIZATION_OFFSET, HEADTRACKING_OFFSET };
+
 class AudioSpatializationService {
 public:
     static AudioSpatializationService& GetAudioSpatializationService()
@@ -43,7 +44,16 @@ public:
         static AudioSpatializationService audioSpatializationService;
         return audioSpatializationService;
     }
-
+    static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
+    {
+        state = {.spatializationEnabled = pack >> SPATIALIZATION_OFFSET & 1,
+            .headTrackingEnabled = pack >> HEADTRACKING_OFFSET & 1};
+    }
+    static uint32_t PackSpatializationState(AudioSpatializationState state)
+    {
+        return (state.spatializationEnabled << SPATIALIZATION_OFFSET) |
+            (state.headTrackingEnabled << HEADTRACKING_OFFSET);
+    }
     void Init(const std::vector<EffectChain> &effectChains);
     void Deinit(void);
 
