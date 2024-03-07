@@ -554,6 +554,9 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(napi
     if (context->status != napi_ok) {
         NapiAudioError::ThrowError(env, context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
+    } else if (context->rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
+        return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto executor = [context]() {
@@ -598,6 +601,9 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfoSync(
     AudioRendererInfo rendererInfo;
     if (NapiParamUtils::GetRendererInfo(env, &rendererInfo, argv[PARAM0]) != napi_ok) {
         NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    } else if (rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
         return result;
     }
 
@@ -824,11 +830,13 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_e
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
     if (valueType != napi_object) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
     }
 
     AudioRendererInfo rendererInfo;
     NapiParamUtils::GetRendererInfo(env, &rendererInfo, args[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(rendererInfo.streamUsage != StreamUsage::STREAM_USAGE_INVALID,
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM), "invalid streamUsage");
     AudioStreamType streamType = AudioSystemManager::GetStreamType(rendererInfo.contentType,
         rendererInfo.streamUsage);
 
@@ -856,7 +864,7 @@ void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_en
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
     if (valueType != napi_object) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
     }
 
     AudioCapturerInfo captureInfo;
