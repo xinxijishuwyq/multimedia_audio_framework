@@ -35,11 +35,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioSpatializationService {
 enum SpatializationStateOffset {
     SPATIALIZATION_OFFSET,
     HEADTRACKING_OFFSET
 };
+class AudioSpatializationService {
 public:
     static AudioSpatializationService& GetAudioSpatializationService()
     {
