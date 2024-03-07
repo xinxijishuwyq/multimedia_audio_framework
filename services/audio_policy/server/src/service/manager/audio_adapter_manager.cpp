@@ -1196,7 +1196,7 @@ void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
 void AudioAdapterManager::WriteSpatializationStateToDb(AudioSpatializationState state)
 {
     CHECK_AND_RETURN_RET(AudioSpatializationService::PackSpatializationState(state) ==
-            AudioSpatializationService::PackSpatializationState(spatializationState_), );
+            AudioSpatializationService::PackSpatializationState(spatializationState_),);
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY,
         AudioSpatializationService::PackSpatializationState(state));
