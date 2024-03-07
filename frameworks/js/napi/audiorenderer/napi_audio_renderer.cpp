@@ -1270,7 +1270,7 @@ napi_value NapiAudioRenderer::SetAudioEffectMode(napi_env env, napi_callback_inf
             NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context,
             NapiAudioEnum::IsLegalInputArgumentAudioEffectMode(context->audioEffectMode), "unsupport mode",
-            NAPI_ERR_UNSUPPORTED);
+            NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
