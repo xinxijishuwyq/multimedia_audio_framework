@@ -82,8 +82,6 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
 };
 
 static const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
-static const int32_t SPATIALIZATION_OFFSET = 0;
-static const int32_t HEADTRACKING_OFFSET = 1;
 
 bool AudioAdapterManager::Init()
 {
