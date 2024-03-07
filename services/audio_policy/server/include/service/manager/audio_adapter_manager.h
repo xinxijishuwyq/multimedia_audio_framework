@@ -136,7 +136,7 @@ public:
 
     bool IsAbsVolumeScene() const;
 
-    void SetSpatializationState(AudioSpatializationState state);
+    void WriteSpatializationStateToDb(AudioSpatializationState state);
 
 private:
     friend class PolicyCallbackImpl;

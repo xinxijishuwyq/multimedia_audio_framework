@@ -110,7 +110,7 @@ public:
 
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 
-    virtual void SetSpatializationState(AudioSpatializationState state) = 0;
+    virtual void WriteSpatializationStateToDb(AudioSpatializationState state) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

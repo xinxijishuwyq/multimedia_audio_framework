@@ -81,6 +81,10 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
     "system_tone_for_notification"
 };
 
+static const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
+static const int32_t SPATIALIZATION_OFFSET = 0;
+static const int32_t HEADTRACKING_OFFSET = 1;
+
 bool AudioAdapterManager::Init()
 {
     char testMode[10] = {0}; // 10 for system parameter usage
@@ -1025,7 +1029,6 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
         AUDIO_WARNING_LOG("WriteRingerModeToKvStore Writing RingerMode:%{public}d to kvStore failed!", ringerMode);
     }
 
-    const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
     PowerMgr::SettingProvider& settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "ringer_mode";
     ErrCode ret = settingProvider.PutIntValue(settingKey, static_cast<int32_t>(ringerMode));
@@ -1172,36 +1175,43 @@ float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
     return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
+static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
+{
+    state = {.spatializationEnabled = pack >> SPATIALIZATION_OFFSET & 1,
+        .headTrackingEnabled = pack >> HEADTRACKING_OFFSET & 1};
+}
+
+static uint32_t PackSpatializationState(AudioSpatializationState state)
+{
+    return (state.spatializationEnabled << SPATIALIZATION_OFFSET) | (state.headTrackingEnabled << HEADTRACKING_OFFSET);
+}
+
 void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
 {
     int32_t pack = 0;
     if (isFirstBoot) {
-        SetSpatializationState({0, 0});
+        WriteSpatializationStateToDb({0, 0});
     } else {
-        const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
         PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         const std::string settingKey = "spatialization_state";
         ErrCode ret = settingProvider.GetIntValue(settingKey, pack);
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
         }
-        spatializationState_ = {pack & 1, pack << 1};
+        UnpackSpatializationState(pack, spatializationState_);
+        AudioSpatializationService::GetAudioSpatializationService().SetSpatializationEnabled(
+            spatializationState_.spatializationEnabled, false);
+        AudioSpatializationService::GetAudioSpatializationService().SetHeadTrackingEnabled(
+            spatializationState_.headTrackingEnabled, false);
     }
-    AudioSpatializationService::GetAudioSpatializationService().SetSpatializationEnabled(pack & 1, false);
-    AudioSpatializationService::GetAudioSpatializationService().SetHeadTrackingEnabled(pack >> 1, false);
 }
 
-void AudioAdapterManager::SetSpatializationState(AudioSpatializationState state)
+void AudioAdapterManager::WriteSpatializationStateToDb(AudioSpatializationState state)
 {
-    if (spatializationState_.headTrackingEnabled == state.headTrackingEnabled &&
-        spatializationState_.spatializationEnabled == state.spatializationEnabled) {
-        return;
-    }
-    const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
+    CHECK_AND_RETURN_RET(PackSpatializationState(state) == PackSpatializationState(spatializationState_), );
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     const std::string settingKey = "spatialization_state";
-    ErrCode ret =
-        settingProvider.PutIntValue(settingKey, (state.headTrackingEnabled << 1) | state.spatializationEnabled);
+    ErrCode ret = settingProvider.PutIntValue(settingKey, PackSpatializationState(state));
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
     }

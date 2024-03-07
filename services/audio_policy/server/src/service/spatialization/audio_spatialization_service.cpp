@@ -118,7 +118,7 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable, 
         return ERROR;
     }
     if (passToDatabase) {
-        audioPolicyManager_.SetSpatializationState({enable, headTrackingEnabledFlag_});
+        audioPolicyManager_.WriteSpatializationStateToDb({enable, headTrackingEnabledFlag_});
     }
     return SPATIALIZATION_SERVICE_OK;
 }
@@ -142,7 +142,7 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable, co
         return ERROR;
     }
     if (passToDatabase) {
-        audioPolicyManager_.SetSpatializationState({spatializationEnabledFlag_, enable});
+        audioPolicyManager_.WriteSpatializationStateToDb({spatializationEnabledFlag_, enable});
     }
     return SPATIALIZATION_SERVICE_OK;
 }
