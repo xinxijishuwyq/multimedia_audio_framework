@@ -355,6 +355,17 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
         std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
         UpdateDeviceInfo(devDesc);
     }
+    std::string devices;
+    devices.append("add device ");
+    devices.append(std::to_string(static_cast<uint32_t>(deviceDescriptor->getType())));
+    devices.append(", connected device ");
+    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
+    for (auto iter : connectedDevices_) {
+        devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
+        devices.append(" ");
+    }
+    devices.append("\n");
+    AUDIO_INFO_LOG("%{public}s.", devices.c_str());
 }
 
 void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
@@ -380,6 +391,17 @@ void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devD
     RemoveCommunicationDevices(devDesc);
     RemoveMediaDevices(devDesc);
     RemoveCaptureDevices(devDesc);
+    std::string devices;
+    devices.append("remove device ");
+    devices.append(std::to_string(static_cast<uint32_t>(devDesc->getType())));
+    devices.append(", connected device ");
+    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
+    for (auto iter : connectedDevices_) {
+        devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
+        devices.append(" ");
+    }
+    devices.append("\n");
+    AUDIO_INFO_LOG("%{public}s.", devices.c_str());
 }
 
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
