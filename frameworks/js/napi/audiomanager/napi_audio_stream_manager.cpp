@@ -385,11 +385,11 @@ napi_value NapiAudioStreamMgr::GetEffectInfoArray(napi_env env, napi_callback_in
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        CHECK_AND_RETURN_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
             "invalid arguments");
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, argv[PARAM0], &valueType);
-        CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        CHECK_AND_RETURN_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
             "invalid arguments");
         context->status = NapiParamUtils::GetValueInt32(env, context->streamUsage, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "getstreamUsage failed",
