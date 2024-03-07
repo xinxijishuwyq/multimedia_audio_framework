@@ -82,6 +82,7 @@ static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
 };
 
 static const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
+static const std::string SPATIALIZATION_SETTINGKEY = "spatialization_state";
 
 bool AudioAdapterManager::Init()
 {
@@ -1180,8 +1181,7 @@ void AudioAdapterManager::InitSpatializationState(bool isFirstBoot)
         WriteSpatializationStateToDb({0, 0});
     } else {
         PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        const std::string settingKey = "spatialization_state";
-        ErrCode ret = settingProvider.GetIntValue(settingKey, pack);
+        ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_SETTINGKEY, pack);
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
         }
@@ -1198,8 +1198,8 @@ void AudioAdapterManager::WriteSpatializationStateToDb(AudioSpatializationState 
     CHECK_AND_RETURN_RET(AudioSpatializationService::PackSpatializationState(state) ==
             AudioSpatializationService::PackSpatializationState(spatializationState_), );
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    const std::string settingKey = "spatialization_state";
-    ErrCode ret = settingProvider.PutIntValue(settingKey, AudioSpatializationService::PackSpatializationState(state));
+    ErrCode ret = settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY,
+        AudioSpatializationService::PackSpatializationState(state));
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
     }
