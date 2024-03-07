@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#undef LOG_TAG
+#define LOG_TAG "AudioRoutingManager"
 
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"

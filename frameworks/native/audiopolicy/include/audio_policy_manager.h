@@ -15,6 +15,8 @@
 
 #ifndef ST_AUDIO_POLICY_MANAGER_H
 #define ST_AUDIO_POLICY_MANAGER_H
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyManager"
 
 #include <cstdint>
 #include "audio_client_tracker_callback_stub.h"

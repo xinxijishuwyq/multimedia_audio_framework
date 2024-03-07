@@ -15,6 +15,9 @@
 #ifndef FAST_AUDIO_STREAM_H
 #define FAST_AUDIO_STREAM_H
 
+#undef LOG_TAG
+#define LOG_TAG "RendererInClientInner"
+
 #include "renderer_in_client.h"
 
 #include <atomic>

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "HeadTracker"
 
 #include "audio_head_tracker.h"
 #include "audio_log.h"
