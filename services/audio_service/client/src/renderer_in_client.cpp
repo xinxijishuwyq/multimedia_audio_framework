@@ -1417,7 +1417,11 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
     waitLock.unlock();
 
-    state_ = PAUSED;
+    {
+        std::lock_guard<std::mutex> lock(writeDataMutex_);
+        state_ = PAUSED;
+    }
+    writeDataCV_.notify_all();
     statusLock.unlock();
 
     // in plan: call HiSysEventWrite
@@ -1473,7 +1477,11 @@ bool RendererInClientInner::StopAudioStream()
     }
     waitLock.unlock();
 
-    state_ = STOPPED;
+    {
+        std::lock_guard<std::mutex> lock(writeDataMutex_);
+        state_ = STOPPED;
+    }
+    writeDataCV_.notify_all();
     statusLock.unlock();
 
     // in plan: call HiSysEventWrite
@@ -1707,9 +1715,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write: Illegal state:%{public}u", state_.load());
 
     // hold lock
-    if (isBlendSet_) {
-        audioBlend_.Process(buffer, bufferSize);
-    }
+    if (isBlendSet_) { audioBlend_.Process(buffer, bufferSize); }
 
     size_t targetSize = bufferSize;
     size_t offset = 0;
@@ -1749,6 +1755,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         }
         // if readable size is enough, we will call write data to server
         int32_t ret = WriteCacheData();
+        if (ret == ERR_ILLEGAL_STATE) {
+            AUDIO_INFO_LOG("Status changed while write");
+            return bufferSize - targetSize;
+        }
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
 
