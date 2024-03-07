@@ -504,7 +504,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     audioRenderer->GetBufferDesc(bufDesc);
     if (encodingType_ == ENCODING_AUDIOVIVID) {
         metadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
-            (void*)bufDesc.metaBuffer, bufDesc.metaLength)
+            (void*)bufDesc.metaBuffer, bufDesc.metaLength);
     } else {
         callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_, (void*)bufDesc.buffer, bufDesc.bufLength);
     }
