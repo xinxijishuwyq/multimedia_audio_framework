@@ -19,6 +19,9 @@
 #include "audio_info.h"
 #include "i_audio_renderer_sink.h"
 
+#include <cstdio>
+#include <list>
+
 namespace OHOS {
 namespace AudioStandard {
 class BluetoothRendererSink : public IAudioRendererSink {

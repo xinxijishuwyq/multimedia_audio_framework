@@ -112,6 +112,9 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
+    AUDIO_INFO_LOG("PaAdapterManager::ReleaseRender set HiResExist false");
+    PolicyHandler::GetInstance().SetHiResExist(false);
+
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
@@ -366,6 +369,25 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         AudioPrivacyType privacyType = processConfig.privacyType;
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
+        
+        bool isHiResExist = PolicyHandler::GetInstance().GetHiResExist();
+        AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist isHiResExist : %{public}d", isHiResExist);
+
+        DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+        AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist deviceType : %{public}d", deviceType);
+        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && isHiResExist == false &&
+            processConfig.streamInfo.samplingRate >= 48000 && processConfig.streamInfo.format >= 2) {
+            PolicyHandler::GetInstance().SetHiResExist(true);
+            AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist stream.hires set 1");
+            pa_proplist_sets(propList, "stream.hires", "1");
+            pa_proplist_sets(propList, "stream.samplerate",
+                std::to_string(processConfig.streamInfo.samplingRate).c_str());
+            pa_proplist_sets(propList, "stream.format",
+                std::to_string(processConfig.streamInfo.format).c_str());
+        } else {
+            AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist stream.hires set 0");
+            pa_proplist_sets(propList, "stream.hires", "0");
+        }
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());

@@ -1526,5 +1526,12 @@ bool AudioRendererPrivate::IsFastRenderer()
 {
     return isFastRenderer_;
 }
+
+bool AudioRendererPrivate::GetHiResExistStatus()
+{
+    AUDIO_INFO_LOG("AudioPolicyManager::GetInstance().IsHiResExist() : %{public}d",
+        AudioPolicyManager::GetInstance().IsHiResExist());
+    return AudioPolicyManager::GetInstance().IsHiResExist();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

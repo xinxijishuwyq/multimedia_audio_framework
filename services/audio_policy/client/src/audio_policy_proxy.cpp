@@ -1999,5 +1999,40 @@ ConverterConfig AudioPolicyProxy::GetConverterConfig()
     result.outChannelLayout = reply.ReadUint64();
     return result;
 }
+
+bool AudioPolicyProxy::IsHiResExist()
+{
+    AUDIO_INFO_LOG("Enter AudioPolicyProxy::IsHiResExist");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "AudioPolicyProxy: WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIRES_EXIST), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
+        "IsHiResExist SendRequest failed, error: %d", error);
+    
+    bool replyReadBool = reply.ReadBool();
+    AUDIO_INFO_LOG("reply.ReadBool() : %{public}d", replyReadBool);
+    return replyReadBool;
+}
+
+void AudioPolicyProxy::SetHiResExist(bool hiResExist)
+{
+    AUDIO_INFO_LOG("Enter AudioPolicyProxy::SetHiResExist");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "AudioPolicyProxy: WriteInterfaceToken failed");
+    
+    data.WriteBool(hiResExist);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIRES_EXIST), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetHiResExist SendRequest failed, error: %d", error);
+}
 } // namespace AudioStandard
 } // namespace OHOS

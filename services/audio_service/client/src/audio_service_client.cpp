@@ -691,6 +691,7 @@ AudioServiceClient::~AudioServiceClient()
     lock_guard<mutex> lockdata(dataMutex_);
     AUDIO_INFO_LOG("start ~AudioServiceClient");
     UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
+    AudioPolicyManager::GetInstance().SetHiResExist(false);
     ResetPAAudioClient();
     StopTimer();
     std::lock_guard<std::mutex> lock(serviceClientLock_);
@@ -1035,6 +1036,21 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
+
+        bool isHiResExist = AudioPolicyManager::GetInstance().IsHiResExist();
+        AUDIO_INFO_LOG("SetPaProplist isHiResExist : %{public}d", isHiResExist);
+
+        DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
+        AUDIO_INFO_LOG("SetPaProplist deviceType : %{public}d", deviceType);
+        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && isHiResExist == false &&
+            audioParams.samplingRate >= 48000 && audioParams.format >= 2) {
+            hiResEnable = true;
+            AudioPolicyManager::GetInstance().SetHiResExist(true);
+            AUDIO_INFO_LOG("SetPaProplist stream.hires set 1");
+        } else {
+            hiResEnable = false;
+            AUDIO_INFO_LOG("SetPaProplist stream.hires set 0");
+        }
     }
 
     AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
@@ -1287,7 +1303,17 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        return StopStreamPlayback();
+        if (hiResEnable) {
+            AudioPolicyManager::GetInstance().SetHiResExist(false);
+            PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
+            int32_t ret = CorkStream();
+            if (ret) {
+                return ret;
+            }
+        } else {
+            return StopStreamPlayback();
+        }
+        return AUDIO_CLIENT_SUCCESS;
     } else {
         PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
         int32_t ret = CorkStream();

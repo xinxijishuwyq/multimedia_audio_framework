@@ -28,6 +28,7 @@
     { "name": "OH_AudioRenderer_GetFramesWritten" },
     { "name": "OH_AudioRenderer_GetTimestamp" },
     { "name": "OH_AudioRenderer_GetFrameSizeInCallback" },
+    { "name": "OH_AudioRenderer_GetHiResExistStatus" },
     { "name": "OH_AudioCapturer_Release" },
     { "name": "OH_AudioCapturer_Start" },
     { "name": "OH_AudioCapturer_Pause" },

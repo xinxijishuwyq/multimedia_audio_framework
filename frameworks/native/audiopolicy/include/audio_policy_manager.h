@@ -335,6 +335,10 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
+    bool IsHiResExist();
+
+    void SetHiResExist(bool hiresExist);
+
 private:
     AudioPolicyManager()
     {

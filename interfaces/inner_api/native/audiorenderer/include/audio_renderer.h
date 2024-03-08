@@ -930,6 +930,13 @@ public:
 
     virtual bool IsFastRenderer() = 0;
 
+    /**
+     * @brief Get the existence status of hires.
+     * 
+     * @since 11
+     */
+    virtual bool GetHiResExistStatus() = 0;
+
     virtual ~AudioRenderer();
 private:
     static std::mutex createRendererMutex_;

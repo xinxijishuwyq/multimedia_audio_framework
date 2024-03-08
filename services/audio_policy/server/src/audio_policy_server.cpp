@@ -2524,5 +2524,20 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
     int32_t apiTargetversion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
     return apiTargetversion;
 }
+
+bool AudioPolicyServer::IsHiResExist()
+{
+    AUDIO_INFO_LOG("Enter AudioPolicyServer::IsHiResExist");
+    return isHiResExist;
+}
+
+void AudioPolicyServer::SetHiResExist(bool hiresExist)
+{
+    AUDIO_INFO_LOG("Enter AudioPolicyServer::SetHiResExist");
+
+    AUDIO_INFO_LOG("before isHiResExist : %{public}d", isHiResExist);
+    isHiResExist = hiresExist;
+    AUDIO_INFO_LOG("after isHiResExist : %{public}d", isHiResExist);
+}
 } // namespace AudioStandard
 } // namespace OHOS

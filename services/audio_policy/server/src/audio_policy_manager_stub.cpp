@@ -1085,5 +1085,17 @@ void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &dat
     streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
     FetchInputDeviceForTrack(streamChangeInfo);
 }
+
+void AudioPolicyManagerStub::IsHiResExistInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool ret = IsHiResExist();
+    reply.WriteBool(ret);
+}
+
+void AudioPolicyManagerStub::SetHiResExistInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool hiresExist = data.ReadBool();
+    SetHiResExist(hiresExist);
+}
 } // namespace audio_policy
 } // namespace OHOS

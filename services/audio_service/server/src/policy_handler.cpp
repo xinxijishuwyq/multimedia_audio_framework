@@ -200,5 +200,16 @@ int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
 }
+
+bool PolicyHandler::GetHiResExist()
+{
+    return isHiResExist_;
+}
+
+void PolicyHandler::SetHiResExist(bool isHiResExist)
+{
+    AUDIO_INFO_LOG("isHiResExist_ is changed to %{public}d", isHiResExist);
+    isHiResExist_ = isHiResExist;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -388,6 +388,10 @@ public:
         sptr<AudioPolicyServer> server_;
     };
 
+    bool IsHiResExist() override;
+
+    void SetHiResExist(bool hiresExist) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -421,7 +425,8 @@ private:
     };
 
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
-
+    bool isHiResExist = false;
+    
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
         int64_t deactivateSessionId);

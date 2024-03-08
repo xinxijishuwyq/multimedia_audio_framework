@@ -1441,5 +1441,30 @@ ConverterConfig AudioPolicyManager::GetConverterConfig()
     }
     return gsp->GetConverterConfig();
 }
+
+bool AudioPolicyManager::IsHiResExist()
+{
+    AUDIO_INFO_LOG("Enter AudioPolicyManager::IsHiResExist");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("IsHiResExist: audio policy manager proxy is NULL.");
+        return false;
+    }
+    bool gspIsHiResExist = gsp->IsHiResExist();
+    AUDIO_INFO_LOG("return before gsp->IsHiResExist() : %{public}d", gspIsHiResExist);
+    return gspIsHiResExist;
+}
+
+void AudioPolicyManager::SetHiResExist(bool hiResExist)
+{
+    AUDIO_INFO_LOG("Enter AudioPolicyManager::SetHiResExist");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("SetHiResExist: audio policy manager proxy is NULL.");
+        return;
+    }
+    AUDIO_INFO_LOG("before gsp->SetHiResExist() : %{public}d", hiResExist);
+    gsp->SetHiResExist(hiResExist);
+}
 } // namespace AudioStandard
 } // namespace OHOS
