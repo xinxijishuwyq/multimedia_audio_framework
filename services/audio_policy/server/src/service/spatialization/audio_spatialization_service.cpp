@@ -442,7 +442,8 @@ void AudioSpatializationService::InitSpatializationState()
 void AudioSpatializationService::WriteSpatializationStateToDb()
 {
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY, PackSpatializationState(spatializationStateFlag_));
+    ErrCode ret =
+        settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY, PackSpatializationState(spatializationStateFlag_));
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
     }
