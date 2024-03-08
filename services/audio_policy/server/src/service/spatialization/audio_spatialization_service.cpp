@@ -444,7 +444,7 @@ void AudioSpatializationService::InitSpatializationState()
 
 void AudioSpatializationService::WriteSpatializationStateToDb(AudioSpatializationState state)
 {
-    CHECK_AND_RETURN_RET(PackSpatializationState(state) == PackSpatializationState(spatializationStateFlag_), );
+    CHECK_AND_RETURN_RET(PackSpatializationState(state) == PackSpatializationState(spatializationStateFlag_),);
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY, PackSpatializationState(state));
     if (ret != SUCCESS) {
