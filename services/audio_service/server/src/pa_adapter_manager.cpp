@@ -411,10 +411,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_channel_map_init(&map);
     map.channels = processConfig.streamInfo.channels;
     uint32_t channelsInLayout = ConvertChLayoutToPaChMap(processConfig.streamInfo.channelLayout, map);
-    if (channelsInLayout != processConfig.streamInfo.channels || channelsInLayout == 0) {
-        AUDIO_ERR_LOG("Invalid channel Layout");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(channelsInLayout == processConfig.streamInfo.channels && channelsInLayout != 0,
+        ERR_INVALID_PARAM, "Invalid channel Layout");
     return SUCCESS;
 }
 
