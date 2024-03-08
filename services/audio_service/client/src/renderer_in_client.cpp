@@ -794,6 +794,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
+    timestamp.framePosition = readPos;
     int64_t audioTimeResult = handleTime;
 
     if (offloadEnable_) {
@@ -1773,15 +1774,16 @@ int32_t RendererInClientInner::WriteCacheData()
     Trace traceCache("RendererInClientInner::WriteCacheData");
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
-    while (sizeInFrame * sizePerFrameInByte_ < clientSpanSizeInByte_) {
-        // wait for server read some data
-        std::unique_lock<std::mutex> lock(writeDataMutex_);
-        int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-        std::cv_status stat = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout));
-        CHECK_AND_RETURN_RET_LOG(stat == std::cv_status::no_timeout, ERROR, "write data time out");
-        if (state_ != RUNNING) { return ERR_ILLEGAL_STATE; }
-        sizeInFrame = clientBuffer_->GetAvailableDataFrames();
-    }
+
+    int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
+    std::unique_lock<std::mutex> lock(writeDataMutex_);
+    bool stopWaiting = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout), [this, sizeInFrame] {
+        return (state_ != RUNNING) || ((sizeInFrame * sizePerFrameInByte_) >= clientSpanSizeInByte_);
+    });
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write while state is not running");
+    CHECK_AND_RETURN_RET_LOG(stopWaiting == true, ERROR, "write data time out, mode is %{public}s",
+        (offloadEnable_ ? "offload" : "normal"));
+
     BufferDesc desc = {};
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
