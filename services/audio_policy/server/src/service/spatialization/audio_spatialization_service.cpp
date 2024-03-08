@@ -137,7 +137,7 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
-    WriteSpatializationStateToDb({enable, spatializationStateFlag_.headTrackingEnabled});
+    WriteSpatializationStateToDb();
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -159,7 +159,7 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
-    WriteSpatializationStateToDb({spatializationStateFlag_.spatializationEnabled, enable});
+    WriteSpatializationStateToDb();
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -433,24 +433,19 @@ void AudioSpatializationService::InitSpatializationState()
     ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_SETTINGKEY, pack);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
-        isFirstBoot_ = true;
-    }
-    if (isFirstBoot_) {
-        WriteSpatializationStateToDb({0, 0});
+        WriteSpatializationStateToDb();
     } else {
         UnpackSpatializationState(pack, spatializationStateFlag_);
     }
 }
 
-void AudioSpatializationService::WriteSpatializationStateToDb(AudioSpatializationState state)
+void AudioSpatializationService::WriteSpatializationStateToDb()
 {
-    CHECK_AND_RETURN_RET(PackSpatializationState(state) == PackSpatializationState(spatializationStateFlag_),);
     PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY, PackSpatializationState(state));
+    ErrCode ret = settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY, PackSpatializationState(spatializationStateFlag_));
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
     }
-    spatializationStateFlag_ = state;
 }
 } // namespace AudioStandard
 } // namespace OHOS

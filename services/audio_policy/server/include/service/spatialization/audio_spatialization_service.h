@@ -79,14 +79,13 @@ private:
     int32_t UpdateSpatializationState();
     void HandleSpatializationStateChange(bool outputDeviceChange);
     void InitSpatializationState();
-    void WriteSpatializationStateToDb(AudioSpatializationState state);
+    void WriteSpatializationStateToDb();
     IAudioPolicyInterface &audioPolicyManager_;
     std::string currentDeviceAddress_ = "";
     bool isSpatializationSupported_ = false;
     bool isHeadTrackingSupported_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
-    bool isFirstBoot_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
