@@ -21,6 +21,7 @@
 #include "ipc_skeleton.h"
 #include "hisysevent.h"
 #include "iservice_registry.h"
+#include "setting_provider.h"
 #include "system_ability_definition.h"
 #include "parameter.h"
 
@@ -42,8 +43,26 @@ static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_BT_MUSIC";
 static const std::string SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL = "SPATIALIZATION_AND_HEADTRACKING";
 static const std::string SPATIALIZATION_SUPPORTED_LABEL = "SPATIALIZATION";
 static const std::string HEAD_TRACKING_SUPPORTED_LABEL = "HEADTRACKING";
+static const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
+static const std::string SPATIALIZATION_SETTINGKEY = "spatialization_state";
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 mutex g_adSpatializationProxyMutex;
+
+enum SpatializationStateOffset {
+    SPATIALIZATION_OFFSET,
+    HEADTRACKING_OFFSET
+};
+
+static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &state)
+{
+    state = {.spatializationEnabled = pack >> SPATIALIZATION_OFFSET & 1,
+        .headTrackingEnabled = pack >> HEADTRACKING_OFFSET & 1};
+}
+
+static uint32_t PackSpatializationState(AudioSpatializationState state)
+{
+    return (state.spatializationEnabled << SPATIALIZATION_OFFSET) | (state.headTrackingEnabled << HEADTRACKING_OFFSET);
+}
 
 static bool IsAudioSpatialDeviceStateEqual(const AudioSpatialDeviceState &a, const AudioSpatialDeviceState &b)
 {
@@ -71,6 +90,7 @@ void AudioSpatializationService::Init(const std::vector<EffectChain> &effectChai
             isHeadTrackingSupported_ = true;
         }
     }
+    InitSpatializationState();
 }
 
 void AudioSpatializationService::Deinit(void)
@@ -103,42 +123,44 @@ const sptr<IStandardAudioService> AudioSpatializationService::GetAudioServerProx
 bool AudioSpatializationService::IsSpatializationEnabled()
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    return spatializationEnabledFlag_;
+    return spatializationStateFlag_.spatializationEnabled;
 }
 
 int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
 {
     AUDIO_INFO_LOG("Spatialization enabled is set to be: %{public}d", enable);
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    if (spatializationEnabledFlag_ == enable) {
+    if (spatializationStateFlag_.spatializationEnabled == enable) {
         return SPATIALIZATION_SERVICE_OK;
     }
-    spatializationEnabledFlag_ = enable;
+    spatializationStateFlag_.spatializationEnabled = enable;
     HandleSpatializationEnabledChange(enable);
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
+    WriteSpatializationStateToDb();
     return SPATIALIZATION_SERVICE_OK;
 }
 
 bool AudioSpatializationService::IsHeadTrackingEnabled()
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    return headTrackingEnabledFlag_;
+    return spatializationStateFlag_.headTrackingEnabled;
 }
 
 int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
 {
     AUDIO_INFO_LOG("Head tracking enabled is set to be: %{public}d", enable);
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    if (headTrackingEnabledFlag_ == enable) {
+    if (spatializationStateFlag_.headTrackingEnabled == enable) {
         return SPATIALIZATION_SERVICE_OK;
     }
-    headTrackingEnabledFlag_ = enable;
+    spatializationStateFlag_.headTrackingEnabled = enable;
     HandleHeadTrackingEnabledChange(enable);
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
+    WriteSpatializationStateToDb();
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -330,9 +352,9 @@ void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddres
 
 int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDeviceChange)
 {
-    bool spatializationEnabled = spatializationEnabledFlag_ && IsSpatializationSupported() &&
+    bool spatializationEnabled = spatializationStateFlag_.spatializationEnabled && IsSpatializationSupported() &&
         IsSpatializationSupportedForDevice(currentDeviceAddress_);
-    bool headTrackingEnabled = headTrackingEnabledFlag_ && IsHeadTrackingSupported() &&
+    bool headTrackingEnabled = spatializationStateFlag_.headTrackingEnabled && IsHeadTrackingSupported() &&
         IsHeadTrackingSupportedForDevice(currentDeviceAddress_) && spatializationEnabled;
     if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled)) {
         AUDIO_INFO_LOG("no need to update real spatialization state");
@@ -402,6 +424,29 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
             currentDeviceAddress_,
             sessionIDToSpatializationEnabledMap));
         notifyOffloadThread.detach();
+    }
+}
+
+void AudioSpatializationService::InitSpatializationState()
+{
+    int32_t pack = 0;
+    PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_SETTINGKEY, pack);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
+        WriteSpatializationStateToDb();
+    } else {
+        UnpackSpatializationState(pack, spatializationStateFlag_);
+    }
+}
+
+void AudioSpatializationService::WriteSpatializationStateToDb()
+{
+    PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret =
+        settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY, PackSpatializationState(spatializationStateFlag_));
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
     }
 }
 } // namespace AudioStandard
