@@ -67,6 +67,8 @@ const uint64_t AUDIO_S_TO_NS = 1000000000;
 const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
+const uint32_t HIRES_SAMPLE_RATE = 48000;
+const uint8_t HIRES_FORMAT = 2;
 
 const std::string FORCED_DUMP_PULSEAUDIO_STACKTRACE = "dump_pulseaudio_stacktrace";
 const std::string RECOVERY_AUDIO_SERVER = "recovery_audio_server";
@@ -1007,6 +1009,24 @@ int32_t AudioServiceClient::InitializeAudioCache()
     return AUDIO_CLIENT_SUCCESS;
 }
 
+void AudioServiceClient::HiResExistStatus(pa_proplist *propList, AudioStreamParams &audioParams)
+{
+    bool isHiResExist = AudioPolicyManager::GetInstance().IsHiResExist();
+    AUDIO_INFO_LOG("SetPaProplist isHiResExist : %{public}d", isHiResExist);
+
+    DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
+    AUDIO_INFO_LOG("SetPaProplist deviceType : %{public}d", deviceType);
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && isHiResExist == false &&
+        audioParams.samplingRate >= HIRES_SAMPLE_RATE && audioParams.format >= HIRES_FORMAT) {
+        hiResEnable = true;
+        AudioPolicyManager::GetInstance().SetHiResExist(true);
+        AUDIO_INFO_LOG("SetPaProplist stream.hires set 1");
+    } else {
+        hiResEnable = false;
+        AUDIO_INFO_LOG("SetPaProplist stream.hires set 0");
+    }
+}
+
 int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map &map,
     AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime)
 {
@@ -1036,21 +1056,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
-
-        bool isHiResExist = AudioPolicyManager::GetInstance().IsHiResExist();
-        AUDIO_INFO_LOG("SetPaProplist isHiResExist : %{public}d", isHiResExist);
-
-        DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
-        AUDIO_INFO_LOG("SetPaProplist deviceType : %{public}d", deviceType);
-        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && isHiResExist == false &&
-            audioParams.samplingRate >= 48000 && audioParams.format >= 2) {
-            hiResEnable = true;
-            AudioPolicyManager::GetInstance().SetHiResExist(true);
-            AUDIO_INFO_LOG("SetPaProplist stream.hires set 1");
-        } else {
-            hiResEnable = false;
-            AUDIO_INFO_LOG("SetPaProplist stream.hires set 0");
-        }
+        HiResExistStatus(propList, audioParams);
     }
 
     AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);

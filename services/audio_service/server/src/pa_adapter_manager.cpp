@@ -31,6 +31,8 @@ namespace AudioStandard {
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 8; // 8S
+const uint32_t HIRES_SAMPLE_RATE = 48000;
+const uint8_t HIRES_FORMAT = 2;
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -336,6 +338,28 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     return paStream;
 }
 
+void PaAdapterManager::HiResExistStatus(pa_proplist *propList, AudioProcessConfig &processConfig)
+{
+    bool isHiResExist = PolicyHandler::GetInstance().GetHiResExist();
+    AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist isHiResExist : %{public}d", isHiResExist);
+
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist deviceType : %{public}d", deviceType);
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && processConfig.streamInfo.samplingRate >= HIRES_SAMPLE_RATE &&
+        processConfig.streamInfo.format >= HIRES_FORMAT  && isHiResExist == false) {
+        PolicyHandler::GetInstance().SetHiResExist(true);
+        AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist stream.hires set 1");
+        pa_proplist_sets(propList, "stream.hires", "1");
+        pa_proplist_sets(propList, "stream.samplerate",
+            std::to_string(processConfig.streamInfo.samplingRate).c_str());
+        pa_proplist_sets(propList, "stream.format",
+            std::to_string(processConfig.streamInfo.format).c_str());
+    } else {
+        AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist stream.hires set 0");
+        pa_proplist_sets(propList, "stream.hires", "0");
+    }
+}
+
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
     const std::string &streamName, uint32_t sessionId)
 {
@@ -369,25 +393,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         AudioPrivacyType privacyType = processConfig.privacyType;
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
-        
-        bool isHiResExist = PolicyHandler::GetInstance().GetHiResExist();
-        AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist isHiResExist : %{public}d", isHiResExist);
-
-        DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-        AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist deviceType : %{public}d", deviceType);
-        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && isHiResExist == false &&
-            processConfig.streamInfo.samplingRate >= 48000 && processConfig.streamInfo.format >= 2) {
-            PolicyHandler::GetInstance().SetHiResExist(true);
-            AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist stream.hires set 1");
-            pa_proplist_sets(propList, "stream.hires", "1");
-            pa_proplist_sets(propList, "stream.samplerate",
-                std::to_string(processConfig.streamInfo.samplingRate).c_str());
-            pa_proplist_sets(propList, "stream.format",
-                std::to_string(processConfig.streamInfo.format).c_str());
-        } else {
-            AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist stream.hires set 0");
-            pa_proplist_sets(propList, "stream.hires", "0");
-        }
+        HiResExistStatus(propList, processConfig);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());

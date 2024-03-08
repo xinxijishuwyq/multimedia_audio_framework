@@ -798,6 +798,7 @@ private:
         AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);
 
     void UpdatePropListForFlush();
+    void HiResExistStatus(pa_proplist *propList, AudioStreamParams &audioParams);
 
     // Error code used
     static const int32_t AUDIO_CLIENT_SUCCESS = 0;

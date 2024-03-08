@@ -932,7 +932,7 @@ public:
 
     /**
      * @brief Get the existence status of hires.
-     * 
+     *
      * @since 11
      */
     virtual bool GetHiResExistStatus() = 0;

@@ -214,14 +214,6 @@ OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer* renderer, floa
     audioRenderer->SetSpeed(speed);
     return AUDIOSTREAM_SUCCESS;
 }
-
-OH_AudioStream_Result OH_AudioRenderer_GetHiResExistStatus(OH_AudioRenderer* renderer, bool* isHiResExist)
-{
-    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    *isHiResExist = audioRenderer->GetHiResExistStatus();
-    return AUDIOSTREAM_SUCCESS;
-}
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()

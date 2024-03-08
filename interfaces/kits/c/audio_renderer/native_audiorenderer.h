@@ -249,17 +249,6 @@ OH_AudioStream_Result OH_AudioRenderer_GetSpeed(OH_AudioRenderer* renderer, floa
 * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
 */
 OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer* renderer, float speed);
-
-/*
-* Query the existence status of hires
-*
-* @since 11
-*
-* @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
-* @param isHiResExist
-* @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
-*/
-OH_AudioStream_Result OH_AudioRenderer_GetHiResExistStatus(OH_AudioRenderer* renderer, bool* isHiResExist);
 #ifdef __cplusplus
 }
 #endif
