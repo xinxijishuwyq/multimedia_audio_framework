@@ -67,6 +67,10 @@ static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_ULTRASONIC,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
+static constexpr int32_t VM_MANAGER_UID = 5010;
+static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
+    VM_MANAGER_UID
+};
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioServer, AUDIO_DISTRIBUTED_SERVICE_ID, true)
 
@@ -684,6 +688,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     AudioProcessConfig resetConfig(config);
     if (callerUid == MEDIA_SERVICE_UID) {
         AUDIO_INFO_LOG("Create process for media service.");
+    } else if (RECORD_CHECK_FORWARD_LIST.count(callerUid)) {
+        AUDIO_INFO_LOG("Check forward calling for uid:%{public}d", callerUid);
+        resetConfig.appInfo.appTokenId = IPCSkeleton::GetFirstTokenID();
     } else if (resetConfig.appInfo.appPid != callerPid || resetConfig.appInfo.appUid != callerUid ||
         resetConfig.appInfo.appTokenId != IPCSkeleton::GetCallingTokenID()) {
         AUDIO_INFO_LOG("Use true client appInfo instead.");
