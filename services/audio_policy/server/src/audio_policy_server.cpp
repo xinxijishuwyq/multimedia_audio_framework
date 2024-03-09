@@ -70,6 +70,7 @@ constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_CAAS_SA = 5527;
 constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr uid_t UID_MEDIA_SA = 1013;
+constexpr uid_t UID_VM_MANAGER = 5010;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
@@ -93,6 +94,10 @@ const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
 const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
     UID_MEDIA_SA,
     UID_CAST_ENGINE_SA
+};
+
+const std::set<uid_t> RECORD_CHECK_FORWARD_LIST = {
+    UID_VM_MANAGER
 };
 
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
@@ -1297,6 +1302,10 @@ bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint64_t 
 Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
     uint32_t appTokenId)
 {
+    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("check forward TokenId with callingUid:%{public}d", callingUid);
+        return IPCSkeleton::GetFirstTokenID();
+    }
     return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
         appTokenId : callingTokenId;
 }
@@ -1304,6 +1313,10 @@ Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t c
 uint64_t AudioPolicyServer::GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId,
     uint64_t appFullTokenId)
 {
+    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("check forward FullTokenId with callingUid:%{public}d", callingUid);
+        return IPCSkeleton::GetFirstFullTokenID();
+    }
     return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
         appFullTokenId : callingFullTokenId;
 }
