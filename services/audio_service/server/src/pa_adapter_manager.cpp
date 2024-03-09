@@ -333,16 +333,19 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     return paStream;
 }
 
+bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
+{
+    if (streamUsage == STREAM_USAGE_SYSTEM || streamUsage == STREAM_USAGE_DTMF ||
+        streamUsage == STREAM_USAGE_ENFORCED_TONE || streamUsage == STREAM_USAGE_ULTRASONIC ||
+        streamUsage == STREAM_USAGE_NAVIGATION || streamUsage == STREAM_USAGE_NOTIFICATION) {
+        return true;
+    }
+    return false;
+}
+
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
     const std::string &streamName, uint32_t sessionId)
 {
-    bool isEffectNone = false;
-    StreamUsage mStreamUsage = processConfig.rendererInfo.streamUsage;
-    if (mStreamUsage == STREAM_USAGE_SYSTEM || mStreamUsage == STREAM_USAGE_DTMF ||
-        mStreamUsage == STREAM_USAGE_ENFORCED_TONE || mStreamUsage == STREAM_USAGE_ULTRASONIC ||
-        mStreamUsage == STREAM_USAGE_NAVIGATION || mStreamUsage == STREAM_USAGE_NOTIFICATION) {
-            isEffectNone = true;
-    }
     // for remote audio device router filter
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionId).c_str());
     pa_proplist_sets(propList, "stream.client.uid", std::to_string(processConfig.appInfo.appUid).c_str());
@@ -351,7 +354,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "media.name", streamName.c_str());
     const std::string effectSceneName = GetEffectSceneName(processConfig.streamType);
     pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
-    pa_proplist_sets(propList, "scene.mode", isEffectNone ? "EFFECT_NONE" : "EFFECT_DEFAULT");
+    pa_proplist_sets(propList, "scene.mode",
+        IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
     float mVolumeFactor = 1.0f;
     float mPowerVolumeFactor = 1.0f;
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
@@ -366,6 +370,10 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         AudioPrivacyType privacyType = processConfig.privacyType;
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
+        pa_proplist_sets(propList, "spatialization.enabled",
+            std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
+        pa_proplist_sets(propList, "headtracking.enabled",
+            std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
@@ -383,10 +391,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_channel_map_init(&map);
     map.channels = processConfig.streamInfo.channels;
     uint32_t channelsInLayout = ConvertChLayoutToPaChMap(processConfig.streamInfo.channelLayout, map);
-    if (channelsInLayout != processConfig.streamInfo.channels || channelsInLayout == 0) {
-        AUDIO_ERR_LOG("Invalid channel Layout");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(channelsInLayout == processConfig.streamInfo.channels && channelsInLayout == 0,
+        ERR_INVALID_PARAM, "Invalid channel Layout");
     return SUCCESS;
 }
 

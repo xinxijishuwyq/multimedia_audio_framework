@@ -538,5 +538,10 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
 {
     return stream_->OffloadSetVolume(volume);
 }
+
+int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
+{
+    return stream_->UpdateSpatializationState(spatializationEnabled, headTrackingEnabled);
+}
 } // namespace AudioStandard
 } // namespace OHOS
