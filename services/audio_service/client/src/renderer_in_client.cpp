@@ -1777,7 +1777,8 @@ int32_t RendererInClientInner::WriteCacheData()
 
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
     std::unique_lock<std::mutex> lock(writeDataMutex_);
-    bool stopWaiting = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout), [this, sizeInFrame] {
+    bool stopWaiting = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout), [this, &sizeInFrame] {
+        sizeInFrame = clientBuffer_->GetAvailableDataFrames();
         return (state_ != RUNNING) || ((sizeInFrame * sizePerFrameInByte_) >= clientSpanSizeInByte_);
     });
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write while state is not running");
