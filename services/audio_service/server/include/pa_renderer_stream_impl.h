@@ -33,7 +33,8 @@ public:
     int32_t Stop() override;
     int32_t Release() override;
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
-    int32_t GetCurrentTimeStamp(uint64_t &timeStamp) override;
+    int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
     int32_t SetLowPowerVolume(float volume) override;
@@ -55,7 +56,7 @@ public:
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
-    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
     int32_t OffloadSetVolume(float volume) override;
     size_t GetWritableSize() override;
@@ -125,6 +126,8 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     FILE *dumpFile_ = nullptr;
     // offload end
+
+    bool getPosFromHdi_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

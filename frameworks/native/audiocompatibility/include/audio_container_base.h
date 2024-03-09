@@ -139,10 +139,10 @@ public:
     /**
     * Provides the current timestamp for playback/record stream created using CreateStreamGa
     *
-    * @param timeStamp will be filled up with current timestamp
+    * @param timestamp will be filled up with current timestamp
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetCurrentTimeStamp(uint64_t &timeStamp, const int32_t &trackId);
+    int32_t GetCurrentTimeStamp(uint64_t &timestamp, const int32_t &trackId);
 
     /**
     * Provides the current latency for playback/record stream created using CreateStreamGa

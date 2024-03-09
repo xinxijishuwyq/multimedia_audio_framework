@@ -356,17 +356,17 @@ int32_t CapturerInServer::Release()
     return SUCCESS;
 }
 
-int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
+int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_WARNING_LOG("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
     stream_->GetStreamFramesRead(framePos);
-    stream_->GetCurrentTimeStamp(timeStamp);
+    stream_->GetCurrentTimeStamp(timestamp);
     if (resetTime_) {
         resetTime_ = false;
-        resetTimestamp_ = timeStamp;
+        resetTimestamp_ = timestamp;
     }
     return SUCCESS;
 }
