@@ -1779,7 +1779,7 @@ int32_t RendererInClientInner::WriteCacheData()
     std::unique_lock<std::mutex> lock(writeDataMutex_);
     bool stopWaiting = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout), [this, &sizeInFrame] {
         sizeInFrame = clientBuffer_->GetAvailableDataFrames();
-        return (state_ != RUNNING) || ((sizeInFrame * sizePerFrameInByte_) >= clientSpanSizeInByte_);
+        return (state_ != RUNNING) || (sizeInFrame >= 0 && static_cast<uint32_t>(sizeInFrame) >= spanSizeInFrame_);
     });
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write while state is not running");
     CHECK_AND_RETURN_RET_LOG(stopWaiting == true, ERROR, "write data time out, mode is %{public}s",
