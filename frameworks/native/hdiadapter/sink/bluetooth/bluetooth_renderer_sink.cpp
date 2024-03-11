@@ -22,7 +22,6 @@
 #include <string>
 #include <list>
 #include <cinttypes>
-#include <fstream>
 
 #include <dlfcn.h>
 #include <unistd.h>
@@ -129,14 +128,12 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     int64_t BytesToNanoTime(size_t lens);
     FILE *dumpFile_ = nullptr;
-    std::ofstream beforeRenderFrame;
 };
 
 BluetoothRendererSinkInner::BluetoothRendererSinkInner()
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioRender_(nullptr), handle_(nullptr),
-      beforeRenderFrame("/data/data/.pulse_dir/bluetooth_renderer_sink_before_renderframe.pcm")
+      audioRender_(nullptr), handle_(nullptr)
 {
     attr_ = {};
 }
@@ -420,7 +417,6 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
-    beforeRenderFrame.write(&data, len);
     while (true) {
         if (*reinterpret_cast<int8_t*>(&data) == 0) {
             Trace::Count("BluetoothRendererSinkInner::RenderFrame", PCM_MAYBE_SILENT);
