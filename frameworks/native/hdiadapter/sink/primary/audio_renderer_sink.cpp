@@ -143,6 +143,7 @@ private:
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
     int32_t InitRender();
+    void ReleaseRunningLock();
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -836,10 +837,8 @@ int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
     return SUCCESS;
 }
 
-int32_t AudioRendererSinkInner::Stop(void)
+void AudioRendererSinkInner::ReleaseRunningLock()
 {
-    Trace trace("AudioRendererSinkInner::Stop");
-    AUDIO_INFO_LOG("Stop.");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
@@ -848,6 +847,13 @@ int32_t AudioRendererSinkInner::Stop(void)
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
+}
+
+int32_t AudioRendererSinkInner::Stop(void)
+{
+    Trace trace("AudioRendererSinkInner::Stop");
+    AUDIO_INFO_LOG("Stop.");
+
     int32_t ret;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -857,13 +863,15 @@ int32_t AudioRendererSinkInner::Stop(void)
         ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
+            ReleaseRunningLock();
             return SUCCESS;
         } else {
             AUDIO_ERR_LOG("Stop failed!");
+            ReleaseRunningLock();
             return ERR_OPERATION_FAILED;
         }
     }
-
+    ReleaseRunningLock();
     return SUCCESS;
 }
 
