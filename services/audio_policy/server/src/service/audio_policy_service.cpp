@@ -893,9 +893,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::string networkId = audioDeviceDescriptors[0]->networkId_;
     DeviceType deviceType = audioDeviceDescriptors[0]->deviceType_;
     FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    if (audioDeviceDescriptors[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
-        FetchDevice(false);
-    }
+    FetchDevice(false);
     if ((deviceType != DEVICE_TYPE_BLUETOOTH_A2DP) || (networkId != LOCAL_NETWORK_ID)) {
         UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
     } else {
@@ -1725,7 +1723,7 @@ int32_t AudioPolicyService::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceD
         }
         if (desc->connectState_ == DEACTIVE_CONNECTED) {
             Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioScene_);
-            return ERROR;
+            return SUCCESS;
         }
 #endif
     return SUCCESS;
@@ -1776,7 +1774,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(
             rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID);
         if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
-            !NeedRehandleA2DPDevice(desc) && !sameDeviceSwitchFlag_)) {
+            !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED && !sameDeviceSwitchFlag_)) {
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
             continue;
         }
@@ -1871,7 +1869,7 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
     }
     if (desc->connectState_ == DEACTIVE_CONNECTED) {
         Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioScene_);
-        return ERROR;
+        return SUCCESS;
     }
 #endif
     return SUCCESS;
@@ -1895,7 +1893,8 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(sourceType,
             capturerChangeInfo->clientUID);
         DeviceInfo inputDeviceInfo = capturerChangeInfo->inputDeviceInfo;
-        if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, inputDeviceInfo)) {
+        if (desc->deviceType_ == DEVICE_TYPE_NONE ||
+            (IsSameDevice(desc, inputDeviceInfo) && desc->connectState_ != DEACTIVE_CONNECTED)) {
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", capturerChangeInfo->sessionId);
             continue;
         }
