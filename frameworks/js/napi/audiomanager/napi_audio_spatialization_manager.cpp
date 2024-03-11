@@ -496,7 +496,7 @@ napi_value NapiAudioSpatializationManager::SetSpatializationSceneType(napi_env e
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSystemMngr_ != nullptr, result,
         "audioSystemMngr_ is nullptr");
     int32_t ret = napiAudioSpatializationManager->audioSystemMngr_->SetSpatializationSceneType(
-        static_cast<AudioEffectMode>(sceneType));
+        static_cast<AudioSpatializationSceneType>(sceneType));
     if (ret == ERR_PERMISSION_DENIED) {
         NapiAudioError::ThrowError(env, NAPI_ERR_NO_PERMISSION);
     }
