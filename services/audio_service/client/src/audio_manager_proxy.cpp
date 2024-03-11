@@ -770,8 +770,8 @@ AudioSpatializationSceneType AudioManagerProxy::GetSpatializationSceneType()
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
-        "GetSpatializationSceneType failed, error: %{public}d", SPATIALIZATION_SCENE_TYPE_DEFAULT);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_DEFAULT,
+        "GetSpatializationSceneType failed, error: %{public}d", error);
 
     return static_cast<AudioSpatializationSceneType>(reply.ReadInt32());
 }

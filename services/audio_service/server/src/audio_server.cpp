@@ -1082,7 +1082,7 @@ AudioSpatializationSceneType AudioServer::GetSpatializationSceneType()
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     if (audioEffectChainManager == nullptr) {
         AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        return ERROR;
+        return SPATIALIZATION_SCENE_TYPE_DEFAULT;
     }
     return audioEffectChainManager->GetSpatializationSceneType();
 }
