@@ -1605,5 +1605,19 @@ uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
     std::string sceneTypeAndDeviceKey = SessionIDToEffectInfoMap_[sessionId].sceneType + "_&_" + GetDeviceTypeName();
     return SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->GetLatency();
 }
+
+AudioSpatializationSceneType AudioEffectChainManager::GetSpatializationSceneType()
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    return spatializationSceneType_;
+}
+
+int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    AUDIO_INFO_LOG("spatialization scene type is set to be %{public}d", spatializationSceneType);
+    spatializationSceneType_ = spatializationSceneType;
+    return SUCCESS;
+}
 }
 }

@@ -1370,5 +1370,19 @@ int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, boo
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
         flag, address));
 }
+
+AudioSpatializationSceneType AudioSystemManager::GetSpatializationSceneType()
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, "", "Audio service unavailable.");
+    return gasp->GetSpatializationSceneType();
+}
+
+int32_t AudioSystemManager::SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, "", "Audio service unavailable.");
+    return gasp->SetSpatializationSceneType(spatializationSceneType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

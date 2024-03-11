@@ -159,6 +159,8 @@ public:
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume);
     uint32_t GetLatency(std::string sessionId);
+    AudioSpatializationSceneType GetSpatializationSceneType();
+    int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
 
 private:
     void UpdateSensorState();
@@ -191,6 +193,7 @@ private:
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
     bool initializedLogFlag_ = true;
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

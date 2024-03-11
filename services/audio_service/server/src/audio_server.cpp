@@ -1073,5 +1073,33 @@ int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float
     }
     return AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
 }
+
+AudioSpatializationSceneType AudioServer::GetSpatializationSceneType()
+{
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_DEFAULT,
+        "get spatialization scene type failed: not system app.");
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+        return ERROR;
+    }
+    return audioEffectChainManager->GetSpatializationSceneType();
+}
+
+int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
+{
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "set spatialization scene type failed: not system app.");
+    ret = VerifyClientPermission(MANAGE_SYSTEM_AUDIO_EFFECTS);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set spatialization scene type failed: no permission.");
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
+        return ERROR;
+    }
+    return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
+}
 } // namespace AudioStandard
 } // namespace OHOS
