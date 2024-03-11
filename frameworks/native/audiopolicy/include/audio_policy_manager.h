@@ -334,10 +334,7 @@ public:
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
 private:
-    AudioPolicyManager()
-    {
-        AUDIO_INFO_LOG("Enter AudioPolicyManager::AudioPolicyManager");
-    }
+    AudioPolicyManager() {}
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
