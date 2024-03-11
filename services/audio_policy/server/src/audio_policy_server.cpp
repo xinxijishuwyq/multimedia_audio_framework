@@ -2525,19 +2525,14 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
     return apiTargetversion;
 }
 
-bool AudioPolicyServer::IsHiResExist()
+bool AudioPolicyServer::IsHighResolutionExist()
 {
-    AUDIO_INFO_LOG("Enter AudioPolicyServer::IsHiResExist");
-    return isHiResExist;
+    return isHighResolutionExist;
 }
 
-void AudioPolicyServer::SetHiResExist(bool hiresExist)
+void AudioPolicyServer::SetHighResolutionExist(bool highResolutionExist)
 {
-    AUDIO_INFO_LOG("Enter AudioPolicyServer::SetHiResExist");
-
-    AUDIO_INFO_LOG("before isHiResExist : %{public}d", isHiResExist);
-    isHiResExist = hiresExist;
-    AUDIO_INFO_LOG("after isHiResExist : %{public}d", isHiResExist);
+    isHighResolutionExist = highResolutionExist;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -388,9 +388,9 @@ public:
         sptr<AudioPolicyServer> server_;
     };
 
-    bool IsHiResExist() override;
+    bool IsHighResolutionExist() override;
 
-    void SetHiResExist(bool hiresExist) override;
+    void SetHighResolutionExist(bool highResolutionExist) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -425,7 +425,7 @@ private:
     };
 
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
-    bool isHiResExist = false;
+    bool isHighResolutionExist = false;
     
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,

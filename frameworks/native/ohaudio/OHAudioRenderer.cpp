@@ -514,10 +514,10 @@ void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const Dev
     callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_DeviceChangeReason>(reason));
 }
 
-bool OHAudioRenderer::GetHiResExistStatus()
+bool OHAudioRenderer::GetHighResolutionExistStatus()
 {
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, !(ERROR), "renderer client is nullptr");
-    return audioRenderer_->GetHiResExistStatus();
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetHighResolutionExistStatus();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

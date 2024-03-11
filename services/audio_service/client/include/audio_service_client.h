@@ -618,7 +618,7 @@ protected:
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
     bool offloadEnable_ = false;
     void CheckOffloadBreakWaitWrite();
-    bool hiResEnable = false;
+    bool highResolutionEnable = false;
 
 private:
     pa_threaded_mainloop *mainLoop;
@@ -798,7 +798,7 @@ private:
         AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);
 
     void UpdatePropListForFlush();
-    void HiResExistStatus(pa_proplist *propList, AudioStreamParams &audioParams);
+    void HighResolutionExistStatus(pa_proplist *propList, AudioStreamParams &audioParams);
 
     // Error code used
     static const int32_t AUDIO_CLIENT_SUCCESS = 0;

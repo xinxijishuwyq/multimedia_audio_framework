@@ -17,8 +17,10 @@
 
 #include "bluetooth_renderer_sink.h"
 
+#include <cstdio>
 #include <cstring>
 #include <string>
+#include <list>
 #include <cinttypes>
 #include <fstream>
 

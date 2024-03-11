@@ -31,8 +31,8 @@ namespace AudioStandard {
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 8; // 8S
-const uint32_t HIRES_SAMPLE_RATE = 48000;
-const uint8_t HIRES_FORMAT = 2;
+const uint32_t HIGH_RESOLUTION_SAMPLE_RATE = 48000;
+const uint8_t HIGH_RESOLUTION_FORMAT = 2;
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -114,8 +114,8 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
-    AUDIO_INFO_LOG("PaAdapterManager::ReleaseRender set HiResExist false");
-    PolicyHandler::GetInstance().SetHiResExist(false);
+    AUDIO_INFO_LOG("ReleaseRender set HighResolutionExist false");
+    PolicyHandler::GetInstance().SetHighResolutionExist(false);
 
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
@@ -338,25 +338,22 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     return paStream;
 }
 
-void PaAdapterManager::HiResExistStatus(pa_proplist *propList, AudioProcessConfig &processConfig)
+void PaAdapterManager::HighResolutionExistStatus(pa_proplist *propList, AudioProcessConfig &processConfig)
 {
-    bool isHiResExist = PolicyHandler::GetInstance().GetHiResExist();
-    AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist isHiResExist : %{public}d", isHiResExist);
-
+    bool isHighResolutionExist = PolicyHandler::GetInstance().GetHighResolutionExist();
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist deviceType : %{public}d", deviceType);
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && processConfig.streamInfo.samplingRate >= HIRES_SAMPLE_RATE &&
-        processConfig.streamInfo.format >= HIRES_FORMAT  && isHiResExist == false) {
-        PolicyHandler::GetInstance().SetHiResExist(true);
-        AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist stream.hires set 1");
-        pa_proplist_sets(propList, "stream.hires", "1");
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && processConfig.streamInfo.format >= HIGH_RESOLUTION_FORMAT &&
+        processConfig.streamInfo.samplingRate >= HIGH_RESOLUTION_SAMPLE_RATE && isHighResolutionExist == false) {
+        PolicyHandler::GetInstance().SetHighResolutionExist(true);
+        AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 1, deviceType : %{public}d", deviceType);
+        pa_proplist_sets(propList, "stream.highResolution", "1");
         pa_proplist_sets(propList, "stream.samplerate",
             std::to_string(processConfig.streamInfo.samplingRate).c_str());
         pa_proplist_sets(propList, "stream.format",
             std::to_string(processConfig.streamInfo.format).c_str());
     } else {
-        AUDIO_INFO_LOG("PaAdapterManager::SetPaProplist stream.hires set 0");
-        pa_proplist_sets(propList, "stream.hires", "0");
+        AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 0, deviceType : %{public}d", deviceType);
+        pa_proplist_sets(propList, "stream.highResolution", "0");
     }
 }
 
@@ -393,7 +390,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         AudioPrivacyType privacyType = processConfig.privacyType;
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
-        HiResExistStatus(propList, processConfig);
+        HighResolutionExistStatus(propList, processConfig);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());

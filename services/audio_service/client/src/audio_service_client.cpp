@@ -67,8 +67,8 @@ const uint64_t AUDIO_S_TO_NS = 1000000000;
 const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
-const uint32_t HIRES_SAMPLE_RATE = 48000;
-const uint8_t HIRES_FORMAT = 2;
+const uint32_t HIGH_RESOLUTION_SAMPLE_RATE = 48000;
+const uint8_t HIGH_RESOLUTION_FORMAT = 2;
 
 const std::string FORCED_DUMP_PULSEAUDIO_STACKTRACE = "dump_pulseaudio_stacktrace";
 const std::string RECOVERY_AUDIO_SERVER = "recovery_audio_server";
@@ -693,7 +693,7 @@ AudioServiceClient::~AudioServiceClient()
     lock_guard<mutex> lockdata(dataMutex_);
     AUDIO_INFO_LOG("start ~AudioServiceClient");
     UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
-    AudioPolicyManager::GetInstance().SetHiResExist(false);
+    AudioPolicyManager::GetInstance().SetHighResolutionExist(false);
     ResetPAAudioClient();
     StopTimer();
     std::lock_guard<std::mutex> lock(serviceClientLock_);
@@ -1009,21 +1009,18 @@ int32_t AudioServiceClient::InitializeAudioCache()
     return AUDIO_CLIENT_SUCCESS;
 }
 
-void AudioServiceClient::HiResExistStatus(pa_proplist *propList, AudioStreamParams &audioParams)
+void AudioServiceClient::HighResolutionExistStatus(pa_proplist *propList, AudioStreamParams &audioParams)
 {
-    bool isHiResExist = AudioPolicyManager::GetInstance().IsHiResExist();
-    AUDIO_INFO_LOG("SetPaProplist isHiResExist : %{public}d", isHiResExist);
-
+    bool isHighResolutionExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
-    AUDIO_INFO_LOG("SetPaProplist deviceType : %{public}d", deviceType);
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && isHiResExist == false &&
-        audioParams.samplingRate >= HIRES_SAMPLE_RATE && audioParams.format >= HIRES_FORMAT) {
-        hiResEnable = true;
-        AudioPolicyManager::GetInstance().SetHiResExist(true);
-        AUDIO_INFO_LOG("SetPaProplist stream.hires set 1");
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && audioParams.samplingRate >= HIGH_RESOLUTION_SAMPLE_RATE &&
+        audioParams.format >= HIGH_RESOLUTION_FORMAT && isHighResolutionExist == false) {
+        highResolutionEnable = true;
+        AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
+        AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 1, deviceType : %{public}d", deviceType);
     } else {
-        hiResEnable = false;
-        AUDIO_INFO_LOG("SetPaProplist stream.hires set 0");
+        highResolutionEnable = false;
+        AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 0, deviceType : %{public}d", deviceType);
     }
 }
 
@@ -1056,7 +1053,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
-        HiResExistStatus(propList, audioParams);
+        HighResolutionExistStatus(propList, audioParams);
     }
 
     AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
@@ -1309,8 +1306,8 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        if (hiResEnable) {
-            AudioPolicyManager::GetInstance().SetHiResExist(false);
+        if (highResolutionEnable) {
+            AudioPolicyManager::GetInstance().SetHighResolutionExist(false);
             PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
             int32_t ret = CorkStream();
             if (ret) {

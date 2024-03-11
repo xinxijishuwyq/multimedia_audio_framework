@@ -268,9 +268,9 @@ public:
 
     virtual void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
 
-    virtual bool IsHiResExist(void) = 0;
+    virtual bool IsHighResolutionExist(void) = 0;
 
-    virtual void SetHiResExist(bool hiResExist) = 0;
+    virtual void SetHighResolutionExist(bool highResolutionExist) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

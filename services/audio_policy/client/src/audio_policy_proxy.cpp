@@ -2000,9 +2000,8 @@ ConverterConfig AudioPolicyProxy::GetConverterConfig()
     return result;
 }
 
-bool AudioPolicyProxy::IsHiResExist()
+bool AudioPolicyProxy::IsHighResolutionExist()
 {
-    AUDIO_INFO_LOG("Enter AudioPolicyProxy::IsHiResExist");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -2010,18 +2009,16 @@ bool AudioPolicyProxy::IsHiResExist()
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "AudioPolicyProxy: WriteInterfaceToken failed");
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIRES_EXIST), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "IsHiResExist SendRequest failed, error: %d", error);
+        "IsHighResolutionExist SendRequest failed, error: %d", error);
     
     bool replyReadBool = reply.ReadBool();
-    AUDIO_INFO_LOG("reply.ReadBool() : %{public}d", replyReadBool);
     return replyReadBool;
 }
 
-void AudioPolicyProxy::SetHiResExist(bool hiResExist)
+void AudioPolicyProxy::SetHighResolutionExist(bool highResolutionExist)
 {
-    AUDIO_INFO_LOG("Enter AudioPolicyProxy::SetHiResExist");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -2029,10 +2026,10 @@ void AudioPolicyProxy::SetHiResExist(bool hiResExist)
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_LOG(ret, "AudioPolicyProxy: WriteInterfaceToken failed");
     
-    data.WriteBool(hiResExist);
+    data.WriteBool(highResolutionExist);
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIRES_EXIST), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetHiResExist SendRequest failed, error: %d", error);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetHighResolutionExist SendRequest failed, error: %d", error);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -335,9 +335,9 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
-    bool IsHiResExist();
+    bool IsHighResolutionExist();
 
-    void SetHiResExist(bool hiresExist);
+    void SetHighResolutionExist(bool highResolutionExist);
 
 private:
     AudioPolicyManager()

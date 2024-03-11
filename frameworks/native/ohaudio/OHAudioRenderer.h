@@ -147,7 +147,7 @@ class OHAudioRenderer {
         void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
             void *userData);
         bool IsFastRenderer();
-        bool GetHiResExistStatus();
+        bool GetHighResolutionExistStatus();
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;

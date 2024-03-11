@@ -255,9 +255,9 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
 
-    bool IsHiResExist() override;
+    bool IsHighResolutionExist() override;
 
-    void SetHiResExist(bool hiResExist) override;
+    void SetHighResolutionExist(bool highResolutionExist) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

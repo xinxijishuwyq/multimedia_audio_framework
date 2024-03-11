@@ -201,15 +201,14 @@ int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
     return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
 }
 
-bool PolicyHandler::GetHiResExist()
+bool PolicyHandler::GetHighResolutionExist()
 {
-    return isHiResExist_;
+    return isHighResolutionExist_;
 }
 
-void PolicyHandler::SetHiResExist(bool isHiResExist)
+void PolicyHandler::SetHighResolutionExist(bool isHighResolutionExist)
 {
-    AUDIO_INFO_LOG("isHiResExist_ is changed to %{public}d", isHiResExist);
-    isHiResExist_ = isHiResExist;
+    isHighResolutionExist_ = isHighResolutionExist;
 }
 } // namespace AudioStandard
 } // namespace OHOS

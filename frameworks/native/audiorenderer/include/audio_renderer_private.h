@@ -117,7 +117,7 @@ public:
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
-    bool GetHiResExistStatus() override;
+    bool GetHighResolutionExistStatus() override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {

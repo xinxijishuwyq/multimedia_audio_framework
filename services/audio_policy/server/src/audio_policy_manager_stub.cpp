@@ -1086,16 +1086,16 @@ void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &dat
     FetchInputDeviceForTrack(streamChangeInfo);
 }
 
-void AudioPolicyManagerStub::IsHiResExistInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::IsHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply)
 {
-    bool ret = IsHiResExist();
+    bool ret = IsHighResolutionExist();
     reply.WriteBool(ret);
 }
 
-void AudioPolicyManagerStub::SetHiResExistInternal(MessageParcel &data, MessageParcel &reply)
+void AudioPolicyManagerStub::SetHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply)
 {
-    bool hiresExist = data.ReadBool();
-    SetHiResExist(hiresExist);
+    bool highResolutionExist = data.ReadBool();
+    SetHighResolutionExist(highResolutionExist);
 }
 } // namespace audio_policy
 } // namespace OHOS
