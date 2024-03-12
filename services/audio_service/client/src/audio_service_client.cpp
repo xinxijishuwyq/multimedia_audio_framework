@@ -1016,9 +1016,11 @@ void AudioServiceClient::HighResolutionExistStatus(pa_proplist *propList, AudioS
         highResolutionEnable = true;
         AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
         AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 1, deviceType : %{public}d", deviceType);
+        pa_proplist_sets(propList, "stream.highResolution", "1");
     } else {
         highResolutionEnable = false;
         AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 0, deviceType : %{public}d", deviceType);
+        pa_proplist_sets(propList, "stream.highResolution", "0");
     }
 }
 
