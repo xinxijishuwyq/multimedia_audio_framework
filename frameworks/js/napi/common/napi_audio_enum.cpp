@@ -549,7 +549,7 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
             audioChannelLayoutMap, audioChannelLayout_)),
         DECLARE_NAPI_PROPERTY("AudioStreamDeviceChangeReason",
             CreateEnumObject(env, audioDeviceChangeReasonMap, audioStreamDeviceChangeReason_)),
-        DECLARE_NAPI_PROPERTY("AudioSpatializationSceneType ", CreateEnumObject(env,
+        DECLARE_NAPI_PROPERTY("AudioSpatializationSceneType", CreateEnumObject(env,
             spatializationSceneTypeMap, spatializationSceneType_)),
     };
     napi_status status =
