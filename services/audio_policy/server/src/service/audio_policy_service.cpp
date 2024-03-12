@@ -185,8 +185,9 @@ bool AudioPolicyService::Init(void)
     audioDeviceManager_.ParseDeviceXml();
     audioPnpServer_.init();
 
-    CHECK_AND_RETURN_RET_LOG(configParser_.LoadConfiguration(), false, "Audio Config Load Configuration failed");
-    CHECK_AND_RETURN_RET_LOG(configParser_.Parse(), false, "Audio Config Parse failed");
+    CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser_.LoadConfiguration(), false,
+        "Audio Policy Config Load Configuration failed");
+    CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser_.Parse(), false, "Audio Config Parse failed");
     MaxRenderInstanceInit();
 
 #ifdef FEATURE_DTMF_TONE
@@ -511,7 +512,7 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         AUDIO_DEBUG_LOG("StreamType not allowed get offload mode, Skipped");
         return;
     }
-    
+
     int32_t channelCount = GetChannelCount(sessionId);
     if ((channelCount != AudioChannel::MONO) && (channelCount != AudioChannel::STEREO)) {
         AUDIO_DEBUG_LOG("ChannelNum not allowed get offload mode, Skipped");
@@ -3688,6 +3689,14 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
     AddMicrophoneDescriptor(audioDescriptor);
 }
 
+void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
+    const std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap)
+{
+    AUDIO_INFO_LOG("adapterInfo num [%{public}zu]", adapterInfoMap.size());
+    CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
+    adapterInfoMap_ = adapterInfoMap;
+}
+
 // Parser callbacks
 void AudioPolicyService::OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmlData)
 {
@@ -3711,6 +3720,21 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
     CHECK_AND_RETURN_LOG(!interruptGroupData.empty(), "failed to parse xml file. Received data is empty");
 
     interruptGroupData_ = interruptGroupData;
+}
+
+void AudioPolicyService::GetAudioAdapterInfos(std::map<AdaptersType, AudioAdapterInfo> &adapterInfoMap)
+{
+    adapterInfoMap = adapterInfoMap_;
+}
+
+void AudioPolicyService::GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData)
+{
+    volumeGroupData = volumeGroupData_;
+}
+
+void AudioPolicyService::GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData)
+{
+    interruptGroupData = interruptGroupData_;
 }
 
 void AudioPolicyService::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)

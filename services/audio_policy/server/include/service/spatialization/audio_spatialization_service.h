@@ -31,7 +31,6 @@
 
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
-#include "parser_factory.h"
 
 namespace OHOS {
 namespace AudioStandard {

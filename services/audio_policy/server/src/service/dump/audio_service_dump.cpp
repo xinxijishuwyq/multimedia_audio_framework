@@ -60,6 +60,7 @@ void AudioServiceDump::InitDumpFuncMap()
     dumpFuncMap[u"-v"] = &AudioServiceDump::StreamVolumesDump;
     dumpFuncMap[u"-a"] = &AudioServiceDump::AudioFocusInfoDump;
     dumpFuncMap[u"-az"] = &AudioServiceDump::AudioInterruptZoneDump;
+    dumpFuncMap[u"-apc"] = &AudioServiceDump::AudioPolicyParserDump;
     dumpFuncMap[u"-g"] = &AudioServiceDump::GroupInfoDump;
     dumpFuncMap[u"-e"] = &AudioServiceDump::EffectManagerInfoDump;
     dumpFuncMap[u"-vi"] = &AudioServiceDump::StreamVolumeInfosDump;
@@ -563,6 +564,52 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
     return;
 }
 
+void AudioServiceDump::AudioPolicyParserDump(string &dumpString)
+{
+    dumpString += "\nAudioPolicyParser:\n";
+
+    for (auto &[adapterType, adapterInfo] : audioData_.policyData.adapterInfoMap) {
+        AppendFormat(dumpString, " - adapter : %s -- adapterType:%u\n", adapterInfo.adapterName_.c_str(), adapterType);
+        for (auto &deviceInfo : adapterInfo.deviceInfos_) {
+            AppendFormat(dumpString, "     - device --  name:%s, type:%s, role:%s\n", deviceInfo.name_.c_str(),
+                deviceInfo.type_.c_str(), deviceInfo.role_.c_str());
+        }
+        for (auto &moduleInfo : adapterInfo.moduleInfos_) {
+            AppendFormat(dumpString, "     - module : -- name:%s, moduleType_:%s, lib:%s, role:%s, fixedLatency:%s, "
+                "renderInIdleState:%s, profile:%s, file:%s\n", moduleInfo.name_.c_str(),
+                moduleInfo.moduleType_.c_str(), moduleInfo.lib_.c_str(), moduleInfo.role_.c_str(),
+                moduleInfo.fixedLatency_.c_str(), moduleInfo.renderInIdleState_.c_str(),
+                moduleInfo.profile_.c_str(), moduleInfo.file_.c_str());
+
+            for (auto &configInfo : moduleInfo.configInfos_) {
+                AppendFormat(dumpString, "         - config : -- name:%s, valu:%s\n", configInfo.name_.c_str(),
+                    configInfo.valu_.c_str());
+            }
+
+            for (auto profileInfo : moduleInfo.profileInfos_) {
+                AppendFormat(dumpString, "         - profile -- rate:%s, channels:%s, format:%s, bufferSize:%s\n",
+                    profileInfo.rate_.c_str(), profileInfo.channels_.c_str(), profileInfo.format_.c_str(),
+                    profileInfo.bufferSize_.c_str());
+            }
+
+            for (auto device : moduleInfo.devices_) {
+                AppendFormat(dumpString, "         - device : %s\n", device.c_str());
+            }
+        }
+    }
+    dumpString += "\n";
+    for (auto& volume : audioData_.policyData.volumeGroupData) {
+        AppendFormat(dumpString, " - volumeGroupMap_ first:%s, second:%s\n", volume.first.c_str(),
+            volume.second.c_str());
+    }
+    dumpString += "\n";
+    for (auto& interrupt : audioData_.policyData.interruptGroupData) {
+        AppendFormat(dumpString, " - interruptGroupMap_ first:%s, second:%s\n", interrupt.first.c_str(),
+            interrupt.second.c_str());
+    }
+    dumpString += "\n";
+}
+
 void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
 {
     dumpString += "\nAudioInterrupt Zone:\n";
@@ -762,6 +809,7 @@ void AudioServiceDump::DataDump(string &dumpString)
     StreamVolumesDump(dumpString);
     AudioFocusInfoDump(dumpString);
     AudioInterruptZoneDump(dumpString);
+    AudioPolicyParserDump(dumpString);
     GroupInfoDump(dumpString);
     EffectManagerInfoDump(dumpString);
     StreamVolumeInfosDump(dumpString);
@@ -806,6 +854,7 @@ void AudioServiceDump::HelpInfoDump(string &dumpString)
     AppendFormat(dumpString, "  -v\t\t\t|dump stream volumes\n");
     AppendFormat(dumpString, "  -a\t\t\t|dump audio in focus info\n");
     AppendFormat(dumpString, "  -az\t\t\t|dump audio in interrupt zone info\n");
+    AppendFormat(dumpString, "  -apc\t\t\t|dump audio policy config xml parser info\n");
     AppendFormat(dumpString, "  -g\t\t\t|dump group info\n");
     AppendFormat(dumpString, "  -e\t\t\t|dump effect manager info\n");
     AppendFormat(dumpString, "  -vi\t\t\t|dump volume config of streams\n");
