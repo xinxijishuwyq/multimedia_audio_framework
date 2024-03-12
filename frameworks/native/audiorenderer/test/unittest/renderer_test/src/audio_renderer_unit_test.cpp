@@ -2761,6 +2761,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_007, TestSize.Level2)
     size_t sleepTime = 1000000; // sleep 1s
     usleep(sleepTime);
 
+    isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
     loopCount = 10; // 200ms
     while (loopCount-- > 0) {
         audioRenderer->Write(tempBuffer.get(), bufferSize);
