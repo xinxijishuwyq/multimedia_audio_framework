@@ -1446,7 +1446,7 @@ bool AudioPolicyManager::IsHighResolutionExist()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("IsHighResolutionExist: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         return false;
     }
     bool gspIsHighResolutionExist = gsp->IsHighResolutionExist();
@@ -1457,7 +1457,7 @@ void AudioPolicyManager::SetHighResolutionExist(bool highResolutionExist)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
-        AUDIO_ERR_LOG("SetHighResolutionExist: audio policy manager proxy is NULL.");
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         return;
     }
     gsp->SetHighResolutionExist(highResolutionExist);

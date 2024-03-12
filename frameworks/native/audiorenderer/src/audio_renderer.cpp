@@ -1526,10 +1526,5 @@ bool AudioRendererPrivate::IsFastRenderer()
 {
     return isFastRenderer_;
 }
-
-bool AudioRendererPrivate::GetHighResolutionExistStatus()
-{
-    return AudioPolicyManager::GetInstance().IsHighResolutionExist();
-}
 }  // namespace AudioStandard
 }  // namespace OHOS

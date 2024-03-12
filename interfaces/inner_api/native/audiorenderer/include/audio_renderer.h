@@ -930,13 +930,6 @@ public:
 
     virtual bool IsFastRenderer() = 0;
 
-    /**
-     * @brief Get the existence status of High-Resolution.
-     *
-     * @since 11
-     */
-    virtual bool GetHighResolutionExistStatus() = 0;
-
     virtual ~AudioRenderer();
 private:
     static std::mutex createRendererMutex_;

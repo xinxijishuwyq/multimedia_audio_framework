@@ -2007,11 +2007,11 @@ bool AudioPolicyProxy::IsHighResolutionExist()
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "AudioPolicyProxy: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
-        "IsHighResolutionExist SendRequest failed, error: %d", error);
+        "SendRequest failed, error: %d", error);
     
     bool replyReadBool = reply.ReadBool();
     return replyReadBool;
@@ -2024,12 +2024,12 @@ void AudioPolicyProxy::SetHighResolutionExist(bool highResolutionExist)
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "AudioPolicyProxy: WriteInterfaceToken failed");
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     
     data.WriteBool(highResolutionExist);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetHighResolutionExist SendRequest failed, error: %d", error);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SendRequest failed, error: %d", error);
 }
 } // namespace AudioStandard
 } // namespace OHOS

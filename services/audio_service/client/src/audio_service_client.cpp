@@ -67,8 +67,6 @@ const uint64_t AUDIO_S_TO_NS = 1000000000;
 const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
-const uint32_t HIGH_RESOLUTION_SAMPLE_RATE = 48000;
-const uint8_t HIGH_RESOLUTION_FORMAT = 2;
 
 const std::string FORCED_DUMP_PULSEAUDIO_STACKTRACE = "dump_pulseaudio_stacktrace";
 const std::string RECOVERY_AUDIO_SERVER = "recovery_audio_server";
@@ -1013,8 +1011,8 @@ void AudioServiceClient::HighResolutionExistStatus(pa_proplist *propList, AudioS
 {
     bool isHighResolutionExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && audioParams.samplingRate >= HIGH_RESOLUTION_SAMPLE_RATE &&
-        audioParams.format >= HIGH_RESOLUTION_FORMAT && isHighResolutionExist == false) {
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && audioParams.format >= AudioSampleFormat::SAMPLE_S24LE &&
+        audioParams.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 && isHighResolutionExist == false) {
         highResolutionEnable = true;
         AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
         AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 1, deviceType : %{public}d", deviceType);
