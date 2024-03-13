@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioFramework"
 
 #ifndef OHOS_AUDIO_LOG_H
 #define OHOS_AUDIO_LOG_H

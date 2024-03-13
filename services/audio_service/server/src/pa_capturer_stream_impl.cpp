@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "PaCapturerStreamImpl"
 
 #include "safe_map.h"
 #include "pa_capturer_stream_impl.h"
