@@ -14,6 +14,7 @@
  */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioFramework"
+#endif
 
 #ifndef OHOS_AUDIO_LOG_H
 #define OHOS_AUDIO_LOG_H
