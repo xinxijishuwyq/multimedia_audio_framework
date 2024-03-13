@@ -198,7 +198,10 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSamplingRate(int32_t rate)
         case AudioSamplingRate::SAMPLE_RATE_44100:
         case AudioSamplingRate::SAMPLE_RATE_48000:
         case AudioSamplingRate::SAMPLE_RATE_64000:
+        case AudioSamplingRate::SAMPLE_RATE_88200:
         case AudioSamplingRate::SAMPLE_RATE_96000:
+        case AudioSamplingRate::SAMPLE_RATE_176400:
+        case AudioSamplingRate::SAMPLE_RATE_192000:
             AUDIO_DEBUG_LOG("sampleFormat input value is valid");
             break;
         default:

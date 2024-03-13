@@ -425,7 +425,7 @@ private:
     };
 
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
-    
+
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
         int64_t deactivateSessionId);

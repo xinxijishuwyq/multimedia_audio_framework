@@ -100,7 +100,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::samplingRateMap = {
     {"SAMPLE_RATE_44100", SAMPLE_RATE_44100},
     {"SAMPLE_RATE_48000", SAMPLE_RATE_48000},
     {"SAMPLE_RATE_64000", SAMPLE_RATE_64000},
-    {"SAMPLE_RATE_96000", SAMPLE_RATE_96000}
+    {"SAMPLE_RATE_88200", SAMPLE_RATE_88200},
+    {"SAMPLE_RATE_96000", SAMPLE_RATE_96000},
+    {"SAMPLE_RATE_176400", SAMPLE_RATE_176400},
+    {"SAMPLE_RATE_192000", SAMPLE_RATE_192000},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::encodingTypeMap = {
