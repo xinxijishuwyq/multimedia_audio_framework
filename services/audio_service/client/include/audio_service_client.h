@@ -618,7 +618,6 @@ protected:
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
     bool offloadEnable_ = false;
     void CheckOffloadBreakWaitWrite();
-    bool highResolutionEnable_ = false;
 
 private:
     pa_threaded_mainloop *mainLoop;

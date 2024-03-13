@@ -1011,15 +1011,16 @@ void AudioServiceClient::SetHighResolution(pa_proplist *propList, AudioStreamPar
 {
     bool isHighResolutionExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && audioParams.format >= AudioSampleFormat::SAMPLE_S24LE &&
-        audioParams.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 && isHighResolutionExist == false) {
-        highResolutionEnable_ = true;
+    AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
+        deviceType, streamType_, audioParams.samplingRate, audioParams.format);
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType_ == STREAM_MUSIC && 
+        audioParams.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
+        audioParams.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolutionExist == false) {
         AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
-        AUDIO_INFO_LOG("set highResolutionExist to true, deviceType : %{public}d", deviceType);
+        AUDIO_INFO_LOG("current stream marked as high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "1");
     } else {
-        highResolutionEnable_ = false;
-        AUDIO_INFO_LOG("set highResolutionExist to false, deviceType : %{public}d", deviceType);
+        AUDIO_INFO_LOG("current stream marked as non-high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "0");
     }
 }
@@ -1306,9 +1307,7 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        if (highResolutionEnable_) {
-            AudioPolicyManager::GetInstance().SetHighResolutionExist(false);
-        }
+        AudioPolicyManager::GetInstance().SetHighResolutionExist(false);
         return StopStreamPlayback();
     } else {
         PAStreamCorkSuccessCb = PAStreamStopSuccessCb;

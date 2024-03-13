@@ -340,14 +340,16 @@ void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConf
 {
     bool isHighResolution = PolicyHandler::GetInstance().GetHighResolutionExist();
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && isHighResolution == false &&
+    AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
+        deviceType, processConfig.streamType, processConfig.streamInfo.samplingRate, processConfig.streamInfo.format);
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && processConfig.streamType == STREAM_MUSIC &&
         processConfig.streamInfo.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
-        processConfig.streamInfo.format >= AudioSampleFormat::SAMPLE_S24LE) {
+        processConfig.streamInfo.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolution == false) {
         PolicyHandler::GetInstance().SetHighResolutionExist(true);
-        AUDIO_INFO_LOG("set highResolutionExist to true, deviceType : %{public}d", deviceType);
+        AUDIO_INFO_LOG("current stream marked as high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "1");
     } else {
-        AUDIO_INFO_LOG("set highResolutionExist to false, deviceType : %{public}d", deviceType);
+        AUDIO_INFO_LOG("current stream marked as non-high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "0");
     }
 }
