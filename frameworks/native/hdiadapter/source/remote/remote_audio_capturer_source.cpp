@@ -109,10 +109,10 @@ private:
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
     std::mutex createCaptureMutex_;
-    std::mutex capturerRemoteSourcesMutex_;
     uint32_t captureId_ = 0;
 };
 
+std::mutex capturerRemoteSourcesMutex_;
 std::map<std::string, RemoteAudioCapturerSourceInner *> allRemoteSources;
 RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::string &deviceNetworkId)
 {

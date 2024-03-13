@@ -129,7 +129,6 @@ private:
     IAudioSinkAttr attr_;
     FILE *dumpFile_ = nullptr;
     std::mutex createRenderMutex_;
-    std::mutex rendererSinksMutex_;
     uint32_t renderId_ = 0;
 };
 
@@ -147,6 +146,7 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink destruction.");
 }
 
+std::mutex rendererSinksMutex_;
 std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
 RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
