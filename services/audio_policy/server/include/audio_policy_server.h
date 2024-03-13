@@ -390,7 +390,7 @@ public:
 
     bool IsHighResolutionExist() override;
 
-    void SetHighResolutionExist(bool highResolutionExist) override;
+    void SetHighResolutionExist(bool highResExist) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -425,7 +425,6 @@ private:
     };
 
     int32_t VerifyVoiceCallPermission(uint64_t fullTokenId, Security::AccessToken::AccessTokenID tokenId);
-    bool isHighResolutionExist = false;
     
     // offload session
     void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
@@ -514,6 +513,7 @@ private:
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool isAvSessionSetVoipStart = false;
     std::set<uint32_t> saveAppCapTokenIdThroughMS;
+    bool isHighResolutionExist_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

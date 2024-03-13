@@ -1007,19 +1007,19 @@ int32_t AudioServiceClient::InitializeAudioCache()
     return AUDIO_CLIENT_SUCCESS;
 }
 
-void AudioServiceClient::HighResolutionExistStatus(pa_proplist *propList, AudioStreamParams &audioParams)
+void AudioServiceClient::SetHighResolution(pa_proplist *propList, AudioStreamParams &audioParams)
 {
     bool isHighResolutionExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && audioParams.format >= AudioSampleFormat::SAMPLE_S24LE &&
         audioParams.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 && isHighResolutionExist == false) {
-        highResolutionEnable = true;
+        highResolutionEnable_ = true;
         AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
-        AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 1, deviceType : %{public}d", deviceType);
+        AUDIO_INFO_LOG("set highResolutionExist to true, deviceType : %{public}d", deviceType);
         pa_proplist_sets(propList, "stream.highResolution", "1");
     } else {
-        highResolutionEnable = false;
-        AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 0, deviceType : %{public}d", deviceType);
+        highResolutionEnable_ = false;
+        AUDIO_INFO_LOG("set highResolutionExist to false, deviceType : %{public}d", deviceType);
         pa_proplist_sets(propList, "stream.highResolution", "0");
     }
 }
@@ -1053,7 +1053,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
-        HighResolutionExistStatus(propList, audioParams);
+        SetHighResolution(propList, audioParams);
     }
 
     AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
@@ -1306,17 +1306,10 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        if (highResolutionEnable) {
+        if (highResolutionEnable_) {
             AudioPolicyManager::GetInstance().SetHighResolutionExist(false);
-            PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
-            int32_t ret = CorkStream();
-            if (ret) {
-                return ret;
-            }
-        } else {
-            return StopStreamPlayback();
         }
-        return AUDIO_CLIENT_SUCCESS;
+        return StopStreamPlayback();
     } else {
         PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
         int32_t ret = CorkStream();

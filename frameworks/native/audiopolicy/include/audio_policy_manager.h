@@ -337,7 +337,7 @@ public:
 
     bool IsHighResolutionExist();
 
-    void SetHighResolutionExist(bool highResolutionExist);
+    void SetHighResolutionExist(bool highResExist);
 
 private:
     AudioPolicyManager()

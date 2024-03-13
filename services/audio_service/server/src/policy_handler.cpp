@@ -206,9 +206,9 @@ bool PolicyHandler::GetHighResolutionExist()
     return isHighResolutionExist_;
 }
 
-void PolicyHandler::SetHighResolutionExist(bool isHighResolutionExist)
+void PolicyHandler::SetHighResolutionExist(bool isHighResExist)
 {
-    isHighResolutionExist_ = isHighResolutionExist;
+    isHighResolutionExist_ = isHighResExist;
 }
 } // namespace AudioStandard
 } // namespace OHOS

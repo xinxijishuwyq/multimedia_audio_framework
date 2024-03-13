@@ -1453,14 +1453,14 @@ bool AudioPolicyManager::IsHighResolutionExist()
     return gspIsHighResolutionExist;
 }
 
-void AudioPolicyManager::SetHighResolutionExist(bool highResolutionExist)
+void AudioPolicyManager::SetHighResolutionExist(bool highResExist)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     if (gsp == nullptr) {
         AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
         return;
     }
-    gsp->SetHighResolutionExist(highResolutionExist);
+    gsp->SetHighResolutionExist(highResExist);
 }
 } // namespace AudioStandard
 } // namespace OHOS

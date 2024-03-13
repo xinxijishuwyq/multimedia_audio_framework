@@ -2527,12 +2527,12 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
 
 bool AudioPolicyServer::IsHighResolutionExist()
 {
-    return isHighResolutionExist;
+    return isHighResolutionExist_;
 }
 
-void AudioPolicyServer::SetHighResolutionExist(bool highResolutionExist)
+void AudioPolicyServer::SetHighResolutionExist(bool highResExist)
 {
-    isHighResolutionExist = highResolutionExist;
+    isHighResolutionExist_ = highResExist;
 }
 } // namespace AudioStandard
 } // namespace OHOS

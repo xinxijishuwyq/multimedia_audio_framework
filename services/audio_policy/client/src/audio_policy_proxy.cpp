@@ -2017,7 +2017,7 @@ bool AudioPolicyProxy::IsHighResolutionExist()
     return replyReadBool;
 }
 
-void AudioPolicyProxy::SetHighResolutionExist(bool highResolutionExist)
+void AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2026,7 +2026,7 @@ void AudioPolicyProxy::SetHighResolutionExist(bool highResolutionExist)
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     
-    data.WriteBool(highResolutionExist);
+    data.WriteBool(highResExist);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "SendRequest failed, error: %d", error);

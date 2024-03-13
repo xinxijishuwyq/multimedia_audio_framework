@@ -112,7 +112,7 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
-    AUDIO_INFO_LOG("ReleaseRender set HighResolutionExist false");
+    AUDIO_INFO_LOG("set HighResolutionExist to false");
     PolicyHandler::GetInstance().SetHighResolutionExist(false);
 
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
@@ -344,14 +344,10 @@ void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConf
         processConfig.streamInfo.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
         processConfig.streamInfo.format >= AudioSampleFormat::SAMPLE_S24LE) {
         PolicyHandler::GetInstance().SetHighResolutionExist(true);
-        AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 1, deviceType : %{public}d", deviceType);
+        AUDIO_INFO_LOG("set highResolutionExist to true, deviceType : %{public}d", deviceType);
         pa_proplist_sets(propList, "stream.highResolution", "1");
-        pa_proplist_sets(propList, "stream.samplerate",
-            std::to_string(processConfig.streamInfo.samplingRate).c_str());
-        pa_proplist_sets(propList, "stream.format",
-            std::to_string(processConfig.streamInfo.format).c_str());
     } else {
-        AUDIO_INFO_LOG("SetPaProplist stream.highResolution set 0, deviceType : %{public}d", deviceType);
+        AUDIO_INFO_LOG("set highResolutionExist to false, deviceType : %{public}d", deviceType);
         pa_proplist_sets(propList, "stream.highResolution", "0");
     }
 }

@@ -1094,8 +1094,8 @@ void AudioPolicyManagerStub::IsHighResolutionExistInternal(MessageParcel &data, 
 
 void AudioPolicyManagerStub::SetHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply)
 {
-    bool highResolutionExist = data.ReadBool();
-    SetHighResolutionExist(highResolutionExist);
+    bool highResExist = data.ReadBool();
+    SetHighResolutionExist(highResExist);
 }
 } // namespace audio_policy
 } // namespace OHOS

@@ -60,7 +60,7 @@ public:
 
     bool GetHighResolutionExist();
 
-    void SetHighResolutionExist(bool isHighResolutionExist);
+    void SetHighResolutionExist(bool isHighResExist);
 
 private:
     PolicyHandler();
