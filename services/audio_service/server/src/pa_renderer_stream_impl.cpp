@@ -674,8 +674,6 @@ uint32_t PaRendererStreamImpl::GetStreamIndex()
     return streamIndex_;
 }
 
-
-
 // offload
 size_t PaRendererStreamImpl::GetWritableSize()
 {

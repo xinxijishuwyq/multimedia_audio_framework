@@ -63,6 +63,22 @@ void AudioEffectManager::GetSupportedEffectConfig(SupportedEffectConfig &support
     supportedEffectConfig = supportedEffectConfig_;
 }
 
+static int32_t UpdateUnsupportedScene(std::string &scene)
+{
+    int32_t isSupported = 0;
+    if ((scene != "SCENE_MUSIC") &&
+        (scene != "SCENE_MOVIE") &&
+        (scene != "SCENE_GAME") &&
+        (scene != "SCENE_SPEECH") &&
+        (scene != "SCENE_RING") &&
+        (scene != "SCENE_OTHERS")) {
+        AUDIO_INFO_LOG("[supportedEffectConfig LOG9]:stream-> The scene of %{public}s is unsupported, \
+            and this scene is deleted!", scene.c_str());
+        isSupported = -1;
+    }
+    return isSupported;
+}
+
 static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, const std::string &mode, int32_t i, int32_t j)
 {
     StreamEffectMode streamEffectMode;
@@ -95,12 +111,12 @@ static void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string
     }
 }
 
-static void UpdateUnsupportedDevicePost(PostProcessStream &pp, Stream &stream, const std::string &mode, int32_t i)
+static void UpdateUnsupportedDevicePost(EffectSceneStream &ess, Stream &stream, const std::string &mode, int32_t i)
 {
     StreamEffectMode streamEffectMode;
     streamEffectMode.mode = mode;
     int32_t j = 0;
-    for (auto &device: pp.device) {
+    for (auto &device: ess.device) {
         if (i == j) {
             for (auto &a: device) {
                 streamEffectMode.devicePort.push_back(a);
@@ -112,7 +128,7 @@ static void UpdateUnsupportedDevicePost(PostProcessStream &pp, Stream &stream, c
     stream.streamEffectMode.push_back(streamEffectMode);
 }
 
-static void UpdateUnsupportedModePost(PostProcessStream &pp, Stream &stream, std::string &mode, int32_t i)
+static void UpdateUnsupportedModePost(EffectSceneStream &ess, Stream &stream, std::string &mode, int32_t i)
 {
     int32_t isSupported = 0;
     if ((mode != "EFFECT_NONE") &&
@@ -122,17 +138,18 @@ static void UpdateUnsupportedModePost(PostProcessStream &pp, Stream &stream, std
         isSupported = -1;
     }
     if (isSupported == 0) {
-        UpdateUnsupportedDevicePost(pp, stream, mode, i);
+        UpdateUnsupportedDevicePost(ess, stream, mode, i);
     }
 }
 
 static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
 {
     bool isDuplicate = 0;
+    int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(preProcessNew.stream.begin(), preProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
     });
-    if ((it == preProcessNew.stream.end())) {
+    if ((it == preProcessNew.stream.end()) && (isSupported == 0)) {
         Stream stream;
         stream.scene = pp.stream;
         int32_t i = 0;
@@ -146,18 +163,19 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
     return isDuplicate;
 }
 
-static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, PostProcessStream &pp)
+static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, EffectSceneStream &ess)
 {
     bool isDuplicate = 0;
-    auto it = std::find_if(postProcessNew.stream.begin(), postProcessNew.stream.end(), [&pp](const Stream& x) {
-        return x.scene == pp.stream;
+    int32_t isSupported = UpdateUnsupportedScene(ess.stream);
+    auto it = std::find_if(postProcessNew.stream.begin(), postProcessNew.stream.end(), [&ess](const Stream& x) {
+        return x.scene == ess.stream;
     });
-    if ((it == postProcessNew.stream.end())) {
+    if ((it == postProcessNew.stream.end()) && (isSupported == 0)) {
         Stream stream;
-        stream.scene = pp.stream;
+        stream.scene = ess.stream;
         int32_t i = 0;
-        for (auto &mode: pp.mode) {
-            UpdateUnsupportedModePost(pp, stream, mode, i);
+        for (auto &mode: ess.mode) {
+            UpdateUnsupportedModePost(ess, stream, mode, i);
         }
         postProcessNew.stream.push_back(stream);
     } else if (it != postProcessNew.stream.end()) {
@@ -228,8 +246,8 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
         }
     }
     ProcessNew postProcessNew;
-    for (PostProcessStream &pp: aeConfig.postProcessCfg.postProcessStreams) {
-        ret = UpdateAvailableStreamPost(postProcessNew, pp);
+    for (EffectSceneStream &ess: aeConfig.postProcessCfg.effectSceneStreams) {
+        ret = UpdateAvailableStreamPost(postProcessNew, ess);
         if (ret == 1) {
             isDuplicate = 1;
         }
@@ -426,7 +444,7 @@ void AudioEffectManager::BuildAvailableAEConfig()
     if (oriEffectConfig_.preProcess.size() == 0) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG11]: preProcess is none!");
     }
-    if (oriEffectConfig_.postProcessCfg.postProcessStreams.size() == 0) {
+    if (oriEffectConfig_.postProcessCfg.effectSceneStreams.size() == 0) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG13]: postProcess is none!");
     }
 
