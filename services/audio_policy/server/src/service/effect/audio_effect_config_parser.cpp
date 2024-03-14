@@ -578,7 +578,7 @@ static void LoadEffectSceneStreams(OriginalEffectConfig &result, xmlNode* thirdN
 }
 
 static void LoadEffectSceneStreamsCheck(OriginalEffectConfig &result, const xmlNode* currNode,
-                            int32_t (&countPostSecondNode)[NODE_SIZE_POST])
+                                        int32_t (&countPostSecondNode)[NODE_SIZE_POST])
 {
     if (countPostSecondNode[INDEX_POST_STREAMS] >= AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
         if (countPostSecondNode[INDEX_POST_STREAMS] == AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
@@ -596,7 +596,7 @@ static void LoadEffectSceneStreamsCheck(OriginalEffectConfig &result, const xmlN
 }
 
 static void LoadStreamUsageMappingCheck(OriginalEffectConfig &result, const xmlNode* currNode,
-                            int32_t (&countPostSecondNode)[NODE_SIZE_POST])
+                                        int32_t (&countPostSecondNode)[NODE_SIZE_POST])
 {
     if (countPostSecondNode[INDEX_POST_MAPPING] >= AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
         if (countPostSecondNode[INDEX_POST_MAPPING] == AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
@@ -650,7 +650,7 @@ static void LoadPostProcessCfg(OriginalEffectConfig &result, xmlNode* secondNode
 }
 
 static void LoadEffectConfigPostProcessCfg(OriginalEffectConfig &result, const xmlNode* currNode,
-                                        int32_t (&countFirstNode)[NODE_SIZE])
+                                           int32_t (&countFirstNode)[NODE_SIZE])
 {
     if (countFirstNode[INDEX_POSTPROCESS] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
         if (countFirstNode[INDEX_POSTPROCESS] == AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {

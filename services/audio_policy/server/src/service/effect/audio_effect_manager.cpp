@@ -266,7 +266,7 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
     std::vector<SceneMappingItem> postSceneMap;
     for (SceneMappingItem &item: aeConfig.postProcess.sceneMap) {
         if (!VerifySceneMappingItem(item)) {
-            AUDIO_WARNING_LOG("Invalid %{public}s-%{public}s pair has been ignored", 
+            AUDIO_WARNING_LOG("Invalid %{public}s-%{public}s pair has been ignored",
                 item.name.c_str(), item.sceneType.c_str());
             continue;
         }
