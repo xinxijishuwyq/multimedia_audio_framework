@@ -331,7 +331,7 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "CapturerChangeInfo Memory Allocation Failed");
             SetCapturerStreamParam(streamChangeInfo, capturerChangeInfo);
-            if (streamChangeInfo.audioCapturerChangeInfo.capturerState != CAPTURER_RUNNING) {
+            if (capturerChangeInfo->inputDeviceInfo.deviceType == DEVICE_TYPE_INVALID) {
                 capturerChangeInfo->inputDeviceInfo = (*it)->inputDeviceInfo;
             }
             *it = move(capturerChangeInfo);
