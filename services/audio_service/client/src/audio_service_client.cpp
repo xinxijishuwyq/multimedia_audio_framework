@@ -336,6 +336,12 @@ void AudioServiceClient::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, in
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
+    bool isClientExist;
+    if (!serviceClientInstanceMap_.Find(asClient, isClientExist)) {
+        AUDIO_ERR_LOG("asClient is null");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(asClient->serviceClientLock_);
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
     int negative = 0;
     asClient->paLatency_ = 0;
@@ -492,7 +498,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
     bool isClientExist;
-    if (serviceClientInstanceMap_.Find(asClient, isClientExist) == false) {
+    if (!serviceClientInstanceMap_.Find(asClient, isClientExist)) {
         AUDIO_ERR_LOG("asClient is null");
         return;
     }
