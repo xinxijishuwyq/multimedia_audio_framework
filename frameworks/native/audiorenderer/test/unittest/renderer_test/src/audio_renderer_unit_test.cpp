@@ -6319,6 +6319,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_001, TestSize.Level1)
     ret = audioRenderer->SetSpeed(0.5);
     EXPECT_EQ(SUCCESS, ret);
 
+    ret = audioRenderer->SetSpeed(0.25); // 0.25 min speed
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->SetSpeed(4); // 4 max speed
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioRenderer->SetSpeed(0.24); // 0.24 lower
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    ret = audioRenderer->SetSpeed(4.01); // 4.01 upper
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
 }
@@ -6348,6 +6360,68 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSpeed_001, TestSize.Level1)
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test SetSpeed and Write API.
+ * @tc.number: Audio_Renderer_SetSpeed_Write_001
+ * @tc.desc  : Test SetSpeed and Write interface.
+ */
+
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetSpeed(1.0); // 1.0 speed
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    size_t minBytes = 4; // 4 min bytes
+    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+
+    while (numBuffersToRender) {
+        if (numBuffersToRender == WRITE_BUFFERS_COUNT / 2) { // 2 half count
+            ret = audioRenderer->SetSpeed(2.0); // 2.0 speed
+            EXPECT_EQ(SUCCESS, ret);
+        }
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        bytesWritten = 0;
+        while ((static_cast<size_t>(bytesWritten) < bytesToWrite) &&
+            ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
+            bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
+                                                 bytesToWrite - static_cast<size_t>(bytesWritten));
+            EXPECT_GE(bytesWritten, VALUE_ZERO);
+            if (bytesWritten < 0) {
+                break;
+            }
+        }
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
 }
 } // namespace AudioStandard
 } // namespace OHOS
