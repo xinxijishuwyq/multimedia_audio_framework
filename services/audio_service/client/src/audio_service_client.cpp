@@ -1013,7 +1013,7 @@ void AudioServiceClient::SetHighResolution(pa_proplist *propList, AudioStreamPar
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
     AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
         deviceType, streamType_, audioParams.samplingRate, audioParams.format);
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType_ == STREAM_MUSIC && 
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType_ == STREAM_MUSIC &&
         audioParams.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
         audioParams.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolutionExist == false) {
         AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
