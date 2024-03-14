@@ -24,9 +24,6 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
-#ifdef OHCORE
-#include "audio_renderer_gateway.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -156,11 +153,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
     if (audioStreamType == STREAM_MEDIA) {
         audioStreamType = STREAM_MUSIC;
     }
-#ifdef OHCORE
-    return std::make_unique<AudioRendererGateway>(audioStreamType);
-#else
+
     return std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, true);
-#endif
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions)
@@ -208,11 +202,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     CHECK_AND_RETURN_RET_LOG((audioStreamType != STREAM_ULTRASONIC || getuid() == UID_MSDP_SA),
         nullptr, "ULTRASONIC can only create by MSDP");
 
-#ifdef OHCORE
-    auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
-#else
     auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, false);
-#endif
+
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
