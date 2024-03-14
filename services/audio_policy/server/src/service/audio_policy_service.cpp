@@ -885,7 +885,8 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
     }
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
-    if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        strUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
         audioStateManager_.SetPerferredCallRenderDevice(audioDeviceDescriptors[0]);
     } else {
         audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
