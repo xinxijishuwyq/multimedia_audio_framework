@@ -24,7 +24,7 @@
 #include "audio_stream_manager.h"
 
 namespace OHOS {
-namespace AudioStandard { 
+namespace AudioStandard {
 class AudioStreamCallback {
 public:
     virtual ~AudioStreamCallback() = default;
