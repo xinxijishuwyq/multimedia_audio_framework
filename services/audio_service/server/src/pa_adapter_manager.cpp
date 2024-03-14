@@ -112,7 +112,7 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
-    AUDIO_INFO_LOG("set HighResolutionExist to false");
+    AUDIO_INFO_LOG("current stream marked as non-high resolution");
     PolicyHandler::GetInstance().SetHighResolutionExist(false);
 
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
