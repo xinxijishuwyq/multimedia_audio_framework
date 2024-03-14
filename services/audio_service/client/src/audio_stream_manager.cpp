@@ -104,9 +104,7 @@ static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
 
 int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo, StreamUsage streamUsage)
 {
-    ContentType contentType = CONTENT_TYPE_UNKNOWN;
-    AudioStreamType streamType = IAudioStream::GetStreamType(contentType, streamUsage);
-    std::string effectScene = IAudioStream::GetEffectSceneName(streamType);
+    std::string effectScene = IAudioStream::GetEffectSceneName(streamUsage);
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     int32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();

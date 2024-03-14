@@ -63,7 +63,6 @@ public:
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex_) override;
     uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
-    const std::string GetEffectSceneName(AudioStreamType audioType);
 
     int32_t GetInfo() override;
 

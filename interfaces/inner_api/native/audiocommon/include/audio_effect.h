@@ -32,7 +32,9 @@ namespace OHOS {
 namespace AudioStandard {
 // audio effect manager info
 constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
+constexpr int32_t AUDIO_EFFECT_COUNT_STREAM_USAGE_UPPER_LIMIT = 200;
 constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
+constexpr int32_t AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT = 1;
 constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64; // max conf for sceneType + effectMode + deviceType
 constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32; // max num of effectChain
 constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of effect per effectChain
@@ -90,10 +92,20 @@ struct Preprocess {
     std::vector<std::vector<Device>> device;
 };
 
-struct Postprocess {
+struct PostProcessStream {
     std::string stream;
     std::vector<std::string> mode;
     std::vector<std::vector<Device>> device;
+};
+
+struct SceneMappingItem {
+    std::string name;
+    std::string sceneType;
+};
+
+struct PostProcessConfig {
+    std::vector<PostProcessStream> postProcessStreams;
+    std::vector<SceneMappingItem> sceneMappingItems;
 };
 
 struct OriginalEffectConfig {
@@ -102,7 +114,7 @@ struct OriginalEffectConfig {
     std::vector<Effect> effects;
     std::vector<EffectChain> effectChains;
     std::vector<Preprocess> preProcess;
-    std::vector<Postprocess> postProcess;
+    PostProcessConfig postProcessCfg;
 };
 
 struct StreamEffectMode {
@@ -123,6 +135,7 @@ struct SupportedEffectConfig {
     std::vector<EffectChain> effectChains;
     ProcessNew preProcessNew;
     ProcessNew postProcessNew;
+    std::vector<SceneMappingItem> postProcessSceneMap;
 };
 
 
@@ -180,6 +193,25 @@ const std::unordered_map<DeviceType, std::string> SUPPORTED_DEVICE_TYPE {
     {DEVICE_TYPE_FILE_SOURCE, "DEVICE_TYPE_FILE_SOURCE"},
     {DEVICE_TYPE_EXTERN_CABLE, "DEVICE_TYPE_EXTERN_CABLE"},
     {DEVICE_TYPE_DEFAULT, "DEVICE_TYPE_DEFAULT"},
+};
+
+static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
+    {STREAM_MUSIC, STREAM_USAGE_MUSIC},
+    {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
+    {STREAM_VOICE_ASSISTANT, STREAM_USAGE_VOICE_ASSISTANT},
+    {STREAM_ALARM, STREAM_USAGE_ALARM},
+    {STREAM_VOICE_MESSAGE, STREAM_USAGE_VOICE_MESSAGE},
+    {STREAM_RING, STREAM_USAGE_RINGTONE},
+    {STREAM_NOTIFICATION, STREAM_USAGE_NOTIFICATION},
+    {STREAM_ACCESSIBILITY, STREAM_USAGE_ACCESSIBILITY},
+    {STREAM_SYSTEM, STREAM_USAGE_SYSTEM},
+    {STREAM_MOVIE, STREAM_USAGE_MOVIE},
+    {STREAM_GAME, STREAM_USAGE_GAME},
+    {STREAM_SPEECH, STREAM_USAGE_AUDIOBOOK},
+    {STREAM_NAVIGATION, STREAM_USAGE_NAVIGATION},
+    {STREAM_DTMF, STREAM_USAGE_DTMF},
+    {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
+    {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC}
 };
 
 enum AudioEffectCommandCode {

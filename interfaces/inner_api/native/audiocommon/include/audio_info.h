@@ -279,17 +279,20 @@ struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = 0;
+    std::string sceneType = "";
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
-            && parcel.WriteInt32(rendererFlags);
+            && parcel.WriteInt32(rendererFlags)
+            && parcel.WriteString(sceneType);
     }
     void Unmarshalling(Parcel &parcel)
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         rendererFlags = parcel.ReadInt32();
+        sceneType = parcel.ReadString();
     }
 };
 

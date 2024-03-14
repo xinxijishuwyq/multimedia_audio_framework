@@ -63,22 +63,6 @@ void AudioEffectManager::GetSupportedEffectConfig(SupportedEffectConfig &support
     supportedEffectConfig = supportedEffectConfig_;
 }
 
-static int32_t UpdateUnsupportedScene(std::string &scene)
-{
-    int32_t isSupported = 0;
-    if ((scene != "SCENE_MUSIC") &&
-        (scene != "SCENE_MOVIE") &&
-        (scene != "SCENE_GAME") &&
-        (scene != "SCENE_SPEECH") &&
-        (scene != "SCENE_RING") &&
-        (scene != "SCENE_OTHERS")) {
-        AUDIO_INFO_LOG("[supportedEffectConfig LOG9]:stream-> The scene of %{public}s is unsupported, \
-            and this scene is deleted!", scene.c_str());
-        isSupported = -1;
-    }
-    return isSupported;
-}
-
 static void UpdateUnsupportedDevicePre(Preprocess &pp, Stream &stream, const std::string &mode, int32_t i, int32_t j)
 {
     StreamEffectMode streamEffectMode;
@@ -111,7 +95,7 @@ static void UpdateUnsupportedModePre(Preprocess &pp, Stream &stream, std::string
     }
 }
 
-static void UpdateUnsupportedDevicePost(Postprocess &pp, Stream &stream, const std::string &mode, int32_t i)
+static void UpdateUnsupportedDevicePost(PostProcessStream &pp, Stream &stream, const std::string &mode, int32_t i)
 {
     StreamEffectMode streamEffectMode;
     streamEffectMode.mode = mode;
@@ -128,7 +112,7 @@ static void UpdateUnsupportedDevicePost(Postprocess &pp, Stream &stream, const s
     stream.streamEffectMode.push_back(streamEffectMode);
 }
 
-static void UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::string &mode, int32_t i)
+static void UpdateUnsupportedModePost(PostProcessStream &pp, Stream &stream, std::string &mode, int32_t i)
 {
     int32_t isSupported = 0;
     if ((mode != "EFFECT_NONE") &&
@@ -145,11 +129,10 @@ static void UpdateUnsupportedModePost(Postprocess &pp, Stream &stream, std::stri
 static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
 {
     bool isDuplicate = 0;
-    int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(preProcessNew.stream.begin(), preProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
     });
-    if ((it == preProcessNew.stream.end()) && (isSupported == 0)) {
+    if ((it == preProcessNew.stream.end())) {
         Stream stream;
         stream.scene = pp.stream;
         int32_t i = 0;
@@ -163,14 +146,13 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
     return isDuplicate;
 }
 
-static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, Postprocess &pp)
+static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, PostProcessStream &pp)
 {
     bool isDuplicate = 0;
-    int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(postProcessNew.stream.begin(), postProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
     });
-    if ((it == postProcessNew.stream.end()) && (isSupported == 0)) {
+    if ((it == postProcessNew.stream.end())) {
         Stream stream;
         stream.scene = pp.stream;
         int32_t i = 0;
@@ -182,6 +164,27 @@ static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, Postprocess
         isDuplicate = 1;
     }
     return isDuplicate;
+}
+
+static int32_t UpdateAvailableSceneMapPost(std::vector<SceneMappingItem> &postProcessSceneMap, SceneMappingItem &item)
+{
+    bool isDuplicate = 0;
+    auto it = std::find_if(postProcessSceneMap.begin(), postProcessSceneMap.end(),
+        [&item](const SceneMappingItem& x) {
+        return x.name == item.name;
+    });
+    if ((it == postProcessSceneMap.end())) {
+        postProcessSceneMap.push_back(item);
+    } else {
+        isDuplicate = 1;
+    }
+    return isDuplicate;
+}
+
+bool AudioEffectManager::VerifySceneMappingItem(const SceneMappingItem &item)
+{
+    return STREAM_USAGE_MAP.find(item.name) != STREAM_USAGE_MAP.end() ||
+        std::find(postSceneTypeSet_.begin(), postSceneTypeSet_.end(), item.sceneType) != postSceneTypeSet_.end();
 }
 
 void AudioEffectManager::UpdateEffectChains(std::vector<std::string> &availableLayout)
@@ -225,7 +228,7 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
         }
     }
     ProcessNew postProcessNew;
-    for (Postprocess &pp: aeConfig.postProcess) {
+    for (PostProcessStream &pp: aeConfig.postProcessCfg.postProcessStreams) {
         ret = UpdateAvailableStreamPost(postProcessNew, pp);
         if (ret == 1) {
             isDuplicate = 1;
@@ -237,6 +240,24 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
     }
     supportedEffectConfig_.preProcessNew = preProcessNew;
     supportedEffectConfig_.postProcessNew = postProcessNew;
+
+    for (Stream &ss: supportedEffectConfig_.postProcessNew.stream) {
+        postSceneTypeSet_.push_back(ss.scene);
+    }
+    AUDIO_INFO_LOG("postSceneTypeSet_ size is %{public}d", supportedEffectConfig_.postProcessNew.stream.size());
+    std::vector<SceneMappingItem> postSceneMap;
+    for (SceneMappingItem &item: aeConfig.postProcessCfg.sceneMappingItems) {
+        if (!VerifySceneMappingItem(item)) {
+            AUDIO_WARNING_LOG("Invalid %{public}s-%{public}s pair has been ignored", 
+                item.name.c_str(), item.sceneType.c_str());
+            continue;
+        }
+        if (UpdateAvailableSceneMapPost(postSceneMap, item)) {
+            AUDIO_WARNING_LOG("The duplicate streamUsage-sceneType pair is deleted, \
+                and the first configuration is retained!");
+        }
+    }
+    supportedEffectConfig_.postProcessSceneMap = postSceneMap;
 }
 
 void AudioEffectManager::UpdateDuplicateBypassMode(ProcessNew &preProcessNew)
@@ -405,7 +426,7 @@ void AudioEffectManager::BuildAvailableAEConfig()
     if (oriEffectConfig_.preProcess.size() == 0) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG11]: preProcess is none!");
     }
-    if (oriEffectConfig_.postProcess.size() == 0) {
+    if (oriEffectConfig_.postProcessCfg.postProcessStreams.size() == 0) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG13]: postProcess is none!");
     }
 
@@ -472,16 +493,5 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
     AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d",
         (int32_t)map.size());
 }
-
-bool AudioEffectManager::CheckEffectSinkName(std::string &sinkName)
-{
-    for (auto it = AUDIO_SUPPORTED_SCENE_TYPES.begin(); it != AUDIO_SUPPORTED_SCENE_TYPES.end(); ++it) {
-        if (it->second == sinkName) {
-            return true;
-        }
-    }
-    return false;
-}
-
 } // namespce AudioStandard
 } // namespace OHOS
