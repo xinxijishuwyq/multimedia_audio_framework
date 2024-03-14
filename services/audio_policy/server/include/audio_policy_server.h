@@ -390,7 +390,7 @@ public:
 
     bool IsHighResolutionExist() override;
 
-    void SetHighResolutionExist(bool highResExist) override;
+    int32_t SetHighResolutionExist(bool highResExist) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

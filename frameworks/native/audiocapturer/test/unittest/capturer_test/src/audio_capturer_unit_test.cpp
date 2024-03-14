@@ -806,6 +806,81 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_007, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test SetParams API via illegal input.
+* @tc.number: Audio_Capturer_SetParams_008
+* @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.
+*             capturerParams.audioSampleFormat = SAMPLE_S24LE;
+*             capturerParams.samplingRate = SAMPLE_RATE_88200;
+*             capturerParams.audioChannel = STEREO;
+*             capturerParams.audioEncoding = ENCODING_PCM;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_008, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S24LE;
+    capturerParams.samplingRate = SAMPLE_RATE_88200;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test SetParams API via illegal input.
+* @tc.number: Audio_Capturer_SetParams_009
+* @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.
+*             capturerParams.audioSampleFormat = SAMPLE_S24LE;
+*             capturerParams.samplingRate = SAMPLE_RATE_176400;
+*             capturerParams.audioChannel = STEREO;
+*             capturerParams.audioEncoding = ENCODING_PCM;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_009, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S24LE;
+    capturerParams.samplingRate = SAMPLE_RATE_176400;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test SetParams API via illegal input.
+* @tc.number: Audio_Capturer_SetParams_010
+* @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.
+*             capturerParams.audioSampleFormat = SAMPLE_S24LE;
+*             capturerParams.samplingRate = SAMPLE_RATE_192000;
+*             capturerParams.audioChannel = STEREO;
+*             capturerParams.audioEncoding = ENCODING_PCM;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_010, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S24LE;
+    capturerParams.samplingRate = SAMPLE_RATE_192000;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
+}
+
+/**
 * @tc.name  : Test SetParams API stability.
 * @tc.number: Audio_Capturer_SetParams_Stability_001
 * @tc.desc  : Test SetParams interface stability.

@@ -921,7 +921,7 @@ private:
         UNSET_CAPTURER_MARK_REACHED_REQUEST,
     };
 
-    void SetHighResolution(pa_proplist *propList, AudioStreamParams &audioParams);
+    int32_t SetHighResolution(pa_proplist *propList, AudioStreamParams &audioParams);
 };
 
 class AudioSpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

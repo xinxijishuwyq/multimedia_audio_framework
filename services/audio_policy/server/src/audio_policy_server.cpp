@@ -2527,12 +2527,23 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
 
 bool AudioPolicyServer::IsHighResolutionExist()
 {
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return false;
+    }
     return isHighResolutionExist_;
 }
 
-void AudioPolicyServer::SetHighResolutionExist(bool highResExist)
+int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
 {
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
     isHighResolutionExist_ = highResExist;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

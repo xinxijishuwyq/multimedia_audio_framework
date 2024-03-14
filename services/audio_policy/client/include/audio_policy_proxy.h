@@ -257,7 +257,7 @@ public:
 
     bool IsHighResolutionExist() override;
 
-    void SetHighResolutionExist(bool highResExist) override;
+    int32_t SetHighResolutionExist(bool highResExist) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

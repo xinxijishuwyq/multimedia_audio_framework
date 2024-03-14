@@ -2017,19 +2017,20 @@ bool AudioPolicyProxy::IsHighResolutionExist()
     return replyReadBool;
 }
 
-void AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
+int32_t AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     
     data.WriteBool(highResExist);
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
-    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SendRequest failed, error: %d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

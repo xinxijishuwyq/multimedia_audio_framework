@@ -270,7 +270,7 @@ public:
 
     virtual bool IsHighResolutionExist(void) = 0;
 
-    virtual void SetHighResolutionExist(bool highResExist) = 0;
+    virtual int32_t SetHighResolutionExist(bool highResExist) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
