@@ -201,7 +201,7 @@ void RemoteAudioRendererSinkInner::DeInit()
         temp = nullptr;
         allsinks.erase(this->deviceNetworkId_);
     }
-    AUDIO_INFO_LOG("DeInit end.");
+    AUDIO_INFO_LOG("end.");
 }
 
 inline std::string PrintRemoteAttr(const IAudioSinkAttr &attr)

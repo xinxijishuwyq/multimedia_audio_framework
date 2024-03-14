@@ -188,7 +188,7 @@ void RemoteAudioCapturerSourceInner::DeInit()
         temp = nullptr;
         allRemoteSources.erase(this->deviceNetworkId_);
     }
-    AUDIO_INFO_LOG("DeInit end.");
+    AUDIO_INFO_LOG("end.");
 }
 
 int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)
