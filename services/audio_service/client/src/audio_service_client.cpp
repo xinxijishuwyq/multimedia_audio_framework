@@ -335,7 +335,7 @@ void AudioServiceClient::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, in
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
     bool isClientExist;
-    if (serviceClientInstanceMap_.Find(asClient, isClientExist) == false) {
+    if (!serviceClientInstanceMap_.Find(asClient, isClientExist)) {
         AUDIO_ERR_LOG("asClient is null");
         return;
     }
