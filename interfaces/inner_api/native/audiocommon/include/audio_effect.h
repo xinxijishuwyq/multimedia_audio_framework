@@ -105,7 +105,7 @@ struct SceneMappingItem {
 
 struct PostProcessConfig {
     std::vector<EffectSceneStream> effectSceneStreams;
-    std::vector<SceneMappingItem> sceneMappingItems;
+    std::vector<SceneMappingItem> sceneMap;
 };
 
 struct OriginalEffectConfig {
@@ -114,7 +114,7 @@ struct OriginalEffectConfig {
     std::vector<Effect> effects;
     std::vector<EffectChain> effectChains;
     std::vector<Preprocess> preProcess;
-    PostProcessConfig postProcessCfg;
+    PostProcessConfig postProcess;
 };
 
 struct StreamEffectMode {

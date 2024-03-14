@@ -453,7 +453,7 @@ static void LoadStreamUsageMapping(OriginalEffectConfig &result, xmlNode* thirdN
                     xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("name")));
                 tmp.sceneType = reinterpret_cast<char*>(
                     xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("scene")));
-                result.postProcessCfg.sceneMappingItems.push_back(tmp);
+                result.postProcess.sceneMap.push_back(tmp);
             }
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be streamUsage", currNode->name);
@@ -490,7 +490,7 @@ static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode* fifthNod
                 std::string pChain = reinterpret_cast<char*>
                          (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("effectChain")));
                 Device tmpdev = {pDevType, pChain};
-                result.postProcessCfg.effectSceneStreams[streamNum].device[modeNum].push_back(tmpdev);
+                result.postProcess.effectSceneStreams[streamNum].device[modeNum].push_back(tmpdev);
             }
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be devicePort", currNode->name);
@@ -523,8 +523,8 @@ static void LoadPostMode(OriginalEffectConfig &result, const xmlNode* fourthNode
             } else {
                 std::string pStreamAEMode = reinterpret_cast<char*>
                                 (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("mode")));
-                result.postProcessCfg.effectSceneStreams[streamNum].mode.push_back(pStreamAEMode);
-                result.postProcessCfg.effectSceneStreams[streamNum].device.push_back({});
+                result.postProcess.effectSceneStreams[streamNum].mode.push_back(pStreamAEMode);
+                result.postProcess.effectSceneStreams[streamNum].device.push_back({});
                 LoadPostDevice(result, currNode, modeNum, streamNum);
                 modeNum++;
             }
@@ -562,7 +562,7 @@ static void LoadEffectSceneStreams(OriginalEffectConfig &result, xmlNode* thirdN
                 std::string pStreamType = reinterpret_cast<char*>
                                          (xmlGetProp(currNode, reinterpret_cast<const xmlChar*>("scene")));
                 tmp.stream = pStreamType;
-                result.postProcessCfg.effectSceneStreams.push_back(tmp);
+                result.postProcess.effectSceneStreams.push_back(tmp);
                 LoadPostMode(result, currNode, streamNum);
                 streamNum++;
             }

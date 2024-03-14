@@ -246,7 +246,7 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
         }
     }
     ProcessNew postProcessNew;
-    for (EffectSceneStream &ess: aeConfig.postProcessCfg.effectSceneStreams) {
+    for (EffectSceneStream &ess: aeConfig.postProcess.effectSceneStreams) {
         ret = UpdateAvailableStreamPost(postProcessNew, ess);
         if (ret == 1) {
             isDuplicate = 1;
@@ -264,7 +264,7 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
     }
     AUDIO_INFO_LOG("postSceneTypeSet_ size is %{public}d", supportedEffectConfig_.postProcessNew.stream.size());
     std::vector<SceneMappingItem> postSceneMap;
-    for (SceneMappingItem &item: aeConfig.postProcessCfg.sceneMappingItems) {
+    for (SceneMappingItem &item: aeConfig.postProcess.sceneMap) {
         if (!VerifySceneMappingItem(item)) {
             AUDIO_WARNING_LOG("Invalid %{public}s-%{public}s pair has been ignored", 
                 item.name.c_str(), item.sceneType.c_str());
@@ -444,7 +444,7 @@ void AudioEffectManager::BuildAvailableAEConfig()
     if (oriEffectConfig_.preProcess.size() == 0) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG11]: preProcess is none!");
     }
-    if (oriEffectConfig_.postProcessCfg.effectSceneStreams.size() == 0) {
+    if (oriEffectConfig_.postProcess.effectSceneStreams.size() == 0) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG13]: postProcess is none!");
     }
 
