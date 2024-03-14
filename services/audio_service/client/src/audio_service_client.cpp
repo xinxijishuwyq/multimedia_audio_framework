@@ -495,8 +495,8 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    bool isClientExist = true;
-    if (serviceClientInstanceMap_.Find(asClient, isClientExist) == false) {
+    bool isClientExist;
+    if (!serviceClientInstanceMap_.Find(asClient, isClientExist)) {
         AUDIO_ERR_LOG("asClient is null");
         return;
     }
