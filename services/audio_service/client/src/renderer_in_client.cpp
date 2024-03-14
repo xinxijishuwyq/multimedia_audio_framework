@@ -438,9 +438,9 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION) {
         effectMode_ = EFFECT_NONE;
     }
-    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d", rendererInfo_.rendererFlags);
     rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
-    AUDIO_INFO_LOG("SetRendererInfo with sceneType %{public}s", rendererInfo_.sceneType.c_str());
+    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
+        rendererInfo_.sceneType.c_str());
 }
 
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)

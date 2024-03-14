@@ -144,7 +144,7 @@ static void UpdateUnsupportedModePost(EffectSceneStream &ess, Stream &stream, st
 
 static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &pp)
 {
-    bool isDuplicate = 0;
+    bool isDuplicate = false;
     int32_t isSupported = UpdateUnsupportedScene(pp.stream);
     auto it = std::find_if(preProcessNew.stream.begin(), preProcessNew.stream.end(), [&pp](const Stream& x) {
         return x.scene == pp.stream;
@@ -158,14 +158,14 @@ static int32_t UpdateAvailableStreamPre(ProcessNew &preProcessNew, Preprocess &p
         }
         preProcessNew.stream.push_back(stream);
     } else if (it != preProcessNew.stream.end()) {
-        isDuplicate = 1;
+        isDuplicate = true;
     }
     return isDuplicate;
 }
 
 static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, EffectSceneStream &ess)
 {
-    bool isDuplicate = 0;
+    bool isDuplicate = false;
     int32_t isSupported = UpdateUnsupportedScene(ess.stream);
     auto it = std::find_if(postProcessNew.stream.begin(), postProcessNew.stream.end(), [&ess](const Stream& x) {
         return x.scene == ess.stream;
@@ -179,14 +179,14 @@ static int32_t UpdateAvailableStreamPost(ProcessNew &postProcessNew, EffectScene
         }
         postProcessNew.stream.push_back(stream);
     } else if (it != postProcessNew.stream.end()) {
-        isDuplicate = 1;
+        isDuplicate = true;
     }
     return isDuplicate;
 }
 
-static int32_t UpdateAvailableSceneMapPost(std::vector<SceneMappingItem> &postProcessSceneMap, SceneMappingItem &item)
+static int32_t UpdateAvailableSceneMapPost(SceneMappingItem &item, std::vector<SceneMappingItem> &postProcessSceneMap)
 {
-    bool isDuplicate = 0;
+    bool isDuplicate = false;
     auto it = std::find_if(postProcessSceneMap.begin(), postProcessSceneMap.end(),
         [&item](const SceneMappingItem& x) {
         return x.name == item.name;
@@ -194,7 +194,7 @@ static int32_t UpdateAvailableSceneMapPost(std::vector<SceneMappingItem> &postPr
     if ((it == postProcessSceneMap.end())) {
         postProcessSceneMap.push_back(item);
     } else {
-        isDuplicate = 1;
+        isDuplicate = true;
     }
     return isDuplicate;
 }
@@ -235,24 +235,24 @@ void AudioEffectManager::UpdateEffectChains(std::vector<std::string> &availableL
 
 void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
 {
-    bool isDuplicate = 0;
+    bool isDuplicate = false;
     bool ret;
     supportedEffectConfig_.effectChains = aeConfig.effectChains;
     ProcessNew preProcessNew;
     for (Preprocess &pp: aeConfig.preProcess) {
         ret = UpdateAvailableStreamPre(preProcessNew, pp);
         if (ret == 1) {
-            isDuplicate = 1;
+            isDuplicate = true;
         }
     }
     ProcessNew postProcessNew;
     for (EffectSceneStream &ess: aeConfig.postProcess.effectSceneStreams) {
         ret = UpdateAvailableStreamPost(postProcessNew, ess);
         if (ret == 1) {
-            isDuplicate = 1;
+            isDuplicate = true;
         }
     }
-    if (isDuplicate == 1) {
+    if (isDuplicate == true) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG2]:stream-> The duplicate stream is deleted, \
             and the first configuration is retained!");
     }

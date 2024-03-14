@@ -81,7 +81,7 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
     return 0;
 }
 
-static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
+static int32_t LoadConfigCheck(xmlDoc *doc, xmlNode *currNode)
 {
     CHECK_AND_RETURN_RET_LOG(currNode != nullptr, FILE_PARSE_ERROR, "error: could not parse file");
     if (xmlStrcmp(currNode->name, reinterpret_cast<const xmlChar*>("audio_effects_conf"))) {
@@ -101,7 +101,7 @@ static int32_t LoadConfigCheck(xmlDoc* doc, xmlNode* currNode)
     }
 }
 
-static void LoadConfigVersion(OriginalEffectConfig &result, xmlNode* currNode)
+static void LoadConfigVersion(OriginalEffectConfig &result, xmlNode *currNode)
 {
     bool ret = xmlHasProp(currNode, reinterpret_cast<const xmlChar*>("version"));
     CHECK_AND_RETURN_LOG(ret, "missing information: audio_effects_conf node has no version attribute");
@@ -109,7 +109,7 @@ static void LoadConfigVersion(OriginalEffectConfig &result, xmlNode* currNode)
     result.version = reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("version")));
 }
 
-static void LoadLibrary(OriginalEffectConfig &result, xmlNode* secondNode)
+static void LoadLibrary(OriginalEffectConfig &result, xmlNode *secondNode)
 {
     xmlNode *currNode = secondNode;
     int32_t countLibrary = 0;
@@ -144,7 +144,7 @@ static void LoadLibrary(OriginalEffectConfig &result, xmlNode* secondNode)
     }
 }
 
-static void LoadEffectConfigLibraries(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadEffectConfigLibraries(OriginalEffectConfig &result, const xmlNode *currNode,
                                       int32_t (&countFirstNode)[NODE_SIZE])
 {
     if (countFirstNode[INDEX_LIBRARIES] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
@@ -162,7 +162,7 @@ static void LoadEffectConfigLibraries(OriginalEffectConfig &result, const xmlNod
     }
 }
 
-static void LoadEffect(OriginalEffectConfig &result, xmlNode* secondNode)
+static void LoadEffect(OriginalEffectConfig &result, xmlNode *secondNode)
 {
     xmlNode *currNode = secondNode;
     int32_t countEffect = 0;
@@ -197,7 +197,7 @@ static void LoadEffect(OriginalEffectConfig &result, xmlNode* secondNode)
     }
 }
 
-static void LoadEffectConfigEffects(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadEffectConfigEffects(OriginalEffectConfig &result, const xmlNode *currNode,
                                     int32_t (&countFirstNode)[NODE_SIZE])
 {
     if (countFirstNode[INDEX_EFFECS] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
@@ -215,7 +215,7 @@ static void LoadEffectConfigEffects(OriginalEffectConfig &result, const xmlNode*
     }
 }
 
-static void LoadApply(OriginalEffectConfig &result, const xmlNode* thirdNode, const int32_t segInx)
+static void LoadApply(OriginalEffectConfig &result, const xmlNode *thirdNode, const int32_t segInx)
 {
     CHECK_AND_RETURN_LOG(thirdNode->xmlChildrenNode, "missing information: effectChain has no child apply");
     int32_t countApply = 0;
@@ -246,7 +246,7 @@ static void LoadApply(OriginalEffectConfig &result, const xmlNode* thirdNode, co
     }
 }
 
-static void LoadEffectChain(OriginalEffectConfig &result, xmlNode* secondNode)
+static void LoadEffectChain(OriginalEffectConfig &result, xmlNode *secondNode)
 {
     xmlNode *currNode = secondNode;
     int32_t countEffectChain = 0;
@@ -285,7 +285,7 @@ static void LoadEffectChain(OriginalEffectConfig &result, xmlNode* secondNode)
     }
 }
 
-static void LoadEffectConfigEffectChains(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadEffectConfigEffectChains(OriginalEffectConfig &result, const xmlNode *currNode,
                                          int32_t (&countFirstNode)[NODE_SIZE])
 {
     if (countFirstNode[INDEX_EFFECTCHAINE] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
@@ -303,7 +303,7 @@ static void LoadEffectConfigEffectChains(OriginalEffectConfig &result, const xml
     }
 }
 
-static void LoadPreDevice(OriginalEffectConfig &result, const xmlNode* fourthNode,
+static void LoadPreDevice(OriginalEffectConfig &result, const xmlNode *fourthNode,
                           const int32_t modeNum, const int32_t streamNum)
 {
     CHECK_AND_RETURN_LOG(fourthNode->xmlChildrenNode, "missing information: streamEffectMode has no child devicePort");
@@ -340,7 +340,7 @@ static void LoadPreDevice(OriginalEffectConfig &result, const xmlNode* fourthNod
     }
 }
 
-static void LoadPreMode(OriginalEffectConfig &result, const xmlNode* thirdNode, const int32_t streamNum)
+static void LoadPreMode(OriginalEffectConfig &result, const xmlNode *thirdNode, const int32_t streamNum)
 {
     CHECK_AND_RETURN_LOG(thirdNode->xmlChildrenNode,
         "missing information: stream has no child streamEffectMode");
@@ -376,7 +376,7 @@ static void LoadPreMode(OriginalEffectConfig &result, const xmlNode* thirdNode, 
     }
 }
 
-static void LoadPreProcess(OriginalEffectConfig &result, xmlNode* secondNode)
+static void LoadPreProcess(OriginalEffectConfig &result, xmlNode *secondNode)
 {
     std::string stream;
     std::vector<std::string> mode;
@@ -414,7 +414,7 @@ static void LoadPreProcess(OriginalEffectConfig &result, xmlNode* secondNode)
     }
 }
 
-static void LoadEffectConfigPreProcess(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadEffectConfigPreProcess(OriginalEffectConfig &result, const xmlNode *currNode,
                                        int32_t (&countFirstNode)[NODE_SIZE])
 {
     if (countFirstNode[INDEX_PREPROCESS] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
@@ -432,7 +432,7 @@ static void LoadEffectConfigPreProcess(OriginalEffectConfig &result, const xmlNo
     }
 }
 
-static void LoadStreamUsageMapping(OriginalEffectConfig &result, xmlNode* thirdNode)
+static void LoadStreamUsageMapping(OriginalEffectConfig &result, xmlNode *thirdNode)
 {
     SceneMappingItem tmp;
     xmlNode *currNode = thirdNode;
@@ -466,7 +466,7 @@ static void LoadStreamUsageMapping(OriginalEffectConfig &result, xmlNode* thirdN
     }
 }
 
-static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode* fifthNode,
+static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode *fifthNode,
                            const int32_t modeNum, const int32_t streamNum)
 {
     CHECK_AND_RETURN_LOG(fifthNode->xmlChildrenNode, "missing information: streamEffectMode has no child devicePort");
@@ -503,7 +503,7 @@ static void LoadPostDevice(OriginalEffectConfig &result, const xmlNode* fifthNod
     }
 }
 
-static void LoadPostMode(OriginalEffectConfig &result, const xmlNode* fourthNode, const int32_t streamNum)
+static void LoadPostMode(OriginalEffectConfig &result, const xmlNode *fourthNode, const int32_t streamNum)
 {
     CHECK_AND_RETURN_LOG(fourthNode->xmlChildrenNode,
         "missing information: stream has no child streamEffectMode");
@@ -539,7 +539,7 @@ static void LoadPostMode(OriginalEffectConfig &result, const xmlNode* fourthNode
     }
 }
 
-static void LoadEffectSceneStreams(OriginalEffectConfig &result, xmlNode* thirdNode)
+static void LoadEffectSceneStreams(OriginalEffectConfig &result, xmlNode *thirdNode)
 {
     std::string stream;
     std::vector<std::string> mode;
@@ -577,7 +577,7 @@ static void LoadEffectSceneStreams(OriginalEffectConfig &result, xmlNode* thirdN
     }
 }
 
-static void LoadEffectSceneStreamsCheck(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadEffectSceneStreamsCheck(OriginalEffectConfig &result, const xmlNode *currNode,
                                         int32_t (&countPostSecondNode)[NODE_SIZE_POST])
 {
     if (countPostSecondNode[INDEX_POST_STREAMS] >= AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
@@ -595,7 +595,7 @@ static void LoadEffectSceneStreamsCheck(OriginalEffectConfig &result, const xmlN
     }
 }
 
-static void LoadStreamUsageMappingCheck(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadStreamUsageMappingCheck(OriginalEffectConfig &result, const xmlNode *currNode,
                                         int32_t (&countPostSecondNode)[NODE_SIZE_POST])
 {
     if (countPostSecondNode[INDEX_POST_MAPPING] >= AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
@@ -613,7 +613,7 @@ static void LoadStreamUsageMappingCheck(OriginalEffectConfig &result, const xmlN
     }
 }
 
-static void LoadPostprocessExceptionCheck(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadPostprocessExceptionCheck(OriginalEffectConfig &result, const xmlNode *currNode,
                                           int32_t (&countPostSecondNode)[NODE_SIZE_POST])
 {
     if (countPostSecondNode[INDEX_POST_EXCEPTION] >= AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT) {
@@ -628,11 +628,12 @@ static void LoadPostprocessExceptionCheck(OriginalEffectConfig &result, const xm
     }
 }
 
-static void LoadPostProcessCfg(OriginalEffectConfig &result, xmlNode* secondNode)
+static void LoadPostProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode)
 {
     int32_t countPostSecondNode[NODE_SIZE_POST] = {0};
     xmlNode *currNode = secondNode;
     while (currNode != nullptr) {
+
         if (currNode->type != XML_ELEMENT_NODE) {
             currNode = currNode->next;
             continue;
@@ -649,7 +650,7 @@ static void LoadPostProcessCfg(OriginalEffectConfig &result, xmlNode* secondNode
     }
 }
 
-static void LoadEffectConfigPostProcessCfg(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadEffectConfigPostProcessCfg(OriginalEffectConfig &result, const xmlNode *currNode,
                                            int32_t (&countFirstNode)[NODE_SIZE])
 {
     if (countFirstNode[INDEX_POSTPROCESS] >= AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT) {
@@ -667,7 +668,7 @@ static void LoadEffectConfigPostProcessCfg(OriginalEffectConfig &result, const x
     }
 }
 
-static void LoadEffectConfigException(OriginalEffectConfig &result, const xmlNode* currNode,
+static void LoadEffectConfigException(OriginalEffectConfig &result, const xmlNode *currNode,
                                       int32_t (&countFirstNode)[NODE_SIZE])
 {
     if (countFirstNode[INDEX_EXCEPTION] >= AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
