@@ -1205,9 +1205,7 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     // update session info
     if (SessionIDToEffectInfoMap_.count(sessionIDString)) {
-        if (SessionIDToEffectInfoMap_[sessionIDString].volume != volume) {
-            SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
-        }
+        SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
     }
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     int32_t ret;
