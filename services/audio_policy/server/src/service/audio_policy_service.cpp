@@ -1611,17 +1611,14 @@ void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType)
 }
 
 void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated,
-    const AudioStreamDeviceChangeReason reason)
+    unique_ptr<AudioDeviceDescriptor> &outputDevice, const AudioStreamDeviceChangeReason reason)
 {
     std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId);
 
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
 
-    if (!isStreamStatusUpdated) {
-        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
-            rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
-    }
+    audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
+        rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
 
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevice->networkId_ == LOCAL_NETWORK_ID)
@@ -1634,15 +1631,14 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
         UpdateActiveDeviceRoute(outputDevice->deviceType_);
     }
 
-    if (!isStreamStatusUpdated) {
-        streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
-            rendererChangeInfo->outputDeviceInfo);
-    }
+    streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
+        rendererChangeInfo->outputDeviceInfo);
+
     ResetOffloadMode();
 }
 
 void AudioPolicyService::SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
-    unique_ptr<AudioDeviceDescriptor> &inputDevice, bool isStreamStatusUpdated = false)
+    unique_ptr<AudioDeviceDescriptor> &inputDevice)
 {
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(capturerChangeInfo->sessionId);
 
@@ -1656,10 +1652,8 @@ void AudioPolicyService::SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo
         UpdateActiveDeviceRoute(inputDevice->deviceType_);
     }
     UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*inputDevice), true, true);
-    if (!isStreamStatusUpdated) {
-        streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
-            capturerChangeInfo->inputDeviceInfo);
-    }
+    streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
+        capturerChangeInfo->inputDeviceInfo);
 }
 
 void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
@@ -1696,7 +1690,7 @@ void AudioPolicyService::FetchInputDeviceWhenNoRunningStream()
 }
 
 int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated)
+    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
     sptr<AudioDeviceDescriptor> deviceDesc = new AudioDeviceDescriptor(*desc);
     int32_t ret = SwitchActiveA2dpDevice(deviceDesc);
@@ -1704,14 +1698,14 @@ int32_t AudioPolicyService::ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor>
         AUDIO_ERR_LOG("Active A2DP device failed, retrigger fetch output device");
         deviceDesc->exceptionFlag_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
-        FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
+        FetchOutputDevice(rendererChangeInfos);
         return ERROR;
     }
     return SUCCESS;
 }
 
 int32_t AudioPolicyService::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated)
+    vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
 #ifdef BLUETOOTH_ENABLE
         int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
@@ -1719,7 +1713,7 @@ int32_t AudioPolicyService::HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceD
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
             desc->exceptionFlag_ = true;
             audioDeviceManager_.UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
-            FetchOutputDevice(rendererChangeInfos, isStreamStatusUpdated);
+            FetchOutputDevice(rendererChangeInfos);
             return ERROR;
         }
         if (desc->connectState_ == DEACTIVE_CONNECTED) {
@@ -1760,7 +1754,7 @@ void AudioPolicyService::MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc)
 }
 
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-    bool isStreamStatusUpdated, const AudioStreamDeviceChangeReason reason)
+    const AudioStreamDeviceChangeReason reason)
 {
     AUDIO_INFO_LOG("Start for %{public}zu stream", rendererChangeInfos.size());
     bool needUpdateActiveDevice = true;
@@ -1780,12 +1774,12 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             continue;
         }
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos, isStreamStatusUpdated);
+            int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
                 GetEncryptAddr(desc->macAddress_).c_str());
             OffloadStartPlayingIfOffloadMode(rendererChangeInfo->sessionId);
         } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            int32_t ret = HandleScoOutputDeviceFetched(desc, rendererChangeInfos, isStreamStatusUpdated);
+            int32_t ret = HandleScoOutputDeviceFetched(desc, rendererChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet",
                 GetEncryptAddr(desc->macAddress_).c_str());
         }
@@ -1801,7 +1795,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
                 MuteSinkPort(desc);
             }
         }
-        SelectNewOutputDevice(rendererChangeInfo, desc, false, reason);
+        SelectNewOutputDevice(rendererChangeInfo, desc, reason);
     }
     sameDeviceSwitchFlag_ = false;
     if (isUpdateActiveDevice) {
@@ -1819,10 +1813,10 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(
             rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID);
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos, false);
+            int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
                 GetEncryptAddr(desc->macAddress_).c_str());
-            SelectNewOutputDevice(rendererChangeInfo, desc, false);
+            SelectNewOutputDevice(rendererChangeInfo, desc);
         }
     }
 }
@@ -1857,7 +1851,7 @@ bool AudioPolicyService::IsSameDevice(unique_ptr<AudioDeviceDescriptor> &desc, A
 }
 
 int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-    vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, bool &isStreamStatusUpdated)
+    vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
 #ifdef BLUETOOTH_ENABLE
     int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
@@ -1865,7 +1859,7 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
         AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
         desc->exceptionFlag_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(new AudioDeviceDescriptor(*desc), EXCEPTION_FLAG_UPDATE);
-        FetchInputDevice(capturerChangeInfos, isStreamStatusUpdated);
+        FetchInputDevice(capturerChangeInfos);
         return ERROR;
     }
     if (desc->connectState_ == DEACTIVE_CONNECTED) {
@@ -1876,8 +1870,7 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
     return SUCCESS;
 }
 
-void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
-    bool isStreamStatusUpdated = false)
+void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
 {
     AUDIO_INFO_LOG("size %{public}zu", capturerChangeInfos.size());
     bool needUpdateActiveDevice = true;
@@ -1900,7 +1893,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             continue;
         }
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            int32_t ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos, isStreamStatusUpdated);
+            int32_t ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet",
                 GetEncryptAddr(desc->macAddress_).c_str());
         }
@@ -1913,7 +1906,7 @@ void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeI
             needUpdateActiveDevice = false;
         }
         // move sourceoutput to target device
-        SelectNewInputDevice(capturerChangeInfo, desc, isStreamStatusUpdated);
+        SelectNewInputDevice(capturerChangeInfo, desc);
         AddAudioCapturerMicrophoneDescriptor(capturerChangeInfo->sessionId, desc->deviceType_);
     }
     if (isUpdateActiveDevice) {
@@ -1931,11 +1924,11 @@ void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDevic
     if (isOutputDevice) {
         vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
         streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-        FetchOutputDevice(rendererChangeInfos, false, reason);
+        FetchOutputDevice(rendererChangeInfos, reason);
     } else {
         vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
-        FetchInputDevice(capturerChangeInfos, false);
+        FetchInputDevice(capturerChangeInfos);
     }
 }
 
@@ -3915,7 +3908,7 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
-    FetchOutputDevice(rendererChangeInfo, true);
+    FetchOutputDevice(rendererChangeInfo);
 }
 
 void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
@@ -3923,7 +3916,7 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
     vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
         make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
-    FetchInputDevice(capturerChangeInfo, true);
+    FetchInputDevice(capturerChangeInfo);
 }
 
 int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<unique_ptr<AudioRendererChangeInfo>>
