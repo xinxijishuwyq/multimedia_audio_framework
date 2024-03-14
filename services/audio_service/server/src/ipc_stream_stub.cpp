@@ -134,10 +134,21 @@ int32_t IpcStreamStub::HandleGetAudioTime(MessageParcel &data, MessageParcel &re
 {
     (void)data;
     uint64_t framePos = 0;
-    uint64_t timeStamp = 0;
-    reply.WriteInt32(GetAudioTime(framePos, timeStamp));
+    uint64_t timestamp = 0;
+    reply.WriteInt32(GetAudioTime(framePos, timestamp));
     reply.WriteUint64(framePos);
-    reply.WriteInt64(timeStamp);
+    reply.WriteInt64(timestamp);
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleGetAudioPosition(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    uint64_t framePos = 0;
+    uint64_t timestamp = 0;
+    reply.WriteInt32(GetAudioPosition(framePos, timestamp));
+    reply.WriteUint64(framePos);
+    reply.WriteInt64(timestamp);
     return AUDIO_OK;
 }
 
@@ -241,12 +252,12 @@ int32_t IpcStreamStub::HandleUnsetOffloadMode(MessageParcel &data, MessageParcel
 
 int32_t IpcStreamStub::HandleGetOffloadApproximatelyCacheTime(MessageParcel &data, MessageParcel &reply)
 {
-    uint64_t timeStamp = data.ReadUint64();
+    uint64_t timestamp = data.ReadUint64();
     uint64_t paWriteIndex = data.ReadUint64();
     uint64_t cacheTimeDsp = data.ReadUint64();
     uint64_t cacheTimePa = data.ReadUint64();
-    reply.WriteInt32(GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa));
-    reply.WriteUint64(timeStamp);
+    reply.WriteInt32(GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa));
+    reply.WriteUint64(timestamp);
     reply.WriteUint64(paWriteIndex);
     reply.WriteUint64(cacheTimeDsp);
     reply.WriteUint64(cacheTimePa);

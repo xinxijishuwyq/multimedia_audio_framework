@@ -613,7 +613,7 @@ int32_t AudioContainerClientBase::SetStreamVolumeGa(float volume, const int32_t 
     return AUDIO_CLIENT_SUCCESS;
 }
 
-int32_t AudioContainerClientBase::GetCurrentTimeStampGa(uint64_t &timeStamp, const int32_t &trackId)
+int32_t AudioContainerClientBase::GetCurrentTimeStampGa(uint64_t &timestamp, const int32_t &trackId)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -625,7 +625,7 @@ int32_t AudioContainerClientBase::GetCurrentTimeStampGa(uint64_t &timeStamp, con
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_CLIENT_ERR,
         "GetCurrentTimeStampGa() failed, error: %{public}d", error);
 
-    reply.ReadUint64(timeStamp);
+    reply.ReadUint64(timestamp);
 
     return AUDIO_CLIENT_SUCCESS;
 }

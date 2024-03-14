@@ -465,18 +465,28 @@ int32_t RendererInServer::Release()
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
+int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_WARNING_LOG("Current status is stopped");
         return ERR_ILLEGAL_STATE;
     }
     stream_->GetStreamFramesWritten(framePos);
-    stream_->GetCurrentTimeStamp(timeStamp);
+    stream_->GetCurrentTimeStamp(timestamp);
     if (resetTime_) {
         resetTime_ = false;
-        resetTimestamp_ = timeStamp;
+        resetTimestamp_ = timestamp;
     }
+    return SUCCESS;
+}
+
+int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
+{
+    if (status_ == I_STATUS_STOPPED) {
+        AUDIO_WARNING_LOG("Current status is stopped");
+        return ERR_ILLEGAL_STATE;
+    }
+    stream_->GetCurrentPosition(framePos, timestamp);
     return SUCCESS;
 }
 
@@ -530,10 +540,10 @@ int32_t RendererInServer::UnsetOffloadMode()
     return stream_->UnsetOffloadMode();
 }
 
-int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
     uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
-    return stream_->GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+    return stream_->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
 }
 
 int32_t RendererInServer::OffloadSetVolume(float volume)

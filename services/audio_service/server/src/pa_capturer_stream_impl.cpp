@@ -148,7 +148,7 @@ int32_t PaCapturerStreamImpl::GetStreamFramesRead(uint64_t &framesRead)
     return SUCCESS;
 }
 
-int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
+int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 {
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERROR) < 0) {
@@ -171,17 +171,17 @@ int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
         return ERR_OPERATION_FAILED;
     }
 
-    if (pa_stream_get_time(paStream_, &timeStamp)) {
+    if (pa_stream_get_time(paStream_, &timestamp)) {
         AUDIO_ERR_LOG("GetCurrentTimeStamp failed for AUDIO_SERVICE_CLIENT_RECORD");
         return ERR_OPERATION_FAILED;
     }
     int32_t uid = static_cast<int32_t>(getuid());
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
-    timeStamp = pa_bytes_to_usec(info->write_index, sampleSpec);
+    timestamp = pa_bytes_to_usec(info->write_index, sampleSpec);
     // 1013 is media_service's uid
     int32_t media_service = 1013;
     if (uid == media_service) {
-        timeStamp = pa_bytes_to_usec(totalBytesRead_, sampleSpec);
+        timestamp = pa_bytes_to_usec(totalBytesRead_, sampleSpec);
     }
     return SUCCESS;
 }

@@ -228,16 +228,25 @@ int32_t IpcStreamInServer::Drain()
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
+int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->GetAudioTime(framePos, timeStamp);
+        return rendererInServer_->GetAudioTime(framePos, timestamp);
     }
     if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
-        return capturerInServer_->GetAudioTime(framePos, timeStamp);
+        return capturerInServer_->GetAudioTime(framePos, timestamp);
     }
     AUDIO_ERR_LOG("GetAudioTime failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("unsupported mode: %{public}d or renderer obj is nullptr", static_cast<int32_t>(mode_));
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->GetAudioPosition(framePos, timestamp);
 }
 
 int32_t IpcStreamInServer::GetLatency(uint64_t &latency)
@@ -341,7 +350,7 @@ int32_t IpcStreamInServer::UnsetOffloadMode()
     return rendererInServer_->UnsetOffloadMode();
 }
 
-int32_t IpcStreamInServer::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+int32_t IpcStreamInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
     uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
     if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
@@ -349,7 +358,7 @@ int32_t IpcStreamInServer::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp,
             static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
         return ERR_OPERATION_FAILED;
     }
-    return rendererInServer_->GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+    return rendererInServer_->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
 }
 
 int32_t IpcStreamInServer::OffloadSetVolume(float volume)

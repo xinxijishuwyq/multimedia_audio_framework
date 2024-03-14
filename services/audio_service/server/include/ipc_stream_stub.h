@@ -40,6 +40,7 @@ private:
     int32_t HandleFlush(MessageParcel &data, MessageParcel &reply);
     int32_t HandleDrain(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetAudioTime(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleGetAudioPosition(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetLatency(MessageParcel &data, MessageParcel &reply);
     int32_t HandleSetRate(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetRate(MessageParcel &data, MessageParcel &reply);
@@ -69,6 +70,7 @@ private:
         &IpcStreamStub::HandleFlush,
         &IpcStreamStub::HandleDrain,
         &IpcStreamStub::HandleGetAudioTime,
+        &IpcStreamStub::HandleGetAudioPosition,
         &IpcStreamStub::HandleGetLatency,
         &IpcStreamStub::HandleSetRate,
         &IpcStreamStub::HandleGetRate,

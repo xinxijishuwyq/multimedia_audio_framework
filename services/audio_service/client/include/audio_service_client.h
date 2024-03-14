@@ -259,19 +259,19 @@ public:
     /**
     * Provides the current timestamp for playback/record stream created using CreateStream
     *
-    * @param timeStamp will be filled up with current timestamp
+    * @param timestamp will be filled up with current timestamp
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetCurrentTimeStamp(uint64_t &timeStamp);
+    int32_t GetCurrentTimeStamp(uint64_t &timestamp);
 
     /**
     * Provides the current timestamp for playback/record stream created using CreateStream
     *
     * @param framePosition will be filled up with current frame position
-    * @param timeStamp will be filled up with current timestamp
+    * @param timestamp will be filled up with current timestamp
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timeStamp);
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp);
 
     /**
     * Update the stream positon and timestamp
@@ -754,6 +754,8 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     float speed_ = 1.0;
 
+    bool getPosFromHdi_ = false;
+
     bool firstUpdatePosition_ = true;
     uint64_t lastStreamPosition_ = 0;
     uint64_t lastPositionTimestamp_ = 0;
@@ -773,8 +775,9 @@ private:
     void ResetOffload();
     int32_t OffloadStopStream();
     void GetOffloadCurrentTimeStamp(uint64_t paTimeStamp, uint64_t paWriteIndex, uint64_t &outTimeStamp);
-    void GetOffloadApproximatelyCacheTime(uint64_t timeStamp, uint64_t paWriteIndex, uint64_t &cacheTimePaDsp);
+    void GetOffloadApproximatelyCacheTime(uint64_t timestamp, uint64_t paWriteIndex, uint64_t &cacheTimePaDsp);
     int32_t CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType);
+    int32_t GetPositionFromServer(uint64_t &framePosition, uint64_t &timestamp);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();

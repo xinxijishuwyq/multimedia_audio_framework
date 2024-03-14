@@ -40,6 +40,9 @@ const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sin
 const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_NS_PER_US = 1000;
+const uint64_t AUDIO_US_PER_S = 1000000;
+const uint64_t AUDIO_NS_PER_S = 1000000000;
+const uint64_t HDI_LATENCY_US = 50000; // 50ms
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -252,7 +255,7 @@ int32_t PaRendererStreamImpl::GetStreamFramesWritten(uint64_t &framesWritten)
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
+int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 {
     PaLockGuard lock(mainloop_);
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
@@ -276,8 +279,48 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timeStamp)
     }
 
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
-    timeStamp = pa_bytes_to_usec(info->write_index, sampleSpec);
+    timestamp = pa_bytes_to_usec(info->write_index, sampleSpec);
     return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
+{
+    if (!getPosFromHdi_) {
+        PaLockGuard lock(mainloop_);
+        pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
+        if (operation != nullptr) {
+            pa_operation_unref(operation);
+        } else {
+            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+            return ERR_OPERATION_FAILED;
+        }
+
+        const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
+        if (info == nullptr) {
+            AUDIO_WARNING_LOG("pa_stream_get_timing_info failed");
+            return ERR_OPERATION_FAILED;
+        }
+
+        const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+        uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
+        if (readIndex > HDI_LATENCY_US && sampleSpec != nullptr) {
+            framePosition = (readIndex - HDI_LATENCY_US) * sampleSpec->rate / AUDIO_US_PER_S;
+        } else {
+            AUDIO_ERR_LOG("error data!");
+            return ERR_OPERATION_FAILED;
+        }
+
+        timespec tm {};
+        clock_gettime(CLOCK_MONOTONIC, &tm);
+        timestamp = tm.tv_sec * AUDIO_NS_PER_S + tm.tv_nsec;
+
+        AUDIO_DEBUG_LOG("framePosition: %{public}" PRIu64 " readIndex %{public}" PRIu64 " timestamp %{public}" PRIu64,
+            framePosition, readIndex, timestamp);
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("Getting position info from hdi is not supported now.");
+        return ERR_OPERATION_FAILED;
+    }
 }
 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
@@ -752,7 +795,7 @@ int32_t PaRendererStreamImpl::OffloadSetBufferSize(uint32_t sizeMs)
     return audioRendererSinkInstance->SetBufferSize(sizeMs);
 }
 
-int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
     uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
     if (!offloadEnable_) {
@@ -779,7 +822,7 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
     uint64_t writeIndex = pa_bytes_to_usec(info->write_index, sampleSpec);
-    timeStamp = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
+    timestamp = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
     lock.Unlock();
 
     int64_t cacheTimeInPulse = writeIndex > readIndex ? writeIndex - readIndex : 0;
@@ -793,7 +836,7 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timeSta
     int64_t timeSec;
     int64_t timeNanoSec;
     OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
-    int64_t timeDelta = static_cast<int64_t>(timeStamp) -
+    int64_t timeDelta = static_cast<int64_t>(timestamp) -
                         static_cast<int64_t>(timeSec * AUDIO_US_PER_SECOND + timeNanoSec / AUDIO_NS_PER_US);
     int64_t framesInt = static_cast<int64_t>(frames) + timeDelta;
     framesInt = framesInt > 0 ? framesInt : 0;

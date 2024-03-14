@@ -154,9 +154,9 @@ int32_t AudioContainerBase::GetAudioStreamParams(AudioStreamParams& audioParams,
     return g_sProxy->GetAudioStreamParamsGa(audioParams, trackId);
 }
 
-int32_t AudioContainerBase::GetCurrentTimeStamp(uint64_t &timeStamp, const int32_t &trackId)
+int32_t AudioContainerBase::GetCurrentTimeStamp(uint64_t &timestamp, const int32_t &trackId)
 {
-    return g_sProxy->GetCurrentTimeStampGa(timeStamp, trackId);
+    return g_sProxy->GetCurrentTimeStampGa(timestamp, trackId);
 }
 
 int32_t AudioContainerBase::GetAudioLatency(uint64_t &latency, const int32_t &trackId) const
