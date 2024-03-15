@@ -270,7 +270,7 @@ void AudioEffectManager::UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig)
                 item.name.c_str(), item.sceneType.c_str());
             continue;
         }
-        if (UpdateAvailableSceneMapPost(postSceneMap, item)) {
+        if (UpdateAvailableSceneMapPost(item, postSceneMap)) {
             AUDIO_WARNING_LOG("The duplicate streamUsage-sceneType pair is deleted, \
                 and the first configuration is retained!");
         }
