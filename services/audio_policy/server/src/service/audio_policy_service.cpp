@@ -180,6 +180,39 @@ static void GetUsbModuleInfo(string deviceInfo, AudioModuleInfo &moduleInfo)
     }
 }
 
+static AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType)
+{
+    switch (streamType) {
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_MESSAGE:
+        case STREAM_VOICE_COMMUNICATION:
+            return STREAM_VOICE_CALL;
+        case STREAM_RING:
+        case STREAM_SYSTEM:
+        case STREAM_NOTIFICATION:
+        case STREAM_SYSTEM_ENFORCED:
+        case STREAM_DTMF:
+            return STREAM_RING;
+        case STREAM_MUSIC:
+        case STREAM_MEDIA:
+        case STREAM_MOVIE:
+        case STREAM_GAME:
+        case STREAM_SPEECH:
+        case STREAM_NAVIGATION:
+            return STREAM_MUSIC;
+        case STREAM_VOICE_ASSISTANT:
+            return STREAM_VOICE_ASSISTANT;
+        case STREAM_ALARM:
+            return STREAM_ALARM;
+        case STREAM_ACCESSIBILITY:
+            return STREAM_ACCESSIBILITY;
+        case STREAM_ULTRASONIC:
+            return STREAM_ULTRASONIC;
+        default:
+            return STREAM_MUSIC;
+    }
+}
+
 AudioPolicyService::~AudioPolicyService()
 {
     AUDIO_DEBUG_LOG("~AudioPolicyService()");
@@ -323,10 +356,8 @@ int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
 int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey)
 {
     int32_t result;
-    // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, set
-    // its absolute volume value.
-
-    if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (GetStreamForVolumeMap(streamType) == STREAM_MUSIC &&
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
 #ifdef BLUETOOTH_ENABLE
         if (result == SUCCESS) {
@@ -441,10 +472,9 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
 int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) const
 {
     {
-        // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, get
-        // its absolute volume value.
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
-        if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (GetStreamForVolumeMap(streamType) == STREAM_MUSIC &&
+            currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
             if (configInfoPos != connectedA2dpDeviceMap_.end()
                 && configInfoPos->second.absVolumeSupport) {
@@ -649,9 +679,8 @@ float AudioPolicyService::GetSingleStreamVolume(int32_t streamId) const
 int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
 {
     int32_t result = SUCCESS;
-    // if current active device's type is DEVICE_TYPE_BLUETOOTH_A2DP and it support absolute volume, set
-    // its absolute volume value.
-    if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (GetStreamForVolumeMap(streamType) == STREAM_MUSIC &&
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
         auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
         if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
@@ -691,7 +720,8 @@ int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute)
 
 bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
 {
-    if (IsStreamActive(streamType) && currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (GetStreamForVolumeMap(streamType) == STREAM_MUSIC &&
+        currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
         auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
         if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
