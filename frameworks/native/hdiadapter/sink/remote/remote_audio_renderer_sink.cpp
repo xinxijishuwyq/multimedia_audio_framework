@@ -198,7 +198,7 @@ void RemoteAudioRendererSinkInner::DeInit()
 
     // remove map recorder.
     CHECK_AND_RETURN_LOG(allsinks.count(this->deviceNetworkId_) > 0,
-        "not find %{public}s", this->deviceNetworkId_);
+        "not find %{public}s", this->deviceNetworkId_.c_str());
     RemoteAudioRendererSinkInner *temp = allsinks[this->deviceNetworkId_];
     allsinks.erase(this->deviceNetworkId_);
     if (temp == nullptr) {
