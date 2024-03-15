@@ -280,12 +280,16 @@ struct AudioRendererInfo {
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = 0;
     std::string sceneType = "";
+    bool spatializationEnabled = false;
+    bool headTrackingEnabled = false;
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
             && parcel.WriteInt32(rendererFlags)
             && parcel.WriteString(sceneType);
+            && parcel.WriteBool(spatializationEnabled)
+            && parcel.WriteBool(headTrackingEnabled);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -293,6 +297,8 @@ struct AudioRendererInfo {
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         rendererFlags = parcel.ReadInt32();
         sceneType = parcel.ReadString();
+        spatializationEnabled = parcel.ReadBool();
+        headTrackingEnabled = parcel.ReadBool();
     }
 };
 

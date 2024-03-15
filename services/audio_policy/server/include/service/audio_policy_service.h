@@ -701,6 +701,7 @@ private:
     static bool isBtListenerRegistered;
     bool isPnpDeviceConnected = false;
     bool hasModulesLoaded = false;
+    bool hasEarpiece_ = false;
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
@@ -721,7 +722,6 @@ private:
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::vector<std::pair<DeviceType, bool>> pnpDeviceList_;
-    std::string localDevicesType_ = "";
 
     std::mutex routerMapMutex_; // unordered_map is not concurrently-secure
     mutable std::mutex a2dpDeviceMapMutex_;

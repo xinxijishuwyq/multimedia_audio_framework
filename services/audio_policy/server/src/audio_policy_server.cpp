@@ -109,6 +109,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
 
     powerStateCallbackRegister_ = false;
+    volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
 }
 
 void AudioPolicyServer::OnDump()
@@ -272,7 +273,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
         std::lock_guard<std::mutex> lock(keyEventMutex_);
         AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-        if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
+        if (volumeApplyToAll_) {
             streamInFocus = AudioStreamType::STREAM_ALL;
         } else {
             streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
@@ -1987,7 +1988,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
 
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-    if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
+    if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());

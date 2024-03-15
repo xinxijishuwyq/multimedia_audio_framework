@@ -272,5 +272,13 @@ int32_t IpcStreamStub::HandleOffloadSetVolume(MessageParcel &data, MessageParcel
 
     return AUDIO_OK;
 }
+
+int32_t IpcStreamStub::HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply)
+{
+    bool spatializationEnabled = data.ReadBool();
+    bool headTrackingEnabled = data.ReadBool();
+    reply.WriteInt32(UpdateSpatializationState(spatializationEnabled, headTrackingEnabled));
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

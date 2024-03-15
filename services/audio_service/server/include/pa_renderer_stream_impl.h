@@ -62,6 +62,8 @@ public:
     size_t GetWritableSize() override;
     // offload end
 
+    int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;
+
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
     static void PAStreamMovedCb(pa_stream *stream, void *userdata);

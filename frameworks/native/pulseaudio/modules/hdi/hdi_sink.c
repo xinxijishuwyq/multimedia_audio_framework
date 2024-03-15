@@ -80,6 +80,7 @@
 #define DEFAULT_NUM_CHANNEL 2
 #define DEFAULT_MULTICHANNEL_CHANNELLAYOUT 1551
 #define DEFAULT_CHANNELLAYOUT 3
+#define OFFLOAD_SET_BUFFER_SIZE_NUM 5
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -175,6 +176,7 @@ struct Userdata {
         bool runninglocked;
         pa_memchunk chunk;
         bool inited;
+        int32_t setHdiBufferSizeNum; // for set hdi buffer size count
     } offload;
     struct {
         pa_usec_t timestamp;
@@ -461,7 +463,7 @@ static enum AudioOffloadType GetInputPolicyState(pa_sink_input *i)
     return atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
 }
 
-static void OffloadSetHdiVolumeBufferSize(pa_sink_input *i)
+static void OffloadSetHdiVolume(pa_sink_input *i)
 {
     if (!InputIsOffload(i)) {
         return;
@@ -472,10 +474,20 @@ static void OffloadSetHdiVolumeBufferSize(pa_sink_input *i)
     float right;
     u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
     u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
+}
+
+static void OffloadSetHdiBufferSize(pa_sink_input *i)
+{
+    if (!InputIsOffload(i)) {
+        return;
+    }
+
+    struct Userdata *u = i->sink->userdata;
     const uint32_t bufSize = (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ?
                               OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
     u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
 }
+
 static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memchunk *pchunk)
 {
     size_t index;
@@ -507,7 +519,11 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         u->offload.firstWriteHdi = false;
         u->offload.hdiPosTs = now;
         u->offload.hdiPos = 0;
-        OffloadSetHdiVolumeBufferSize(i);
+        OffloadSetHdiVolume(i);
+    }
+    if (ret == 0 && u->offload.setHdiBufferSizeNum > 0) {
+        u->offload.setHdiBufferSizeNum--;
+        OffloadSetHdiBufferSize(i);
     }
     if (ret == 0 && writeLen == 0) { // is full
         AUDIO_DEBUG_LOG("RenderWriteOffload, hdi is full, break");
@@ -1766,6 +1782,7 @@ static void OffloadReset(struct Userdata *u)
     u->offload.minWait = 0;
     u->offload.firstWrite = true;
     u->offload.firstWriteHdi = true;
+    u->offload.setHdiBufferSizeNum = OFFLOAD_SET_BUFFER_SIZE_NUM;
     pa_atomic_store(&u->offload.hdistate, 0);
     u->offload.fullTs = 0;
 }
@@ -2015,7 +2032,8 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
             AUDIO_INFO_LOG("StartOffloadHdi, Successfully restarted offload HDI renderer");
             OffloadLock(u);
             u->offload.sessionID = sessionID;
-            OffloadSetHdiVolumeBufferSize(i);
+            OffloadSetHdiVolume(i);
+            OffloadSetHdiBufferSize(i);
         }
     }
 }
@@ -2252,7 +2270,7 @@ static void PaInputVolumeChangeCb(pa_sink_input *i)
         pa_cvolume volume;
         pa_sw_cvolume_multiply(&volume, &i->sink->thread_info.soft_volume, &i->volume);
         float volumeResult;
-        if (i->sink->thread_info.soft_muted || pa_cvolume_is_muted(&volume) || pa_cvolume_is_norm(&volume)) {
+        if (i->sink->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
             volumeResult = 0;
         } else {
             volumeResult = (float)pa_sw_volume_to_linear(pa_cvolume_avg(&volume));

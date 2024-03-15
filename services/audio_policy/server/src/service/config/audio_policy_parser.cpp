@@ -22,10 +22,13 @@ namespace OHOS {
 namespace AudioStandard {
 bool AudioPolicyParser::LoadConfiguration()
 {
-    doc_ = xmlReadFile(CONFIG_FILE, nullptr, 0);
+    doc_ = xmlReadFile(CHIP_PROD_CONFIG_FILE, nullptr, 0);
     if (doc_ == nullptr) {
-        AUDIO_ERR_LOG("xmlReadFile Failed");
-        return false;
+        doc_ = xmlReadFile(CONFIG_FILE, nullptr, 0);
+        if (doc_ == nullptr) {
+            AUDIO_ERR_LOG("xmlReadFile Failed");
+            return false;
+        }
     }
     return true;
 }

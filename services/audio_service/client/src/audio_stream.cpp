@@ -1129,6 +1129,7 @@ int32_t AudioStream::SetSpeed(float speed)
     }
     audioSpeed_->SetSpeed(speed);
     speed_ = speed;
+    AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
 

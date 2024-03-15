@@ -67,8 +67,8 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
-const uint32_t MEDIA_SERVICE_UID = 1013;
-const uint32_t UID_AUDIO = 1041;
+const int32_t MEDIA_SERVICE_UID = 1013; // open or close offload of MEDIA_SERVICE
+const int32_t UID_AUDIO = 1041;
 const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
 const int END_POS = 13;
@@ -205,11 +205,6 @@ bool AudioPolicyService::Init(void)
     CHECK_AND_RETURN_RET_LOG(status == SUCCESS, false, "[Policy Service] Register for device status events failed");
 
     RegisterRemoteDevStatusCallback();
-
-    // Get device type from const.product.devicetype when starting.
-    char devicesType[100] = {0}; // 100 for system parameter usage
-    (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-    localDevicesType_ = devicesType;
 
     if (policyVolumeMap_ == nullptr) {
         size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
@@ -356,7 +351,7 @@ void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t vo
         return;
     }
     DeviceType dev = GetActiveOutputDevice();
-    if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP)) {
+    if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP || dev == DEVICE_TYPE_USB_HEADSET)) {
         return;
     }
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
@@ -385,7 +380,7 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
-    if (deviceType == DEVICE_TYPE_SPEAKER) {
+    if (deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_USB_HEADSET) {
         SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SetOffloadVolume(OffloadStreamType(), audioPolicyManager_.GetMaxVolumeLevel(OffloadStreamType()));
@@ -585,7 +580,8 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
 bool AudioPolicyService::CheckActiveOutputDeviceSupportOffload()
 {
     DeviceType dev = GetActiveOutputDevice();
-    return dev == DEVICE_TYPE_SPEAKER || (dev == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD);
+    return dev == DEVICE_TYPE_SPEAKER || (dev == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD) ||
+        dev == DEVICE_TYPE_USB_HEADSET;
 }
 
 void AudioPolicyService::SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo)
@@ -2516,7 +2512,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
 void AudioPolicyService::AddEarpiece()
 {
-    if (localDevicesType_.compare("phone") != 0) {
+    if (!hasEarpiece_) {
         return;
     }
     sptr<AudioDeviceDescriptor> audioDescriptor =
@@ -2536,11 +2532,6 @@ void AudioPolicyService::AddEarpiece()
     std::lock_guard<std::mutex> lock(deviceStatusUpdateSharedMutex_);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     AUDIO_INFO_LOG("Add earpiece to device list");
-}
-
-std::string AudioPolicyService::GetLocalDevicesType()
-{
-    return localDevicesType_;
 }
 
 AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
@@ -3689,6 +3680,20 @@ void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
     AUDIO_INFO_LOG("adapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
     adapterInfoMap_ = adapterInfoMap;
+
+    for (auto &adapterInfo : adapterInfoMap_) {
+        for (auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
+            if (deviceInfos.name_ == ADAPTER_DEVICE_PRIMARY_EARPIECE) {
+                hasEarpiece_ = true;
+                break;
+            }
+        }
+        if (hasEarpiece_) {
+            break;
+        }
+    }
+
+    audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
 
 // Parser callbacks

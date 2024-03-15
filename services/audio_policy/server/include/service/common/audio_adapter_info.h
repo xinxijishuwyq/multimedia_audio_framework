@@ -36,7 +36,7 @@ static const std::string ADAPTER_FILE_TYPE = "file";
 static const std::string ADAPTER_USB_TYPE = "usb";
 
 static const std::string ADAPTER_DEVICE_PRIMARY_SPEAKER = "Speaker";
-static const std::string ADAPTER_DEVICE_PRIMARY_EARPICECE = "Earpicece";
+static const std::string ADAPTER_DEVICE_PRIMARY_EARPIECE = "Earpicece";
 static const std::string ADAPTER_DEVICE_PRIMARY_MIC = "Built-In Mic";
 static const std::string ADAPTER_DEVICE_PRIMARY_WIRE_HEADSET = "Wired Headset";
 static const std::string ADAPTER_DEVICE_PRIMARY_WIRE_HEADPHONE = "Wired Headphones";

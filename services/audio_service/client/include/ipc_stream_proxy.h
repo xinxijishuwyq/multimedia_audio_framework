@@ -77,6 +77,8 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override; // renderer only
 
     int32_t OffloadSetVolume(float volume) override; // renderer only
+
+    int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override; // renderer only
 private:
     static inline BrokerDelegator<IpcStreamProxy> delegator_;
 };
