@@ -206,11 +206,6 @@ bool AudioPolicyService::Init(void)
 
     RegisterRemoteDevStatusCallback();
 
-    // Get device type from const.product.devicetype when starting.
-    char devicesType[100] = {0}; // 100 for system parameter usage
-    (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-    localDevicesType_ = devicesType;
-
     if (policyVolumeMap_ == nullptr) {
         size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
         AUDIO_INFO_LOG("InitSharedVolume create shared volume map with size %{public}zu", mapSize);
@@ -2517,7 +2512,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 
 void AudioPolicyService::AddEarpiece()
 {
-    if (localDevicesType_.compare("phone") != 0) {
+    if (!hasEarpiece_) {
         return;
     }
     sptr<AudioDeviceDescriptor> audioDescriptor =
@@ -2537,11 +2532,6 @@ void AudioPolicyService::AddEarpiece()
     std::lock_guard<std::mutex> lock(deviceStatusUpdateSharedMutex_);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     AUDIO_INFO_LOG("Add earpiece to device list");
-}
-
-std::string AudioPolicyService::GetLocalDevicesType()
-{
-    return localDevicesType_;
 }
 
 AudioScene AudioPolicyService::GetAudioScene(bool hasSystemPermission) const
@@ -3690,6 +3680,20 @@ void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
     AUDIO_INFO_LOG("adapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
     adapterInfoMap_ = adapterInfoMap;
+
+    for (auto &adapterInfo : adapterInfoMap_) {
+        for (auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
+            if (deviceInfos.name_ == ADAPTER_DEVICE_PRIMARY_EARPIECE) {
+                hasEarpiece_ = true;
+                break;
+            }
+        }
+        if (hasEarpiece_) {
+            break;
+        }
+    }
+
+    audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
 
 // Parser callbacks

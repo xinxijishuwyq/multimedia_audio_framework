@@ -32,9 +32,6 @@ constexpr int32_t NS_PER_MS = 1000000;
 
 AudioDeviceManager::AudioDeviceManager()
 {
-    char devicesType[100] = {0}; // 100 for system parameter usage
-    (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-    localDevicesType_ = devicesType;
 }
 
 static int64_t GetCurrentTimeMS()
@@ -555,7 +552,7 @@ unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice
     }
 
     unique_ptr<AudioDeviceDescriptor> devDesc;
-    if (localDevicesType_.compare("phone") == 0 && streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION) {
+    if (hasEarpiece_ && streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION) {
         devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
     } else {
         devDesc = make_unique<AudioDeviceDescriptor>(speaker_);
@@ -836,6 +833,11 @@ void AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
                 desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
         }
     }
+}
+
+void AudioDeviceManager::UpdateEarpieceStatus(const bool hasEarPiece)
+{
+    hasEarpiece_ = hasEarPiece;
 }
 
 void AudioDeviceManager::AddBtToOtherList(const shared_ptr<AudioDeviceDescriptor> &devDesc)
