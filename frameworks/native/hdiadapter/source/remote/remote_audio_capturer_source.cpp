@@ -184,12 +184,18 @@ void RemoteAudioCapturerSourceInner::DeInit()
 
     std::lock_guard<std::mutex> lock(capturerRemoteSourcesMutex_);
     // remove map recorder.
+
+    CHECK_AND_RETURN_LOG(allRemoteSources.count(this->deviceNetworkId_) > 0,
+        "not find %{public}s", this->deviceNetworkId_);
+
     RemoteAudioCapturerSource *temp = allRemoteSources[this->deviceNetworkId_];
-    if (temp != nullptr) {
+    allRemoteSources.erase(this->deviceNetworkId_);
+    if (temp == nullptr) {
+        AUDIO_ERR_LOG("temp is nullptr");
+    } else {
         delete temp;
-        temp = nullptr;
-        allRemoteSources.erase(this->deviceNetworkId_);
     }
+
     AUDIO_INFO_LOG("end.");
 }
 
