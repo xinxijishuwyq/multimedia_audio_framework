@@ -374,7 +374,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "stream.client.uid", std::to_string(processConfig.appInfo.appUid).c_str());
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(processConfig.appInfo.appPid).c_str());
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
-    pa_proplist_sets(propList, "media.name", streamName.c_str());;
+    pa_proplist_sets(propList, "media.name", streamName.c_str());
     pa_proplist_sets(propList, "scene.mode",
         IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
     float mVolumeFactor = 1.0f;
