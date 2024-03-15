@@ -238,7 +238,6 @@ OH_AudioStream_Result OH_AudioRenderer_GetFrameSizeInCallback(OH_AudioRenderer* 
 */
 OH_AudioStream_Result OH_AudioRenderer_GetSpeed(OH_AudioRenderer* renderer, float* speed);
 
-
 /*
 * Set the playback speed of the stream client
 *
@@ -249,6 +248,84 @@ OH_AudioStream_Result OH_AudioRenderer_GetSpeed(OH_AudioRenderer* renderer, floa
 * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
 */
 OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer* renderer, float speed);
+
+/**
+ * @brief Callback when the mark position of an audio renderer changed.
+ *
+ * @param renderer AudioRenderer where this event occurs.
+ * @param samplePos mark position
+ * @param userData User data which is passed by user.
+ * @since 12
+ */
+typedef void (*OH_AudioRenderer_OnMarkReachedCallback)(OH_AudioRenderer* renderer, uint32_t samplePos, void* userData);
+
+/**
+ * @brief Registers the renderer position callback listener
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param samplePos mark position
+ * @param callback callback to the function that will process this mark position change event.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ * @since 12
+ */
+OH_AudioStream_Result OH_AudioRenderer_SetMarkPosition(OH_AudioRenderer* renderer, uint32_t samplePos,
+    OH_AudioRenderer_OnMarkReachedCallback callback, void* userData);
+
+/*
+ * Cancel markPosition by OH_AudioStreamBuilder_GenerateRenderer()
+ *
+ * @since 12
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_CancelMark(OH_AudioRenderer* renderer);
+
+/*
+ * Set the stream volume by OH_AudioStreamBuilder_GenerateRenderer()
+ *
+ * @since 12
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param volume will be set for the stream.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_SetVolume(OH_AudioRenderer* renderer, float volume);
+
+/*
+ * Set the stream volume with ramp by OH_AudioStreamBuilder_GenerateRenderer()
+ *
+ * @since 12
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param volume will be set for the stream.
+ * @param durationMs used for volume fading in and out
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* renderer, float volume, int32_t durationMs);
+
+/*
+ * Query the stream volume by OH_AudioStreamBuilder_GenerateRenderer()
+ *
+ * @since 12
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param volume Pointer to a variable that will be set for the stream.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer* renderer, float* volume);
+
+/*
+ * Set the stream interruptMode by OH_AudioStreamBuilder_GenerateRenderer()
+ *
+ * @since 12
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param mode will be set for the stream.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_SetInterruptMode(OH_AudioRenderer* renderer, OH_AudioStream_InterruptMode mode);
 #ifdef __cplusplus
 }
 #endif

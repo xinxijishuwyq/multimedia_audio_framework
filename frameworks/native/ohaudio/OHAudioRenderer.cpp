@@ -19,6 +19,7 @@
 #include "audio_errors.h"
 
 using OHOS::AudioStandard::Timestamp;
+using OHOS::AudioStandard::InterruptMode;
 
 static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
@@ -214,6 +215,63 @@ OH_AudioStream_Result OH_AudioRenderer_SetSpeed(OH_AudioRenderer* renderer, floa
     audioRenderer->SetSpeed(speed);
     return AUDIOSTREAM_SUCCESS;
 }
+
+OH_AudioStream_Result OH_AudioRenderer_SetVolume(OH_AudioRenderer* renderer, float volume)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(((volume >= 0) && (volume <= 1)), AUDIOSTREAM_ERROR_INVALID_PARAM, "volume set invalid");
+    audioRenderer->SetVolume(volume);
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* renderer, float volume, int32_t durationMs)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(((volume >= 0) && (volume <= 1)), AUDIOSTREAM_ERROR_INVALID_PARAM, "volume set invalid");
+    audioRenderer->SetVolumeWithRamp(volume, durationMs);
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer* renderer, float* volume)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(volume != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "volume is nullptr");
+    *volume = audioRenderer->GetVolume();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_SetMarkPosition(OH_AudioRenderer* renderer, uint32_t samplePos,
+    OH_AudioRenderer_OnMarkReachedCallback callback, void* userData)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(samplePos > 0, AUDIOSTREAM_ERROR_INVALID_PARAM, "framePos set invalid");
+    audioRenderer->SetRendererPositionCallback(callback, samplePos, userData);
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_CancelMark(OH_AudioRenderer* renderer)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    audioRenderer->UnsetRendererPositionCallback();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_SetInterruptMode(OH_AudioRenderer* renderer, OH_AudioStream_InterruptMode mode)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG((mode != AUDIOSTREAM_SHARE_MODE || mode != AUDIOSTREAM_INDEPENDENT_MODE),
+        AUDIOSTREAM_ERROR_INVALID_PARAM, "mode is invalid");
+    InterruptMode interruptMode = static_cast<InterruptMode>(mode);
+    audioRenderer->SetInterruptMode(interruptMode);
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -376,6 +434,54 @@ float OHAudioRenderer::GetSpeed()
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetSpeed();
+}
+
+int32_t OHAudioRenderer::SetVolume(float volume) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->SetVolume(volume);
+}
+
+float OHAudioRenderer::GetVolume() const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetVolume();
+}
+
+int32_t OHAudioRenderer::SetVolumeWithRamp(float volume, int32_t duration)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->SetVolumeWithRamp(volume, duration);
+}
+
+int32_t OHAudioRenderer::SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
+    uint32_t markPosition, void* userData)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "callback is nullptr");
+    rendererPositionCallback_ = std::make_shared<OHRendererPositionCallback>(callback,
+        reinterpret_cast<OH_AudioRenderer*>(this), userData);
+    return audioRenderer_->SetRendererPositionCallback(markPosition, rendererPositionCallback_);
+}
+
+void OHAudioRenderer::UnsetRendererPositionCallback()
+{
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
+    audioRenderer_->UnsetRendererPositionCallback();
+}
+
+void OHAudioRenderer::SetInterruptMode(InterruptMode mode)
+{
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
+    audioRenderer_->SetInterruptMode(mode);
+}
+
+void OHRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
+{
+    CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the fuction is nullptr");
+    userData_ = nullptr;
+    callback_(ohAudioRenderer_, framePosition, userData_);
 }
 
 void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData)

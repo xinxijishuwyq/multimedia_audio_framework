@@ -592,6 +592,26 @@ typedef enum {
 typedef void (*OH_AudioRenderer_OutputDeviceChangeCallback)(OH_AudioRenderer* renderer, void* userData,
     OH_AudioStream_DeviceChangeReason reason);
 
+/**
+ * Define the audio stream interrupt mode.
+ *
+ * @since 12
+ */
+typedef enum {
+    /**
+     * The mode for audio stream is share.
+     *
+     * @since 12
+     */
+    AUDIOSTREAM_SHARE_MODE = 0,
+    /**
+     * The mode for audio stream is independent.
+     *
+     * @since 12
+     */
+    AUDIOSTREAM_INDEPENDENT_MODE = 1
+} OH_AudioStream_InterruptMode;
+
 #ifdef __cplusplus
 }
 
