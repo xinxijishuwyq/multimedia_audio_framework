@@ -523,11 +523,11 @@ private:
     int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        unique_ptr<AudioDeviceDescriptor> &outputDevice, bool isStreamStatusUpdated = false,
+        unique_ptr<AudioDeviceDescriptor> &outputDevice,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
-        unique_ptr<AudioDeviceDescriptor> &inputDevice, bool isStreamStatusUpdated);
+        unique_ptr<AudioDeviceDescriptor> &inputDevice);
 
     DeviceRole GetDeviceRole(AudioPin pin) const;
 
@@ -536,19 +536,17 @@ private:
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
 
     int32_t HandleScoOutputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool &isStreamStatusUpdated);
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-        bool isStreamStatusUpdated = false,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void FetchStreamForA2dpOffload(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
-        vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, bool &isStreamStatusUpdated);
+        vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
-    void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
-        bool isStreamStatusUpdated);
+    void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
     void FetchDevice(bool isOutputDevice = true,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -674,7 +672,7 @@ private:
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
 
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos, bool isStreamStatusUpdated);
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     void ResetToSpeaker(DeviceType devType);
 

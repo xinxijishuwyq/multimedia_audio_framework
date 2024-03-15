@@ -181,7 +181,7 @@ int32_t IpcStreamProxy::Drain()
     return reply.ReadInt32();
 }
 
-int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
+int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -194,7 +194,24 @@ int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timeStamp)
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioTime failed, error: %{public}d", ret);
     framePos = reply.ReadUint64();
-    timeStamp = reply.ReadInt64();
+    timestamp = reply.ReadInt64();
+    return ret;
+}
+
+int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IpcStreamMsg::OH_GET_AUDIO_POSITION, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "error: %{public}d", ret);
+    framePos = reply.ReadUint64();
+    timestamp = reply.ReadInt64();
     return ret;
 }
 
@@ -376,7 +393,7 @@ int32_t IpcStreamProxy::UnsetOffloadMode()
     return ret;
 }
 
-int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
     uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
     MessageParcel data;
@@ -385,7 +402,7 @@ int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, ui
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
 
-    data.WriteUint64(timeStamp);
+    data.WriteUint64(timestamp);
     data.WriteUint64(paWriteIndex);
     data.WriteUint64(cacheTimeDsp);
     data.WriteUint64(cacheTimePa);
@@ -394,7 +411,7 @@ int32_t IpcStreamProxy::GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, ui
         ret);
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
-    timeStamp = reply.ReadUint64();
+    timestamp = reply.ReadUint64();
     paWriteIndex = reply.ReadUint64();
     cacheTimeDsp = reply.ReadUint64();
     cacheTimePa = reply.ReadUint64();

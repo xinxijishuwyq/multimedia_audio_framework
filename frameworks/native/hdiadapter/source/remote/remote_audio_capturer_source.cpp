@@ -114,9 +114,11 @@ private:
     uint32_t captureId_ = 0;
 };
 
+std::mutex capturerRemoteSourcesMutex_;
 std::map<std::string, RemoteAudioCapturerSourceInner *> allRemoteSources;
 RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::string &deviceNetworkId)
 {
+    std::lock_guard<std::mutex> lock(capturerRemoteSourcesMutex_);
     AUDIO_INFO_LOG("GetInstance.");
     bool isEmpty = deviceNetworkId.empty();
     CHECK_AND_RETURN_RET_LOG(!isEmpty, nullptr, "Remote capture device networkId is null.");
@@ -125,13 +127,14 @@ RemoteAudioCapturerSource *RemoteAudioCapturerSource::GetInstance(const std::str
         return allRemoteSources[deviceNetworkId];
     }
     RemoteAudioCapturerSourceInner *audioCapturer = new(std::nothrow) RemoteAudioCapturerSourceInner(deviceNetworkId);
-    AUDIO_DEBUG_LOG("New daudio remote capture device networkId: [%{public}s].", deviceNetworkId.c_str());
+    AUDIO_INFO_LOG("New daudio remote capture device networkId: [%{public}s].", deviceNetworkId.c_str());
     allRemoteSources[deviceNetworkId] = audioCapturer;
     return audioCapturer;
 }
 
 void RemoteAudioCapturerSource::GetAllInstance(std::vector<IAudioCapturerSource *> &allInstance)
 {
+    std::lock_guard<std::mutex> lock(capturerRemoteSourcesMutex_);
     for (auto it = allRemoteSources.begin(); it != allRemoteSources.end(); it++) {
         allInstance.push_back((*it).second);
     }
@@ -179,6 +182,7 @@ void RemoteAudioCapturerSourceInner::DeInit()
     AUDIO_INFO_LOG("RemoteAudioCapturerSourceInner::DeInit");
     ClearCapture();
 
+    std::lock_guard<std::mutex> lock(capturerRemoteSourcesMutex_);
     // remove map recorder.
     RemoteAudioCapturerSource *temp = allRemoteSources[this->deviceNetworkId_];
     if (temp != nullptr) {
@@ -186,6 +190,7 @@ void RemoteAudioCapturerSourceInner::DeInit()
         temp = nullptr;
         allRemoteSources.erase(this->deviceNetworkId_);
     }
+    AUDIO_INFO_LOG("end.");
 }
 
 int32_t RemoteAudioCapturerSourceInner::Init(const IAudioSourceAttr &attr)

@@ -229,12 +229,12 @@ bool AudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbas
         return false;
     }
     uint64_t framePosition = 0;
-    uint64_t timeStamp = 0;
-    if (GetCurrentPosition(framePosition, timeStamp) == SUCCESS) {
+    uint64_t timestampHdi = 0;
+    if (GetCurrentPosition(framePosition, timestampHdi) == SUCCESS) {
         timestamp.framePosition = framePosition;
-        timestamp.time.tv_sec = static_cast<time_t>(timeStamp / TIME_CONVERSION_NS_S);
+        timestamp.time.tv_sec = static_cast<time_t>(timestampHdi / TIME_CONVERSION_NS_S);
         timestamp.time.tv_nsec
-            = static_cast<time_t>(timeStamp - (timestamp.time.tv_sec * TIME_CONVERSION_NS_S));
+            = static_cast<time_t>(timestampHdi - (timestamp.time.tv_sec * TIME_CONVERSION_NS_S));
         return true;
     }
     return false;

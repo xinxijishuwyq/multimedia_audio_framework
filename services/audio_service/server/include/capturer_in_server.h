@@ -44,7 +44,7 @@ public:
     int32_t Stop();
     int32_t Release();
 
-    int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp);
+    int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
     int32_t GetLatency(uint64_t &latency);
 
     int32_t Init();

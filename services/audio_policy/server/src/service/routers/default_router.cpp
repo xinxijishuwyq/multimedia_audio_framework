@@ -33,7 +33,8 @@ unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsag
 
 unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice();
+    unique_ptr<AudioDeviceDescriptor> desc =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice(streamUsage);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
         desc->deviceType_);
     return desc;

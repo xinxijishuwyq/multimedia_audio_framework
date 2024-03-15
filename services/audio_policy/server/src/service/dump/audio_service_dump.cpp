@@ -288,6 +288,9 @@ const std::string AudioServiceDump::GetStreamUsgaeName(StreamUsage streamUsage)
         case STREAM_USAGE_VOICE_COMMUNICATION:
             usage = "VOICE_COMMUNICATION";
             break;
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            usage = "VIDEO_COMMUNICATION";
+            break;
         case STREAM_USAGE_NOTIFICATION_RINGTONE:
             usage = "NOTIFICATION_RINGTONE";
             break;

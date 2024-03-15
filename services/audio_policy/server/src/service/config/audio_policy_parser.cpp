@@ -135,11 +135,11 @@ void AudioPolicyParser::GetCommontAudioModuleInfo(ModuleInfo &moduleInfo, AudioM
     }
 
     audioModuleInfo.lib = moduleInfo.lib_;
-    if (moduleInfo.profileInfos_.rbegin() != moduleInfo.profileInfos_.rend()) {
-        audioModuleInfo.rate = moduleInfo.profileInfos_.rbegin()->rate_;
-        audioModuleInfo.format = moduleInfo.profileInfos_.rbegin()->format_;
-        audioModuleInfo.channels = moduleInfo.profileInfos_.rbegin()->channels_;
-        audioModuleInfo.bufferSize = moduleInfo.profileInfos_.rbegin()->bufferSize_;
+    if (moduleInfo.profileInfos_.begin() != moduleInfo.profileInfos_.end()) {
+        audioModuleInfo.rate = moduleInfo.profileInfos_.begin()->rate_;
+        audioModuleInfo.format = moduleInfo.profileInfos_.begin()->format_;
+        audioModuleInfo.channels = moduleInfo.profileInfos_.begin()->channels_;
+        audioModuleInfo.bufferSize = moduleInfo.profileInfos_.begin()->bufferSize_;
     }
     audioModuleInfo.fileName = moduleInfo.file_;
     audioModuleInfo.renderInIdleState = moduleInfo.renderInIdleState_;

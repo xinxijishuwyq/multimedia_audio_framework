@@ -2599,11 +2599,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_001, TestSize.Level1)
     int32_t bytesWritten = audioRenderer->Write(buffer, bytesToWrite);
     EXPECT_GE(bytesWritten, VALUE_ZERO);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
-    EXPECT_GE(timeStamp.time.tv_sec, (const long)VALUE_ZERO);
-    EXPECT_GE(timeStamp.time.tv_nsec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
 
     audioRenderer->Drain();
     audioRenderer->Stop();
@@ -2623,8 +2623,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_002, TestSize.Level1)
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioRenderer);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 }
 
@@ -2644,8 +2644,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_003, TestSize.Level1)
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
 
     audioRenderer->Release();
@@ -2670,8 +2670,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_004, TestSize.Level1)
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 
     audioRenderer->Release();
@@ -2699,8 +2699,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_005, TestSize.Level1)
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 }
 
@@ -2723,8 +2723,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_006, TestSize.Level1)
     bool isPaused = audioRenderer->Pause();
     EXPECT_EQ(true, isPaused);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
 
     audioRenderer->Release();
@@ -2752,8 +2752,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_007, TestSize.Level2)
     while (loopCount-- > 0) {
         audioRenderer->Write(tempBuffer.get(), bufferSize);
     }
-    Timestamp timeStamp1;
-    audioRenderer->GetAudioTime(timeStamp1, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp1;
+    audioRenderer->GetAudioTime(timestamp1, Timestamp::Timestampbase::MONOTONIC);
 
     bool isPaused = audioRenderer->Pause();
     EXPECT_EQ(true, isPaused);
@@ -2768,11 +2768,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTime_007, TestSize.Level2)
     while (loopCount-- > 0) {
         audioRenderer->Write(tempBuffer.get(), bufferSize);
     }
-    Timestamp timeStamp2;
-    audioRenderer->GetAudioTime(timeStamp2, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp2;
+    audioRenderer->GetAudioTime(timestamp2, Timestamp::Timestampbase::MONOTONIC);
 
-    int64_t duration = (timeStamp2.time.tv_sec - timeStamp1.time.tv_sec) * 1000000 + (timeStamp2.time.tv_nsec -
-        timeStamp1.time.tv_nsec) / VALUE_THOUSAND; // ns -> us
+    int64_t duration = (timestamp2.time.tv_sec - timestamp1.time.tv_sec) * 1000000 + (timestamp2.time.tv_nsec -
+        timestamp1.time.tv_nsec) / VALUE_THOUSAND; // ns -> us
     EXPECT_GE(duration, sleepTime);
 
     audioRenderer->Release();
