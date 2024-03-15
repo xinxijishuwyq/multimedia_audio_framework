@@ -137,9 +137,13 @@ enum AudioStreamType {
      */
     STREAM_SOURCE_VOICE_CALL = 23,
     /**
+     * Indicates audio streams for voip call.
+     */
+    STREAM_VOICE_COMMUNICATION = 24,
+    /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_SOURCE_VOICE_CALL,
+    STREAM_TYPE_MAX = STREAM_VOICE_COMMUNICATION,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.

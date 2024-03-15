@@ -60,6 +60,8 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
         {AudioStreamType::STREAM_ULTRASONIC, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_INTERNAL_FORCE_STOP",
         {AudioStreamType::STREAM_INTERNAL_FORCE_STOP, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_VOICE_COMMUNICATION",
+        {AudioStreamType::STREAM_VOICE_COMMUNICATION, SourceType::SOURCE_TYPE_INVALID, true}},
     // source type for audio interrupt
     {"SOURCE_TYPE_MIC",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
