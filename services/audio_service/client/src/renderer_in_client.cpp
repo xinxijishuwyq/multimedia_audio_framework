@@ -50,6 +50,8 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
+#include "audio_policy_manager.h"
+#include "audio_spatialization_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,6 +76,7 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 }
+class SpatializationStateChangeCallbackImpl;
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
 public:
@@ -203,6 +206,8 @@ public:
     void HandleRenderMarkReachedEvent(int64_t rendererMarkPosition);
     void HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber);
 
+    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -227,6 +232,11 @@ private:
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
+
+    int32_t RegisterSpatializationStateEventListener();
+
+    int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -344,6 +354,12 @@ private:
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
 
+    std::string spatializationEnabled_ = "Invalid";
+    std::string headTrackingEnabled_ = "Invalid";
+    uint32_t spatializationRegisteredSessionID_ = 0;
+    bool firstSpatializationRegistered_ = true;
+    std::shared_ptr<SpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
+
     enum {
         STATE_CHANGE_EVENT = 0,
         RENDERER_MARK_REACHED_EVENT,
@@ -365,6 +381,17 @@ private:
         HANDLER_PARAM_RUNNING_FROM_SYSTEM,
         HANDLER_PARAM_PAUSED_FROM_SYSTEM,
     };
+};
+
+class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {
+public:
+    SpatializationStateChangeCallbackImpl();
+    virtual ~SpatializationStateChangeCallbackImpl();
+
+    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
+    void SetRendererInClientPtr(std::shared_ptr<RendererInClientInner> rendererInClientPtr);
+private:
+    std::weak_ptr<RendererInClientInner> rendererInClientPtr_;
 };
 
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
@@ -438,6 +465,10 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION) {
         effectMode_ = EFFECT_NONE;
     }
+    AudioSpatializationState spatializationState =
+        AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
+    rendererInfo_.spatializationEnabled = spatializationState.spatializationEnabled;
+    rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
     AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d", rendererInfo_.rendererFlags);
 }
 
@@ -522,6 +553,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
 
     RegisterTracker(proxyObj);
+    RegisterSpatializationStateEventListener();
     return SUCCESS;
 }
 
@@ -2083,6 +2115,67 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
 {
     return PA_STREAM;
+}
+
+void RendererInClientInner::OnSpatializationStateChange(const AudioSpatializationState &spatializationState)
+{
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
+    CHECK_AND_RETURN_LOG(ipcStream_->UpdateSpatializationState(spatializationState.spatializationEnabled,
+        spatializationState.headTrackingEnabled) == SUCCESS, "Update spatialization state failed");
+}
+
+int32_t RendererInClientInner::RegisterSpatializationStateEventListener()
+{
+    if (firstSpatializationRegistered_) {
+        firstSpatializationRegistered_ = false;
+    } else {
+        UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
+    }
+
+    if (!spatializationStateChangeCallback_) {
+        spatializationStateChangeCallback_ = std::make_shared<SpatializationStateChangeCallbackImpl>();
+        CHECK_AND_RETURN_RET_LOG(spatializationStateChangeCallback_, ERROR, "Memory Allocation Failed !!");
+    }
+    spatializationStateChangeCallback_->SetRendererInClientPtr(shared_from_this());
+
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(
+        sessionId_, rendererInfo_.streamUsage, spatializationStateChangeCallback_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "RegisterSpatializationStateEventListener failed");
+    spatializationRegisteredSessionID_ = sessionId_;
+
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::UnregisterSpatializationStateEventListener(uint32_t sessionID)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "UnregisterSpatializationStateEventListener failed");
+    return SUCCESS;
+}
+
+SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("Instance create");
+}
+
+SpatializationStateChangeCallbackImpl::~SpatializationStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("Instance destory");
+}
+
+void SpatializationStateChangeCallbackImpl::SetRendererInClientPtr(
+    std::shared_ptr<RendererInClientInner> rendererInClientPtr)
+{
+    rendererInClientPtr_ = rendererInClientPtr;
+}
+
+void SpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
+    const AudioSpatializationState &spatializationState)
+{
+    std::shared_ptr<RendererInClientInner> rendererInClient = rendererInClientPtr_.lock();
+    if (rendererInClient != nullptr) {
+        rendererInClient->OnSpatializationStateChange(spatializationState);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

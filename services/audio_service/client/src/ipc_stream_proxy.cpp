@@ -435,5 +435,22 @@ int32_t IpcStreamProxy::OffloadSetVolume(float volume)
 
     return ret;
 }
+
+int32_t IpcStreamProxy::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteBool(spatializationEnabled);
+    data.WriteBool(headTrackingEnabled);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_UPDATE_SPATIALIZATION_STATE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

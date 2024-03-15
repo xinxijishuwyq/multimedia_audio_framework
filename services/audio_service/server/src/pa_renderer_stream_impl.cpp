@@ -777,6 +777,29 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
     return audioRendererSinkInstance->SetVolume(volume, 0);
 }
 
+int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
+{
+    PaLockGuard lock(mainloop_);
+    if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
+        return ERR_ILLEGAL_STATE;
+    }
+
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        return ERR_OPERATION_FAILED;
+    }
+
+    pa_proplist_sets(propList, "spatialization.enabled", std::to_string(spatializationEnabled).c_str());
+    pa_proplist_sets(propList, "headtracking.enabled", std::to_string(headTrackingEnabled).c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    return SUCCESS;
+}
+
 int32_t PaRendererStreamImpl::OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
     auto *audioRendererSinkInstance = static_cast<IOffloadAudioRendererSink*> (IAudioRendererSink::GetInstance(

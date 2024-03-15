@@ -53,6 +53,7 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0;
     virtual int32_t OffloadSetVolume(float volume) = 0;
     virtual size_t GetWritableSize() = 0;
+    virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
