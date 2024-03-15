@@ -633,7 +633,6 @@ static void LoadPostProcessCfg(OriginalEffectConfig &result, xmlNode *secondNode
     int32_t countPostSecondNode[NODE_SIZE_POST] = {0};
     xmlNode *currNode = secondNode;
     while (currNode != nullptr) {
-
         if (currNode->type != XML_ELEMENT_NODE) {
             currNode = currNode->next;
             continue;
