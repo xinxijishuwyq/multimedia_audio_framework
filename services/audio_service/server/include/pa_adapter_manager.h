@@ -102,6 +102,8 @@ private:
 
     int32_t GetDeviceNameForConnect(AudioProcessConfig processConfig,
         uint32_t sessionId, std::string &deviceName);
+    
+    void SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig);
 
     std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;

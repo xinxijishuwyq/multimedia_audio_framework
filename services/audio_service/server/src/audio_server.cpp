@@ -272,6 +272,7 @@ int32_t AudioServer::GetExtraParameters(const std::string &mainKey,
     }
 
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    CHECK_AND_RETURN_RET_LOG(audioRendererSinkInstance != nullptr, ERROR, "has no valid sink");
     std::unordered_map<std::string, std::set<std::string>> subKeyMap = mainKeyIt->second;
     if (subKeys.empty()) {
         for (auto it = subKeyMap.begin(); it != subKeyMap.end(); it++) {

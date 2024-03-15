@@ -31,7 +31,8 @@ class IRendererStream : public IStream {
 public:
     virtual ~IRendererStream() = default;
     virtual int32_t GetStreamFramesWritten(uint64_t &framesWritten) = 0;
-    virtual int32_t GetCurrentTimeStamp(uint64_t &timeStamp) = 0;
+    virtual int32_t GetCurrentTimeStamp(uint64_t &timestamp) = 0;
+    virtual int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp);
     virtual int32_t GetLatency(uint64_t &latency) = 0;
     virtual int32_t SetRate(int32_t rate) = 0;
     virtual int32_t SetLowPowerVolume(float volume) = 0;
@@ -48,7 +49,7 @@ public:
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) = 0;
     virtual int32_t UnsetOffloadMode() = 0;
-    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0;
     virtual int32_t OffloadSetVolume(float volume) = 0;
     virtual size_t GetWritableSize() = 0;

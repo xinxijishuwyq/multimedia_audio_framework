@@ -16,7 +16,7 @@
 #ifndef I_AUDIO_POLICY_INTERFACE_H
 #define I_AUDIO_POLICY_INTERFACE_H
 
-#include "audio_module_info.h"
+#include "audio_adapter_info.h"
 #include "audio_info.h"
 #include "audio_policy_manager.h"
 #include "audio_policy_ipc_interface_code.h"
@@ -97,7 +97,7 @@ public:
     virtual float GetMinStreamVolume() const = 0;
 
     virtual float GetMaxStreamVolume() const = 0;
-    
+
     virtual int32_t UpdateSwapDeviceStatus() = 0;
 
     virtual bool IsVolumeUnadjustable() = 0;

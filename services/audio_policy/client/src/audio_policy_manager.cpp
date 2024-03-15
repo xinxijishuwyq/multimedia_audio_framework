@@ -1441,5 +1441,27 @@ ConverterConfig AudioPolicyManager::GetConverterConfig()
     }
     return gsp->GetConverterConfig();
 }
+
+bool AudioPolicyManager::IsHighResolutionExist()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        return false;
+    }
+    bool gspIsHighResolutionExist = gsp->IsHighResolutionExist();
+    return gspIsHighResolutionExist;
+}
+
+int32_t AudioPolicyManager::SetHighResolutionExist(bool highResExist)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        return -1;
+    }
+    gsp->SetHighResolutionExist(highResExist);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

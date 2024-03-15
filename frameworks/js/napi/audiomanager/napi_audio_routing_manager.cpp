@@ -557,9 +557,6 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(napi
     if (context->status != napi_ok) {
         NapiAudioError::ThrowError(env, context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
-    } else if (context->rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
-        return NapiParamUtils::GetUndefinedValue(env);
     }
 
     auto executor = [context]() {
@@ -569,10 +566,14 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(napi
         auto *napiAudioRoutingManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
             "context object state is error.");
-        context->intValue = napiAudioRoutingManager->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
-            context->rendererInfo, context->outDeviceDescriptors);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS,
-            "GetPreferredOutputDeviceForRendererInfo failed", NAPI_ERR_SYSTEM);
+        if (context->rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
+        } else {
+            context->intValue = napiAudioRoutingManager->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
+                context->rendererInfo, context->outDeviceDescriptors);
+            NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS,
+                "GetPreferredOutputDeviceForRendererInfo failed", NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env, context](napi_value &output) {

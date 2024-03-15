@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../audio_ohcore.gni")
 import("../../../config.gni")
 
 pulseaudio_dir = "//third_party/pulseaudio"
@@ -45,9 +44,7 @@ ohos_shared_library("audio_capturer") {
 
   configs = [ ":audio_capturer_config" ]
 
-  include_dirs = audio_gateway_include_dirs
-
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
+  include_dirs = [ multimedia_audio_framework_pulse_audio ]
 
   sources = [
     "src/audio_capturer.cpp",
@@ -58,8 +55,6 @@ ohos_shared_library("audio_capturer") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
   ]
-
-  deps += audio_capturer_gateway_deps
 
   public_configs = [ ":audio_external_library_config" ]
 

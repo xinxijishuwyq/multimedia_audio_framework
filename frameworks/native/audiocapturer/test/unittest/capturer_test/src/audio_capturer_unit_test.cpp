@@ -806,6 +806,81 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_007, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test SetParams API via illegal input.
+* @tc.number: Audio_Capturer_SetParams_008
+* @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.
+*             capturerParams.audioSampleFormat = SAMPLE_S24LE;
+*             capturerParams.samplingRate = SAMPLE_RATE_88200;
+*             capturerParams.audioChannel = STEREO;
+*             capturerParams.audioEncoding = ENCODING_PCM;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_008, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S24LE;
+    capturerParams.samplingRate = SAMPLE_RATE_88200;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test SetParams API via illegal input.
+* @tc.number: Audio_Capturer_SetParams_009
+* @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.
+*             capturerParams.audioSampleFormat = SAMPLE_S24LE;
+*             capturerParams.samplingRate = SAMPLE_RATE_176400;
+*             capturerParams.audioChannel = STEREO;
+*             capturerParams.audioEncoding = ENCODING_PCM;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_009, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S24LE;
+    capturerParams.samplingRate = SAMPLE_RATE_176400;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
+}
+
+/**
+* @tc.name  : Test SetParams API via illegal input.
+* @tc.number: Audio_Capturer_SetParams_010
+* @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.
+*             capturerParams.audioSampleFormat = SAMPLE_S24LE;
+*             capturerParams.samplingRate = SAMPLE_RATE_192000;
+*             capturerParams.audioChannel = STEREO;
+*             capturerParams.audioEncoding = ENCODING_PCM;
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_010, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S24LE;
+    capturerParams.samplingRate = SAMPLE_RATE_192000;
+    capturerParams.audioChannel = STEREO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, ret);
+    audioCapturer->Release();
+}
+
+/**
 * @tc.name  : Test SetParams API stability.
 * @tc.number: Audio_Capturer_SetParams_Stability_001
 * @tc.desc  : Test SetParams interface stability.
@@ -1702,11 +1777,11 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_001, TestSize.Level1)
     int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
     EXPECT_GE(bytesRead, VALUE_ZERO);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioCapturer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
-    EXPECT_GE(timeStamp.time.tv_sec, (const long)VALUE_ZERO);
-    EXPECT_GE(timeStamp.time.tv_nsec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_sec, (const long)VALUE_ZERO);
+    EXPECT_GE(timestamp.time.tv_nsec, (const long)VALUE_ZERO);
 
     audioCapturer->Flush();
     audioCapturer->Stop();
@@ -1725,8 +1800,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_002, TestSize.Level1)
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
     ASSERT_NE(nullptr, audioCapturer);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioCapturer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 }
 
@@ -1746,8 +1821,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_003, TestSize.Level1)
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioCapturer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(true, getAudioTime);
 
     audioCapturer->Release();
@@ -1772,8 +1847,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_004, TestSize.Level1)
     bool isStopped = audioCapturer->Stop();
     EXPECT_EQ(true, isStopped);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioCapturer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 
     audioCapturer->Release();
@@ -1801,8 +1876,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_005, TestSize.Level1)
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioCapturer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 }
 
@@ -1825,8 +1900,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_Stability_001, TestSiz
     thread captureThread(StartCaptureThread, audioCapturer.get(), AUDIO_TIME_STABILITY_TEST_FILE);
 
     for (int i = 0; i < VALUE_THOUSAND; i++) {
-        Timestamp timeStamp;
-        bool getAudioTime = audioCapturer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+        Timestamp timestamp;
+        bool getAudioTime = audioCapturer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
         EXPECT_EQ(true, getAudioTime);
     }
 

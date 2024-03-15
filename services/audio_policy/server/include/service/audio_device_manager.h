@@ -57,7 +57,7 @@ public:
     vector<unique_ptr<AudioDeviceDescriptor>> GetMediaCapturePublicDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
-    unique_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice();
+    unique_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
     unique_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
     unique_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();

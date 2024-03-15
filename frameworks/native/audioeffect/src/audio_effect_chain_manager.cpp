@@ -199,6 +199,10 @@ bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
 
 uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap)
 {
+    if (channelLayout == CH_LAYOUT_MONO) {
+        pa_channel_map_init_mono(paMap);
+        return AudioChannel::MONO;
+    }
     uint32_t channelNum = 0;
     uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
     switch (mode) {
@@ -1205,9 +1209,7 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     // update session info
     if (SessionIDToEffectInfoMap_.count(sessionIDString)) {
-        if (SessionIDToEffectInfoMap_[sessionIDString].volume != volume) {
-            SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
-        }
+        SessionIDToEffectInfoMap_[sessionIDString].volume = volume;
     }
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     int32_t ret;

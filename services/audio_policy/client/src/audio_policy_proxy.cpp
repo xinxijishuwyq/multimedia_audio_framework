@@ -1999,5 +1999,38 @@ ConverterConfig AudioPolicyProxy::GetConverterConfig()
     result.outChannelLayout = reply.ReadUint64();
     return result;
 }
+
+bool AudioPolicyProxy::IsHighResolutionExist()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
+        "SendRequest failed, error: %d", error);
+    
+    bool replyReadBool = reply.ReadBool();
+    return replyReadBool;
+}
+
+int32_t AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    
+    data.WriteBool(highResExist);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

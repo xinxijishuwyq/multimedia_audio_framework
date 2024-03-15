@@ -15,8 +15,6 @@
 
 #ifndef ST_AUDIO_POLICY_MANAGER_H
 #define ST_AUDIO_POLICY_MANAGER_H
-#undef LOG_TAG
-#define LOG_TAG "AudioPolicyManager"
 
 #include <cstdint>
 #include "audio_client_tracker_callback_stub.h"
@@ -335,11 +333,12 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
+    bool IsHighResolutionExist();
+
+    int32_t SetHighResolutionExist(bool highResExist);
+
 private:
-    AudioPolicyManager()
-    {
-        AUDIO_INFO_LOG("Enter AudioPolicyManager::AudioPolicyManager");
-    }
+    AudioPolicyManager() {}
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);

@@ -548,10 +548,14 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
     return descs;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice()
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice(StreamUsage streamUsage)
 {
+    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        AUDIO_DEBUG_LOG("Invalid stream usage");
+    }
+
     unique_ptr<AudioDeviceDescriptor> devDesc;
-    if (localDevicesType_.compare("phone") == 0) {
+    if (localDevicesType_.compare("phone") == 0 && streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION) {
         devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
     } else {
         devDesc = make_unique<AudioDeviceDescriptor>(speaker_);

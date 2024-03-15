@@ -255,6 +255,10 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
 
+    bool IsHighResolutionExist() override;
+
+    int32_t SetHighResolutionExist(bool highResExist) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

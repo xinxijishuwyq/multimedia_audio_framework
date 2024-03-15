@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "PaAdapterManager"
 
 #include "pa_adapter_manager.h"
 #include <sstream>
@@ -111,6 +113,9 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     }
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
+
+    AUDIO_INFO_LOG("current stream marked as non-high resolution");
+    PolicyHandler::GetInstance().SetHighResolutionExist(false);
 
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
@@ -343,6 +348,24 @@ bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
     return false;
 }
 
+void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig)
+{
+    bool isHighResolution = PolicyHandler::GetInstance().GetHighResolutionExist();
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
+        deviceType, processConfig.streamType, processConfig.streamInfo.samplingRate, processConfig.streamInfo.format);
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && processConfig.streamType == STREAM_MUSIC &&
+        processConfig.streamInfo.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
+        processConfig.streamInfo.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolution == false) {
+        PolicyHandler::GetInstance().SetHighResolutionExist(true);
+        AUDIO_INFO_LOG("current stream marked as high resolution");
+        pa_proplist_sets(propList, "stream.highResolution", "1");
+    } else {
+        AUDIO_INFO_LOG("current stream marked as non-high resolution");
+        pa_proplist_sets(propList, "stream.highResolution", "0");
+    }
+}
+
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
     const std::string &streamName, uint32_t sessionId)
 {
@@ -373,6 +396,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
         pa_proplist_sets(propList, "headtracking.enabled",
             std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
+        SetHighResolution(propList, processConfig);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
@@ -602,6 +626,10 @@ pa_sample_spec PaAdapterManager::ConvertToPAAudioParams(AudioProcessConfig proce
 
 uint32_t PaAdapterManager::ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap)
 {
+    if (channelLayout == CH_LAYOUT_MONO) {
+        pa_channel_map_init_mono(&paMap);
+        return AudioChannel::MONO;
+    }
     uint32_t channelNum = 0;
     uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
     switch (mode) {

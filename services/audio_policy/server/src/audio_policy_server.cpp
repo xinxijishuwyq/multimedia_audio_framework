@@ -1356,6 +1356,9 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     policyData.availableMicrophones = GetAvailableMicrophones();
     // Get Audio Effect Manager Information
     audioPolicyService_.GetEffectManagerInfo(policyData.oriEffectConfig, policyData.availableEffects);
+    audioPolicyService_.GetAudioAdapterInfos(policyData.adapterInfoMap);
+    audioPolicyService_.GetVolumeGroupData(policyData.volumeGroupData);
+    audioPolicyService_.GetInterruptGroupData(policyData.interruptGroupData);
 }
 
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
@@ -2536,6 +2539,27 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
     // Taking remainder of large integers
     int32_t apiTargetversion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
     return apiTargetversion;
+}
+
+bool AudioPolicyServer::IsHighResolutionExist()
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return false;
+    }
+    return isHighResolutionExist_;
+}
+
+int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    isHighResolutionExist_ = highResExist;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
