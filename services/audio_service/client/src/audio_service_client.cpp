@@ -1011,9 +1011,10 @@ int32_t AudioServiceClient::SetHighResolution(pa_proplist *propList, AudioStream
 {
     bool isHighResolutionExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
     DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
+    bool isSpatialEnabled = AudioPolicyManager::GetInstance().IsSpatializationEnabled();
     AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
         deviceType, streamType_, audioParams.samplingRate, audioParams.format);
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType_ == STREAM_MUSIC &&
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType_ == STREAM_MUSIC && isSpatialEnabled == false &&
         audioParams.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
         audioParams.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolutionExist == false) {
         int32_t ret = AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
