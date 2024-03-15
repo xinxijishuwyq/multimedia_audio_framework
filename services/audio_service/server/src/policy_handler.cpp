@@ -202,5 +202,15 @@ int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
 }
+
+bool PolicyHandler::GetHighResolutionExist()
+{
+    return isHighResolutionExist_;
+}
+
+void PolicyHandler::SetHighResolutionExist(bool isHighResExist)
+{
+    isHighResolutionExist_ = isHighResExist;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -333,6 +333,10 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
+    bool IsHighResolutionExist();
+
+    int32_t SetHighResolutionExist(bool highResExist);
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

@@ -114,6 +114,9 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
+    AUDIO_INFO_LOG("current stream marked as non-high resolution");
+    PolicyHandler::GetInstance().SetHighResolutionExist(false);
+
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
@@ -335,6 +338,24 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     return paStream;
 }
 
+void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig)
+{
+    bool isHighResolution = PolicyHandler::GetInstance().GetHighResolutionExist();
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
+        deviceType, processConfig.streamType, processConfig.streamInfo.samplingRate, processConfig.streamInfo.format);
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && processConfig.streamType == STREAM_MUSIC &&
+        processConfig.streamInfo.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
+        processConfig.streamInfo.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolution == false) {
+        PolicyHandler::GetInstance().SetHighResolutionExist(true);
+        AUDIO_INFO_LOG("current stream marked as high resolution");
+        pa_proplist_sets(propList, "stream.highResolution", "1");
+    } else {
+        AUDIO_INFO_LOG("current stream marked as non-high resolution");
+        pa_proplist_sets(propList, "stream.highResolution", "0");
+    }
+}
+
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
     const std::string &streamName, uint32_t sessionId)
 {
@@ -368,6 +389,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         AudioPrivacyType privacyType = processConfig.privacyType;
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
+        SetHighResolution(propList, processConfig);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
@@ -385,10 +407,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_channel_map_init(&map);
     map.channels = processConfig.streamInfo.channels;
     uint32_t channelsInLayout = ConvertChLayoutToPaChMap(processConfig.streamInfo.channelLayout, map);
-    if (channelsInLayout != processConfig.streamInfo.channels || channelsInLayout == 0) {
-        AUDIO_ERR_LOG("Invalid channel Layout");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(channelsInLayout == processConfig.streamInfo.channels && channelsInLayout != 0,
+        ERR_INVALID_PARAM, "Invalid channel Layout");
     return SUCCESS;
 }
 
