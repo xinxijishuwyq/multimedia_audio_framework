@@ -2680,10 +2680,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     int32_t ret = SetStreamVolumeInML(volume);
     pa_threaded_mainloop_unlock(mainLoop);
 
-    if (offloadEnable_) {
-        audioSystemManager_->OffloadSetVolume(GetSingleStreamVol() * duckVolumeFactor_);
-    }
-
     return ret;
 }
 
