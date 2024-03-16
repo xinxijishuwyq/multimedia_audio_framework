@@ -304,16 +304,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* rende
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer* renderer, float* volume);
-/*
- * Set the stream interruptMode by OH_AudioStreamBuilder_GenerateRenderer()
- *
- * @since 12
- *
- * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param mode will be set for the stream.
- * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
- */
-OH_AudioStream_Result OH_AudioRenderer_SetInterruptMode(OH_AudioRenderer* renderer, OH_AudioStream_InterruptMode mode);
+
 #ifdef __cplusplus
 }
 #endif

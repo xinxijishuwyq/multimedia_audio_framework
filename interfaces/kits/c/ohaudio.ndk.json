@@ -51,6 +51,5 @@
     { "name": "OH_AudioRenderer_CancelMark"},
     { "name": "OH_AudioRenderer_SetVolume"},
     { "name": "OH_AudioRenderer_SetVolumeWithRamp"},
-    { "name": "OH_AudioRenderer_GetVolume"},
-    { "name": "OH_AudioRenderer_SetInterruptMode"}
+    { "name": "OH_AudioRenderer_GetVolume"}
 ]

@@ -261,17 +261,6 @@ OH_AudioStream_Result OH_AudioRenderer_CancelMark(OH_AudioRenderer* renderer)
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioRenderer_SetInterruptMode(OH_AudioRenderer* renderer, OH_AudioStream_InterruptMode mode)
-{
-    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    CHECK_AND_RETURN_RET_LOG((mode != AUDIOSTREAM_SHARE_MODE || mode != AUDIOSTREAM_INDEPENDENT_MODE),
-        AUDIOSTREAM_ERROR_INVALID_PARAM, "mode is invalid");
-    InterruptMode interruptMode = static_cast<InterruptMode>(mode);
-    audioRenderer->SetInterruptMode(interruptMode);
-    return AUDIOSTREAM_SUCCESS;
-}
-
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -468,12 +457,6 @@ void OHAudioRenderer::UnsetRendererPositionCallback()
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->UnsetRendererPositionCallback();
-}
-
-void OHAudioRenderer::SetInterruptMode(InterruptMode mode)
-{
-    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
-    audioRenderer_->SetInterruptMode(mode);
 }
 
 void OHRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
