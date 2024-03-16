@@ -105,38 +105,32 @@ AudioStreamType IAudioStream::GetStreamType(ContentType contentType, StreamUsage
     return streamType;
 }
 
-const std::string IAudioStream::GetEffectSceneName(AudioStreamType audioType)
+const std::string IAudioStream::GetEffectSceneName(const StreamUsage &streamUsage)
 {
-    std::string name;
-    switch (audioType) {
-        case STREAM_MUSIC:
-            name = "SCENE_MUSIC";
+    // return AudioPolicyManager::GetInstance().GetEffectSceneName(streamUsage);
+    SupportedEffectConfig supportedEffectConfig;
+    AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
+    std::string streamUsageString = "";
+    for (const auto& pair : STREAM_USAGE_MAP) {
+        if (pair.second == streamUsage) {
+            streamUsageString = pair.first;
             break;
-        case STREAM_GAME:
-            name = "SCENE_GAME";
-            break;
-        case STREAM_MOVIE:
-            name = "SCENE_MOVIE";
-            break;
-        case STREAM_SPEECH:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-            name = "SCENE_SPEECH";
-            break;
-        case STREAM_RING:
-        case STREAM_ALARM:
-        case STREAM_NOTIFICATION:
-        case STREAM_SYSTEM:
-        case STREAM_DTMF:
-        case STREAM_SYSTEM_ENFORCED:
-            name = "SCENE_RING";
-            break;
-        default:
-            name = "SCENE_OTHERS";
+        }
     }
-
-    const std::string sceneName = name;
-    return sceneName;
+    if (supportedEffectConfig.postProcessNew.stream.empty()) {
+        AUDIO_WARNING_LOG("empty scene type set!");
+        return "";
+    }
+    if (streamUsageString == "") {
+        AUDIO_WARNING_LOG("Find streamUsage string failed, not in the parser's string-enum map.");
+        return supportedEffectConfig.postProcessNew.stream.back().scene;
+    }
+    for (SceneMappingItem &item: supportedEffectConfig.postProcessSceneMap) {
+        if (item.name == streamUsageString) {
+            return item.sceneType;
+        }
+    }
+    return supportedEffectConfig.postProcessNew.stream.back().scene;
 }
 
 int32_t IAudioStream::GetByteSizePerFrame(const AudioStreamParams &params, size_t &result)

@@ -20,11 +20,18 @@
 #include <string>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#ifdef USE_CONFIG_POLICY
+#include "config_policy_utils.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 
+#ifdef USE_CONFIG_POLICY
+static constexpr char AUDIO_CONVERTER_CONFIG_FILE[] = "/etc/audio/audio_converter_config.xml";
+#else
 static constexpr char AUDIO_CONVERTER_CONFIG_FILE[] = "/system/etc/audio/audio_converter_config.xml";
+#endif
 
 static constexpr int32_t FILE_CONTENT_ERROR = -2;
 static constexpr int32_t FILE_PARSE_ERROR = -3;
@@ -88,6 +95,29 @@ static std::map<std::string, AudioChannelLayout> str2layout = {
     {"CH_LAYOUT_AMB_ORDER3_FUMA", CH_LAYOUT_HOA_ORDER3_FUMA},
 };
 
+static void ParseEffectConfigFile(xmlDoc* &doc)
+{
+#ifdef USE_CONFIG_POLICY
+    CfgFiles *cfgFiles = GetCfgFiles(AUDIO_CONVERTER_CONFIG_FILE);
+    if (cfgFiles == nullptr) {
+        AUDIO_ERR_LOG("Not found audio_converter_config.xml!");
+        return;
+    }
+
+    for (int32_t i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; i--) {
+        if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
+            AUDIO_INFO_LOG("converter config file path:%{public}s", cfgFiles->paths[i]);
+            doc = xmlReadFile(cfgFiles->paths[i], nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
+            break;
+        }
+    }
+    FreeCfgFiles(cfgFiles);
+#else
+    AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
+    doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
+#endif
+}
+
 AudioConverterParser::AudioConverterParser()
 {
     AUDIO_INFO_LOG("AudioConverterParser created");
@@ -130,6 +160,7 @@ static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode *currNode)
             AUDIO_ERR_LOG("unsupported format: invalid channel layout");
         } else {
             result.outChannelLayout = str2layout[strChannelLayout];
+            AUDIO_INFO_LOG("AudioVivid MCR output format is %{public}s", strChannelLayout.c_str());
         }
     }
 }
@@ -158,7 +189,8 @@ ConverterConfig AudioConverterParser::LoadConfig()
     xmlNode *rootElement = nullptr;
     cfg_ = std::make_unique<ConverterConfig>();
     ConverterConfig &result = *cfg_;
-    doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
+
+    ParseEffectConfigFile(doc);
     CHECK_AND_RETURN_RET_LOG(doc != nullptr, result, "error: could not parse file %{public}s",
         AUDIO_CONVERTER_CONFIG_FILE);
 

@@ -700,9 +700,10 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
 
     int32_t countPre = supportedEffectConfig.preProcessNew.stream.size();
     int32_t countPost = supportedEffectConfig.postProcessNew.stream.size();
+    int32_t countPostMap = supportedEffectConfig.postProcessSceneMap.size();
     reply.WriteInt32(countPre);
     reply.WriteInt32(countPost);
-
+    reply.WriteInt32(countPostMap);
     if (countPre > 0) {
         for (i = 0; i < countPre; i++) {
             PreprocessProcess(supportedEffectConfig, reply, i);
@@ -711,6 +712,12 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     if (countPost > 0) {
         for (i = 0; i < countPost; i++) {
             PostprocessProcess(supportedEffectConfig, reply, i);
+        }
+    }
+    if (countPostMap > 0) {
+        for (i = 0; i < countPostMap; i++) {
+            reply.WriteString(supportedEffectConfig.postProcessSceneMap[i].name);
+            reply.WriteString(supportedEffectConfig.postProcessSceneMap[i].sceneType);
         }
     }
 }

@@ -114,7 +114,7 @@ int32_t PaRendererStreamImpl::InitParams()
 
     lock.Unlock();
     // In plan: Get data from xml
-    effectSceneName_ = GetEffectSceneName(processConfig_.streamType);
+    effectSceneName_ = processConfig_.rendererInfo.sceneType;
 
     ResetOffload();
 
@@ -717,40 +717,6 @@ void PaRendererStreamImpl::SetStreamIndex(uint32_t index)
 uint32_t PaRendererStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
-}
-
-const std::string PaRendererStreamImpl::GetEffectSceneName(AudioStreamType audioType)
-{
-    std::string name;
-    switch (audioType) {
-        case STREAM_MUSIC:
-            name = "SCENE_MUSIC";
-            break;
-        case STREAM_GAME:
-            name = "SCENE_GAME";
-            break;
-        case STREAM_MOVIE:
-            name = "SCENE_MOVIE";
-            break;
-        case STREAM_SPEECH:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-            name = "SCENE_SPEECH";
-            break;
-        case STREAM_RING:
-        case STREAM_ALARM:
-        case STREAM_NOTIFICATION:
-        case STREAM_SYSTEM:
-        case STREAM_DTMF:
-        case STREAM_SYSTEM_ENFORCED:
-            name = "SCENE_RING";
-            break;
-        default:
-            name = "SCENE_OTHERS";
-    }
-
-    const std::string sceneName = name;
-    return sceneName;
 }
 
 // offload

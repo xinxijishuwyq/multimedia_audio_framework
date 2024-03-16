@@ -563,7 +563,7 @@ AudioServiceClient::AudioServiceClient()
     captureMode_ = CAPTURE_MODE_NORMAL;
 
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
-    effectSceneName = "SCENE_MUSIC";
+    effectSceneName = "";
     effectMode = EFFECT_DEFAULT;
 
     mFrameSize = 0;
@@ -1180,7 +1180,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
             AUDIO_ERR_LOG("Set render rate failed");
         }
 
-        effectSceneName = IAudioStream::GetEffectSceneName(audioType);
+        effectSceneName = IAudioStream::GetEffectSceneName(mStreamUsage);
         if (SetStreamAudioEffectMode(effectMode) != AUDIO_CLIENT_SUCCESS) {
             AUDIO_ERR_LOG("Set audio effect mode failed");
         }
@@ -2640,7 +2640,15 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     streamType_ = audioStreamType;
     const std::string streamName = GetStreamName(audioStreamType);
-    effectSceneName = IAudioStream::GetEffectSceneName(audioStreamType);
+    auto it = STREAM_TYPE_USAGE_MAP.find(audioStreamType);
+    StreamUsage tmpStreamUsage;
+    if (it != STREAM_TYPE_USAGE_MAP.end()) {
+        tmpStreamUsage = STREAM_TYPE_USAGE_MAP.at(audioStreamType);
+    } else {
+        AUDIO_WARNING_LOG("audioStreamType doesn't have a unique streamUsage, set to MUSIC");
+        tmpStreamUsage = STREAM_USAGE_MUSIC;
+    }
+    effectSceneName = IAudioStream::GetEffectSceneName(tmpStreamUsage);
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {

@@ -465,11 +465,13 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION) {
         effectMode_ = EFFECT_NONE;
     }
+    rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
+    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
+        rendererInfo_.sceneType.c_str());
     AudioSpatializationState spatializationState =
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
     rendererInfo_.spatializationEnabled = spatializationState.spatializationEnabled;
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
-    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d", rendererInfo_.rendererFlags);
 }
 
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -687,6 +689,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
+    config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(curStreamParams_.channelLayout);
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 

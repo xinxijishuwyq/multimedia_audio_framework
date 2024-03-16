@@ -375,8 +375,6 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(processConfig.appInfo.appPid).c_str());
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "media.name", streamName.c_str());
-    const std::string effectSceneName = GetEffectSceneName(processConfig.streamType);
-    pa_proplist_sets(propList, "scene.type", effectSceneName.c_str());
     pa_proplist_sets(propList, "scene.mode",
         IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
     float mVolumeFactor = 1.0f;
@@ -392,6 +390,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         AudioPrivacyType privacyType = processConfig.privacyType;
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
+        pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
         pa_proplist_sets(propList, "spatialization.enabled",
             std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
         pa_proplist_sets(propList, "headtracking.enabled",
@@ -655,41 +654,6 @@ uint32_t PaAdapterManager::ConvertChLayoutToPaChMap(const uint64_t &channelLayou
     }
     return channelNum;
 }
-
-const std::string PaAdapterManager::GetEffectSceneName(AudioStreamType audioType)
-{
-    std::string name;
-    switch (audioType) {
-        case STREAM_MUSIC:
-            name = "SCENE_MUSIC";
-            break;
-        case STREAM_GAME:
-            name = "SCENE_GAME";
-            break;
-        case STREAM_MOVIE:
-            name = "SCENE_MOVIE";
-            break;
-        case STREAM_SPEECH:
-        case STREAM_VOICE_CALL:
-        case STREAM_VOICE_ASSISTANT:
-            name = "SCENE_SPEECH";
-            break;
-        case STREAM_RING:
-        case STREAM_ALARM:
-        case STREAM_NOTIFICATION:
-        case STREAM_SYSTEM:
-        case STREAM_DTMF:
-        case STREAM_SYSTEM_ENFORCED:
-            name = "SCENE_RING";
-            break;
-        default:
-            name = "SCENE_OTHERS";
-    }
-
-    const std::string sceneName = name;
-    return sceneName;
-}
-
 
 int32_t PaAdapterManager::GetInfo()
 {

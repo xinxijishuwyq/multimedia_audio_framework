@@ -77,7 +77,6 @@ private:
     static void PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     const std::string GetEffectModeName(int32_t effectMode);
-    const std::string GetEffectSceneName(AudioStreamType audioType);
     // offload
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
     int32_t OffloadSetBufferSize(uint32_t sizeMs);
@@ -111,7 +110,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     int32_t renderRate_;
     int32_t effectMode_ = -1;
-    std::string effectSceneName_ = "SCENE_MUSIC";
+    std::string effectSceneName_ = "";
     int32_t privacyType_ = 0;
 
     float powerVolumeFactor_ = 1.0f;

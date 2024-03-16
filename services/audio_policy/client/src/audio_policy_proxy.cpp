@@ -1307,6 +1307,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
     int countPre = reply.ReadInt32();
     int countPost = reply.ReadInt32();
+    int32_t countPostMap = reply.ReadInt32();
     error = QueryEffectSceneModeChkReply(countPre, countPost);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
     // preprocess
@@ -1327,6 +1328,14 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
             postProcessNew.stream.push_back(stream);
         }
         supportedEffectConfig.postProcessNew = postProcessNew;
+    }
+    if (countPostMap > 0) {
+        SceneMappingItem item;
+        for (i = 0; i < countPostMap; i++) {
+            item.name = reply.ReadString();
+            item.sceneType = reply.ReadString();
+            supportedEffectConfig.postProcessSceneMap.push_back(item);
+        }
     }
     return 0;
 }
