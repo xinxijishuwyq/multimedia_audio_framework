@@ -148,11 +148,11 @@ RemoteAudioRendererSinkInner::~RemoteAudioRendererSinkInner()
     AUDIO_DEBUG_LOG("RemoteAudioRendererSink destruction.");
 }
 
-std::mutex rendererSinksMutex_;
+std::mutex g_rendererSinksMutex;
 std::map<std::string, RemoteAudioRendererSinkInner *> allsinks;
 RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
-    std::lock_guard<std::mutex> lock(rendererSinksMutex_);
+    std::lock_guard<std::mutex> lock(g_rendererSinksMutex);
     AUDIO_INFO_LOG("RemoteAudioRendererSink::GetInstance");
     CHECK_AND_RETURN_RET_LOG(!deviceNetworkId.empty(), nullptr, "Remote render device networkId is null.");
 
@@ -192,16 +192,19 @@ void RemoteAudioRendererSinkInner::ClearRender()
 
 void RemoteAudioRendererSinkInner::DeInit()
 {
-    std::lock_guard<std::mutex> lock(rendererSinksMutex_);
+    std::lock_guard<std::mutex> lock(g_rendererSinksMutex);
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::DeInit");
     ClearRender();
 
     // remove map recorder.
+    CHECK_AND_RETURN_LOG(allsinks.count(this->deviceNetworkId_) > 0,
+        "not find %{public}s", this->deviceNetworkId_.c_str());
     RemoteAudioRendererSinkInner *temp = allsinks[this->deviceNetworkId_];
-    if (temp != nullptr) {
+    allsinks.erase(this->deviceNetworkId_);
+    if (temp == nullptr) {
+        AUDIO_ERR_LOG("temp is nullptr");
+    } else {
         delete temp;
-        temp = nullptr;
-        allsinks.erase(this->deviceNetworkId_);
     }
     AUDIO_INFO_LOG("end.");
 }
