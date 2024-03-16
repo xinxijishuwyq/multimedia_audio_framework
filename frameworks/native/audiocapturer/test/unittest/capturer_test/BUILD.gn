@@ -39,8 +39,8 @@ ohos_unittest("audio_capturer_unit_test") {
   ]
 
   sources = [
+    "src/audio_capturer_extra_unit_test.cpp",
     "src/audio_capturer_unit_test.cpp",
-    "src/audio_capturer_extra_unit_test.cpp"
   ]
 
   deps = [
