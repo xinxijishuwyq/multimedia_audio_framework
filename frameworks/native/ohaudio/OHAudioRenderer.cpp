@@ -19,7 +19,6 @@
 #include "audio_errors.h"
 
 using OHOS::AudioStandard::Timestamp;
-using OHOS::AudioStandard::InterruptMode;
 
 static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
