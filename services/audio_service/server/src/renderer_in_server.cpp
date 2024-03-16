@@ -148,6 +148,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
                 AUDIO_INFO_LOG("Buffer is not empty");
                 WriteData();
             }
+            stateListener->OnOperationHandled(BUFFER_UNDERRUN, 0);
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;

@@ -91,6 +91,12 @@ public:
 
     virtual uint32_t GetUnderflowCount() = 0;
 
+    virtual uint32_t GetOverflowCount() = 0;
+
+    virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
+
+    virtual void SetOverflowCount(uint32_t overflowCount) = 0;
+
     virtual int64_t GetFramesWritten() = 0;
 
     virtual int64_t GetFramesRead() = 0;
