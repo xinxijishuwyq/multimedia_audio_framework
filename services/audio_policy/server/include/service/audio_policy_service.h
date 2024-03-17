@@ -694,6 +694,8 @@ private:
 
     void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc);
 
+    void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
