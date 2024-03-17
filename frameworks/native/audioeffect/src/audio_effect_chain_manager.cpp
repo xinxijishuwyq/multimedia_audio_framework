@@ -527,11 +527,6 @@ int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
     return SUCCESS;
 }
 
-void AudioEffectChain::AddEffectHandleEnd()
-{
-    reloadMutex.unlock();
-}
-
 
 void CopyBuffer(const float *bufIn, float *bufOut, uint32_t totalLen)
 {

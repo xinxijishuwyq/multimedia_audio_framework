@@ -94,7 +94,6 @@ public:
     std::string GetEffectMode();
     void SetEffectMode(std::string mode);
     void ReleaseEffectChain();
-    void AddEffectHandleEnd();
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
