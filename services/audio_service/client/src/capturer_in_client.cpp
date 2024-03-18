@@ -1501,7 +1501,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             result = ringCache_->Dequeue({&buffer + (readSize), readableSize});
             CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "DequeueCache err %{public}d", result.ret);
             readSize += readableSize;
-            HandleCapturerPositionChanges(readSize);
             return readSize; // data size
         }
         if (result.size != 0) {
@@ -1519,7 +1518,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
         } else {
             if (!isBlockingRead) {
-                HandleCapturerPositionChanges(readSize);
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
