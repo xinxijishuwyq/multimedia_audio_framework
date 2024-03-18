@@ -90,6 +90,7 @@ private:
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_ {};
     std::unordered_map<std::string, std::string> volumeGroupMap_;
     std::unordered_map<std::string, std::string> interruptGroupMap_;
+    bool shouldOpenMicSpeaker_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

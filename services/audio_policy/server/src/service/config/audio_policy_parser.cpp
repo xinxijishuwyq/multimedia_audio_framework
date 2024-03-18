@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyParser"
+
 #include "audio_policy_parser.h"
 
 #include <regex>
@@ -123,9 +126,11 @@ void AudioPolicyParser::GetCommontAudioModuleInfo(ModuleInfo &moduleInfo, AudioM
         audioModuleInfo.name = PRIMARY_MIC;
     } else if (audioModuleInfo.name == ADAPTER_DEVICE_A2DP_BT_A2DP) {
         audioModuleInfo.name = BLUETOOTH_SPEAKER;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_USB_SPEAKER) {
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_USB_SPEAKER ||
+        (audioModuleInfo.role == MODULE_TYPE_SINK && audioModuleInfo.name == ADAPTER_DEVICE_USB_HEADSET_ARM)) {
         audioModuleInfo.name = USB_SPEAKER;
-    } else if (audioModuleInfo.name == ADAPTER_DEVICE_USB_MIC) {
+    } else if (audioModuleInfo.name == ADAPTER_DEVICE_USB_MIC ||
+        (audioModuleInfo.role == MODULE_TYPE_SOURCE && audioModuleInfo.name == ADAPTER_DEVICE_USB_HEADSET_ARM)) {
         audioModuleInfo.name = USB_MIC;
     } else if (audioModuleInfo.name == ADAPTER_DEVICE_FILE_SINK) {
         audioModuleInfo.name = FILE_SINK;
@@ -145,6 +150,8 @@ void AudioPolicyParser::GetCommontAudioModuleInfo(ModuleInfo &moduleInfo, AudioM
         audioModuleInfo.bufferSize = moduleInfo.profileInfos_.begin()->bufferSize_;
     }
     audioModuleInfo.fileName = moduleInfo.file_;
+
+    audioModuleInfo.fixedLatency = moduleInfo.fixedLatency_;
     audioModuleInfo.renderInIdleState = moduleInfo.renderInIdleState_;
 }
 
@@ -202,6 +209,7 @@ void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo(
                 audioModuleInfo.className = FILE_CLASS;
             }
 
+            shouldOpenMicSpeaker_ ? audioModuleInfo.OpenMicSpeaker = "1" : audioModuleInfo.OpenMicSpeaker = "0";
             if (adapterType == AdaptersType::TYPE_PRIMARY &&
                 shouldEnableOffload && moduleInfo.moduleType_ == MODULE_TYPE_SINK) {
                 audioModuleInfo.offloadEnable = "1";
@@ -481,8 +489,10 @@ void AudioPolicyParser::ParseUpdateRouteSupport(xmlNode &node)
 
     if (!xmlStrcmp(supportFlag, reinterpret_cast<const xmlChar*>("true"))) {
         portObserver_.OnUpdateRouteSupport(true);
+        shouldOpenMicSpeaker_ = true;
     } else {
         portObserver_.OnUpdateRouteSupport(false);
+        shouldOpenMicSpeaker_ = false;
     }
     xmlFree(supportFlag);
 }
@@ -529,6 +539,8 @@ AdaptersType AudioPolicyParser::GetAdaptersType(const std::string &adapterName)
         return AdaptersType::TYPE_REMOTE;
     else if (adapterName == ADAPTER_FILE_TYPE)
         return AdaptersType::TYPE_FILE;
+    else if (adapterName == ADAPTER_USB_TYPE)
+        return AdaptersType::TYPE_USB;
     else
         return AdaptersType::TYPE_INVALID;
 }

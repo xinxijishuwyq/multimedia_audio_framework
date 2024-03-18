@@ -108,6 +108,7 @@ private:
     float rightVolume_;
     int32_t routeHandle_ = -1;
     int32_t logMode_ = 0;
+    uint32_t openSpeaker_;
     uint32_t renderId_ = 0;
     std::string adapterNameCase_;
     struct IAudioManager *audioManager_;
@@ -147,7 +148,7 @@ private:
 
 MultiChannelRendererSinkInner::MultiChannelRendererSinkInner(const std::string &halName)
     : sinkInited_(false), adapterInited_(false), renderInited_(false), started_(false), paused_(false),
-      leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL),
+      leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
     AUDIO_INFO_LOG("MultiChannelRendererSinkInner");
@@ -467,6 +468,7 @@ int32_t MultiChannelRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
+    openSpeaker_ = attr_.openMicSpeaker;
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
     int32_t ret = InitAdapter();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init adapter failed");
@@ -783,30 +785,32 @@ int32_t MultiChannelRendererSinkInner::SetAudioScene(AudioScene audioScene, Devi
         AUDIO_ERR_LOG("SetAudioScene failed audio render handle is null!");
         return ERR_INVALID_HANDLE;
     }
-    AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
-    if (halName_ == "usb") {
-        audioSceneOutPort = PIN_OUT_USB_HEADSET;
-    }
-
-    AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
-    int32_t ret = SUCCESS;
-    if (audioScene != currentAudioScene_) {
-        struct AudioSceneDescriptor scene;
-        scene.scene.id = GetAudioCategory(audioScene);
-        scene.desc.pins = audioSceneOutPort;
-        scene.desc.desc = (char *)"";
-
-        ret = audioRender_->SelectScene(audioRender_, &scene);
-        if (ret < 0) {
-            AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
-            return ERR_OPERATION_FAILED;
+    if (openSpeaker_) {
+        AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
+        if (halName_ == "usb") {
+            audioSceneOutPort = PIN_OUT_USB_HEADSET;
         }
-        currentAudioScene_ = audioScene;
-    }
 
-    ret = SetOutputRoute(activeDevice, audioSceneOutPort);
-    if (ret < 0) {
-        AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
+        AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
+        int32_t ret = SUCCESS;
+        if (audioScene != currentAudioScene_) {
+            struct AudioSceneDescriptor scene;
+            scene.scene.id = GetAudioCategory(audioScene);
+            scene.desc.pins = audioSceneOutPort;
+            scene.desc.desc = (char *)"";
+
+            ret = audioRender_->SelectScene(audioRender_, &scene);
+            if (ret < 0) {
+                AUDIO_ERR_LOG("Select scene FAILED: %{public}d", ret);
+                return ERR_OPERATION_FAILED;
+            }
+            currentAudioScene_ = audioScene;
+        }
+
+        ret = SetOutputRoute(activeDevice, audioSceneOutPort);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
+        }
     }
     return SUCCESS;
 }
@@ -990,6 +994,7 @@ int32_t MultiChannelRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfo
     attr_.format = ParseAudioFormat(formatStr);
 
     adapterNameCase_ = "usb";
+    openSpeaker_ = 0;
 
     return SUCCESS;
 }
