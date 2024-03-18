@@ -232,6 +232,7 @@ private:
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
+    int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -1181,7 +1182,7 @@ void RendererInClientInner::WriteCallbackFunc()
             // call write here.
             int32_t result = curStreamParams_.encoding == ENCODING_PCM
                 ? WriteInner(temp.buffer, temp.bufLength)
-                : Write(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
+                : WriteInner(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
             if (result < 0) {
                 AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
             }
@@ -1724,6 +1725,21 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
+        "Write with callback is not supported");
+    return WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+}
+
+int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
+{
+    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
+        "Write with callback is not supported");
+    return WriteInner(buffer, bufferSize);
+}
+
+int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
+    size_t metaBufferSize)
+{
     Trace trace("RendererInClient::Write with meta " + std::to_string(pcmBufferSize));
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding == ENCODING_AUDIOVIVID, ERR_NOT_SUPPORTED,
         "Write: Write not supported. encoding doesnot match.");
@@ -1734,13 +1750,6 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     uint8_t *buffer;
     uint32_t bufferSize;
     converter_->GetOutputBufferStream(buffer, bufferSize);
-    return WriteInner(buffer, bufferSize);
-}
-
-int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
-{
-    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
-        "Write with callback is not supported");
     return WriteInner(buffer, bufferSize);
 }
 
