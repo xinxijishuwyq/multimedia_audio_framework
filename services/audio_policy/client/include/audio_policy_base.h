@@ -268,6 +268,10 @@ public:
 
     virtual void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
 
+    virtual AudioSpatializationSceneType GetSpatializationSceneType() = 0;
+
+    virtual int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

@@ -446,13 +446,6 @@ int AudioManagerStub::HandleNotifyStreamVolumeChanged(MessageParcel &data, Messa
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleGetSpatializationSceneType(MessageParcel &data, MessageParcel &reply)
-{
-    AudioSpatializationSceneType spatializationSceneType = GetSpatializationSceneType();
-    reply.WriteInt32(static_cast<int32_t>(spatializationSceneType));
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply)
 {
     AudioSpatializationSceneType spatializationSceneType = static_cast<AudioSpatializationSceneType>(data.ReadInt32());

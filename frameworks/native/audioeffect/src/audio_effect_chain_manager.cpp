@@ -1615,12 +1615,6 @@ uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
     return SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->GetLatency();
 }
 
-AudioSpatializationSceneType AudioEffectChainManager::GetSpatializationSceneType()
-{
-    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    return spatializationSceneType_;
-}
-
 int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
@@ -1638,7 +1632,7 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput) != 0) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
     }
-    AUDIO_DEBUG_LOG("set spatialization scene type to hdi: %{public}d",effectHdiInput[1]);
+    AUDIO_DEBUG_LOG("set spatialization scene type to hdi: %{public}d", effectHdiInput[1]);
 
     UpdateEffectChainParams(sceneType);
 

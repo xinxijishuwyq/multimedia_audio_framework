@@ -25,7 +25,6 @@
 
 #include "parcel.h"
 #include "audio_info.h"
-#include "audio_effect.h"
 #include "audio_interrupt_callback.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
@@ -1131,20 +1130,6 @@ public:
      * @since 11
      */
     int32_t SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const;
-
-    /**
-     * @brief Get current spatialization rendering scene type
-     *
-     * @since 12
-     */
-    AudioSpatializationSceneType GetSpatializationSceneType();
-
-    /**
-     * @brief Set spatialization rendering scene type
-     *
-     * @since 12
-     */
-    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
     
     static void AudioServerDied(pid_t pid);
 private:

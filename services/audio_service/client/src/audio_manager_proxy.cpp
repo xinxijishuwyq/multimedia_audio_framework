@@ -758,24 +758,6 @@ int32_t AudioManagerProxy::UpdateSpatializationState(AudioSpatializationState sp
     return reply.ReadInt32();
 }
 
-AudioSpatializationSceneType AudioManagerProxy::GetSpatializationSceneType()
-{
-    int32_t error;
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_DEFAULT, "WriteInterfaceToken failed");
-
-    error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_DEFAULT,
-        "GetSpatializationSceneType failed, error: %{public}d", error);
-
-    return static_cast<AudioSpatializationSceneType>(reply.ReadInt32());
-}
-
 int32_t AudioManagerProxy::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
     int32_t error;

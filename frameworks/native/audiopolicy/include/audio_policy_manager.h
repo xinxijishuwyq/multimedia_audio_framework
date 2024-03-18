@@ -335,6 +335,10 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
+    AudioSpatializationSceneType GetSpatializationSceneType();
+
+    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
+
 private:
     AudioPolicyManager()
     {

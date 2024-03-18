@@ -1074,31 +1074,14 @@ int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float
     return AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
 }
 
-AudioSpatializationSceneType AudioServer::GetSpatializationSceneType()
-{
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_DEFAULT,
-        "get spatialization scene type failed: not system app.");
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        return SPATIALIZATION_SCENE_TYPE_DEFAULT;
-    }
-    return audioEffectChainManager->GetSpatializationSceneType();
-}
-
 int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
-    bool ret = PermissionUtil::VerifySystemPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
-        "set spatialization scene type failed: not system app.");
-    ret = VerifyClientPermission(MANAGE_SYSTEM_AUDIO_EFFECTS);
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set spatialization scene type failed: no permission.");
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "UpdateSpatializationState refused for %{public}d", callingUid);
+
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
 }
 } // namespace AudioStandard

@@ -119,5 +119,16 @@ int32_t AudioSpatializationManager::UpdateSpatialDeviceState(const AudioSpatialD
 {
     return AudioPolicyManager::GetInstance().UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
+
+AudioSpatializationSceneType AudioSpatializationManager::GetSpatializationSceneType()
+{
+    return AudioPolicyManager::GetInstance().GetSpatializationSceneType();
+}
+
+int32_t AudioSpatializationManager::SetSpatializationSceneType(
+    const AudioSpatializationSceneType spatializationSceneType)
+{
+    return AudioPolicyManager::GetInstance().SetSpatializationSceneType(spatializationSceneType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

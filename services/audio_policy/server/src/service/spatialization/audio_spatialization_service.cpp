@@ -350,6 +350,26 @@ void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddres
     }
 }
 
+AudioSpatializationSceneType AudioSpatializationService::GetSpatializationSceneType()
+{
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    return spatializationSceneType_;
+}
+
+int32_t AudioSpatializationService::SetSpatializationSceneType(
+    const AudioSpatializationSceneType spatializationSceneType)
+{
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    AUDIO_INFO_LOG("spatialization scene type is set to be %{public}d", spatializationSceneType);
+    spatializationSceneType_ = spatializationSceneType;
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
+        return -1;
+    }
+    int32_t ret = gasp->SetSpatializationSceneType(spatializationSceneType);
+}
+
 int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDeviceChange)
 {
     bool spatializationEnabled = spatializationStateFlag_.spatializationEnabled && IsSpatializationSupported() &&

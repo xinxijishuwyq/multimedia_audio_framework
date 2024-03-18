@@ -76,7 +76,6 @@ struct AudioSpatializationManagerAsyncContext : public ContextBase {
         NapiAudioSpatializationManager *napiAudioSpatializationManager);
 
     AudioSpatializationManager *audioSpatializationMngr_;
-    AudioSystemManager *audioSystemMngr_;
     std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> headTrackingEnabledChangeCallbackNapi_ = nullptr;
 

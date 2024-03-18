@@ -156,7 +156,6 @@ public:
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume);
     uint32_t GetLatency(std::string sessionId);
-    AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
 
 private:

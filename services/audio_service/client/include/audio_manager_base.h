@@ -277,18 +277,9 @@ public:
     virtual int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) = 0;
 
     /**
-     * Update spatialization enabled state and head tracking enabled state.
+     * Set spatialization rendering scene type.
      *
-     * @param state identify the enabled state
-     *
-     * @return result of setting. 0 if success, error number else.
-    */
-    virtual AudioSpatializationSceneType GetSpatializationSceneType() = 0;
-
-    /**
-     * Update spatialization enabled state and head tracking enabled state.
-     *
-     * @param state identify the enabled state
+     * @param spatializationSceneType identify the spatialization rendering scene type to be set.
      *
      * @return result of setting. 0 if success, error number else.
     */
@@ -338,7 +329,6 @@ private:
     int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
-    int HandleGetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
     int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
@@ -377,7 +367,6 @@ private:
         &AudioManagerStub::HandleNotifyStreamVolumeChanged,
         &AudioManagerStub::HandleGetCapturePresentationPosition,
         &AudioManagerStub::HandleGetRenderPresentationPosition,
-        &AudioManagerStub::HandleGetSpatializationSceneType,
         &AudioManagerStub::HandleSetSpatializationSceneType,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);

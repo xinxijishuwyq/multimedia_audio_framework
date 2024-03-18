@@ -1085,5 +1085,18 @@ void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &dat
     streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
     FetchInputDeviceForTrack(streamChangeInfo);
 }
+
+void AudioPolicyManagerStub::GetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSpatializationSceneType spatializationSceneType = GetSpatializationSceneType();
+    reply.WriteInt32(static_cast<int32_t>(spatializationSceneType));
+}
+
+void AudioPolicyManagerStub::SetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSpatializationSceneType spatializationSceneType = static_cast<AudioSpatializationSceneType>(data.ReadInt32());
+    int32_t ret = SetSpatializationSceneType(spatializationSceneType);
+    reply.WriteInt32(ret);
+}
 } // namespace audio_policy
 } // namespace OHOS

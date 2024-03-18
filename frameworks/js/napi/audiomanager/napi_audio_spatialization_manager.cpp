@@ -33,7 +33,7 @@ using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_spatializationManagerConstructor = nullptr;
 NapiAudioSpatializationManager::NapiAudioSpatializationManager()
-    : audioSpatializationMngr_(nullptr), audioSystemMngr_(nullptr), env_(nullptr) {}
+    : audioSpatializationMngr_(nullptr), env_(nullptr) {}
 
 NapiAudioSpatializationManager::~NapiAudioSpatializationManager() = default;
 
@@ -92,7 +92,6 @@ napi_value NapiAudioSpatializationManager::Construct(napi_env env, napi_callback
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result, "No memory");
 
     napiAudioSpatializationManager->audioSpatializationMngr_ = AudioSpatializationManager::GetInstance();
-    napiAudioSpatializationManager->audioSystemMngr_ = AudioSystemManager::GetInstance();
     napiAudioSpatializationManager->env_ = env;
 
     ObjectRefMap<NapiAudioSpatializationManager>::Insert(napiAudioSpatializationManager.get());
@@ -120,9 +119,8 @@ NapiAudioSpatializationManager* NapiAudioSpatializationManager::GetParamWithSync
     status = napi_unwrap(env, jsThis, (void **)&napiAudioSpatializationManager);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr &&
-        napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr &&
-        napiAudioSpatializationManager->audioSystemMngr_ != nullptr,
-        napiAudioSpatializationManager, "GetParamWithSync fail to napi_unwrap");
+        napiAudioSpatializationManager->audioSpatializationMngr_ !=
+        nullptr, napiAudioSpatializationManager, "GetParamWithSync fail to napi_unwrap");
     return napiAudioSpatializationManager;
 }
 
@@ -458,10 +456,8 @@ napi_value NapiAudioSpatializationManager::GetSpatializationSceneType(napi_env e
         "napiAudioSpatializationManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
         "audioSpatializationMngr_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSystemMngr_ != nullptr, result,
-        "audioSystemMngr_ is nullptr");
     AudioSpatializationSceneType sceneType =
-        napiAudioSpatializationManager->audioSystemMngr_->GetSpatializationSceneType();
+        napiAudioSpatializationManager->audioSpatializationMngr_->GetSpatializationSceneType();
     NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(sceneType), result);
 
     return result;
@@ -493,9 +489,7 @@ napi_value NapiAudioSpatializationManager::SetSpatializationSceneType(napi_env e
         "napiAudioSpatializationManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
         "audioSpatializationMngr_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSystemMngr_ != nullptr, result,
-        "audioSystemMngr_ is nullptr");
-    int32_t ret = napiAudioSpatializationManager->audioSystemMngr_->SetSpatializationSceneType(
+    int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->SetSpatializationSceneType(
         static_cast<AudioSpatializationSceneType>(sceneType));
     if (ret == ERR_PERMISSION_DENIED) {
         NapiAudioError::ThrowError(env, NAPI_ERR_NO_PERMISSION);
