@@ -34,11 +34,11 @@
 #include "audio_effect.h"
 
 #define DEVICE_FLAG
+#define NULL_SCENE_UPPER_LIMIT 500
 
 using namespace OHOS::AudioStandard;
 
 static int32_t nullSceneLogCount = 0;
-const int32_t NULL_SCENE_UPPER_LIMIT = 500;
 
 static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
     {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
