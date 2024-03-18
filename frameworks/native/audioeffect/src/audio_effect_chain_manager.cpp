@@ -1092,7 +1092,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     
     if (sceneType == "") {
         if (nullSceneLogCount++ >= NULL_SCENE_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("null sceneType %{public}d", nullSceneLogCount);
+            AUDIO_ERR_LOG("Not exist for null sceneType");
             nullSceneLogCount = 0;
             return false;
         }
