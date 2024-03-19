@@ -1307,6 +1307,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
     int countPre = reply.ReadInt32();
     int countPost = reply.ReadInt32();
+    int32_t countPostMap = reply.ReadInt32();
     error = QueryEffectSceneModeChkReply(countPre, countPost);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
     // preprocess
@@ -1327,6 +1328,14 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
             postProcessNew.stream.push_back(stream);
         }
         supportedEffectConfig.postProcessNew = postProcessNew;
+    }
+    if (countPostMap > 0) {
+        SceneMappingItem item;
+        for (i = 0; i < countPostMap; i++) {
+            item.name = reply.ReadString();
+            item.sceneType = reply.ReadString();
+            supportedEffectConfig.postProcessSceneMap.push_back(item);
+        }
     }
     return 0;
 }
@@ -1998,6 +2007,39 @@ ConverterConfig AudioPolicyProxy::GetConverterConfig()
     result.library = {reply.ReadString(), reply.ReadString()};
     result.outChannelLayout = reply.ReadUint64();
     return result;
+}
+
+bool AudioPolicyProxy::IsHighResolutionExist()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
+        "SendRequest failed, error: %d", error);
+    
+    bool replyReadBool = reply.ReadBool();
+    return replyReadBool;
+}
+
+int32_t AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    
+    data.WriteBool(highResExist);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
+    return SUCCESS;
 }
 
 AudioSpatializationSceneType AudioPolicyProxy::GetSpatializationSceneType()

@@ -255,6 +255,10 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
 
+    bool IsHighResolutionExist() override;
+
+    int32_t SetHighResolutionExist(bool highResExist) override;
+
     AudioSpatializationSceneType GetSpatializationSceneType() override;
 
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;

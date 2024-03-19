@@ -38,7 +38,10 @@ ohos_unittest("audio_capturer_unit_test") {
     "hilog:libhilog",
   ]
 
-  sources = [ "src/audio_capturer_unit_test.cpp" ]
+  sources = [
+    "src/audio_capturer_extra_unit_test.cpp",
+    "src/audio_capturer_unit_test.cpp",
+  ]
 
   deps = [
     "../../../../../../services/audio_service:audio_client",

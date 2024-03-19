@@ -135,6 +135,8 @@ private:
     void GetActiveBluetoothDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void FetchOutputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply);
     void FetchInputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply);
+    void IsHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply);
+    void SetHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply);
     void GetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
 
@@ -246,6 +248,8 @@ private:
         &AudioPolicyManagerStub::GetActiveBluetoothDeviceInternal,
         &AudioPolicyManagerStub::FetchOutputDeviceForTrackInternal,
         &AudioPolicyManagerStub::FetchInputDeviceForTrackInternal,
+        &AudioPolicyManagerStub::IsHighResolutionExistInternal,
+        &AudioPolicyManagerStub::SetHighResolutionExistInternal,
         &AudioPolicyManagerStub::GetSpatializationSceneTypeInternal,
         &AudioPolicyManagerStub::SetSpatializationSceneTypeInternal,
     };

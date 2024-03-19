@@ -70,6 +70,7 @@ constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_CAAS_SA = 5527;
 constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr uid_t UID_MEDIA_SA = 1013;
+constexpr uid_t UID_VM_MANAGER = 5010;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
@@ -95,6 +96,10 @@ const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
     UID_CAST_ENGINE_SA
 };
 
+const std::set<uid_t> RECORD_CHECK_FORWARD_LIST = {
+    UID_VM_MANAGER
+};
+
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
@@ -104,6 +109,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
 
     powerStateCallbackRegister_ = false;
+    volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
 }
 
 void AudioPolicyServer::OnDump()
@@ -267,7 +273,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
         std::lock_guard<std::mutex> lock(keyEventMutex_);
         AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-        if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
+        if (volumeApplyToAll_) {
             streamInFocus = AudioStreamType::STREAM_ALL;
         } else {
             streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
@@ -1297,6 +1303,10 @@ bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint64_t 
 Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
     uint32_t appTokenId)
 {
+    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("check forward TokenId with callingUid:%{public}d", callingUid);
+        return IPCSkeleton::GetFirstTokenID();
+    }
     return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
         appTokenId : callingTokenId;
 }
@@ -1304,6 +1314,10 @@ Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t c
 uint64_t AudioPolicyServer::GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId,
     uint64_t appFullTokenId)
 {
+    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("check forward FullTokenId with callingUid:%{public}d", callingUid);
+        return IPCSkeleton::GetFirstFullTokenID();
+    }
     return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
         appFullTokenId : callingFullTokenId;
 }
@@ -1343,6 +1357,9 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     policyData.availableMicrophones = GetAvailableMicrophones();
     // Get Audio Effect Manager Information
     audioPolicyService_.GetEffectManagerInfo(policyData.oriEffectConfig, policyData.availableEffects);
+    audioPolicyService_.GetAudioAdapterInfos(policyData.adapterInfoMap);
+    audioPolicyService_.GetVolumeGroupData(policyData.volumeGroupData);
+    audioPolicyService_.GetInterruptGroupData(policyData.interruptGroupData);
 }
 
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
@@ -1971,7 +1988,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
 
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-    if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
+    if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
@@ -2545,6 +2562,27 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
     // Taking remainder of large integers
     int32_t apiTargetversion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
     return apiTargetversion;
+}
+
+bool AudioPolicyServer::IsHighResolutionExist()
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return false;
+    }
+    return isHighResolutionExist_;
+}
+
+int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    isHighResolutionExist_ = highResExist;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

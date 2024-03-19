@@ -37,41 +37,58 @@
     </preProcess>
 
     <postProcess>
-        <stream scene="SCENE_MUSIC">
-            <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
-            </streamEffectMode>
-        </stream>
-        <stream scene="SCENE_MOVIE">
-            <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
-            </streamEffectMode>  
-        </stream>
-        <stream scene="SCENE_GAME">
-            <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
-            </streamEffectMode>  
-        </stream>
-        <stream scene="SCENE_SPEECH">
-            <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
-            </streamEffectMode>  
-        </stream>
-        <stream scene="SCENE_RING">
-            <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
-            </streamEffectMode>  
-        </stream>
-        <stream scene="SCENE_OTHERS">
-            <streamEffectMode mode="EFFECT_DEFAULT">
-                <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
-                <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
-            </streamEffectMode>  
-        </stream>
+        <effectSceneStreams>
+            <stream scene="SCENE_MUSIC">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                    <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+                    <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
+                </streamEffectMode>
+            </stream>
+            <stream scene="SCENE_MOVIE">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                    <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+                    <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
+                </streamEffectMode>
+            </stream>
+            <stream scene="SCENE_GAME">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                    <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+                    <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
+                </streamEffectMode>
+            </stream>
+            <stream scene="SCENE_SPEECH">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                    <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+                    <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
+                </streamEffectMode>
+            </stream>
+            <stream scene="SCENE_RING">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                    <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+                    <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
+                </streamEffectMode>
+            </stream>
+            <stream scene="SCENE_OTHERS">
+                <streamEffectMode mode="EFFECT_DEFAULT">
+                    <devicePort type="DEVICE_TYPE_SPEAKER" effectChain="EFFECTCHAIN_SPK_MUSIC"/>
+                    <devicePort type="DEVICE_TYPE_BLUETOOTH_A2DP" effectChain="EFFECTCHAIN_BT_MUSIC"/>
+                </streamEffectMode>
+            </stream>
+        </effectSceneStreams>
+        <sceneMap>
+            <streamUsage name="STREAM_USAGE_UNKNOWN" scene="SCENE_MUSIC"/>
+            <streamUsage name="STREAM_USAGE_MUSIC" scene="SCENE_MUSIC"/>
+            <streamUsage name="STREAM_USAGE_GAME" scene="SCENE_GAME"/>
+            <streamUsage name="STREAM_USAGE_MOVIE" scene="SCENE_MOVIE"/>
+            <streamUsage name="STREAM_USAGE_AUDIOBOOK" scene="SCENE_SPEECH"/>
+            <streamUsage name="STREAM_USAGE_VOICE_COMMUNICATION" scene="SCENE_SPEECH"/>
+            <streamUsage name="STREAM_USAGE_VOICE_ASSISTANT" scene="SCENE_SPEECH"/>
+            <streamUsage name="STREAM_USAGE_ALARM" scene="SCENE_RING"/>
+            <streamUsage name="STREAM_USAGE_RINGTONE" scene="SCENE_RING"/>
+            <streamUsage name="STREAM_USAGE_NOTIFICATION" scene="SCENE_RING"/>
+            <streamUsage name="STREAM_USAGE_SYSTEM" scene="SCENE_RING"/>
+            <streamUsage name="STREAM_USAGE_DTMF" scene="SCENE_RING"/>
+            <streamUsage name="STREAM_USAGE_ENFORCED_TONE" scene="SCENE_RING"/>
+        </sceneMap>
     </postProcess>
 </audio_effects_conf>

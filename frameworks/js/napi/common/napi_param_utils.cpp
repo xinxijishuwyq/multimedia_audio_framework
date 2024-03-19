@@ -366,7 +366,7 @@ napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *
     int32_t intValue = {0};
     napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
     if (status == napi_ok) {
-        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_96000) {
+        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_192000) {
             streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
         } else {
             AUDIO_ERR_LOG("invaild samplingRate");

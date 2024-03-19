@@ -375,7 +375,7 @@ void AudioHfpManager::UpdateAudioScene(AudioScene scene)
     scene_ = scene;
 }
 
-void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
+void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
     AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: state: [%{public}d]", state);
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);

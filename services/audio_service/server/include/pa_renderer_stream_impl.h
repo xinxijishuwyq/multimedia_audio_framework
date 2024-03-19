@@ -33,7 +33,8 @@ public:
     int32_t Stop() override;
     int32_t Release() override;
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
-    int32_t GetCurrentTimeStamp(uint64_t &timeStamp) override;
+    int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
     int32_t SetLowPowerVolume(float volume) override;
@@ -55,11 +56,13 @@ public:
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
-    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
     int32_t OffloadSetVolume(float volume) override;
     size_t GetWritableSize() override;
     // offload end
+
+    int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -74,7 +77,6 @@ private:
     static void PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
 
     const std::string GetEffectModeName(int32_t effectMode);
-    const std::string GetEffectSceneName(AudioStreamType audioType);
     // offload
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec);
     int32_t OffloadSetBufferSize(uint32_t sizeMs);
@@ -108,7 +110,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     int32_t renderRate_;
     int32_t effectMode_ = -1;
-    std::string effectSceneName_ = "SCENE_MUSIC";
+    std::string effectSceneName_ = "";
     int32_t privacyType_ = 0;
 
     float powerVolumeFactor_ = 1.0f;
@@ -125,6 +127,8 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     FILE *dumpFile_ = nullptr;
     // offload end
+
+    bool getPosFromHdi_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
