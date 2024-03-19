@@ -142,9 +142,11 @@ private:
 #endif // DEBUG_DIRECT_USE_HDI
 };
 
+std::mutex g_remoteFastSourcesMutex;
 std::map<std::string, RemoteFastAudioCapturerSourceInner *> allRFSources;
 IMmapAudioCapturerSource *RemoteFastAudioCapturerSource::GetInstance(const std::string &deviceNetworkId)
 {
+    std::lock_guard<std::mutex> lock(g_remoteFastSourcesMutex);
     AUDIO_INFO_LOG("GetInstance.");
     bool isEmpty = deviceNetworkId.empty();
     CHECK_AND_RETURN_RET_LOG(!isEmpty, nullptr, "Remote capture device networkId is null.");
@@ -223,15 +225,19 @@ void RemoteFastAudioCapturerSourceInner::ClearCapture()
 
 void RemoteFastAudioCapturerSourceInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(g_remoteFastSourcesMutex);
     AUDIO_INFO_LOG("RemoteFastAudioCapturerSourceInner::DeInit");
     ClearCapture();
 
     // remove map recorder.
+    CHECK_AND_RETURN_LOG(allRFSources.count(this->deviceNetworkId_) > 0,
+        "not find %{public}s", this->deviceNetworkId_.c_str());
     RemoteFastAudioCapturerSource *temp = allRFSources[this->deviceNetworkId_];
-    if (temp != nullptr) {
+    allRFSources.erase(this->deviceNetworkId_);
+    if (temp == nullptr) {
+        AUDIO_ERR_LOG("temp is nullptr");
+    } else {
         delete temp;
-        temp = nullptr;
-        allRFSources.erase(this->deviceNetworkId_);
     }
 }
 
