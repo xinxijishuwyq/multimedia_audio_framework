@@ -618,7 +618,7 @@ typedef void (*OH_AudioRenderer_OutputDeviceChangeCallback)(OH_AudioRenderer* re
  * @param metadataSize Metadata size which is the size of metadata written by user.
  * @since 12
  */
-typedef OH_AudioStream_Result (*OH_AudioRenderer_WriteDataWithMetadataCallback)(OH_AudioRenderer* renderer,
+typedef int32_t (*OH_AudioRenderer_WriteDataWithMetadataCallback)(OH_AudioRenderer* renderer,
     void* userData, void* audioData, int32_t audioDataSize, void* metadata, int32_t metadataSize);
 #ifdef __cplusplus
 }

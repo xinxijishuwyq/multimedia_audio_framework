@@ -198,16 +198,6 @@ OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer,
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioCapturer_GetChannelLayout(OH_AudioCapturer* capturer,
-    OH_AudioChannelLayout* channelLayout)
-{
-    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
-    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
-
-    *channelLayout = (OH_AudioChannelLayout)audioCapturer->GetChannelLayout();
-    return AUDIOSTREAM_SUCCESS;
-}
-
 namespace OHOS {
 namespace AudioStandard {
 OHAudioCapturer::OHAudioCapturer()
@@ -379,14 +369,6 @@ int32_t OHAudioCapturer::Enqueue(const BufferDesc &bufDesc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
     return audioCapturer_->Enqueue(bufDesc);
-}
-
-AudioChannelLayout OHAudioCapturer::GetChannelLayout()
-{
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, CH_LAYOUT_UNKNOWN, "capturer client is nullptr");
-    AudioCapturerParams params;
-    audioCapturer_->GetParams(params);
-    return params.channelLayout;
 }
 
 void OHAudioCapturerModeCallback::OnReadData(size_t length)
