@@ -18,7 +18,7 @@
 
 #include <servmgr_hdi.h>
 
-#include "audio_module_info.h"
+#include "audio_adapter_info.h"
 #include "idevice_status_observer.h"
 #include "audio_pnp_server.h"
 

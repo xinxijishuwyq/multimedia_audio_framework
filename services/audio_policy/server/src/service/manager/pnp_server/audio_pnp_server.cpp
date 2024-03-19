@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPnpServer"
 
 #include "audio_pnp_server.h"
 
@@ -147,7 +149,7 @@ void AudioPnpServer::OpenAndReadWithSocket()
             continue;
         }
 
-        if (((uint32_t)fd.revents & POLLIN) == POLLIN) {
+        if (((uint32_t)fd.revents & (POLLIN | POLLERR)) != 0) {
             memset_s(&msg, sizeof(msg), 0, sizeof(msg));
             rcvLen = AudioSocketThread::AudioPnpReadUeventMsg(socketFd, msg, UEVENT_MSG_LEN);
             if (rcvLen <= 0) {
@@ -160,8 +162,6 @@ void AudioPnpServer::OpenAndReadWithSocket()
             eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
             CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid socket info");
             OnPnpDeviceStatusChanged(eventInfo_);
-        } else if (((uint32_t)fd.revents & POLLERR) == POLLERR) {
-            AUDIO_ERR_LOG("audio event poll error");
         }
     }
     close(socketFd);

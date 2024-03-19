@@ -333,11 +333,12 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
+    bool IsHighResolutionExist();
+
+    int32_t SetHighResolutionExist(bool highResExist);
+
 private:
-    AudioPolicyManager()
-    {
-        AUDIO_INFO_LOG("Enter AudioPolicyManager::AudioPolicyManager");
-    }
+    AudioPolicyManager() {}
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);

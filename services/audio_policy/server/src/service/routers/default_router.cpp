@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "DefaultRouter"
 
 #include "default_router.h"
 #include "audio_log.h"
@@ -31,7 +33,8 @@ unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsag
 
 unique_ptr<AudioDeviceDescriptor> DefaultRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    unique_ptr<AudioDeviceDescriptor> desc = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice();
+    unique_ptr<AudioDeviceDescriptor> desc =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderDefaultDevice(streamUsage);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
         desc->deviceType_);
     return desc;

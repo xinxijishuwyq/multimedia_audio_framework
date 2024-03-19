@@ -388,6 +388,10 @@ public:
         sptr<AudioPolicyServer> server_;
     };
 
+    bool IsHighResolutionExist() override;
+
+    int32_t SetHighResolutionExist(bool highResExist) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -508,7 +512,9 @@ private:
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool isAvSessionSetVoipStart = false;
+    bool volumeApplyToAll_ = false;
     std::set<uint32_t> saveAppCapTokenIdThroughMS;
+    bool isHighResolutionExist_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -15,6 +15,8 @@
 
 #ifndef ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_IMPL_H
 #define ST_PULSEAUDIO_AUDIO_SERVICE_ADAPTER_IMPL_H
+#undef LOG_TAG
+#define LOG_TAG "PulseAudioServiceAdapterImpl"
 
 #include "pulse_audio_service_adapter_impl.h"
 

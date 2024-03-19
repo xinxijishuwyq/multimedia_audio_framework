@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRoutingManager"
+
 #include "napi_audio_routing_manager.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
@@ -563,10 +566,14 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfo(napi
         auto *napiAudioRoutingManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
             "context object state is error.");
-        context->intValue = napiAudioRoutingManager->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
-            context->rendererInfo, context->outDeviceDescriptors);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS,
-            "GetPreferredOutputDeviceForRendererInfo failed", NAPI_ERR_SYSTEM);
+        if (context->rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
+        } else {
+            context->intValue = napiAudioRoutingManager->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
+                context->rendererInfo, context->outDeviceDescriptors);
+            NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS,
+                "GetPreferredOutputDeviceForRendererInfo failed", NAPI_ERR_SYSTEM);
+        }
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -598,6 +605,9 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfoSync(
     AudioRendererInfo rendererInfo;
     if (NapiParamUtils::GetRendererInfo(env, &rendererInfo, argv[PARAM0]) != napi_ok) {
         NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        return result;
+    } else if (rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
         return result;
     }
 
@@ -824,11 +834,13 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_e
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
     if (valueType != napi_object) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
     }
 
     AudioRendererInfo rendererInfo;
     NapiParamUtils::GetRendererInfo(env, &rendererInfo, args[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(rendererInfo.streamUsage != StreamUsage::STREAM_USAGE_INVALID,
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM), "invalid streamUsage");
     AudioStreamType streamType = AudioSystemManager::GetStreamType(rendererInfo.contentType,
         rendererInfo.streamUsage);
 
@@ -856,7 +868,7 @@ void NapiAudioRoutingManager::RegisterPreferredInputDeviceChangeCallback(napi_en
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM1], &valueType);
     if (valueType != napi_object) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
     }
 
     AudioCapturerInfo captureInfo;

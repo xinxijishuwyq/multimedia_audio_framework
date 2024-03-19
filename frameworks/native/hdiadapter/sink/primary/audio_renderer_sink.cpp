@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioRendererSinkInner"
 
 #include "audio_renderer_sink.h"
 
@@ -109,7 +111,6 @@ private:
     float rightVolume_;
     int32_t routeHandle_ = -1;
     int32_t logMode_ = 0;
-    uint32_t openSpeaker_;
     uint32_t renderId_ = 0;
     std::string adapterNameCase_;
     struct IAudioManager *audioManager_;
@@ -141,6 +142,7 @@ private:
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
     int32_t InitRender();
+    void ReleaseRunningLock();
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -149,7 +151,7 @@ private:
 
 AudioRendererSinkInner::AudioRendererSinkInner(const std::string &halName)
     : sinkInited_(false), adapterInited_(false), renderInited_(false), started_(false), paused_(false),
-      leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL), openSpeaker_(0),
+      leftVolume_(DEFAULT_VOLUME_LEVEL), rightVolume_(DEFAULT_VOLUME_LEVEL),
       audioManager_(nullptr), audioAdapter_(nullptr), audioRender_(nullptr), halName_(halName)
 {
     attr_ = {};
@@ -484,7 +486,6 @@ int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
-    openSpeaker_ = attr_.openMicSpeaker;
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
     Trace trace("AudioRendererSinkInner::Init " + adapterNameCase_);
 
@@ -789,34 +790,32 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         ERR_INVALID_PARAM, "invalid audioScene");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "SetAudioScene failed audio render handle is null!");
-    if (openSpeaker_) {
-        AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
-        if (halName_ == "usb") {
-            audioSceneOutPort = PIN_OUT_USB_HEADSET;
-        }
+    AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
+    if (halName_ == "usb") {
+        audioSceneOutPort = PIN_OUT_USB_HEADSET;
+    }
 
-        AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
-        bool isAudioSceneUpdate = false;
-        if (audioScene != currentAudioScene_) {
-            struct AudioSceneDescriptor scene;
-            scene.scene.id = GetAudioCategory(audioScene);
-            scene.desc.pins = audioSceneOutPort;
-            scene.desc.desc = const_cast<char *>("");
+    AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
+    bool isAudioSceneUpdate = false;
+    if (audioScene != currentAudioScene_) {
+        struct AudioSceneDescriptor scene;
+        scene.scene.id = GetAudioCategory(audioScene);
+        scene.desc.pins = audioSceneOutPort;
+        scene.desc.desc = const_cast<char *>("");
 
-            int32_t ret = audioRender_->SelectScene(audioRender_, &scene);
-            CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
-                "Select scene FAILED: %{public}d", ret);
-            currentAudioScene_ = audioScene;
-            isAudioSceneUpdate = true;
-        }
+        int32_t ret = audioRender_->SelectScene(audioRender_, &scene);
+        CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED,
+            "Select scene FAILED: %{public}d", ret);
+        currentAudioScene_ = audioScene;
+        isAudioSceneUpdate = true;
+    }
 
-        if (activeDevice != currentActiveDevice_ ||
-            (isAudioSceneUpdate &&
-                (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
-            int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
-            if (ret < 0) {
-                AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
-            }
+    if (activeDevice != currentActiveDevice_ ||
+        (isAudioSceneUpdate &&
+            (currentAudioScene_ == AUDIO_SCENE_PHONE_CALL || currentAudioScene_ == AUDIO_SCENE_PHONE_CHAT))) {
+        int32_t ret = SetOutputRoute(activeDevice, audioSceneOutPort);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("Update route FAILED: %{public}d", ret);
         }
     }
     return SUCCESS;
@@ -834,10 +833,8 @@ int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
     return SUCCESS;
 }
 
-int32_t AudioRendererSinkInner::Stop(void)
+void AudioRendererSinkInner::ReleaseRunningLock()
 {
-    Trace trace("AudioRendererSinkInner::Stop");
-    AUDIO_INFO_LOG("Stop.");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
@@ -846,6 +843,13 @@ int32_t AudioRendererSinkInner::Stop(void)
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
+}
+
+int32_t AudioRendererSinkInner::Stop(void)
+{
+    Trace trace("AudioRendererSinkInner::Stop");
+    AUDIO_INFO_LOG("Stop.");
+
     int32_t ret;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -855,13 +859,15 @@ int32_t AudioRendererSinkInner::Stop(void)
         ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
+            ReleaseRunningLock();
             return SUCCESS;
         } else {
             AUDIO_ERR_LOG("Stop failed!");
+            ReleaseRunningLock();
             return ERR_OPERATION_FAILED;
         }
     }
-
+    ReleaseRunningLock();
     return SUCCESS;
 }
 
@@ -993,7 +999,6 @@ int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
     attr_.format = ParseAudioFormat(formatStr);
 
     adapterNameCase_ = "usb";
-    openSpeaker_ = 0;
 
     return SUCCESS;
 }
@@ -1051,16 +1056,14 @@ int32_t AudioRendererSinkInner::InitRender()
     CHECK_AND_RETURN_RET_LOG(err == 0, ERR_NOT_STARTED,
         "Create render failed, Audio Port: %{public}d", audioPort_.portId);
 
-    if (openSpeaker_) {
-        int32_t ret = SUCCESS;
-        if (halName_ == "usb") {
-            ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
-        } else {
-            ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
-        }
-        if (ret < 0) {
-            AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);
-        }
+    int32_t ret = SUCCESS;
+    if (halName_ == "usb") {
+        ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
+    } else {
+        ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
+    }
+    if (ret < 0) {
+        AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);
     }
 
     renderInited_ = true;

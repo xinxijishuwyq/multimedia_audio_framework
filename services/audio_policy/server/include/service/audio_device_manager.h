@@ -57,7 +57,7 @@ public:
     vector<unique_ptr<AudioDeviceDescriptor>> GetMediaCapturePublicDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
     vector<unique_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
-    unique_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice();
+    unique_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
     unique_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
     unique_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> GetDevicePrivacyMaps();
@@ -68,6 +68,7 @@ public:
     vector<unique_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
     void UpdateScoState(const std::string &macAddress, bool isConnnected);
+    void UpdateEarpieceStatus(const bool hasEarPiece);
 
 private:
     AudioDeviceManager();
@@ -140,7 +141,7 @@ private:
     sptr<AudioDeviceDescriptor> speaker_ = nullptr;
     sptr<AudioDeviceDescriptor> defalutMic_ = nullptr;
     std::mutex connectedDevicesMutex_;
-    string localDevicesType_;
+    bool hasEarpiece_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

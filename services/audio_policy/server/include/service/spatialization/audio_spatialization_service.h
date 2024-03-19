@@ -31,7 +31,6 @@
 
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
-#include "parser_factory.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,14 +77,15 @@ private:
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange);
     int32_t UpdateSpatializationState();
     void HandleSpatializationStateChange(bool outputDeviceChange);
-    IAudioPolicyInterface& audioPolicyManager_;
+    void InitSpatializationState();
+    void WriteSpatializationStateToDb();
+    IAudioPolicyInterface &audioPolicyManager_;
     std::string currentDeviceAddress_ = "";
     bool isSpatializationSupported_ = false;
     bool isHeadTrackingSupported_ = false;
-    bool spatializationEnabledFlag_ = false;
-    bool headTrackingEnabledFlag_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
+    AudioSpatializationState spatializationStateFlag_ = {false};
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;

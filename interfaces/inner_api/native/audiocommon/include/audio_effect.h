@@ -32,7 +32,9 @@ namespace OHOS {
 namespace AudioStandard {
 // audio effect manager info
 constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
+constexpr int32_t AUDIO_EFFECT_COUNT_STREAM_USAGE_UPPER_LIMIT = 200;
 constexpr int32_t AUDIO_EFFECT_COUNT_FIRST_NODE_UPPER_LIMIT = 1;
+constexpr int32_t AUDIO_EFFECT_COUNT_POST_SECOND_NODE_UPPER_LIMIT = 1;
 constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64; // max conf for sceneType + effectMode + deviceType
 constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32; // max num of effectChain
 constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of effect per effectChain
@@ -90,10 +92,20 @@ struct Preprocess {
     std::vector<std::vector<Device>> device;
 };
 
-struct Postprocess {
+struct EffectSceneStream {
     std::string stream;
     std::vector<std::string> mode;
     std::vector<std::vector<Device>> device;
+};
+
+struct SceneMappingItem {
+    std::string name;
+    std::string sceneType;
+};
+
+struct PostProcessConfig {
+    std::vector<EffectSceneStream> effectSceneStreams;
+    std::vector<SceneMappingItem> sceneMap;
 };
 
 struct OriginalEffectConfig {
@@ -102,7 +114,7 @@ struct OriginalEffectConfig {
     std::vector<Effect> effects;
     std::vector<EffectChain> effectChains;
     std::vector<Preprocess> preProcess;
-    std::vector<Postprocess> postProcess;
+    PostProcessConfig postProcess;
 };
 
 struct StreamEffectMode {
@@ -123,6 +135,7 @@ struct SupportedEffectConfig {
     std::vector<EffectChain> effectChains;
     ProcessNew preProcessNew;
     ProcessNew postProcessNew;
+    std::vector<SceneMappingItem> postProcessSceneMap;
 };
 
 

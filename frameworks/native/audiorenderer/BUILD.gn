@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../audio_ohcore.gni")
 import("../../../config.gni")
 
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
@@ -55,9 +54,7 @@ ohos_shared_library("audio_renderer") {
 
   configs = [ ":audio_renderer_config" ]
 
-  include_dirs = audio_gateway_include_dirs
-
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
+  include_dirs = [ multimedia_audio_framework_pulse_audio ]
 
   sources = [
     "src/audio_renderer.cpp",
@@ -69,8 +66,6 @@ ohos_shared_library("audio_renderer") {
     "../../../services/audio_service:audio_client",
     "../audioutils:audio_utils",
   ]
-
-  deps += audio_renderer_gateway_deps
 
   if (sonic_enable == true) {
     deps += [ "$pulseaudio_dir/sonic:sonic" ]

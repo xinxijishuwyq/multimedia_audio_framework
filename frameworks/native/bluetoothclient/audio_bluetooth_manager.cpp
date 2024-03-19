@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioBluetoothManager"
 
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
@@ -373,7 +375,7 @@ void AudioHfpManager::UpdateAudioScene(AudioScene scene)
     scene_ = scene;
 }
 
-void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
+void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
     AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: state: [%{public}d]", state);
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);

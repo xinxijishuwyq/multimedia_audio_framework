@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioCapturer"
 
 #include "audio_capturer.h"
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
-#ifdef OHCORE
-#include "audio_capturer_gateway.h"
-#endif
 #include "audio_log.h"
 #include "audio_policy_manager.h"
 
@@ -57,11 +56,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStream
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType, const AppInfo &appInfo)
 {
-#ifdef OHCORE
-    return std::make_unique<AudioCapturerGateway>(audioStreamType);
-#else
     return std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, true);
-#endif
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions &options)
@@ -105,11 +100,9 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     }
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
-#ifdef OHCORE
-    auto capturer = std::make_unique<AudioCapturerGateway>(audioStreamType);
-#else
+
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
-#endif
+
     if (capturer == nullptr) {
         return capturer;
     }
@@ -364,9 +357,12 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 bool AudioCapturerPrivate::Start() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Start %{public}u", sessionID_);
-    bool recordingStateChange = audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-        appInfo_.appUid, AUDIO_PERMISSION_START);
-    CHECK_AND_RETURN_RET_LOG(recordingStateChange, false, "recording start check failed");
+
+    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
+        bool recordingStateChange = audioStream_->CheckRecordingStateChange(appInfo_.appTokenId,
+            appInfo_.appFullTokenId, appInfo_.appUid, AUDIO_PERMISSION_START);
+        CHECK_AND_RETURN_RET_LOG(recordingStateChange, false, "recording start check failed");
+    }
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
@@ -400,9 +396,12 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 bool AudioCapturerPrivate::Pause() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Pause %{public}u", sessionID_);
-    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-        AUDIO_WARNING_LOG("Pause monitor permission failed");
+
+    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
+        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
+            AUDIO_WARNING_LOG("Pause monitor permission failed");
+        }
     }
 
     // When user is intentionally pausing , Deactivate to remove from audio focus info list
@@ -419,9 +418,12 @@ bool AudioCapturerPrivate::Pause() const
 bool AudioCapturerPrivate::Stop() const
 {
     AUDIO_INFO_LOG("AudioCapturer::Stop %{public}u", sessionID_);
-    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-        AUDIO_WARNING_LOG("Stop monitor permission failed");
+
+    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
+        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
+            AUDIO_WARNING_LOG("Stop monitor permission failed");
+        }
     }
 
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
@@ -443,13 +445,16 @@ bool AudioCapturerPrivate::Flush() const
 bool AudioCapturerPrivate::Release()
 {
     AUDIO_INFO_LOG("AudioCapturer::Release %{public}u", sessionID_);
+
     abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(isValid_, false, "Release when capturer invalid");
 
-    if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-        appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-        AUDIO_WARNING_LOG("Release monitor permission failed");
+    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
+        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
+            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
+            AUDIO_WARNING_LOG("Release monitor permission failed");
+        }
     }
 
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
