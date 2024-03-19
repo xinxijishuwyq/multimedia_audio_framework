@@ -152,12 +152,14 @@ static void LoadConfigLibrary(ConverterConfig &result, xmlNode *currNode)
 static void LoadConfigChannelLayout(ConverterConfig &result, xmlNode *currNode)
 {
     if (!xmlHasProp(currNode, reinterpret_cast<const xmlChar *>("out_channel_layout"))) {
-        AUDIO_ERR_LOG("missing information: config has no out_channel_layout attribute");
+        AUDIO_ERR_LOG("missing information: config has no out_channel_layout attribute, set to default STEREO");
+        result.outChannelLayout = CH_LAYOUT_STEREO;
     } else {
         std::string strChannelLayout =
             reinterpret_cast<char *>(xmlGetProp(currNode, reinterpret_cast<const xmlChar *>("out_channel_layout")));
         if (str2layout.count(strChannelLayout) == 0) {
-            AUDIO_ERR_LOG("unsupported format: invalid channel layout");
+            AUDIO_ERR_LOG("unsupported format: invalid channel layout, set to STEREO");
+            result.outChannelLayout = CH_LAYOUT_STEREO;
         } else {
             result.outChannelLayout = str2layout[strChannelLayout];
             AUDIO_INFO_LOG("AudioVivid MCR output format is %{public}s", strChannelLayout.c_str());
