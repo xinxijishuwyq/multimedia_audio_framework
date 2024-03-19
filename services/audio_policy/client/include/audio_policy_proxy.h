@@ -237,11 +237,11 @@ public:
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
 
-    int32_t CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID) override;
+    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID) override;
 
-    int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID) override;
+    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID) override;
 
-    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID) override;
+    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID) override;
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID) override;
 

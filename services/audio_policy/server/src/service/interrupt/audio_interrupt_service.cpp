@@ -284,7 +284,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::CreateAudioInterruptZone(const int32_t zoneId, const std::set<int32_t> pids)
+int32_t AudioInterruptService::CreateAudioInterruptZone(const int32_t zoneId, const std::set<int32_t> &pids)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -315,7 +315,7 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId)
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::AddAudioInterruptZonePids(const int32_t zoneId, const std::set<int32_t> pids)
+int32_t AudioInterruptService::AddAudioInterruptZonePids(const int32_t zoneId, const std::set<int32_t> &pids)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -357,7 +357,7 @@ int32_t AudioInterruptService::AddAudioInterruptZonePids(const int32_t zoneId, c
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::RemoveAudioInterruptZonePids(const int32_t zoneId, const std::set<int32_t> pids)
+int32_t AudioInterruptService::RemoveAudioInterruptZonePids(const int32_t zoneId, const std::set<int32_t> &pids)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -412,11 +412,11 @@ int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId,
     return SUCCESS;
 }
 
-AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zondId)
+AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
 {
     AudioStreamType streamInFocus = STREAM_DEFAULT;
 
-    auto itZone = zonesMap_.find(zondId);
+    auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
@@ -437,13 +437,13 @@ AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zondId)
     return streamInFocus;
 }
 
-int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zondId)
+int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId)
 {
     uint32_t invalidSessionId = static_cast<uint32_t>(-1);
     audioInterrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionId};
 
-    auto itZone = zonesMap_.find(zondId);
+    auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
@@ -611,7 +611,8 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
     if (!audioFocusInfoList.empty()) {
         // If the session is present in audioFocusInfoList, remove and treat it as a new request
         AUDIO_DEBUG_LOG("audioFocusInfoList is not empty, check whether the session is present");
-        audioFocusInfoList.remove_if([&incomingSessionId](std::pair<AudioInterrupt, AudioFocuState> &audioFocus) {
+        audioFocusInfoList.remove_if(
+            [&incomingSessionId](const std::pair<AudioInterrupt, AudioFocuState> &audioFocus) {
             return (audioFocus.first).sessionId == incomingSessionId;
         });
 
@@ -934,7 +935,7 @@ bool AudioInterruptService::CheckAudioInterruptZonePermission()
     return false;
 }
 
-int32_t AudioInterruptService::CreateAudioInterruptZoneInternal(const int32_t zoneId, const std::set<int32_t> pids)
+int32_t AudioInterruptService::CreateAudioInterruptZoneInternal(const int32_t zoneId, const std::set<int32_t> &pids)
 {
     if (zonesMap_.find(zoneId) != zonesMap_.end()) {
         AUDIO_INFO_LOG("zone:(%{public}d) already exists.", zoneId);
