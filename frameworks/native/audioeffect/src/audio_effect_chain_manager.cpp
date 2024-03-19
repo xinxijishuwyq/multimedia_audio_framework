@@ -34,12 +34,8 @@
 #include "audio_effect.h"
 
 #define DEVICE_FLAG
-#define NULL_SCENE_UPPER_LIMIT 500
 
 using namespace OHOS::AudioStandard;
-
-static int32_t nullSceneLogCount = 0;
-
 static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
     {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
     {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
@@ -1089,14 +1085,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
         return false;
     }
     initializedLogFlag_ = true;
-    
-    if (sceneType == "") {
-        if (nullSceneLogCount++ >= NULL_SCENE_UPPER_LIMIT) {
-            AUDIO_ERR_LOG("Not exist for null sceneType");
-            nullSceneLogCount = 0;
-            return false;
-        }
-    }
+    CHECK_AND_RETURN_RET(sceneType != "", false);
     CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
 
 #ifndef DEVICE_FLAG
