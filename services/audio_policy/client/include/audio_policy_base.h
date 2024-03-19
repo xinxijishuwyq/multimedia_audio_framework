@@ -268,6 +268,10 @@ public:
 
     virtual void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
 
+    virtual bool IsHighResolutionExist(void) = 0;
+
+    virtual int32_t SetHighResolutionExist(bool highResExist) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

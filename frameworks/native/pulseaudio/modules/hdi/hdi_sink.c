@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "HdiSink"
 
 #include <config.h>
 #include <pulse/rtclock.h>
@@ -78,6 +80,7 @@
 #define DEFAULT_NUM_CHANNEL 2
 #define DEFAULT_MULTICHANNEL_CHANNELLAYOUT 1551
 #define DEFAULT_CHANNELLAYOUT 3
+#define OFFLOAD_SET_BUFFER_SIZE_NUM 5
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_A2DP = "a2dp";
@@ -147,8 +150,8 @@ struct Userdata {
     BufferAttr *bufferAttr;
     int32_t processLen;
     size_t processSize;
-    char *sinkSceneType;
-    char *sinkSceneMode;
+    int32_t sinkSceneType;
+    int32_t sinkSceneMode;
     bool hdiEffectEnabled;
     pthread_mutex_t mutexPa;
     pthread_mutex_t mutexPa2;
@@ -173,6 +176,7 @@ struct Userdata {
         bool runninglocked;
         pa_memchunk chunk;
         bool inited;
+        int32_t setHdiBufferSizeNum; // for set hdi buffer size count
     } offload;
     struct {
         pa_usec_t timestamp;
@@ -459,7 +463,7 @@ static enum AudioOffloadType GetInputPolicyState(pa_sink_input *i)
     return atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
 }
 
-static void OffloadSetHdiVolumeBufferSize(pa_sink_input *i)
+static void OffloadSetHdiVolume(pa_sink_input *i)
 {
     if (!InputIsOffload(i)) {
         return;
@@ -470,10 +474,20 @@ static void OffloadSetHdiVolumeBufferSize(pa_sink_input *i)
     float right;
     u->offload.sinkAdapter->RendererSinkGetVolume(u->offload.sinkAdapter, &left, &right);
     u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, left, right);
+}
+
+static void OffloadSetHdiBufferSize(pa_sink_input *i)
+{
+    if (!InputIsOffload(i)) {
+        return;
+    }
+
+    struct Userdata *u = i->sink->userdata;
     const uint32_t bufSize = (GetInputPolicyState(i) == OFFLOAD_INACTIVE_BACKGROUND ?
                               OFFLOAD_HDI_CACHE2 : OFFLOAD_HDI_CACHE1);
     u->offload.sinkAdapter->RendererSinkSetBufferSize(u->offload.sinkAdapter, bufSize);
 }
+
 static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memchunk *pchunk)
 {
     size_t index;
@@ -505,7 +519,11 @@ static int32_t RenderWriteOffload(struct Userdata *u, pa_sink_input *i, pa_memch
         u->offload.firstWriteHdi = false;
         u->offload.hdiPosTs = now;
         u->offload.hdiPos = 0;
-        OffloadSetHdiVolumeBufferSize(i);
+        OffloadSetHdiVolume(i);
+    }
+    if (ret == 0 && u->offload.setHdiBufferSizeNum > 0) {
+        u->offload.setHdiBufferSizeNum--;
+        OffloadSetHdiBufferSize(i);
     }
     if (ret == 0 && writeLen == 0) { // is full
         AUDIO_DEBUG_LOG("RenderWriteOffload, hdi is full, break");
@@ -1764,6 +1782,7 @@ static void OffloadReset(struct Userdata *u)
     u->offload.minWait = 0;
     u->offload.firstWrite = true;
     u->offload.firstWriteHdi = true;
+    u->offload.setHdiBufferSizeNum = OFFLOAD_SET_BUFFER_SIZE_NUM;
     pa_atomic_store(&u->offload.hdistate, 0);
     u->offload.fullTs = 0;
 }
@@ -2013,7 +2032,8 @@ static void StartOffloadHdi(struct Userdata *u, pa_sink_input *i)
             AUDIO_INFO_LOG("StartOffloadHdi, Successfully restarted offload HDI renderer");
             OffloadLock(u);
             u->offload.sessionID = sessionID;
-            OffloadSetHdiVolumeBufferSize(i);
+            OffloadSetHdiVolume(i);
+            OffloadSetHdiBufferSize(i);
         }
     }
 }
@@ -2250,7 +2270,7 @@ static void PaInputVolumeChangeCb(pa_sink_input *i)
         pa_cvolume volume;
         pa_sw_cvolume_multiply(&volume, &i->sink->thread_info.soft_volume, &i->volume);
         float volumeResult;
-        if (i->sink->thread_info.soft_muted || pa_cvolume_is_muted(&volume) || pa_cvolume_is_norm(&volume)) {
+        if (i->sink->thread_info.soft_muted || pa_cvolume_is_muted(&volume)) {
             volumeResult = 0;
         } else {
             volumeResult = (float)pa_sw_volume_to_linear(pa_cvolume_avg(&volume));
@@ -2583,21 +2603,29 @@ static void ThreadFuncRendererTimerMultiChannel(void *userdata)
     }
 }
 
+static int32_t GetSinkTypeNum(const char *sinkSceneType)
+{
+    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static void SetHdiParam(struct Userdata *userdata)
 {
     pa_sink_input *i;
     void *state = NULL;
     int sessionIDMax = -1;
-    char *sinkSceneTypeMax = "";
-    char *sinkSceneModeMax = "";
+    int32_t sinkSceneTypeMax = -1;
+    int32_t sinkSceneModeMax = -1;
     bool hdiEffectEnabledMax = false;
     while ((i = pa_hashmap_iterate(userdata->sink->thread_info.inputs, &state, NULL))) {
         pa_sink_input_assert_ref(i);
         const char *clientUid = pa_proplist_gets(i->proplist, "stream.client.uid");
         const char *bootUpMusic = "1003";
-        if (pa_safe_streq(clientUid, bootUpMusic)) {
-            return;
-        }
+        if (pa_safe_streq(clientUid, bootUpMusic)) { return; }
         const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
         const char *sinkSpatialization = pa_proplist_gets(i->proplist, "spatialization.enabled");
@@ -2609,25 +2637,25 @@ static void SetHdiParam(struct Userdata *userdata)
         if (sinkSceneType && sinkSceneMode && sinkSpatialization) {
             if (sessionID > sessionIDMax) {
                 sessionIDMax = sessionID;
-                sinkSceneTypeMax = (char *)sinkSceneType;
-                sinkSceneModeMax = (char *)sinkSceneMode;
+                sinkSceneTypeMax = GetSinkTypeNum(sinkSceneType);
+                sinkSceneModeMax = pa_safe_streq(sinkSceneMode, "EFFECT_NONE") == true ? 0 : 1;
                 hdiEffectEnabledMax = hdiEffectEnabled;
             }
         }
     }
 
-    if (userdata == NULL || userdata->sinkSceneType == NULL || userdata->sinkSceneMode == NULL) {
+    if (userdata == NULL) {
         AUDIO_DEBUG_LOG("SetHdiParam userdata null pointer");
         return;
     }
 
-    if (!pa_safe_streq(userdata->sinkSceneType, sinkSceneTypeMax) ||
-        !pa_safe_streq(userdata->sinkSceneMode, sinkSceneModeMax) ||
+    if ((userdata->sinkSceneType != sinkSceneTypeMax) || (userdata->sinkSceneMode != sinkSceneModeMax) ||
         (userdata->hdiEffectEnabled != hdiEffectEnabledMax)) {
         userdata->sinkSceneMode = sinkSceneModeMax;
         userdata->sinkSceneType = sinkSceneTypeMax;
         userdata->hdiEffectEnabled = hdiEffectEnabledMax;
-        EffectChainManagerSetHdiParam(userdata->sinkSceneType, userdata->sinkSceneMode, userdata->hdiEffectEnabled);
+        EffectChainManagerSetHdiParam(userdata->sinkSceneType < 0 ? "" : SCENE_TYPE_SET[userdata->sinkSceneType],
+            userdata->sinkSceneMode == 0 ? "EFFECT_NONE" : "EFFECT_DEFAULT", userdata->hdiEffectEnabled);
     }
 }
 
@@ -3038,7 +3066,6 @@ static int32_t RemoteSinkStateChange(pa_sink *s, pa_sink_state_t newState)
 
 static int32_t SinkSetStateInIoThreadCbStartPrimary(struct Userdata *u, pa_sink_state_t newState)
 {
-    u->primary.previousState = u->sink->thread_info.state;
     if (!PA_SINK_IS_OPENED(newState)) {
         return 0;
     }
@@ -3138,6 +3165,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
     AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass(u->primary.sinkAdapter->deviceClass), GetStateInfo(s->thread_info.state),
         GetStateInfo(newState));
+    u->primary.previousState = u->sink->thread_info.state;
 
     if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
         return RemoteSinkStateChange(s, newState);
@@ -3355,8 +3383,8 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     u->bufferAttr->frameLen = DEFAULT_FRAMELEN;
     u->bufferAttr->numChanIn = u->ss.channels;
     u->bufferAttr->numChanOut = u->ss.channels;
-    u->sinkSceneMode = "";
-    u->sinkSceneType = "";
+    u->sinkSceneMode = -1;
+    u->sinkSceneType = -1;
     u->hdiEffectEnabled = false;
 }
 

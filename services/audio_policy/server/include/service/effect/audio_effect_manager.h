@@ -41,9 +41,7 @@ public:
     void SetEffectChainManagerAvailable();
     bool CanLoadEffectSinks();
     void ConstructSceneTypeToEffectChainNameMap(std::unordered_map<std::string, std::string> &map);
-    bool CheckEffectSinkName(std::string &sinkName);
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
-
 private:
     OriginalEffectConfig oriEffectConfig_;
     std::vector<Effect> availableEffects_;
@@ -51,6 +49,7 @@ private:
     int32_t existDefault_ = 0;
     bool isMasterSinkAvailable_ = false;
     bool isEffectChainManagerAvailable_ = false;
+    std::vector<std::string> postSceneTypeSet_;
 
     void UpdateAvailableAEConfig(OriginalEffectConfig &aeConfig);
     void UpdateEffectChains(std::vector<std::string> &availableLayout);
@@ -58,6 +57,7 @@ private:
     void UpdateDuplicateMode(ProcessNew &preProcessNew);
     void UpdateDuplicateDevice(ProcessNew &preProcessNew);
     int32_t UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout, ProcessNew &preProcessNew);
+    bool VerifySceneMappingItem(const SceneMappingItem &item);
 };
 } // namespce AudioStandard
 } // namespace OHOS

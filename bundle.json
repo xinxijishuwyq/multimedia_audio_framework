@@ -85,8 +85,6 @@
               "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
               "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:ohaudio",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
-              "//foundation/multimedia/audio_framework/frameworks/native/audiocompatibility:audio_renderer_gateway",
-              "//foundation/multimedia/audio_framework/frameworks/native/audiocompatibility:audio_capturer_gateway",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"
             ],
             "service_group": [

@@ -79,7 +79,7 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
     size_t bytesWritten = 0;
     size_t minBytes = 4;
     int32_t writeError;
-    uint64_t timeStamp = 0;
+    uint64_t timestamp = 0;
     size_t bufferLen = 0;
     StreamBuffer stream;
 
@@ -104,8 +104,8 @@ int32_t StartPlayback(std::unique_ptr<AudioServiceClient> &client, FILE *wavFile
             stream.buffer = buffer + bytesWritten;
             stream.bufferLen = bytesToWrite - bytesWritten;
             bytesWritten += client->WriteStream(stream, writeError);
-            if (client->GetCurrentTimeStamp(timeStamp) >= 0)
-                AUDIO_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
+            if (client->GetCurrentTimeStamp(timestamp) >= 0)
+                AUDIO_DEBUG_LOG("current timestamp: %{public}" PRIu64, timestamp);
         }
     }
 

@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioDeviceManager"
+
 #include "audio_device_manager.h"
 
 #include "parameter.h"
@@ -29,9 +32,6 @@ constexpr int32_t NS_PER_MS = 1000000;
 
 AudioDeviceManager::AudioDeviceManager()
 {
-    char devicesType[100] = {0}; // 100 for system parameter usage
-    (void)GetParameter("const.product.devicetype", " ", devicesType, sizeof(devicesType));
-    localDevicesType_ = devicesType;
 }
 
 static int64_t GetCurrentTimeMS()
@@ -352,6 +352,17 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
         std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
         UpdateDeviceInfo(devDesc);
     }
+    std::string devices;
+    devices.append("add device ");
+    devices.append(std::to_string(static_cast<uint32_t>(deviceDescriptor->getType())));
+    devices.append(", connected device ");
+    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
+    for (auto iter : connectedDevices_) {
+        devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
+        devices.append(" ");
+    }
+    devices.append("\n");
+    AUDIO_INFO_LOG("%{public}s.", devices.c_str());
 }
 
 void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
@@ -377,6 +388,17 @@ void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devD
     RemoveCommunicationDevices(devDesc);
     RemoveMediaDevices(devDesc);
     RemoveCaptureDevices(devDesc);
+    std::string devices;
+    devices.append("remove device ");
+    devices.append(std::to_string(static_cast<uint32_t>(devDesc->getType())));
+    devices.append(", connected device ");
+    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
+    for (auto iter : connectedDevices_) {
+        devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
+        devices.append(" ");
+    }
+    devices.append("\n");
+    AUDIO_INFO_LOG("%{public}s.", devices.c_str());
 }
 
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
@@ -523,10 +545,14 @@ vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
     return descs;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice()
+unique_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCommRenderDefaultDevice(StreamUsage streamUsage)
 {
+    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        AUDIO_DEBUG_LOG("Invalid stream usage");
+    }
+
     unique_ptr<AudioDeviceDescriptor> devDesc;
-    if (localDevicesType_.compare("phone") == 0) {
+    if (hasEarpiece_ && streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION) {
         devDesc = make_unique<AudioDeviceDescriptor>(earpiece_);
     } else {
         devDesc = make_unique<AudioDeviceDescriptor>(speaker_);
@@ -807,6 +833,11 @@ void AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
                 desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
         }
     }
+}
+
+void AudioDeviceManager::UpdateEarpieceStatus(const bool hasEarPiece)
+{
+    hasEarpiece_ = hasEarPiece;
 }
 
 void AudioDeviceManager::AddBtToOtherList(const shared_ptr<AudioDeviceDescriptor> &devDesc)

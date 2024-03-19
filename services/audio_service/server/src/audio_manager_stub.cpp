@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioManagerStub"
 
 #include "audio_manager_base.h"
 #include "audio_system_manager.h"
@@ -23,6 +25,8 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT = 40;
+
 static void LoadEffectLibrariesReadData(vector<Library>& libList, vector<Effect>& effectList, MessageParcel &data,
     int32_t countLib, int32_t countEff)
 {
@@ -68,6 +72,8 @@ int AudioManagerStub::HandleGetExtraAudioParameters(MessageParcel &data, Message
 {
     const std::string mainKey = data.ReadString();
     int32_t num = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(num >= 0 && num <= AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT,
+        AUDIO_ERR, "Get extra audio parameters failed");
     std::vector<std::string> subKeys = {};
     for (int32_t i = 0; i < num; i++) {
         std::string subKey = data.ReadString();
@@ -90,6 +96,8 @@ int AudioManagerStub::HandleSetExtraAudioParameters(MessageParcel &data, Message
     const std::string mainKey = data.ReadString();
     std::vector<std::pair<std::string, std::string>> audioParametersSubKVPairs;
     int32_t mapSize = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(mapSize >= 0 && mapSize <= AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT,
+        AUDIO_ERR, "Set extra audio parameters failed");
     for (int32_t i = 0; i < mapSize; i++) {
         std::string subKey = data.ReadString();
         std::string value = data.ReadString();

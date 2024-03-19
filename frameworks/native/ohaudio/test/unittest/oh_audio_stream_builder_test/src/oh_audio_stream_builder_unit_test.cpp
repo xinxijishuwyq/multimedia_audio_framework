@@ -155,11 +155,71 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_002, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via illegal state.
+* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 88200.
 * @tc.number: OH_AudioStreamBuilder_SetParameter_003
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns error code, if samplingRate is -1.
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = SAMPLING_RATE_88200;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 176400.
+* @tc.number: OH_AudioStreamBuilder_SetParameter_004
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = SAMPLING_RATE_176400;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 192000.
+* @tc.number: OH_AudioStreamBuilder_SetParameter_005
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_005, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = SAMPLING_RATE_192000;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via illegal state.
+* @tc.number: OH_AudioStreamBuilder_SetParameter_006
+* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns error code, if samplingRate is -1.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_006, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;

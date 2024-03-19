@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioVolumeParser"
+
 #include "audio_volume_parser.h"
 #ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"

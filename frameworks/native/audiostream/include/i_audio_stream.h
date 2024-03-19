@@ -109,7 +109,7 @@ public:
 
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
-    static const std::string GetEffectSceneName(AudioStreamType audioType);
+    static const std::string GetEffectSceneName(const StreamUsage &streamUsage);
 
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;

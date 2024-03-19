@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioProcessInServer"
 
 #include "audio_process_in_server.h"
 #include "policy_handler.h"

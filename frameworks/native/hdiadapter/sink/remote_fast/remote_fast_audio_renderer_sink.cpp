@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "RemoteFastAudioRendererSinkInner"
 
 #include "remote_fast_audio_renderer_sink.h"
 
@@ -147,9 +149,11 @@ private:
 #endif
 };
 
+std::mutex g_remoteFRSinksMutex;
 std::map<std::string, RemoteFastAudioRendererSinkInner *> allRFSinks;
 IMmapAudioRendererSink *RemoteFastAudioRendererSink::GetInstance(const std::string &deviceNetworkId)
 {
+    std::lock_guard<std::mutex> lock(g_remoteFRSinksMutex);
     AUDIO_INFO_LOG("GetInstance.");
     CHECK_AND_RETURN_RET_LOG(!deviceNetworkId.empty(), nullptr, "Remote fast render device networkId is null.");
 
@@ -221,14 +225,18 @@ void RemoteFastAudioRendererSinkInner::ClearRender()
 
 void RemoteFastAudioRendererSinkInner::DeInit()
 {
+    std::lock_guard<std::mutex> lock(g_remoteFRSinksMutex);
     AUDIO_INFO_LOG("RemoteFastAudioRendererSinkInner::DeInit");
     ClearRender();
 
-    RemoteFastAudioRendererSinkInner *temp = allRFSinks[this->deviceNetworkId_];
-    if (temp != nullptr) {
+    CHECK_AND_RETURN_LOG(allRFSinks.count(this->deviceNetworkId_) > 0,
+        "not find %{public}s", this->deviceNetworkId_.c_str());
+    RemoteFastAudioRendererSink *temp = allRFSinks[this->deviceNetworkId_];
+    allRFSinks.erase(this->deviceNetworkId_);
+    if (temp == nullptr) {
+        AUDIO_ERR_LOG("temp is nullptr");
+    } else {
         delete temp;
-        temp = nullptr;
-        allRFSinks.erase(this->deviceNetworkId_);
     }
 }
 

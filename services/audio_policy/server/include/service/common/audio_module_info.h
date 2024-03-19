@@ -23,9 +23,6 @@
 #include "audio_info.h"
 #include "audio_log.h"
 
-#include <libxml/tree.h>
-#include <libxml/parser.h>
-
 namespace OHOS {
 namespace AudioStandard {
 static const std::string PRIMARY_CLASS = "primary";

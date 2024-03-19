@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamCollector"
+
 #include "audio_stream_collector.h"
 
 #include "audio_errors.h"
@@ -32,7 +35,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     map<pair<ContentType, StreamUsage>, AudioStreamType> streamMap;
     // Mapping relationships from content and usage to stream type in design
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_CALL;
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
     streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
     streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
@@ -60,7 +64,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     // Only use stream usage to choose stream type
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_CALL;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_ALARM;
@@ -274,6 +279,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
             rendererChangeInfo->channelCount = (*it)->channelCount;
             if (rendererChangeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_INVALID) {
+                streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = (*it)->outputDeviceInfo;
                 rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;
             }
             *it = move(rendererChangeInfo);
@@ -328,7 +334,8 @@ int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &stream
             CHECK_AND_RETURN_RET_LOG(capturerChangeInfo != nullptr,
                 ERR_MEMORY_ALLOC_FAILED, "CapturerChangeInfo Memory Allocation Failed");
             SetCapturerStreamParam(streamChangeInfo, capturerChangeInfo);
-            if (streamChangeInfo.audioCapturerChangeInfo.capturerState != CAPTURER_RUNNING) {
+            if (capturerChangeInfo->inputDeviceInfo.deviceType == DEVICE_TYPE_INVALID) {
+                streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo = (*it)->inputDeviceInfo;
                 capturerChangeInfo->inputDeviceInfo = (*it)->inputDeviceInfo;
             }
             *it = move(capturerChangeInfo);

@@ -40,6 +40,7 @@ private:
     int32_t HandleFlush(MessageParcel &data, MessageParcel &reply);
     int32_t HandleDrain(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetAudioTime(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleGetAudioPosition(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetLatency(MessageParcel &data, MessageParcel &reply);
     int32_t HandleSetRate(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetRate(MessageParcel &data, MessageParcel &reply);
@@ -55,6 +56,8 @@ private:
     int32_t HandleGetOffloadApproximatelyCacheTime(MessageParcel &data, MessageParcel &reply);
     int32_t HandleOffloadSetVolume(MessageParcel &data, MessageParcel &reply);
 
+    int32_t HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
+
     using HandlerFunc = int32_t(IpcStreamStub::*)(MessageParcel &data, MessageParcel &reply);
     // Using the same order in IpcStreamMsg::Code when add func!
     static inline HandlerFunc funcList_[IpcStreamMsg::IPC_STREAM_MAX_MSG] = {
@@ -69,6 +72,7 @@ private:
         &IpcStreamStub::HandleFlush,
         &IpcStreamStub::HandleDrain,
         &IpcStreamStub::HandleGetAudioTime,
+        &IpcStreamStub::HandleGetAudioPosition,
         &IpcStreamStub::HandleGetLatency,
         &IpcStreamStub::HandleSetRate,
         &IpcStreamStub::HandleGetRate,
@@ -82,6 +86,7 @@ private:
         &IpcStreamStub::HandleUnsetOffloadMode,
         &IpcStreamStub::HandleGetOffloadApproximatelyCacheTime,
         &IpcStreamStub::HandleOffloadSetVolume,
+        &IpcStreamStub::HandleUpdateSpatializationState,
     };
 };
 } // namespace AudioStandard

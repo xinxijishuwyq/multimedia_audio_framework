@@ -107,9 +107,9 @@ void AudioFocusInfoChangeCallbackTest::OnAudioFocusInfoChange(
 }
 
 /**
-* @tc.name  : Test GetDevices API
-* @tc.number: GetConnectedDevicesList_001
-* @tc.desc  : Test GetDevices interface. Returns list of all input and output devices
+* @tc.name   : Test GetDevices API
+* @tc.number : GetConnectedDevicesList_001
+* @tc.desc   : Test GetDevices interface. Returns list of all input and output devices
 */
 HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_001, TestSize.Level1)
 {
@@ -119,9 +119,9 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetDevices API
-* @tc.number: GetConnectedDevicesList_002
-* @tc.desc  : Test GetDevices interface. Returns list of input devices
+* @tc.name   : Test GetDevices API
+* @tc.number : GetConnectedDevicesList_002
+* @tc.desc   : Test GetDevices interface. Returns list of input devices
 */
 HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
 {
@@ -139,9 +139,9 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetDevices API
-* @tc.number: GetConnectedDevicesList_003
-* @tc.desc  : Test GetDevices interface. Returns list of output devices
+* @tc.name   : Test GetDevices API
+* @tc.number : GetConnectedDevicesList_003
+* @tc.desc   : Test GetDevices interface. Returns list of output devices
 */
 HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level1)
 {
@@ -163,10 +163,10 @@ HWTEST(AudioManagerUnitTest, GetConnectedDevicesList_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_001
-* @tc.desc  : Test SelectOutputDevice interface.
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_001
+* @tc.desc    : Test SelectOutputDevice interface.
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_001, TestSize.Level1)
 {
@@ -182,10 +182,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_002
-* @tc.desc  : Test SelectOutputDevice interface.
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_002
+* @tc.desc    : Test SelectOutputDevice interface.
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_002, TestSize.Level1)
 {
@@ -201,10 +201,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_003
-* @tc.desc  : Test SelectOutputDevice interface.
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_003
+* @tc.desc    : Test SelectOutputDevice interface.
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_003, TestSize.Level1)
 {
@@ -227,10 +227,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SelectOutputDevice API
- * @tc.number: SelectOutputDevice_004
- * @tc.desc  : Test SelectOutputDevice interface.
- * @tc.require: issueI5NZAQ
+ * @tc.name    : Test SelectOutputDevice API
+ * @tc.number  : SelectOutputDevice_004
+ * @tc.desc    : Test SelectOutputDevice interface.
+ * @tc.require : issueI5NZAQ
  */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level1)
 {
@@ -253,10 +253,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_005
-* @tc.desc  : Test SelectOutputDevice interface, set deviceDescriptorVector.size() to zero.
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_005
+* @tc.desc    : Test SelectOutputDevice interface, set deviceDescriptorVector.size() to zero.
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_005, TestSize.Level1)
 {
@@ -266,10 +266,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_006
-* @tc.desc  : Test SelectOutputDevice interface, set networkId_ to "".
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_006
+* @tc.desc    : Test SelectOutputDevice interface, set networkId_ to "".
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_006, TestSize.Level1)
 {
@@ -285,10 +285,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_006, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_007
-* @tc.desc  : Test SelectOutputDevice interface, set audioRendererFilter to nullptr.
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_007
+* @tc.desc    : Test SelectOutputDevice interface, set audioRendererFilter to nullptr.
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_007, TestSize.Level1)
 {
@@ -305,10 +305,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_007, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_008
-* @tc.desc  : Test SelectOutputDevice interface, set audioDeviceDescriptors[0] to nullptr.
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_008
+* @tc.desc    : Test SelectOutputDevice interface, set audioDeviceDescriptors[0] to nullptr.
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_008, TestSize.Level1)
 {
@@ -326,10 +326,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_008, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_009
-* @tc.desc  : Test SelectOutputDevice interface, set deviceRole_ to INPUT_DEVICE.
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_009
+* @tc.desc    : Test SelectOutputDevice interface, set deviceRole_ to INPUT_DEVICE.
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_009, TestSize.Level1)
 {
@@ -351,10 +351,10 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_009, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectOutputDevice API
-* @tc.number: SelectOutputDevice_010
-* @tc.desc  : Test SelectOutputDevice interface, set networkId_ to "".
-* @tc.require: issueI5NZAQ
+* @tc.name    : Test SelectOutputDevice API
+* @tc.number  : SelectOutputDevice_010
+* @tc.desc    : Test SelectOutputDevice interface, set networkId_ to "".
+* @tc.require : issueI5NZAQ
 */
 HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
 {
@@ -376,9 +376,9 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_001
-* @tc.desc  : Test SelectInputDevice interface. deviceRole_ set to INPUT_DEVICE
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_001
+* @tc.desc   : Test SelectInputDevice interface. deviceRole_ set to INPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_001, TestSize.Level1)
 {
@@ -394,9 +394,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_002
-* @tc.desc  : Test SelectInputDevice interface. deviceRole_ set to OUTPUT_DEVICE
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_002
+* @tc.desc   : Test SelectInputDevice interface. deviceRole_ set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_002, TestSize.Level1)
 {
@@ -412,9 +412,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_003
-* @tc.desc  : Test SelectInputDevice interface. deviceDescriptorVector[0] set to nullptr
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_003
+* @tc.desc   : Test SelectInputDevice interface. deviceDescriptorVector[0] set to nullptr
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_003, TestSize.Level1)
 {
@@ -424,9 +424,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_004
-* @tc.desc  : Test SelectInputDevice interface. normal
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_004
+* @tc.desc   : Test SelectInputDevice interface. normal
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_004, TestSize.Level1)
 {
@@ -444,9 +444,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_005
-* @tc.desc  : Test SelectInputDevice interface. audioCapturerFilter set to nullptr
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_005
+* @tc.desc   : Test SelectInputDevice interface. audioCapturerFilter set to nullptr
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_005, TestSize.Level1)
 {
@@ -463,9 +463,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_006
-* @tc.desc  : Test SelectInputDevice interface. deviceDescriptorVector.size() set to 0
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_006
+* @tc.desc   : Test SelectInputDevice interface. deviceDescriptorVector.size() set to 0
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_006, TestSize.Level1)
 {
@@ -478,9 +478,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_006, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_007
-* @tc.desc  : Test SelectInputDevice interface. deviceDescriptorVector[0] set to nullptr
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_007
+* @tc.desc   : Test SelectInputDevice interface. deviceDescriptorVector[0] set to nullptr
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_007, TestSize.Level1)
 {
@@ -494,9 +494,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_007, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_008
-* @tc.desc  : Test SelectInputDevice interface. deviceDescriptorVector[0] set to nullptr
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_008
+* @tc.desc   : Test SelectInputDevice interface. deviceDescriptorVector[0] set to nullptr
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_008, TestSize.Level1)
 {
@@ -510,9 +510,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_008, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_009
-* @tc.desc  : Test SelectInputDevice interface. deviceRole_ set to DeviceRole::OUTPUT_DEVICE
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_009
+* @tc.desc   : Test SelectInputDevice interface. deviceRole_ set to DeviceRole::OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_009, TestSize.Level1)
 {
@@ -530,9 +530,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_009, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SelectInputDevice API
-* @tc.number: SelectInputDevice_010
-* @tc.desc  : Test SelectInputDevice interface. uid set to -1
+* @tc.name   : Test SelectInputDevice API
+* @tc.number : SelectInputDevice_010
+* @tc.desc   : Test SelectInputDevice interface. uid set to -1
 */
 HWTEST(AudioManagerUnitTest, SelectInputDevice_010, TestSize.Level1)
 {
@@ -550,9 +550,9 @@ HWTEST(AudioManagerUnitTest, SelectInputDevice_010, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetActiveOutputDeviceDescriptors API
-* @tc.number: GetActiveOutputDeviceDescriptors_001
-* @tc.desc  : Test GetActiveOutputDeviceDescriptors interface.
+* @tc.name   : Test GetActiveOutputDeviceDescriptors API
+* @tc.number : GetActiveOutputDeviceDescriptors_001
+* @tc.desc   : Test GetActiveOutputDeviceDescriptors interface.
 */
 HWTEST(AudioManagerUnitTest, GetActiveOutputDeviceDescriptors_001, TestSize.Level1)
 {
@@ -562,9 +562,9 @@ HWTEST(AudioManagerUnitTest, GetActiveOutputDeviceDescriptors_001, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test RegisterVolumeKeyEventCallback API
-* @tc.number: RegisterVolumeKeyEventCallback_001
-* @tc.desc  : Test RegisterVolumeKeyEventCallback interface.
+* @tc.name   : Test RegisterVolumeKeyEventCallback API
+* @tc.number : RegisterVolumeKeyEventCallback_001
+* @tc.desc   : Test RegisterVolumeKeyEventCallback interface.
 */
 HWTEST(AudioManagerUnitTest, RegisterVolumeKeyEventCallback_001, TestSize.Level1)
 {
@@ -575,9 +575,9 @@ HWTEST(AudioManagerUnitTest, RegisterVolumeKeyEventCallback_001, TestSize.Level1
 }
 
 /**
-* @tc.name  : Test SetAudioManagerCallback API
-* @tc.number: SetAudioManagerCallback_001
-* @tc.desc  : Test SetAudioManagerCallback interface.
+* @tc.name   : Test SetAudioManagerCallback API
+* @tc.number : SetAudioManagerCallback_001
+* @tc.desc   : Test SetAudioManagerCallback interface.
 */
 HWTEST(AudioManagerUnitTest, SetAudioManagerCallback_001, TestSize.Level1)
 {
@@ -588,9 +588,9 @@ HWTEST(AudioManagerUnitTest, SetAudioManagerCallback_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test UnsetAudioManagerCallback API
-* @tc.number: UnsetAudioManagerCallback_001
-* @tc.desc  : Test UnsetAudioManagerCallback interface.
+* @tc.name   : Test UnsetAudioManagerCallback API
+* @tc.number : UnsetAudioManagerCallback_001
+* @tc.desc   : Test UnsetAudioManagerCallback interface.
 */
 HWTEST(AudioManagerUnitTest, UnsetAudioManagerCallback_001, TestSize.Level1)
 {
@@ -600,9 +600,9 @@ HWTEST(AudioManagerUnitTest, UnsetAudioManagerCallback_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ActivateAudioInterrupt API
-* @tc.number: ActivateAudioInterrupt_001
-* @tc.desc  : Test ActivateAudioInterrupt interface.
+* @tc.name   : Test ActivateAudioInterrupt API
+* @tc.number : ActivateAudioInterrupt_001
+* @tc.desc   : Test ActivateAudioInterrupt interface.
 */
 HWTEST(AudioManagerUnitTest, ActivateAudioInterrupt_001, TestSize.Level1)
 {
@@ -615,9 +615,9 @@ HWTEST(AudioManagerUnitTest, ActivateAudioInterrupt_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DeactivateAudioInterrupt API
-* @tc.number: DeactivateAudioInterrupt_001
-* @tc.desc  : Test DeactivateAudioInterrupt interface.
+* @tc.name   : Test DeactivateAudioInterrupt API
+* @tc.number : DeactivateAudioInterrupt_001
+* @tc.desc   : Test DeactivateAudioInterrupt interface.
 */
 HWTEST(AudioManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
 {
@@ -630,9 +630,9 @@ HWTEST(AudioManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test RequestIndependentInterrupt API
-* @tc.number: RequestIndependentInterrupt_001
-* @tc.desc  : Test RequestIndependentInterrupt interface.
+* @tc.name   : Test RequestIndependentInterrupt API
+* @tc.number : RequestIndependentInterrupt_001
+* @tc.desc   : Test RequestIndependentInterrupt interface.
 */
 HWTEST(AudioManagerUnitTest, RequestIndependentInterrupt_001, TestSize.Level1)
 {
@@ -642,9 +642,9 @@ HWTEST(AudioManagerUnitTest, RequestIndependentInterrupt_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AbandonIndependentInterrupt API
-* @tc.number: AbandonIndependentInterrupt_001
-* @tc.desc  : Test AbandonIndependentInterrupt interface.
+* @tc.name   : Test AbandonIndependentInterrupt API
+* @tc.number : AbandonIndependentInterrupt_001
+* @tc.desc   : Test AbandonIndependentInterrupt interface.
 */
 HWTEST(AudioManagerUnitTest, AbandonIndependentInterrupt_001, TestSize.Level1)
 {
@@ -654,9 +654,9 @@ HWTEST(AudioManagerUnitTest, AbandonIndependentInterrupt_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_001
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_NONE,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_001
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_NONE,
 * deviceRole set to DEVICE_ROLE_NONE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_001, TestSize.Level1)
@@ -668,9 +668,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_002
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_INVALID,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_002
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_INVALID,
 * deviceRole set to DEVICE_ROLE_NONE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_002, TestSize.Level1)
@@ -682,9 +682,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_003
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_DEFAULT,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_003
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_DEFAULT,
 * deviceRole set to INPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_003, TestSize.Level1)
@@ -696,9 +696,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_004
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_DEFAULT,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_004
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_DEFAULT,
 * deviceRole set to DEVICE_ROLE_NONE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_004, TestSize.Level1)
@@ -710,9 +710,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_005
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_SPEAKER,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_005
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_SPEAKER,
 * deviceRole set to DEVICE_ROLE_NONE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_005, TestSize.Level1)
@@ -724,9 +724,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_006
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_MIC,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_006
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_MIC,
 * deviceRole set to DEVICE_ROLE_NONE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_006, TestSize.Level1)
@@ -738,9 +738,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_006, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_007
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_WIRED_HEADSET,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_007
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_WIRED_HEADSET,
 * deviceRole set to INPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_007, TestSize.Level1)
@@ -752,9 +752,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_007, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_008
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_WIRED_HEADSET,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_008
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_WIRED_HEADSET,
 * deviceRole set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_008, TestSize.Level1)
@@ -766,9 +766,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_008, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_009
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_USB_HEADSET,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_009
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_USB_HEADSET,
 * deviceRole set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_009, TestSize.Level1)
@@ -780,9 +780,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_009, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_010
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_FILE_SINK,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_010
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_FILE_SINK,
 * deviceRole set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_010, TestSize.Level1)
@@ -794,9 +794,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_010, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_011
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_FILE_SOURCE,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_011
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_FILE_SOURCE,
 * deviceRole set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_011, TestSize.Level1)
@@ -808,9 +808,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_011, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_012
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_BLUETOOTH_SCO,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_012
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_BLUETOOTH_SCO,
 * deviceRole set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_012, TestSize.Level1)
@@ -822,9 +822,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_012, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_013
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_BLUETOOTH_A2DP,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_013
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_BLUETOOTH_A2DP,
 * deviceRole set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_013, TestSize.Level1)
@@ -836,9 +836,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_013, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_014
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_MAX,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_014
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_MAX,
 * deviceRole set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_014, TestSize.Level1)
@@ -850,9 +850,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_014, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPinValueFromType API
-* @tc.number: GetPinValueFromType_015
-* @tc.desc  : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_DEFAULT,
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_015
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_DEFAULT,
 * deviceRole set to OUTPUT_DEVICE
 */
 HWTEST(AudioManagerUnitTest, GetPinValueFromType_015, TestSize.Level1)
@@ -864,9 +864,9 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_015, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_001
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_NONE
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_001
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_NONE
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_001, TestSize.Level1)
 {
@@ -876,9 +876,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_002
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_SPEAKER
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_002
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_SPEAKER
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_002, TestSize.Level1)
 {
@@ -888,9 +888,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_003
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_HEADSET
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_003
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_HEADSET
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_003, TestSize.Level1)
 {
@@ -900,9 +900,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_004
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_LINEOUT
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_004
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_LINEOUT
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_004, TestSize.Level1)
 {
@@ -912,9 +912,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_005
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_HDMI
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_005
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_HDMI
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_005, TestSize.Level1)
 {
@@ -924,9 +924,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_006
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_USB
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_006
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_USB
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_006, TestSize.Level1)
 {
@@ -936,9 +936,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_006, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_007
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_USB_EXT
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_007
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_USB_EXT
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_007, TestSize.Level1)
 {
@@ -948,9 +948,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_007, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_008
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_DAUDIO_DEFAULT
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_008
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_OUT_DAUDIO_DEFAULT
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_008, TestSize.Level1)
 {
@@ -960,9 +960,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_008, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_009
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_MIC
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_009
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_MIC
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_009, TestSize.Level1)
 {
@@ -972,9 +972,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_009, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_010
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_HS_MIC
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_010
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_HS_MIC
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_010, TestSize.Level1)
 {
@@ -984,9 +984,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_010, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_011
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_LINEIN
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_011
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_LINEIN
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_011, TestSize.Level1)
 {
@@ -996,9 +996,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_011, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_012
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_USB_EXT
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_012
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_USB_EXT
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_012, TestSize.Level1)
 {
@@ -1008,9 +1008,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_012, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_013
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_DAUDIO_DEFAULT
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_013
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to AUDIO_PIN_IN_DAUDIO_DEFAULT
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_013, TestSize.Level1)
 {
@@ -1020,9 +1020,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_013, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetTypeValueFromPin API
-* @tc.number: GetTypeValueFromPin_014
-* @tc.desc  : Test GetTypeValueFromPin interface. pin set to INVALID data
+* @tc.name   : Test GetTypeValueFromPin API
+* @tc.number : GetTypeValueFromPin_014
+* @tc.desc   : Test GetTypeValueFromPin interface. pin set to INVALID data
 */
 HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_014, TestSize.Level1)
 {
@@ -1033,9 +1033,9 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_014, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetDeviceActive API
-* @tc.number: SetDeviceActive_001
-* @tc.desc  : Test SetDeviceActive interface. Activate bluetooth sco device by deactivating speaker
+* @tc.name   : Test SetDeviceActive API
+* @tc.number : SetDeviceActive_001
+* @tc.desc   : Test SetDeviceActive interface. Activate bluetooth sco device by deactivating speaker
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_001, TestSize.Level1)
 {
@@ -1044,9 +1044,9 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetDeviceActive API
-* @tc.number: SetDeviceActive_002
-* @tc.desc  : Test SetDeviceActive interface. Speaker should not be disable since its the only active device
+* @tc.name   : Test SetDeviceActive API
+* @tc.number : SetDeviceActive_002
+* @tc.desc   : Test SetDeviceActive interface. Speaker should not be disable since its the only active device
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_002, TestSize.Level1)
 {
@@ -1058,9 +1058,9 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetDeviceActive API
-* @tc.number: SetDeviceActive_003
-* @tc.desc  : Test SetDeviceActive interface. Actiavting invalid device should fail
+* @tc.name   : Test SetDeviceActive API
+* @tc.number : SetDeviceActive_003
+* @tc.desc   : Test SetDeviceActive interface. Actiavting invalid device should fail
 */
 HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level1)
 {
@@ -1076,9 +1076,9 @@ HWTEST(AudioManagerUnitTest, SetDeviceActive_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test IsDeviceActive API
-* @tc.number: IsDeviceActive_001
-* @tc.desc  : Test IsDeviceActive interface. Activate device by ACTIVE_DEVICE_TYPE_NONE
+* @tc.name   : Test IsDeviceActive API
+* @tc.number : IsDeviceActive_001
+* @tc.desc   : Test IsDeviceActive interface. Activate device by ACTIVE_DEVICE_TYPE_NONE
 */
 HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
 {
@@ -1087,9 +1087,9 @@ HWTEST(AudioManagerUnitTest, IsDeviceActive_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test IsStreamActive API
-* @tc.number: IsStreamActive_001
-* @tc.desc  : Test IsStreamActive interface. set AudioVolumeType return true
+* @tc.name   : Test IsStreamActive API
+* @tc.number : IsStreamActive_001
+* @tc.desc   : Test IsStreamActive interface. set AudioVolumeType return true
 */
 HWTEST(AudioManagerUnitTest, IsStreamActive_001, TestSize.Level1)
 {
@@ -1104,9 +1104,9 @@ HWTEST(AudioManagerUnitTest, IsStreamActive_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test IsStreamActive API
-* @tc.number: IsStreamActive_002
-* @tc.desc  : Test IsStreamActive interface. set AudioVolumeType return false
+* @tc.name   : Test IsStreamActive API
+* @tc.number : IsStreamActive_002
+* @tc.desc   : Test IsStreamActive interface. set AudioVolumeType return false
 */
 HWTEST(AudioManagerUnitTest, IsStreamActive_002, TestSize.Level1)
 {
@@ -1115,9 +1115,9 @@ HWTEST(AudioManagerUnitTest, IsStreamActive_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test IsStreamMute API
-* @tc.number: IsStreamMute_001
-* @tc.desc  : Test IsStreamMute interface. set AudioVolumeType return false
+* @tc.name   : Test IsStreamMute API
+* @tc.number : IsStreamMute_001
+* @tc.desc   : Test IsStreamMute interface. set AudioVolumeType return false
 */
 HWTEST(AudioManagerUnitTest, IsStreamMute_001, TestSize.Level1)
 {
@@ -1126,9 +1126,9 @@ HWTEST(AudioManagerUnitTest, IsStreamMute_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ReconfigureChannel API
-* @tc.number: ReconfigureChannel_001
-* @tc.desc  : Test ReconfigureAudioChannel interface. Change sink and source channel count on runtime
+* @tc.name   : Test ReconfigureChannel API
+* @tc.number : ReconfigureChannel_001
+* @tc.desc   : Test ReconfigureAudioChannel interface. Change sink and source channel count on runtime
 */
 HWTEST(AudioManagerUnitTest, ReconfigureChannel_001, TestSize.Level1)
 {
@@ -1154,9 +1154,9 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ReconfigureChannel API
-* @tc.number: ReconfigureChannel_002
-* @tc.desc  : Test ReconfigureAudioChannel interface. Change sink and source channel count on runtime
+* @tc.name   : Test ReconfigureChannel API
+* @tc.number : ReconfigureChannel_002
+* @tc.desc   : Test ReconfigureAudioChannel interface. Change sink and source channel count on runtime
 */
 HWTEST(AudioManagerUnitTest, ReconfigureChannel_002, TestSize.Level1)
 {
@@ -1176,9 +1176,9 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ReconfigureChannel API
-* @tc.number: ReconfigureChannel_003
-* @tc.desc  : Test ReconfigureAudioChannel interface. Check for wrong channel count
+* @tc.name   : Test ReconfigureChannel API
+* @tc.number : ReconfigureChannel_003
+* @tc.desc   : Test ReconfigureAudioChannel interface. Check for wrong channel count
 */
 HWTEST(AudioManagerUnitTest, ReconfigureChannel_003, TestSize.Level1)
 {
@@ -1205,9 +1205,9 @@ HWTEST(AudioManagerUnitTest, ReconfigureChannel_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetAudioManagerInterruptCallback API
-* @tc.number: SetAudioManagerInterruptCallback_001
-* @tc.desc  : Test SetAudioManagerInterruptCallback interface with valid parameters
+* @tc.name   : Test SetAudioManagerInterruptCallback API
+* @tc.number : SetAudioManagerInterruptCallback_001
+* @tc.desc   : Test SetAudioManagerInterruptCallback interface with valid parameters
 */
 HWTEST(AudioManagerUnitTest, SetAudioManagerInterruptCallback_001, TestSize.Level1)
 {
@@ -1217,9 +1217,9 @@ HWTEST(AudioManagerUnitTest, SetAudioManagerInterruptCallback_001, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test SetAudioManagerInterruptCallback API
-* @tc.number: SetAudioManagerInterruptCallback_002
-* @tc.desc  : Test SetAudioManagerInterruptCallback interface with null callback pointer as parameter
+* @tc.name   : Test SetAudioManagerInterruptCallback API
+* @tc.number : SetAudioManagerInterruptCallback_002
+* @tc.desc   : Test SetAudioManagerInterruptCallback interface with null callback pointer as parameter
 */
 HWTEST(AudioManagerUnitTest, SetAudioManagerInterruptCallback_002, TestSize.Level1)
 {
@@ -1228,9 +1228,9 @@ HWTEST(AudioManagerUnitTest, SetAudioManagerInterruptCallback_002, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test SetAudioManagerInterruptCallback API
-* @tc.number: SetAudioManagerInterruptCallback_003
-* @tc.desc  : Test SetAudioManagerInterruptCallback interface with Multiple Set
+* @tc.name   : Test SetAudioManagerInterruptCallback API
+* @tc.number : SetAudioManagerInterruptCallback_003
+* @tc.desc   : Test SetAudioManagerInterruptCallback interface with Multiple Set
 */
 HWTEST(AudioManagerUnitTest, SetAudioManagerInterruptCallback_003, TestSize.Level1)
 {
@@ -1245,9 +1245,9 @@ HWTEST(AudioManagerUnitTest, SetAudioManagerInterruptCallback_003, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test UnsetAudioManagerInterruptCallback API
-* @tc.number: UnsetAudioManagerInterruptCallback_001
-* @tc.desc  : Test UnsetAudioManagerInterruptCallback interface with Set and Unset callback
+* @tc.name   : Test UnsetAudioManagerInterruptCallback API
+* @tc.number : UnsetAudioManagerInterruptCallback_001
+* @tc.desc   : Test UnsetAudioManagerInterruptCallback interface with Set and Unset callback
 */
 HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_001, TestSize.Level1)
 {
@@ -1259,9 +1259,9 @@ HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_001, TestSize.Le
 }
 
 /**
-* @tc.name  : Test UnsetAudioManagerInterruptCallback API
-* @tc.number: UnsetAudioManagerInterruptCallback_002
-* @tc.desc  : Test UnsetAudioManagerInterruptCallback interface with Multiple Unset
+* @tc.name   : Test UnsetAudioManagerInterruptCallback API
+* @tc.number : UnsetAudioManagerInterruptCallback_002
+* @tc.desc   : Test UnsetAudioManagerInterruptCallback interface with Multiple Unset
 */
 HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_002, TestSize.Level1)
 {
@@ -1275,9 +1275,9 @@ HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_002, TestSize.Le
 }
 
 /**
-* @tc.name  : Test UnsetAudioManagerInterruptCallback API
-* @tc.number: UnsetAudioManagerInterruptCallback_003
-* @tc.desc  : Test UnsetAudioManagerInterruptCallback interface without set interrupt call
+* @tc.name   : Test UnsetAudioManagerInterruptCallback API
+* @tc.number : UnsetAudioManagerInterruptCallback_003
+* @tc.desc   : Test UnsetAudioManagerInterruptCallback interface without set interrupt call
 */
 HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_003, TestSize.Level1)
 {
@@ -1286,9 +1286,9 @@ HWTEST(AudioManagerUnitTest, UnsetAudioManagerInterruptCallback_003, TestSize.Le
 }
 
 /**
-* @tc.name  : Test RequestAudioFocus API
-* @tc.number: RequestAudioFocus_001
-* @tc.desc  : Test RequestAudioFocus interface with valid parameters
+* @tc.name   : Test RequestAudioFocus API
+* @tc.number : RequestAudioFocus_001
+* @tc.desc   : Test RequestAudioFocus interface with valid parameters
 */
 HWTEST(AudioManagerUnitTest, RequestAudioFocus_001, TestSize.Level1)
 {
@@ -1304,9 +1304,9 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test RequestAudioFocus API
-* @tc.number: RequestAudioFocus_002
-* @tc.desc  : Test RequestAudioFocus interface with invalid parameters
+* @tc.name   : Test RequestAudioFocus API
+* @tc.number : RequestAudioFocus_002
+* @tc.desc   : Test RequestAudioFocus interface with invalid parameters
 */
 HWTEST(AudioManagerUnitTest, RequestAudioFocus_002, TestSize.Level1)
 {
@@ -1323,9 +1323,9 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test RequestAudioFocus API
-* @tc.number: RequestAudioFocus_003
-* @tc.desc  : Test RequestAudioFocus interface with boundary values for content type, stream usage
+* @tc.name   : Test RequestAudioFocus API
+* @tc.number : RequestAudioFocus_003
+* @tc.desc   : Test RequestAudioFocus interface with boundary values for content type, stream usage
 *             and stream type
 */
 HWTEST(AudioManagerUnitTest, RequestAudioFocus_003, TestSize.Level1)
@@ -1374,9 +1374,9 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test RequestAudioFocus API
-* @tc.number: RequestAudioFocus_004
-* @tc.desc  : Test RequestAudioFocus interface with back to back requests
+* @tc.name   : Test RequestAudioFocus API
+* @tc.number : RequestAudioFocus_004
+* @tc.desc   : Test RequestAudioFocus interface with back to back requests
 */
 HWTEST(AudioManagerUnitTest, RequestAudioFocus_004, TestSize.Level1)
 {
@@ -1399,9 +1399,9 @@ HWTEST(AudioManagerUnitTest, RequestAudioFocus_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AbandonAudioFocus API
-* @tc.number: AbandonAudioFocus_001
-* @tc.desc  : Test AbandonAudioFocus interface with valid parameters
+* @tc.name   : Test AbandonAudioFocus API
+* @tc.number : AbandonAudioFocus_001
+* @tc.desc   : Test AbandonAudioFocus interface with valid parameters
 */
 HWTEST(AudioManagerUnitTest, AbandonAudioFocus_001, TestSize.Level1)
 {
@@ -1419,9 +1419,9 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AbandonAudioFocus API
-* @tc.number: AbandonAudioFocus_002
-* @tc.desc  : Test AbandonAudioFocus interface with invalid parameters
+* @tc.name   : Test AbandonAudioFocus API
+* @tc.number : AbandonAudioFocus_002
+* @tc.desc   : Test AbandonAudioFocus interface with invalid parameters
 */
 HWTEST(AudioManagerUnitTest, AbandonAudioFocus_002, TestSize.Level1)
 {
@@ -1441,9 +1441,9 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AbandonAudioFocus API
-* @tc.number: AbandonAudioFocus_003
-* @tc.desc  : Test AbandonAudioFocus interface with invalid parameters
+* @tc.name   : Test AbandonAudioFocus API
+* @tc.number : AbandonAudioFocus_003
+* @tc.desc   : Test AbandonAudioFocus interface with invalid parameters
 */
 HWTEST(AudioManagerUnitTest, AbandonAudioFocus_003, TestSize.Level1)
 {
@@ -1500,9 +1500,9 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AbandonAudioFocus API
-* @tc.number: AbandonAudioFocus_004
-* @tc.desc  : Test AbandonAudioFocus interface multiple requests
+* @tc.name   : Test AbandonAudioFocus API
+* @tc.number : AbandonAudioFocus_004
+* @tc.desc   : Test AbandonAudioFocus interface multiple requests
 */
 HWTEST(AudioManagerUnitTest, AbandonAudioFocus_004, TestSize.Level1)
 {
@@ -1529,9 +1529,9 @@ HWTEST(AudioManagerUnitTest, AbandonAudioFocus_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioVolume API
-* @tc.number: AudioVolume_001
-* @tc.desc  : Test AudioVolume manager interface multiple requests
+* @tc.name   : Test AudioVolume API
+* @tc.number : AudioVolume_001
+* @tc.desc   : Test AudioVolume manager interface multiple requests
 */
 HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 {
@@ -1563,9 +1563,9 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_001
-* @tc.desc  : Test setting volume of ringtone stream with max volume
+* @tc.name   : Test SetVolume API
+* @tc.number : SetVolumeTest_001
+* @tc.desc   : Test setting volume of ringtone stream with max volume
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level1)
 {
@@ -1577,9 +1577,9 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_002
-* @tc.desc  : Test setting volume of ringtone stream with min volume
+* @tc.name   : Test SetVolume API
+* @tc.number : SetVolumeTest_002
+* @tc.desc   : Test setting volume of ringtone stream with min volume
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level1)
 {
@@ -1591,9 +1591,9 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_003
-* @tc.desc  : Test setting volume of media stream with max volume
+* @tc.name   : Test SetVolume API
+* @tc.number : SetVolumeTest_003
+* @tc.desc   : Test setting volume of media stream with max volume
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_003, TestSize.Level1)
 {
@@ -1608,9 +1608,9 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetVolume API
-* @tc.number: SetVolumeTest_004
-* @tc.desc  : Test setting volume of default stream with max volume
+* @tc.name   : Test SetVolume API
+* @tc.number : SetVolumeTest_004
+* @tc.desc   : Test setting volume of default stream with max volume
 */
 HWTEST(AudioManagerUnitTest, SetVolumeTest_004, TestSize.Level1)
 {
@@ -1621,9 +1621,9 @@ HWTEST(AudioManagerUnitTest, SetVolumeTest_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetRingerModeCallbak API
-* @tc.number: SetRingerModeCallbak_001
-* @tc.desc  : Test setting of callback to nullptr
+* @tc.name   : Test SetRingerModeCallbak API
+* @tc.number : SetRingerModeCallbak_001
+* @tc.desc   : Test setting of callback to nullptr
 */
 HWTEST(AudioManagerUnitTest, SetRingerModeCallbak_001, TestSize.Level1)
 {
@@ -1634,9 +1634,9 @@ HWTEST(AudioManagerUnitTest, SetRingerModeCallbak_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetRingerMode API
-* @tc.number: SetRingerModeTest_001
-* @tc.desc  : Test setting of ringer mode to SILENT
+* @tc.name   : Test SetRingerMode API
+* @tc.number : SetRingerModeTest_001
+* @tc.desc   : Test setting of ringer mode to SILENT
 */
 HWTEST(AudioManagerUnitTest, SetRingerModeTest_001, TestSize.Level1)
 {
@@ -1648,9 +1648,9 @@ HWTEST(AudioManagerUnitTest, SetRingerModeTest_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetRingerMode API
-* @tc.number: SetRingerModeTest_002
-* @tc.desc  : Test setting of ringer mode to NORMAL
+* @tc.name   : Test SetRingerMode API
+* @tc.number : SetRingerModeTest_002
+* @tc.desc   : Test setting of ringer mode to NORMAL
 */
 HWTEST(AudioManagerUnitTest, SetRingerModeTest_002, TestSize.Level1)
 {
@@ -1662,9 +1662,9 @@ HWTEST(AudioManagerUnitTest, SetRingerModeTest_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetRingerMode API
-* @tc.number: SetRingerModeTest_003
-* @tc.desc  : Test setting of ringer mode to VIBRATE
+* @tc.name   : Test SetRingerMode API
+* @tc.number : SetRingerModeTest_003
+* @tc.desc   : Test setting of ringer mode to VIBRATE
 */
 HWTEST(AudioManagerUnitTest, SetRingerModeTest_003, TestSize.Level1)
 {
@@ -1676,9 +1676,9 @@ HWTEST(AudioManagerUnitTest, SetRingerModeTest_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMicrophoneMute API
-* @tc.number: SetMicrophoneMute_001
-* @tc.desc  : Test muting of microphone to true
+* @tc.name   : Test SetMicrophoneMute API
+* @tc.number : SetMicrophoneMute_001
+* @tc.desc   : Test muting of microphone to true
 */
 HWTEST(AudioManagerUnitTest, SetMicrophoneMute_001, TestSize.Level1)
 {
@@ -1690,9 +1690,9 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMicrophoneMute API
-* @tc.number: SetMicrophoneMute_002
-* @tc.desc  : Test muting of microphone to false
+* @tc.name   : Test SetMicrophoneMute API
+* @tc.number : SetMicrophoneMute_002
+* @tc.desc   : Test muting of microphone to false
 */
 HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level1)
 {
@@ -1704,9 +1704,9 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMute API
-* @tc.number: SetMute_001
-* @tc.desc  : Test mute functionality of ring stream
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_001
+* @tc.desc   : Test mute functionality of ring stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level1)
 {
@@ -1715,9 +1715,9 @@ HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMute API
-* @tc.number: SetMute_002
-* @tc.desc  : Test unmute functionality of ring stream
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_002
+* @tc.desc   : Test unmute functionality of ring stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level1)
 {
@@ -1726,9 +1726,9 @@ HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMute API
-* @tc.number: SetMute_003
-* @tc.desc  : Test mute functionality of music stream
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_003
+* @tc.desc   : Test mute functionality of music stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level1)
 {
@@ -1737,9 +1737,9 @@ HWTEST(AudioManagerUnitTest, SetMute_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMute API
-* @tc.number: SetMute_004
-* @tc.desc  : Test unmute functionality of music stream
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_004
+* @tc.desc   : Test unmute functionality of music stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level1)
 {
@@ -1748,9 +1748,9 @@ HWTEST(AudioManagerUnitTest, SetMute_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMute API
-* @tc.number: SetMute_005
-* @tc.desc  : Test mute functionality of default stream
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_005
+* @tc.desc   : Test mute functionality of default stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_005, TestSize.Level1)
 {
@@ -1759,9 +1759,9 @@ HWTEST(AudioManagerUnitTest, SetMute_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMute API
-* @tc.number: SetMute_006
-* @tc.desc  : Test unmute functionality of default stream
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_006
+* @tc.desc   : Test unmute functionality of default stream
 */
 HWTEST(AudioManagerUnitTest, SetMute_006, TestSize.Level1)
 {
@@ -1850,9 +1850,9 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetLowPowerVolume API
- * @tc.number: SetLowPowerVolume_003
- * @tc.desc  : Test function SetLowPowerVolume in the recording scene
+ * @tc.name   : Test SetLowPowerVolume API
+ * @tc.number : SetLowPowerVolume_003
+ * @tc.desc   : Test function SetLowPowerVolume in the recording scene
  */
 HWTEST(AudioManagerUnitTest, SetLowPowerVolume_003, TestSize.Level1)
 {
@@ -1932,9 +1932,9 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetLowPowerVolume API
- * @tc.number: GetLowPowerVolume_002
- * @tc.desc  : Test function GetLowPowerVolume in the recording scene
+ * @tc.name   : Test GetLowPowerVolume API
+ * @tc.number : GetLowPowerVolume_002
+ * @tc.desc   : Test function GetLowPowerVolume in the recording scene
  */
 HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
 {
@@ -1974,9 +1974,9 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
 }
 
 /**
- * @tc.name : GetSingleStreamVolume_001
- * @tc.desc : Test get single stream volume.
- * @tc.type : FUNC
+ * @tc.name    : GetSingleStreamVolume_001
+ * @tc.desc    : Test get single stream volume.
+ * @tc.type    : FUNC
  * @tc.require : issueI5NXAE
  */
 HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
@@ -2018,9 +2018,9 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetSingleStreamVolume API
- * @tc.number: GetSingleStreamVolume_002
- * @tc.desc  : Test function GetSingleStreamVolume in the recording scene
+ * @tc.name   : Test GetSingleStreamVolume API
+ * @tc.number : GetSingleStreamVolume_002
+ * @tc.desc   : Test function GetSingleStreamVolume in the recording scene
  */
 HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
 {
@@ -2060,9 +2060,9 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetPauseOrResumeStream API
-* @tc.number: SetPauseOrResumeStream_001
-* @tc.desc  : Test Puase functionality of media stream
+* @tc.name   : Test SetPauseOrResumeStream API
+* @tc.number : SetPauseOrResumeStream_001
+* @tc.desc   : Test Puase functionality of media stream
 */
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 {
@@ -2072,9 +2072,9 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetPauseOrResumeStream API
-* @tc.number: SetPauseOrResumeStream_002
-* @tc.desc  : Test Resume functionality of media stream
+* @tc.name   : Test SetPauseOrResumeStream API
+* @tc.number : SetPauseOrResumeStream_002
+* @tc.desc   : Test Resume functionality of media stream
 */
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
 {
@@ -2084,9 +2084,9 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
 }
 
 /**
- * @tc.name : GetAudioFocusInfoList_001
- * @tc.desc : Test get audio focus info list
- * @tc.type : FUNC
+ * @tc.name    : GetAudioFocusInfoList_001
+ * @tc.desc    : Test get audio focus info list
+ * @tc.type    : FUNC
  * @tc.require : issueI6GYJT
  */
 HWTEST(AudioManagerUnitTest, GetAudioFocusInfoList_001, TestSize.Level1)
@@ -2098,9 +2098,9 @@ HWTEST(AudioManagerUnitTest, GetAudioFocusInfoList_001, TestSize.Level1)
 }
 
 /**
- * @tc.name : GetAudioFocusInfoList_002
- * @tc.desc : Test get audio focus info list
- * @tc.type : FUNC
+ * @tc.name    : GetAudioFocusInfoList_002
+ * @tc.desc    : Test get audio focus info list
+ * @tc.type    : FUNC
  * @tc.require : issueI6GYJT
  */
 HWTEST(AudioManagerUnitTest, GetAudioFocusInfoList_002, TestSize.Level1)
@@ -2162,9 +2162,9 @@ HWTEST(AudioManagerUnitTest, GetAudioFocusInfoList_002, TestSize.Level1)
 }
 
 /**
- * @tc.name : RegisterFocusInfoChangeCallback_001
- * @tc.desc : Test register focus info change callback
- * @tc.type : FUNC
+ * @tc.name    : RegisterFocusInfoChangeCallback_001
+ * @tc.desc    : Test register focus info change callback
+ * @tc.type    : FUNC
  * @tc.require : issueI6GYJT
  */
 HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_001, TestSize.Level1)
@@ -2178,9 +2178,9 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_001, TestSize.Level
 }
 
 /**
- * @tc.name : RegisterFocusInfoChangeCallback_002
- * @tc.desc : Test register focus info change callback
- * @tc.type : FUNC
+ * @tc.name    : RegisterFocusInfoChangeCallback_002
+ * @tc.desc    : Test register focus info change callback
+ * @tc.type    : FUNC
  * @tc.require : issueI6GYJT
  */
 HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level1)
@@ -2249,9 +2249,9 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_002, TestSize.Level
 }
 
 /**
- * @tc.name : RegisterFocusInfoChangeCallback_003
- * @tc.desc : Test register focus info change callback
- * @tc.type : FUNC
+ * @tc.name    : RegisterFocusInfoChangeCallback_003
+ * @tc.desc    : Test register focus info change callback
+ * @tc.type    : FUNC
  * @tc.require : issueI6GYJT
  */
 HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_003, TestSize.Level1)
@@ -2332,9 +2332,9 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_003, TestSize.Level
 }
 
 /**
- * @tc.name : RegisterFocusInfoChangeCallback_004
- * @tc.desc : Test register focus info change callback
- * @tc.type : FUNC
+ * @tc.name    : RegisterFocusInfoChangeCallback_004
+ * @tc.desc    : Test register focus info change callback
+ * @tc.type    : FUNC
  * @tc.require : issueI6GYJT
  */
 HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_004, TestSize.Level1)
@@ -2415,9 +2415,9 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_004, TestSize.Level
 }
 
 /**
- * @tc.name : RegisterFocusInfoChangeCallback_005
- * @tc.desc : Test register two focus info change callback
- * @tc.type : FUNC
+ * @tc.name    : RegisterFocusInfoChangeCallback_005
+ * @tc.desc    : Test register two focus info change callback
+ * @tc.type    : FUNC
  * @tc.require : issueI6GYJT
  */
 HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_005, TestSize.Level1)
@@ -2466,9 +2466,9 @@ HWTEST(AudioManagerUnitTest, RegisterFocusInfoChangeCallback_005, TestSize.Level
 }
 
 /**
-* @tc.name  : Test GetAudioEffectInfoArray API
-* @tc.number: GetAudioEffectInfoArray_001
-* @tc.desc  : Test GetAudioEffectInfoArray interface.
+* @tc.name   : Test GetAudioEffectInfoArray API
+* @tc.number : GetAudioEffectInfoArray_001
+* @tc.desc   : Test GetAudioEffectInfoArray interface.
 */
 HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_001, TestSize.Level1)
 {
@@ -2511,9 +2511,9 @@ HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetAudioEffectInfoArray API
-* @tc.number: GetAudioEffectInfoArray_002
-* @tc.desc  : Test GetAudioEffectInfoArray interface.
+* @tc.name   : Test GetAudioEffectInfoArray API
+* @tc.number : GetAudioEffectInfoArray_002
+* @tc.desc   : Test GetAudioEffectInfoArray interface.
 */
 HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_002, TestSize.Level1)
 {
@@ -2556,9 +2556,9 @@ HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetAudioEffectInfoArray API
-* @tc.number: GetAudioEffectInfoArray_003
-* @tc.desc  : Test GetAudioEffectInfoArray interface.
+* @tc.name   : Test GetAudioEffectInfoArray API
+* @tc.number : GetAudioEffectInfoArray_003
+* @tc.desc   : Test GetAudioEffectInfoArray interface.
 */
 HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_003, TestSize.Level1)
 {
@@ -2600,9 +2600,9 @@ HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetAudioEffectInfoArray API
-* @tc.number: GetAudioEffectInfoArray_004
-* @tc.desc  : Test GetAudioEffectInfoArray interface.
+* @tc.name   : Test GetAudioEffectInfoArray API
+* @tc.number : GetAudioEffectInfoArray_004
+* @tc.desc   : Test GetAudioEffectInfoArray interface.
 */
 HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_004, TestSize.Level1)
 {
@@ -2631,9 +2631,9 @@ HWTEST(AudioManagerUnitTest, GetAudioEffectInfoArray_004, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetDeviceAbsVolumeSupported API
- * @tc.number: SetDeviceAbsVolumeSupported_001
- * @tc.desc  : Test SetDeviceAbsVolumeSupported interface.
+ * @tc.name   : Test SetDeviceAbsVolumeSupported API
+ * @tc.number : SetDeviceAbsVolumeSupported_001
+ * @tc.desc   : Test SetDeviceAbsVolumeSupported interface.
  */
 HWTEST(AudioManagerUnitTest, SetDeviceAbsVolumeSupported_001, TestSize.Level1)
 {
@@ -2671,9 +2671,9 @@ HWTEST(AudioManagerUnitTest, SetDeviceAbsVolumeSupported_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetAvailableDeviceChangeCallback API
- * @tc.number: SetAvailableDeviceChangeCallback_001
- * @tc.desc  : Test SetAvailableDeviceChangeCallback interface.
+ * @tc.name   : Test SetAvailableDeviceChangeCallback API
+ * @tc.number : SetAvailableDeviceChangeCallback_001
+ * @tc.desc   : Test SetAvailableDeviceChangeCallback interface.
  */
 HWTEST(AudioManagerUnitTest, SetAvailableDeviceChangeCallback_001, TestSize.Level1)
 {
@@ -2688,9 +2688,9 @@ HWTEST(AudioManagerUnitTest, SetAvailableDeviceChangeCallback_001, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test SetAvailableDeviceChangeCallback API
- * @tc.number: SetAvailableDeviceChangeCallback_002
- * @tc.desc  : Test SetAvailableDeviceChangeCallback interface.
+ * @tc.name   : Test SetAvailableDeviceChangeCallback API
+ * @tc.number : SetAvailableDeviceChangeCallback_002
+ * @tc.desc   : Test SetAvailableDeviceChangeCallback interface.
  */
 HWTEST(AudioManagerUnitTest, SetAvailableDeviceChangeCallback_002, TestSize.Level1)
 {
@@ -2706,9 +2706,9 @@ HWTEST(AudioManagerUnitTest, SetAvailableDeviceChangeCallback_002, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test SetDistributedRoutingRoleCallback API
- * @tc.number: SetDistributedRoutingRoleCallback_001
- * @tc.desc  : Test SetDistributedRoutingRoleCallback interface.
+ * @tc.name   : Test SetDistributedRoutingRoleCallback API
+ * @tc.number : SetDistributedRoutingRoleCallback_001
+ * @tc.desc   : Test SetDistributedRoutingRoleCallback interface.
  */
 HWTEST(AudioManagerUnitTest, SetDistributedRoutingRoleCallback_001, TestSize.Level1)
 {
@@ -2722,9 +2722,9 @@ HWTEST(AudioManagerUnitTest, SetDistributedRoutingRoleCallback_001, TestSize.Lev
 }
 
 /**
- * @tc.name  : Test SetDistributedRoutingRoleCallback API
- * @tc.number: SetDistributedRoutingRoleCallback_002
- * @tc.desc  : Test SetDistributedRoutingRoleCallback interface.
+ * @tc.name   : Test SetDistributedRoutingRoleCallback API
+ * @tc.number : SetDistributedRoutingRoleCallback_002
+ * @tc.desc   : Test SetDistributedRoutingRoleCallback interface.
  */
 HWTEST(AudioManagerUnitTest, SetDistributedRoutingRoleCallback_002, TestSize.Level1)
 {
@@ -2756,9 +2756,9 @@ bool GetOffloadAvailable()
 }
 
 /**
-* @tc.name  : Test OffloadDrain API
-* @tc.number: OffloadDrainTest_001
-* @tc.desc  : Test OffloadDrain inner api
+* @tc.name   : Test OffloadDrain API
+* @tc.number : OffloadDrainTest_001
+* @tc.desc   : Test OffloadDrain inner api
 */
 HWTEST(AudioManagerUnitTest, OffloadDrainTest_001, TestSize.Level1)
 {
@@ -2772,9 +2772,9 @@ HWTEST(AudioManagerUnitTest, OffloadDrainTest_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test OffloadGetPresentationPosition API
-* @tc.number: OffloadGetPresentationPositionTest_001
-* @tc.desc  : Test OffloadGetPresentationPosition inner api
+* @tc.name   : Test OffloadGetPresentationPosition API
+* @tc.number : OffloadGetPresentationPositionTest_001
+* @tc.desc   : Test OffloadGetPresentationPosition inner api
 */
 HWTEST(AudioManagerUnitTest, OffloadGetPresentationPositionTest_001, TestSize.Level1)
 {
@@ -2790,9 +2790,9 @@ HWTEST(AudioManagerUnitTest, OffloadGetPresentationPositionTest_001, TestSize.Le
 }
 
 /**
-* @tc.name  : Test OffloadSetBufferSize API
-* @tc.number: OffloadSetBufferSizeTest_001
-* @tc.desc  : Test OffloadSetBufferSize inner api
+* @tc.name   : Test OffloadSetBufferSize API
+* @tc.number : OffloadSetBufferSizeTest_001
+* @tc.desc   : Test OffloadSetBufferSize inner api
 */
 HWTEST(AudioManagerUnitTest, OffloadSetBufferSizeTest_001, TestSize.Level1)
 {
@@ -2806,9 +2806,9 @@ HWTEST(AudioManagerUnitTest, OffloadSetBufferSizeTest_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test OffloadSetVolume API
-* @tc.number: OffloadSetVolumeTest_001
-* @tc.desc  : Test OffloadSetVolume inner api
+* @tc.name   : Test OffloadSetVolume API
+* @tc.number : OffloadSetVolumeTest_001
+* @tc.desc   : Test OffloadSetVolume inner api
 */
 HWTEST(AudioManagerUnitTest, OffloadSetVolumeTest_001, TestSize.Level1)
 {
@@ -2822,9 +2822,9 @@ HWTEST(AudioManagerUnitTest, OffloadSetVolumeTest_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ConfigDistributedRoutingRole API
-* @tc.number: ConfigDistributedRoutingRoleTest_001
-* @tc.desc  : Test ConfigDistributedRoutingRole inner api, when audioDeviceDescriptors is INPUT_DEVICES
+* @tc.name   : Test ConfigDistributedRoutingRole API
+* @tc.number : ConfigDistributedRoutingRoleTest_001
+* @tc.desc   : Test ConfigDistributedRoutingRole inner api, when audioDeviceDescriptors is INPUT_DEVICES
 */
 HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_001, TestSize.Level1)
 {
@@ -2838,9 +2838,9 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_001, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test ConfigDistributedRoutingRole API
-* @tc.number: ConfigDistributedRoutingRoleTest_002
-* @tc.desc  : Test ConfigDistributedRoutingRole inner api, when audioDeviceDescriptors is OUTPUT_DEVICES
+* @tc.name   : Test ConfigDistributedRoutingRole API
+* @tc.number : ConfigDistributedRoutingRoleTest_002
+* @tc.desc   : Test ConfigDistributedRoutingRole inner api, when audioDeviceDescriptors is OUTPUT_DEVICES
 */
 HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_002, TestSize.Level1)
 {
@@ -2854,9 +2854,9 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_002, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test ConfigDistributedRoutingRole API
-* @tc.number: ConfigDistributedRoutingRoleTest_003
-* @tc.desc  : Test ConfigDistributedRoutingRole inner api, when networkid is REMOTE_NETWORK_ID
+* @tc.name   : Test ConfigDistributedRoutingRole API
+* @tc.number : ConfigDistributedRoutingRoleTest_003
+* @tc.desc   : Test ConfigDistributedRoutingRole inner api, when networkid is REMOTE_NETWORK_ID
 */
 HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Level1)
 {
@@ -2868,6 +2868,19 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Leve
     audioDeviceDescriptors[0]->networkId_ = REMOTE_NETWORK_ID;
     ret = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDeviceDescriptors[0], castType);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name   : Test SetCallDeviceActive API
+* @tc.number : SetCallDeviceActive_001
+* @tc.desc   : Test SetCallDeviceActive interface.
+*/
+HWTEST(AudioManagerUnitTest, SetCallDeviceActive_001, TestSize.Level1)
+{
+    // On bootup sco won't be connected. Hence setup should fail.
+    std::string address = "";
+    auto ret = AudioSystemManager::GetInstance()->SetCallDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, true, address);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

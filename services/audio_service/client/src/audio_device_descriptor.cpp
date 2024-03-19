@@ -127,6 +127,16 @@ AudioDeviceDescriptor::~AudioDeviceDescriptor()
     pairDeviceDescriptor_ = nullptr;
 }
 
+DeviceType AudioDeviceDescriptor::getType()
+{
+    return deviceType_;
+}
+
+DeviceRole AudioDeviceDescriptor::getRole()
+{
+    return deviceRole_;
+}
+
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
     parcel.WriteInt32(deviceType_);

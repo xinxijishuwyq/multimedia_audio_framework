@@ -322,24 +322,24 @@ int32_t AudioInterruptService::AddAudioInterruptZonePids(const int32_t zoneId, c
     CHECK_AND_RETURN_RET_LOG(CheckAudioInterruptZonePermission(), ERR_INVALID_PARAM,
         "permission deny");
 
-    bool shouldCreateNew = false;
-    if (zonesMap_.find(zoneId) == zonesMap_.end()) {
-        shouldCreateNew = true;
-    }
-
+    bool shouldCreateNew = true;
     auto it = zonesMap_.find(zoneId);
-    std::shared_ptr<AudioInterruptZone> audioInterruptZone = it->second;
-    if (audioInterruptZone == nullptr) {
-        zonesMap_.erase(it);
-        shouldCreateNew = true;
+    std::shared_ptr<AudioInterruptZone> audioInterruptZone = nullptr;
+    if (it != zonesMap_.end()) {
+        shouldCreateNew = false;
+        audioInterruptZone = it->second;
+        if (audioInterruptZone == nullptr) {
+            zonesMap_.erase(it);
+            shouldCreateNew = true;
+        }
     }
 
     if (shouldCreateNew) {
-        CreateAudioInterruptZone(zoneId, pids);
+        CreateAudioInterruptZoneInternal(zoneId, pids);
         return SUCCESS;
     }
 
-    audioInterruptZone = (zonesMap_.find(zoneId))->second;
+    CHECK_AND_RETURN_RET_LOG(audioInterruptZone != nullptr, ERROR, "Invalid audio interrupt zone.");
     for (int32_t pid : pids) {
         std::pair<set<int32_t>::iterator, bool> ret = audioInterruptZone->pids.insert(pid);
         if (!ret.second) {
