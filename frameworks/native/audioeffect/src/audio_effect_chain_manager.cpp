@@ -36,6 +36,7 @@
 #define DEVICE_FLAG
 
 using namespace OHOS::AudioStandard;
+
 static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
     {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
     {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
