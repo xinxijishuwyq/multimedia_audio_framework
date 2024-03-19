@@ -1086,7 +1086,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
         return false;
     }
     initializedLogFlag_ = true;
-    CHECK_AND_RETURN_RET_LOG(sceneType != "", false, "null sceneType");
+    CHECK_AND_RETURN_RET(sceneType != "", false);
     CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
 
 #ifndef DEVICE_FLAG
