@@ -203,6 +203,10 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
 
     bool state = *reinterpret_cast<const bool *>(rawData);
     AudioPolicyServerPtr->SetCaptureSilentState(state);
+
+    AudioPolicyServerPtr->IsHighResolutionExist();
+    bool highResExist = *reinterpret_cast<const bool *>(rawData);
+    AudioPolicyServerPtr->SetHighResolutionExist(highResExist);
 }
 
 void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)

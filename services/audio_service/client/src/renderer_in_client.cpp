@@ -50,6 +50,8 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
+#include "audio_policy_manager.h"
+#include "audio_spatialization_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,6 +76,7 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 }
+class SpatializationStateChangeCallbackImpl;
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
 public:
@@ -203,6 +206,8 @@ public:
     void HandleRenderMarkReachedEvent(int64_t rendererMarkPosition);
     void HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber);
 
+    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -227,6 +232,12 @@ private:
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
+    int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
+
+    int32_t RegisterSpatializationStateEventListener();
+
+    int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -344,6 +355,12 @@ private:
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
 
+    std::string spatializationEnabled_ = "Invalid";
+    std::string headTrackingEnabled_ = "Invalid";
+    uint32_t spatializationRegisteredSessionID_ = 0;
+    bool firstSpatializationRegistered_ = true;
+    std::shared_ptr<SpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
+
     enum {
         STATE_CHANGE_EVENT = 0,
         RENDERER_MARK_REACHED_EVENT,
@@ -365,6 +382,17 @@ private:
         HANDLER_PARAM_RUNNING_FROM_SYSTEM,
         HANDLER_PARAM_PAUSED_FROM_SYSTEM,
     };
+};
+
+class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {
+public:
+    SpatializationStateChangeCallbackImpl();
+    virtual ~SpatializationStateChangeCallbackImpl();
+
+    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
+    void SetRendererInClientPtr(std::shared_ptr<RendererInClientInner> rendererInClientPtr);
+private:
+    std::weak_ptr<RendererInClientInner> rendererInClientPtr_;
 };
 
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
@@ -438,7 +466,13 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION) {
         effectMode_ = EFFECT_NONE;
     }
-    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d", rendererInfo_.rendererFlags);
+    rendererInfo_.sceneType = GetEffectSceneName(rendererInfo_.streamUsage);
+    AUDIO_INFO_LOG("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
+        rendererInfo_.sceneType.c_str());
+    AudioSpatializationState spatializationState =
+        AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
+    rendererInfo_.spatializationEnabled = spatializationState.spatializationEnabled;
+    rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
 }
 
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -522,6 +556,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
 
     RegisterTracker(proxyObj);
+    RegisterSpatializationStateEventListener();
     return SUCCESS;
 }
 
@@ -655,6 +690,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
+    config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(curStreamParams_.channelLayout);
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
@@ -798,15 +834,15 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     int64_t audioTimeResult = handleTime;
 
     if (offloadEnable_) {
-        uint64_t timeStamp = 0;
+        uint64_t timestampHdi = 0;
         uint64_t paWriteIndex = 0;
         uint64_t cacheTimeDsp = 0;
         uint64_t cacheTimePa = 0;
-        ipcStream_->GetOffloadApproximatelyCacheTime(timeStamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+        ipcStream_->GetOffloadApproximatelyCacheTime(timestampHdi, paWriteIndex, cacheTimeDsp, cacheTimePa);
         int64_t cacheTime = static_cast<int64_t>(cacheTimeDsp + cacheTimePa) * AUDIO_NS_PER_US;
         int64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count());
-        int64_t deltaTimeStamp = (static_cast<int64_t>(timeNow) - static_cast<int64_t>(timeStamp)) * AUDIO_NS_PER_US;
+        int64_t deltaTimeStamp = (static_cast<int64_t>(timeNow) - static_cast<int64_t>(timestampHdi)) * AUDIO_NS_PER_US;
         int64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
         uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / curStreamParams_.samplingRate * AUDIO_US_PER_S;
 
@@ -832,7 +868,15 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    return GetAudioTime(timestamp, base);
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
+    uint64_t framePosition = 0;
+    uint64_t timestampVal = 0;
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->GetAudioPosition(framePosition, timestampVal);
+    timestamp.framePosition = framePosition;
+    timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
+    timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
+    return ret == SUCCESS;
 }
 
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
@@ -920,6 +964,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     }
     audioSpeed_->SetSpeed(speed);
     speed_ = speed;
+    AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
 
@@ -1137,7 +1182,7 @@ void RendererInClientInner::WriteCallbackFunc()
             // call write here.
             int32_t result = curStreamParams_.encoding == ENCODING_PCM
                 ? WriteInner(temp.buffer, temp.bufLength)
-                : Write(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
+                : WriteInner(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
             if (result < 0) {
                 AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
             }
@@ -1680,6 +1725,21 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
 int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
+        "Write with callback is not supported");
+    return WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+}
+
+int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
+{
+    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
+        "Write with callback is not supported");
+    return WriteInner(buffer, bufferSize);
+}
+
+int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
+    size_t metaBufferSize)
+{
     Trace trace("RendererInClient::Write with meta " + std::to_string(pcmBufferSize));
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding == ENCODING_AUDIOVIVID, ERR_NOT_SUPPORTED,
         "Write: Write not supported. encoding doesnot match.");
@@ -1690,13 +1750,6 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
     uint8_t *buffer;
     uint32_t bufferSize;
     converter_->GetOutputBufferStream(buffer, bufferSize);
-    return WriteInner(buffer, bufferSize);
-}
-
-int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
-{
-    CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
-        "Write with callback is not supported");
     return WriteInner(buffer, bufferSize);
 }
 
@@ -1777,8 +1830,9 @@ int32_t RendererInClientInner::WriteCacheData()
 
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
     std::unique_lock<std::mutex> lock(writeDataMutex_);
-    bool stopWaiting = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout), [this, sizeInFrame] {
-        return (state_ != RUNNING) || ((sizeInFrame * sizePerFrameInByte_) >= clientSpanSizeInByte_);
+    bool stopWaiting = writeDataCV_.wait_for(lock, std::chrono::milliseconds(timeout), [this, &sizeInFrame] {
+        sizeInFrame = clientBuffer_->GetAvailableDataFrames();
+        return (state_ != RUNNING) || (sizeInFrame >= 0 && static_cast<uint32_t>(sizeInFrame) >= spanSizeInFrame_);
     });
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write while state is not running");
     CHECK_AND_RETURN_RET_LOG(stopWaiting == true, ERROR, "write data time out, mode is %{public}s",
@@ -2073,6 +2127,67 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
 {
     return PA_STREAM;
+}
+
+void RendererInClientInner::OnSpatializationStateChange(const AudioSpatializationState &spatializationState)
+{
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
+    CHECK_AND_RETURN_LOG(ipcStream_->UpdateSpatializationState(spatializationState.spatializationEnabled,
+        spatializationState.headTrackingEnabled) == SUCCESS, "Update spatialization state failed");
+}
+
+int32_t RendererInClientInner::RegisterSpatializationStateEventListener()
+{
+    if (firstSpatializationRegistered_) {
+        firstSpatializationRegistered_ = false;
+    } else {
+        UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
+    }
+
+    if (!spatializationStateChangeCallback_) {
+        spatializationStateChangeCallback_ = std::make_shared<SpatializationStateChangeCallbackImpl>();
+        CHECK_AND_RETURN_RET_LOG(spatializationStateChangeCallback_, ERROR, "Memory Allocation Failed !!");
+    }
+    spatializationStateChangeCallback_->SetRendererInClientPtr(shared_from_this());
+
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(
+        sessionId_, rendererInfo_.streamUsage, spatializationStateChangeCallback_);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "RegisterSpatializationStateEventListener failed");
+    spatializationRegisteredSessionID_ = sessionId_;
+
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::UnregisterSpatializationStateEventListener(uint32_t sessionID)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "UnregisterSpatializationStateEventListener failed");
+    return SUCCESS;
+}
+
+SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("Instance create");
+}
+
+SpatializationStateChangeCallbackImpl::~SpatializationStateChangeCallbackImpl()
+{
+    AUDIO_INFO_LOG("Instance destory");
+}
+
+void SpatializationStateChangeCallbackImpl::SetRendererInClientPtr(
+    std::shared_ptr<RendererInClientInner> rendererInClientPtr)
+{
+    rendererInClientPtr_ = rendererInClientPtr;
+}
+
+void SpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
+    const AudioSpatializationState &spatializationState)
+{
+    std::shared_ptr<RendererInClientInner> rendererInClient = rendererInClientPtr_.lock();
+    if (rendererInClient != nullptr) {
+        rendererInClient->OnSpatializationStateChange(spatializationState);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

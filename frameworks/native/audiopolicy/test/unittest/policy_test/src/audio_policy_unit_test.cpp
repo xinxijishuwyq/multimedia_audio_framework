@@ -765,7 +765,33 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetSystemSoundUri_001, TestSize.Level1)
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
     std::string systemSoundUri = AudioPolicyManager::GetInstance().GetSystemSoundUri(key);
-    EXPECT_NE(systemSoundUri, "");
+    EXPECT_EQ(systemSoundUri, "");
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_HighResolutionExist_001
+ * @tc.number: Audio_Policy_Manager_HighResolutionExist_001
+ * @tc.desc  : Test high resolution exist status.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_HighResolutionExist_001, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
+    EXPECT_EQ(SUCCESS, ret);
+    bool isHighResExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
+    EXPECT_EQ(true, isHighResExist);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_HighResolutionExist_002
+ * @tc.number: Audio_Policy_Manager_HighResolutionExist_002
+ * @tc.desc  : Test high resolution exist status.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_HighResolutionExist_002, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().SetHighResolutionExist(false);
+    EXPECT_EQ(SUCCESS, ret);
+    bool isHighResExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
+    EXPECT_EQ(false, isHighResExist);
 }
 } // namespace AudioStandard
 } // namespace OHOS

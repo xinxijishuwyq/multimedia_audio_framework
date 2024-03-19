@@ -101,7 +101,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::samplingRateMap = {
     {"SAMPLE_RATE_44100", SAMPLE_RATE_44100},
     {"SAMPLE_RATE_48000", SAMPLE_RATE_48000},
     {"SAMPLE_RATE_64000", SAMPLE_RATE_64000},
-    {"SAMPLE_RATE_96000", SAMPLE_RATE_96000}
+    {"SAMPLE_RATE_88200", SAMPLE_RATE_88200},
+    {"SAMPLE_RATE_96000", SAMPLE_RATE_96000},
+    {"SAMPLE_RATE_176400", SAMPLE_RATE_176400},
+    {"SAMPLE_RATE_192000", SAMPLE_RATE_192000},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::encodingTypeMap = {
@@ -138,7 +141,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_NAVIGATION", STREAM_USAGE_NAVIGATION},
     {"STREAM_USAGE_DTMF", STREAM_USAGE_DTMF},
     {"STREAM_USAGE_ENFORCED_TONE", STREAM_USAGE_ENFORCED_TONE},
-    {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC}
+    {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC},
+    {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceRoleMap = {
@@ -1257,6 +1261,7 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
         case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
             result = true;
             break;
         default:

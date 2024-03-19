@@ -54,7 +54,9 @@ public:
 
     virtual int32_t Drain() = 0;
 
-    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp) = 0;
+    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) = 0;
+
+    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp) = 0;
 
     virtual int32_t GetLatency(uint64_t &latency) = 0;
 
@@ -78,10 +80,12 @@ public:
 
     virtual int32_t UnsetOffloadMode() = 0; // renderer only
 
-    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0; // renderer only
 
     virtual int32_t OffloadSetVolume(float volume) = 0; // renderer only
+
+    virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) = 0; // rendererOnly
 
     // IPC code.
     enum IpcStreamMsg : uint32_t {
@@ -96,6 +100,7 @@ public:
         ON_FLUSH,
         ON_DRAIN,
         OH_GET_AUDIO_TIME,
+        OH_GET_AUDIO_POSITION,
         ON_GET_LATENCY,
         ON_SET_RATE,
         ON_GET_RATE,
@@ -109,6 +114,7 @@ public:
         ON_UNSET_OFFLOAD_MODE,
         ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME,
         ON_SET_OFFLOAD_VOLUME,
+        ON_UPDATE_SPATIALIZATION_STATE,
         IPC_STREAM_MAX_MSG
     };
 
