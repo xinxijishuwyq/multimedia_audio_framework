@@ -420,7 +420,7 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, boo
                 return configInfoPos->second.mute ? 0 : configInfoPos->second.volumeLevel;
             } else {
                 AUDIO_WARNING_LOG("Get absolute volume failed for activeBTDevice :[%{public}s]",
-                    activeBTDevice_.c_str());
+                    GetEncryptAddr(activeBTDevice_).c_str());
             }
         }
     }
@@ -622,7 +622,7 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
         auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
         if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
-            AUDIO_WARNING_LOG("Set failed for macAddress:[%{public}s]", activeBTDevice_.c_str());
+            AUDIO_WARNING_LOG("Set failed for macAddress:[%{public}s]", GetEncryptAddr(activeBTDevice_).c_str());
         } else {
             configInfoPos->second.mute = mute;
 #ifdef BLUETOOTH_ENABLE
@@ -662,7 +662,7 @@ bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
         auto configInfoPos = connectedA2dpDeviceMap_.find(activeBTDevice_);
         if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
-            AUDIO_WARNING_LOG("Get failed for macAddress:[%{public}s]", activeBTDevice_.c_str());
+            AUDIO_WARNING_LOG("Get failed for macAddress:[%{public}s]", GetEncryptAddr(activeBTDevice_).c_str());
         } else {
             return configInfoPos->second.mute;
         }
@@ -4294,12 +4294,12 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
             break;
         }
         CHECK_AND_RETURN_RET_LOG(retryCount != maxRetries, ERROR,
-            "failed, can't find device for macAddress:[%{public}s]", macAddress.c_str());;
+            "failed, can't find device for macAddress:[%{public}s]", GetEncryptAddr(macAddress).c_str());;
         usleep(ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS);
     }
 
     AUDIO_INFO_LOG("success for macAddress:[%{public}s], support: %{public}d",
-        macAddress.c_str(), support);
+        GetEncryptAddr(macAddress).c_str(), support);
 
     std::unique_ptr<AudioDeviceDescriptor> deviceDes = GetActiveBluetoothDevice();
     if (deviceDes != nullptr && deviceDes->macAddress_ == macAddress) {
@@ -4319,13 +4319,13 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
     CHECK_AND_RETURN_RET_LOG(configInfoPos != connectedA2dpDeviceMap_.end() && configInfoPos->second.absVolumeSupport,
-        ERROR, "failed for macAddress:[%{public}s]", macAddress.c_str());
+        ERROR, "failed for macAddress:[%{public}s]", GetEncryptAddr(macAddress).c_str());
     configInfoPos->second.volumeLevel = volumeLevel;
     if (volumeLevel > 0) {
         configInfoPos->second.mute = false;
     }
     AUDIO_DEBUG_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
-        macAddress.c_str(), volumeLevel);
+        GetEncryptAddr(macAddress).c_str(), volumeLevel);
     return SUCCESS;
 }
 
@@ -5408,7 +5408,7 @@ void AudioPolicyService::GetAllRunningStreamSession(std::vector<int32_t> &allSes
 
 void AudioPolicyService::OnScoStateChanged(const std::string &macAddress, bool isConnnected)
 {
-    AUDIO_INFO_LOG("macAddress: %{public}s, isConnnected: %{public}d", macAddress.c_str(),
+    AUDIO_INFO_LOG("macAddress: %{public}s, isConnnected: %{public}d", GetEncryptAddr(macAddress).c_str(),
         isConnnected);
     audioDeviceManager_.UpdateScoState(macAddress, isConnnected);
     FetchDevice(true);
@@ -5502,7 +5502,7 @@ void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
 int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address)
 {
     AUDIO_INFO_LOG("Device type[%{public}d] flag[%{public}d] address[%{public}s]",
-        deviceType, active, address.c_str());
+        deviceType, active, GetEncryptAddr(address).c_str());
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
     // Activate new device if its already connected
