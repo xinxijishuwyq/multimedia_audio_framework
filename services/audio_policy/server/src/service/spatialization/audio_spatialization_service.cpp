@@ -367,7 +367,9 @@ int32_t AudioSpatializationService::SetSpatializationSceneType(
         AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
         return -1;
     }
-    int32_t ret = gasp->SetSpatializationSceneType(spatializationSceneType);
+    int32_t ret = gsp->SetSpatializationSceneType(spatializationSceneType);
+    CHECK_AND_RETURN_RET_LOG(ret == SPATIALIZATION_SERVICE_OK, ret, "set spatialization scene type failed");
+    return SPATIALIZATION_SERVICE_OK;
 }
 
 int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDeviceChange)
