@@ -654,7 +654,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
-    config.streamInfo.channelLayout = static_cast<AudioSamplingRate>(streamParams_.channelLayout);
+    config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(streamParams_.channelLayout);
 
     config.audioMode = AUDIO_MODE_RECORD;
 
