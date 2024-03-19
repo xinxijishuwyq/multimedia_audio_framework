@@ -462,7 +462,6 @@ void OHRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the fuction is nullptr");
-    userData_ = nullptr;
     callback_(ohAudioRenderer_, framePosition, userData_);
 }
 
