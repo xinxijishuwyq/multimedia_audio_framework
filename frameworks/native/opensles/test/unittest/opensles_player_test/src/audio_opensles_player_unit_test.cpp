@@ -28,7 +28,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    const char *g_testFilePath = "/data/test_44100_2.wav";
+    const char *TEST_FILE_PATH = "/data/test_44100_2.wav";
     const int64_t PERFORMANCE_TEST_TIME = 10;
     const int64_t USEC_TIMES = 1000000000;
     const int64_t EXPECT_TIME = 1000000000;
@@ -134,7 +134,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_AbortAsyncOperation_001, Test
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayer_001, TestSize.Level0)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayer_001: Unable to open wave file");
     }
@@ -213,7 +213,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_002,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_003, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_003: Unable to open wave file");
     }
@@ -243,7 +243,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_003,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_004, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_004: Unable to open wave file");
     }
@@ -273,7 +273,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_004,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_005, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_005: Unable to open wave file");
     }
@@ -303,7 +303,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_005,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_006, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_006: Unable to open wave file");
     }
@@ -333,7 +333,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_006,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_007, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_007: Unable to open wave file");
     }
@@ -363,7 +363,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_007,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_008, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_008: Unable to open wave file");
     }
@@ -393,7 +393,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_008,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_009, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_009: Unable to open wave file");
     }
@@ -423,7 +423,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_009,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_010, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_010: Unable to open wave file");
     }
@@ -453,7 +453,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_010,
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayerAdapter_011, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayerAdapter_011: Unable to open wave file");
     }
@@ -552,7 +552,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayer_003, TestSi
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateAudioPlayer_004, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayer_004: Unable to open wave file");
     }
@@ -589,7 +589,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_GetInterface_003, TestSize.Le
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateLEDDevice_001, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateLEDDevice_001: CreateLEDDevice Unable to open wave file");
     }
@@ -602,7 +602,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateLEDDevice_001, TestSize
 
 HWTEST(AudioOpenslesPlayerUnitTest, Audio_Opensles_CreateVibraDevice_001, TestSize.Level1)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateVibraDevice_001: CreateVibraDevice Unable to open wave file");
     }
@@ -963,7 +963,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, Prf_Audio_Opensles_CreateOutputMix_001, Test
 
 HWTEST(AudioOpenslesPlayerUnitTest, Prf_Audio_Opensles_CreateAudioPlayer_001, TestSize.Level0)
 {
-    wavFile_ = fopen(g_testFilePath, "rb");
+    wavFile_ = fopen(TEST_FILE_PATH, "rb");
     if (wavFile_ == nullptr) {
         AUDIO_INFO_LOG("CreateAudioPlayer_001: Unable to open wave file");
     }
