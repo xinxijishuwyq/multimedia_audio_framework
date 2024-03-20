@@ -27,6 +27,18 @@ static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer* r
     return (OHOS::AudioStandard::OHAudioRenderer*) renderer;
 }
 
+static OH_AudioStream_Result ConvertError(int32_t err)
+{
+    if (err == OHOS::AudioStandard::SUCCESS) {
+        return AUDIOSTREAM_SUCCESS;
+    } else if (err == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    } else if (err == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
+    return AUDIOSTREAM_ERROR_SYSTEM;
+}
+
 OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
@@ -220,8 +232,8 @@ OH_AudioStream_Result OH_AudioRenderer_SetVolume(OH_AudioRenderer* renderer, flo
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     CHECK_AND_RETURN_RET_LOG(((volume >= 0) && (volume <= 1)), AUDIOSTREAM_ERROR_INVALID_PARAM, "volume set invalid");
-    audioRenderer->SetVolume(volume);
-    return AUDIOSTREAM_SUCCESS;
+    int32_t err = audioRenderer->SetVolume(volume);
+    return ConvertError(err);
 }
 
 OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* renderer, float volume, int32_t durationMs)
@@ -229,8 +241,8 @@ OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* rende
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     CHECK_AND_RETURN_RET_LOG(((volume >= 0) && (volume <= 1)), AUDIOSTREAM_ERROR_INVALID_PARAM, "volume set invalid");
-    audioRenderer->SetVolumeWithRamp(volume, durationMs);
-    return AUDIOSTREAM_SUCCESS;
+    int32_t err = audioRenderer->SetVolumeWithRamp(volume, durationMs);
+    return ConvertError(err);
 }
 
 OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer* renderer, float* volume)
@@ -248,8 +260,8 @@ OH_AudioStream_Result OH_AudioRenderer_SetMarkPosition(OH_AudioRenderer* rendere
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     CHECK_AND_RETURN_RET_LOG(samplePos > 0, AUDIOSTREAM_ERROR_INVALID_PARAM, "framePos set invalid");
-    audioRenderer->SetRendererPositionCallback(callback, samplePos, userData);
-    return AUDIOSTREAM_SUCCESS;
+    int32_t err = audioRenderer->SetRendererPositionCallback(callback, samplePos, userData);
+    return ConvertError(err);
 }
 
 OH_AudioStream_Result OH_AudioRenderer_CancelMark(OH_AudioRenderer* renderer)
