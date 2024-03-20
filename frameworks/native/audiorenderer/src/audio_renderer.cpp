@@ -301,6 +301,9 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
         SetSelfRendererStateCallback();
     }
 
+    ret = GetAudioStreamId(sessionID_);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "GetAudioStreamId err");
+
     return SUCCESS;
 }
 
@@ -373,7 +376,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     RegisterRendererPolicyServiceDiedCallback();
 
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_, sessionID_);
 
     if (outputDeviceChangeCallback_ != nullptr) {
         ret = InitOutputDeviceChangeCallback();
