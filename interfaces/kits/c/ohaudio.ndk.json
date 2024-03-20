@@ -46,5 +46,10 @@
     { "name": "OH_AudioCapturer_GetFramesRead" },
     { "name": "OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback"},
     { "name": "OH_AudioRenderer_GetSpeed"},
-    { "name": "OH_AudioRenderer_SetSpeed"}
+    { "name": "OH_AudioRenderer_SetSpeed"},
+    { "name": "OH_AudioRenderer_SetMarkPosition"},
+    { "name": "OH_AudioRenderer_CancelMark"},
+    { "name": "OH_AudioRenderer_SetVolume"},
+    { "name": "OH_AudioRenderer_SetVolumeWithRamp"},
+    { "name": "OH_AudioRenderer_GetVolume"}
 ]

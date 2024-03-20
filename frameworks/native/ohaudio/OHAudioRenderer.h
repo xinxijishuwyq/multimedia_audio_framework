@@ -116,6 +116,22 @@ private:
     OH_AudioRenderer* ohAudioRenderer_;
     void* userData_;
 };
+
+class OHRendererPositionCallback : public RendererPositionCallback {
+public:
+    OHRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
+        OH_AudioRenderer* ohAudioRenderer, void* userData)
+        : callback_(callback), ohAudioRenderer_(ohAudioRenderer), userData_(userData)
+    {
+    }
+    void OnMarkReached(const int64_t &framePosition) override;
+
+private:
+    OH_AudioRenderer_OnMarkReachedCallback callback_;
+    OH_AudioRenderer* ohAudioRenderer_;
+    void* userData_;
+};
+
 class OHAudioRenderer {
     public:
         OHAudioRenderer();
@@ -147,10 +163,18 @@ class OHAudioRenderer {
         void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
             void *userData);
         bool IsFastRenderer();
+
+        int32_t SetVolume(float volume) const;
+        int32_t SetVolumeWithRamp(float volume, int32_t duration);
+        float GetVolume() const;
+        int32_t SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
+            uint32_t markPosition, void* userData);
+        void UnsetRendererPositionCallback();
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
+        std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
