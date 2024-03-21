@@ -462,7 +462,7 @@ void DumpFileUtil::CloseDumpFile(FILE **dumpFile)
     }
 }
 
-void DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std::string filePath, uint32_t sessionId)
+void DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std::string filePath)
 {
     CHECK_AND_RETURN_LOG(*dumpFile != nullptr, "Invalid file para");
     CHECK_AND_RETURN_LOG(g_lastPara[para] == "w" || g_lastPara[para] == "a", "Invalid input para");
@@ -478,16 +478,11 @@ void DumpFileUtil::ChangeDumpFileState(std::string para, FILE **dumpFile, std::s
     OpenDumpFile(para, filePath, dumpFile);
 }
 
-void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **file, uint32_t sessionId)
+void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **file)
 {
     if (*file != nullptr) {
-        DumpFileUtil::ChangeDumpFileState(para, file, fileName, sessionId);
+        DumpFileUtil::ChangeDumpFileState(para, file, fileName);
         return;
-    }
-
-    std::string extFileName = fileName;
-    if (sessionId > 0) {
-        extFileName = std::to_string(sessionId) + '_' + fileName;
     }
 
     if (para == DUMP_SERVER_PARA) {
@@ -498,9 +493,9 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
         }
         *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_SERVICE);
     } else {
-        *file = DumpFileUtil::OpenDumpFileInner(para, extFileName, AUDIO_APP);
+        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_APP);
         if (*file == nullptr) {
-            *file = DumpFileUtil::OpenDumpFileInner(para, extFileName, AUDIO_SERVICE);
+            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_SERVICE);
         }
     }
 }

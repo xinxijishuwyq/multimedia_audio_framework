@@ -376,7 +376,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     RegisterRendererPolicyServiceDiedCallback();
 
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_, sessionID_);
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, std::to_string(sessionID_) + DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
 
     if (outputDeviceChangeCallback_ != nullptr) {
         ret = InitOutputDeviceChangeCallback();

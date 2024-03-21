@@ -127,10 +127,10 @@ public:
     static void WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
     static void CloseDumpFile(FILE **dumpFile);
     static std::map<std::string, std::string> g_lastPara;
-    static void OpenDumpFile(std::string para, std::string fileName, FILE **file, uint32_t sessionId = 0);
+    static void OpenDumpFile(std::string para, std::string fileName, FILE **file);
 private:
     static FILE *OpenDumpFileInner(std::string para, std::string fileName, AudioDumpFileType fileType);
-    static void ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName, uint32_t sessionId = 0);
+    static void ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName);
 };
 
 template<typename T>
