@@ -193,8 +193,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     }
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d",
-        streamUsage, contentType, rendererFlags);
+    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d, "\
+        "uid: %{public}d", streamUsage, contentType, rendererFlags, appInfo.appUid);
 
     audioRenderer->rendererInfo_.contentType = contentType;
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
