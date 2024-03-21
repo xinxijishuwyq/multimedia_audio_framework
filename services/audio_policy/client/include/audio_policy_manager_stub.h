@@ -137,6 +137,8 @@ private:
     void FetchInputDeviceForTrackInternal(MessageParcel &data, MessageParcel &reply);
     void IsHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply);
     void SetHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void SetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -248,6 +250,8 @@ private:
         &AudioPolicyManagerStub::FetchInputDeviceForTrackInternal,
         &AudioPolicyManagerStub::IsHighResolutionExistInternal,
         &AudioPolicyManagerStub::SetHighResolutionExistInternal,
+        &AudioPolicyManagerStub::GetSpatializationSceneTypeInternal,
+        &AudioPolicyManagerStub::SetSpatializationSceneTypeInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),

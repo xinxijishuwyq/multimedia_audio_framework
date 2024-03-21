@@ -259,6 +259,10 @@ public:
 
     int32_t SetHighResolutionExist(bool highResExist) override;
 
+    AudioSpatializationSceneType GetSpatializationSceneType() override;
+
+    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
+
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

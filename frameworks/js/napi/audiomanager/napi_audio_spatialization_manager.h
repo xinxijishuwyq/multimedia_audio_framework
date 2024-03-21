@@ -58,6 +58,8 @@ struct AudioSpatializationManagerAsyncContext : public ContextBase {
     static napi_value IsHeadTrackingSupported(napi_env env, napi_callback_info info);
     static napi_value IsHeadTrackingSupportedForDevice(napi_env env, napi_callback_info info);
     static napi_value UpdateSpatialDeviceState(napi_env env, napi_callback_info info);
+    static napi_value GetSpatializationSceneType(napi_env env, napi_callback_info info);
+    static napi_value SetSpatializationSceneType(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis,

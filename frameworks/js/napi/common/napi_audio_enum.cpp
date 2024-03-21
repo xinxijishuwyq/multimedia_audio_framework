@@ -70,6 +70,7 @@ napi_ref NapiAudioEnum::audioDviceUsage_ = nullptr;
 napi_ref NapiAudioEnum::audioSpatialDeivceType_ = nullptr;
 napi_ref NapiAudioEnum::audioChannelLayout_ = nullptr;
 napi_ref NapiAudioEnum::audioStreamDeviceChangeReason_ = nullptr;
+napi_ref NapiAudioEnum::spatializationSceneType_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -436,6 +437,13 @@ const std::map<std::string, uint64_t> NapiAudioEnum::audioChannelLayoutMap = {
     {"CH_LAYOUT_AMB_ORDER3_FUMA", CH_LAYOUT_HOA_ORDER3_FUMA},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::spatializationSceneTypeMap = {
+    {"SPATIALIZATION_SCENE_TYPE_DEFAULT", SPATIALIZATION_SCENE_TYPE_DEFAULT },
+    {"SPATIALIZATION_SCENE_TYPE_MUSIC", SPATIALIZATION_SCENE_TYPE_MUSIC},
+    {"SPATIALIZATION_SCENE_TYPE_MOVIE", SPATIALIZATION_SCENE_TYPE_MOVIE},
+    {"SPATIALIZATION_SCENE_TYPE_AUDIOBOOK", SPATIALIZATION_SCENE_TYPE_AUDIOBOOK},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -545,6 +553,8 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
             audioChannelLayoutMap, audioChannelLayout_)),
         DECLARE_NAPI_PROPERTY("AudioStreamDeviceChangeReason",
             CreateEnumObject(env, audioDeviceChangeReasonMap, audioStreamDeviceChangeReason_)),
+        DECLARE_NAPI_PROPERTY("AudioSpatializationSceneType", CreateEnumObject(env,
+            spatializationSceneTypeMap, spatializationSceneType_)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
@@ -1395,6 +1405,23 @@ AudioStandard::InterruptMode NapiAudioEnum::GetNativeInterruptMode(int32_t inter
         default:
             result = AudioStandard::InterruptMode::SHARE_MODE;
             AUDIO_ERR_LOG("Unknown interruptMode type, Set it to default SHARE_MODE!");
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType)
+{
+    bool result = false;
+    switch (spatializationSceneType) {
+        case AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_DEFAULT:
+        case AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MUSIC:
+        case AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MOVIE:
+        case AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_AUDIOBOOK:
+            result = true;
+            break;
+        default:
+            result = false;
             break;
     }
     return result;

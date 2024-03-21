@@ -1081,5 +1081,16 @@ int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float
     }
     return AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
 }
+
+int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "set spatialization scene type refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

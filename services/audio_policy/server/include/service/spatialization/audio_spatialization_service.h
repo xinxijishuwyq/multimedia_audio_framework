@@ -68,6 +68,8 @@ public:
         const sptr<IRemoteObject> &object);
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
     void UpdateCurrentDevice(const std::string macAddress);
+    AudioSpatializationSceneType GetSpatializationSceneType();
+    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
@@ -86,6 +88,7 @@ private:
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;

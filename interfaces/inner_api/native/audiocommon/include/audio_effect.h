@@ -293,6 +293,13 @@ struct ConverterConfig {
     Library library;
     uint64_t outChannelLayout;
 };
+
+enum AudioSpatializationSceneType {
+    SPATIALIZATION_SCENE_TYPE_DEFAULT = 0,
+    SPATIALIZATION_SCENE_TYPE_MUSIC = 1,
+    SPATIALIZATION_SCENE_TYPE_MOVIE = 2,
+    SPATIALIZATION_SCENE_TYPE_AUDIOBOOK = 3,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

@@ -94,10 +94,7 @@ public:
     std::string GetEffectMode();
     void SetEffectMode(std::string mode);
     void ReleaseEffectChain();
-    void AddEffectHandleBegin();
-    void AddEffectHandleEnd();
-    void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle);
-    void SetEffectChain(std::vector<AudioEffectHandle> &effHandles, std::vector<AudioEffectLibrary *> &libHandles);
+    void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
@@ -108,7 +105,7 @@ public:
     void InitEffectChain();
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
-    int32_t SetEffectParam();
+    int32_t SetEffectParam(AudioEffectScene currSceneType);
 private:
     std::mutex reloadMutex;
     std::string sceneType;
@@ -159,6 +156,7 @@ public:
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume);
     uint32_t GetLatency(std::string sessionId);
+    int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
 
 private:
     void UpdateSensorState();
@@ -166,6 +164,8 @@ private:
     void RecoverAllChains();
     int32_t EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     int32_t EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
+    AudioEffectScene GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType);
+    void UpdateEffectChainParams(AudioEffectScene sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -191,6 +191,9 @@ private:
     bool headTrackingEnabled_ = false;
     bool offloadEnabled_ = false;
     bool initializedLogFlag_ = true;
+    AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    int32_t hdiSceneType_ = 0;
+    int32_t hdiEffectMode_ = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

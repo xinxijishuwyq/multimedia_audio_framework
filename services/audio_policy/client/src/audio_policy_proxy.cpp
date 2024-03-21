@@ -2041,5 +2041,37 @@ int32_t AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
     return SUCCESS;
 }
+
+AudioSpatializationSceneType AudioPolicyProxy::GetSpatializationSceneType()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_DEFAULT, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_DEFAULT,
+        "SendRequest failed, error: %{public}d", error);
+    return static_cast<AudioSpatializationSceneType>(reply.ReadInt32());
+}
+
+int32_t AudioPolicyProxy::SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(spatializationSceneType));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS
