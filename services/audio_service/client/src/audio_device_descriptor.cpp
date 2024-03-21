@@ -132,7 +132,7 @@ DeviceType AudioDeviceDescriptor::getType()
     return deviceType_;
 }
 
-DeviceRole AudioDeviceDescriptor::getRole()
+DeviceRole AudioDeviceDescriptor::getRole() const
 {
     return deviceRole_;
 }

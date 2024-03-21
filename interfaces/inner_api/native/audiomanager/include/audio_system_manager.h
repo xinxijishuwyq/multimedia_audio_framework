@@ -37,7 +37,7 @@ class AudioDeviceDescriptor : public Parcelable {
     friend class AudioSystemManager;
 public:
     DeviceType getType();
-    DeviceRole getRole();
+    DeviceRole getRole() const;
     DeviceType deviceType_;
     DeviceRole deviceRole_;
     int32_t deviceId_;

@@ -1059,5 +1059,13 @@ int32_t MultiChannelRendererSinkInner::InitRender()
 
     return SUCCESS;
 }
+
+void MultiChannelRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    if (currentActiveDevice_ == device) {
+        currentActiveDevice_ = NONE_DEVICES_FLAG;
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
