@@ -632,6 +632,7 @@ typedef void (*OH_AudioRenderer_OnMarkReachedCallback)(OH_AudioRenderer* rendere
  * @param audioDataSize Audio data size which is the size of audio data written by user.
  * @param metadata Metadata which is written by user.
  * @param metadataSize Metadata size which is the size of metadata written by user.
+ * @return Error code of the callback function returned by user.
  * @since 12
  */
 typedef int32_t (*OH_AudioRenderer_WriteDataWithMetadataCallback)(OH_AudioRenderer* renderer,
