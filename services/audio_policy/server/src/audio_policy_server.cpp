@@ -2506,6 +2506,28 @@ ConverterConfig AudioPolicyServer::GetConverterConfig()
     return audioPolicyService_.GetConverterConfig();
 }
 
+AudioSpatializationSceneType AudioPolicyServer::GetSpatializationSceneType()
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    }
+    return audioSpatializationService_.GetSpatializationSceneType();
+}
+
+int32_t AudioPolicyServer::SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType)
+{
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.SetSpatializationSceneType(spatializationSceneType);
+}
+
 AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
 {
     std::string bundleName {""};

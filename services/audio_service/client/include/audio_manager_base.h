@@ -276,6 +276,15 @@ public:
     */
     virtual int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) = 0;
 
+    /**
+     * Set spatialization rendering scene type.
+     *
+     * @param spatializationSceneType identify the spatialization rendering scene type to be set.
+     *
+     * @return result of setting. 0 if success, error number else.
+    */
+    virtual int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioService");
 };
@@ -320,6 +329,7 @@ private:
     int HandleOffloadGetPresentationPosition(MessageParcel &data, MessageParcel &reply);
     int HandleOffloadSetBufferSize(MessageParcel &data, MessageParcel &reply);
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
+    int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -357,6 +367,7 @@ private:
         &AudioManagerStub::HandleNotifyStreamVolumeChanged,
         &AudioManagerStub::HandleGetCapturePresentationPosition,
         &AudioManagerStub::HandleGetRenderPresentationPosition,
+        &AudioManagerStub::HandleSetSpatializationSceneType,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

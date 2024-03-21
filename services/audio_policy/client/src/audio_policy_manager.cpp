@@ -1463,5 +1463,19 @@ int32_t AudioPolicyManager::SetHighResolutionExist(bool highResExist)
     gsp->SetHighResolutionExist(highResExist);
     return SUCCESS;
 }
+
+AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_DEFAULT, "audio policy manager proxy is NULL.");
+    return gsp->GetSpatializationSceneType();
+}
+
+int32_t AudioPolicyManager::SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetSpatializationSceneType(spatializationSceneType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

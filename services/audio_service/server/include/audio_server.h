@@ -115,6 +115,8 @@ public:
 
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
 
+    int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

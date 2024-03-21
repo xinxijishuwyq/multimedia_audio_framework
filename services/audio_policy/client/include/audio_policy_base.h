@@ -272,6 +272,10 @@ public:
 
     virtual int32_t SetHighResolutionExist(bool highResExist) = 0;
 
+    virtual AudioSpatializationSceneType GetSpatializationSceneType() = 0;
+
+    virtual int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

@@ -337,6 +337,10 @@ public:
 
     int32_t SetHighResolutionExist(bool highResExist);
 
+    AudioSpatializationSceneType GetSpatializationSceneType();
+
+    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

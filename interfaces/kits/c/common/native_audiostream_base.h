@@ -613,6 +613,16 @@ typedef void (*OH_AudioRenderer_OutputDeviceChangeCallback)(OH_AudioRenderer* re
     OH_AudioStream_DeviceChangeReason reason);
 
 /**
+ * @brief Callback when the mark position reached.
+ *
+ * @param renderer AudioRenderer where this event occurs.
+ * @param samplePos Mark position in samples.
+ * @param userData User data which is passed by user.
+ * @since 12
+ */
+typedef void (*OH_AudioRenderer_OnMarkReachedCallback)(OH_AudioRenderer* renderer, uint32_t samplePos, void* userData);
+
+/**
  * @brief This function pointer will point to the callback function that
  * is used to write audio data with metadata
  *

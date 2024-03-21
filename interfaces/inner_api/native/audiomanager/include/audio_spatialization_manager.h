@@ -183,6 +183,23 @@ public:
      * @since 11
      */
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
+
+    /**
+     * @brief Get current spatialization rendering scene type
+     *
+     * @return Returns current spatialization scene type enum defined in {@link audio_effect.h}.
+     * @since 12
+     */
+    AudioSpatializationSceneType GetSpatializationSceneType();
+
+    /**
+     * @brief Set spatialization rendering scene type
+     *
+     * @return Returns {@link SUCCESS} if setting spatialization scene type is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
 private:
     AudioSpatializationManager();
     virtual ~AudioSpatializationManager();

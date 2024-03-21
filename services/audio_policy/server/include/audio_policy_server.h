@@ -358,6 +358,10 @@ public:
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
 
+    AudioSpatializationSceneType GetSpatializationSceneType() override;
+
+    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

@@ -446,6 +446,14 @@ int AudioManagerStub::HandleNotifyStreamVolumeChanged(MessageParcel &data, Messa
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSpatializationSceneType spatializationSceneType = static_cast<AudioSpatializationSceneType>(data.ReadInt32());
+    int32_t ret = SetSpatializationSceneType(spatializationSceneType);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
