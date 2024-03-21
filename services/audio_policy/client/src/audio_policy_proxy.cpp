@@ -2054,7 +2054,7 @@ AudioSpatializationSceneType AudioPolicyProxy::GetSpatializationSceneType()
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_DEFAULT,
-        "GetSpatializationSceneType failed, error: %{public}d", error);
+        "SendRequest failed, error: %{public}d", error);
     return static_cast<AudioSpatializationSceneType>(reply.ReadInt32());
 }
 
@@ -2070,7 +2070,7 @@ int32_t AudioPolicyProxy::SetSpatializationSceneType(const AudioSpatializationSc
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SetSpatializationSceneType failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 } // namespace AudioStandard

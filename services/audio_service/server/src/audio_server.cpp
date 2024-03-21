@@ -1086,7 +1086,7 @@ int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spa
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
-        ERR_NOT_SUPPORTED, "UpdateSpatializationState refused for %{public}d", callingUid);
+        ERR_NOT_SUPPORTED, "set spatialization scene type refused for %{public}d", callingUid);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");

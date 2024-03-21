@@ -771,7 +771,7 @@ int32_t AudioManagerProxy::SetSpatializationSceneType(AudioSpatializationSceneTy
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetSpatializationSceneType failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
