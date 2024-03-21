@@ -144,6 +144,12 @@ typedef enum {
      * @since 10
      */
     AUDIOSTREAM_ENCODING_TYPE_RAW = 0,
+    /**
+     * AudioVivid encoding type.
+     *
+     * @since 12
+     */
+    AUDIOSTREAM_ENCODING_TYPE_AUDIOVIVID = 1,
 } OH_AudioStream_EncodingType;
 
 /**

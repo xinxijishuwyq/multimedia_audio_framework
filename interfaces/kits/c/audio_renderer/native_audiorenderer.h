@@ -306,6 +306,42 @@ OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* rende
  */
 OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer* renderer, float* volume);
 
+/**
+ * @brief Query the channel layout of the renderer client.
+ *
+ * @since 12
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param channelLayout Pointer to a variable to receive the channel layout
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_GetChannelLayout(OH_AudioRenderer* renderer,
+    OH_AudioChannelLayout* channelLayout);
+
+/**
+ * @brief Query current audio effect mode.
+ *
+ * @since 12
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param effectMode Pointer to a variable to receive current audio effect mode
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_GetEffectMode(OH_AudioRenderer* renderer,
+    OH_AudioStream_AudioEffectMode* effectMode);
+
+/**
+ * @brief Set current audio effect mode.
+ *
+ * @since 12
+ *
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param effectMode Audio effect mode that will be set for the stream
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_SetEffectMode(OH_AudioRenderer* renderer,
+    OH_AudioStream_AudioEffectMode effectMode);
+
 #ifdef __cplusplus
 }
 #endif
