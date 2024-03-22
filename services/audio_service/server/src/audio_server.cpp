@@ -349,6 +349,10 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
         }
+        if (key == "perf_info") {
+            parmKey = AudioParamKey::PERF_INFO;
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), key);
+        }
 
         const std::string mmiPre = "mmi_";
         if (key.size() > mmiPre.size()) {
