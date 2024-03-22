@@ -53,7 +53,8 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
 static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
     // all stream types for voice call volume type
     STREAM_VOICE_CALL,
-    STREAM_VOICE_MESSAGE
+    STREAM_VOICE_MESSAGE,
+    STREAM_VOICE_COMMUNICATION
 };
 
 static const std::vector<AudioStreamType> RINGTONE_VOLUME_TYPE_LIST = {
@@ -198,7 +199,8 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         streamType, currentActiveDevice_, volumeLevel);
     if (volumeLevel == 0 &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
-        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
+        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
+        streamType == STREAM_VOICE_COMMUNICATION)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetSystemVolumeLevel this type can not set mute");
         return SUCCESS;
@@ -272,7 +274,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         "SetSystemVolumeLevel audio adapter null");
 
     AUDIO_INFO_LOG("SetVolumeDb: streamType %{public}d, volumeDb %{public}f", streamType, volumeDb);
-    if (streamType == STREAM_VOICE_CALL) {
+    if (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) {
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
     } else if (streamType == STREAM_MUSIC) {
         return SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
@@ -320,7 +322,8 @@ int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute
     AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d, mute %{public}d", streamType, mute);
     if (mute &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
-        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
+        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
+        streamType == STREAM_VOICE_COMMUNICATION)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetStreamMute: this type can not set mute");
         return SUCCESS;
@@ -754,6 +757,7 @@ std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, A
         case STREAM_DTMF:
             return type + "_dtmf_volume";
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
             return type + "_voice_call_volume";
         case STREAM_VOICE_ASSISTANT:
             return type + "_voice_assistant_volume";
@@ -800,6 +804,7 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
+        case STREAM_VOICE_COMMUNICATION:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -1132,6 +1137,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
         case STREAM_DTMF:
             return type + "_dtmf_mute_status";
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
             return type + "_voice_call_mute_status";
         case STREAM_VOICE_ASSISTANT:
             return type + "_voice_assistant_mute_status";

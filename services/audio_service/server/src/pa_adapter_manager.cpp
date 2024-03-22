@@ -55,7 +55,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_ULTRASONIC, "ultrasonic"},
     {STREAM_WAKEUP, "wakeup"},
     {STREAM_VOICE_MESSAGE, "voice_message"},
-    {STREAM_NAVIGATION, "navigation"}
+    {STREAM_NAVIGATION, "navigation"},
+    {STREAM_VOICE_COMMUNICATION, "voice_call"}
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)

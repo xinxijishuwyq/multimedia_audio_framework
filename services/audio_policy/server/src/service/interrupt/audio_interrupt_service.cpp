@@ -35,7 +35,8 @@ inline AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInt
 {
     if (audioInterrupt.audioFocusType.streamType == STREAM_RING) {
         return AUDIO_SCENE_RINGING;
-    } else if (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL) {
+    } else if (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
+               audioInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) {
         return audioInterrupt.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ?
             AUDIO_SCENE_PHONE_CALL : AUDIO_SCENE_PHONE_CHAT;
     }
