@@ -197,7 +197,6 @@ void AudioPnpServer::DetectAudioDevice()
     int32_t ret;
     AudioEvent audioEvent = {0};
 
-    OsalMSleep(AUDIO_DEVICE_WAIT_USB_ONLINE);
     ret = AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
     if ((ret == SUCCESS) && (audioEvent.eventType == AUDIO_DEVICE_ADD)) {
         AUDIO_INFO_LOG("audio detect analog headset");
