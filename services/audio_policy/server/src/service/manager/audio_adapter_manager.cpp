@@ -140,6 +140,13 @@ void AudioAdapterManager::InitKVStore()
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
+
+    // Make sure that the volume value is applied.
+    auto iter = VOLUME_TYPE_LIST.begin();
+    while (iter != VOLUME_TYPE_LIST.end()) {
+        SetVolumeDb(*iter);
+        iter++;
+    }
 }
 
 void AudioAdapterManager::Deinit(void)
