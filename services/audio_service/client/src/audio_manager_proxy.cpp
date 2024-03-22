@@ -793,5 +793,23 @@ int32_t AudioManagerProxy::ResetRouteForDisconnect(DeviceType type)
 
     return reply.ReadInt32();
 }
+
+uint32_t AudioManagerProxy::GetEffectLatency(const std::string &sessionId)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteString(sessionId);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_LATENCY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "error: %{public}d", error);
+
+    return reply.ReadUint32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

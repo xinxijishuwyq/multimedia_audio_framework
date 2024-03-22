@@ -60,6 +60,7 @@ const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compa
 const uint64_t AUDIO_US_PER_MS = 1000;
 const int64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
+const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
@@ -355,6 +356,9 @@ private:
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
+
+    uint64_t lastFramePosition_ = 0;
+    uint64_t lastFrameTimestamp_ = 0;
 
     std::string spatializationEnabled_ = "Invalid";
     std::string headTrackingEnabled_ = "Invalid";
@@ -874,6 +878,25 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t timestampVal = 0;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->GetAudioPosition(framePosition, timestampVal);
+
+    // add MCR latency
+    uint32_t mcrLatency = 0;
+    if (converter_ != nullptr) {
+        mcrLatency = converter_->GetLatency();
+        framePosition = framePosition - (mcrLatency * rendererRate_ / AUDIO_MS_PER_S);
+    }
+
+    if (lastFramePosition_ < framePosition) {
+        lastFramePosition_ = framePosition;
+        lastFrameTimestamp_ = timestampVal;
+    } else {
+        AUDIO_WARNING_LOG("The frame position should be continuously increasing");
+        framePosition = lastFramePosition_;
+        timestampVal = lastFrameTimestamp_;
+    }
+    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", timestamp %{public}" PRIu64
+        ", mcrLatency %{public}u", framePosition, timestampVal, mcrLatency);
+
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);

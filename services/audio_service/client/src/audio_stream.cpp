@@ -39,6 +39,7 @@ using namespace OHOS::AppExecFwk;
 namespace OHOS {
 namespace AudioStandard {
 const unsigned long long TIME_CONVERSION_US_S = 1000000ULL; /* us to s */
+const unsigned long long TIME_CONVERSION_MS_S = 1000ULL; /* ms to s */
 const unsigned long long TIME_CONVERSION_NS_US = 1000ULL; /* ns to us */
 const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
@@ -231,6 +232,23 @@ bool AudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbas
     uint64_t framePosition = 0;
     uint64_t timestampHdi = 0;
     if (GetCurrentPosition(framePosition, timestampHdi) == SUCCESS) {
+        // add MCR latency
+        uint32_t mcrLatency = 0;
+        if (converter_ != nullptr) {
+            mcrLatency = converter_->GetLatency();
+            framePosition -= mcrLatency * streamParams_.samplingRate / TIME_CONVERSION_MS_S;
+        }
+
+        if (lastFramePosition_ < framePosition) {
+            lastFramePosition_ = framePosition;
+            lastFrameTimestamp_ = timestampHdi;
+        } else {
+            AUDIO_WARNING_LOG("The frame position should be continuously increasing");
+            framePosition = lastFramePosition_;
+            timestampHdi = lastFrameTimestamp_;
+        }
+        AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 " timestamp: %{public}" PRIu64
+            " mcrLatency: %{public}u ms", framePosition, timestampHdi, mcrLatency);
         timestamp.framePosition = framePosition;
         timestamp.time.tv_sec = static_cast<time_t>(timestampHdi / TIME_CONVERSION_NS_S);
         timestamp.time.tv_nsec
