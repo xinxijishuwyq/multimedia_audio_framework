@@ -115,6 +115,7 @@ AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType strea
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
+        case STREAM_VOICE_COMMUNICATION:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:

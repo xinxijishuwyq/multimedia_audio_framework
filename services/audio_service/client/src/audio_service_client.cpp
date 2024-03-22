@@ -96,7 +96,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_WAKEUP, "wakeup"},
     {STREAM_VOICE_MESSAGE, "voice_message"},
     {STREAM_NAVIGATION, "navigation"},
-    {STREAM_SOURCE_VOICE_CALL, "source_voice_call"}
+    {STREAM_SOURCE_VOICE_CALL, "source_voice_call"},
+    {STREAM_VOICE_COMMUNICATION, "voice_call"}
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -2974,6 +2975,7 @@ AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType 
 {
     switch (streamType) {
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_MESSAGE:
             return STREAM_VOICE_CALL;
         case STREAM_RING:

@@ -1117,6 +1117,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
     switch (volumeType) {
         case AudioStreamType::STREAM_VOICE_CALL:
         case AudioStreamType::STREAM_VOICE_MESSAGE:
+        case AudioStreamType::STREAM_VOICE_COMMUNICATION:
             result = NapiAudioEnum::VOICE_CALL;
             break;
         case AudioStreamType::STREAM_RING:
