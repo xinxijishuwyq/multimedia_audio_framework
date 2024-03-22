@@ -308,6 +308,7 @@ private:
     std::mutex writeDataMutex_;
     std::condition_variable writeDataCV_;
 
+    float lowPowerVolume_ = 1.0;
     float clientVolume_ = 1.0;
     float clientOldVolume_ = 1.0;
 
@@ -1302,14 +1303,18 @@ int32_t RendererInClientInner::Clear()
 
 int32_t RendererInClientInner::SetLowPowerVolume(float volume)
 {
-    // in plan
-    return ERROR;
+    AUDIO_INFO_LOG("Volume number: %{public}f", volume);
+    if (volume < 0.0 || volume > 1.0) {
+        AUDIO_ERR_LOG("Invalid param: %{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
+    lowPowerVolume_ = volume;
+    return SUCCESS;
 }
 
 float RendererInClientInner::GetLowPowerVolume()
 {
-    // in plan
-    return 0.0;
+    return lowPowerVolume_;
 }
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
@@ -1853,10 +1858,14 @@ int32_t RendererInClientInner::WriteCacheData()
         clientOldVolume_ = clientVolume_;
         clientVolume_ = volumeRamp_.GetRampVolume();
     }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, clientVolume_, AUDIO_VOLOMUE_EPSILON)) {
+    float applyVolume = clientVolume_;
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= lowPowerVolume_;
+    }
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
         Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
         AudioChannel channel = clientConfig_.streamInfo.channels;
-        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, clientVolume_, clientVolume_);
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
         int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
         if (volRet != SUCCESS) {
             AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
