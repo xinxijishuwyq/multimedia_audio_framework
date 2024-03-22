@@ -350,8 +350,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
         }
         if (key == "perf_info") {
-            parmKey = AudioParamKey::PERF_INFO;
-            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey(parmKey), key);
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::PERF_INFO, key);
         }
 
         const std::string mmiPre = "mmi_";
