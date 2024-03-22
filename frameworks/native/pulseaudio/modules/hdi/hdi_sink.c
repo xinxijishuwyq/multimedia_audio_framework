@@ -2663,10 +2663,10 @@ static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUse
 {
     pa_usec_t now = 0;
 
-    bool flag = ((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
-                (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state)) ||
-                (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true))) &&
-                !(u->sink->state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED);
+    bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
+                (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
+                !(u->sink->state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED)) ||
+                (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
     unsigned nPrimary;
     unsigned nOffload;
     unsigned nHd;
