@@ -951,8 +951,10 @@ napi_status NapiParamUtils::GetAudioInterrupt(const napi_env &env, AudioInterrup
 
     status = NapiParamUtils::GetValueBoolean(env, "pauseWhenDucked", audioInterrupt.pauseWhenDucked, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetAudioInterrupt: Failed to retrieve pauseWhenDucked");
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     audioInterrupt.audioFocusType.streamType = AudioSystemManager::GetStreamType(audioInterrupt.contentType,
         audioInterrupt.streamUsage);
+#endif
     return status;
 }
 
