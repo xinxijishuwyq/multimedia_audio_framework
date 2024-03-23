@@ -1102,11 +1102,10 @@ int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
         ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
-    // AudioCapturerSource *audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
-
-    // audioCapturerSourceInstance->ResetOutputRouteForDisconnect(type);
     audioRendererSinkInstance->ResetOutputRouteForDisconnect(type);
+
+    // todo reset capturer
 
     return SUCCESS;
 }
