@@ -1774,7 +1774,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write: Illegal state:%{public}u", state_.load());
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
 
     // hold lock
     if (isBlendSet_) { audioBlend_.Process(buffer, bufferSize); }
