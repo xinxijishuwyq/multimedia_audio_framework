@@ -1083,7 +1083,7 @@ int32_t AudioRendererSinkInner::InitRender()
 void AudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
 {
     if (currentActiveDevice_ == device) {
-        currentActiveDevice_ = NONE_DEVICES_FLAG;
+        currentActiveDevice_ = DEVICE_TYPE_NONE;
     }
 }
 } // namespace AudioStandard
