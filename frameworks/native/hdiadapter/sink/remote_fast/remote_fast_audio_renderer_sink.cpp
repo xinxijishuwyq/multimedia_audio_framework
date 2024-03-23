@@ -111,7 +111,7 @@ public:
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
 
-    void ResetOutputRouteForDisconnect() override;
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
 
     std::string GetNetworkId();
     IAudioSinkCallback* GetParamCallback();
