@@ -1107,6 +1107,8 @@ int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
 
     // audioCapturerSourceInstance->ResetOutputRouteForDisconnect(type);
     audioRendererSinkInstance->ResetOutputRouteForDisconnect(type);
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -95,6 +95,8 @@ public:
 
     int32_t Preload(const std::string &usbInfoStr) override;
 
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
+
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
 private:
