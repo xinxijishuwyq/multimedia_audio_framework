@@ -26,13 +26,18 @@
 #include "audio_process_in_server.h"
 #include "audio_endpoint.h"
 #include "ipc_stream_in_server.h"
+#include "playback_capturer_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioService : public ProcessReleaseCallback {
+class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener {
 public:
     static AudioService *GetInstance();
     ~AudioService();
+
+    // override for ICapturerFilterListener
+    int32_t OnCapturerFilterChange(uint32_t sessionId, AudioPlaybackCaptureConfig newConfig) override;
+    int32_t OnCapturerFilterRemove(uint32_t sessionId) override;
 
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
 
@@ -53,6 +58,9 @@ private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
 
+    // for inner-capturer
+    void CheckFilterForAllRenderers(std::weak_ptr<RendererInServer> renderer);
+
 private:
     std::mutex processListMutex_;
     std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
@@ -61,6 +69,15 @@ private:
     std::condition_variable releaseEndpointCV_;
     std::set<std::string> releasingEndpointSet_;
     std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
+
+    // for inner-capturer
+    PlaybackCapturerManager *innerCapturerMgr_ = nullptr;
+    uint32_t innerCapSessionId_ = 0; // invalid sessionId
+    std::unique_ptr<AudioPlaybackCaptureConfig> workingConfig_ = nullptr;
+
+    std::mutex rendererListMutex_;
+    std::vector<std::weak_ptr<RendererInServer>> allRendererList_ = {};
+    std::vector<std::weak_ptr<RendererInServer>> filteredRendererList_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

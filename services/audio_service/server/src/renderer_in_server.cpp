@@ -532,6 +532,18 @@ int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
     return stream_->GetPrivacyType(privacyType);
 }
 
+int32_t RendererInServer::EnableInnerCap()
+{
+    // in plan
+    return ERROR;
+}
+
+int32_t RendererInServer::DisableInnerCap()
+{
+    // in plan
+    return ERROR;
+}
+
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 {
     return stream_->SetOffloadMode(state, isAppBack);

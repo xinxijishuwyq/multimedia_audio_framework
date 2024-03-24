@@ -69,6 +69,9 @@ public:
     int32_t DrainAudioBuffer();
     int32_t GetInfo();
 
+    // for inner-cap
+    int32_t EnableInnerCap();
+    int32_t DisableInnerCap();
 private:
     void OnStatusUpdateSub(IOperation operation);
     std::mutex statusLock_;

@@ -134,5 +134,30 @@ bool PlaybackCapturerManager::GetInnerCapturerState()
 {
     return isInnerCapturerRunning_;
 }
+
+bool PlaybackCapturerManager::RegisterCapturerFilterListener(ICapturerFilterListener *listener)
+{
+    if (listener == nullptr || listener_ != nullptr) {
+        AUDIO_ERR_LOG("Register fail: listener is %{public}s", (listener == nullptr ? "null." : "already set."));
+        return false;
+    }
+    AUDIO_INFO_LOG("Register success");
+    listener_ = listener;
+    return true;
+}
+
+int32_t PlaybackCapturerManager::SetPlaybackCapturerFilterInfo(uint32_t sessionId, AudioPlaybackCaptureConfig config)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
+
+    return listener_->OnCapturerFilterChange(sessionId, config);
+}
+
+int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
+
+    return listener_->OnCapturerFilterRemove(sessionId);
+}
 } // namespace OHOS
 } // namespace AudioStandard

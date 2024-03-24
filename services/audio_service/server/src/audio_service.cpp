@@ -89,10 +89,67 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
+    if (innerCapturerMgr_ == nullptr) {
+        innerCapturerMgr_ = PlaybackCapturerManager::GetInstance(); // As mgr is a singleton, lock is needless here.
+        innerCapturerMgr_->RegisterCapturerFilterListener(this);
+    }
+
     // in plan: GetDeviceInfoForProcess(config) and stream limit check
     sptr<IpcStreamInServer> ipcStreamInServer = IpcStreamInServer::Create(config, ret);
 
+    // in plan: Put playback into list, check if EnableInnerCap is need.
+    if (ipcStreamInServer != nullptr && config.audioMode == AUDIO_MODE_PLAYBACK) {
+        CheckFilterForAllRenderers(ipcStreamInServer->GetRenderer());
+    }
+
     return ipcStreamInServer;
+}
+
+void AudioService::CheckFilterForAllRenderers(std::weak_ptr<RendererInServer> renderer)
+{
+    std::lock_guard<std::mutex> lock(rendererListMutex_);
+    allRendererList_.push_back(renderer);
+
+    std::shared_ptr<RendererInServer> temp = renderer.lock();
+    // in plan: check if meet with the workingConfig_
+    if (temp != nullptr) {
+        temp->EnableInnerCap(); // for debug
+    }
+}
+
+int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, AudioPlaybackCaptureConfig newConfig)
+{
+    // debug: wait for modify
+    innerCapSessionId_ = sessionId;
+    workingConfig_ = std::make_unique<AudioPlaybackCaptureConfig>(newConfig);
+
+    // in plan:
+    // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererList_
+    // step 2: if sessionId is already in using, this means the config is changed. Check the filtered renderer before,
+    // call disable inner-cap for those not meet with the new config, than filter all allRendererList_.
+
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
+{
+    innerCapSessionId_ = 0;
+    workingConfig_ = nullptr;
+    // in plan:
+    // disable inner-cap in the filteredRendererList_
+    std::lock_guard<std::mutex> lock(rendererListMutex_);
+    for (size_t i = 0; i < filteredRendererList_.size(); i++) {
+        std::shared_ptr<RendererInServer> renderer = filteredRendererList_[i].lock();
+        if (renderer == nullptr) {
+            AUDIO_WARNING_LOG("Find renderer is already released!");
+            continue;
+        }
+        renderer->DisableInnerCap();
+    }
+
+    filteredRendererList_.clear();
+
+    return ERR_OPERATION_FAILED;
 }
 
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)

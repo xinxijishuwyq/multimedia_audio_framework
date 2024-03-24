@@ -102,6 +102,8 @@ public:
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override; // renderer only
 
+    // for inner-capturer
+    std::weak_ptr<RendererInServer> GetRenderer();
 private:
     int32_t ConfigRenderer();
     int32_t ConfigCapturer();
