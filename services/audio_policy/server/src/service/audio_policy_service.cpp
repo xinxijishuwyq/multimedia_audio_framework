@@ -2056,6 +2056,15 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
     return result;
 }
 
+void AudioPolicyService::UnloadA2dpModule()
+{
+    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
+    if (IOHandles_.find(BLUETOOTH_SPEAKER) != IOHandles_.end()) {
+        audioPolicyManager_.CloseAudioPort(IOHandles_[BLUETOOTH_SPEAKER]);
+        IOHandles_.erase(BLUETOOTH_SPEAKER);
+    }
+}
+
 int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
 {
     std::list<AudioModuleInfo> moduleInfoList;
@@ -5485,6 +5494,8 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
             AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
             return;
         }
+    } else if (updateCommand == ENABLE_UPDATE && desc.isEnable_ == false) {
+        UnloadA2dpModule();
     }
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
     audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, updateCommand);
