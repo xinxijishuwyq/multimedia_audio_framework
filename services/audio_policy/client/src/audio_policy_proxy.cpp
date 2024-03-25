@@ -1848,7 +1848,7 @@ int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject>
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1873,7 +1873,7 @@ int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> pids,
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1896,7 +1896,7 @@ int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> pids
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyProxy::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
