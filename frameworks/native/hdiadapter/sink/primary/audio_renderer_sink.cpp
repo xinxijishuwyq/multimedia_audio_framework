@@ -98,6 +98,8 @@ public:
 
     int32_t Preload(const std::string &usbInfoStr) override;
 
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
+
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
 private:
@@ -777,7 +779,7 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("UpdateAudioRoute cost[%{public}" PRId64 "]ms", stamp);
+    AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
     renderEmptyFrameCount_ = 3; // render 3 empty frame
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
@@ -1076,6 +1078,13 @@ int32_t AudioRendererSinkInner::InitRender()
     renderInited_ = true;
 
     return SUCCESS;
+}
+
+void AudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    if (currentActiveDevice_ == device) {
+        currentActiveDevice_ = DEVICE_TYPE_NONE;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2753,6 +2753,10 @@ int32_t AudioPolicyService::HandleLocalDeviceDisconnected(const AudioDeviceDescr
             IOHandles_.erase(USB_MIC);
         }
     }
+
+    CHECK_AND_RETURN_RET_LOG(g_adProxy != nullptr, ERROR, "Audio Server Proxy is null");
+    g_adProxy->ResetRouteForDisconnect(updatedDesc.deviceType_);
+
     return SUCCESS;
 }
 
