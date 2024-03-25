@@ -133,6 +133,12 @@ bool AudioAdapterManager::ConnectServiceAdapter()
 
 void AudioAdapterManager::InitKVStore()
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    InitKVStoreInternal();
+}
+
+void AudioAdapterManager::InitKVStoreInternal()
+{
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ == nullptr, "InitKVStore: kv store is not nullptr.");
 
     AUDIO_INFO_LOG("AudioAdapterManager::%{public}s in", __func__);
@@ -195,6 +201,7 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
     bool /* isFromVolumeKey */)
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_, volumeLevel);
     if (volumeLevel == 0 &&
@@ -234,10 +241,10 @@ void AudioAdapterManager::UpdateRingerModeForVolume(AudioStreamType streamType, 
     }
     if (volumeLevel > 0 && (ringerMode_ == RINGER_MODE_SILENT || ringerMode_ == RINGER_MODE_VIBRATE)) {
         // ringtone volume > 0, change the ringer mode to RINGER_MODE_NORMAL
-        SetRingerMode(RINGER_MODE_NORMAL);
+        SetRingerModeInternal(RINGER_MODE_NORMAL);
     } else if (volumeLevel == 0 && ringerMode_ == RINGER_MODE_NORMAL) {
         // ringtone volume == 0, change the ringer mode to RINGER_MODE_VIBRATE
-        SetRingerMode(RINGER_MODE_VIBRATE);
+        SetRingerModeInternal(RINGER_MODE_VIBRATE);
     }
 }
 
@@ -246,10 +253,10 @@ void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, 
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
 
     //The mute status is automatically updated based on the stream volume
-    if (volumeLevel > 0 && GetStreamMute(streamType)) {
+    if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
         muteStatusMap_[streamForVolumeMap] = false;
         WriteMuteStatusToKvStore(currentActiveDevice_, streamType, false);
-    } else if (volumeLevel == 0 && !GetStreamMute(streamType)) {
+    } else if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
         muteStatusMap_[streamForVolumeMap] = true;
         WriteMuteStatusToKvStore(currentActiveDevice_, streamType, true);
     }
@@ -319,6 +326,12 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    return SetStreamMuteInternal(streamType, mute);
+}
+
+int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute)
+{
     AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d, mute %{public}d", streamType, mute);
     if (mute &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
@@ -351,6 +364,12 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
 }
 
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
+{
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    return GetStreamMuteInternal(streamType);
+}
+
+bool AudioAdapterManager::GetStreamMuteInternal(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     return muteStatusMap_[streamForVolumeMap];
@@ -464,6 +483,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "SetVolumeForSwitchDevice audioPolicyKvStore_ is null!");
     LoadVolumeMap();
     LoadMuteStatusMap();
@@ -491,16 +511,22 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
 
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    return SetRingerModeInternal(ringerMode);
+}
+
+int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
+{
     AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
     ringerMode_ = ringerMode;
 
     switch (ringerMode) {
         case RINGER_MODE_SILENT:
         case RINGER_MODE_VIBRATE:
-            SetStreamMute(STREAM_RING, true);
+            SetStreamMuteInternal(STREAM_RING, true);
             break;
         case RINGER_MODE_NORMAL:
-            SetStreamMute(STREAM_RING, false);
+            SetStreamMuteInternal(STREAM_RING, false);
             break;
         default:
             break;
