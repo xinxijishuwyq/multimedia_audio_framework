@@ -6454,8 +6454,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_002, TestSize.Level1
     EXPECT_EQ(true, isStarted);
 
     size_t bufferLen;
-    uint8_t *buffer;
-    uint8_t *metaBuffer;
+    uint8_t *buffer = nullptr;
+    uint8_t *metaBuffer = nullptr;
     AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
     size_t bytesToWrite = 0;
