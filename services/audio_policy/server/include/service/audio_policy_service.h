@@ -809,8 +809,8 @@ private:
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
 
     DistributedRoutingInfo distributedRoutingInfo_ = {
-        descriptor = nullptr,
-        type = 0
+        .descriptor = nullptr,
+        .type = CAST_TYPE_NULL
     };
 
     // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
