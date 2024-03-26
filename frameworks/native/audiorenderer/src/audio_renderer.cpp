@@ -28,9 +28,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-// #ifdef SONIC_ENABLE
-// static const int32_t MAX_BUFFER_SIZE = 100000;
-// #endif
 static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
