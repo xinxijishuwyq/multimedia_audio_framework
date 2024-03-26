@@ -1091,8 +1091,8 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
 void AudioPolicyServer::OnSessionRemoved(const uint64_t sessionID)
 {
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
-    sessionProcessor_.Post({SessionEvent::Type::REMOVE, sessionID});
 }
 
 void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneID)
@@ -1110,6 +1110,7 @@ void AudioPolicyServer::OnCapturerSessionAdded(const uint64_t sessionID, Session
     streamInfo.channels = static_cast<AudioChannel>(sessionInfo.channels);
 
     int32_t error = SUCCESS;
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionID, false, error);
 }
 

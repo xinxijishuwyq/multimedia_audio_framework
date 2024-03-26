@@ -84,6 +84,8 @@ public:
     {
         return 0;
     }
+
+    virtual void ResetOutputRouteForDisconnect(DeviceType device) = 0;
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {

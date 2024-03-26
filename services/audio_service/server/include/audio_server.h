@@ -117,6 +117,8 @@ public:
 
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
 
+    int32_t ResetRouteForDisconnect(DeviceType type) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

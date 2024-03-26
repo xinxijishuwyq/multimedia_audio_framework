@@ -205,5 +205,10 @@ int32_t AudioRendererFileSink::GetTransactionId(uint64_t *transactionId)
     AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     return ERR_NOT_SUPPORTED;
 }
+
+void AudioRendererFileSink::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    AUDIO_WARNING_LOG("not supported.");
+}
 } // namespace AudioStandard
 } // namespace OHOS
