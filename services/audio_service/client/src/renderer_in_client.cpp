@@ -308,7 +308,6 @@ private:
     std::mutex writeDataMutex_;
     std::condition_variable writeDataCV_;
 
-    float lowPowerVolume_ = 1.0;
     float clientVolume_ = 1.0;
     float clientOldVolume_ = 1.0;
 
@@ -1177,9 +1176,6 @@ void RendererInClientInner::WriteCallbackFunc()
             }
             if (state_ != RUNNING) { continue; }
             traceQueuePop.End();
-            if (!isEqual(speed_, 1.0f) && !ProcessSpeed(temp)) {
-                continue;
-            }
             // call write here.
             int32_t result = curStreamParams_.encoding == ENCODING_PCM
                 ? WriteInner(temp.buffer, temp.bufLength)
@@ -1303,18 +1299,14 @@ int32_t RendererInClientInner::Clear()
 
 int32_t RendererInClientInner::SetLowPowerVolume(float volume)
 {
-    AUDIO_INFO_LOG("Volume number: %{public}f", volume);
-    if (volume < 0.0 || volume > 1.0) {
-        AUDIO_ERR_LOG("Invalid param: %{public}f", volume);
-        return ERR_INVALID_PARAM;
-    }
-    lowPowerVolume_ = volume;
-    return SUCCESS;
+    // in plan
+    return ERROR;
 }
 
 float RendererInClientInner::GetLowPowerVolume()
 {
-    return lowPowerVolume_;
+    // in plan
+    return 0.0;
 }
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
@@ -1732,14 +1724,16 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
-    return WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    int32_t ret = WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    return ret <= 0 ? ret : pcmBufferSize;
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
-    return WriteInner(buffer, bufferSize);
+    int32_t ret = WriteInner(buffer, bufferSize);
+    return ret <= 0 ? ret : bufferSize;
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
@@ -1766,6 +1760,18 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
+#ifdef SONIC_ENABLE
+    if (!isEqual(speed_, 1.0f)) {
+        int32_t outBufferSize = 0;
+        audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize);
+        if (outBufferSize == 0) {
+            return bufferSize;
+        }
+        buffer = speedBuffer_.get();
+        bufferSize = outBufferSize;
+    }
+#endif
+
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
         AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
@@ -1774,8 +1780,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
-        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write: Illegal state:%{public}u", state_.load());
 
     // hold lock
     if (isBlendSet_) { audioBlend_.Process(buffer, bufferSize); }
@@ -1859,14 +1864,10 @@ int32_t RendererInClientInner::WriteCacheData()
         clientOldVolume_ = clientVolume_;
         clientVolume_ = volumeRamp_.GetRampVolume();
     }
-    float applyVolume = clientVolume_;
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
-        applyVolume *= lowPowerVolume_;
-    }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, clientVolume_, AUDIO_VOLOMUE_EPSILON)) {
         Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
         AudioChannel channel = clientConfig_.streamInfo.channels;
-        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, clientVolume_, clientVolume_);
         int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
         if (volRet != SUCCESS) {
             AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
@@ -1906,7 +1907,7 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 
     {
         std::lock_guard<std::mutex> lock(periodReachMutex_);
-        rendererPeriodWritten_ += (bytesWritten / sizePerFrameInByte_);
+        rendererPeriodWritten_ += (totalBytesWritten_ / sizePerFrameInByte_);
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(rendererPeriodWritten_), static_cast<int64_t>(totalBytesWritten_));
         if (rendererPeriodWritten_ >= rendererPeriodSize_ && rendererPeriodSize_ > 0) {
