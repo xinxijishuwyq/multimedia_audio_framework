@@ -529,6 +529,9 @@ int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t 
 {
     Trace trace("Write");
     int32_t size = audioStream_->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);
+    if (size > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(pcmBuffer), size);
+    }
     return size;
 }
 
