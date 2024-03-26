@@ -1190,13 +1190,10 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
                 currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
                     GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first)));
             }
-            uint32_t lastLatency = audioEffectChain->GetLatency();
             int32_t ret = audioEffectChain->SetEffectParam(currSceneType);
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
-            if (lastLatency != audioEffectChain->GetLatency()) {
-                AUDIO_INFO_LOG("The delay of SceneType %{public}s changed to %{public}u because volume changed",
-                    it->first.c_str(), audioEffectChain->GetLatency());
-            }
+            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, volume changed to %{public}u",
+                it->first.c_str(), audioEffectChain->GetLatency(), volumeMax);
         }
     }
     return SUCCESS;
@@ -1265,13 +1262,10 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
                 currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
                     GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, it->first)));
             }
-            uint32_t lastLatency = audioEffectChain->GetLatency();
             int32_t ret = audioEffectChain->SetEffectParam(currSceneType);
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
-            if (lastLatency != audioEffectChain->GetLatency()) {
-                AUDIO_INFO_LOG("The delay of SceneType %{public}s changed to %{public}u because rotation changed",
-                    it->first.c_str(), audioEffectChain->GetLatency());
-            }
+            AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, rotation changed to %{public}u",
+                it->first.c_str(), audioEffectChain->GetLatency(), rotationState);
         }
     }
     return SUCCESS;
