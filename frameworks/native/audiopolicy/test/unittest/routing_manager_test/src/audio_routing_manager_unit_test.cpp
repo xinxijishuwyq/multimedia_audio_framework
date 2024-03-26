@@ -60,6 +60,26 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredOutputDevi
 }
 
 /**
+ * @tc.name  : Test Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_002 via legal state
+ * @tc.number: Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_002
+ * @tc.desc  : Test getPreferredOutputDeviceForRendererInfo interface. Returns success.
+ */
+HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererInfo rendererInfo;
+    rendererInfo.contentType = CONTENT_TYPE_UNKNOWN;
+    rendererInfo.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    std::vector<sptr<AudioDeviceDescriptor>> desc;
+    ret = AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(rendererInfo, desc);
+    EXPECT_EQ(SUCCESS, ret);
+    for (auto &device : desc) {
+        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*device);
+        EXPECT_EQ(devDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    }
+}
+
+/**
  * @tc.name   : Test Audio_Routing_Manager_PreferredOutputDeviceChangeCallback_001 via legal state
  * @tc.number : Audio_Routing_Manager_PreferredOutputDeviceChangeCallback_001
  * @tc.desc   : Test PreferredOutputDeviceChangeCallback interface. Returns success.
