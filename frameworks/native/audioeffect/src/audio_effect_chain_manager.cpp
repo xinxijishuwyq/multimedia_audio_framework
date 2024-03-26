@@ -1194,8 +1194,8 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
             int32_t ret = audioEffectChain->SetEffectParam(currSceneType);
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap volume failed");
             if (lastLatency != audioEffectChain->GetLatency()) {
-                AUDIO_INFO_LOG("The delay of SceneType %{public}s changed to %{public}u", it->first.c_str(),
-                    audioEffectChain->GetLatency());
+                AUDIO_INFO_LOG("The delay of SceneType %{public}s changed to %{public}u because volume changed",
+                    it->first.c_str(), audioEffectChain->GetLatency());
             }
         }
     }
@@ -1269,8 +1269,8 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
             int32_t ret = audioEffectChain->SetEffectParam(currSceneType);
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
             if (lastLatency != audioEffectChain->GetLatency()) {
-                AUDIO_INFO_LOG("The delay of SceneType %{public}s changed to %{public}u", it->first.c_str(),
-                    audioEffectChain->GetLatency());
+                AUDIO_INFO_LOG("The delay of SceneType %{public}s changed to %{public}u because rotation changed",
+                    it->first.c_str(), audioEffectChain->GetLatency());
             }
         }
     }
