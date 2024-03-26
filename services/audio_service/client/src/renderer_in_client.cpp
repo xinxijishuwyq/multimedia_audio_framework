@@ -225,7 +225,6 @@ private:
     int32_t DrainRingCache();
 
     int32_t WriteCacheData();
-    bool ProcessSpeed(BufferDesc &temp);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WriteCallbackFunc();
@@ -1137,19 +1136,6 @@ bool RendererInClientInner::WaitForRunning()
             return false;
         }
     }
-    return true;
-}
-
-bool RendererInClientInner::ProcessSpeed(BufferDesc &temp)
-{
-    int32_t speedBufferSize = 0;
-    int32_t ret = audioSpeed_->ChangeSpeedFunc(temp.buffer, temp.bufLength, speedBuffer_, speedBufferSize);
-    if (ret == 0 || speedBufferSize == 0) {
-        // Continue writing when the sonic is not full
-        return false;
-    }
-    temp.buffer = speedBuffer_.get();
-    temp.bufLength = speedBufferSize;
     return true;
 }
 
