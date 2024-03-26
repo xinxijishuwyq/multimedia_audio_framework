@@ -116,9 +116,8 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
         int32_t &outBufferSize) override;
-    int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
@@ -977,25 +976,6 @@ int32_t RendererInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, 
     int32_t &outBufferSize)
 {
     return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
-}
-
-int32_t RendererInClientInner::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
-{
-    int32_t writeIndex = 0;
-    int32_t writeSize = bufferSize_;
-    while (speedBufferSize > 0) {
-        if (speedBufferSize < bufferSize_) {
-            writeSize = speedBufferSize;
-        }
-        int32_t writtenSize = Write(speedBuffer + writeIndex, writeSize);
-        if (writtenSize <= 0) {
-            return writtenSize;
-        }
-        writeIndex += writtenSize;
-        speedBufferSize -= writtenSize;
-    }
-
-    return bufferSize;
 }
 
 AudioRendererRate RendererInClientInner::GetRenderRate()

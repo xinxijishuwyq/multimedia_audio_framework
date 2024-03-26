@@ -136,9 +136,8 @@ public:
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
     virtual int32_t SetSpeed(float speed) = 0;
     virtual float GetSpeed() = 0;
-    virtual int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
-        std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize) = 0;
-    virtual int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) = 0;
+    virtual int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
+        int32_t &outBufferSize) = 0;
 
     // callback mode api
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
