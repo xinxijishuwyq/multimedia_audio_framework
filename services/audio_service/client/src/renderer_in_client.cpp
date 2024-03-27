@@ -229,6 +229,7 @@ private:
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
+    bool ProcessSpeed(uint8_t *&buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
 
@@ -1707,6 +1708,23 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
     return ret <= 0 ? ret : bufferSize;
 }
 
+bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t bufferSize)
+{
+#ifdef SONIC_ENABLE
+    if (!isEqual(speed_, 1.0f)) {
+        int32_t outBufferSize = 0;
+        CHECK_AND_RETURN_RET_LOG(audioSpeed_ != nullptr, false, "audioSpeed is nullptr");
+        audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize);
+        if (outBufferSize == 0) {
+            return false;
+        }
+        buffer = speedBuffer_.get();
+        bufferSize = outBufferSize;
+    }
+#endif
+    return true;
+}
+
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
@@ -1731,18 +1749,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
-#ifdef SONIC_ENABLE
-    if (!isEqual(speed_, 1.0f)) {
-        int32_t outBufferSize = 0;
-        audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize);
-        if (outBufferSize == 0) {
-            return bufferSize;
-        }
-        buffer = speedBuffer_.get();
-        bufferSize = outBufferSize;
-    }
-#endif
-
+    CHECK_AND_RETURN_RET_LOG(ProcessSpeed(buffer, bufferSize), 0, "Process speed failed");
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
         AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());

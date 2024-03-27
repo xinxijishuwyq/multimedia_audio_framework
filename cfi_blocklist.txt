@@ -1,3 +1,3 @@
 src:*services/audio_service/server/src/audio_effect_server.cpp
-src:*frameworks/native/audioeffect/src/audio_effect_chain_manager.cpp
+src:*frameworks/native/audioeffect/src/audio_effect_chain.cpp
 src:*services/audio_service/client/src/audio_spatial_channel_converter.cpp

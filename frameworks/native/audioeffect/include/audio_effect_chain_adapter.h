@@ -49,7 +49,6 @@ bool EffectChainManagerExist(const char *sceneType, const char *effectMode, cons
 int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID);
 int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID);
 int32_t EffectChainManagerMultichannelUpdate(const char *sceneType);
-bool IsChannelLayoutHVSSupported(const uint64_t channelLayout);
 uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap);
 int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack);
 int32_t EffectChainManagerInitCb(const char *sceneType);

@@ -27,641 +27,36 @@
 #include <set>
 
 #include "securec.h"
-#include "audio_effect_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_effect.h"
+#include "audio_utils.h"
 
 #define DEVICE_FLAG
 
-using namespace OHOS::AudioStandard;
-
-static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
-    {FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
-    {FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER}, {LOW_FREQUENCY, PA_CHANNEL_POSITION_LFE},
-    {SIDE_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SIDE_RIGHT, PA_CHANNEL_POSITION_SIDE_RIGHT},
-    {BACK_LEFT, PA_CHANNEL_POSITION_REAR_LEFT}, {BACK_RIGHT, PA_CHANNEL_POSITION_REAR_RIGHT},
-    {FRONT_LEFT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_LEFT_OF_CENTER},
-    {FRONT_RIGHT_OF_CENTER, PA_CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER},
-    {BACK_CENTER, PA_CHANNEL_POSITION_REAR_CENTER}, {TOP_CENTER, PA_CHANNEL_POSITION_TOP_CENTER},
-    {TOP_FRONT_LEFT, PA_CHANNEL_POSITION_TOP_FRONT_LEFT}, {TOP_FRONT_CENTER, PA_CHANNEL_POSITION_TOP_FRONT_CENTER},
-    {TOP_FRONT_RIGHT, PA_CHANNEL_POSITION_TOP_FRONT_RIGHT}, {TOP_BACK_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT},
-    {TOP_BACK_CENTER, PA_CHANNEL_POSITION_TOP_REAR_CENTER}, {TOP_BACK_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
-    /** Channel layout positions below do not have precise mapped pulseaudio positions */
-    {STEREO_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {STEREO_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
-    {WIDE_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {WIDE_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
-    {SURROUND_DIRECT_LEFT, PA_CHANNEL_POSITION_SIDE_LEFT}, {SURROUND_DIRECT_RIGHT, PA_CHANNEL_POSITION_SIDE_LEFT},
-    {BOTTOM_FRONT_CENTER, PA_CHANNEL_POSITION_FRONT_CENTER},
-    {BOTTOM_FRONT_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT}, {BOTTOM_FRONT_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT},
-    {TOP_SIDE_LEFT, PA_CHANNEL_POSITION_TOP_REAR_LEFT}, {TOP_SIDE_RIGHT, PA_CHANNEL_POSITION_TOP_REAR_RIGHT},
-    {LOW_FREQUENCY_2, PA_CHANNEL_POSITION_LFE},
-};
-
-
-int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString = "";
-    if (sceneType) {
-        sceneTypeString = sceneType;
-    }
-    if (audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, bufferAttr) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-int32_t EffectChainManagerGetFrameLen()
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, DEFAULT_FRAMELEN, "null audioEffectChainManager");
-    return audioEffectChainManager->GetFrameLen();
-}
-
-bool EffectChainManagerExist(const char *sceneType, const char *effectMode, const char *spatializationEnabled)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
-    std::string sceneTypeString = "";
-    if (sceneType) {
-        sceneTypeString = sceneType;
-    }
-    std::string effectModeString = "";
-    if (effectMode) {
-        effectModeString = effectMode;
-    }
-    std::string spatializationEnabledString = "";
-    if (spatializationEnabled) {
-        spatializationEnabledString = spatializationEnabled;
-    }
-    return audioEffectChainManager->ExistAudioEffectChain(sceneTypeString, effectModeString,
-        spatializationEnabledString);
-}
-
-int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString = "";
-    std::string sessionIDString = "";
-    if (sceneType) {
-        sceneTypeString = sceneType;
-    }
-    if (sessionID) {
-        sessionIDString = sessionID;
-    }
-    if (!audioEffectChainManager->CheckAndAddSessionID(sessionIDString)) {
-        return SUCCESS;
-    }
-    if (audioEffectChainManager->GetOffloadEnabled()) {
-        audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Register");
-        return SUCCESS;
-    }
-    if (audioEffectChainManager->CreateAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString = "";
-    std::string sessionIDString = "";
-    if (sceneType) {
-        sceneTypeString = sceneType;
-    }
-    if (sessionID) {
-        sessionIDString = sessionID;
-    }
-    if (!audioEffectChainManager->CheckAndRemoveSessionID(sessionIDString)) {
-        return SUCCESS;
-    }
-    if (audioEffectChainManager->GetOffloadEnabled()) {
-        audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Deregister");
-        return SUCCESS;
-    }
-    if (audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-int32_t EffectChainManagerMultichannelUpdate(const char *sceneType)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString = "";
-    if (sceneType != nullptr && strlen(sceneType)) {
-        sceneTypeString = sceneType;
-    } else {
-        AUDIO_ERR_LOG("Scenetype is null.");
-        return ERROR;
-    }
-    if (audioEffectChainManager->UpdateMultichannelConfig(sceneTypeString) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t volume)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sessionIDString = "";
-    sessionIDString = sessionID;
-    if (audioEffectChainManager->EffectVolumeUpdate(sessionIDString, volume) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-#ifdef WINDOW_MANAGER_ENABLE
-int32_t EffectChainManagerRotationUpdate(const uint32_t rotationState)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    if (audioEffectChainManager->EffectRotationUpdate(rotationState) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-#endif
-
-bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
-{
-    return find(HVS_SUPPORTED_CHANNELLAYOUTS.begin(), HVS_SUPPORTED_CHANNELLAYOUTS.end(),
-        channelLayout) != HVS_SUPPORTED_CHANNELLAYOUTS.end();
-}
-
-uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap)
-{
-    if (channelLayout == CH_LAYOUT_MONO) {
-        pa_channel_map_init_mono(paMap);
-        return AudioChannel::MONO;
-    }
-    uint32_t channelNum = 0;
-    uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
-    switch (mode) {
-        case 0: {
-            for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
-                if ((channelLayout & (bit->first)) != 0) {
-                    paMap->map[channelNum++] = bit->second;
-                }
-            }
-            break;
-        }
-        case 1: {
-            uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
-            channelNum = (order + 1) * (order + 1);
-            for (uint32_t i = 0; i < channelNum; ++i) {
-                paMap->map[i] = chSetToPaPositionMap[FRONT_LEFT];
-            }
-            break;
-        }
-        default:
-            channelNum = 0;
-            break;
-    }
-    return channelNum;
-}
-
-int32_t EffectChainManagerSetHdiParam(const char *sceneType, const char *effectMode, bool enabled)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString = "";
-    if (sceneType) {
-        sceneTypeString = sceneType;
-    }
-    std::string effectModeString = "";
-    if (effectMode) {
-        effectModeString = effectMode;
-    }
-    return audioEffectChainManager->SetHdiParam(sceneTypeString, effectModeString, enabled);
-}
-
-int32_t EffectChainManagerInitCb(const char *sceneType)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string sceneTypeString = "";
-    if (sceneType) {
-        sceneTypeString = sceneType;
-    }
-    if (audioEffectChainManager->InitAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-bool EffectChainManagerCheckA2dpOffload()
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string effectChainManagerDeviceType = audioEffectChainManager->GetDeviceTypeName();
-    std::string effectChainManagerDeviceSink = audioEffectChainManager->GetDeviceSinkName();
-    if ((effectChainManagerDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") &&
-        (effectChainManagerDeviceSink == "Speaker")) {
-        return true;
-    }
-    return false;
-}
-
-int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-
-    uint64_t channelLayoutNum = 0;
-    std::string sceneTypeString = "";
-    std::string sessionIDString = "";
-    std::string sceneModeString = "";
-    std::string spatializationEnabledString = "";
-    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode && pack.spatializationEnabled) {
-        sceneTypeString = sceneType;
-        channelLayoutNum = std::strtoull(pack.channelLayout, nullptr, BASE_TEN);
-        sessionIDString = sessionID;
-        sceneModeString = pack.sceneMode;
-        spatializationEnabledString = pack.spatializationEnabled;
-    } else {
-        AUDIO_ERR_LOG("map input parameters missing.");
-        return ERROR;
-    }
-
-    sessionEffectInfo info;
-    info.sceneMode = sceneModeString;
-    info.sceneType = sceneTypeString;
-    info.channels = pack.channels;
-    info.channelLayout = channelLayoutNum;
-    info.spatializationEnabled = spatializationEnabledString;
-    info.volume = pack.volume;
-    return audioEffectChainManager->SessionInfoMapAdd(sessionIDString, info);
-}
-
-int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *sessionID)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-
-    std::string sceneTypeString = "";
-    std::string sessionIDString = "";
-    if (sceneType && sessionID) {
-        sceneTypeString = sceneType;
-        sessionIDString = sessionID;
-    } else {
-        AUDIO_ERR_LOG("map unlink parameters missing.");
-        return ERROR;
-    }
-
-    return audioEffectChainManager->SessionInfoMapDelete(sceneTypeString, sessionIDString);
-}
-
-int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_t *channels, uint64_t *channelLayout)
-{
-    if (sceneType == nullptr || channels == nullptr || channelLayout == nullptr) {
-        return ERROR;
-    }
-    std::string sceneTypeString = sceneType;
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    return audioEffectChainManager->ReturnEffectChannelInfo(sceneTypeString, channels, channelLayout);
-}
-
-int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
-{
-    if (channels == nullptr || channelLayout == nullptr) {
-        return ERROR;
-    }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    return audioEffectChainManager->ReturnMultiChannelInfo(channels, channelLayout);
-}
-
 namespace OHOS {
 namespace AudioStandard {
+int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string &effect, const std::string &libName)
+{
+    CHECK_AND_RETURN_RET_LOG(libEntry, ERROR, "Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(),
+        libName.c_str());
 
-#ifdef SENSOR_ENABLE
-AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
-{
-    sceneType = scene;
-    effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
-    audioBufIn.frameLength = 0;
-    audioBufOut.frameLength = 0;
-    ioBufferConfig.inputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
-    ioBufferConfig.inputCfg.channels = DEFAULT_NUM_CHANNEL;
-    ioBufferConfig.inputCfg.format = DATA_FORMAT_F32;
-    ioBufferConfig.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    ioBufferConfig.outputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
-    ioBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
-    ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
-    ioBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    headTracker_ = headTracker;
-}
-#else
-AudioEffectChain::AudioEffectChain(std::string scene)
-{
-    sceneType = scene;
-    effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
-    audioBufIn.frameLength = 0;
-    audioBufOut.frameLength = 0;
-    ioBufferConfig.inputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
-    ioBufferConfig.inputCfg.channels = DEFAULT_NUM_CHANNEL;
-    ioBufferConfig.inputCfg.format = DATA_FORMAT_F32;
-    ioBufferConfig.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    ioBufferConfig.outputCfg.samplingRate = DEFAULT_SAMPLE_RATE;
-    ioBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
-    ioBufferConfig.outputCfg.format = DATA_FORMAT_F32;
-    ioBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-}
-#endif
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle, ERROR,
+        "AudioEffectLibHandle of Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(), libName.c_str());
 
-AudioEffectChain::~AudioEffectChain()
-{
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    ReleaseEffectChain();
-}
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->createEffect, ERROR,
+        "CreateEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(), libName.c_str());
 
-void AudioEffectChain::Dump()
-{
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    for (AudioEffectHandle handle: standByEffectHandles) {
-        AUDIO_INFO_LOG("standByEffectHandle for [%{public}s], handle address is %{public}p", sceneType.c_str(),
-            handle);
-    }
-}
-
-std::string AudioEffectChain::GetEffectMode()
-{
-    return effectMode;
-}
-
-void AudioEffectChain::SetEffectMode(std::string mode)
-{
-    effectMode = mode;
-}
-
-template <typename T>
-int32_t GetKeyFromValue(const std::unordered_map<T, std::string> &map, const std::string &value)
-{
-    for (auto it = map.begin(); it != map.end(); ++it) {
-        if (it->second == value) {
-            return it->first;
-        }
-    }
-    return -1;
-}
-
-void AudioEffectChain::ReleaseEffectChain()
-{
-    for (uint32_t i = 0; i < standByEffectHandles.size() && i < libHandles.size(); ++i) {
-        if (!libHandles[i]) {
-            continue;
-        }
-        if (!standByEffectHandles[i]) {
-            continue;
-        }
-        if (!libHandles[i]->releaseEffect) {
-            continue;
-        }
-        libHandles[i]->releaseEffect(standByEffectHandles[i]);
-    }
-    standByEffectHandles.clear();
-    libHandles.clear();
-}
-
-void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle,
-    AudioEffectScene currSceneType)
-{
-    int32_t ret;
-    int32_t replyData = 0;
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
-    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_INIT fail",
-        sceneType.c_str(), effectMode.c_str());
-    ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
-        sceneType.c_str(), effectMode.c_str());
-    ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
-        sceneType.c_str(), effectMode.c_str());
-    // Set param
-    AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
-        NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
-    effectParam->status = 0;
-    effectParam->paramSize = sizeof(int32_t);
-    effectParam->valueSize = 0;
-    int32_t *data = &(effectParam->data[0]);
-    *data++ = EFFECT_SET_PARAM;
-    *data++ = static_cast<int32_t>(currSceneType);
-    *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-#ifdef WINDOW_MANAGER_ENABLE
-    std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
-    if (audioEffectRotation == nullptr) {
-        *data++ = 0;
-    } else {
-        *data++ = audioEffectRotation->GetRotation();
-    }
-#else
-    *data++ = 0;
-#endif
-    AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    if (audioEffectVolume == nullptr) {
-        *data++ = 0;
-    } else {
-        *data++ = audioEffectVolume->GetApVolume(sceneType);
-    }
-    AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
-    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
-    ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-    delete[] effectParam;
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
-        sceneType.c_str(), effectMode.c_str());
-    standByEffectHandles.emplace_back(handle);
-    libHandles.emplace_back(libHandle);
-    latency_ += static_cast<uint32_t>(replyData);
-}
-
-int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
-{
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    latency_ = 0;
-    for (AudioEffectHandle handle : standByEffectHandles) {
-        AudioEffectParam *effectParam = new AudioEffectParam[sizeof(AudioEffectParam) +
-            NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
-        effectParam->status = 0;
-        effectParam->paramSize = sizeof(int32_t);
-        effectParam->valueSize = 0;
-        int32_t *data = &(effectParam->data[0]);
-        *data++ = EFFECT_SET_PARAM;
-        *data++ = static_cast<int32_t>(currSceneType);
-        *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode);
-#ifdef WINDOW_MANAGER_ENABLE
-        std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
-        if (audioEffectRotation == nullptr) {
-            AUDIO_DEBUG_LOG("null audioEffectRotation");
-            *data++ = 0;
-        } else {
-            *data++ = audioEffectRotation->GetRotation();
-        }
-#else
-        *data++ = 0;
-#endif
-        AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
-        std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-        if (audioEffectVolume == nullptr) {
-            AUDIO_DEBUG_LOG("null audioEffectVolume");
-            *data++ = 0;
-        } else {
-            *data++ = audioEffectVolume->GetApVolume(sceneType);
-        }
-        AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
-        int32_t replyData = 0;
-        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM,
-            effectParam};
-        AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-        int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-        delete[] effectParam;
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set rotation EFFECT_CMD_SET_PARAM fail");
-        latency_ += replyData;
-    }
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->releaseEffect, ERROR,
+        "ReleaseEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(),
+        libName.c_str());
     return SUCCESS;
 }
-
-
-void CopyBuffer(const float *bufIn, float *bufOut, uint32_t totalLen)
-{
-    for (uint32_t i = 0; i < totalLen; ++i) {
-        bufOut[i] = bufIn[i];
-    }
-}
-
-void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen,
-    AudioEffectProcInfo procInfo)
-{
-    if (IsEmptyEffectHandles()) {
-        CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
-        return;
-    }
-
-#ifdef SENSOR_ENABLE
-    int32_t replyData = 0;
-    auto imuData = headTracker_->GetHeadPostureData();
-    AudioEffectTransInfo cmdInfo = {sizeof(HeadPostureData), &imuData};
-    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-#endif
-
-    audioBufIn.frameLength = frameLen;
-    audioBufOut.frameLength = frameLen;
-    int32_t count = 0;
-    {
-        std::lock_guard<std::mutex> lock(reloadMutex);
-        for (AudioEffectHandle handle: standByEffectHandles) {
-#ifdef SENSOR_ENABLE
-            if ((!procInfo.offloadEnabled) && procInfo.headTrackingEnabled) {
-            (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
-            }
-#endif
-            if (count % FACTOR_TWO == 0) {
-                audioBufIn.raw = bufIn;
-                audioBufOut.raw = bufOut;
-            } else {
-                audioBufOut.raw = bufIn;
-                audioBufIn.raw = bufOut;
-            }
-            int32_t ret = (*handle)->process(handle, &audioBufIn, &audioBufOut);
-            CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs process fail",
-                sceneType.c_str(), effectMode.c_str());
-            count++;
-        }
-    }
-
-    if (count % FACTOR_TWO == 0) {
-        CopyBuffer(bufIn, bufOut, frameLen * ioBufferConfig.outputCfg.channels);
-    }
-}
-
-void AudioEffectChain::SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels)
-{
-    if (isInput) {
-        ioBufferConfig.inputCfg.samplingRate = samplingRate;
-        ioBufferConfig.inputCfg.channels = channels;
-    } else {
-        ioBufferConfig.outputCfg.samplingRate = samplingRate;
-        ioBufferConfig.outputCfg.channels = channels;
-    }
-}
-
-bool AudioEffectChain::IsEmptyEffectHandles()
-{
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    return standByEffectHandles.size() == 0;
-}
-
-int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout)
-{
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    if (ioBufferConfig.inputCfg.channels == channels && ioBufferConfig.inputCfg.channelLayout == channelLayout) {
-        return SUCCESS;
-    }
-    ioBufferConfig.inputCfg.channels = channels;
-    ioBufferConfig.inputCfg.channelLayout = channelLayout;
-    int32_t replyData = 0;
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
-    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    for (AudioEffectHandle handle: standByEffectHandles) {
-        int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
-    }
-    return SUCCESS;
-}
-
-AudioEffectConfig AudioEffectChain::GetIoBufferConfig()
-{
-    return ioBufferConfig;
-}
-
-void AudioEffectChain::StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig)
-{
-    sceneMode = GetEffectMode();
-    ioBufferConfig = GetIoBufferConfig();
-    return;
-}
-
-uint32_t AudioEffectChain::GetLatency()
-{
-    return latency_;
-}
-
-#ifdef SENSOR_ENABLE
-void AudioEffectChain::SetHeadTrackingDisabled()
-{
-    if (IsEmptyEffectHandles()) {
-        return;
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(reloadMutex);
-        for (AudioEffectHandle handle: standByEffectHandles) {
-            int32_t replyData = 0;
-            HeadPostureData imuDataDisabled = {1, 1.0, 0.0, 0.0, 0.0};
-            AudioEffectTransInfo cmdInfo = {sizeof(HeadPostureData), &imuDataDisabled};
-            AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-            int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
-            if (ret != 0) {
-                AUDIO_WARNING_LOG("SetHeadTrackingDisabled failed");
-            }
-        }
-    }
-}
-#endif
 
 int32_t FindEffectLib(const std::string &effect,
-    const std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList,
-    AudioEffectLibEntry **libEntry, std::string &libName)
+    const std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList, AudioEffectLibEntry **libEntry,
+    std::string &libName)
 {
     for (const std::unique_ptr<AudioEffectLibEntry> &lib : effectLibraryList) {
         if (lib->libraryName == effect) {
@@ -673,39 +68,10 @@ int32_t FindEffectLib(const std::string &effect,
     return ERROR;
 }
 
-void AudioEffectChain::InitEffectChain()
+bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
 {
-    if (IsEmptyEffectHandles()) {
-        return;
-    }
-    std::lock_guard<std::mutex> lock(reloadMutex);
-    for (AudioEffectHandle handle: standByEffectHandles) {
-        int32_t replyData = 0;
-        AudioEffectTransInfo cmdInfo = {sizeof(int32_t), &replyData};
-        AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-        int32_t ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
-            sceneType.c_str(), effectMode.c_str());
-    }
-}
-
-int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string &effect, const std::string &libName)
-{
-    CHECK_AND_RETURN_RET_LOG(libEntry, ERROR, "Effect [%{public}s] in lib [%{public}s] is nullptr",
-        effect.c_str(), libName.c_str());
-
-    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle, ERROR,
-        "AudioEffectLibHandle of Effect [%{public}s] in lib [%{public}s] is nullptr",
-        effect.c_str(), libName.c_str());
-
-    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->createEffect, ERROR,
-        "CreateEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
-        effect.c_str(), libName.c_str());
-
-    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->releaseEffect, ERROR,
-        "ReleaseEffect function of Effect [%{public}s] in lib [%{public}s] is nullptr",
-        effect.c_str(), libName.c_str());
-    return SUCCESS;
+    return find(HVS_SUPPORTED_CHANNELLAYOUTS.begin(), HVS_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) !=
+        HVS_SUPPORTED_CHANNELLAYOUTS.end();
 }
 
 AudioEffectChainManager::AudioEffectChainManager()
@@ -1105,17 +471,19 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
     return !audioEffectChain->IsEmptyEffectHandles();
 }
 
-int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, BufferAttr *bufferAttr)
+int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType,
+    std::unique_ptr<effectBufferAttr> &bufferAttr)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    size_t totLen = bufferAttr->frameLen * bufferAttr->numChans * sizeof(float);
 #ifdef DEVICE_FLAG
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-        CopyBuffer(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
+        memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen);
         return ERROR;
     }
 #else
     if (deviceType_ != DEVICE_TYPE_SPEAKER || !SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-        CopyBuffer(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
+        memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen);
         return SUCCESS;
     }
 #endif
@@ -1671,5 +1039,5 @@ void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType
         }
     }
 }
-}
+} // namespace AudioStandard
 }

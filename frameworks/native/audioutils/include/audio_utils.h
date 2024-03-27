@@ -218,6 +218,17 @@ T *ObjectRefMap<T>::GetPtr()
 {
     return obj_;
 }
+
+template <typename T, typename V>
+T GetKeyFromValue(const std::unordered_map<T, V> &map, const V &value)
+{
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        if (it->second == value) {
+            return it->first;
+        }
+    }
+    return T{};
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

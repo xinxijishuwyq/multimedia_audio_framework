@@ -98,8 +98,8 @@ void PlayerTest(char *argv[])
     printf("set device change callback ret: %d \n", ret);
 
     //  set buffer size to g_frameSize
-    ret = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, g_frameSize);
-    printf("set buffer size, ret: %d \n", ret);
+    // ret = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, g_frameSize);
+    // printf("set buffer size, ret: %d \n", ret);
 
     // 3. create OH_AudioRenderer
     OH_AudioRenderer* audioRenderer;

@@ -499,7 +499,6 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
         }
     }
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
 
