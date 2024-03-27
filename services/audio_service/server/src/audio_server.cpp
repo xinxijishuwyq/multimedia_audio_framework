@@ -1109,5 +1109,12 @@ int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
 
     return SUCCESS;
 }
+
+uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->GetLatency(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

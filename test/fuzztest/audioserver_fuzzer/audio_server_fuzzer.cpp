@@ -248,6 +248,23 @@ void AudioServerResetRouteForDisconnectFuzzTest(const uint8_t *rawData, size_t s
         data, reply, option);
 }
 
+void AudioServerGetEffectLatencyTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    std::string sessionId(reinterpret_cast<const char*>(rawData), size);
+    data.WriteString(sessionId);
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_LATENCY),
+        data, reply, option);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -265,5 +282,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerGetCapturePresentationPositionFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerGetRenderPresentationPositionFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerGetEffectLatencyTest(data, size);
     return 0;
 }

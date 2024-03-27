@@ -1377,5 +1377,12 @@ int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, boo
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
         flag, address));
 }
+
+uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->GetEffectLatency(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

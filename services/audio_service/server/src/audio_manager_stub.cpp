@@ -462,6 +462,14 @@ int AudioManagerStub::HandleResetRouteForDisconnect(MessageParcel &data, Message
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleGetEffectLatency(MessageParcel &data, MessageParcel &reply)
+{
+    string sessionId = data.ReadString();
+    uint32_t ret = GetEffectLatency(sessionId);
+    reply.WriteUint32(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),

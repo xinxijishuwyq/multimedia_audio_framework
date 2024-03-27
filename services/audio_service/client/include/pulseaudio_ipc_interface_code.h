@@ -58,7 +58,8 @@ namespace AudioStandard {
         GET_RENDER_PRESENTATION_POSITION,
         SET_SPATIALIZATION_SCENE_TYPE,
         RESET_ROUTE_FOR_DISCONNECT,
-        AUDIO_SERVER_CODE_MAX = RESET_ROUTE_FOR_DISCONNECT,
+        GET_EFFECT_LATENCY,
+        AUDIO_SERVER_CODE_MAX = GET_EFFECT_LATENCY,
     };
 } // namespace AudioStandard
 } // namespace OHOS

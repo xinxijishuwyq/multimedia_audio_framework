@@ -754,8 +754,6 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     float speed_ = 1.0;
 
-    bool getPosFromHdi_ = false;
-
     bool firstUpdatePosition_ = true;
     uint64_t lastStreamPosition_ = 0;
     uint64_t lastPositionTimestamp_ = 0;
@@ -777,7 +775,6 @@ private:
     void GetOffloadCurrentTimeStamp(uint64_t paTimeStamp, uint64_t paWriteIndex, uint64_t &outTimeStamp);
     void GetOffloadApproximatelyCacheTime(uint64_t timestamp, uint64_t paWriteIndex, uint64_t &cacheTimePaDsp);
     int32_t CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType);
-    int32_t GetPositionFromServer(uint64_t &framePosition, uint64_t &timestamp);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();

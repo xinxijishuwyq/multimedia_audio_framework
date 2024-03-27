@@ -1130,7 +1130,16 @@ public:
      * @since 11
      */
     int32_t SetCallDeviceActive(ActiveDeviceType deviceType, bool flag, std::string address) const;
-    
+
+    /**
+     * @brief get the effect algorithmic latency value for a specified audio stream.
+     *
+     * @param sessionId the session ID value for the stream
+     * @return Returns the effect algorithmic latency in ms.
+     * @since 12
+     */
+    uint32_t GetEffectLatency(const std::string &sessionId);
+
     static void AudioServerDied(pid_t pid);
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
