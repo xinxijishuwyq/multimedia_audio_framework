@@ -1040,4 +1040,4 @@ void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType
     }
 }
 } // namespace AudioStandard
-}
+} // namespace OHOS
