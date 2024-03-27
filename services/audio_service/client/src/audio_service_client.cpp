@@ -3609,6 +3609,9 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
     switch (mode) {
         case 0: {
             for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
+                if (channelNum >= PA_CHANNELS_MAX) {
+                    return 0;
+                }
                 if ((channelLayout & (bit->first)) != 0) {
                     paMap.map[channelNum++] = bit->second;
                 }
@@ -3618,6 +3621,9 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
         case 1: {
             uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
             channelNum = (order + 1) * (order + 1);
+            if (channelNum > PA_CHANNELS_MAX) {
+                return 0;
+            }
             for (uint32_t i = 0; i < channelNum; ++i) {
                 paMap.map[i] = chSetToPaPositionMap[FRONT_LEFT];
             }
