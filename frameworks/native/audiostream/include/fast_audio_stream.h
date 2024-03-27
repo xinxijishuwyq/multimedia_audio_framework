@@ -134,7 +134,6 @@ public:
     int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
         std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize) override;
     int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) override;
-        int32_t &outBufferSize) override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
