@@ -78,7 +78,7 @@ private:
 
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
     void* outputDeviceChangeuserData_ = nullptr;
-    OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback_ = nullptr;
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_ = nullptr;
     void* metadataUserData_ = nullptr;
 };
 }  // namespace AudioStandard

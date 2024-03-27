@@ -29,10 +29,10 @@ public:
         : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData), encodingType_(encodingType)
     {
     }
-    OHAudioRendererModeCallback(OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback,
+    OHAudioRendererModeCallback(OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback,
         OH_AudioRenderer* audioRenderer, void* metadataUserData, AudioEncodingType encodingType)
-        : metadataCallback_(metadataCallback), ohAudioRenderer_(audioRenderer), metadataUserData_(metadataUserData),
-        encodingType_(encodingType)
+        : writeDataWithMetadataCallback_(writeDataWithMetadataCallback), ohAudioRenderer_(audioRenderer),
+        metadataUserData_(metadataUserData), encodingType_(encodingType)
     {
     }
 
@@ -40,7 +40,7 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback_;
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_;
     OH_AudioRenderer* ohAudioRenderer_;
     void* userData_;
     void* metadataUserData_;
@@ -171,7 +171,7 @@ class OHAudioRenderer {
         int32_t SetEffectMode(AudioEffectMode effectMode);
 
         void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData,
-            OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback, void* metadataUserData);
+            OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback, void* metadataUserData);
         void SetPreferredFrameSize(int32_t frameSize);
 
         void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,

@@ -328,7 +328,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
 
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
     if (audioRenderer->Initialize(options)) {
-        audioRenderer->SetRendererCallback(rendererCallbacks_, userData_, metadataCallback_, metadataUserData_);
+        audioRenderer->SetRendererCallback(rendererCallbacks_, userData_,
+            writeDataWithMetadataCallback_, metadataUserData_);
         audioRenderer->SetRendererOutputDeviceChangeCallback(outputDeviceChangecallback_, outputDeviceChangeuserData_);
         *renderer = (OH_AudioRenderer*)audioRenderer;
         if (preferredFrameSize_ != UNDEFINED_SIZE) {
@@ -410,7 +411,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetWriteDataWithMetadataCallback(
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "SetRendererCallback Error, invalid type input");
-    metadataCallback_ = callback;
+    writeDataWithMetadataCallback_ = callback;
     metadataUserData_ = userData;
     return AUDIOSTREAM_SUCCESS;
 }

@@ -525,15 +525,15 @@ int32_t OHAudioRenderer::SetEffectMode(AudioEffectMode effectMode)
 }
 
 void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData,
-    OH_AudioRenderer_WriteDataWithMetadataCallback metadataCallback, void* metadataUserData)
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback, void* metadataUserData)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
 
     AudioEncodingType encodingType = GetEncodingType();
-    if ((encodingType == ENCODING_AUDIOVIVID) && (metadataCallback != nullptr)) {
+    if ((encodingType == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback != nullptr)) {
         std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
-            metadataCallback, (OH_AudioRenderer*)this, metadataUserData, encodingType);
+            writeDataWithMetadataCallback, (OH_AudioRenderer*)this, metadataUserData, encodingType);
         audioRenderer_->SetRendererWriteCallback(callback);
         AUDIO_INFO_LOG("The write callback function is for AudioVivid type");
     } else if ((encodingType == ENCODING_PCM) && (callbacks.OH_AudioRenderer_OnWriteData != nullptr)) {
@@ -605,7 +605,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     BufferDesc bufDesc;
     audioRenderer->GetBufferDesc(bufDesc);
     if (encodingType_ == ENCODING_AUDIOVIVID) {
-        metadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
+        writeDataWithMetadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
             (void*)bufDesc.metaBuffer, bufDesc.metaLength);
     } else {
         callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_, (void*)bufDesc.buffer, bufDesc.bufLength);
