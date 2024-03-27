@@ -560,7 +560,7 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
 
     auto streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     bool tempBool = true;
-    if (rendererStreamInstanceMap_.Find(streamImpl,tempBool) == false) {
+    if (rendererStreamInstanceMap_.Find(streamImpl, tempBool) == false) {
         AUDIO_ERR_LOG("streamImpl is nullptr");
         return;
     }
