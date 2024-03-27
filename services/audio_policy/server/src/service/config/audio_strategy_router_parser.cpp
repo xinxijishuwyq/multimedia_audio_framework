@@ -89,6 +89,8 @@ void AudioStrategyRouterParser::ParserStrategyInfo(xmlNode *node)
         AddRouters(recordCaptureRouters_, routers);
     } else if (name == "CALL_CAPTURE") {
         AddRouters(callCaptureRouters_, routers);
+    } else if (name == "VOICE_MESSAGE") {
+        AddRouters(voiceMessageRouters_, routers);
     }
 }
 
