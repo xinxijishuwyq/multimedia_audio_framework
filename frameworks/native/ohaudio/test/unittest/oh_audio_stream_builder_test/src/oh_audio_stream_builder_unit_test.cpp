@@ -54,8 +54,25 @@ static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
 static int32_t AudioRendererWriteDataWithMetadataCallback(OH_AudioRenderer* renderer,
     void* userData, void* audioData, int32_t audioDataSize, void* metadata, int32_t metadataSize)
 {
-    fread(audioData, audioDataSize, 1, g_file);
-    fread(metadata, metadataSize, 1, g_file);
+    size_t readCount = fread(audioData, audioDataSize, 1, g_file);
+    if (!readCount) {
+        g_readEnd = true;
+        if (ferror(g_file)) {
+            printf("Error reading myfile");
+        } else if (feof(g_file)) {
+            printf("EOF found");
+        }
+        return 0;
+    }
+    readCount = fread(metadata, metadataSize, 1, g_file);
+    if (!readCount) {
+        g_readEnd = true;
+        if (ferror(g_file)) {
+            printf("Error reading myfile");
+        } else if (feof(g_file)) {
+            printf("EOF found");
+        }
+    }
     return 0;
 }
 
