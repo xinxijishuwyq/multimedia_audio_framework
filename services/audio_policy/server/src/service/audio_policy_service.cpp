@@ -873,6 +873,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioDeviceDescriptors[0]->isEnable_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
     }
+    if (audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        ClearScoDeviceSuspendState(audioDeviceDescriptors[0]->macAddress_);
+    }
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
         strUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
@@ -2486,6 +2489,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
 #endif
+        ClearScoDeviceSuspendState();
     }
 
     // fetch input&output device
@@ -3461,6 +3465,7 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
     CHECK_AND_RETURN_LOG(res == SUCCESS, "DeviceParamsCheck no success");
     if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
         audioStateManager_.SetPerferredCallRenderDevice(audioDeviceDescriptors[0]);
+        ClearScoDeviceSuspendState(audioDeviceDescriptors[0]->macAddress_);
     } else {
         audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
     }
@@ -5532,6 +5537,9 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
     if (active) {
+        if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            ClearScoDeviceSuspendState(address);
+        }
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(**itr));
 #ifdef BLUETOOTH_ENABLE
         if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
@@ -5596,6 +5604,16 @@ ConverterConfig AudioPolicyService::GetConverterConfig()
 {
     AudioConverterParser &converterParser = AudioConverterParser::GetInstance();
     return converterParser.LoadConfig();
+}
+
+void AudioPolicyService::ClearScoDeviceSuspendState(string macAddress)
+{
+    AUDIO_DEBUG_LOG("Clear sco suspend state %{public}s", macAddress.c_str());
+    vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetDevicesByFilter(
+        DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE, macAddress, "", SUSPEND_CONNECTED);
+    for (auto &desc : descs) {
+        desc->connectState_ = DEACTIVE_CONNECTED;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

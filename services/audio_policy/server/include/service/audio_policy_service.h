@@ -698,6 +698,8 @@ private:
 
     void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
 
+    void ClearScoDeviceSuspendState(string macAddress = "");
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
