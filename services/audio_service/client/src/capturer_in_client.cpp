@@ -98,7 +98,7 @@ public:
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
         int32_t &outBufferSize) override;
 
     // callback mode api
@@ -878,6 +878,13 @@ int32_t CapturerInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, 
     AUDIO_ERR_LOG("ChangeSpeed is not supported");
     return ERROR;
 }
+
+int32_t CapturerInClientInner::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
+{
+    AUDIO_ERR_LOG("Speed is not supported");
+    return ERROR;
+}
+
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
