@@ -17,7 +17,6 @@
 #define AUDIO_RENDERER_UNIT_TEST_H
 
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include "audio_renderer.h"
 
 namespace OHOS {
@@ -52,11 +51,6 @@ public:
 class AudioRenderModeCallbackTest : public AudioRendererWriteCallback {
 public:
     void OnWriteData(size_t length) override;
-};
-
-class AudioRendererWriteCallbackMock : public AudioRendererWriteCallback {
-public:
-    MOCK_METHOD(void, OnWriteData, (size_t length), (override));
 };
 
 class AudioRendererUnitTest : public testing::Test {
