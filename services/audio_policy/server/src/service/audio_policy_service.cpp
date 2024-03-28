@@ -3925,6 +3925,7 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
+    streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfo[0]);
     FetchOutputDevice(rendererChangeInfo);
 }
 
@@ -3933,6 +3934,7 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
     vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
         make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
+    streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfo[0]);
     FetchInputDevice(capturerChangeInfo);
 }
 
