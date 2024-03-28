@@ -5794,6 +5794,57 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_002, TestSize.Lev
 
 /**
  * @tc.name  : Test GetUnderflowCount
+ * @tc.number: Audio_Renderer_GetUnderflowCount_004
+ * @tc.desc  : Test GetUnderflowCount interface get underflow value.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_004, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    // Use the STREAM_USAGE_VOICE_COMMUNICATION to prevent entering offload mode, as offload does not support underflow.
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+
+    shared_ptr<AudioRendererWriteCallbackMock> cb = make_shared<AudioRendererWriteCallbackMock>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    EXPECT_CALL(*cb, OnWriteData(_))
+        .Times(AtLeast(1))
+        .WillOnce([&audioRenderer](size_t length) {
+                BufferDesc bufDesc {};
+                bufDesc.buffer = nullptr;
+                bufDesc.dataLength = g_reqBufLen;
+                auto ret = audioRenderer->GetBufferDesc(bufDesc);
+                EXPECT_EQ(SUCCESS, ret);
+                EXPECT_NE(nullptr, bufDesc.buffer);
+                audioRenderer->Enqueue(bufDesc);
+        });
+
+    std::this_thread::sleep_for(1s);
+    auto underFlowCount = audioRenderer->GetUnderflowCount();
+
+    // Ensure the underflowCount is at least 1
+    EXPECT_GE(underFlowCount, 1);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetUnderflowCount
  * @tc.number: Audio_Renderer_GetUnderflowCount_Stability_001
  * @tc.desc  : Test GetUnderflowCount interface get underflow value for 1000 times.
  */
