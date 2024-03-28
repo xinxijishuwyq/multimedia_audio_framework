@@ -30,7 +30,7 @@ AccessibilityConfigListener::~AccessibilityConfigListener() {}
 
 void AccessibilityConfigListener::OnConfigChanged(const CONFIG_ID configId, const ConfigValue &value)
 {
-    AUDIO_INFO_LOG("OnConfigChanged: configId %{public}d", configId);
+    AUDIO_DEBUG_LOG("OnConfigChanged: configId %{public}d", configId);
     if (configId == CONFIG_AUDIO_MONO) {
         audioAccessibilityConfigObserver_.OnMonoAudioConfigChanged(value.audioMono);
     } else if (configId == CONFIG_AUDIO_BALANCE) {
