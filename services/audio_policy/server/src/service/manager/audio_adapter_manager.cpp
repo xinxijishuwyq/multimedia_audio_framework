@@ -156,6 +156,33 @@ void AudioAdapterManager::InitKVStoreInternal()
     }
 }
 
+int32_t AudioAdapterManager::ReInitKVStore()
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, ERR_INVALID_OPERATION,
+        "audioPolicyKvStore_ is already nullptr");
+    audioPolicyKvStore_ = nullptr;
+    DistributedKvDataManager manager;
+    Options options;
+
+    AppId appId;
+    appId.appId = "audio_policy_manager";
+    options.baseDir = std::string("/data/service/el1/public/database/") + appId.appId;
+
+    StoreId storeId;
+    storeId.storeId = "audiopolicy";
+    Status status = Status::SUCCESS;
+
+    status = manager.CloseKvStore(appId, storeId);
+    AUDIO_ERR_LOG("CloseKvStore status: %{public}d", status);
+    CHECK_AND_RETURN_RET_LOG(status == Status::SUCCESS, ERR_ILLEGAL_STATE, "CloseKvStore failed!");
+
+    status = manager.DeleteKvStore(appId, storeId, options.baseDir);
+    CHECK_AND_RETURN_RET_LOG(status == Status::SUCCESS, ERR_ILLEGAL_STATE, "CloseKvStore failed!");
+
+    InitKVStore();
+    return SUCCESS;
+}
+
 void AudioAdapterManager::Deinit(void)
 {
     CHECK_AND_RETURN_LOG(audioServiceAdapter_, "Deinit audio adapter null");
@@ -903,11 +930,9 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
 
         do {
             status = manager.GetSingleKvStore(options, appId, storeId, audioPolicyKvStore_);
-            if (status == Status::INVALID_ARGUMENT) {
-                AUDIO_ERR_LOG("InitAudioPolicyKvStore: INVALID_ARGUMENT!");
-            }
-
-            if ((status == Status::SUCCESS) || (status == Status::INVALID_ARGUMENT)) {
+            AUDIO_ERR_LOG("GetSingleKvStore status: %{public}d", status);
+            if ((status == Status::SUCCESS) || (status == Status::INVALID_ARGUMENT) ||
+                (status == Status::DATA_CORRUPTED) || (status == Status::CRYPT_ERROR)) {
                 break;
             } else {
                 AUDIO_ERR_LOG("InitAudioPolicyKvStore: Kvstore Connect failed! Retrying.");
@@ -918,16 +943,18 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
     }
 
     if (audioPolicyKvStore_ == nullptr) {
-        if (status == Status::INVALID_ARGUMENT) {
-            AUDIO_INFO_LOG("First Boot: Create AudioPolicyKvStore");
-            options.createIfMissing = true;
-            // [create and] open and initialize kvstore instance.
-            status = manager.GetSingleKvStore(options, appId, storeId, audioPolicyKvStore_);
-            if (status == Status::SUCCESS) {
-                isFirstBoot = true;
-            } else {
-                AUDIO_ERR_LOG("Create AudioPolicyKvStore Failed!");
-            }
+        if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+            (void)manager.CloseKvStore(appId, storeId);
+            status = manager.DeleteKvStore(appId, storeId, options.baseDir);
+        }
+        AUDIO_INFO_LOG("First Boot: Create AudioPolicyKvStore status: %{public}d", status);
+        options.createIfMissing = true;
+        // [create and] open and initialize kvstore instance.
+        status = manager.GetSingleKvStore(options, appId, storeId, audioPolicyKvStore_);
+        if (status == Status::SUCCESS) {
+            isFirstBoot = true;
+        } else {
+            AUDIO_ERR_LOG("Create AudioPolicyKvStore Failed status: %{public}d", status);
         }
     }
 
@@ -986,6 +1013,9 @@ bool AudioAdapterManager::LoadVolumeFromKvStore(DeviceType deviceType, AudioStre
         AUDIO_DEBUG_LOG("volumeLevel %{public}d for streamType: %{public}d from kvStore",
             volumeLevel, streamType);
         return true;
+    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+        AUDIO_ERR_LOG("load volume for streamType: %{public}d from kvStore failed, reInitKVStore", streamType);
+        (void)ReInitKVStore();
     }
 
     return false;
@@ -1018,6 +1048,10 @@ bool AudioAdapterManager::LoadRingerMode(void)
     if (status == Status::SUCCESS) {
         ringerMode_ = static_cast<AudioRingerMode>(TransferByteArrayToType<int>(value.Data()));
         AUDIO_DEBUG_LOG("LoadRingerMode Ringer Mode from kvStore %{public}d", ringerMode_);
+    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+        AUDIO_ERR_LOG("load ringerMode from kvStore %{public}d failed, reInitKVStore", ringerMode_);
+        (void)ReInitKVStore();
+        return false;
     }
 
     return true;
@@ -1041,6 +1075,8 @@ void AudioAdapterManager::WriteVolumeToKvStore(DeviceType type, AudioStreamType 
     Status status = audioPolicyKvStore_->Put(key, value);
     if (status == Status::SUCCESS) {
         AUDIO_INFO_LOG("volumeLevel %{public}d for %{public}s", volumeLevel, volumeKey.c_str());
+    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+        (void)ReInitKVStore();
     } else {
         AUDIO_WARNING_LOG("Failed to write volumeLevel %{public}d for %{public}s to kvStore!",
             volumeLevel, volumeKey.c_str());
@@ -1060,6 +1096,8 @@ void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
     Status status = audioPolicyKvStore_->Put(key, value);
     if (status == Status::SUCCESS) {
         AUDIO_INFO_LOG("WriteRingerModeToKvStore Wrote RingerMode:%{public}d to kvStore", ringerMode);
+    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+        (void)ReInitKVStore();
     } else {
         AUDIO_WARNING_LOG("WriteRingerModeToKvStore Writing RingerMode:%{public}d to kvStore failed!", ringerMode);
     }
@@ -1122,6 +1160,8 @@ bool AudioAdapterManager::LoadMuteStatusFromKvStore(DeviceType deviceType, Audio
         bool muteStatus = TransferByteArrayToType<int>(value.Data());
         muteStatusMap_[streamType] = muteStatus;
         return true;
+    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+        (void)ReInitKVStore();
     }
 
     return false;
@@ -1196,6 +1236,8 @@ void AudioAdapterManager::WriteMuteStatusToKvStore(DeviceType deviceType, AudioS
     Status status = audioPolicyKvStore_->Put(key, value);
     if (status == Status::SUCCESS) {
         AUDIO_INFO_LOG("WriteMuteStatusToKvStore: muteStatus %{public}d for %{public}s", muteStatus, muteKey.c_str());
+    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+        (void)ReInitKVStore();
     } else {
         AUDIO_WARNING_LOG("WriteMuteStatusToKvStore: Failed to write muteStatus %{public}d for %{public}s to kvStore!",
             muteStatus, muteKey.c_str());
@@ -1266,6 +1308,8 @@ int32_t AudioAdapterManager::WriteSystemSoundUriToKvStore(const std::string &key
     if (status == Status::SUCCESS) {
         AUDIO_INFO_LOG("WriteSystemSoundUriToKvStore: Wrote [%{public}s]: [%{public}s] to kvStore",
             key.c_str(), uri.c_str());
+    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+        (void)ReInitKVStore();
     } else {
         AUDIO_WARNING_LOG("WriteSystemSoundUriToKvStore: Writing [%{public}s]: [%{public}s] to kvStore failed",
             key.c_str(), uri.c_str());
@@ -1283,6 +1327,8 @@ std::string AudioAdapterManager::LoadSystemSoundUriFromKvStore(const std::string
     Status status = audioPolicyKvStore_->Get(key, value);
     if (status == Status::SUCCESS) {
         uri = value.ToString();
+    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
+        (void)ReInitKVStore();
     }
     AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore:: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
     return uri;

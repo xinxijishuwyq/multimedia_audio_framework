@@ -165,6 +165,7 @@ private:
     std::string GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const;
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
+    int32_t ReInitKVStore();
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
