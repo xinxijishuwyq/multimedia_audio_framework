@@ -559,8 +559,8 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
     CHECK_AND_RETURN_LOG(userdata, "PAStreamWriteCb: userdata is null");
 
     auto streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
-    bool tempBool = true;
-    if (rendererStreamInstanceMap_.Find(streamImpl, tempBool) == false) {
+    bool isStreamValid = true;
+    if (rendererStreamInstanceMap_.Find(streamImpl, isStreamValid) == false) {
         AUDIO_ERR_LOG("streamImpl is nullptr");
         return;
     }
@@ -657,8 +657,8 @@ void PaRendererStreamImpl::PAStreamDrainSuccessCb(pa_stream *stream, int32_t suc
     CHECK_AND_RETURN_LOG(userdata, "PAStreamDrainSuccessCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
-    bool tempBool = true;
-    if (rendererStreamInstanceMap_.Find(streamImpl, tempBool) == false) {
+    bool isStreamValid = true;
+    if (rendererStreamInstanceMap_.Find(streamImpl, isStreamValid) == false) {
         AUDIO_ERR_LOG("streamImpl is null");
         return;
     }
