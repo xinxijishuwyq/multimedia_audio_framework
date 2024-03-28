@@ -443,7 +443,7 @@ void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
     asClient->underFlowCount_++;
-    AUDIO_WARNING_LOG("AudioServiceClient underrun: %{public}d!", asClient->underFlowCount_);
+    AUDIO_WARNING_LOG("underrun: %{public}d!", asClient->underFlowCount_);
 }
 
 void AudioServiceClient::PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata)

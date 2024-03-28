@@ -16,7 +16,7 @@
 #ifndef AUDIO_RENDERER_UNIT_TEST_H
 #define AUDIO_RENDERER_UNIT_TEST_H
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include "audio_renderer.h"
 
 namespace OHOS {

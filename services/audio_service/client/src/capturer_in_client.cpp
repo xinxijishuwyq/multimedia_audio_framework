@@ -1624,6 +1624,7 @@ uint32_t CapturerInClientInner::GetOverflowCount()
 void CapturerInClientInner::SetUnderflowCount(uint32_t underflowCount)
 {
     // not supported for capturer
+    AUDIO_WARNING_LOG("No Underflow in Capturer");
     return;
 }
 

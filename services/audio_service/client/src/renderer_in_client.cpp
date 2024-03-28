@@ -2010,6 +2010,7 @@ uint32_t RendererInClientInner::GetUnderflowCount()
 
 uint32_t RendererInClientInner::GetOverflowCount()
 {
+    AUDIO_WARNING_LOG("No Overflow in renderer");
     return 0;
 }
 
@@ -2021,6 +2022,7 @@ void RendererInClientInner::SetUnderflowCount(uint32_t underflowCount)
 void RendererInClientInner::SetOverflowCount(uint32_t overflowCount)
 {
     // not support for renderer
+    AUDIO_WARNING_LOG("No Overflow in renderer");
     return;
 }
 

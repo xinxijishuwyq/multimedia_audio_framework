@@ -5756,10 +5756,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_001, TestSize.Lev
 
 /**
  * @tc.name  : Test GetUnderflowCount
- * @tc.number: Audio_Renderer_GetUnderflowCount_003
+ * @tc.number: Audio_Renderer_GetUnderflowCount_002
  * @tc.desc  : Test GetUnderflowCount interface get underflow value.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_003, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_002, TestSize.Level1)
 {
     AudioRendererOptions rendererOptions;
 
