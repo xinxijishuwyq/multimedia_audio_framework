@@ -30,6 +30,7 @@
 using namespace std;
 using namespace std::chrono;
 using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -5752,6 +5753,45 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_001, TestSize.Lev
     audioRenderer->Release();
 }
 
+
+/**
+ * @tc.name  : Test GetUnderflowCount
+ * @tc.number: Audio_Renderer_GetUnderflowCount_002
+ * @tc.desc  : Test GetUnderflowCount interface get underflow value.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_002, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    // Use the STREAM_USAGE_VOICE_COMMUNICATION to prevent entering offload mode, as offload does not support underflow.
+    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    size_t bufferSize;
+    int32_t ret = audioRenderer->GetBufferSize(bufferSize);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto buffer = std::make_unique<uint8_t[]>(bufferSize);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    ret = audioRenderer->Write(buffer.get(), bufferSize);
+
+    std::this_thread::sleep_for(1s);
+    auto underFlowCount = audioRenderer->GetUnderflowCount();
+
+    // Ensure the underflowCount is at least 1
+    EXPECT_GE(underFlowCount, 1);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+}
+
 /**
  * @tc.name  : Test GetUnderflowCount
  * @tc.number: Audio_Renderer_GetUnderflowCount_Stability_001
@@ -5773,6 +5813,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_Stability_001, Te
 
     audioRenderer->Release();
 }
+
 /**
  * @tc.name  : Test SetRendererSamplingRate
  * @tc.number: Audio_Renderer_SetRendererSamplingRate_001

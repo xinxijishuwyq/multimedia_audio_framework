@@ -637,6 +637,8 @@ public:
      */
     virtual int32_t SetCaptureSilentState(bool state) = 0;
 
+    virtual uint32_t GetOverflowCount() = 0;
+
     virtual ~AudioCapturer();
 
 protected:

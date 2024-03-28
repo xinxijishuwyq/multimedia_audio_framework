@@ -165,6 +165,10 @@ public:
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
 
     uint32_t GetUnderflowCount() override;
+    uint32_t GetOverflowCount() override;
+    void SetUnderflowCount(uint32_t underflowCount) override;
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
         override;
     void UnsetRendererPositionCallback() override;
@@ -438,7 +442,9 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
     if (operation == BUFFER_UNDERRUN) {
-        underrunCount_++;
+        if (!offloadEnable_) {
+            underrunCount_++;
+        }
         AUDIO_WARNING_LOG("recv underrun %{public}d", underrunCount_);
         // in plan next: do more to reduce underrun
         writeDataCV_.notify_all();
@@ -2023,6 +2029,24 @@ int32_t RendererInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 uint32_t RendererInClientInner::GetUnderflowCount()
 {
     return underrunCount_;
+}
+
+uint32_t RendererInClientInner::GetOverflowCount()
+{
+    AUDIO_WARNING_LOG("No Overflow in renderer");
+    return 0;
+}
+
+void RendererInClientInner::SetUnderflowCount(uint32_t underflowCount)
+{
+    underrunCount_ = underflowCount;
+}
+
+void RendererInClientInner::SetOverflowCount(uint32_t overflowCount)
+{
+    // not support for renderer
+    AUDIO_WARNING_LOG("No Overflow in renderer");
+    return;
 }
 
 void RendererInClientInner::SetRendererPositionCallback(int64_t markPosition,

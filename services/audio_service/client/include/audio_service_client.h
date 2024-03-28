@@ -349,6 +349,12 @@ public:
     */
     uint32_t GetUnderflowCount() override;
 
+    uint32_t GetOverflowCount() override;
+
+    void SetUnderflowCount(uint32_t underflowCount) override;
+
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     // Device volume & route handling APIs
 
     // Audio stream callbacks
@@ -739,7 +745,8 @@ private:
 
     ASClientType eAudioClientType;
 
-    uint32_t underFlowCount;
+    uint32_t underFlowCount_ = 0;
+    uint32_t overflowCount_ = 0;
     int64_t offloadTsOffset_ = 0;
     uint64_t offloadTsLast_ = 0;
     uint64_t offloadWriteIndex_ = 0;

@@ -842,6 +842,11 @@ int32_t AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback()
     return SUCCESS;
 }
 
+uint32_t AudioCapturerPrivate::GetOverflowCount()
+{
+    return audioStream_->GetOverflowCount();
+}
+
 AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()
 {
     AUDIO_DEBUG_LOG("AudioCapturerStateChangeCallbackImpl instance create");

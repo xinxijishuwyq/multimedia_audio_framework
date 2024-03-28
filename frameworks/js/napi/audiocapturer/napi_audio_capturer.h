@@ -59,6 +59,7 @@ private:
         AudioCapturerOptions capturerOptions;
         AudioCapturerInfo capturerInfo;
         AudioStreamInfo streamInfo;
+        uint32_t overflowCount;
     };
 
     static napi_status InitAudioCapturer(napi_env env, napi_value &constructor);
@@ -87,6 +88,8 @@ private:
     static napi_value GetCurrentAudioCapturerChangeInfo(napi_env env, napi_callback_info info);
     static napi_value GetCurrentMicrophones(napi_env env, napi_callback_info info);
     static napi_value GetState(napi_env env, napi_callback_info info);
+    static napi_value GetOverflowCount(napi_env env, napi_callback_info info);
+    static napi_value GetOverflowCountSync(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *argv, const std::string &cbName);
     static napi_value RegisterCapturerCallback(napi_env env, napi_value *argv,

@@ -442,8 +442,8 @@ void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    asClient->underFlowCount++;
-    AUDIO_WARNING_LOG("AudioServiceClient underrun: %{public}d!", asClient->underFlowCount);
+    asClient->underFlowCount_++;
+    AUDIO_WARNING_LOG("underrun: %{public}d!", asClient->underFlowCount_);
 }
 
 void AudioServiceClient::PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata)
@@ -592,7 +592,7 @@ AudioServiceClient::AudioServiceClient()
     streamCmdStatus_ = 0;
     streamDrainStatus_ = 0;
     streamFlushStatus_ = 0;
-    underFlowCount = 0;
+    underFlowCount_ = 0;
 
     acache_.readIndex = 0;
     acache_.writeIndex = 0;
@@ -682,7 +682,7 @@ void AudioServiceClient::ResetPAAudioClient()
 
     internalRdBufIndex_ = 0;
     internalRdBufLen_   = 0;
-    underFlowCount     = 0;
+    underFlowCount_     = 0;
 
     acache_.buffer = nullptr;
     acache_.readIndex = 0;
@@ -1197,7 +1197,22 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
 uint32_t AudioServiceClient::GetUnderflowCount()
 {
-    return underFlowCount;
+    return underFlowCount_;
+}
+
+uint32_t AudioServiceClient::GetOverflowCount()
+{
+    return overflowCount_;
+}
+
+void AudioServiceClient::SetUnderflowCount(uint32_t underflowCount)
+{
+    underFlowCount_ = underflowCount;
+}
+
+void AudioServiceClient::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ = overflowCount;
 }
 
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
@@ -1927,7 +1942,7 @@ void AudioServiceClient::GetStreamSwitchInfo(SwitchInfo& info)
 {
     info.cachePath = cachePath_;
     info.rendererSampleRate = rendererSampleRate;
-    info.underFlowCount = underFlowCount;
+    info.underFlowCount = underFlowCount_;
     info.effectMode = effectMode;
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;
@@ -1945,6 +1960,8 @@ void AudioServiceClient::GetStreamSwitchInfo(SwitchInfo& info)
     info.capturePeriodPositionCb = mCapturePeriodPositionCb;
 
     info.rendererWriteCallback = writeCallback_;
+    info.underFlowCount = underFlowCount_;
+    info.underFlowCount = overflowCount_;
 }
 
 void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
