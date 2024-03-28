@@ -915,6 +915,15 @@ bool AudioServer::CheckPlaybackPermission(Security::AccessToken::AccessTokenID t
 
 bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType)
 {
+    if (sourceType == SOURCE_TYPE_VOICE_CALL) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false,
+            "Create voicecall record stream failed: no system permission.");
+
+        bool res = CheckVoiceCallRecorderPermission(tokenId);
+        return res;
+    }
+
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
     CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
@@ -926,6 +935,13 @@ bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID t
             "Create wakeup record stream failed: no permission.");
     }
     return true;
+}
+
+bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
+{
+    bool hasRecordVoiceCallPermission = VerifyClientPermission(RECORD_VOICE_CALL_PERMISSION, tokenId);
+    CHECK_AND_RETURN_RET_LOG(hasRecordVoiceCallPermission, false, "No permission");
+    return SUCCESS;
 }
 
 int32_t AudioServer::OffloadDrain()
