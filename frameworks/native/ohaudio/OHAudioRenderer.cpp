@@ -627,5 +627,11 @@ void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const Dev
 
     callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_DeviceChangeReason>(reason));
 }
+
+void OHAudioRenderer::SetInterruptMode(InterruptMode mode)
+{
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
+    audioRenderer_->SetInterruptMode(mode);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
