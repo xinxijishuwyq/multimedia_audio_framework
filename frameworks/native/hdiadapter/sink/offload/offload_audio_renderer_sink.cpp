@@ -108,6 +108,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetOutputRoute(DeviceType outputDevice) override;
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
 
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
@@ -842,6 +843,11 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
 #endif
 
     return SUCCESS;
+}
+
+void OffloadAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    AUDIO_WARNING_LOG("not supported.");
 }
 
 } // namespace AudioStandard

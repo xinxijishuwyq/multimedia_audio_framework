@@ -349,6 +349,9 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
         }
+        if (key == "perf_info") {
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::PERF_INFO, key);
+        }
 
         const std::string mmiPre = "mmi_";
         if (key.size() > mmiPre.size()) {
@@ -1091,6 +1094,27 @@ int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spa
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
+}
+
+int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    audioRendererSinkInstance->ResetOutputRouteForDisconnect(type);
+
+    // todo reset capturer
+
+    return SUCCESS;
+}
+
+uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->GetLatency(sessionId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

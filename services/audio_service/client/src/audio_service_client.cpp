@@ -68,7 +68,7 @@ const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
 const uint64_t AUDIO_US_PER_S = 1000000;
-const uint64_t HDI_LATENCY_US = 50000; // 50ms
+const uint64_t AUDIO_MS_PER_S = 1000;
 
 const std::string FORCED_DUMP_PULSEAUDIO_STACKTRACE = "dump_pulseaudio_stacktrace";
 const std::string RECOVERY_AUDIO_SERVER = "recovery_audio_server";
@@ -96,7 +96,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_WAKEUP, "wakeup"},
     {STREAM_VOICE_MESSAGE, "voice_message"},
     {STREAM_NAVIGATION, "navigation"},
-    {STREAM_SOURCE_VOICE_CALL, "source_voice_call"}
+    {STREAM_SOURCE_VOICE_CALL, "source_voice_call"},
+    {STREAM_VOICE_COMMUNICATION, "voice_call"}
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -441,8 +442,8 @@ void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    asClient->underFlowCount++;
-    AUDIO_WARNING_LOG("AudioServiceClient underrun: %{public}d!", asClient->underFlowCount);
+    asClient->underFlowCount_++;
+    AUDIO_WARNING_LOG("underrun: %{public}d!", asClient->underFlowCount_);
 }
 
 void AudioServiceClient::PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata)
@@ -591,7 +592,7 @@ AudioServiceClient::AudioServiceClient()
     streamCmdStatus_ = 0;
     streamDrainStatus_ = 0;
     streamFlushStatus_ = 0;
-    underFlowCount = 0;
+    underFlowCount_ = 0;
 
     acache_.readIndex = 0;
     acache_.writeIndex = 0;
@@ -681,7 +682,7 @@ void AudioServiceClient::ResetPAAudioClient()
 
     internalRdBufIndex_ = 0;
     internalRdBufLen_   = 0;
-    underFlowCount     = 0;
+    underFlowCount_     = 0;
 
     acache_.buffer = nullptr;
     acache_.readIndex = 0;
@@ -1196,7 +1197,22 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
 uint32_t AudioServiceClient::GetUnderflowCount()
 {
-    return underFlowCount;
+    return underFlowCount_;
+}
+
+uint32_t AudioServiceClient::GetOverflowCount()
+{
+    return overflowCount_;
+}
+
+void AudioServiceClient::SetUnderflowCount(uint32_t underflowCount)
+{
+    underFlowCount_ = underflowCount;
+}
+
+void AudioServiceClient::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ = overflowCount;
 }
 
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
@@ -1926,7 +1942,7 @@ void AudioServiceClient::GetStreamSwitchInfo(SwitchInfo& info)
 {
     info.cachePath = cachePath_;
     info.rendererSampleRate = rendererSampleRate;
-    info.underFlowCount = underFlowCount;
+    info.underFlowCount = underFlowCount_;
     info.effectMode = effectMode;
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;
@@ -1944,6 +1960,8 @@ void AudioServiceClient::GetStreamSwitchInfo(SwitchInfo& info)
     info.capturePeriodPositionCb = mCapturePeriodPositionCb;
 
     info.rendererWriteCallback = writeCallback_;
+    info.underFlowCount = underFlowCount_;
+    info.underFlowCount = overflowCount_;
 }
 
 void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
@@ -2362,7 +2380,7 @@ int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
     }
 }
 
-int32_t AudioServiceClient::GetPositionFromServer(uint64_t &framePosition, uint64_t &timestamp)
+int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
 {
     pa_threaded_mainloop_lock(mainLoop);
     pa_operation *operation = pa_stream_update_timing_info(paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
@@ -2381,41 +2399,26 @@ int32_t AudioServiceClient::GetPositionFromServer(uint64_t &framePosition, uint6
     }
     pa_threaded_mainloop_unlock(mainLoop);
 
-    uint64_t paReadIndex = offloadReadIndex_;
-    if (paReadIndex > HDI_LATENCY_US) {
-        framePosition = (paReadIndex - HDI_LATENCY_US) * sampleSpec.rate / AUDIO_US_PER_S;
+    uint64_t paWriteIndex = offloadWriteIndex_;
+    // subtract the latency of prebuf
+    uint64_t writeClientIndex = paWriteIndex > MIN_BUF_DURATION_IN_USEC ? paWriteIndex - MIN_BUF_DURATION_IN_USEC : 0;
+    if (writeClientIndex > paLatency_) {
+        framePosition = (writeClientIndex - paLatency_) * sampleSpec.rate / AUDIO_US_PER_S;
     } else {
         AUDIO_ERR_LOG("error data!");
         return AUDIO_CLIENT_ERR;
     }
+    // subtract the latency of effect latency
+    uint32_t algorithmLatency = AudioSystemManager::GetInstance()->GetEffectLatency(std::to_string(sessionID_));
+    uint64_t algorithmLatencyToFrames = algorithmLatency * sampleSpec.rate / AUDIO_MS_PER_S;
+    framePosition = framePosition > algorithmLatencyToFrames ? framePosition - algorithmLatencyToFrames : 0;
+    AUDIO_DEBUG_LOG("Latency info: effect algorithmic Latency: %{public}u ms", algorithmLatency);
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     timestamp = tm.tv_sec * AUDIO_S_TO_NS + tm.tv_nsec;
 
-    AUDIO_DEBUG_LOG("framePosition: %{public}" PRIu64 " readIndex %{public}" PRIu64 " timestamp %{public}" PRIu64,
-        framePosition, paReadIndex, timestamp);
     return SUCCESS;
-}
-
-int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
-{
-    if (!getPosFromHdi_) {
-        return GetPositionFromServer(framePosition, timestamp);
-    } else {
-        // Since the START processing between the framework service and hdf service is asynchronous, the application
-        // may get the frame information without the hdf service completing the stream initialization.
-        // This time will get an exception value, here will not return the exception to the application.Return the
-        // last frame information instead
-        UpdateStreamPosition(UpdatePositionTimeNode::USER_NODE);
-        framePosition = lastStreamPosition_ > preFrameNum_ ? lastStreamPosition_ - preFrameNum_ : 0;
-        uint64_t latency = 0;
-        GetAudioLatency(latency);
-        latency = latency * sampleSpec.rate / SECOND_TO_MICROSECOND;
-        framePosition = framePosition > latency ? framePosition - latency : 0;
-        timestamp = lastPositionTimestamp_;
-        return AUDIO_CLIENT_SUCCESS;
-    }
 }
 
 void AudioServiceClient::GetAudioLatencyOffload(uint64_t &latency)
@@ -2974,6 +2977,7 @@ AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType 
 {
     switch (streamType) {
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_MESSAGE:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
@@ -3607,6 +3611,9 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
     switch (mode) {
         case 0: {
             for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
+                if (channelNum >= PA_CHANNELS_MAX) {
+                    return 0;
+                }
                 if ((channelLayout & (bit->first)) != 0) {
                     paMap.map[channelNum++] = bit->second;
                 }
@@ -3616,6 +3623,9 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
         case 1: {
             uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
             channelNum = (order + 1) * (order + 1);
+            if (channelNum > PA_CHANNELS_MAX) {
+                return 0;
+            }
             for (uint32_t i = 0; i < channelNum; ++i) {
                 paMap.map[i] = chSetToPaPositionMap[FRONT_LEFT];
             }

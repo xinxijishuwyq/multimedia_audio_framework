@@ -39,6 +39,7 @@ using namespace OHOS::AppExecFwk;
 namespace OHOS {
 namespace AudioStandard {
 const unsigned long long TIME_CONVERSION_US_S = 1000000ULL; /* us to s */
+const unsigned long long TIME_CONVERSION_MS_S = 1000ULL; /* ms to s */
 const unsigned long long TIME_CONVERSION_NS_US = 1000ULL; /* ns to us */
 const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
@@ -231,6 +232,23 @@ bool AudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbas
     uint64_t framePosition = 0;
     uint64_t timestampHdi = 0;
     if (GetCurrentPosition(framePosition, timestampHdi) == SUCCESS) {
+        // add MCR latency
+        uint32_t mcrLatency = 0;
+        if (converter_ != nullptr) {
+            mcrLatency = converter_->GetLatency();
+            framePosition -= mcrLatency * streamParams_.samplingRate / TIME_CONVERSION_MS_S;
+        }
+
+        if (lastFramePosition_ < framePosition) {
+            lastFramePosition_ = framePosition;
+            lastFrameTimestamp_ = timestampHdi;
+        } else {
+            AUDIO_WARNING_LOG("The frame position should be continuously increasing");
+            framePosition = lastFramePosition_;
+            timestampHdi = lastFrameTimestamp_;
+        }
+        AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 " timestamp: %{public}" PRIu64
+            " mcrLatency: %{public}u ms", framePosition, timestampHdi, mcrLatency);
         timestamp.framePosition = framePosition;
         timestamp.time.tv_sec = static_cast<time_t>(timestampHdi / TIME_CONVERSION_NS_S);
         timestamp.time.tv_nsec
@@ -370,15 +388,16 @@ int32_t AudioStream::SetAudioStreamInfo(const AudioStreamParams info,
 bool AudioStream::StartAudioStream(StateChangeCmdType cmdType)
 {
     CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
-        false, "Illegal state:%{public}u", state_);
+        false, "Illegal state:%{public}u, sessionId: %{public}u", state_, sessionId_);
     CHECK_AND_RETURN_RET_LOG(!isPausing_, false,
-        "Illegal isPausing_:%{public}u", isPausing_);
+        "Illegal isPausing_:%{public}u, sessionId: %{public}u", isPausing_, sessionId_);
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, GetClientPid(), rendererInfo_);
         audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, GetClientPid(), capturerInfo_);
     }
     int32_t ret = StartStream(cmdType);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "StartStream Start failed:%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false,
+        "StartStream Start failed:%{public}d, sessionId: %{public}u", ret, sessionId_);
 
     resetTime_ = true;
     int32_t retCode = clock_gettime(CLOCK_MONOTONIC, &baseTimestamp_);
@@ -465,7 +484,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
         ERR_INVALID_PARAM, "Invalid buffer size:%{public}zu", bufferSize);
 
     if (state_ != RUNNING) {
-        AUDIO_ERR_LOG("Write: Illegal  state:%{public}u", state_);
+        AUDIO_ERR_LOG("Write: Illegal  state:%{public}u, sessionId: %{public}u", state_, sessionId_);
         // To allow context switch for APIs running in different thread contexts
         std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
         return ERR_ILLEGAL_STATE;
@@ -495,7 +514,7 @@ int32_t AudioStream::Write(uint8_t *buffer, size_t bufferSize)
     ProcessDataByVolumeRamp(buffer, bufferSize);
     size_t bytesWritten = WriteStream(stream, writeError);
     CHECK_AND_RETURN_RET_LOG(writeError == 0, ERR_WRITE_FAILED,
-        "WriteStream fail,writeError:%{public}d", writeError);
+        "WriteStream fail,writeError:%{public}d, sessionId: %{public}u", writeError, sessionId_);
     return bytesWritten;
 }
 
@@ -505,7 +524,7 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
         "Write not supported. RenderMode is callback");
 
     if (state_ != RUNNING) {
-        AUDIO_ERR_LOG("Write: Illegal state:%{public}u", state_);
+        AUDIO_ERR_LOG("Write: Illegal state:%{public}u, sessionId: %{public}u", state_, sessionId_);
         // To allow context switch for APIs running in different thread contexts
         std::this_thread::sleep_for(std::chrono::microseconds(WRITE_RETRY_DELAY_IN_US));
         return ERR_ILLEGAL_STATE;
@@ -544,14 +563,14 @@ int32_t AudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *me
     stream.bufferLen -= bytesWritten;
     bytesWritten += WriteStream(stream, writeError);
     CHECK_AND_RETURN_RET_LOG(writeError == 0, ERR_WRITE_FAILED,
-        "WriteStream fail,writeError:%{public}d", writeError);
+        "WriteStream fail,writeError:%{public}d, sessionId: %{public}u", writeError, sessionId_);
     return bytesWritten;
 }
 
 bool AudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
-        "State is not RUNNING. Illegal state:%{public}u", state_);
+        "State is not RUNNING. Illegal state:%{public}u, sessionId: %{public}u", state_, sessionId_);
     State oldState = state_;
     // Update state to stop write thread
     state_ = PAUSED;
@@ -647,7 +666,7 @@ bool AudioStream::FlushAudioStream()
 {
     Trace trace("AudioStream::FlushAudioStream");
     CHECK_AND_RETURN_RET_LOG((state_ == RUNNING) || (state_ == PAUSED) || (state_ == STOPPED),
-        false, "State is not RUNNING. Illegal state:%{public}u", state_);
+        false, "State is not RUNNING. Illegal state:%{public}u, sessionId: %{public}u", state_, sessionId_);
 
     if (converter_ != nullptr && streamParams_.encoding == ENCODING_AUDIOVIVID) {
         CHECK_AND_RETURN_RET_LOG(converter_->Flush(), false, "Flush stream fail, failed in converter");
@@ -663,7 +682,7 @@ bool AudioStream::FlushAudioStream()
 bool AudioStream::DrainAudioStream()
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
-        "State is not RUNNING. Illegal  state:%{public}u", state_);
+        "State is not RUNNING. Illegal  state:%{public}u, sessionId: %{public}u", state_, sessionId_);
 
     int32_t ret = DrainStream();
     if (ret != SUCCESS) {
@@ -678,7 +697,7 @@ bool AudioStream::DrainAudioStream()
 bool AudioStream::ReleaseAudioStream(bool releaseRunner)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED && state_ != NEW,
-        false, "Illegal state: state = %{public}u", state_);
+        false, "Illegal state: state = %{public}u, sessionId: %{public}u", state_, sessionId_);
     // If state_ is RUNNING try to Stop it first and Release
     if (state_ == RUNNING) {
         StopAudioStream();

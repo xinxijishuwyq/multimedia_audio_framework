@@ -53,7 +53,8 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
 static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
     // all stream types for voice call volume type
     STREAM_VOICE_CALL,
-    STREAM_VOICE_MESSAGE
+    STREAM_VOICE_MESSAGE,
+    STREAM_VOICE_COMMUNICATION
 };
 
 static const std::vector<AudioStreamType> RINGTONE_VOLUME_TYPE_LIST = {
@@ -132,6 +133,12 @@ bool AudioAdapterManager::ConnectServiceAdapter()
 
 void AudioAdapterManager::InitKVStore()
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    InitKVStoreInternal();
+}
+
+void AudioAdapterManager::InitKVStoreInternal()
+{
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ == nullptr, "InitKVStore: kv store is not nullptr.");
 
     AUDIO_INFO_LOG("AudioAdapterManager::%{public}s in", __func__);
@@ -140,6 +147,13 @@ void AudioAdapterManager::InitKVStore()
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
+
+    // Make sure that the volume value is applied.
+    auto iter = VOLUME_TYPE_LIST.begin();
+    while (iter != VOLUME_TYPE_LIST.end()) {
+        SetVolumeDb(*iter);
+        iter++;
+    }
 }
 
 void AudioAdapterManager::Deinit(void)
@@ -187,11 +201,13 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
     bool /* isFromVolumeKey */)
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_, volumeLevel);
     if (volumeLevel == 0 &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
-        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
+        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
+        streamType == STREAM_VOICE_COMMUNICATION)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetSystemVolumeLevel this type can not set mute");
         return SUCCESS;
@@ -225,10 +241,10 @@ void AudioAdapterManager::UpdateRingerModeForVolume(AudioStreamType streamType, 
     }
     if (volumeLevel > 0 && (ringerMode_ == RINGER_MODE_SILENT || ringerMode_ == RINGER_MODE_VIBRATE)) {
         // ringtone volume > 0, change the ringer mode to RINGER_MODE_NORMAL
-        SetRingerMode(RINGER_MODE_NORMAL);
+        SetRingerModeInternal(RINGER_MODE_NORMAL);
     } else if (volumeLevel == 0 && ringerMode_ == RINGER_MODE_NORMAL) {
         // ringtone volume == 0, change the ringer mode to RINGER_MODE_VIBRATE
-        SetRingerMode(RINGER_MODE_VIBRATE);
+        SetRingerModeInternal(RINGER_MODE_VIBRATE);
     }
 }
 
@@ -237,10 +253,10 @@ void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, 
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
 
     //The mute status is automatically updated based on the stream volume
-    if (volumeLevel > 0 && GetStreamMute(streamType)) {
+    if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
         muteStatusMap_[streamForVolumeMap] = false;
         WriteMuteStatusToKvStore(currentActiveDevice_, streamType, false);
-    } else if (volumeLevel == 0 && !GetStreamMute(streamType)) {
+    } else if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
         muteStatusMap_[streamForVolumeMap] = true;
         WriteMuteStatusToKvStore(currentActiveDevice_, streamType, true);
     }
@@ -265,7 +281,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         "SetSystemVolumeLevel audio adapter null");
 
     AUDIO_INFO_LOG("SetVolumeDb: streamType %{public}d, volumeDb %{public}f", streamType, volumeDb);
-    if (streamType == STREAM_VOICE_CALL) {
+    if (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) {
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
     } else if (streamType == STREAM_MUSIC) {
         return SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
@@ -310,10 +326,17 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    return SetStreamMuteInternal(streamType, mute);
+}
+
+int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute)
+{
     AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d, mute %{public}d", streamType, mute);
     if (mute &&
         (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
-        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY)) {
+        streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
+        streamType == STREAM_VOICE_COMMUNICATION)) {
         // these types can not set to mute, but don't return error
         AUDIO_ERR_LOG("SetStreamMute: this type can not set mute");
         return SUCCESS;
@@ -341,6 +364,12 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
 }
 
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
+{
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    return GetStreamMuteInternal(streamType);
+}
+
+bool AudioAdapterManager::GetStreamMuteInternal(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
     return muteStatusMap_[streamForVolumeMap];
@@ -454,6 +483,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "SetVolumeForSwitchDevice audioPolicyKvStore_ is null!");
     LoadVolumeMap();
     LoadMuteStatusMap();
@@ -481,16 +511,22 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
 
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    return SetRingerModeInternal(ringerMode);
+}
+
+int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
+{
     AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
     ringerMode_ = ringerMode;
 
     switch (ringerMode) {
         case RINGER_MODE_SILENT:
         case RINGER_MODE_VIBRATE:
-            SetStreamMute(STREAM_RING, true);
+            SetStreamMuteInternal(STREAM_RING, true);
             break;
         case RINGER_MODE_NORMAL:
-            SetStreamMute(STREAM_RING, false);
+            SetStreamMuteInternal(STREAM_RING, false);
             break;
         default:
             break;
@@ -747,6 +783,7 @@ std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, A
         case STREAM_DTMF:
             return type + "_dtmf_volume";
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
             return type + "_voice_call_volume";
         case STREAM_VOICE_ASSISTANT:
             return type + "_voice_assistant_volume";
@@ -793,6 +830,7 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
+        case STREAM_VOICE_COMMUNICATION:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -1125,6 +1163,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
         case STREAM_DTMF:
             return type + "_dtmf_mute_status";
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
             return type + "_voice_call_mute_status";
         case STREAM_VOICE_ASSISTANT:
             return type + "_voice_assistant_mute_status";

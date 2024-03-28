@@ -23,7 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioRendererCallbackTest : public AudioRendererCallback {
 public:
-    void OnInterrupt(const InterruptEvent &interruptEvent) override {}
+    void OnInterrupt(const InterruptEvent &interruptEvent) override;
     void OnStateChange(const RendererState state, const StateChangeCmdType cmdType) override {}
 };
 
@@ -75,6 +75,7 @@ public:
     // Release memory
     static void ReleaseBufferAndFiles(uint8_t *&buffer, uint8_t *&metaBuffer,
         FILE *&wavFile, FILE *&metaFile);
+    static InterruptEvent interruptEventTest_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

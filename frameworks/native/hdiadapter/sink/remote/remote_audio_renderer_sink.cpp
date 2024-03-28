@@ -101,6 +101,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
@@ -677,6 +678,11 @@ int32_t RemoteAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, 
 std::string RemoteAudioRendererSinkInner::GetNetworkId()
 {
     return deviceNetworkId_;
+}
+
+void RemoteAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    AUDIO_WARNING_LOG("not supported.");
 }
 
 OHOS::AudioStandard::IAudioSinkCallback* RemoteAudioRendererSinkInner::GetParamCallback()

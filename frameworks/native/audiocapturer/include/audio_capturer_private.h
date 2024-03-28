@@ -83,6 +83,8 @@ public:
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
 
+    uint32_t GetOverflowCount() override;
+
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
     AudioStreamType audioStreamType_;

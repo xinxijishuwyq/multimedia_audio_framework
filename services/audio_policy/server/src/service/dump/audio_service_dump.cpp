@@ -189,6 +189,7 @@ bool AudioServiceDump::IsStreamSupported(AudioStreamType streamType)
         case STREAM_MUSIC:
         case STREAM_RING:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_WAKEUP:
             return true;
@@ -205,6 +206,7 @@ const std::string AudioServiceDump::GetStreamName(AudioStreamType streamType)
             name = "VOICE_ASSISTANT";
             break;
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
             name = "VOICE_CALL";
             break;
         case STREAM_SYSTEM:

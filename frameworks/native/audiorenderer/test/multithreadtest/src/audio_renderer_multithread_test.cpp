@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioRendererMultiTest"
 
 #include "audio_renderer_multithread_test.h"
 
@@ -20,19 +22,17 @@
 
 #include "audio_errors.h"
 #include "audio_info.h"
+#include "audio_log.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
 #include "audio_stream.h"
 #include "audio_renderer_private.h"
-#include "hilog/log.h"
 
 using namespace std;
 using namespace std::chrono;
 using namespace testing::ext;
 using namespace testing::mt;
-using OHOS::HiviewDFX::HiLog;
-using OHOS::HiviewDFX::HiLogLabel;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -40,7 +40,6 @@ namespace {
     const int32_t RENDERER_FLAG = 0;
     const int32_t WRITE_BUFFERS_COUNT = 1000;
     const int32_t VALUE_ZERO = 0;
-    constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "AudioRendererMultiTest"};
     const int32_t MAX_INSTANCE_NUM = 16;
 } // namespace
 
@@ -64,7 +63,7 @@ void AudioRendererMultithreadTest::InitializeRendererOptions(AudioRendererOption
 
 void AudioRendererMultithreadTest::Write(unique_ptr<AudioRenderer> &audioRenderer)
 {
-    HiLog::Info(LABEL, "RendererMultiTest Write");
+    AUDIO_INFO_LOG("RendererMultiTest Write");
     FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
     int32_t ret = -1;
@@ -107,7 +106,7 @@ void RendererMultiTest()
     std::unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     EXPECT_NE(nullptr, audioRenderer);
     if (audioRenderer == nullptr) {
-        HiLog::Info(LABEL, "RendererMultiTest AudioRenderer::Create Faild");
+        AUDIO_ERR_LOG("RendererMultiTest AudioRenderer::Create Faild");
         return;
     }
 
@@ -137,7 +136,7 @@ void RendererMultiTest()
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
 
-    HiLog::Info(LABEL, "RendererMultiTest is called");
+    AUDIO_INFO_LOG("RendererMultiTest is called");
 }
 
 HWTEST(AudioRendererMultithreadTest, Audio_Renderer_001, TestSize.Level1)

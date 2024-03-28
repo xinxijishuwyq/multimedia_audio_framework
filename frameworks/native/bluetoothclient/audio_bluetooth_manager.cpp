@@ -377,7 +377,7 @@ void AudioHfpManager::UpdateAudioScene(AudioScene scene)
 
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
-    AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: state: [%{public}d]", state);
+    AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: state: [%{public}d] reason: [%{public}d]", state, reason);
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice() &&
@@ -386,7 +386,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
         }
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected);
+        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
     }
 }
 
