@@ -422,6 +422,13 @@ RendererInClientInner::~RendererInClientInner()
     AUDIO_INFO_LOG("~RendererInClientInner()");
     DumpFileUtil::CloseDumpFile(&dumpOutFd_);
     RendererInClientInner::ReleaseAudioStream(true);
+    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+    if (!runnerReleased_ && callbackHandler_ != nullptr) {
+        AUDIO_INFO_LOG("runner remove");
+        callbackHandler_->ReleaseEventRunner();
+        runnerReleased_ = true;
+        callbackHandler_ = nullptr;
+    }
 }
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
