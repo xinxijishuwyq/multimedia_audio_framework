@@ -500,6 +500,12 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     cb->Install([&audioRenderer](size_t length) {
+                static int32_t count = 0;
+                // only execute once
+                if (count > 0) {
+                    return;
+                }
+                count++;
                 BufferDesc bufDesc {};
                 bufDesc.buffer = nullptr;
                 bufDesc.dataLength = g_reqBufLen;
