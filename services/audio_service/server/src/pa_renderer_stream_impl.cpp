@@ -328,7 +328,7 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     timestamp = tm.tv_sec * AUDIO_NS_PER_S + tm.tv_nsec;
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
-        ",timestamp %{public}" PRIu64 ",MCR latency: %{public}u ms",
+        ",timestamp %{public}" PRIu64 ", effect latency: %{public}u ms",
         framePosition, readIndex, timestamp, algorithmLatency);
     return SUCCESS;
 }
