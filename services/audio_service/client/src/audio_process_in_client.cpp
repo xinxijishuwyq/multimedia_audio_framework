@@ -104,6 +104,8 @@ public:
     void SetApplicationCachePath(const std::string &cachePath) override;
 
     void SetPreferredFrameSize(int32_t frameSize) override;
+
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     
     bool Init(const AudioProcessConfig &config);
 
@@ -448,6 +450,16 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     AUDIO_INFO_LOG("Set preferred callbackBuffer size:%{public}zu", clientSpanSizeInByte_);
     memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
+}
+
+void AudioProcessInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
+{
+    sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
+        return;
+    }
+    gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
 bool AudioProcessInClientInner::InitAudioBuffer()

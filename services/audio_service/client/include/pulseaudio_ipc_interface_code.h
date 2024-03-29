@@ -60,7 +60,8 @@ namespace AudioStandard {
         GET_MAX_AMPLITUDE,
         RESET_ROUTE_FOR_DISCONNECT,
         GET_EFFECT_LATENCY,
-        AUDIO_SERVER_CODE_MAX = GET_EFFECT_LATENCY,
+        UPDATE_LATENCY_TIMESTAMP,
+        AUDIO_SERVER_CODE_MAX = UPDATE_LATENCY_TIMESTAMP,
     };
 } // namespace AudioStandard
 } // namespace OHOS

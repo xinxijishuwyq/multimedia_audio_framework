@@ -211,6 +211,7 @@ public:
     void HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber);
 
     void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -2222,6 +2223,16 @@ int32_t RendererInClientInner::UnregisterSpatializationStateEventListener(uint32
     int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "UnregisterSpatializationStateEventListener failed");
     return SUCCESS;
+}
+
+void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
+{
+    sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
+        return;
+    }
+    gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()

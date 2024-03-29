@@ -19,6 +19,7 @@
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 #include "audio_log.h"
 #include "audio_policy_manager.h"
 
@@ -202,6 +203,16 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     CHECK_AND_RETURN_RET_LOG((capturerInfo_.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) ||
         checkRecordingCreate, ERR_PERMISSION_DENIED, "recording create check failed");
 
+    int32_t ret = InitAudioStream(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
+
+    RegisterCapturerPolicyServiceDiedCallback();
+
+    return InitAudioInterruptCallback();
+}
+
+int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStreamParams)
+{
     const AudioCapturer *capturer = this;
     capturerProxyObj_->SaveCapturerObj(capturer);
 
@@ -218,11 +229,41 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     audioStream_->SetCapturerSource(capturerInfo_.sourceType);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioStreamInfo Failed");
+    if (ret != SUCCESS) {
+        return ret;
+    }
+    InitLatencyMeasurement(audioStreamParams);
+    return ret;
+}
 
-    RegisterCapturerPolicyServiceDiedCallback();
+void AudioCapturerPrivate::CheckSignalData(uint8_t *buffer, size_t bufferSize) const
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    bool detected = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
+    if (detected) {
+        if (capturerInfo_.capturerFlags == IAudioStream::FAST_STREAM) {
+            AUDIO_INFO_LOG("LatencyMeas fast capturer signal detected");
+        } else {
+            AUDIO_INFO_LOG("LatencyMeas normal capturer signal detected");
+        }
+        audioStream_->UpdateLatencyTimestamp(signalDetectAgent_->lastPeakBufferTime_, false);
+    }
+}
 
-    return InitAudioInterruptCallback();
+void AudioCapturerPrivate::InitLatencyMeasurement(const AudioStreamParams &audioStreamParams)
+{
+    latencyMeasEnabled_ = AudioLatencyMeasurement::CheckIfEnabled();
+    AUDIO_INFO_LOG("LatencyMeas enabled in capturer:%{public}d", latencyMeasEnabled_);
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    signalDetectAgent_->sampleFormat_ = audioStreamParams.format;
+    signalDetectAgent_->formatByteSize_ = GetFormatByteSize(audioStreamParams.format);
 }
 
 int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
@@ -380,6 +421,7 @@ bool AudioCapturerPrivate::Start() const
 
 int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const
 {
+    CheckSignalData(&buffer, userSize);
     return audioStream_->Read(buffer, userSize, isBlockingRead);
 }
 
@@ -653,6 +695,7 @@ int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 
 int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
+    CheckSignalData(bufDesc.buffer, bufDesc.bufLength);
     return audioStream_->Enqueue(bufDesc);
 }
 

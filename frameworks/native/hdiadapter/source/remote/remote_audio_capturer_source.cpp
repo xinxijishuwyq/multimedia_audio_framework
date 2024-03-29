@@ -79,6 +79,7 @@ public:
     int32_t SetInputRoute(DeviceType inputDevice) override;
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
@@ -620,6 +621,13 @@ int32_t RemoteAudioCapturerSourceInner::GetPresentationPosition(uint64_t& frames
     int64_t& timeNanoSec)
 {
     return ERR_OPERATION_FAILED;
+}
+
+std::string RemoteAudioCapturerSourceInner::GetAudioParameter(const AudioParamKey key,
+                                                              const std::string &condition)
+{
+    AUDIO_WARNING_LOG("not supported yet");
+    return "";
 }
 
 void RemoteAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback *callback)
