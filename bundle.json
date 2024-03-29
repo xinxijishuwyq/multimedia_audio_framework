@@ -163,7 +163,9 @@
             "//foundation/multimedia/audio_framework/frameworks/native/opensles:audio_opensles_test_packages",
             "//foundation/multimedia/audio_framework/frameworks/native/toneplayer:audio_toneplayer_test",
             "//foundation/multimedia/audio_framework/services/audio_service:audio_service_test_packages",
-            "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_test_packages"
+            "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_test_packages",
+            "//foundation/multimedia/audio_framework/frameworks/native/ohaudio/test/unittest/oh_audio_render_test:audio_oh_render_unit_test",
+            "//foundation/multimedia/audio_framework/frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test"
           ]
         }
     }
