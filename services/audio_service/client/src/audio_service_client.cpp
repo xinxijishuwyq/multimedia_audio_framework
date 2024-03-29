@@ -64,8 +64,6 @@ const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_S_TO_NS = 1000000000;
-const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
-const int64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_MS_PER_S = 1000;
@@ -455,21 +453,6 @@ void AudioServiceClient::PAStreamEventCb(pa_stream *stream, const char *event, p
     if (!strcmp(event, "signal_mainloop")) {
         pa_threaded_mainloop_signal(asClient->mainLoop, 0);
         AUDIO_DEBUG_LOG("receive event signal_mainloop");
-    }
-
-    if (!strcmp(event, "state_changed")) {
-        const char *old_state = pa_proplist_gets(pl, "old_state");
-        const char *new_state = pa_proplist_gets(pl, "new_state");
-        AUDIO_INFO_LOG("old state : %{public}s, new state : %{public}s",
-            old_state, new_state);
-        if (asClient != nullptr) {
-            if (!strcmp(old_state, "RUNNING") && !strcmp(new_state, "CORKED")) {
-                asClient->UpdateStreamPosition(UpdatePositionTimeNode::CORKED_NODE);
-            }
-            if (!strcmp(old_state, "CORKED") && !strcmp(new_state, "RUNNING")) {
-                asClient->UpdateStreamPosition(UpdatePositionTimeNode::RUNNING_NODE);
-            }
-        }
     }
 }
 
@@ -1897,8 +1880,6 @@ int32_t AudioServiceClient::RenderPrebuf(uint32_t writeLen)
         prebufStream.bufferLen = writeLen;
     }
 
-    preFrameNum_ = prebufStream.bufferLen / mFrameSize;
-
     size_t bytesWritten {0};
     AUDIO_INFO_LOG("RenderPrebuf start");
     while (true) {
@@ -2325,62 +2306,6 @@ void AudioServiceClient::GetOffloadApproximatelyCacheTime(uint64_t paTimeStamp, 
     cacheTimePaDsp = static_cast<uint64_t>(writeIndexInt - (framesInt + offloadTsOffset_));
 }
 
-int32_t AudioServiceClient::UpdateOffloadStreamPosition(UpdatePositionTimeNode node, uint64_t& frames,
-    int64_t& timeSec, int64_t& timeNanoSec)
-{
-    if (node == UpdatePositionTimeNode::CORKED_NODE) {
-        lastOffloadStreamCorkedPosition_ = mTotalBytesWritten / mFrameSize;
-        return AUDIO_CLIENT_SUCCESS;
-    }
-    frames = frames * HDI_OFFLOAD_SAMPLE_RATE / SECOND_TO_MICROSECOND;
-    lastStreamPosition_ = lastOffloadStreamCorkedPosition_ + frames;
-    lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
-    return AUDIO_CLIENT_SUCCESS;
-}
-
-int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
-{
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
-    unique_lock<mutex> positionLock(streamPositionMutex_);
-    std::string deviceClass = offloadEnable_ ? "offload" : "primary";
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK &&
-        audioSystemManager_->GetRenderPresentationPosition(deviceClass, frames, timeSec, timeNanoSec) == 0) {
-        if (offloadEnable_) {
-            return UpdateOffloadStreamPosition(node, frames, timeSec, timeNanoSec);
-        }
-        frames = frames * sampleSpec.rate / HDI_OFFLOAD_SAMPLE_RATE; // revert hdi frame size to client size
-        if (frames < lastHdiPosition_) {
-            AUDIO_ERR_LOG("The frame position should be continuously increasing");
-            return AUDIO_CLIENT_ERR;
-        }
-        if (firstUpdatePosition_) {
-            lastHdiPosition_ = frames;
-            firstUpdatePosition_ = false;
-        }
-        if (node == UpdatePositionTimeNode::USER_NODE && state_ == RUNNING) {
-            lastStreamPosition_ = lastStreamPosition_ + frames - lastHdiPosition_;
-            lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
-        } else if (node == UpdatePositionTimeNode::CORKED_NODE) {
-            // In the current paused state, all data will be flushed
-            lastStreamPosition_ = mTotalBytesWritten / mFrameSize;
-        } else {
-            AUDIO_INFO_LOG("other node value %{public}d!", node);
-        }
-        lastHdiPosition_ = frames;
-        return AUDIO_CLIENT_SUCCESS;
-    } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD &&
-        audioSystemManager_->GetCapturePresentationPosition("primary", frames, timeSec, timeNanoSec) == 0) {
-        lastStreamPosition_ = frames;
-        lastPositionTimestamp_ = timeSec * AUDIO_S_TO_NS + timeNanoSec;
-        return AUDIO_CLIENT_SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("UpdateStreamPosition from hdi failed!");
-        return AUDIO_CLIENT_ERR;
-    }
-}
-
 int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
 {
     pa_threaded_mainloop_lock(mainLoop);
@@ -2558,7 +2483,6 @@ int32_t AudioServiceClient::SetRendererFirstFrameWritingCallback(
 
 void AudioServiceClient::OnFirstFrameWriting()
 {
-    UpdateStreamPosition(UpdatePositionTimeNode::START_NODE);
     hasFirstFrameWrited_ = true;
     CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
