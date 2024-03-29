@@ -187,7 +187,6 @@ bool TonePlayerImpl::Release()
     if (audioRenderer_ != nullptr) {
         audioRenderer_->Stop();
         audioRenderer_->Release();
-        audioRenderer_ = nullptr;
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     return true;
