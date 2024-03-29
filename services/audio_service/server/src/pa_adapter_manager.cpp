@@ -231,7 +231,7 @@ int32_t PaAdapterManager::InitPaContext()
         return ERR_DEVICE_INIT;
     }
     isContextConnected_ = true;
-    HandleMainLoopStart();
+    CHECK_AND_RETURN_RET_LOG(HandleMainLoopStart() == SUCCESS, ERR_DEVICE_INIT, "Failed to start pa mainLoop");
 
     return SUCCESS;
 }

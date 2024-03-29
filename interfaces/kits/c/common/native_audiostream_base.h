@@ -441,6 +441,26 @@ typedef enum {
 } OH_AudioStream_SourceType;
 
 /**
+ * Defines the audio interrupt mode.
+ *
+ * @since 12
+ */
+typedef enum {
+    /**
+     * Share mode
+     *
+     * @since 12
+     */
+    AUDIOSTREAM_INTERRUPT_MODE_SHARE = 0,
+    /**
+     * Independent mode
+     *
+     * @since 12
+     */
+    AUDIOSTREAM_INTERRUPT_MODE_INDEPENDENT = 1
+} OH_AudioInterrupt_Mode;
+
+/**
  * @brief Defines the audio effect mode.
  *
  * @since 12

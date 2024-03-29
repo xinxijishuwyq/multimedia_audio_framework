@@ -3474,7 +3474,7 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
 
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
-    AUDIO_INFO_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -3484,7 +3484,7 @@ void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
-    AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
+    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -3925,6 +3925,7 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
+    streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfo[0]);
     FetchOutputDevice(rendererChangeInfo);
 }
 
@@ -3933,6 +3934,7 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
     vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
         make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
+    streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfo[0]);
     FetchInputDevice(capturerChangeInfo);
 }
 

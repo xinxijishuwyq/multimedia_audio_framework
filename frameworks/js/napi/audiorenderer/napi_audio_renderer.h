@@ -99,6 +99,7 @@ private:
     static napi_value GetAudioStreamId(napi_env env, napi_callback_info info);
     static napi_value GetAudioStreamIdSync(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
+    static napi_value GetVolume(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfo(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfoSync(napi_env env, napi_callback_info info);
     static napi_value GetStreamInfo(napi_env env, napi_callback_info info);

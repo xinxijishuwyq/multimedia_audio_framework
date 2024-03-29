@@ -56,6 +56,7 @@ public:
     std::vector<std::unique_ptr<RouterBase>> ringRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> toneRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> recordCaptureRouters_;
+    std::vector<std::unique_ptr<RouterBase>> voiceMessageRouters_;
 
 private:
     bool ParseInternal(xmlNode *node);
