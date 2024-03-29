@@ -710,6 +710,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     AUDIO_DEBUG_LOG("GetSinkInputInfoVolumeCb enter.");
     if (eol < 0) {
+        pa_threaded_mainloop_signal(thiz->mMainLoop, 1);
         delete userData;
         AUDIO_ERR_LOG("Failed to get sink input information: %{public}s",
             pa_strerror(pa_context_errno(c)));
