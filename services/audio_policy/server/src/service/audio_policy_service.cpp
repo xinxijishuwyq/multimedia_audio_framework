@@ -3463,6 +3463,8 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
     }
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_LOG(res == SUCCESS, "DeviceParamsCheck no success");
+    audioDeviceDescriptors[0]->isEnable_ = true;
+    audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
     if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
         audioStateManager_.SetPerferredCallRenderDevice(audioDeviceDescriptors[0]);
         ClearScoDeviceSuspendState(audioDeviceDescriptors[0]->macAddress_);
