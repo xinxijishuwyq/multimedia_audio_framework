@@ -24,8 +24,15 @@ namespace OHOS {
 namespace AudioStandard {
 class OHAudioRendererModeCallback : public AudioRendererWriteCallback {
 public:
-    OHAudioRendererModeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer, void* userData)
-        : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    OHAudioRendererModeCallback(OH_AudioRenderer_Callbacks callbacks,
+        OH_AudioRenderer *audioRenderer, void *userData, AudioEncodingType encodingType)
+        : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData), encodingType_(encodingType)
+    {
+    }
+    OHAudioRendererModeCallback(OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback,
+        OH_AudioRenderer *audioRenderer, void *metadataUserData, AudioEncodingType encodingType)
+        : writeDataWithMetadataCallback_(writeDataWithMetadataCallback), ohAudioRenderer_(audioRenderer),
+        metadataUserData_(metadataUserData), encodingType_(encodingType)
     {
     }
 
@@ -33,14 +40,17 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer* ohAudioRenderer_;
-    void* userData_;
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
+    void *metadataUserData_;
+    AudioEncodingType encodingType_;
 };
 
 class OHAudioRendererDeviceChangeCallback : public AudioRendererDeviceChangeCallback {
 public:
-    OHAudioRendererDeviceChangeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer,
-        void* userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    OHAudioRendererDeviceChangeCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer *audioRenderer,
+        void *userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
 
@@ -48,14 +58,14 @@ public:
     void RemoveAllCallbacks() override {};
 private:
     OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer* ohAudioRenderer_;
-    void* userData_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
 };
 
 class OHAudioRendererDeviceChangeCallbackWithInfo : public AudioRendererOutputDeviceChangeCallback {
 public:
     OHAudioRendererDeviceChangeCallbackWithInfo(OH_AudioRenderer_OutputDeviceChangeCallback callback,
-        OH_AudioRenderer* audioRenderer, void* userData)
+        OH_AudioRenderer *audioRenderer, void *userData)
         : callback_(callback), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
@@ -63,14 +73,14 @@ public:
     void OnOutputDeviceChange(const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
 private:
     OH_AudioRenderer_OutputDeviceChangeCallback callback_;
-    OH_AudioRenderer* ohAudioRenderer_;
-    void* userData_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
 };
 
 class OHAudioRendererCallback : public AudioRendererCallback {
 public:
-    OHAudioRendererCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer,
-        void* userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    OHAudioRendererCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer *audioRenderer,
+        void *userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
     void OnInterrupt(const InterruptEvent &interruptEvent) override;
@@ -81,14 +91,14 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer* ohAudioRenderer_;
-    void* userData_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
 };
 
 class OHServiceDiedCallback : public AudioRendererPolicyServiceDiedCallback {
 public:
-    OHServiceDiedCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer,
-        void* userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    OHServiceDiedCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer *audioRenderer,
+        void *userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
 
@@ -96,14 +106,14 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer* ohAudioRenderer_;
-    void* userData_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
 };
 
 class OHAudioRendererErrorCallback : public AudioRendererErrorCallback {
 public:
-    OHAudioRendererErrorCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer* audioRenderer,
-        void* userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
+    OHAudioRendererErrorCallback(OH_AudioRenderer_Callbacks callbacks, OH_AudioRenderer *audioRenderer,
+        void *userData) : callbacks_(callbacks), ohAudioRenderer_(audioRenderer), userData_(userData)
     {
     }
 
@@ -113,14 +123,14 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer* ohAudioRenderer_;
-    void* userData_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
 };
 
 class OHRendererPositionCallback : public RendererPositionCallback {
 public:
     OHRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
-        OH_AudioRenderer* ohAudioRenderer, void* userData)
+        OH_AudioRenderer *ohAudioRenderer, void *userData)
         : callback_(callback), ohAudioRenderer_(ohAudioRenderer), userData_(userData)
     {
     }
@@ -128,8 +138,8 @@ public:
 
 private:
     OH_AudioRenderer_OnMarkReachedCallback callback_;
-    OH_AudioRenderer* ohAudioRenderer_;
-    void* userData_;
+    OH_AudioRenderer *ohAudioRenderer_;
+    void *userData_;
 };
 
 class OHAudioRenderer {
@@ -156,8 +166,12 @@ class OHAudioRenderer {
         int32_t Enqueue(const BufferDesc &bufDesc) const;
         int32_t SetSpeed(float speed);
         float GetSpeed();
+        AudioChannelLayout GetChannelLayout();
+        AudioEffectMode GetEffectMode();
+        int32_t SetEffectMode(AudioEffectMode effectMode);
 
-        void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
+        void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void *userData,
+            OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback, void *metadataUserData);
         void SetPreferredFrameSize(int32_t frameSize);
 
         void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
@@ -168,7 +182,7 @@ class OHAudioRenderer {
         int32_t SetVolumeWithRamp(float volume, int32_t duration);
         float GetVolume() const;
         int32_t SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
-            uint32_t markPosition, void* userData);
+            uint32_t markPosition, void *userData);
         void UnsetRendererPositionCallback();
         uint32_t GetUnderflowCount();
         void SetInterruptMode(InterruptMode mode);

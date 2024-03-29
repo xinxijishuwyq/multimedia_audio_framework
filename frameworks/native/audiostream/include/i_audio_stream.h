@@ -259,7 +259,11 @@ public:
 
     bool IsRendererChannelLayoutValid(uint64_t channelLayout);
 
+    bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
+
     bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
+
+    bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -41,6 +41,8 @@ struct AudioCapturerParams {
     AudioStreamType streamType = STREAM_MEDIA;
     /** audioSampleFormat */
     AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
+    /** Audio Channel Layout */
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
 };
 
 class AudioCapturerCallback {
