@@ -95,6 +95,8 @@ public:
 
     int32_t Preload(const std::string &usbInfoStr) override;
 
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
+
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
 private:
@@ -1059,5 +1061,13 @@ int32_t MultiChannelRendererSinkInner::InitRender()
 
     return SUCCESS;
 }
+
+void MultiChannelRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    if (currentActiveDevice_ == device) {
+        currentActiveDevice_ = DEVICE_TYPE_NONE;
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -163,6 +163,10 @@ public:
     void UnsetRendererPeriodPositionCallback() override;
 
     uint32_t GetUnderflowCount() override;
+    uint32_t GetOverflowCount() override;
+    void SetUnderflowCount(uint32_t underflowCount) override;
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     uint32_t GetRendererSamplingRate() override;
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
@@ -356,7 +360,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == BUFFER_OVERFLOW) {
-        overflowCount_++;
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
         readDataCV_.notify_all();
@@ -1504,7 +1507,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             result = ringCache_->Dequeue({&buffer + (readSize), readableSize});
             CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "DequeueCache err %{public}d", result.ret);
             readSize += readableSize;
-            HandleCapturerPositionChanges(readSize);
             return readSize; // data size
         }
         if (result.size != 0) {
@@ -1522,7 +1524,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
         } else {
             if (!isBlockingRead) {
-                HandleCapturerPositionChanges(readSize);
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
@@ -1599,7 +1600,7 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
 
     {
         std::lock_guard<std::mutex> lock(periodReachMutex_);
-        capturerPeriodRead_ += (totalBytesRead_ / sizePerFrameInByte_);
+        capturerPeriodRead_ += (bytesRead / sizePerFrameInByte_);
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(capturerPeriodRead_), static_cast<int64_t>(totalBytesRead_));
         if (capturerPeriodRead_ >= capturerPeriodSize_ && capturerPeriodSize_ > 0) {
@@ -1616,6 +1617,23 @@ uint32_t CapturerInClientInner::GetUnderflowCount()
     // not supported for capturer
     AUDIO_WARNING_LOG("No Underflow in Capturer");
     return 0;
+}
+
+uint32_t CapturerInClientInner::GetOverflowCount()
+{
+    return overflowCount_;
+}
+
+void CapturerInClientInner::SetUnderflowCount(uint32_t underflowCount)
+{
+    // not supported for capturer
+    AUDIO_WARNING_LOG("No Underflow in Capturer");
+    return;
+}
+
+void CapturerInClientInner::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ = overflowCount;
 }
 
 void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, const

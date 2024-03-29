@@ -75,7 +75,6 @@ constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
-constexpr uid_t UID_COMPONENT_SCHEDULE_SERVICE_SA = 1905;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
@@ -354,6 +353,7 @@ AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType s
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
+        case STREAM_VOICE_COMMUNICATION:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -391,6 +391,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
@@ -545,7 +546,7 @@ int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_FOUNDATION_SA &&
-        callerUid != UID_COMPONENT_SCHEDULE_SERVICE_SA) {
+        callerUid != UID_ROOT) {
         AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not foundation or component_schedule_service");
         return ERROR;
     }
@@ -1090,8 +1091,8 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
 void AudioPolicyServer::OnSessionRemoved(const uint64_t sessionID)
 {
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
-    sessionProcessor_.Post({SessionEvent::Type::REMOVE, sessionID});
 }
 
 void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneID)
@@ -1109,6 +1110,7 @@ void AudioPolicyServer::OnCapturerSessionAdded(const uint64_t sessionID, Session
     streamInfo.channels = static_cast<AudioChannel>(sessionInfo.channels);
 
     int32_t error = SUCCESS;
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionID, false, error);
 }
 
@@ -2431,7 +2433,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
         return interruptService_->CreateAudioInterruptZone(zoneID, pids);
@@ -2439,7 +2441,7 @@ int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> pids
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyServer::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
         return interruptService_->AddAudioInterruptZonePids(zoneID, pids);
@@ -2447,7 +2449,7 @@ int32_t AudioPolicyServer::AddAudioInterruptZonePids(const std::set<int32_t> pid
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyServer::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
         return interruptService_->RemoveAudioInterruptZonePids(zoneID, pids);

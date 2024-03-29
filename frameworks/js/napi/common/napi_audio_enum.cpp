@@ -438,10 +438,10 @@ const std::map<std::string, uint64_t> NapiAudioEnum::audioChannelLayoutMap = {
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::spatializationSceneTypeMap = {
-    {"SPATIALIZATION_SCENE_TYPE_DEFAULT", SPATIALIZATION_SCENE_TYPE_DEFAULT },
-    {"SPATIALIZATION_SCENE_TYPE_MUSIC", SPATIALIZATION_SCENE_TYPE_MUSIC},
-    {"SPATIALIZATION_SCENE_TYPE_MOVIE", SPATIALIZATION_SCENE_TYPE_MOVIE},
-    {"SPATIALIZATION_SCENE_TYPE_AUDIOBOOK", SPATIALIZATION_SCENE_TYPE_AUDIOBOOK},
+    {"DEFAULT", SPATIALIZATION_SCENE_TYPE_DEFAULT },
+    {"MUSIC", SPATIALIZATION_SCENE_TYPE_MUSIC},
+    {"MOVIE", SPATIALIZATION_SCENE_TYPE_MOVIE},
+    {"AUDIOBOOK", SPATIALIZATION_SCENE_TYPE_AUDIOBOOK},
 };
 
 NapiAudioEnum::NapiAudioEnum()
@@ -1117,6 +1117,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
     switch (volumeType) {
         case AudioStreamType::STREAM_VOICE_CALL:
         case AudioStreamType::STREAM_VOICE_MESSAGE:
+        case AudioStreamType::STREAM_VOICE_COMMUNICATION:
             result = NapiAudioEnum::VOICE_CALL;
             break;
         case AudioStreamType::STREAM_RING:

@@ -263,7 +263,7 @@ bool AudioPolicyServerHandler::SendPreferredInputDeviceUpdated()
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> &descriptor,
+bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
     const CastType &type)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();

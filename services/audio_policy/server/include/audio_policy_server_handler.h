@@ -131,7 +131,7 @@ public:
         const int32_t &clientId);
     bool SendPreferredOutputDeviceUpdated();
     bool SendPreferredInputDeviceUpdated();
-    bool SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> &descriptor,
+    bool SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
         const CastType &type);
     bool SendRendererInfoEvent(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     bool SendCapturerInfoEvent(const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);

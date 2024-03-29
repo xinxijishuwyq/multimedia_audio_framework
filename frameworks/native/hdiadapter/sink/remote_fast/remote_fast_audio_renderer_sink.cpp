@@ -111,6 +111,8 @@ public:
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
 
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
+
     std::string GetNetworkId();
     IAudioSinkCallback* GetParamCallback();
 
@@ -706,6 +708,11 @@ std::string RemoteFastAudioRendererSinkInner::GetAudioParameter(const AudioParam
 std::string RemoteFastAudioRendererSinkInner::GetNetworkId()
 {
     return deviceNetworkId_;
+}
+
+void RemoteFastAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    AUDIO_WARNING_LOG("not supported.");
 }
 
 OHOS::AudioStandard::IAudioSinkCallback* RemoteFastAudioRendererSinkInner::GetParamCallback()

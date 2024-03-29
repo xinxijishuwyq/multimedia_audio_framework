@@ -117,6 +117,9 @@ public:
 
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
 
+    int32_t ResetRouteForDisconnect(DeviceType type) override;
+
+    uint32_t GetEffectLatency(const std::string &sessionId) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

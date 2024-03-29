@@ -19,20 +19,17 @@
 
 #include "audio_errors.h"
 #include "audio_info.h"
+#include "audio_log.h"
 #include "audio_system_manager.h"
-#include "hilog/log.h"
 
 #include "audio_volume_change_unit_test.h"
 
-using OHOS::HiviewDFX::HiLog;
-using OHOS::HiviewDFX::HiLogLabel;
 using namespace std;
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    constexpr HiLogLabel LABEL = {LOG_CORE, LOG_DOMAIN, "VolumeChangeGtest"};
     AudioSystemManager *g_audioManagerInstance = nullptr;
 
     int32_t g_streamType(0);
@@ -72,7 +69,7 @@ void AudioVolumeChangeUnitTest::SetUpTestCase(void)
 {
     g_audioManagerInstance = AudioSystemManager::GetInstance();
     if (g_audioManagerInstance == nullptr) {
-        HiLog::Error(LABEL, "AudioSystemManager instance not available");
+        AUDIO_ERR_LOG("AudioSystemManager instance not available");
         return;
     }
 }

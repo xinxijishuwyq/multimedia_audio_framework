@@ -25,6 +25,7 @@
 
 #include "safe_map.h"
 #include "pa_adapter_tools.h"
+#include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
@@ -40,9 +41,9 @@ const int32_t OFFLOAD_HDI_CACHE2 = 7000; // ms, should equal with val in hdi_sin
 const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_NS_PER_US = 1000;
+const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_NS_PER_S = 1000000000;
-const uint64_t HDI_LATENCY_US = 50000; // 50ms
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -285,42 +286,51 @@ int32_t PaRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 
 int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
 {
-    if (!getPosFromHdi_) {
-        PaLockGuard lock(mainloop_);
-        pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
-        if (operation != nullptr) {
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-            return ERR_OPERATION_FAILED;
-        }
-
-        const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
-        if (info == nullptr) {
-            AUDIO_WARNING_LOG("pa_stream_get_timing_info failed");
-            return ERR_OPERATION_FAILED;
-        }
-
-        const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
-        uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
-        if (readIndex > HDI_LATENCY_US && sampleSpec != nullptr) {
-            framePosition = (readIndex - HDI_LATENCY_US) * sampleSpec->rate / AUDIO_US_PER_S;
-        } else {
-            AUDIO_ERR_LOG("error data!");
-            return ERR_OPERATION_FAILED;
-        }
-
-        timespec tm {};
-        clock_gettime(CLOCK_MONOTONIC, &tm);
-        timestamp = tm.tv_sec * AUDIO_NS_PER_S + tm.tv_nsec;
-
-        AUDIO_DEBUG_LOG("framePosition: %{public}" PRIu64 " readIndex %{public}" PRIu64 " timestamp %{public}" PRIu64,
-            framePosition, readIndex, timestamp);
-        return SUCCESS;
+    PaLockGuard lock(mainloop_);
+    pa_operation *operation = pa_stream_update_timing_info(paStream_, NULL, NULL);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
     } else {
-        AUDIO_ERR_LOG("Getting position info from hdi is not supported now.");
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
         return ERR_OPERATION_FAILED;
     }
+    pa_usec_t paLatency {0};
+    int32_t negative {0};
+    if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
+        if (negative) {
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
+    const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
+    if (info == nullptr) {
+        AUDIO_WARNING_LOG("pa_stream_get_timing_info failed");
+        return ERR_OPERATION_FAILED;
+    }
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    uint64_t readIndex = pa_bytes_to_usec(info->read_index, sampleSpec);
+    uint64_t writeIndex = pa_bytes_to_usec(info->write_index, sampleSpec);
+    if (writeIndex > paLatency && sampleSpec != nullptr) {
+        framePosition = (writeIndex - paLatency) * sampleSpec->rate / AUDIO_US_PER_S;
+    } else {
+        AUDIO_ERR_LOG("error data!");
+        return ERR_OPERATION_FAILED;
+    }
+
+    // Processing data for algorithmic time delays
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    uint32_t algorithmLatency = audioEffectChainManager->GetLatency(std::to_string(streamIndex_));
+    uint64_t algorithmLatencyToFrames = algorithmLatency * sampleSpec->rate / AUDIO_MS_PER_S;
+    framePosition = framePosition > algorithmLatencyToFrames ? framePosition - algorithmLatencyToFrames : 0;
+
+    timespec tm {};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    timestamp = tm.tv_sec * AUDIO_NS_PER_S + tm.tv_nsec;
+
+    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
+        ",timestamp %{public}" PRIu64 ",MCR latency: %{public}u ms",
+        framePosition, readIndex, timestamp, algorithmLatency);
+    return SUCCESS;
 }
 
 int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)

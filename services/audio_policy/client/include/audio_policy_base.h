@@ -247,13 +247,13 @@ public:
     virtual int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t CreateAudioInterruptZone(const std::set<int32_t> pids,
+    virtual int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids,
+    virtual int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids,
+    virtual int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;

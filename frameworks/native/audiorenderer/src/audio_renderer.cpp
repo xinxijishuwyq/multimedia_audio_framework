@@ -193,8 +193,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     }
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d",
-        streamUsage, contentType, rendererFlags);
+    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d, "\
+        "uid: %{public}d", streamUsage, contentType, rendererFlags, appInfo.appUid);
 
     audioRenderer->rendererInfo_.contentType = contentType;
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
@@ -301,6 +301,9 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
         SetSelfRendererStateCallback();
     }
 
+    ret = GetAudioStreamId(sessionID_);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "GetAudioStreamId err");
+
     return SUCCESS;
 }
 
@@ -373,7 +376,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     RegisterRendererPolicyServiceDiedCallback();
 
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, std::to_string(sessionID_) + '_' + DUMP_AUDIO_RENDERER_FILENAME,
+        &dumpFile_);
 
     if (outputDeviceChangeCallback_ != nullptr) {
         ret = InitOutputDeviceChangeCallback();
@@ -1181,6 +1185,7 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRenderMode(info.renderMode);
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
+    audioStream->SetUnderflowCount(info.underFlowCount);
 
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {

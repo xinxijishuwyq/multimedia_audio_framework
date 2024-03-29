@@ -12,11 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioGroupManagerUnitTest"
 
 #include "audio_group_manager_unit_test.h"
 
 #include "audio_errors.h"
 #include "audio_info.h"
+#include "audio_log.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -30,14 +33,8 @@ namespace {
     constexpr int32_t ERROR_62980101 = -62980101;
 }
 
-void AudioGroupManagerUnitTest::SetUpTestCase(void)
-{
-    system("param set debug.media_service.histreamer 0");
-}
-void AudioGroupManagerUnitTest::TearDownTestCase(void)
-{
-    system("param set debug.media_service.histreamer 0");
-}
+void AudioGroupManagerUnitTest::SetUpTestCase(void) {}
+void AudioGroupManagerUnitTest::TearDownTestCase(void) {}
 void AudioGroupManagerUnitTest::SetUp(void) {}
 void AudioGroupManagerUnitTest::TearDown(void) {}
 
@@ -462,7 +459,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_IsVolumeUnadjustable_001, 
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
         auto ret = audioGroupMngr_->IsVolumeUnadjustable();
-        GTEST_LOG_(INFO) << "Is volume unadjustable: " << ret;
+        AUDIO_INFO_LOG("Is volume unadjustable: %{public}d", ret);
         EXPECT_EQ(false, ret);
     }
 }
@@ -485,7 +482,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_001, Te
         EXPECT_EQ(SUCCESS, ret);
 
         ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_UP);
-        GTEST_LOG_(INFO) << "Adjust volume by step: " << ret;
+        AUDIO_INFO_LOG("Adjust volume by step: %{public}d", ret);
         EXPECT_EQ(SUCCESS, ret);
     }
 }
@@ -506,7 +503,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustVolumeByStep_002, Te
         auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
 
         ret = audioGroupMngr_->AdjustVolumeByStep(VolumeAdjustType::VOLUME_DOWN);
-        GTEST_LOG_(INFO) << "Adjust volume by step: " << ret;
+        AUDIO_INFO_LOG("Adjust volume by step: %{public}d", ret);
         EXPECT_EQ(SUCCESS, ret);
     }
 }
@@ -531,7 +528,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 
         ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING,
                                                         VolumeAdjustType::VOLUME_UP);
-        GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
+        AUDIO_INFO_LOG("Adjust system volume by step: %{public}d", ret);
         EXPECT_EQ(SUCCESS, ret);
 
         int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
@@ -559,7 +556,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 
         ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING,
                                                         VolumeAdjustType::VOLUME_DOWN);
-        GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
+        AUDIO_INFO_LOG("Adjust system volume by step: %{public}d", ret);
         EXPECT_EQ(SUCCESS, ret);
 
         int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
@@ -587,7 +584,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 
         ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_RING,
                                                         VolumeAdjustType::VOLUME_UP);
-        GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
+        AUDIO_INFO_LOG("Adjust system volume by step: %{public}d", ret);
         EXPECT_EQ(ERROR_62980101, ret);
 
         int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_RING);
@@ -615,7 +612,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_AdjustSystemVolumeByStep_0
 
         ret = audioGroupMngr_->AdjustSystemVolumeByStep(AudioVolumeType::STREAM_MUSIC,
                                                         VolumeAdjustType::VOLUME_DOWN);
-        GTEST_LOG_(INFO) << "Adjust system volume by step: " << ret;
+        AUDIO_INFO_LOG("Adjust system volume by step: %{public}d", ret);
         EXPECT_EQ(ERROR_62980101, ret);
 
         int32_t SecondVolume = audioGroupMngr_->GetVolume(AudioVolumeType::STREAM_MUSIC);
@@ -640,7 +637,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_001, T
 
         float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, vol,
                                                         DeviceType::DEVICE_TYPE_SPEAKER);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        AUDIO_INFO_LOG("Get system volume in Db: %{public}f", db);
         EXPECT_LT(SUCCESS, db);
     }
 }
@@ -662,7 +659,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_002, T
 
         float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_VOICE_CALL, vol,
                                                         DeviceType::DEVICE_TYPE_SPEAKER);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        AUDIO_INFO_LOG("Get system volume in Db: %{public}f", db);
         EXPECT_LT(SUCCESS, db);
     }
 }
@@ -684,7 +681,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_003, T
 
         float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, vol,
                                                         DeviceType::DEVICE_TYPE_SPEAKER);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        AUDIO_INFO_LOG("Get system volume in Db: %{public}f", db);
         EXPECT_LT(SUCCESS, db);
     }
 }
@@ -706,7 +703,7 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetSystemVolumeInDb_004, T
 
         float db = audioGroupMngr_->GetSystemVolumeInDb(AudioVolumeType::STREAM_ALARM, vol,
                                                         DeviceType::DEVICE_TYPE_EARPIECE);
-        GTEST_LOG_(INFO) << "Get system volume in Db: " << db;
+        AUDIO_INFO_LOG("Get system volume in Db: %{public}f", db);
         EXPECT_LT(SUCCESS, db);
     }
 }

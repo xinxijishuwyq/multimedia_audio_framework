@@ -349,6 +349,12 @@ public:
     */
     uint32_t GetUnderflowCount() override;
 
+    uint32_t GetOverflowCount() override;
+
+    void SetUnderflowCount(uint32_t underflowCount) override;
+
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     // Device volume & route handling APIs
 
     // Audio stream callbacks
@@ -739,7 +745,8 @@ private:
 
     ASClientType eAudioClientType;
 
-    uint32_t underFlowCount;
+    uint32_t underFlowCount_ = 0;
+    uint32_t overflowCount_ = 0;
     int64_t offloadTsOffset_ = 0;
     uint64_t offloadTsLast_ = 0;
     uint64_t offloadWriteIndex_ = 0;
@@ -753,8 +760,6 @@ private:
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
     float speed_ = 1.0;
-
-    bool getPosFromHdi_ = false;
 
     bool firstUpdatePosition_ = true;
     uint64_t lastStreamPosition_ = 0;
@@ -777,7 +782,6 @@ private:
     void GetOffloadCurrentTimeStamp(uint64_t paTimeStamp, uint64_t paWriteIndex, uint64_t &outTimeStamp);
     void GetOffloadApproximatelyCacheTime(uint64_t timestamp, uint64_t paWriteIndex, uint64_t &cacheTimePaDsp);
     int32_t CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType);
-    int32_t GetPositionFromServer(uint64_t &framePosition, uint64_t &timestamp);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
     int32_t InitializeAudioCache();
