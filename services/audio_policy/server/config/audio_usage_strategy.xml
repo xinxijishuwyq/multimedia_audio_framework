@@ -23,6 +23,7 @@
     <adapter name="sourceType">
         <strategy name="RECORD_CAPTURE" sourceType="SOURCE_TYPE_MIC,SOURCE_TYPE_VOICE_RECOGNITION,SOURCE_TYPE_WAKEUP,SOURCE_TYPE_ULTRASONIC"/>
         <strategy name="CALL_CAPTURE"  sourceType="SOURCE_TYPE_VOICE_COMMUNICATION,SOURCE_TYPE_VIRTUAL_CAPTURE,SOURCE_TYPE_VOICE_CALL"/>
+        <strategy name="VOICE_MESSAGE"  sourceType="SOURCE_TYPE_VOICE_MESSAGE"/>
     </adapter>
 </audioUsageStrategy>
 
