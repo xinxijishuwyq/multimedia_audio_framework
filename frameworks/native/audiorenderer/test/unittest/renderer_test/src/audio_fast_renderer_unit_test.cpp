@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <mutex>
 
 #include "audio_errors.h"
 #include "audio_info.h"
@@ -499,11 +500,19 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
     ret = audioRenderer->SetRendererWriteCallback(cb);
     EXPECT_EQ(SUCCESS, ret);
 
+    std::mutex mutex;
+    std::condition_variable cv;
     int32_t count = 0;
-    cb->Install([&count, &audioRenderer](size_t length) {
-                // only execute once
-                if (count > 0) {
+    cb->Install([&count, &audioRenderer, &mutex, &cv](size_t length) {
+                std::lock_guard lock(mutex);
+                cv.notify_one();
+                // only execute twice
+                if (count > 1) {
                     return;
+                }
+                // sleep time trigger underflow
+                if (count == 1) {
+                    std::this_thread::sleep_for(20ms);
                 }
                 count++;
                 BufferDesc bufDesc {};
@@ -518,7 +527,11 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    std::this_thread::sleep_for(500ms);
+    std::unique_lock lock(mutex);
+    cv.wait_for(lock, 1s, [&count] {
+        // count > 1 ensure sleeped
+        return count > 1 ? true : false;
+    });
 
     // Verify that the callback is invoked at least once
     EXPECT_GE(cb->GetExeCount(), 1);
