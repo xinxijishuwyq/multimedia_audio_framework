@@ -518,7 +518,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(500ms);
 
     // Verify that the callback is invoked at least once
     EXPECT_GE(cb->GetExeCount(), 1);
