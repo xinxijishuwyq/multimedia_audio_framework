@@ -474,5 +474,55 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
 
     audioRenderer->Release();
 }
+
+/**
+ * @tc.name  : Test Fast Renderer
+ * @tc.number: Audio_Fast_Renderer_011
+ * @tc.desc  : Audio_Fast_Renderer_011
+ */
+HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
+{
+    if (!g_flag) {
+        return;
+    }
+    AudioRendererOptions rendererOptions;
+
+    InitializeFastRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    int32_t ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+
+    shared_ptr<AudioRendererWriteCallbackMock> cb = make_shared<AudioRendererWriteCallbackMock>();
+
+    ret = audioRenderer->SetRendererWriteCallback(cb);
+    EXPECT_EQ(SUCCESS, ret);
+
+    cb->Install([&audioRenderer](size_t length) {
+                BufferDesc bufDesc {};
+                bufDesc.buffer = nullptr;
+                bufDesc.dataLength = g_reqBufLen;
+                auto ret = audioRenderer->GetBufferDesc(bufDesc);
+                EXPECT_EQ(SUCCESS, ret);
+                EXPECT_NE(nullptr, bufDesc.buffer);
+                audioRenderer->Enqueue(bufDesc);
+                });
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    std::this_thread::sleep_for(100ms);
+
+    // Verify that the callback is invoked at least once
+    EXPECT_GE(cb->GetExeCount(), 1);
+
+    auto underFlowCount = audioRenderer->GetUnderflowCount();
+    // Ensure the underflowCount is at least 1
+    EXPECT_GE(underFlowCount, 1);
+
+    audioRenderer->Stop();
+    audioRenderer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -16,8 +16,8 @@
 #ifndef AUDIO_RENDERER_UNIT_TEST_H
 #define AUDIO_RENDERER_UNIT_TEST_H
 
+#include <functional>
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include "audio_renderer.h"
 
 namespace OHOS {
@@ -56,7 +56,26 @@ public:
 
 class AudioRendererWriteCallbackMock : public AudioRendererWriteCallback {
 public:
-    MOCK_METHOD(void, OnWriteData, (size_t length), (override));
+    void OnWriteData(size_t length)
+    {
+        exeCount_++;
+        if (executor_) {
+            executor_(length);
+        }
+    }
+
+    void Install(std::function<void(size_t)> executor)
+    {
+        executor_ = executor;
+    }
+
+    uint32_t GetExeCount()
+    {
+        return exeCount_;
+    }
+private:
+    std::function<void(size_t)> executor_;
+    std::atomic<uint32_t> exeCount_ = 0;
 };
 
 class AudioRendererUnitTest : public testing::Test {

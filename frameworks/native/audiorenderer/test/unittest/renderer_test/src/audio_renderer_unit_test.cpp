@@ -5818,12 +5818,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_004, TestSize.Lev
     ret = audioRenderer->SetRendererWriteCallback(cb);
     EXPECT_EQ(SUCCESS, ret);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
-
-    EXPECT_CALL(*cb, OnWriteData(_))
-        .Times(AtLeast(1))
-        .WillOnce([&audioRenderer](size_t length) {
+    cb->Install([&audioRenderer](size_t length) {
                 BufferDesc bufDesc {};
                 bufDesc.buffer = nullptr;
                 bufDesc.dataLength = g_reqBufLen;
@@ -5831,9 +5826,16 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_004, TestSize.Lev
                 EXPECT_EQ(SUCCESS, ret);
                 EXPECT_NE(nullptr, bufDesc.buffer);
                 audioRenderer->Enqueue(bufDesc);
-        });
+                });
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
 
     std::this_thread::sleep_for(1s);
+
+    // Verify that the callback is invoked at least once
+    EXPECT_GE(cb->GetExeCount(), 1);
+
     auto underFlowCount = audioRenderer->GetUnderflowCount();
 
     // Ensure the underflowCount is at least 1
