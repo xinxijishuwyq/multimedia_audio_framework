@@ -318,11 +318,9 @@ bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t 
 bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
 {
     if (!IsCapturerChannelValid(channels)) {
-        AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", channels);
         return false;
     }
     if (!IsCapturerChannelLayoutValid(channelLayout)) {
-        AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
         return false;
     }
     return true;

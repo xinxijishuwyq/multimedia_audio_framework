@@ -435,6 +435,8 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         return ERR_NOT_SUPPORTED;
     }
     if (!IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout)) {
+        AUDIO_ERR_LOG("Invalid sink channel %{public}d or channel layout %{public}" PRIu64, info.channels,
+                info.channelLayout);
         return ERR_NOT_SUPPORTED;
     }
 
