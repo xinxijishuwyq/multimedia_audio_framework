@@ -27,6 +27,7 @@ using OHOS::AudioStandard::StreamUsage;
 using OHOS::AudioStandard::AudioEncodingType;
 using OHOS::AudioStandard::ContentType;
 using OHOS::AudioStandard::SourceType;
+using OHOS::AudioStandard::InterruptMode;
 
 static const int32_t RENDERER_TYPE = 1;
 static const int32_t CAPTURER_TYPE = 2;
@@ -171,6 +172,17 @@ OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* build
     return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStreamBuilder* builder,
+    OH_AudioInterrupt_Mode mode)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    CHECK_AND_RETURN_RET_LOG((mode != AUDIOSTREAM_INTERRUPT_MODE_SHARE ||
+        mode != AUDIOSTREAM_INTERRUPT_MODE_INDEPENDENT), AUDIOSTREAM_ERROR_INVALID_PARAM, "mode is invalid");
+    InterruptMode interruptMode = static_cast<InterruptMode>(mode);
+    return audioStreamBuilder->SetInterruptMode(interruptMode);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -305,6 +317,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer** renderer
     if (audioRenderer->Initialize(options)) {
         audioRenderer->SetRendererCallback(rendererCallbacks_, userData_);
         audioRenderer->SetRendererOutputDeviceChangeCallback(outputDeviceChangecallback_, outputDeviceChangeuserData_);
+        audioRenderer->SetInterruptMode(interruptMode_);
         *renderer = (OH_AudioRenderer*)audioRenderer;
         if (preferredFrameSize_ != UNDEFINED_SIZE) {
             audioRenderer->SetPreferredFrameSize(preferredFrameSize_);
@@ -376,6 +389,14 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererOutputDeviceChangeCallbac
         "SetRendererCallback Error, invalid type input");
     outputDeviceChangecallback_ = callback;
     outputDeviceChangeuserData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetInterruptMode(InterruptMode mode)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ == RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "Error, invalid type input");
+    interruptMode_ = mode;
     return AUDIOSTREAM_SUCCESS;
 }
 }  // namespace AudioStandard

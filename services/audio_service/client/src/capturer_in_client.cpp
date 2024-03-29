@@ -163,6 +163,10 @@ public:
     void UnsetRendererPeriodPositionCallback() override;
 
     uint32_t GetUnderflowCount() override;
+    uint32_t GetOverflowCount() override;
+    void SetUnderflowCount(uint32_t underflowCount) override;
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     uint32_t GetRendererSamplingRate() override;
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
@@ -356,7 +360,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == BUFFER_OVERFLOW) {
-        overflowCount_++;
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
         readDataCV_.notify_all();
@@ -1611,6 +1614,23 @@ uint32_t CapturerInClientInner::GetUnderflowCount()
     // not supported for capturer
     AUDIO_WARNING_LOG("No Underflow in Capturer");
     return 0;
+}
+
+uint32_t CapturerInClientInner::GetOverflowCount()
+{
+    return overflowCount_;
+}
+
+void CapturerInClientInner::SetUnderflowCount(uint32_t underflowCount)
+{
+    // not supported for capturer
+    AUDIO_WARNING_LOG("No Underflow in Capturer");
+    return;
+}
+
+void CapturerInClientInner::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ = overflowCount;
 }
 
 void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, const

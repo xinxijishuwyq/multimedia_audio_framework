@@ -53,6 +53,8 @@ void AudioRenderModeCallbackTest::OnWriteData(size_t length)
     g_reqBufLen = length;
 }
 
+void AudioRendererCallbackTest::OnInterrupt(const InterruptEvent &interruptEvent) {}
+
 void InitializeFastRendererOptions(AudioRendererOptions &rendererOptions)
 {
     rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
@@ -76,6 +78,8 @@ void AudioFastRendererUnitTest::SetUpTestCase(void)
         g_flag = false;
     }
 }
+
+InterruptEvent AudioRendererUnitTest::interruptEventTest_ = {};
 
 void AudioFastRendererUnitTest::TearDownTestCase(void)
 {

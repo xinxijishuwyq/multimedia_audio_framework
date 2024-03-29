@@ -349,6 +349,9 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
         if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
             return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::NONE, key);
         }
+        if (key == "perf_info") {
+            return audioRendererSinkInstance->GetAudioParameter(AudioParamKey::PERF_INFO, key);
+        }
 
         const std::string mmiPre = "mmi_";
         if (key.size() > mmiPre.size()) {
@@ -593,7 +596,7 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
 
 void AudioServer::SetAudioMonoState(bool audioMono)
 {
-    AUDIO_INFO_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
         "NotifyDeviceInfo refused for %{public}d", callingUid);
@@ -621,7 +624,7 @@ void AudioServer::SetAudioBalanceValue(float audioBalance)
         "NotifyDeviceInfo refused for %{public}d", callingUid);
     CHECK_AND_RETURN_LOG(audioBalance >= -1.0f && audioBalance <= 1.0f,
         "audioBalance value %{public}f is out of range [-1.0, 1.0]", audioBalance);
-    AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
+    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
 
     // Set balance for audio_renderer_sink (primary)
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
@@ -912,6 +915,15 @@ bool AudioServer::CheckPlaybackPermission(Security::AccessToken::AccessTokenID t
 
 bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType)
 {
+    if (sourceType == SOURCE_TYPE_VOICE_CALL) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false,
+            "Create voicecall record stream failed: no system permission.");
+
+        bool res = CheckVoiceCallRecorderPermission(tokenId);
+        return res;
+    }
+
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
     CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
@@ -923,6 +935,13 @@ bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID t
             "Create wakeup record stream failed: no permission.");
     }
     return true;
+}
+
+bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
+{
+    bool hasRecordVoiceCallPermission = VerifyClientPermission(RECORD_VOICE_CALL_PERMISSION, tokenId);
+    CHECK_AND_RETURN_RET_LOG(hasRecordVoiceCallPermission, false, "No permission");
+    return SUCCESS;
 }
 
 int32_t AudioServer::OffloadDrain()
@@ -1091,6 +1110,27 @@ int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spa
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
+}
+
+int32_t AudioServer::ResetRouteForDisconnect(DeviceType type)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+
+    IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    audioRendererSinkInstance->ResetOutputRouteForDisconnect(type);
+
+    // todo reset capturer
+
+    return SUCCESS;
+}
+
+uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->GetLatency(sessionId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

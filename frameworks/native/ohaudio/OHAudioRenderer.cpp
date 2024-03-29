@@ -542,6 +542,12 @@ bool OHAudioRenderer::IsFastRenderer()
     return audioRenderer_->IsFastRenderer();
 }
 
+uint32_t OHAudioRenderer::GetUnderflowCount()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetUnderflowCount();
+}
+
 void OHAudioRendererModeCallback::OnWriteData(size_t length)
 {
     OHAudioRenderer* audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
@@ -596,6 +602,15 @@ OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors e
     }
 }
 
+OH_AudioStream_Result OH_AudioRenderer_GetUnderflowCount(OH_AudioRenderer* renderer, uint32_t* count)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(count != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "count is nullptr");
+    *count = audioRenderer->GetUnderflowCount();
+    return AUDIOSTREAM_SUCCESS;
+}
+
 void OHAudioRendererErrorCallback::OnError(AudioErrors errorCode)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr && callbacks_.OH_AudioRenderer_OnError != nullptr,
@@ -611,6 +626,12 @@ void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const Dev
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the fuction is nullptr");
 
     callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_DeviceChangeReason>(reason));
+}
+
+void OHAudioRenderer::SetInterruptMode(InterruptMode mode)
+{
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
+    audioRenderer_->SetInterruptMode(mode);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

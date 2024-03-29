@@ -25,7 +25,7 @@ namespace AudioStandard {
 
 static const int32_t MAX_BUFFER_SIZE = 100000;
 
-AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels):rate_(rate), format_(format)
+AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels):rate_(rate), format_(format), channels_(channels)
 {
     AUDIO_INFO_LOG("AudioSpeed construct");
     Init();

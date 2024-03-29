@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include "native_audiostream_base.h"
+#include "audio_interrupt_info.h"
 #include "audio_info.h"
 
 namespace OHOS {
@@ -45,6 +46,7 @@ public:
 
     OH_AudioStream_Result SetSourceType(SourceType type);
     OH_AudioStream_Result SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
+    OH_AudioStream_Result SetInterruptMode(InterruptMode mode);
 
 private:
     int32_t streamType_;
@@ -74,6 +76,7 @@ private:
 
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
     void* outputDeviceChangeuserData_ = nullptr;
+    InterruptMode interruptMode_ = SHARE_MODE;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

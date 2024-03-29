@@ -188,6 +188,9 @@ private:
 
     std::shared_ptr<AudioStreamPolicyServiceDiedCallbackImpl> audioStreamPolicyServiceDiedCB_ = nullptr;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
+
+    uint64_t lastFramePosition_ = 0;
+    uint64_t lastFrameTimestamp_ = 0;
 };
 
 class AudioStreamPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {

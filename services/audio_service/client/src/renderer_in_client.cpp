@@ -60,6 +60,7 @@ const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compa
 const uint64_t AUDIO_US_PER_MS = 1000;
 const int64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
+const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
@@ -164,6 +165,10 @@ public:
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
 
     uint32_t GetUnderflowCount() override;
+    uint32_t GetOverflowCount() override;
+    void SetUnderflowCount(uint32_t underflowCount) override;
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
         override;
     void UnsetRendererPositionCallback() override;
@@ -308,6 +313,7 @@ private:
     std::mutex writeDataMutex_;
     std::condition_variable writeDataCV_;
 
+    float lowPowerVolume_ = 1.0;
     float clientVolume_ = 1.0;
     float clientOldVolume_ = 1.0;
 
@@ -354,6 +360,9 @@ private:
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
+
+    uint64_t lastFramePosition_ = 0;
+    uint64_t lastFrameTimestamp_ = 0;
 
     std::string spatializationEnabled_ = "Invalid";
     std::string headTrackingEnabled_ = "Invalid";
@@ -433,7 +442,9 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
     if (operation == BUFFER_UNDERRUN) {
-        underrunCount_++;
+        if (!offloadEnable_) {
+            underrunCount_++;
+        }
         AUDIO_WARNING_LOG("recv underrun %{public}d", underrunCount_);
         // in plan next: do more to reduce underrun
         writeDataCV_.notify_all();
@@ -873,6 +884,25 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t timestampVal = 0;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->GetAudioPosition(framePosition, timestampVal);
+
+    // add MCR latency
+    uint32_t mcrLatency = 0;
+    if (converter_ != nullptr) {
+        mcrLatency = converter_->GetLatency();
+        framePosition = framePosition - (mcrLatency * rendererRate_ / AUDIO_MS_PER_S);
+    }
+
+    if (lastFramePosition_ < framePosition) {
+        lastFramePosition_ = framePosition;
+        lastFrameTimestamp_ = timestampVal;
+    } else {
+        AUDIO_WARNING_LOG("The frame position should be continuously increasing");
+        framePosition = lastFramePosition_;
+        timestampVal = lastFrameTimestamp_;
+    }
+    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", timestamp %{public}" PRIu64
+        ", mcrLatency %{public}u", framePosition, timestampVal, mcrLatency);
+
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
@@ -1302,14 +1332,18 @@ int32_t RendererInClientInner::Clear()
 
 int32_t RendererInClientInner::SetLowPowerVolume(float volume)
 {
-    // in plan
-    return ERROR;
+    AUDIO_INFO_LOG("Volume number: %{public}f", volume);
+    if (volume < 0.0 || volume > 1.0) {
+        AUDIO_ERR_LOG("Invalid param: %{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
+    lowPowerVolume_ = volume;
+    return SUCCESS;
 }
 
 float RendererInClientInner::GetLowPowerVolume()
 {
-    // in plan
-    return 0.0;
+    return lowPowerVolume_;
 }
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
@@ -1769,7 +1803,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Write: Illegal state:%{public}u", state_.load());
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
 
     // hold lock
     if (isBlendSet_) { audioBlend_.Process(buffer, bufferSize); }
@@ -1853,10 +1888,14 @@ int32_t RendererInClientInner::WriteCacheData()
         clientOldVolume_ = clientVolume_;
         clientVolume_ = volumeRamp_.GetRampVolume();
     }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, clientVolume_, AUDIO_VOLOMUE_EPSILON)) {
+    float applyVolume = clientVolume_;
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= lowPowerVolume_;
+    }
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
         Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
         AudioChannel channel = clientConfig_.streamInfo.channels;
-        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, clientVolume_, clientVolume_);
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
         int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
         if (volRet != SUCCESS) {
             AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
@@ -1990,6 +2029,24 @@ int32_t RendererInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
 uint32_t RendererInClientInner::GetUnderflowCount()
 {
     return underrunCount_;
+}
+
+uint32_t RendererInClientInner::GetOverflowCount()
+{
+    AUDIO_WARNING_LOG("No Overflow in renderer");
+    return 0;
+}
+
+void RendererInClientInner::SetUnderflowCount(uint32_t underflowCount)
+{
+    underrunCount_ = underflowCount;
+}
+
+void RendererInClientInner::SetOverflowCount(uint32_t overflowCount)
+{
+    // not support for renderer
+    AUDIO_WARNING_LOG("No Overflow in renderer");
+    return;
 }
 
 void RendererInClientInner::SetRendererPositionCallback(int64_t markPosition,
