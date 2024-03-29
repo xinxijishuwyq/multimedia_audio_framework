@@ -85,6 +85,8 @@ public:
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
+    
+    float GetMaxAmplitude() override;
 
 private:
     int32_t CreateCapture(const struct AudioPort &capturePort);
@@ -773,6 +775,12 @@ void RemoteFastAudioCapturerSourceInner::OnAudioParamChange(const std::string &a
 
     CHECK_AND_RETURN_LOG(paramCb_ != nullptr, "Sink audio param callback is null.");
     paramCb_->OnAudioSourceParamChange(adapterName, key, condition, value);
+}
+
+float RemoteFastAudioCapturerSourceInner::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in remote fast audio cap not support");
+    return 0;
 }
 } // namespace AudioStandard
 } // namesapce OHOS

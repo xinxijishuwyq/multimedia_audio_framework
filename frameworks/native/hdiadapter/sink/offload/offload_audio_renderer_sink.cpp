@@ -59,6 +59,7 @@ const int64_t SECOND_TO_NANOSECOND = 1000000000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
 const int64_t SECOND_TO_MILLISECOND = 1000;
 const uint32_t BIT_IN_BYTE = 8;
+const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 }
 
 struct AudioCallbackService {
@@ -109,6 +110,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetOutputRoute(DeviceType outputDevice) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
+    float GetMaxAmplitude() override;
 
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
@@ -133,6 +135,12 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    // for get amplitude
+    float maxAmplitude_ = 0;
+    int64_t lastGetMaxAmplitudeTime_ = 0;
+    int64_t last10FrameStartTime_ = 0;
+    bool startUpdate_ = false;
+    int renderFrameNum_ = 0;
     std::mutex renderMutex_;
 
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -140,6 +148,7 @@ private:
     AudioFormat ConverToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
 
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
@@ -571,10 +580,36 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         &writeLen);
     if (ret == 0 && writeLen != 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
+        CheckUpdateState(&data, len);
     }
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrameOffload failed! ret: %{public}x", ret);
     renderPos_ += writeLen;
     return SUCCESS;
+}
+
+void OffloadAudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
+{
+    if (startUpdate_) {
+        if (renderFrameNum_ == 0) {
+            last10FrameStartTime_ = ClockTime::GetCurNano();
+        }
+        renderFrameNum_++;
+        maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(attr_.format), frame, replyBytes);
+        if (renderFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
+            renderFrameNum_ = 0;
+            if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
+                startUpdate_ = false;
+                maxAmplitude_ = 0;
+            }
+        }
+    }
+}
+
+float OffloadAudioRendererSinkInner::GetMaxAmplitude()
+{
+    lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
+    startUpdate_ = true;
+    return maxAmplitude_;
 }
 
 int32_t OffloadAudioRendererSinkInner::Start(void)

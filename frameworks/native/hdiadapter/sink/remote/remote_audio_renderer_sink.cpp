@@ -70,6 +70,8 @@ const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t REMOTE_OUTPUT_STREAM_ID = 29; // 13 + 2 * 8
+
+const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 }
 class RemoteAudioRendererSinkInner : public RemoteAudioRendererSink, public IAudioDeviceAdapterCallback {
 public:
@@ -105,6 +107,7 @@ public:
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
+    float GetMaxAmplitude() override;
 
     std::string GetNetworkId();
     IAudioSinkCallback* GetParamCallback();
@@ -116,6 +119,7 @@ private:
     int32_t OpenOutput(DeviceType outputDevice);
     void ClearRender();
 
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
 private:
     std::string deviceNetworkId_;
     std::atomic<bool> rendererInited_ = false;
@@ -133,6 +137,12 @@ private:
     FILE *dumpFile_ = nullptr;
     std::mutex createRenderMutex_;
     uint32_t renderId_ = 0;
+    // for get amplitude
+    float maxAmplitude_ = 0;
+    int64_t lastGetMaxAmplitudeTime_ = 0;
+    int64_t last10FrameStartTime_ = 0;
+    bool startUpdate_ = false;
+    int renderFrameNum_ = 0;
 };
 
 RemoteAudioRendererSinkInner::RemoteAudioRendererSinkInner(const std::string &deviceNetworkId)
@@ -342,10 +352,36 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
     writeLen = len;
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    CheckUpdateState(&data, len);
 
     int64_t cost = (ClockTime::GetCurNano() - start) / AUDIO_US_PER_SECOND;
     AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, cost);
     return SUCCESS;
+}
+
+void RemoteAudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
+{
+    if (startUpdate_) {
+        if (renderFrameNum_ == 0) {
+            last10FrameStartTime_ = ClockTime::GetCurNano();
+        }
+        renderFrameNum_++;
+        maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(attr_.format), frame, replyBytes);
+        if (renderFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
+            renderFrameNum_ = 0;
+            if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
+                startUpdate_ = false;
+                maxAmplitude_ = 0;
+            }
+        }
+    }
+}
+
+float RemoteAudioRendererSinkInner::GetMaxAmplitude()
+{
+    lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
+    startUpdate_ = true;
+    return maxAmplitude_;
 }
 
 int32_t RemoteAudioRendererSinkInner::Start(void)
