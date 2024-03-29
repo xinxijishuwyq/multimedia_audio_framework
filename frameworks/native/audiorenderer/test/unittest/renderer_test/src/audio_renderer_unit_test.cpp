@@ -5818,8 +5818,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_004, TestSize.Lev
     ret = audioRenderer->SetRendererWriteCallback(cb);
     EXPECT_EQ(SUCCESS, ret);
 
-    cb->Install([&audioRenderer](size_t length) {
-                static int32_t count = 0;
+    int32_t count = 0;
+    cb->Install([= count, &audioRenderer](size_t length) {
                 // only execute once
                 if (count > 0) {
                     return;
