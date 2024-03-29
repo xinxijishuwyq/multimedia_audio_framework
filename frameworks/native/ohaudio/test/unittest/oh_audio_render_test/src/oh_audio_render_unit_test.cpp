@@ -492,8 +492,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Leve
 */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetChannelLayout_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioChannelLayout channelLayout;
@@ -510,8 +510,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetChannelLayout_001, TestSize.Le
 */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioStream_AudioEffectMode effectMode;

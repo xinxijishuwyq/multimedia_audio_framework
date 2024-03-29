@@ -51,8 +51,8 @@ static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     return 0;
 }
 
-static int32_t AudioRendererWriteDataWithMetadataCallback(OH_AudioRenderer* renderer,
-    void* userData, void* audioData, int32_t audioDataSize, void* metadata, int32_t metadataSize)
+static int32_t AudioRendererWriteDataWithMetadataCallback(OH_AudioRenderer *renderer,
+    void *userData, void *audioData, int32_t audioDataSize, void *metadata, int32_t metadataSize)
 {
     size_t readCount = fread(audioData, audioDataSize, 1, g_file);
     if (!readCount) {
@@ -782,7 +782,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, 
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetChannelLayout_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder;
+    OH_AudioStreamBuilder *builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
@@ -803,13 +803,13 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetChannelLayout_001,
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback_001, TestSize.Level0)
 {
-    OH_AudioStreamBuilder* builder;
+    OH_AudioStreamBuilder *builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioRenderer_WriteDataWithMetadataCallback callback = AudioRendererWriteDataWithMetadataCallback;
-    result = OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(builder, callbacks, NULL);
+    result = OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(builder, callbacks, nullptr);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
