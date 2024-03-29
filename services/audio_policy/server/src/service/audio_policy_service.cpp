@@ -55,7 +55,6 @@ static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settings
 static const std::string SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const std::string SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const std::string PREDICATES_STRING = "settings.general.device_name";
-static const char MAX_RENDERER_INSTANCE[100] = "128"; // 100 for system parameter usage
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -188,7 +187,6 @@ bool AudioPolicyService::Init(void)
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser_.LoadConfiguration(), false,
         "Audio Policy Config Load Configuration failed");
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser_.Parse(), false, "Audio Config Parse failed");
-    MaxRenderInstanceInit();
 
 #ifdef FEATURE_DTMF_TONE
     std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
@@ -3691,6 +3689,7 @@ void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
     AUDIO_INFO_LOG("adapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
     adapterInfoMap_ = adapterInfoMap;
+    MaxRenderInstanceInit();
 
     for (auto &adapterInfo : adapterInfoMap_) {
         for (auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
@@ -4685,17 +4684,30 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+int32_t AudioPolicyService::ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo)
+{
+    if (moduleInfo.name_ == "primary out") {
+        for (auto &configInfo : moduleInfo.configInfos_) {
+            if (configInfo.name_ == "maxinstances") {
+                maxRendererInstances_ = atoi(configInfo.valu_.c_str());
+                AUDIO_DEBUG_LOG("Get max renderer instances success %{public}d", maxRendererInstances_);
+                return SUCCESS;
+            }
+        }
+    }
+    return ERROR;
+}
+
 void AudioPolicyService::MaxRenderInstanceInit()
 {
-    // init max renderer instances before kvstore start by local prop for bootanimation
-    char currentMaxRendererInstances[100] = {0}; // 100 for system parameter usage
-    auto ret = GetParameter("persist.multimedia.audio.maxrendererinstances", MAX_RENDERER_INSTANCE,
-        currentMaxRendererInstances, sizeof(currentMaxRendererInstances));
-    if (ret > 0) {
-        maxRendererInstances_ = atoi(currentMaxRendererInstances);
-        AUDIO_DEBUG_LOG("Get max renderer instances success %{public}d", maxRendererInstances_);
-    } else {
-        AUDIO_ERR_LOG("Get max renderer instances failed %{public}d", ret);
+    for (auto &adapterInfo : adapterInfoMap_) {
+        if ((adapterInfo.second).adapterName_ == "primary") {
+            for (auto &moduleInfo : (adapterInfo.second).moduleInfos_) {
+                CHECK_AND_RETURN_LOG(ParsePolicyConfigXmlNodeModuleInfos(moduleInfo) != ERROR,
+                    "Get max renderer instances failed");
+                return;
+            }
+        }
     }
 }
 

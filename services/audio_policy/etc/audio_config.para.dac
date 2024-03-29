@@ -12,7 +12,6 @@
 # limitations under the License.
 
 persist.multimedia.audio.ringtonevolume = audio:audio:660
-persist.multimedia.audio.maxrendererinstances = audio:audio:660
 persist.multimedia.audio.mmap.enable = audio:audio:660
 persist.multimedia.audioflag.ipc.renderer = audio:audio:664
 persist.multimedia.audioflag.ipc.capturer = audio:audio:664
