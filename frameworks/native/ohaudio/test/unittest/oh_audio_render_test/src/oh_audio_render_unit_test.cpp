@@ -28,6 +28,30 @@ void OHAudioRenderUnitTest::SetUp(void) { }
 
 void OHAudioRenderUnitTest::TearDown(void) { }
 
+const int32_t g_samplingRate = 48000; // 48000:g_samplingRate value
+const int32_t g_channelCount = 2; // 2:g_channelCount value
+const int32_t g_latencyMode = 0;
+const int32_t g_sampleFormat = 1;
+const int32_t g_frameSize = 240; // 240:g_frameSize value
+uint32_t g_flag = 0;
+const float MAX_AUDIO_VOLUME = 1.0f; // volume range is between 0 to 1.
+const float MIN_AUDIO_VOLUME = 0.0f; // volume range is between 0 to 1.
+const int32_t DURATIONMS = 40; // 40:fade out latency ms
+
+static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
+    void* userData,
+    void* buffer,
+    int32_t bufferLen)
+{
+    return 0;
+}
+
+static void AudioRendererOnMarkReachedCb(OH_AudioRenderer* renderer, uint32_t samplePos, void* userData)
+{
+    g_flag = samplePos;
+    printf("AudioRendererOnMarkReachedCb samplePos: %d \n", samplePos);
+}
+
 OH_AudioStreamBuilder* OHAudioRenderUnitTest::CreateRenderBuilder()
 {
     OH_AudioStreamBuilder* builder;
@@ -520,6 +544,381 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level
     result = OH_AudioRenderer_GetEffectMode(audioRenderer, &effectMode);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_TRUE(effectMode == EFFECT_DEFAULT);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetVolume API via illegal state.
+* @tc.number: OH_Audio_Render_GetVolume_001
+* @tc.desc  : Test OH_AudioRenderer_GetVolume interface with nullptr audioRenderer.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_001, TestSize.Level0)
+{
+    OH_AudioRenderer* audioRenderer = nullptr;
+    float volume;
+    OH_AudioStream_Result result = OH_AudioRenderer_GetVolume(audioRenderer, &volume);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetVolume API via legal state.
+* @tc.number: OH_Audio_Render_GetVolume_002
+* @tc.desc  : Test OH_AudioRenderer_GetVolume interface.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    float volume;
+    result = OH_AudioRenderer_GetVolume(audioRenderer, &volume);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetVolume API via legal state.
+* @tc.number: OH_Audio_Render_GetVolume_003
+* @tc.desc  : Test OH_AudioRenderer_GetVolume interface after set volume call.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    float volumeSet = 0.5;
+    result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    float volumeGet;
+    result = OH_AudioRenderer_GetVolume(audioRenderer, &volumeGet);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(volumeGet, 0.5);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetVolume API via legal state.
+* @tc.number: OH_Audio_Render_GetVolume_004
+* @tc.desc  : Test OH_AudioRenderer_GetVolume interface after set volume fails.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    float volumeSet = 0.5;
+    result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    volumeSet = 1.5;
+    result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    float volumeGet;
+    result = OH_AudioRenderer_GetVolume(audioRenderer, &volumeGet);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(volumeGet, 0.5);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetVolume API via illegal state.
+* @tc.number: OH_Audio_Render_SetVolume_001
+* @tc.desc  : Test OH_AudioRenderer_SetVolume interface with nullptr audioRenderer.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_001, TestSize.Level0)
+{
+    OH_AudioRenderer* audioRenderer = nullptr;
+    float volumeSet = 0.5;
+    OH_AudioStream_Result result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetVolume API via legal state.
+* @tc.number: OH_Audio_Render_SetVolume_002
+* @tc.desc  : Test OH_AudioRenderer_SetVolume interface between minimum and maximum volumes.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    float volumeSet = 0.5;
+    result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetVolume API via legal state.
+* @tc.number: OH_Audio_Render_SetVolume_003
+* @tc.desc  : Test OH_AudioRenderer_SetVolume interface for minimum and maximum volumes.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    float volumeSet = MIN_AUDIO_VOLUME;
+    result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    volumeSet = MAX_AUDIO_VOLUME;
+    result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetVolume API via illegal state.
+* @tc.number: OH_Audio_Render_SetVolume_004
+* @tc.desc  : Test OH_AudioRenderer_SetVolume interface out of volumes range.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    float volumeSet = -0.5;
+    result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    volumeSet = -1.5;
+    result = OH_AudioRenderer_SetVolume(audioRenderer, volumeSet);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetVolumeWithRamp API via illegal state.
+* @tc.number: OH_Audio_Render_SetVolumeWithRamp_001
+* @tc.desc  : Test OH_AudioRenderer_SetVolumeWithRamp interface with nullptr audioRenderer.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolumeWithRamp_001, TestSize.Level0)
+{
+    OH_AudioRenderer* audioRenderer = nullptr;
+    float volumeSet = MIN_AUDIO_VOLUME;
+    int32_t durationMs = DURATIONMS;
+    OH_AudioStream_Result result = OH_AudioRenderer_SetVolumeWithRamp(audioRenderer, volumeSet, durationMs);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetVolumeWithRamp API via legal state.
+* @tc.number: OH_Audio_Render_SetVolumeWithRamp_002
+* @tc.desc  : Test OH_AudioRenderer_SetVolumeWithRamp interface.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolumeWithRamp_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    float volumeSet = MIN_AUDIO_VOLUME;
+    int32_t durationMs = DURATIONMS;
+    result = OH_AudioRenderer_SetVolumeWithRamp(audioRenderer, volumeSet, durationMs);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via illegal state.
+* @tc.number: OH_Audio_Render_SetMarkPosition_001
+* @tc.desc  : Test OH_AudioRenderer_SetMarkPosition interface with nullptr audioRenderer.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_001, TestSize.Level0)
+{
+    OH_AudioRenderer* audioRenderer = nullptr;
+    uint32_t samplePos = 1;
+    OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
+    OH_AudioStream_Result result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via legal state.
+* @tc.number: OH_Audio_Render_SetMarkPosition_002
+* @tc.desc  : Test OH_AudioRenderer_SetMarkPosition interface.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    uint32_t samplePos = 1;
+    OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
+    result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via illegal state.
+* @tc.number: OH_Audio_Render_SetMarkPosition_003
+* @tc.desc  : Test OH_AudioRenderer_SetMarkPosition interface with incorrect samplepos value.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    uint32_t samplePos = 0;
+    OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
+    result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via legal state.
+* @tc.number: OH_Audio_Render_SetMarkPosition_004
+* @tc.desc  : Test OH_AudioRenderer_SetMarkPosition interface with callback.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_004, TestSize.Level0)
+{
+    // 1. create
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+    // 2. set params and callbacks
+    OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder, (OH_AudioStream_SampleFormat)g_sampleFormat);
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, nullptr);
+    // 3. set buffer size to g_frameSize
+    result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, g_frameSize);
+
+    OH_AudioRenderer* audioRenderer;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(g_flag, 0);
+    uint32_t samplePos = 1;
+    OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
+    result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 4. start
+    result = OH_AudioRenderer_Start(audioRenderer);
+    sleep(2);
+    EXPECT_EQ(g_flag, 1);
+    // 5. stop and release client
+    result = OH_AudioRenderer_Stop(audioRenderer);
+    result = OH_AudioRenderer_Release(audioRenderer);
+
+    // 6. destroy the builder
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via legal state.
+* @tc.number: OH_Audio_Render_SetMarkPosition_005
+* @tc.desc  : Test OH_AudioRenderer_SetMarkPosition interface multiple times.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_005, TestSize.Level0)
+{
+    // 1. create
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+    // 2. set params and callbacks
+    OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder, (OH_AudioStream_SampleFormat)g_sampleFormat);
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, nullptr);
+    // 3. set buffer size to g_frameSize
+    result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, g_frameSize);
+
+    OH_AudioRenderer* audioRenderer;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    uint32_t samplePos = 1;
+    OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
+    result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
+    result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
+    result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 4. start
+    result = OH_AudioRenderer_Start(audioRenderer);
+    sleep(2);
+    EXPECT_EQ(g_flag, 1);
+    // 5. stop and release client
+    result = OH_AudioRenderer_Stop(audioRenderer);
+    result = OH_AudioRenderer_Release(audioRenderer);
+
+    // 6. destroy the builder
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_CancelMark API via illegal state.
+* @tc.number: OH_Audio_Render_CancelMark_001
+* @tc.desc  : Test OH_AudioRenderer_CancelMark interface with nullptr audioRenderer.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_001, TestSize.Level0)
+{
+    OH_AudioRenderer* audioRenderer = nullptr;
+    OH_AudioStream_Result result = OH_AudioRenderer_CancelMark(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_CancelMark API via legal state.
+* @tc.number: OH_Audio_Render_CancelMark_002
+* @tc.desc  : Test OH_AudioRenderer_CancelMark interface without callback.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    result = OH_AudioRenderer_CancelMark(audioRenderer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_CancelMark API via legal state.
+* @tc.number: OH_Audio_Render_CancelMark_003
+* @tc.desc  : Test OH_AudioRenderer_CancelMark interface with callback.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_003, TestSize.Level0)
+{
+    // 1. create
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+    // 2. set params and callbacks
+    OH_AudioStreamBuilder_SetSamplingRate(builder, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder, (OH_AudioStream_SampleFormat)g_sampleFormat);
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, nullptr);
+    // 3. set buffer size to g_frameSize
+    result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder, g_frameSize);
+
+    OH_AudioRenderer* audioRenderer;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    uint32_t samplePos = 2;
+    OH_AudioRenderer_OnMarkReachedCallback callback = AudioRendererOnMarkReachedCb;
+    result = OH_AudioRenderer_SetMarkPosition(audioRenderer, samplePos, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 4. start
+    result = OH_AudioRenderer_Start(audioRenderer);
+    sleep(2);
+    EXPECT_EQ(g_flag, 2);
+
+    // CancelMark
+    result = OH_AudioRenderer_CancelMark(audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 5. stop and release client
+    result = OH_AudioRenderer_Stop(audioRenderer);
+    result = OH_AudioRenderer_Release(audioRenderer);
+
+    // 6. destroy the builder
     OH_AudioStreamBuilder_Destroy(builder);
 }
 } // namespace AudioStandard
