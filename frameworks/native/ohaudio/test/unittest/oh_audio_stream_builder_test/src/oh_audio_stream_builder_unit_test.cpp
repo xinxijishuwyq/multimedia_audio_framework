@@ -51,6 +51,31 @@ static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     return 0;
 }
 
+static int32_t AudioRendererWriteDataWithMetadataCallback(OH_AudioRenderer *renderer,
+    void *userData, void *audioData, int32_t audioDataSize, void *metadata, int32_t metadataSize)
+{
+    size_t readCount = fread(audioData, audioDataSize, 1, g_file);
+    if (!readCount) {
+        g_readEnd = true;
+        if (ferror(g_file)) {
+            printf("Error reading myfile");
+        } else if (feof(g_file)) {
+            printf("EOF found");
+        }
+        return 0;
+    }
+    readCount = fread(metadata, metadataSize, 1, g_file);
+    if (!readCount) {
+        g_readEnd = true;
+        if (ferror(g_file)) {
+            printf("Error reading myfile");
+        } else if (feof(g_file)) {
+            printf("EOF found");
+        }
+    }
+    return 0;
+}
+
 static int32_t AudioCapturerOnReadData(
     OH_AudioCapturer* capturer,
     void* userData,
@@ -744,6 +769,47 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, 
 
     OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetChannelLayout API via legal state, AUDIOSTREAM_LATENCY_MODE_NORMAL.
+* @tc.number: OH_AudioStreamBuilder_SetChannelLayout_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetChannelLayout interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetChannelLayout_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    result = OH_AudioStreamBuilder_SetChannelLayout(builder, channelLayout);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback API via legal state.
+* @tc.number: OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback interface.
+              Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer_WriteDataWithMetadataCallback callback = AudioRendererWriteDataWithMetadataCallback;
+    result = OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(builder, callbacks, nullptr);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);

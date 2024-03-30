@@ -328,7 +328,7 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     timestamp = tm.tv_sec * AUDIO_NS_PER_S + tm.tv_nsec;
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
-        ",timestamp %{public}" PRIu64 ",MCR latency: %{public}u ms",
+        ",timestamp %{public}" PRIu64 ", effect latency: %{public}u ms",
         framePosition, readIndex, timestamp, algorithmLatency);
     return SUCCESS;
 }
@@ -640,6 +640,11 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
     CHECK_AND_RETURN_LOG(userdata, "PAStreamPauseSuccessCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
+    bool isStreamValid = true;
+    if (rendererStreamInstanceMap_.Find(streamImpl, isStreamValid) == false) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
     streamImpl->state_ = PAUSED;
     streamImpl->offloadTsLast_ = 0;
     streamImpl->ResetOffload();

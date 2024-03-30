@@ -483,5 +483,44 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Leve
     EXPECT_TRUE(content == AUDIOSTREAM_CONTENT_TYPE_MUSIC);
     OH_AudioStreamBuilder_Destroy(builder);
 }
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetChannelLayout API via legal state.
+* @tc.number: OH_AudioRenderer_GetChannelLayout_001
+* @tc.desc  : Test OH_AudioRenderer_GetChannelLayout interface. Returns true if channelLayout is
+*             CH_LAYOUT_UNKNOWN, because default channelLayout is CH_LAYOUT_UNKNOWN.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetChannelLayout_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioChannelLayout channelLayout;
+    result = OH_AudioRenderer_GetEncodingType(audioRenderer, &channelLayout);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(channelLayout == CH_LAYOUT_UNKNOWN);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetEffectMode API via legal state.
+* @tc.number: OH_AudioRenderer_GetEffectMode_001
+* @tc.desc  : Test OH_AudioRenderer_GetEffectMode interface. Returns true if effect mode is the same as set.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioStream_AudioEffectMode effectMode;
+    result = OH_AudioRenderer_SetEffectMode(audioRenderer, EFFECT_DEFAULT);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    result = OH_AudioRenderer_GetEffectMode(audioRenderer, &effectMode);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(effectMode == EFFECT_DEFAULT);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
 } // namespace AudioStandard
 } // namespace OHOS
