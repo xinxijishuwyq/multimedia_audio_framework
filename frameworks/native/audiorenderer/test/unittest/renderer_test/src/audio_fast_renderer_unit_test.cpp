@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <mutex>
+#include <gtest/gtest.h>
 
 #include "audio_errors.h"
 #include "audio_info.h"
@@ -38,7 +38,7 @@ constexpr uint32_t STREAM_FAST = 1;
 const int32_t VALUE_THOUSAND = 1000;
 const int32_t VALUE_ZERO = 0;
 static size_t g_reqBufLen = 0;
-bool g_flag = true;
+bool g_isFastRenderer = true;
 } // namespace
 
 class AudioFastRendererUnitTest : public testing::Test {
@@ -76,7 +76,7 @@ void AudioFastRendererUnitTest::SetUpTestCase(void)
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     bool isFast = audioRenderer->IsFastRenderer();
     if (audioRenderer == nullptr || !isFast) {
-        g_flag = false;
+        g_isFastRenderer = false;
     }
 }
 
@@ -104,7 +104,7 @@ void AudioFastRendererUnitTest::TearDown(void)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     int32_t ret = -1;
@@ -132,7 +132,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_002, TestSize.Level0)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     int32_t ret = -1;
@@ -164,7 +164,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_002, TestSize.Level0)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     int32_t ret = -1;
@@ -212,7 +212,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     AudioRendererOptions rendererOptions;
@@ -238,7 +238,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     int32_t ret = -1;
@@ -299,7 +299,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_006, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     int32_t ret = -1;
@@ -332,7 +332,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_006, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     int32_t ret = -1;
@@ -373,7 +373,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_008, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     AudioRendererOptions rendererOptions;
@@ -407,7 +407,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_008, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     int32_t ret = -1;
@@ -451,7 +451,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     int32_t SET_FRAME_SIZE = 960;
@@ -483,7 +483,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
 {
-    if (!g_flag) {
+    if (!g_isFastRenderer) {
         return;
     }
     AudioRendererOptions rendererOptions;
