@@ -530,7 +530,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
     std::unique_lock lock(mutex);
     cv.wait_for(lock, 1s, [&count] {
         // count > 1 ensure sleeped
-        return count > 1 ? true : false;
+        return count > 1;
     });
 
     // Verify that the callback is invoked at least once
