@@ -454,18 +454,18 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
     if (!g_isFastRenderer) {
         return;
     }
-    int32_t SET_FRAME_SIZE = 960;
-    uint32_t GET_FRAME_SIZE = 0;
+    int32_t setFrameSize = 960;
+    uint32_t getFrameSize = 0;
     AudioRendererOptions rendererOptions;
 
     InitializeFastRendererOptions(rendererOptions);
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
 
-    audioRenderer->SetPreferredFrameSize(SET_FRAME_SIZE);
-    bool gotFrameSize = audioRenderer->GetFrameCount(GET_FRAME_SIZE);
+    audioRenderer->SetPreferredFrameSize(setFrameSize);
+    bool gotFrameSize = audioRenderer->GetFrameCount(getFrameSize);
     EXPECT_EQ(SUCCESS, gotFrameSize);
-    EXPECT_EQ(static_cast<uint32_t>(SET_FRAME_SIZE), GET_FRAME_SIZE);
+    EXPECT_EQ(static_cast<uint32_t>(setFrameSize), getFrameSize);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
