@@ -259,7 +259,10 @@ ohos_shared_library("audio_policy_service") {
   if (accessibility_enable == true) {
     sources +=
         [ "server/src/service/listener/accessibility_config_listener.cpp" ]
-    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
   }
 
   if (bluetooth_part_enable == true) {

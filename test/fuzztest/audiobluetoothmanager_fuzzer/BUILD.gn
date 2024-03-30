@@ -62,7 +62,10 @@ ohos_fuzztest("AudioBluetoothManagerFuzzTest") {
     "samgr:samgr_proxy",
   ]
   if (accessibility_enable == true) {
-    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
   }
 }
 
