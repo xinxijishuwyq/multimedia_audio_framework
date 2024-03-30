@@ -506,11 +506,18 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
+    std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    if (GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType)) {
+        AUDIO_INFO_LOG("Old device: %{public}d. New device: %{public}d. No need to update volume",
+            currentActiveDevice_, deviceType);
+        currentActiveDevice_ = deviceType;
+        return;
+    }
+
     AUDIO_INFO_LOG("SetVolumeForSwitchDevice: Load volume and mute status for new device %{public}d", deviceType);
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "SetVolumeForSwitchDevice audioPolicyKvStore_ is null!");
     LoadVolumeMap();
     LoadMuteStatusMap();
@@ -776,25 +783,8 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
 std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType)
 {
-    std::string type = "";
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-        case DEVICE_TYPE_SPEAKER:
-            type = "build-in";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            type = "wireless";
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            type = "wired";
-            break;
-        default:
-            AUDIO_ERR_LOG("GetVolumeKeyForKvStore: device %{public}d is not supported for kvStore", deviceType);
-            return "";
-    }
+    std::string type = GetVolumeGroupForDevice(deviceType);
+    CHECK_AND_RETURN_RET_LOG(type != "", type, "Device %{public}d is not supported for kvStore", deviceType);
 
     switch (streamType) {
         case STREAM_MUSIC:
@@ -824,6 +814,30 @@ std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, A
             AUDIO_ERR_LOG("GetVolumeKeyForKvStore: streamType %{public}d is not supported for kvStore", streamType);
             return "";
     }
+}
+
+std::string AudioAdapterManager::GetVolumeGroupForDevice(DeviceType deviceType)
+{
+    std::string volumeGroup = "";
+    switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
+        case DEVICE_TYPE_SPEAKER:
+            volumeGroup = "build-in";
+            break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            volumeGroup = "wireless";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            volumeGroup = "wired";
+            break;
+        default:
+            AUDIO_ERR_LOG("Device %{public}d is not invalid value for volume group", deviceType);
+            return "";
+    }
+    return volumeGroup;
 }
 
 AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)

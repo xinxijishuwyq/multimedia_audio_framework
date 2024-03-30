@@ -172,6 +172,7 @@ private:
     void WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     bool LoadVolumeFromKvStore(DeviceType type, AudioStreamType streamType);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
+    std::string GetVolumeGroupForDevice(DeviceType deviceType);
     void InitRingerMode(bool isFirstBoot);
     bool LoadRingerMode(void);
     void WriteRingerModeToKvStore(AudioRingerMode ringerMode);
