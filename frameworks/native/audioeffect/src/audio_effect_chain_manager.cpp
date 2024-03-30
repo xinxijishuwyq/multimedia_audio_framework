@@ -1621,6 +1621,8 @@ uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
         return 0;
     }
     std::string sceneTypeAndDeviceKey = SessionIDToEffectInfoMap_[sessionId].sceneType + "_&_" + GetDeviceTypeName();
+    CHECK_AND_RETURN_RET_LOG(SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
+        SessionIDToEffectInfoMap_[sceneTypeAndDeviceKey] != nullptr, 0, "no such sceneTypeAndDeviceKey in map");
     return SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->GetLatency();
 }
 
