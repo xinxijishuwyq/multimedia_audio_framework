@@ -640,6 +640,11 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
     CHECK_AND_RETURN_LOG(userdata, "PAStreamPauseSuccessCb: userdata is null");
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
+    bool isStreamValid = true;
+    if (rendererStreamInstanceMap_.Find(streamImpl, isStreamValid) == false) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
     streamImpl->state_ = PAUSED;
     streamImpl->offloadTsLast_ = 0;
     streamImpl->ResetOffload();
