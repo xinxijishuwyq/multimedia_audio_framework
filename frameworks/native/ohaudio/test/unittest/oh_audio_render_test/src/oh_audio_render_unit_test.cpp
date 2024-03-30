@@ -541,6 +541,8 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level
     OH_AudioStream_AudioEffectMode effectMode;
     result = OH_AudioRenderer_SetEffectMode(audioRenderer, EFFECT_DEFAULT);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    result = OH_AudioRenderer_GetEffectMode(audioRenderer, &effectMode);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_TRUE(effectMode == EFFECT_DEFAULT);
     OH_AudioStreamBuilder_Destroy(builder);
 }
