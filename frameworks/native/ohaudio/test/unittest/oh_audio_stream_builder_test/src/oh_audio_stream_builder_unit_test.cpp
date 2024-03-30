@@ -48,9 +48,9 @@ static int32_t AudioRendererOnWriteDataInterrupt(OH_AudioRenderer* capturer,
 }
 
 static int32_t AudioRendererInterruptEvent(OH_AudioRenderer* renderer,
-            void* userData,
-            OH_AudioInterrupt_ForceType type,
-            OH_AudioInterrupt_Hint hint)
+    void* userData,
+    OH_AudioInterrupt_ForceType type,
+    OH_AudioInterrupt_Hint hint)
 {
     printf("AudioRendererInterruptEvent type = %d, hint = %d\n", type, hint);
     return 0;
