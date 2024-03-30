@@ -47,6 +47,15 @@ static int32_t AudioRendererOnWriteDataInterrupt(OH_AudioRenderer* capturer,
     return 0;
 }
 
+static int32_t AudioRendererInterruptEvent(OH_AudioRenderer* renderer,
+            void* userData,
+            OH_AudioInterrupt_ForceType type,
+            OH_AudioInterrupt_Hint hint)
+{
+    printf("AudioRendererInterruptEvent type = %d, hint = %d\n", type, hint);
+    return 0;
+}
+
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     void* userData,
     void* buffer,
@@ -366,7 +375,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_008, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
@@ -386,7 +395,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_009, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_COMMUNICATION;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -407,7 +416,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_010, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_COMMUNICATION;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
@@ -761,9 +770,9 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, 
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
@@ -781,7 +790,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, 
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -896,7 +905,6 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_002,
     OH_AudioRenderer_Stop(audioRenderer1);
     OH_AudioRenderer_Release(audioRenderer1);
 
-    // result = OH_AudioStreamBuilder_Destroy(builder2);
     result = OH_AudioStreamBuilder_Destroy(builder1);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }

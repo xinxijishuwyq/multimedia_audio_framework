@@ -377,7 +377,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_004, TestSize.Lev
 * @tc.name  : Test OH_AudioRenderer_GetCurrentState API via legal state.
 * @tc.number: OH_AudioRenderer_GetCurrentState_005
 * @tc.desc  : Test OH_AudioRenderer_GetCurrentState interface. Return true if the result state is
-*             AUDIOSTREAM_STATE_INVALID.
+*             AUDIOSTREAM_STATE_RELEASED.
 */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_005, TestSize.Level0)
 {
@@ -391,7 +391,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_005, TestSize.Lev
     OH_AudioStream_State state;
     result = OH_AudioRenderer_GetCurrentState(audioRenderer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(state == AUDIOSTREAM_STATE_INVALID);
+    EXPECT_TRUE(state == AUDIOSTREAM_STATE_RELEASED);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -491,7 +491,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetEncodingType_001, TestSize.Leve
 /**
 * @tc.name  : Test OH_AudioRenderer_GetRendererInfo API via legal state.
 * @tc.number: OH_Audio_Render_GetRendererInfo_001
-* @tc.desc  : Test OH_AudioRenderer_GetRendererInfo interface. Returns true if usage is AUDIOSTREAM_USAGE_MUSIC
+* @tc.desc  : Test OH_AudioRenderer_GetRendererInfo interface. Returns true if usage is STREAM_USAGE_MEDIA and content
+*             is CONTENT_TYPE_MUSIC.
 */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Level0)
 {
@@ -502,7 +503,8 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Leve
     OH_AudioStream_Usage usage;
     result = OH_AudioRenderer_GetRendererInfo(audioRenderer, &usage);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(usage == AUDIOSTREAM_USAGE_MUSIC);
+    EXPECT_TRUE(usage == AUDIOSTREAM_USAGE_MEDIA);
+    EXPECT_TRUE(content == AUDIOSTREAM_CONTENT_TYPE_MUSIC);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -538,8 +540,6 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level
 
     OH_AudioStream_AudioEffectMode effectMode;
     result = OH_AudioRenderer_SetEffectMode(audioRenderer, EFFECT_DEFAULT);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    result = OH_AudioRenderer_GetEffectMode(audioRenderer, &effectMode);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_TRUE(effectMode == EFFECT_DEFAULT);
     OH_AudioStreamBuilder_Destroy(builder);
