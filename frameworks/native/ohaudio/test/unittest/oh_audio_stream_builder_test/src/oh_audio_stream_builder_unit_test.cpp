@@ -840,7 +840,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetWriteDataWithMetad
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via illegal state.
 * @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_001
 * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with nullptr builder.
 */

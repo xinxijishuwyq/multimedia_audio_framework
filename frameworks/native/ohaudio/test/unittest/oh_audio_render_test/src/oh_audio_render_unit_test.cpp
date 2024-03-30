@@ -548,7 +548,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetEffectMode_001, TestSize.Level
 }
 
 /**
-* @tc.name  : Test OH_AudioRenderer_GetVolume API via legal state.
+* @tc.name  : Test OH_AudioRenderer_GetVolume API via illegal state.
 * @tc.number: OH_Audio_Render_GetVolume_001
 * @tc.desc  : Test OH_AudioRenderer_GetVolume interface with nullptr audioRenderer.
 */
@@ -620,7 +620,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioRenderer_SetVolume API via legal state.
+* @tc.name  : Test OH_AudioRenderer_SetVolume API via illegal state.
 * @tc.number: OH_Audio_Render_SetVolume_001
 * @tc.desc  : Test OH_AudioRenderer_SetVolume interface with nullptr audioRenderer.
 */
@@ -668,7 +668,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_003, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioRenderer_SetVolume API via legal state.
+* @tc.name  : Test OH_AudioRenderer_SetVolume API via illegal state.
 * @tc.number: OH_Audio_Render_SetVolume_004
 * @tc.desc  : Test OH_AudioRenderer_SetVolume interface out of volumes range.
 */
@@ -687,7 +687,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioRenderer_SetVolumeWithRamp API via legal state.
+* @tc.name  : Test OH_AudioRenderer_SetVolumeWithRamp API via illegal state.
 * @tc.number: OH_Audio_Render_SetVolumeWithRamp_001
 * @tc.desc  : Test OH_AudioRenderer_SetVolumeWithRamp interface with nullptr audioRenderer.
 */
@@ -718,7 +718,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolumeWithRamp_002, TestSize.Le
 }
 
 /**
-* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via legal state.
+* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via illegal state.
 * @tc.number: OH_Audio_Render_SetMarkPosition_001
 * @tc.desc  : Test OH_AudioRenderer_SetMarkPosition interface with nullptr audioRenderer.
 */
@@ -750,7 +750,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_002, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via legal state.
+* @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via illegal state.
 * @tc.number: OH_Audio_Render_SetMarkPosition_003
 * @tc.desc  : Test OH_AudioRenderer_SetMarkPosition interface with incorrect samplepos value.
 */
@@ -851,7 +851,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetMarkPosition_005, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test OH_AudioRenderer_CancelMark API via legal state.
+* @tc.name  : Test OH_AudioRenderer_CancelMark API via illegal state.
 * @tc.number: OH_Audio_Render_CancelMark_001
 * @tc.desc  : Test OH_AudioRenderer_CancelMark interface with nullptr audioRenderer.
 */
@@ -880,7 +880,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_002, TestSize.Level0)
 /**
 * @tc.name  : Test OH_AudioRenderer_CancelMark API via legal state.
 * @tc.number: OH_Audio_Render_CancelMark_003
-* @tc.desc  : Test OH_AudioRenderer_CancelMark interface.
+* @tc.desc  : Test OH_AudioRenderer_CancelMark interface with callback.
 */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_003, TestSize.Level0)
 {
