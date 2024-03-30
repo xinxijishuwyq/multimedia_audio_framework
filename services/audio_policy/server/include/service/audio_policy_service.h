@@ -425,6 +425,8 @@ public:
 
     void UnloadA2dpModule();
 
+    int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
