@@ -206,6 +206,13 @@ void AudioDeviceDescriptor::SetDeviceCapability(const DeviceStreamInfo &audioStr
     channelIndexMasks_ = channelIndexMasks;
 }
 
+bool AudioDeviceDescriptor::isSameDevice(const DeviceInfo &deviceInfo)
+{
+    return deviceInfo.deviceType == deviceType_ &&
+        deviceInfo.macAddress == macAddress_ &&
+        deviceInfo.networkId == networkId_;
+}
+
 AudioRendererFilter::AudioRendererFilter()
 {}
 
