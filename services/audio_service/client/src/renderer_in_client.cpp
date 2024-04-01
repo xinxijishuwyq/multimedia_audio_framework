@@ -242,6 +242,8 @@ private:
 
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
 
+    void FirstframeProcess();
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -1780,6 +1782,17 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
     return WriteInner(buffer, bufferSize);
 }
 
+void RendererInClientInner::FirstframeProcess()
+{
+    // if first call, call set thread priority. if thread tid change recall set thread priority
+    if (needSetThreadPriority_) {
+        AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
+        needSetThreadPriority_ = false;
+    }
+
+    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
+}
+
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
@@ -1788,15 +1801,12 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
-    CHECK_AND_RETURN_RET_LOG(ProcessSpeed(buffer, bufferSize), 0, "process speed error");
-
-    // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_) {
-        AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
-        needSetThreadPriority_ = false;
+    if (ProcessSpeed(buffer, bufferSize)) {
+        AUDIO_INFO_LOG("process speed error");
+        return ERROR;
     }
 
-    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
+    FirstframeProcess();
 
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
