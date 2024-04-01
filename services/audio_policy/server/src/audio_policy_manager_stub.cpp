@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyManagerStub"
 
 #include "audio_policy_manager_stub.h"
 
@@ -698,9 +700,10 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
 
     int32_t countPre = supportedEffectConfig.preProcessNew.stream.size();
     int32_t countPost = supportedEffectConfig.postProcessNew.stream.size();
+    int32_t countPostMap = supportedEffectConfig.postProcessSceneMap.size();
     reply.WriteInt32(countPre);
     reply.WriteInt32(countPost);
-
+    reply.WriteInt32(countPostMap);
     if (countPre > 0) {
         for (i = 0; i < countPre; i++) {
             PreprocessProcess(supportedEffectConfig, reply, i);
@@ -709,6 +712,12 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     if (countPost > 0) {
         for (i = 0; i < countPost; i++) {
             PostprocessProcess(supportedEffectConfig, reply, i);
+        }
+    }
+    if (countPostMap > 0) {
+        for (i = 0; i < countPostMap; i++) {
+            reply.WriteString(supportedEffectConfig.postProcessSceneMap[i].name);
+            reply.WriteString(supportedEffectConfig.postProcessSceneMap[i].sceneType);
         }
     }
 }
@@ -1082,6 +1091,31 @@ void AudioPolicyManagerStub::FetchInputDeviceForTrackInternal(MessageParcel &dat
     AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioCapturerChangeInfo.Unmarshalling(data);
     FetchInputDeviceForTrack(streamChangeInfo);
+}
+
+void AudioPolicyManagerStub::IsHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool ret = IsHighResolutionExist();
+    reply.WriteBool(ret);
+}
+
+void AudioPolicyManagerStub::SetHighResolutionExistInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool highResExist = data.ReadBool();
+    SetHighResolutionExist(highResExist);
+}
+
+void AudioPolicyManagerStub::GetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSpatializationSceneType spatializationSceneType = GetSpatializationSceneType();
+    reply.WriteInt32(static_cast<int32_t>(spatializationSceneType));
+}
+
+void AudioPolicyManagerStub::SetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSpatializationSceneType spatializationSceneType = static_cast<AudioSpatializationSceneType>(data.ReadInt32());
+    int32_t ret = SetSpatializationSceneType(spatializationSceneType);
+    reply.WriteInt32(ret);
 }
 } // namespace audio_policy
 } // namespace OHOS

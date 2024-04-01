@@ -12,9 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRenderer"
+
 #include "napi_audio_renderer.h"
 #include "audio_utils.h"
+#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
+#include "errors.h"
+#else
 #include "xpower_event_js.h"
+#endif
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
@@ -474,7 +481,9 @@ napi_value NapiAudioRenderer::Start(napi_env env, napi_callback_info info)
     }
 
     context->GetCbInfo(env, info);
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "STREAM_CHANGE", "SRC=Audio");
+#endif
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
@@ -1270,9 +1279,14 @@ napi_value NapiAudioRenderer::SetAudioEffectMode(napi_env env, napi_callback_inf
             NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context,
             NapiAudioEnum::IsLegalInputArgumentAudioEffectMode(context->audioEffectMode), "unsupport mode",
-            NAPI_ERR_UNSUPPORTED);
+            NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
+
+    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+        NapiAudioError::ThrowError(env, context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
 
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");

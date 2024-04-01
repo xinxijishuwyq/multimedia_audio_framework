@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioRendererSinkInner"
 
 #include "audio_renderer_sink.h"
 
@@ -96,6 +98,8 @@ public:
 
     int32_t Preload(const std::string &usbInfoStr) override;
 
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
+
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
 private:
@@ -141,6 +145,7 @@ private:
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
     int32_t InitRender();
+    void ReleaseRunningLock();
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -774,7 +779,7 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice, AudioPor
     ret = audioAdapter_->UpdateAudioRoute(audioAdapter_, &route, &routeHandle_);
     inSwitch_.store(false);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AUDIO_INFO_LOG("UpdateAudioRoute cost[%{public}" PRId64 "]ms", stamp);
+    AUDIO_INFO_LOG("deviceType : %{public}d UpdateAudioRoute cost[%{public}" PRId64 "]ms", outputDevice, stamp);
     renderEmptyFrameCount_ = 3; // render 3 empty frame
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "UpdateAudioRoute failed");
 
@@ -834,10 +839,8 @@ int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
     return SUCCESS;
 }
 
-int32_t AudioRendererSinkInner::Stop(void)
+void AudioRendererSinkInner::ReleaseRunningLock()
 {
-    Trace trace("AudioRendererSinkInner::Stop");
-    AUDIO_INFO_LOG("Stop.");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
@@ -846,6 +849,13 @@ int32_t AudioRendererSinkInner::Stop(void)
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
+}
+
+int32_t AudioRendererSinkInner::Stop(void)
+{
+    Trace trace("AudioRendererSinkInner::Stop");
+    AUDIO_INFO_LOG("Stop.");
+
     int32_t ret;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -855,13 +865,15 @@ int32_t AudioRendererSinkInner::Stop(void)
         ret = audioRender_->Stop(audioRender_);
         if (!ret) {
             started_ = false;
+            ReleaseRunningLock();
             return SUCCESS;
         } else {
             AUDIO_ERR_LOG("Stop failed!");
+            ReleaseRunningLock();
             return ERR_OPERATION_FAILED;
         }
     }
-
+    ReleaseRunningLock();
     return SUCCESS;
 }
 
@@ -1066,6 +1078,13 @@ int32_t AudioRendererSinkInner::InitRender()
     renderInited_ = true;
 
     return SUCCESS;
+}
+
+void AudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    if (currentActiveDevice_ == device) {
+        currentActiveDevice_ = DEVICE_TYPE_NONE;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

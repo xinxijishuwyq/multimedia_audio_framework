@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioRendererFileSink"
 
 #include "audio_renderer_file_sink.h"
 
@@ -202,6 +204,11 @@ int32_t AudioRendererFileSink::GetTransactionId(uint64_t *transactionId)
 {
     AUDIO_ERR_LOG("AudioRendererFileSink %{public}s", __func__);
     return ERR_NOT_SUPPORTED;
+}
+
+void AudioRendererFileSink::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    AUDIO_WARNING_LOG("not supported.");
 }
 } // namespace AudioStandard
 } // namespace OHOS

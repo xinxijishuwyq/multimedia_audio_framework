@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiParamUtils"
 
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
@@ -335,7 +337,11 @@ napi_status NapiParamUtils::GetRendererInfo(const napi_env &env, AudioRendererIn
 
     status = GetValueInt32(env, "usage", intValue, in);
     if (status == napi_ok) {
-        rendererInfo->streamUsage = static_cast<StreamUsage>(intValue);
+        if (NapiAudioEnum::IsLegalInputArgumentStreamUsage(intValue)) {
+            rendererInfo->streamUsage = static_cast<StreamUsage>(intValue);
+        } else {
+            rendererInfo->streamUsage = StreamUsage::STREAM_USAGE_INVALID;
+        }
     }
 
     GetValueInt32(env, "rendererFlags", rendererInfo->rendererFlags, in);
@@ -360,7 +366,7 @@ napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *
     int32_t intValue = {0};
     napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
     if (status == napi_ok) {
-        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_96000) {
+        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_192000) {
             streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
         } else {
             AUDIO_ERR_LOG("invaild samplingRate");
@@ -945,8 +951,10 @@ napi_status NapiParamUtils::GetAudioInterrupt(const napi_env &env, AudioInterrup
 
     status = NapiParamUtils::GetValueBoolean(env, "pauseWhenDucked", audioInterrupt.pauseWhenDucked, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetAudioInterrupt: Failed to retrieve pauseWhenDucked");
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     audioInterrupt.audioFocusType.streamType = AudioSystemManager::GetStreamType(audioInterrupt.contentType,
         audioInterrupt.streamUsage);
+#endif
     return status;
 }
 

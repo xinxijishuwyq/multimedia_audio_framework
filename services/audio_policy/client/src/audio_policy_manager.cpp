@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyManager"
 
 #include "audio_policy_manager.h"
 #include "audio_errors.h"
@@ -1367,7 +1369,7 @@ int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uin
     return gsp->UnregisterSpatializationStateEventListener(sessionID);
 }
 
-int32_t AudioPolicyManager::CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyManager::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -1375,7 +1377,7 @@ int32_t AudioPolicyManager::CreateAudioInterruptZone(const std::set<int32_t> pid
     return gsp->CreateAudioInterruptZone(pids, zoneID);
 }
 
-int32_t AudioPolicyManager::AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyManager::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -1383,7 +1385,7 @@ int32_t AudioPolicyManager::AddAudioInterruptZonePids(const std::set<int32_t> pi
     return gsp->AddAudioInterruptZonePids(pids, zoneID);
 }
 
-int32_t AudioPolicyManager::RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyManager::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
@@ -1438,6 +1440,42 @@ ConverterConfig AudioPolicyManager::GetConverterConfig()
         return ConverterConfig();
     }
     return gsp->GetConverterConfig();
+}
+
+bool AudioPolicyManager::IsHighResolutionExist()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        return false;
+    }
+    bool gspIsHighResolutionExist = gsp->IsHighResolutionExist();
+    return gspIsHighResolutionExist;
+}
+
+int32_t AudioPolicyManager::SetHighResolutionExist(bool highResExist)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        return -1;
+    }
+    gsp->SetHighResolutionExist(highResExist);
+    return SUCCESS;
+}
+
+AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_DEFAULT, "audio policy manager proxy is NULL.");
+    return gsp->GetSpatializationSceneType();
+}
+
+int32_t AudioPolicyManager::SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetSpatializationSceneType(spatializationSceneType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

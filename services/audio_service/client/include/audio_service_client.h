@@ -259,19 +259,19 @@ public:
     /**
     * Provides the current timestamp for playback/record stream created using CreateStream
     *
-    * @param timeStamp will be filled up with current timestamp
+    * @param timestamp will be filled up with current timestamp
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetCurrentTimeStamp(uint64_t &timeStamp);
+    int32_t GetCurrentTimeStamp(uint64_t &timestamp);
 
     /**
     * Provides the current timestamp for playback/record stream created using CreateStream
     *
     * @param framePosition will be filled up with current frame position
-    * @param timeStamp will be filled up with current timestamp
+    * @param timestamp will be filled up with current timestamp
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
-    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timeStamp);
+    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp);
 
     /**
     * Update the stream positon and timestamp
@@ -348,6 +348,12 @@ public:
     * @return Returns number of underflow
     */
     uint32_t GetUnderflowCount() override;
+
+    uint32_t GetOverflowCount() override;
+
+    void SetUnderflowCount(uint32_t underflowCount) override;
+
+    void SetOverflowCount(uint32_t overflowCount) override;
 
     // Device volume & route handling APIs
 
@@ -739,7 +745,8 @@ private:
 
     ASClientType eAudioClientType;
 
-    uint32_t underFlowCount;
+    uint32_t underFlowCount_ = 0;
+    uint32_t overflowCount_ = 0;
     int64_t offloadTsOffset_ = 0;
     uint64_t offloadTsLast_ = 0;
     uint64_t offloadWriteIndex_ = 0;
@@ -773,7 +780,7 @@ private:
     void ResetOffload();
     int32_t OffloadStopStream();
     void GetOffloadCurrentTimeStamp(uint64_t paTimeStamp, uint64_t paWriteIndex, uint64_t &outTimeStamp);
-    void GetOffloadApproximatelyCacheTime(uint64_t timeStamp, uint64_t paWriteIndex, uint64_t &cacheTimePaDsp);
+    void GetOffloadApproximatelyCacheTime(uint64_t timestamp, uint64_t paWriteIndex, uint64_t &cacheTimePaDsp);
     int32_t CreateStreamWithPa(AudioStreamParams audioParams, AudioStreamType audioType);
 
     // Audio cache related functions. These APIs are applicable only for playback scenarios
@@ -920,6 +927,8 @@ private:
         SET_CAPTURER_MARK_REACHED_REQUEST,
         UNSET_CAPTURER_MARK_REACHED_REQUEST,
     };
+
+    int32_t SetHighResolution(pa_proplist *propList, AudioStreamParams &audioParams);
 };
 
 class AudioSpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyProxy"
 
 #include "audio_policy_manager.h"
 #include "audio_log.h"
@@ -1305,6 +1307,7 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
     int countPre = reply.ReadInt32();
     int countPost = reply.ReadInt32();
+    int32_t countPostMap = reply.ReadInt32();
     error = QueryEffectSceneModeChkReply(countPre, countPost);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
     // preprocess
@@ -1325,6 +1328,14 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
             postProcessNew.stream.push_back(stream);
         }
         supportedEffectConfig.postProcessNew = postProcessNew;
+    }
+    if (countPostMap > 0) {
+        SceneMappingItem item;
+        for (i = 0; i < countPostMap; i++) {
+            item.name = reply.ReadString();
+            item.sceneType = reply.ReadString();
+            supportedEffectConfig.postProcessSceneMap.push_back(item);
+        }
     }
     return 0;
 }
@@ -1837,7 +1848,7 @@ int32_t AudioPolicyProxy::RegisterPolicyCallbackClient(const sptr<IRemoteObject>
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1862,7 +1873,7 @@ int32_t AudioPolicyProxy::CreateAudioInterruptZone(const std::set<int32_t> pids,
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1885,7 +1896,7 @@ int32_t AudioPolicyProxy::AddAudioInterruptZonePids(const std::set<int32_t> pids
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyProxy::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1996,6 +2007,71 @@ ConverterConfig AudioPolicyProxy::GetConverterConfig()
     result.library = {reply.ReadString(), reply.ReadString()};
     result.outChannelLayout = reply.ReadUint64();
     return result;
+}
+
+bool AudioPolicyProxy::IsHighResolutionExist()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HIGH_RESOLUTION_EXIST), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERR_TRANSACTION_FAILED,
+        "SendRequest failed, error: %d", error);
+    
+    bool replyReadBool = reply.ReadBool();
+    return replyReadBool;
+}
+
+int32_t AudioPolicyProxy::SetHighResolutionExist(bool highResExist)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    
+    data.WriteBool(highResExist);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HIGH_RESOLUTION_EXIST), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %d", error);
+    return SUCCESS;
+}
+
+AudioSpatializationSceneType AudioPolicyProxy::GetSpatializationSceneType()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, SPATIALIZATION_SCENE_TYPE_DEFAULT, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SPATIALIZATION_SCENE_TYPE_DEFAULT,
+        "SendRequest failed, error: %{public}d", error);
+    return static_cast<AudioSpatializationSceneType>(reply.ReadInt32());
+}
+
+int32_t AudioPolicyProxy::SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(spatializationSceneType));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

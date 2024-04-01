@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioBluetoothManager"
 
 #include "audio_bluetooth_manager.h"
 #include "bluetooth_def.h"
@@ -373,9 +375,9 @@ void AudioHfpManager::UpdateAudioScene(AudioScene scene)
     scene_ = scene;
 }
 
-void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state)
+void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
-    AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: state: [%{public}d]", state);
+    AUDIO_INFO_LOG("AudioHfpListener::OnScoStateChanged: state: [%{public}d] reason: [%{public}d]", state, reason);
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         if (device.GetDeviceAddr() == AudioHfpManager::GetCurrentActiveHfpDevice() &&
@@ -384,7 +386,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT);
         }
         bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected);
+        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
     }
 }
 

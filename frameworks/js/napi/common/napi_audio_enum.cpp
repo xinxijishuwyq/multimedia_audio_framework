@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioEnum"
 
 #include "napi_audio_enum.h"
 #include "audio_renderer.h"
@@ -68,6 +70,7 @@ napi_ref NapiAudioEnum::audioDviceUsage_ = nullptr;
 napi_ref NapiAudioEnum::audioSpatialDeivceType_ = nullptr;
 napi_ref NapiAudioEnum::audioChannelLayout_ = nullptr;
 napi_ref NapiAudioEnum::audioStreamDeviceChangeReason_ = nullptr;
+napi_ref NapiAudioEnum::spatializationSceneType_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -98,7 +101,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::samplingRateMap = {
     {"SAMPLE_RATE_44100", SAMPLE_RATE_44100},
     {"SAMPLE_RATE_48000", SAMPLE_RATE_48000},
     {"SAMPLE_RATE_64000", SAMPLE_RATE_64000},
-    {"SAMPLE_RATE_96000", SAMPLE_RATE_96000}
+    {"SAMPLE_RATE_88200", SAMPLE_RATE_88200},
+    {"SAMPLE_RATE_96000", SAMPLE_RATE_96000},
+    {"SAMPLE_RATE_176400", SAMPLE_RATE_176400},
+    {"SAMPLE_RATE_192000", SAMPLE_RATE_192000},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::encodingTypeMap = {
@@ -135,7 +141,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_NAVIGATION", STREAM_USAGE_NAVIGATION},
     {"STREAM_USAGE_DTMF", STREAM_USAGE_DTMF},
     {"STREAM_USAGE_ENFORCED_TONE", STREAM_USAGE_ENFORCED_TONE},
-    {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC}
+    {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC},
+    {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceRoleMap = {
@@ -430,6 +437,13 @@ const std::map<std::string, uint64_t> NapiAudioEnum::audioChannelLayoutMap = {
     {"CH_LAYOUT_AMB_ORDER3_FUMA", CH_LAYOUT_HOA_ORDER3_FUMA},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::spatializationSceneTypeMap = {
+    {"DEFAULT", SPATIALIZATION_SCENE_TYPE_DEFAULT },
+    {"MUSIC", SPATIALIZATION_SCENE_TYPE_MUSIC},
+    {"MOVIE", SPATIALIZATION_SCENE_TYPE_MOVIE},
+    {"AUDIOBOOK", SPATIALIZATION_SCENE_TYPE_AUDIOBOOK},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -539,6 +553,8 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
             audioChannelLayoutMap, audioChannelLayout_)),
         DECLARE_NAPI_PROPERTY("AudioStreamDeviceChangeReason",
             CreateEnumObject(env, audioDeviceChangeReasonMap, audioStreamDeviceChangeReason_)),
+        DECLARE_NAPI_PROPERTY("AudioSpatializationSceneType", CreateEnumObject(env,
+            spatializationSceneTypeMap, spatializationSceneType_)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
@@ -1101,6 +1117,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
     switch (volumeType) {
         case AudioStreamType::STREAM_VOICE_CALL:
         case AudioStreamType::STREAM_VOICE_MESSAGE:
+        case AudioStreamType::STREAM_VOICE_COMMUNICATION:
             result = NapiAudioEnum::VOICE_CALL;
             break;
         case AudioStreamType::STREAM_RING:
@@ -1245,6 +1262,7 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
         case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
             result = true;
             break;
         default:
@@ -1388,6 +1406,23 @@ AudioStandard::InterruptMode NapiAudioEnum::GetNativeInterruptMode(int32_t inter
         default:
             result = AudioStandard::InterruptMode::SHARE_MODE;
             AUDIO_ERR_LOG("Unknown interruptMode type, Set it to default SHARE_MODE!");
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType)
+{
+    bool result = false;
+    switch (spatializationSceneType) {
+        case AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_DEFAULT:
+        case AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MUSIC:
+        case AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MOVIE:
+        case AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_AUDIOBOOK:
+            result = true;
+            break;
+        default:
+            result = false;
             break;
     }
     return result;

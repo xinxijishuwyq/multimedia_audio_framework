@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "OHAudioCapturer"
 
 #include "OHAudioCapturer.h"
 #include "audio_errors.h"
@@ -198,6 +200,15 @@ OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer,
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioCapturer_GetOverflowCount(OH_AudioCapturer* capturer, uint32_t* count)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
+
+    *count = audioCapturer->GetOverflowCount();
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioCapturer::OHAudioCapturer()
@@ -369,6 +380,12 @@ int32_t OHAudioCapturer::Enqueue(const BufferDesc &bufDesc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
     return audioCapturer_->Enqueue(bufDesc);
+}
+
+uint32_t OHAudioCapturer::GetOverflowCount() const
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->GetOverflowCount();
 }
 
 void OHAudioCapturerModeCallback::OnReadData(size_t length)

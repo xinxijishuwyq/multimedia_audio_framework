@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "MultiChannelRendererSinkInner"
 
 #include "multichannel_audio_renderer_sink.h"
 
@@ -92,6 +94,8 @@ public:
     int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
 
     int32_t Preload(const std::string &usbInfoStr) override;
+
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
 
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
@@ -1057,5 +1061,13 @@ int32_t MultiChannelRendererSinkInner::InitRender()
 
     return SUCCESS;
 }
+
+void MultiChannelRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    if (currentActiveDevice_ == device) {
+        currentActiveDevice_ = DEVICE_TYPE_NONE;
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

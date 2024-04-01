@@ -232,6 +232,12 @@ typedef enum {
      * @since 10
      */
     AUDIOSTREAM_USAGE_NAVIGATION = 13,
+    /**
+     * Video call usage.
+     *
+     * @since 11
+     */
+    AUDIOSTREAM_USAGE_VIDEO_COMMUNICATION = 17,
 } OH_AudioStream_Usage;
 
 /**
@@ -585,6 +591,16 @@ typedef enum {
  */
 typedef void (*OH_AudioRenderer_OutputDeviceChangeCallback)(OH_AudioRenderer* renderer, void* userData,
     OH_AudioStream_DeviceChangeReason reason);
+
+/**
+ * @brief Callback when the mark position reached.
+ *
+ * @param renderer AudioRenderer where this event occurs.
+ * @param samplePos Mark position in samples.
+ * @param userData User data which is passed by user.
+ * @since 12
+ */
+typedef void (*OH_AudioRenderer_OnMarkReachedCallback)(OH_AudioRenderer* renderer, uint32_t samplePos, void* userData);
 
 #ifdef __cplusplus
 }

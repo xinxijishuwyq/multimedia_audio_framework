@@ -69,7 +69,9 @@ public:
 
     int32_t Drain() override;
 
-    int32_t GetAudioTime(uint64_t &framePos, uint64_t &timeStamp) override;
+    int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override;
+
+    int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp) override;
 
     int32_t GetLatency(uint64_t &latency) override;
 
@@ -93,10 +95,12 @@ public:
 
     int32_t UnsetOffloadMode() override; // renderer only
 
-    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timeStamp, uint64_t &paWriteIndex,
+    int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override; // renderer only
 
     int32_t OffloadSetVolume(float volume) override; // renderer only
+
+    int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override; // renderer only
 
 private:
     int32_t ConfigRenderer();

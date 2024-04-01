@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioGroupManager"
 
 #include "audio_errors.h"
 #include "audio_manager_proxy.h"
@@ -53,6 +55,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
 
     switch (volumeType) {
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_RING:
         case STREAM_MUSIC:
         case STREAM_ALARM:
@@ -90,6 +93,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
@@ -180,6 +184,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute)
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
@@ -211,6 +216,7 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioRenderer"
 
 #include <sstream>
 
@@ -22,9 +24,6 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
-#ifdef OHCORE
-#include "audio_renderer_gateway.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,24 +39,6 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
-static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
-    {STREAM_MUSIC, STREAM_USAGE_MUSIC},
-    {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
-    {STREAM_VOICE_ASSISTANT, STREAM_USAGE_VOICE_ASSISTANT},
-    {STREAM_ALARM, STREAM_USAGE_ALARM},
-    {STREAM_VOICE_MESSAGE, STREAM_USAGE_VOICE_MESSAGE},
-    {STREAM_RING, STREAM_USAGE_RINGTONE},
-    {STREAM_NOTIFICATION, STREAM_USAGE_NOTIFICATION},
-    {STREAM_ACCESSIBILITY, STREAM_USAGE_ACCESSIBILITY},
-    {STREAM_SYSTEM, STREAM_USAGE_SYSTEM},
-    {STREAM_MOVIE, STREAM_USAGE_MOVIE},
-    {STREAM_GAME, STREAM_USAGE_GAME},
-    {STREAM_SPEECH, STREAM_USAGE_AUDIOBOOK},
-    {STREAM_NAVIGATION, STREAM_USAGE_NAVIGATION},
-    {STREAM_DTMF, STREAM_USAGE_DTMF},
-    {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
-    {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC}
-};
 
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
@@ -154,11 +135,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
     if (audioStreamType == STREAM_MEDIA) {
         audioStreamType = STREAM_MUSIC;
     }
-#ifdef OHCORE
-    return std::make_unique<AudioRendererGateway>(audioStreamType);
-#else
+
     return std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, true);
-#endif
 }
 
 std::unique_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions)
@@ -206,11 +184,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     CHECK_AND_RETURN_RET_LOG((audioStreamType != STREAM_ULTRASONIC || getuid() == UID_MSDP_SA),
         nullptr, "ULTRASONIC can only create by MSDP");
 
-#ifdef OHCORE
-    auto audioRenderer = std::make_unique<AudioRendererGateway>(audioStreamType);
-#else
     auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, false);
-#endif
+
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
@@ -218,8 +193,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     }
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d",
-        streamUsage, contentType, rendererFlags);
+    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d, "\
+        "uid: %{public}d", streamUsage, contentType, rendererFlags, appInfo.appUid);
 
     audioRenderer->rendererInfo_.contentType = contentType;
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
@@ -326,6 +301,9 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
         SetSelfRendererStateCallback();
     }
 
+    ret = GetAudioStreamId(sessionID_);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "GetAudioStreamId err");
+
     return SUCCESS;
 }
 
@@ -398,7 +376,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     RegisterRendererPolicyServiceDiedCallback();
 
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_RENDERER_FILENAME, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, std::to_string(sessionID_) + '_' + DUMP_AUDIO_RENDERER_FILENAME,
+        &dumpFile_);
 
     if (outputDeviceChangeCallback_ != nullptr) {
         ret = InitOutputDeviceChangeCallback();
@@ -1206,6 +1185,7 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRenderMode(info.renderMode);
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
+    audioStream->SetUnderflowCount(info.underFlowCount);
 
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {

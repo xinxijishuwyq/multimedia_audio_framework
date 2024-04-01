@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AccessibilityConfigListener"
 
 #include "accessibility_config_listener.h"
 
@@ -28,7 +30,7 @@ AccessibilityConfigListener::~AccessibilityConfigListener() {}
 
 void AccessibilityConfigListener::OnConfigChanged(const CONFIG_ID configId, const ConfigValue &value)
 {
-    AUDIO_INFO_LOG("OnConfigChanged: configId %{public}d", configId);
+    AUDIO_DEBUG_LOG("OnConfigChanged: configId %{public}d", configId);
     if (configId == CONFIG_AUDIO_MONO) {
         audioAccessibilityConfigObserver_.OnMonoAudioConfigChanged(value.audioMono);
     } else if (configId == CONFIG_AUDIO_BALANCE) {

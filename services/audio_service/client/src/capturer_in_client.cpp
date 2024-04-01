@@ -15,6 +15,9 @@
 #ifndef FAST_AUDIO_STREAM_H
 #define FAST_AUDIO_STREAM_H
 
+#undef LOG_TAG
+#define LOG_TAG "CapturerInClientInner"
+
 #include "capturer_in_client.h"
 
 #include <atomic>
@@ -58,7 +61,7 @@ const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t INVALID_FRAME_SIZE = -1;
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
-static constexpr int CB_QUEUE_CAPACITY = 1;
+static constexpr int CB_QUEUE_CAPACITY = 3;
 }
 class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<CapturerInClientInner> {
@@ -160,6 +163,10 @@ public:
     void UnsetRendererPeriodPositionCallback() override;
 
     uint32_t GetUnderflowCount() override;
+    uint32_t GetOverflowCount() override;
+    void SetUnderflowCount(uint32_t underflowCount) override;
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     uint32_t GetRendererSamplingRate() override;
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
@@ -353,7 +360,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == BUFFER_OVERFLOW) {
-        overflowCount_++;
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
         readDataCV_.notify_all();
@@ -1055,6 +1061,7 @@ void CapturerInClientInner::ReadCallbackFunc()
         if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
             AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
         }
+        if (state_ != RUNNING) { continue; }
         lockBuffer.unlock();
 
         // call client read
@@ -1363,6 +1370,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
         AUDIO_WARNING_LOG("Already release, do nothing");
         return true;
     }
+    state_ = RELEASED;
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
         ipcStream_->Release();
@@ -1389,12 +1397,12 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner)
             cbBufferQueue_.PushNoWait({nullptr, 0, 0});
         }
         cbThreadCv_.notify_all();
+        readDataCV_.notify_all();
         if (callbackLoop_.joinable()) {
             callbackLoop_.join();
         }
     }
     paramsIsSet_ = false;
-    state_ = RELEASED;
 
     std::unique_lock<std::mutex> lock(streamCbMutex_);
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
@@ -1496,7 +1504,6 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             result = ringCache_->Dequeue({&buffer + (readSize), readableSize});
             CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "DequeueCache err %{public}d", result.ret);
             readSize += readableSize;
-            HandleCapturerPositionChanges(readSize);
             return readSize; // data size
         }
         if (result.size != 0) {
@@ -1514,19 +1521,16 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
         } else {
             if (!isBlockingRead) {
-                HandleCapturerPositionChanges(readSize);
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
             std::unique_lock<std::mutex> readLock(readDataMutex_);
             bool isTimeout = !readDataCV_.wait_for(readLock,
                 std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-                    return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame();
+                    return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
             });
-            if (isTimeout) {
-                AUDIO_WARNING_LOG("timeout");
-                return ERROR;
-            }
+            CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "State is not running");
+            CHECK_AND_RETURN_RET_LOG(isTimeout == false, ERROR, "Wait timeout");
         }
     }
     return readSize;
@@ -1593,7 +1597,7 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
 
     {
         std::lock_guard<std::mutex> lock(periodReachMutex_);
-        capturerPeriodRead_ += (totalBytesRead_ / sizePerFrameInByte_);
+        capturerPeriodRead_ += (bytesRead / sizePerFrameInByte_);
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(capturerPeriodRead_), static_cast<int64_t>(totalBytesRead_));
         if (capturerPeriodRead_ >= capturerPeriodSize_ && capturerPeriodSize_ > 0) {
@@ -1610,6 +1614,23 @@ uint32_t CapturerInClientInner::GetUnderflowCount()
     // not supported for capturer
     AUDIO_WARNING_LOG("No Underflow in Capturer");
     return 0;
+}
+
+uint32_t CapturerInClientInner::GetOverflowCount()
+{
+    return overflowCount_;
+}
+
+void CapturerInClientInner::SetUnderflowCount(uint32_t underflowCount)
+{
+    // not supported for capturer
+    AUDIO_WARNING_LOG("No Underflow in Capturer");
+    return;
+}
+
+void CapturerInClientInner::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ = overflowCount;
 }
 
 void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, const

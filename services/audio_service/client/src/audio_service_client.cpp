@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioServiceClient"
 
 #include "audio_service_client.h"
 
@@ -65,6 +67,8 @@ const uint64_t AUDIO_S_TO_NS = 1000000000;
 const uint64_t HDI_OFFLOAD_SAMPLE_RATE = 48000;
 const int64_t SECOND_TO_MICROSECOND = 1000000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
+const uint64_t AUDIO_US_PER_S = 1000000;
+const uint64_t AUDIO_MS_PER_S = 1000;
 
 const std::string FORCED_DUMP_PULSEAUDIO_STACKTRACE = "dump_pulseaudio_stacktrace";
 const std::string RECOVERY_AUDIO_SERVER = "recovery_audio_server";
@@ -92,7 +96,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_WAKEUP, "wakeup"},
     {STREAM_VOICE_MESSAGE, "voice_message"},
     {STREAM_NAVIGATION, "navigation"},
-    {STREAM_SOURCE_VOICE_CALL, "source_voice_call"}
+    {STREAM_SOURCE_VOICE_CALL, "source_voice_call"},
+    {STREAM_VOICE_COMMUNICATION, "voice_call"}
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -332,6 +337,12 @@ void AudioServiceClient::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, in
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
+    bool isClientExist;
+    if (!serviceClientInstanceMap_.Find(asClient, isClientExist)) {
+        AUDIO_ERR_LOG("asClient is null");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(asClient->serviceClientLock_);
     pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asClient->mainLoop;
     int negative = 0;
     asClient->paLatency_ = 0;
@@ -431,8 +442,8 @@ void AudioServiceClient::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
-    asClient->underFlowCount++;
-    AUDIO_WARNING_LOG("AudioServiceClient underrun: %{public}d!", asClient->underFlowCount);
+    asClient->underFlowCount_++;
+    AUDIO_WARNING_LOG("underrun: %{public}d!", asClient->underFlowCount_);
 }
 
 void AudioServiceClient::PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata)
@@ -488,7 +499,7 @@ void AudioServiceClient::PAStreamStateCb(pa_stream *stream, void *userdata)
 
     AudioServiceClient *asClient = (AudioServiceClient *)userdata;
     bool isClientExist;
-    if (serviceClientInstanceMap_.Find(asClient, isClientExist) == false) {
+    if (!serviceClientInstanceMap_.Find(asClient, isClientExist)) {
         AUDIO_ERR_LOG("asClient is null");
         return;
     }
@@ -553,7 +564,7 @@ AudioServiceClient::AudioServiceClient()
     captureMode_ = CAPTURE_MODE_NORMAL;
 
     eAudioClientType = AUDIO_SERVICE_CLIENT_PLAYBACK;
-    effectSceneName = "SCENE_MUSIC";
+    effectSceneName = "";
     effectMode = EFFECT_DEFAULT;
 
     mFrameSize = 0;
@@ -581,7 +592,7 @@ AudioServiceClient::AudioServiceClient()
     streamCmdStatus_ = 0;
     streamDrainStatus_ = 0;
     streamFlushStatus_ = 0;
-    underFlowCount = 0;
+    underFlowCount_ = 0;
 
     acache_.readIndex = 0;
     acache_.writeIndex = 0;
@@ -671,7 +682,7 @@ void AudioServiceClient::ResetPAAudioClient()
 
     internalRdBufIndex_ = 0;
     internalRdBufLen_   = 0;
-    underFlowCount     = 0;
+    underFlowCount_     = 0;
 
     acache_.buffer = nullptr;
     acache_.readIndex = 0;
@@ -689,6 +700,7 @@ AudioServiceClient::~AudioServiceClient()
     lock_guard<mutex> lockdata(dataMutex_);
     AUDIO_INFO_LOG("start ~AudioServiceClient");
     UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
+    AudioPolicyManager::GetInstance().SetHighResolutionExist(false);
     ResetPAAudioClient();
     StopTimer();
     std::lock_guard<std::mutex> lock(serviceClientLock_);
@@ -1004,6 +1016,27 @@ int32_t AudioServiceClient::InitializeAudioCache()
     return AUDIO_CLIENT_SUCCESS;
 }
 
+int32_t AudioServiceClient::SetHighResolution(pa_proplist *propList, AudioStreamParams &audioParams)
+{
+    bool isHighResolutionExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
+    DeviceType deviceType = AudioSystemManager::GetInstance()->GetActiveOutputDevice();
+    bool isSpatialEnabled = AudioPolicyManager::GetInstance().IsSpatializationEnabled();
+    AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
+        deviceType, streamType_, audioParams.samplingRate, audioParams.format);
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType_ == STREAM_MUSIC && isSpatialEnabled == false &&
+        audioParams.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
+        audioParams.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolutionExist == false) {
+        int32_t ret = AudioPolicyManager::GetInstance().SetHighResolutionExist(true);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, AUDIO_CLIENT_ERR, "mark current stream as high resolution failed");
+        AUDIO_INFO_LOG("current stream marked as high resolution");
+        pa_proplist_sets(propList, "stream.highResolution", "1");
+    } else {
+        AUDIO_INFO_LOG("current stream marked as non-high resolution");
+        pa_proplist_sets(propList, "stream.highResolution", "0");
+    }
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map &map,
     AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime)
 {
@@ -1033,6 +1066,9 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(mPrivacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(mStreamUsage).c_str());
+        int32_t ret = SetHighResolution(propList, audioParams);
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIO_CLIENT_SUCCESS, AUDIO_CLIENT_CREATE_STREAM_ERR,
+            "set high resolution failed");
     }
 
     AUDIO_DEBUG_LOG("Creating stream of channels %{public}d", audioParams.channels);
@@ -1145,7 +1181,7 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
             AUDIO_ERR_LOG("Set render rate failed");
         }
 
-        effectSceneName = IAudioStream::GetEffectSceneName(audioType);
+        effectSceneName = IAudioStream::GetEffectSceneName(mStreamUsage);
         if (SetStreamAudioEffectMode(effectMode) != AUDIO_CLIENT_SUCCESS) {
             AUDIO_ERR_LOG("Set audio effect mode failed");
         }
@@ -1161,7 +1197,22 @@ int32_t AudioServiceClient::CreateStream(AudioStreamParams audioParams, AudioStr
 
 uint32_t AudioServiceClient::GetUnderflowCount()
 {
-    return underFlowCount;
+    return underFlowCount_;
+}
+
+uint32_t AudioServiceClient::GetOverflowCount()
+{
+    return overflowCount_;
+}
+
+void AudioServiceClient::SetUnderflowCount(uint32_t underflowCount)
+{
+    underFlowCount_ = underflowCount;
+}
+
+void AudioServiceClient::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ = overflowCount;
 }
 
 int32_t AudioServiceClient::GetSessionID(uint32_t &sessionID) const
@@ -1285,6 +1336,9 @@ int32_t AudioServiceClient::StopStream()
     lock_guard<mutex> lockdata(dataMutex_);
     lock_guard<mutex> lockctrl(ctrlMutex_);
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
+        int32_t ret = AudioPolicyManager::GetInstance().SetHighResolutionExist(false);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, AUDIO_CLIENT_ERR,
+            "mark current stream as non-high resolution failed");
         return StopStreamPlayback();
     } else {
         PAStreamCorkSuccessCb = PAStreamStopSuccessCb;
@@ -1888,7 +1942,7 @@ void AudioServiceClient::GetStreamSwitchInfo(SwitchInfo& info)
 {
     info.cachePath = cachePath_;
     info.rendererSampleRate = rendererSampleRate;
-    info.underFlowCount = underFlowCount;
+    info.underFlowCount = underFlowCount_;
     info.effectMode = effectMode;
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;
@@ -1906,6 +1960,8 @@ void AudioServiceClient::GetStreamSwitchInfo(SwitchInfo& info)
     info.capturePeriodPositionCb = mCapturePeriodPositionCb;
 
     info.rendererWriteCallback = writeCallback_;
+    info.underFlowCount = underFlowCount_;
+    info.underFlowCount = overflowCount_;
 }
 
 void AudioServiceClient::HandleCapturePositionCallbacks(size_t bytesRead)
@@ -2161,12 +2217,12 @@ void AudioServiceClient::GetOffloadCurrentTimeStamp(uint64_t paTimeStamp, uint64
     outTimeStamp = paWriteIndex + cacheTime;
 }
 
-int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
+int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timestamp)
 {
     if (offloadWaitWriteableMutex_.try_lock_for(chrono::milliseconds(OFFLOAD_HDI_CACHE1))) {
         lock_guard<timed_mutex> lockoffload(offloadWaitWriteableMutex_, adopt_lock);
     } else if (offloadEnable_ && eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && offloadTsLast_ != 0) {
-        GetOffloadCurrentTimeStamp(0, 0, timeStamp);
+        GetOffloadCurrentTimeStamp(0, 0, timestamp);
         return AUDIO_CLIENT_SUCCESS;
     }
     lock_guard<mutex> lock(dataMutex_);
@@ -2194,11 +2250,11 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
     }
 
     if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        timeStamp = pa_bytes_to_usec(info->write_index, &sampleSpec);
+        timestamp = pa_bytes_to_usec(info->write_index, &sampleSpec);
         uint64_t paTimeStamp = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
-        GetOffloadCurrentTimeStamp(paTimeStamp, timeStamp, timeStamp);
+        GetOffloadCurrentTimeStamp(paTimeStamp, timestamp, timestamp);
     } else if (eAudioClientType == AUDIO_SERVICE_CLIENT_RECORD) {
-        if (pa_stream_get_time(paStream, &timeStamp)) {
+        if (pa_stream_get_time(paStream, &timestamp)) {
             AUDIO_ERR_LOG("failed for AUDIO_SERVICE_CLIENT_RECORD");
             pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_ERR;
@@ -2208,7 +2264,7 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timeStamp)
         // 1013 is media_service's uid
         int32_t media_service = 1013;
         if (uid == media_service) {
-            timeStamp = pa_bytes_to_usec(mTotalBytesRead, &sampleSpec);
+            timestamp = pa_bytes_to_usec(mTotalBytesRead, &sampleSpec);
         }
     }
 
@@ -2324,28 +2380,45 @@ int32_t AudioServiceClient::UpdateStreamPosition(UpdatePositionTimeNode node)
     }
 }
 
-int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t &timeStamp)
+int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
 {
-    // Since the START processing between the framework service and hdf service is asynchronous, the application
-    // may get the frame information without the hdf service completing the stream initialization.
-    // This time will get an exception value, here will not return the exception to the application.Return the
-    // last frame information instead
-    UpdateStreamPosition(UpdatePositionTimeNode::USER_NODE);
-    if (lastStreamPosition_ > preFrameNum_) {
-        framePosition = lastStreamPosition_ - preFrameNum_;
+    pa_threaded_mainloop_lock(mainLoop);
+    pa_operation *operation = pa_stream_update_timing_info(paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
     } else {
-        framePosition = 0;
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
-    uint64_t latency = 0;
-    GetAudioLatency(latency);
-    latency = latency * sampleSpec.rate / SECOND_TO_MICROSECOND;
-    if (framePosition > latency) {
-        framePosition -= latency;
+    StartTimer(INIT_TIMEOUT_IN_SEC);
+    pa_threaded_mainloop_wait(mainLoop);
+    StopTimer();
+    if (IsTimeOut()) {
+        AUDIO_ERR_LOG("Get audio position timeout");
+        pa_threaded_mainloop_unlock(mainLoop);
+        return AUDIO_CLIENT_ERR;
+    }
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    uint64_t paWriteIndex = offloadWriteIndex_;
+    // subtract the latency of prebuf
+    uint64_t writeClientIndex = paWriteIndex > MIN_BUF_DURATION_IN_USEC ? paWriteIndex - MIN_BUF_DURATION_IN_USEC : 0;
+    if (writeClientIndex > paLatency_) {
+        framePosition = (writeClientIndex - paLatency_) * sampleSpec.rate / AUDIO_US_PER_S;
     } else {
-        framePosition = 0;
+        AUDIO_ERR_LOG("error data!");
+        return AUDIO_CLIENT_ERR;
     }
-    timeStamp = lastPositionTimestamp_;
-    return AUDIO_CLIENT_SUCCESS;
+    // subtract the latency of effect latency
+    uint32_t algorithmLatency = AudioSystemManager::GetInstance()->GetEffectLatency(std::to_string(sessionID_));
+    uint64_t algorithmLatencyToFrames = algorithmLatency * sampleSpec.rate / AUDIO_MS_PER_S;
+    framePosition = framePosition > algorithmLatencyToFrames ? framePosition - algorithmLatencyToFrames : 0;
+    AUDIO_DEBUG_LOG("Latency info: effect algorithmic Latency: %{public}u ms", algorithmLatency);
+
+    timespec tm {};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    timestamp = tm.tv_sec * AUDIO_S_TO_NS + tm.tv_nsec;
+
+    return SUCCESS;
 }
 
 void AudioServiceClient::GetAudioLatencyOffload(uint64_t &latency)
@@ -2570,7 +2643,15 @@ int32_t AudioServiceClient::SetStreamType(AudioStreamType audioStreamType)
 
     streamType_ = audioStreamType;
     const std::string streamName = GetStreamName(audioStreamType);
-    effectSceneName = IAudioStream::GetEffectSceneName(audioStreamType);
+    auto it = STREAM_TYPE_USAGE_MAP.find(audioStreamType);
+    StreamUsage tmpStreamUsage;
+    if (it != STREAM_TYPE_USAGE_MAP.end()) {
+        tmpStreamUsage = STREAM_TYPE_USAGE_MAP.at(audioStreamType);
+    } else {
+        AUDIO_WARNING_LOG("audioStreamType doesn't have a unique streamUsage, set to MUSIC");
+        tmpStreamUsage = STREAM_USAGE_MUSIC;
+    }
+    effectSceneName = IAudioStream::GetEffectSceneName(tmpStreamUsage);
 
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
@@ -2609,10 +2690,6 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     pa_threaded_mainloop_lock(mainLoop);
     int32_t ret = SetStreamVolumeInML(volume);
     pa_threaded_mainloop_unlock(mainLoop);
-
-    if (offloadEnable_) {
-        audioSystemManager_->OffloadSetVolume(GetSingleStreamVol() * duckVolumeFactor_);
-    }
 
     return ret;
 }
@@ -2871,7 +2948,8 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     bool isAbsVolumeScene = AudioPolicyManager::GetInstance().IsAbsVolumeScene();
     float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType,
         systemVolumeLevel, deviceType);
-    if (isAbsVolumeScene && (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
+    if (volumeType == STREAM_MUSIC && isAbsVolumeScene &&
+        (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
         systemVolumeDb = 1.0f; // Transfer raw pcm data to bluetooth device
     }
     float vol = systemVolumeDb * client.volumeFactor_ * client.powerVolumeFactor_ * client.duckVolumeFactor_;
@@ -2899,6 +2977,7 @@ AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType 
 {
     switch (streamType) {
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_MESSAGE:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
@@ -3523,11 +3602,18 @@ void AudioServiceClient::SetCapturerSource(int capturerSource)
 
 uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap)
 {
+    if (channelLayout == CH_LAYOUT_MONO) {
+        pa_channel_map_init_mono(&paMap);
+        return AudioChannel::MONO;
+    }
     uint32_t channelNum = 0;
     uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
     switch (mode) {
         case 0: {
             for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
+                if (channelNum >= PA_CHANNELS_MAX) {
+                    return 0;
+                }
                 if ((channelLayout & (bit->first)) != 0) {
                     paMap.map[channelNum++] = bit->second;
                 }
@@ -3537,6 +3623,9 @@ uint32_t AudioServiceClient::ConvertChLayoutToPaChMap(const uint64_t &channelLay
         case 1: {
             uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
             channelNum = (order + 1) * (order + 1);
+            if (channelNum > PA_CHANNELS_MAX) {
+                return 0;
+            }
             for (uint32_t i = 0; i < channelNum; ++i) {
                 paMap.map[i] = chSetToPaPositionMap[FRONT_LEFT];
             }

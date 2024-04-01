@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioSpatializationManager"
 
 #include "audio_spatialization_manager.h"
 
@@ -116,6 +118,17 @@ bool AudioSpatializationManager::IsHeadTrackingSupportedForDevice(const sptr<Aud
 int32_t AudioSpatializationManager::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
 {
     return AudioPolicyManager::GetInstance().UpdateSpatialDeviceState(audioSpatialDeviceState);
+}
+
+AudioSpatializationSceneType AudioSpatializationManager::GetSpatializationSceneType()
+{
+    return AudioPolicyManager::GetInstance().GetSpatializationSceneType();
+}
+
+int32_t AudioSpatializationManager::SetSpatializationSceneType(
+    const AudioSpatializationSceneType spatializationSceneType)
+{
+    return AudioPolicyManager::GetInstance().SetSpatializationSceneType(spatializationSceneType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

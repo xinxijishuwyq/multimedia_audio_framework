@@ -69,6 +69,9 @@ public:
     int32_t SetCaptureSilentState(bool state) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) override;
+    int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
+    int32_t ResetRouteForDisconnect(DeviceType type) override;
+    uint32_t GetEffectLatency(const std::string &sessionId) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

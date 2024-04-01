@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 
     size_t size = 1;
     size_t numBuffersToCapture = 1024;
-    uint64_t timeStamp;
+    uint64_t timestamp;
     StreamBuffer stream;
     stream.buffer = buffer;
     stream.bufferLen = bufferLen;
@@ -115,8 +115,8 @@ int main(int argc, char* argv[])
 
         if (bytesRead > 0) {
             fwrite(stream.buffer, size, bytesRead, pFile);
-            if (client->GetCurrentTimeStamp(timeStamp) >= 0)
-                AUDIO_DEBUG_LOG("current timestamp: %{public}" PRIu64, timeStamp);
+            if (client->GetCurrentTimeStamp(timestamp) >= 0)
+                AUDIO_DEBUG_LOG("current timestamp: %{public}" PRIu64, timestamp);
             numBuffersToCapture--;
         }
     }

@@ -237,11 +237,11 @@ public:
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneID = 0) override;
 
-    int32_t CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID) override;
+    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID) override;
 
-    int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID) override;
+    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID) override;
 
-    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID) override;
+    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID) override;
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneID) override;
 
@@ -254,6 +254,14 @@ public:
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
+
+    bool IsHighResolutionExist() override;
+
+    int32_t SetHighResolutionExist(bool highResExist) override;
+
+    AudioSpatializationSceneType GetSpatializationSceneType() override;
+
+    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;

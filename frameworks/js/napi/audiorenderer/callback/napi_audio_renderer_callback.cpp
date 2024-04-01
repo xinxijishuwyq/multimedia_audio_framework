@@ -12,10 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "NapiAudioRendererCallback"
+
 #include "napi_audio_renderer_callback.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioSystemManager"
 
 #include "audio_system_manager.h"
 
@@ -71,7 +73,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::CreateS
     map<pair<ContentType, StreamUsage>, AudioStreamType> streamMap;
     // Mapping relationships from content and usage to stream type in design
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
     streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
     streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
@@ -99,7 +102,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::CreateS
     // Only use stream usage to choose stream type
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC)] = STREAM_MUSIC;
-    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_ALARM;
@@ -251,6 +255,7 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
@@ -313,6 +318,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     /* Validate volumeType and return INVALID_PARAMS error */
     switch (volumeType) {
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_RING:
         case STREAM_MUSIC:
         case STREAM_ALARM:
@@ -341,6 +347,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
@@ -416,6 +423,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
@@ -444,6 +452,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
@@ -1367,6 +1376,13 @@ int32_t AudioSystemManager::SetCallDeviceActive(ActiveDeviceType deviceType, boo
     AUDIO_INFO_LOG("device: %{public}d", deviceType);
     return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
         flag, address));
+}
+
+uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    return gasp->GetEffectLatency(sessionId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

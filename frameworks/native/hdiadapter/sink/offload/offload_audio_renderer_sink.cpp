@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "OffloadAudioRendererSinkInner"
 
 #include "offload_audio_renderer_sink.h"
 
@@ -106,6 +108,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetOutputRoute(DeviceType outputDevice) override;
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
 
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
@@ -840,6 +843,11 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
 #endif
 
     return SUCCESS;
+}
+
+void OffloadAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    AUDIO_WARNING_LOG("not supported.");
 }
 
 } // namespace AudioStandard

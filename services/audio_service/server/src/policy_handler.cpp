@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "PolicyHandler"
 
 #include "policy_handler.h"
 
@@ -113,6 +115,7 @@ AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType strea
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
+        case STREAM_VOICE_COMMUNICATION:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -199,6 +202,16 @@ int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
+}
+
+bool PolicyHandler::GetHighResolutionExist()
+{
+    return isHighResolutionExist_;
+}
+
+void PolicyHandler::SetHighResolutionExist(bool isHighResExist)
+{
+    isHighResolutionExist_ = isHighResExist;
 }
 } // namespace AudioStandard
 } // namespace OHOS

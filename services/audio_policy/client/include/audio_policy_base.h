@@ -247,13 +247,13 @@ public:
     virtual int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t CreateAudioInterruptZone(const std::set<int32_t> pids,
+    virtual int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids,
+    virtual int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
-    virtual int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids,
+    virtual int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
     virtual int32_t ReleaseAudioInterruptZone(const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
@@ -267,6 +267,14 @@ public:
     virtual void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
 
     virtual void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) = 0;
+
+    virtual bool IsHighResolutionExist(void) = 0;
+
+    virtual int32_t SetHighResolutionExist(bool highResExist) = 0;
+
+    virtual AudioSpatializationSceneType GetSpatializationSceneType() = 0;
+
+    virtual int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

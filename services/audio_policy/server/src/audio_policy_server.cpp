@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyServer"
 
 #include "audio_policy_server.h"
 
@@ -68,11 +70,11 @@ constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_CAAS_SA = 5527;
 constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr uid_t UID_MEDIA_SA = 1013;
+constexpr uid_t UID_VM_MANAGER = 5010;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
-constexpr uid_t UID_COMPONENT_SCHEDULE_SERVICE_SA = 1905;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
@@ -93,6 +95,10 @@ const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
     UID_CAST_ENGINE_SA
 };
 
+const std::set<uid_t> RECORD_CHECK_FORWARD_LIST = {
+    UID_VM_MANAGER
+};
+
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
@@ -102,6 +108,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
 
     powerStateCallbackRegister_ = false;
+    volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
 }
 
 void AudioPolicyServer::OnDump()
@@ -265,7 +272,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
             (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? "up" : "down");
         std::lock_guard<std::mutex> lock(keyEventMutex_);
         AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-        if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
+        if (volumeApplyToAll_) {
             streamInFocus = AudioStreamType::STREAM_ALL;
         } else {
             streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
@@ -346,6 +353,7 @@ AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType s
     switch (streamType) {
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_MESSAGE:
+        case STREAM_VOICE_COMMUNICATION:
             return STREAM_VOICE_CALL;
         case STREAM_RING:
         case STREAM_SYSTEM:
@@ -383,6 +391,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
@@ -537,7 +546,7 @@ int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_FOUNDATION_SA &&
-        callerUid != UID_COMPONENT_SCHEDULE_SERVICE_SA) {
+        callerUid != UID_ROOT) {
         AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not foundation or component_schedule_service");
         return ERROR;
     }
@@ -1082,8 +1091,8 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
 
 void AudioPolicyServer::OnSessionRemoved(const uint64_t sessionID)
 {
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
-    sessionProcessor_.Post({SessionEvent::Type::REMOVE, sessionID});
 }
 
 void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneID)
@@ -1101,6 +1110,7 @@ void AudioPolicyServer::OnCapturerSessionAdded(const uint64_t sessionID, Session
     streamInfo.channels = static_cast<AudioChannel>(sessionInfo.channels);
 
     int32_t error = SUCCESS;
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionID, false, error);
 }
 
@@ -1295,6 +1305,10 @@ bool AudioPolicyServer::CheckAppBackgroundPermission(uid_t callingUid, uint64_t 
 Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t callingUid, uint32_t callingTokenId,
     uint32_t appTokenId)
 {
+    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("check forward TokenId with callingUid:%{public}d", callingUid);
+        return IPCSkeleton::GetFirstTokenID();
+    }
     return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
         appTokenId : callingTokenId;
 }
@@ -1302,6 +1316,10 @@ Security::AccessToken::AccessTokenID AudioPolicyServer::GetTargetTokenId(uid_t c
 uint64_t AudioPolicyServer::GetTargetFullTokenId(uid_t callingUid, uint64_t callingFullTokenId,
     uint64_t appFullTokenId)
 {
+    if (RECORD_CHECK_FORWARD_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("check forward FullTokenId with callingUid:%{public}d", callingUid);
+        return IPCSkeleton::GetFirstFullTokenID();
+    }
     return (std::count(RECORD_PASS_APPINFO_LIST.begin(), RECORD_PASS_APPINFO_LIST.end(), callingUid) > 0) ?
         appFullTokenId : callingFullTokenId;
 }
@@ -1341,6 +1359,9 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     policyData.availableMicrophones = GetAvailableMicrophones();
     // Get Audio Effect Manager Information
     audioPolicyService_.GetEffectManagerInfo(policyData.oriEffectConfig, policyData.availableEffects);
+    audioPolicyService_.GetAudioAdapterInfos(policyData.adapterInfoMap);
+    audioPolicyService_.GetVolumeGroupData(policyData.volumeGroupData);
+    audioPolicyService_.GetInterruptGroupData(policyData.interruptGroupData);
 }
 
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
@@ -1969,7 +1990,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, co
     }
 
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
-    if (audioPolicyService_.GetLocalDevicesType().compare("2in1") == 0) {
+    if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
         streamInFocus = GetVolumeTypeFromStreamType(GetStreamInFocus());
@@ -2412,7 +2433,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
         return interruptService_->CreateAudioInterruptZone(zoneID, pids);
@@ -2420,7 +2441,7 @@ int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> pids
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyServer::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
         return interruptService_->AddAudioInterruptZonePids(zoneID, pids);
@@ -2428,7 +2449,7 @@ int32_t AudioPolicyServer::AddAudioInterruptZonePids(const std::set<int32_t> pid
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneID)
+int32_t AudioPolicyServer::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
         return interruptService_->RemoveAudioInterruptZonePids(zoneID, pids);
@@ -2487,6 +2508,28 @@ ConverterConfig AudioPolicyServer::GetConverterConfig()
     return audioPolicyService_.GetConverterConfig();
 }
 
+AudioSpatializationSceneType AudioPolicyServer::GetSpatializationSceneType()
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    }
+    return audioSpatializationService_.GetSpatializationSceneType();
+}
+
+int32_t AudioPolicyServer::SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType)
+{
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.SetSpatializationSceneType(spatializationSceneType);
+}
+
 AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
 {
     std::string bundleName {""};
@@ -2521,6 +2564,27 @@ int32_t AudioPolicyServer::GetApiTargerVersion()
     // Taking remainder of large integers
     int32_t apiTargetversion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
     return apiTargetversion;
+}
+
+bool AudioPolicyServer::IsHighResolutionExist()
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return false;
+    }
+    return isHighResolutionExist_;
+}
+
+int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    isHighResolutionExist_ = highResExist;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -83,7 +83,7 @@ public:
     AudioHfpListener() = default;
     virtual ~AudioHfpListener() = default;
 
-    void OnScoStateChanged(const BluetoothRemoteDevice &device, int state);
+    void OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason);
     void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state);
     void OnActiveDeviceChanged(const BluetoothRemoteDevice &device) {}
     void OnHfEnhancedDriverSafetyChanged(const BluetoothRemoteDevice &device, int indValue) {}

@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioStreamManager"
 
 #include "audio_stream_manager.h"
 
@@ -102,9 +104,7 @@ static void UpdateEffectInfoArray(SupportedEffectConfig &supportedEffectConfig,
 
 int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneEffectInfo, StreamUsage streamUsage)
 {
-    ContentType contentType = CONTENT_TYPE_UNKNOWN;
-    AudioStreamType streamType = IAudioStream::GetStreamType(contentType, streamUsage);
-    std::string effectScene = IAudioStream::GetEffectSceneName(streamType);
+    std::string effectScene = IAudioStream::GetEffectSceneName(streamUsage);
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
     int32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();
@@ -134,6 +134,7 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_RING:
         case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:

@@ -68,10 +68,10 @@ public:
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
 
     // zone debug interfaces
-    int32_t CreateAudioInterruptZone(const int32_t zoneId, const std::set<int32_t> pids);
+    int32_t CreateAudioInterruptZone(const int32_t zoneId, const std::set<int32_t> &pids);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId);
-    int32_t AddAudioInterruptZonePids(const int32_t zoneId, const std::set<int32_t> pids);
-    int32_t RemoveAudioInterruptZonePids(const int32_t zoneId, const std::set<int32_t> pids);
+    int32_t AddAudioInterruptZonePids(const int32_t zoneId, const std::set<int32_t> &pids);
+    int32_t RemoveAudioInterruptZonePids(const int32_t zoneId, const std::set<int32_t> &pids);
 
     int32_t GetAudioFocusInfoList(const int32_t zoneId,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
@@ -138,7 +138,7 @@ private:
 
     // zone debug interfaces
     bool CheckAudioInterruptZonePermission();
-    int32_t CreateAudioInterruptZoneInternal(const int32_t zoneId, const std::set<int32_t> pids);
+    int32_t CreateAudioInterruptZoneInternal(const int32_t zoneId, const std::set<int32_t> &pids);
     int32_t HitZoneId(const std::set<int32_t> &pids, const std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
         const int32_t &zoneId, int32_t &hitZoneId, bool &haveSamePids);
     int32_t HitZoneIdHaveTheSamePidsZone(const std::set<int32_t> &pids, int32_t &hitZoneId);
@@ -147,7 +147,7 @@ private:
         std::shared_ptr<AudioInterruptZone> &audioInterruptZone);
     int32_t NewAudioInterruptZoneByPids(std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
         const std::set<int32_t> &pids, const int32_t &zoneId);
-    int32_t ArchiveToNewAudioInterruptZone(const int32_t &fromZoneId, const int32_t &archiveToZoneId);
+    int32_t ArchiveToNewAudioInterruptZone(const int32_t &fromZoneId, const int32_t &toZoneId);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

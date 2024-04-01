@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "BluetoothRendererSinkInner"
 
 #include "bluetooth_renderer_sink.h"
 
@@ -93,6 +95,8 @@ public:
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
 
     bool GetAudioMonoState();
     float GetAudioBalanceValue();
@@ -750,6 +754,11 @@ void BluetoothRendererSinkInner::AdjustAudioBalance(char *data, uint64_t len)
             break;
         }
     }
+}
+
+void BluetoothRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    AUDIO_WARNING_LOG("not supported.");
 }
 
 static uint32_t HdiFormatToByte(HDI::Audio_Bluetooth::AudioFormat format)

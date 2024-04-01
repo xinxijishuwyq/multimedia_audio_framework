@@ -31,7 +31,7 @@ class ICapturerStream : public IStream {
 public:
     virtual ~ICapturerStream() = default;
     virtual int32_t GetStreamFramesRead(uint64_t &framesRead) = 0;
-    virtual int32_t GetCurrentTimeStamp(uint64_t &timeStamp) = 0;
+    virtual int32_t GetCurrentTimeStamp(uint64_t &timestamp) = 0;
     virtual int32_t GetLatency(uint64_t &latency) = 0;
 
     virtual void RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback) = 0;

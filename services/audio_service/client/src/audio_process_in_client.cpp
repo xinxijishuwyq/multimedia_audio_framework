@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioProcessInClientInner"
 
 #include "audio_process_in_client.h"
 
@@ -88,6 +90,12 @@ public:
     float GetVolume() override;
 
     uint32_t GetUnderflowCount() override;
+
+    uint32_t GetOverflowCount() override;
+
+    void SetUnderflowCount(uint32_t underflowCount) override;
+
+    void SetOverflowCount(uint32_t overflowCount) override;
 
     int64_t GetFramesWritten() override;
 
@@ -187,6 +195,8 @@ private:
     std::condition_variable threadStatusCV_;
 
     std::atomic<uint32_t> underflowCount_ = 0;
+    std::atomic<uint32_t> overflowCount_ = 0;
+
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
 
@@ -375,6 +385,21 @@ float AudioProcessInClientInner::GetVolume()
 uint32_t AudioProcessInClientInner::GetUnderflowCount()
 {
     return underflowCount_.load();
+}
+
+uint32_t AudioProcessInClientInner::GetOverflowCount()
+{
+    return overflowCount_.load();
+}
+
+void AudioProcessInClientInner::SetUnderflowCount(uint32_t underflowCount)
+{
+    underflowCount_ += underflowCount;
+}
+
+void AudioProcessInClientInner::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ += overflowCount;
 }
 
 int64_t AudioProcessInClientInner::GetFramesWritten()
@@ -1335,7 +1360,11 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
     clientWriteCost = tempSpan->writeDoneTime - tempSpan->writeStartTime;
     if (clientWriteCost > MAX_WRITE_COST_DURATION_NANO) {
         AUDIO_WARNING_LOG("Client write cost too long...");
-        underflowCount_++;
+        if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+            underflowCount_++;
+        } else {
+            overflowCount_++;
+        }
         // todo
         // handle write time out: send underrun msg to client, reset time model with latest server handle time.
     }

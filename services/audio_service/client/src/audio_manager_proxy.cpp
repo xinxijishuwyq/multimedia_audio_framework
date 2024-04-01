@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioManagerProxy"
 
 #include "audio_manager_proxy.h"
 
@@ -754,6 +756,60 @@ int32_t AudioManagerProxy::UpdateSpatializationState(AudioSpatializationState sp
         "UpdateSpatializationState failed, error: %{public}d", error);
 
     return reply.ReadInt32();
+}
+
+int32_t AudioManagerProxy::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(spatializationSceneType));
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioManagerProxy::ResetRouteForDisconnect(DeviceType type)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(type));
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::RESET_ROUTE_FOR_DISCONNECT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+uint32_t AudioManagerProxy::GetEffectLatency(const std::string &sessionId)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteString(sessionId);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_LATENCY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "error: %{public}d", error);
+
+    return reply.ReadUint32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

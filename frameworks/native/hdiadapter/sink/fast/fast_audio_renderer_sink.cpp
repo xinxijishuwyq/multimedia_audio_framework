@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "FastAudioRendererSinkInner"
 
 #include "fast_audio_renderer_sink.h"
 
@@ -78,6 +80,7 @@ public:
     int32_t GetTransactionId(uint64_t *transactionId) override;
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
     int32_t SetOutputRoute(DeviceType deviceType) override;
+    void ResetOutputRouteForDisconnect(DeviceType device) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
@@ -831,5 +834,11 @@ int32_t FastAudioRendererSinkInner::Flush(void)
 
     return SUCCESS;
 }
+
+void FastAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
+{
+    AUDIO_WARNING_LOG("not supported.");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

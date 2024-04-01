@@ -340,11 +340,11 @@ public:
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, const int32_t zoneId = 0) override;
 
-    int32_t CreateAudioInterruptZone(const std::set<int32_t> pids, const int32_t zoneId) override;
+    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneId) override;
 
-    int32_t AddAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneId) override;
+    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneId) override;
 
-    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> pids, const int32_t zoneId) override;
+    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneId) override;
 
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId) override;
 
@@ -357,6 +357,10 @@ public:
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
 
     void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo) override;
+
+    AudioSpatializationSceneType GetSpatializationSceneType() override;
+
+    int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -387,6 +391,10 @@ public:
     private:
         sptr<AudioPolicyServer> server_;
     };
+
+    bool IsHighResolutionExist() override;
+
+    int32_t SetHighResolutionExist(bool highResExist) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -508,7 +516,9 @@ private:
     AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool isAvSessionSetVoipStart = false;
+    bool volumeApplyToAll_ = false;
     std::set<uint32_t> saveAppCapTokenIdThroughMS;
+    bool isHighResolutionExist_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

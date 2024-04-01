@@ -33,7 +33,7 @@ public:
     int32_t Stop() override;
     int32_t Release() override;
     int32_t GetStreamFramesRead(uint64_t &framesRead) override;
-    int32_t GetCurrentTimeStamp(uint64_t &timeStamp) override;
+    int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
     int32_t GetLatency(uint64_t &latency) override;
 
     void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override;

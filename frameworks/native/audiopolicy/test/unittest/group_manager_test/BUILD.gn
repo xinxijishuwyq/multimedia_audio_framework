@@ -34,5 +34,9 @@ ohos_unittest("audio_group_manager_unit_test") {
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiorenderer:audio_renderer",
   ]
-  external_deps = [ "c_utils:utils" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
 }

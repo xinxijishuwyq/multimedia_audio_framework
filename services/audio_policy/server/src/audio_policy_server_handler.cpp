@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioPolicyServerHandler"
+
 #include "audio_policy_server_handler.h"
 #include "audio_policy_service.h"
 
@@ -260,7 +263,7 @@ bool AudioPolicyServerHandler::SendPreferredInputDeviceUpdated()
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> &descriptor,
+bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor,
     const CastType &type)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();

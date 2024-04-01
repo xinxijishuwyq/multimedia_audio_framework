@@ -43,7 +43,7 @@ public:
 
 class AudioEndpoint : public IProcessStatusListener {
 public:
-    static constexpr int32_t MAX_LINKED_PROCESS = 3; // 3
+    static constexpr int32_t MAX_LINKED_PROCESS = 6; // 6
     enum EndpointType : uint32_t {
         TYPE_MMAP = 0,
         TYPE_INVALID,

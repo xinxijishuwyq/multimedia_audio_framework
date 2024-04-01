@@ -79,6 +79,7 @@ class OHAudioCapturer {
         int32_t GetFrameSizeInCallback();
         int32_t GetBufferDesc(BufferDesc &bufDesc) const;
         int32_t Enqueue(const BufferDesc &bufDesc) const;
+        uint32_t GetOverflowCount() const;
 
         void SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
 

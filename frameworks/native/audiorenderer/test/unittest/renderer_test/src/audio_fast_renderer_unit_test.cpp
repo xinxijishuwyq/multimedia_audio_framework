@@ -53,6 +53,8 @@ void AudioRenderModeCallbackTest::OnWriteData(size_t length)
     g_reqBufLen = length;
 }
 
+void AudioRendererCallbackTest::OnInterrupt(const InterruptEvent &interruptEvent) {}
+
 void InitializeFastRendererOptions(AudioRendererOptions &rendererOptions)
 {
     rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
@@ -76,6 +78,8 @@ void AudioFastRendererUnitTest::SetUpTestCase(void)
         g_flag = false;
     }
 }
+
+InterruptEvent AudioRendererUnitTest::interruptEventTest_ = {};
 
 void AudioFastRendererUnitTest::TearDownTestCase(void)
 {
@@ -182,8 +186,8 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 
     size_t bufferLen;
@@ -219,8 +223,8 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
     int32_t ret = audioRenderer->GetUnderflowCount();
     EXPECT_GE(ret, SUCCESS);
 
-    Timestamp timeStamp;
-    bool getAudioTime = audioRenderer->GetAudioTime(timeStamp, Timestamp::Timestampbase::MONOTONIC);
+    Timestamp timestamp;
+    bool getAudioTime = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_EQ(false, getAudioTime);
 
     audioRenderer->Release();

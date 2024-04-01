@@ -66,7 +66,8 @@ public:
         uint32_t sessionId;
         std::string cachePath = "";
         uint32_t rendererSampleRate;
-        uint32_t underFlowCount;
+        uint32_t underFlowCount = 0;
+        uint32_t overFlowCount = 0;
         AudioEffectMode effectMode;
         AudioRenderMode renderMode;
         AudioCaptureMode captureMode;
@@ -109,7 +110,7 @@ public:
 
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
-    static const std::string GetEffectSceneName(AudioStreamType audioType);
+    static const std::string GetEffectSceneName(const StreamUsage &streamUsage);
 
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
@@ -139,6 +140,9 @@ public:
     virtual int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
         std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize) = 0;
     virtual int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) = 0;
+
+    virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
+    virtual void SetOverflowCount(uint32_t overflowCount) = 0;
 
     // callback mode api
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
@@ -191,6 +195,7 @@ public:
     virtual void SetPrivacyType(AudioPrivacyType privacyType) = 0;
 
     virtual uint32_t GetUnderflowCount() = 0;
+    virtual uint32_t GetOverflowCount() = 0;
 
     virtual void SetRendererPositionCallback(int64_t markPosition,
         const std::shared_ptr<RendererPositionCallback> &callback) = 0;

@@ -896,4 +896,83 @@ describe("AudioSpatializationManagerJsTest", function () {
       return;
     }
   });
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_GET_SPATIALIZATION_SCENE_TYPE_001
+   * @tc.desc:getSpatializationSceneType success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_GET_SPATIALIZATION_SCENE_TYPE_001", 0, async function (done) {
+    try {
+      let sceneType = audioSpatializationManager.getSpatializationSceneType();
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_GET_SPATIALIZATION_SCENE_TYPE_001 SUCCESS: ${sceneType}.`);
+      expect(true).assertTrue();
+      done();
+    } catch (err) {
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_GET_SPATIALIZATION_SCENE_TYPE_001 ERROR: ${err}`);
+      expect(false).assertTrue();
+      done();
+    }
+  });
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_001
+   * @tc.desc:setSpatializationSceneType success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_001", 0, async function (done) {
+    try {
+      audioSpatializationManager.setSpatializationSceneType(0);
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_001 PASS`);
+      expect(true).assertTrue();
+      done();
+    } catch (err) {
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_001 ERROR ${err.message}`);
+      expect(false).assertTrue();
+      done();
+      return;
+    }
+  });
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_002
+   * @tc.desc:setSpatializationSceneType no parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_002", 0, async function (done) {
+    try {
+      audioSpatializationManager.setSpatializationSceneType();
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_002 check no parameter fail.`);
+      expect(false).assertTrue();
+      done();
+    } catch (err) {
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_002 PASS: ${err.code}`);
+      expect(err.code).assertEqual(ERROR_INPUT_INVALID);
+      done();
+      return;
+    }
+  });
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_003
+   * @tc.desc:setSpatializationSceneType invalid parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_003", 0, async function (done) {
+    try {
+      audioSpatializationManager.setSpatializationSceneType(-1);
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_003 check invalid parameter fail.`);
+      expect(false).assertTrue();
+      done();
+    } catch (err) {
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_SPATIALIZATION_SCENE_TYPE_003 PASS: ${err.code}`);
+      expect(err.code).assertEqual(ERROR_INVALID_PARAM);
+      done();
+      return;
+    }
+  });
 })

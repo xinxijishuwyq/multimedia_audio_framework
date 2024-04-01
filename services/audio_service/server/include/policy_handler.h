@@ -58,6 +58,10 @@ public:
 
     int32_t NotifyWakeUpCapturerRemoved();
 
+    bool GetHighResolutionExist();
+
+    void SetHighResolutionExist(bool isHighResExist);
+
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;
@@ -66,6 +70,7 @@ private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
+    bool isHighResolutionExist_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
