@@ -643,15 +643,16 @@ int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 {
     int32_t ret;
     float thevolume;
+    leftVolume_ = left;
+    rightVolume_ = right;
 
+    AUDIO_INFO_LOG("SetVolume: left is %{public}f, right is %{public}f", left, right);
     if (audioRender_ == nullptr) {
         AUDIO_WARNING_LOG("OffloadAudioRendererSinkInner::SetVolume failed, audioRender_ null, "
                           "this will happen when set volume on devices which offload not available");
         return ERR_INVALID_HANDLE;
     }
 
-    leftVolume_ = left;
-    rightVolume_ = right;
     if ((leftVolume_ == 0) && (rightVolume_ !=0)) {
         thevolume = rightVolume_;
     } else if ((leftVolume_ != 0) && (rightVolume_ ==0)) {
