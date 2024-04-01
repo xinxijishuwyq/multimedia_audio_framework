@@ -258,6 +258,15 @@ enum AudioRendererRate {
     RENDER_RATE_HALF = 2,
 };
 
+/**
+* media safe volume status
+*/
+enum SafeStatus : int32_t {
+    SAFE_UNKNOWN = -1,
+    SAFE_INACTIVE = 0,
+    SAFE_ACTIVE = 1,
+};
+
 struct VolumeEvent {
     AudioVolumeType volumeType;
     int32_t volume;
