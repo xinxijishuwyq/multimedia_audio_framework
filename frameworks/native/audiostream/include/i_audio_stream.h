@@ -66,7 +66,8 @@ public:
         uint32_t sessionId;
         std::string cachePath = "";
         uint32_t rendererSampleRate;
-        uint32_t underFlowCount;
+        uint32_t underFlowCount = 0;
+        uint32_t overFlowCount = 0;
         AudioEffectMode effectMode;
         AudioRenderMode renderMode;
         AudioCaptureMode captureMode;
@@ -140,6 +141,9 @@ public:
         std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize) = 0;
     virtual int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) = 0;
 
+    virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
+    virtual void SetOverflowCount(uint32_t overflowCount) = 0;
+
     // callback mode api
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
     virtual AudioRenderMode GetRenderMode() = 0;
@@ -191,6 +195,7 @@ public:
     virtual void SetPrivacyType(AudioPrivacyType privacyType) = 0;
 
     virtual uint32_t GetUnderflowCount() = 0;
+    virtual uint32_t GetOverflowCount() = 0;
 
     virtual void SetRendererPositionCallback(int64_t markPosition,
         const std::shared_ptr<RendererPositionCallback> &callback) = 0;
@@ -254,7 +259,11 @@ public:
 
     bool IsRendererChannelLayoutValid(uint64_t channelLayout);
 
+    bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
+
     bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
+
+    bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 };
 } // namespace AudioStandard
 } // namespace OHOS

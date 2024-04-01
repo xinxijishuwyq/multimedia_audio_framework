@@ -425,6 +425,8 @@ public:
 
     void UnloadA2dpModule();
 
+    int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -697,6 +699,8 @@ private:
     void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc);
 
     void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
+
+    void ClearScoDeviceSuspendState(string macAddress = "");
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

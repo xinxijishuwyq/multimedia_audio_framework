@@ -55,7 +55,6 @@ static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settings
 static const std::string SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const std::string SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const std::string PREDICATES_STRING = "settings.general.device_name";
-static const char MAX_RENDERER_INSTANCE[100] = "128"; // 100 for system parameter usage
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -188,7 +187,6 @@ bool AudioPolicyService::Init(void)
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser_.LoadConfiguration(), false,
         "Audio Policy Config Load Configuration failed");
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser_.Parse(), false, "Audio Config Parse failed");
-    MaxRenderInstanceInit();
 
 #ifdef FEATURE_DTMF_TONE
     std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
@@ -872,6 +870,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         audioDeviceDescriptors[0]->isEnable_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
+    }
+    if (audioDeviceDescriptors[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        ClearScoDeviceSuspendState(audioDeviceDescriptors[0]->macAddress_);
     }
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
     if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
@@ -2486,6 +2487,7 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::DisconnectSco();
 #endif
+        ClearScoDeviceSuspendState();
     }
 
     // fetch input&output device
@@ -3459,8 +3461,11 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
     }
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
     CHECK_AND_RETURN_LOG(res == SUCCESS, "DeviceParamsCheck no success");
+    audioDeviceDescriptors[0]->isEnable_ = true;
+    audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
     if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
         audioStateManager_.SetPerferredCallRenderDevice(audioDeviceDescriptors[0]);
+        ClearScoDeviceSuspendState(audioDeviceDescriptors[0]->macAddress_);
     } else {
         audioStateManager_.SetPerferredMediaRenderDevice(audioDeviceDescriptors[0]);
     }
@@ -3469,7 +3474,7 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
 
 void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 {
-    AUDIO_INFO_LOG("audioMono = %{public}s", audioMono? "true": "false");
+    AUDIO_DEBUG_LOG("audioMono = %{public}s", audioMono? "true": "false");
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -3479,7 +3484,7 @@ void AudioPolicyService::OnMonoAudioConfigChanged(bool audioMono)
 
 void AudioPolicyService::OnAudioBalanceChanged(float audioBalance)
 {
-    AUDIO_INFO_LOG("audioBalance = %{public}f", audioBalance);
+    AUDIO_DEBUG_LOG("audioBalance = %{public}f", audioBalance);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable: g_adProxy null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -3686,6 +3691,7 @@ void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
     AUDIO_INFO_LOG("adapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
     adapterInfoMap_ = adapterInfoMap;
+    MaxRenderInstanceInit();
 
     for (auto &adapterInfo : adapterInfoMap_) {
         for (auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
@@ -3920,6 +3926,7 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
+    streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfo[0]);
     FetchOutputDevice(rendererChangeInfo);
 }
 
@@ -3928,6 +3935,7 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
     vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
         make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
+    streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfo[0]);
     FetchInputDevice(capturerChangeInfo);
 }
 
@@ -4678,17 +4686,30 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+int32_t AudioPolicyService::ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo)
+{
+    if (moduleInfo.name_ == "primary out") {
+        for (auto &configInfo : moduleInfo.configInfos_) {
+            if (configInfo.name_ == "maxinstances") {
+                maxRendererInstances_ = atoi(configInfo.valu_.c_str());
+                AUDIO_DEBUG_LOG("Get max renderer instances success %{public}d", maxRendererInstances_);
+                return SUCCESS;
+            }
+        }
+    }
+    return ERROR;
+}
+
 void AudioPolicyService::MaxRenderInstanceInit()
 {
-    // init max renderer instances before kvstore start by local prop for bootanimation
-    char currentMaxRendererInstances[100] = {0}; // 100 for system parameter usage
-    auto ret = GetParameter("persist.multimedia.audio.maxrendererinstances", MAX_RENDERER_INSTANCE,
-        currentMaxRendererInstances, sizeof(currentMaxRendererInstances));
-    if (ret > 0) {
-        maxRendererInstances_ = atoi(currentMaxRendererInstances);
-        AUDIO_DEBUG_LOG("Get max renderer instances success %{public}d", maxRendererInstances_);
-    } else {
-        AUDIO_ERR_LOG("Get max renderer instances failed %{public}d", ret);
+    for (auto &adapterInfo : adapterInfoMap_) {
+        if ((adapterInfo.second).adapterName_ == "primary") {
+            for (auto &moduleInfo : (adapterInfo.second).moduleInfos_) {
+                CHECK_AND_RETURN_LOG(ParsePolicyConfigXmlNodeModuleInfos(moduleInfo) != ERROR,
+                    "Get max renderer instances failed");
+                return;
+            }
+        }
     }
 }
 
@@ -5532,6 +5553,9 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
     CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
     if (active) {
+        if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            ClearScoDeviceSuspendState(address);
+        }
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(**itr));
 #ifdef BLUETOOTH_ENABLE
         if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
@@ -5596,6 +5620,16 @@ ConverterConfig AudioPolicyService::GetConverterConfig()
 {
     AudioConverterParser &converterParser = AudioConverterParser::GetInstance();
     return converterParser.LoadConfig();
+}
+
+void AudioPolicyService::ClearScoDeviceSuspendState(string macAddress)
+{
+    AUDIO_DEBUG_LOG("Clear sco suspend state %{public}s", macAddress.c_str());
+    vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetDevicesByFilter(
+        DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE, macAddress, "", SUSPEND_CONNECTED);
+    for (auto &desc : descs) {
+        desc->connectState_ = DEACTIVE_CONNECTED;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -554,6 +554,26 @@ uint32_t FastAudioStream::GetUnderflowCount()
     return underflowCount_;
 }
 
+uint32_t FastAudioStream::GetOverflowCount()
+{
+    AUDIO_INFO_LOG("enter.");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 0, "process client is null.");
+    overflowCount_ = processClient_->GetOverflowCount();
+    return overflowCount_;
+}
+
+void FastAudioStream::SetUnderflowCount(uint32_t underflowCount)
+{
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
+    processClient_->SetUnderflowCount(underflowCount);
+}
+
+void FastAudioStream::SetOverflowCount(uint32_t overflowCount)
+{
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
+    processClient_->SetOverflowCount(overflowCount);
+}
+
 void FastAudioStream::SetRendererPositionCallback(int64_t markPosition,
     const std::shared_ptr<RendererPositionCallback> &callback)
 {
@@ -674,6 +694,9 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;
     info.renderRate = renderRate_;
+
+    info.underFlowCount = GetUnderflowCount();
+    info.overFlowCount = GetOverflowCount();
 
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();

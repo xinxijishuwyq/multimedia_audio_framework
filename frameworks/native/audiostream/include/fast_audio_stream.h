@@ -139,6 +139,10 @@ public:
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
 
     uint32_t GetUnderflowCount() override;
+    uint32_t GetOverflowCount() override;
+    void SetUnderflowCount(uint32_t underflowCount) override;
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
         override;
     void UnsetRendererPositionCallback() override;
@@ -189,7 +193,8 @@ private:
     State state_;
     uint32_t sessionId_;
     std::string cachePath_ = "";
-    uint32_t underflowCount_;
+    uint32_t underflowCount_ = 0;
+    uint32_t overflowCount_ = 0;
     AudioRenderMode renderMode_;
     AudioCaptureMode captureMode_;
     AudioRendererRate renderRate_ = RENDER_RATE_NORMAL;

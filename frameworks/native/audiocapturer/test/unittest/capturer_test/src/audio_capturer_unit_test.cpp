@@ -3339,5 +3339,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_RegisterAudioCapturerEventListener_
     audioCapturer->SetValid(true);
     audioCapturer->Release();
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

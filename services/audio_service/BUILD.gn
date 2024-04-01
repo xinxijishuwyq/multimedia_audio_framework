@@ -298,6 +298,7 @@ ohos_shared_library("audio_process_service") {
   deps = [
     ":audio_common",
     "$pulseaudio_build_path/src/pulse:pulse",
+    "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
@@ -312,6 +313,8 @@ ohos_shared_library("audio_process_service") {
 
   external_deps = [
     "c_utils:utils",
+    "drivers_interface_audio:effect_idl_headers",
+    "drivers_interface_audio:libeffect_proxy_1.0",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",

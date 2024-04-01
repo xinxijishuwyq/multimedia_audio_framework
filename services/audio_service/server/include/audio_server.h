@@ -119,6 +119,7 @@ public:
 
     int32_t ResetRouteForDisconnect(DeviceType type) override;
 
+    uint32_t GetEffectLatency(const std::string &sessionId) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -128,6 +129,7 @@ private:
     bool PermissionChecker(const AudioProcessConfig &config);
     bool CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage);
     bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType);
+    bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
 
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();

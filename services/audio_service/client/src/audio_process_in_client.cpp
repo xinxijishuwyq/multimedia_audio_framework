@@ -91,6 +91,12 @@ public:
 
     uint32_t GetUnderflowCount() override;
 
+    uint32_t GetOverflowCount() override;
+
+    void SetUnderflowCount(uint32_t underflowCount) override;
+
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     int64_t GetFramesWritten() override;
 
     int64_t GetFramesRead() override;
@@ -189,6 +195,8 @@ private:
     std::condition_variable threadStatusCV_;
 
     std::atomic<uint32_t> underflowCount_ = 0;
+    std::atomic<uint32_t> overflowCount_ = 0;
+
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
 
@@ -377,6 +385,21 @@ float AudioProcessInClientInner::GetVolume()
 uint32_t AudioProcessInClientInner::GetUnderflowCount()
 {
     return underflowCount_.load();
+}
+
+uint32_t AudioProcessInClientInner::GetOverflowCount()
+{
+    return overflowCount_.load();
+}
+
+void AudioProcessInClientInner::SetUnderflowCount(uint32_t underflowCount)
+{
+    underflowCount_ += underflowCount;
+}
+
+void AudioProcessInClientInner::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ += overflowCount;
 }
 
 int64_t AudioProcessInClientInner::GetFramesWritten()
@@ -970,6 +993,16 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
     int64_t stamp = ClockTime::GetCurNano();
     cb->OnHandleData(clientSpanSizeInByte_);
     stamp = ClockTime::GetCurNano() - stamp;
+    if (stamp > MAX_WRITE_COST_DURATION_NANO) {
+        AUDIO_WARNING_LOG("Client write cost too long...");
+        if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+            underflowCount_++;
+        } else {
+            overflowCount_++;
+        }
+        // todo
+        // handle write time out: send underrun msg to client, reset time model with latest server handle time.
+    }
     if (stamp > THREE_MILLISECOND_DURATION) {
         AUDIO_WARNING_LOG("Client handle callback too slow, cost %{public}" PRId64"us", stamp / AUDIO_MS_PER_SECOND);
         return;
@@ -1335,12 +1368,6 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
     tempSpan->volumeStart = processVolume_;
     tempSpan->volumeEnd = processVolume_;
     clientWriteCost = tempSpan->writeDoneTime - tempSpan->writeStartTime;
-    if (clientWriteCost > MAX_WRITE_COST_DURATION_NANO) {
-        AUDIO_WARNING_LOG("Client write cost too long...");
-        underflowCount_++;
-        // todo
-        // handle write time out: send underrun msg to client, reset time model with latest server handle time.
-    }
 
     return true;
 }

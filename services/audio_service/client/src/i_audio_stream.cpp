@@ -31,7 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     constexpr int32_t MEDIA_UID = 1013;
-    constexpr int32_t FORCED_NORMAL = 1;
+    constexpr int32_t FORCED_IPC = 1;
 }
 const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_ = IAudioStream::CreateStreamMap();
 std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::CreateStreamMap()
@@ -212,7 +212,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     if (streamClass == PA_STREAM) {
         int32_t ipcFlag = -1;
         GetSysPara("persist.multimedia.audioflag.ipc.renderer", ipcFlag);
-        if (getuid() == MEDIA_UID || ipcFlag == FORCED_NORMAL) {
+        if (getuid() == MEDIA_UID && ipcFlag != FORCED_IPC) {
             AUDIO_INFO_LOG("Create normal playback stream");
             return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
         }
@@ -233,7 +233,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     if (streamClass == PA_STREAM) {
         int32_t ipcFlag = -1;
         GetSysPara("persist.multimedia.audioflag.ipc.capturer", ipcFlag);
-        if (getuid() == MEDIA_UID || ipcFlag == FORCED_NORMAL) {
+        if (getuid() == MEDIA_UID && ipcFlag != FORCED_IPC) {
             AUDIO_INFO_LOG("Create normal record stream");
             return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
         }
@@ -294,6 +294,14 @@ bool IAudioStream::IsRendererChannelLayoutValid(uint64_t channelLayout)
     return isValidRendererChannelLayout;
 }
 
+bool IAudioStream::IsCapturerChannelLayoutValid(uint64_t channelLayout)
+{
+    bool isValidCapturerChannelLayout = IsRendererChannelLayoutValid(channelLayout);
+    AUDIO_DEBUG_LOG("AudioStream: isValidCapturerChannelLayout: %{public}s",
+        isValidCapturerChannelLayout ? "true" : "false");
+    return isValidCapturerChannelLayout;
+}
+
 bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
 {
     if (!IsRendererChannelValid(channels)) {
@@ -302,6 +310,17 @@ bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t 
     }
     if (!IsRendererChannelLayoutValid(channelLayout)) {
         AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
+        return false;
+    }
+    return true;
+}
+
+bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
+{
+    if (!IsCapturerChannelValid(channels)) {
+        return false;
+    }
+    if (!IsCapturerChannelLayoutValid(channelLayout)) {
         return false;
     }
     return true;

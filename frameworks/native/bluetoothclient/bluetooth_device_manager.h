@@ -89,7 +89,7 @@ public:
     static bool IsHfpBluetoothDeviceExist(const std::string& macAddress);
     static void UpdateHfpDeviceConfiguration(const BluetoothRemoteDevice &device,
         const AudioStandard::AudioStreamInfo &streamInfo);
-    static void OnScoStateChanged(const BluetoothRemoteDevice &device, bool isConnected);
+    static void OnScoStateChanged(const BluetoothRemoteDevice &device, bool isConnected, int reason);
     static int32_t GetConnectedHfpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
     static void ClearAllHfpBluetoothDevice();
 

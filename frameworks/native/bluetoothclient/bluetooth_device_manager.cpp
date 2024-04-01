@@ -32,6 +32,7 @@ const int USER_SELECTION = 1;
 const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
 const int END_POS = 13;
+const int HFP_AG_SCO_REMOTE_USER_TERMINATED = 2;
 const std::map<std::pair<int, int>, DeviceCategory> bluetoothDeviceCategoryMap_ = {
     {std::make_pair(BluetoothDevice::MAJOR_AUDIO_VIDEO, BluetoothDevice::AUDIO_VIDEO_HEADPHONES), BT_HEADPHONE},
     {std::make_pair(BluetoothDevice::MAJOR_AUDIO_VIDEO, BluetoothDevice::AUDIO_VIDEO_WEARABLE_HEADSET), BT_HEADPHONE},
@@ -86,7 +87,7 @@ void UnregisterDeviceObserver()
     g_deviceObserver = nullptr;
 }
 
-void SendUserSelectionEvent(DeviceType devType, const std::string &macAddress, int32_t eventType)
+void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string &macAddress, int32_t eventType)
 {
     AUDIO_INFO_LOG("devType is %{public}d, eventType is%{public}d.", devType, eventType);
     BluetoothRemoteDevice device;
@@ -768,12 +769,17 @@ void HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice()
     wearDetectionStateMap_.clear();
 }
 
-void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &device, bool isConnected)
+void HfpBluetoothDeviceManager::OnScoStateChanged(const BluetoothRemoteDevice &device, bool isConnected, int reason)
 {
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc.macAddress_ = device.GetDeviceAddr();
-    desc.connectState_ = isConnected == true ? ConnectState::CONNECTED : ConnectState::DEACTIVE_CONNECTED;
+    if (isConnected) {
+        desc.connectState_ = ConnectState::CONNECTED;
+    } else {
+        desc.connectState_ = reason == HFP_AG_SCO_REMOTE_USER_TERMINATED ?  ConnectState::SUSPEND_CONNECTED
+                                                                         :  ConnectState::DEACTIVE_CONNECTED;
+    }
     std::lock_guard<std::mutex> observerLock(g_observerLock);
     if (g_deviceObserver != nullptr) {
         g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CONNECTSTATE_UPDATE);

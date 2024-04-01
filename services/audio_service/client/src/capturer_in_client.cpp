@@ -163,6 +163,10 @@ public:
     void UnsetRendererPeriodPositionCallback() override;
 
     uint32_t GetUnderflowCount() override;
+    uint32_t GetOverflowCount() override;
+    void SetUnderflowCount(uint32_t underflowCount) override;
+    void SetOverflowCount(uint32_t overflowCount) override;
+
     uint32_t GetRendererSamplingRate() override;
     int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
     int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
@@ -356,7 +360,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == BUFFER_OVERFLOW) {
-        overflowCount_++;
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
         readDataCV_.notify_all();
@@ -427,9 +430,13 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
         info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND);
-    if (!IsFormatValid(info.format) || !IsCapturerChannelValid(info.channels) || !IsEncodingTypeValid(info.encoding) ||
-        !IsSamplingRateValid(info.samplingRate)) {
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) || !IsSamplingRateValid(info.samplingRate)) {
         AUDIO_ERR_LOG("CapturerInClient: Unsupported audio parameter");
+        return ERR_NOT_SUPPORTED;
+    }
+    if (!IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout)) {
+        AUDIO_ERR_LOG("Invalid sink channel %{public}d or channel layout %{public}" PRIu64, info.channels,
+                info.channelLayout);
         return ERR_NOT_SUPPORTED;
     }
 
@@ -655,6 +662,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
+    config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(streamParams_.channelLayout);
 
     config.audioMode = AUDIO_MODE_RECORD;
 
@@ -1611,6 +1619,23 @@ uint32_t CapturerInClientInner::GetUnderflowCount()
     // not supported for capturer
     AUDIO_WARNING_LOG("No Underflow in Capturer");
     return 0;
+}
+
+uint32_t CapturerInClientInner::GetOverflowCount()
+{
+    return overflowCount_;
+}
+
+void CapturerInClientInner::SetUnderflowCount(uint32_t underflowCount)
+{
+    // not supported for capturer
+    AUDIO_WARNING_LOG("No Underflow in Capturer");
+    return;
+}
+
+void CapturerInClientInner::SetOverflowCount(uint32_t overflowCount)
+{
+    overflowCount_ = overflowCount;
 }
 
 void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, const

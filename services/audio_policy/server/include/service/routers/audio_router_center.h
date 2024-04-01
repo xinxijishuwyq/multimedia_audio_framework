@@ -72,6 +72,10 @@ private:
                 AUDIO_INFO_LOG("recordCaptureRouters_, class %{public}s", recordCaptureRouter->GetClassName().c_str());
                 recordCaptureRouters_.push_back(std::move(recordCaptureRouter));
             }
+            for (auto &voiceMessageRouter : audioStrategyRouterParser->voiceMessageRouters_) {
+                AUDIO_INFO_LOG("voiceMessageRouters_, class %{public}s", voiceMessageRouter->GetClassName().c_str());
+                voiceMessageRouters_.push_back(std::move(voiceMessageRouter));
+            }
         }
 
         unique_ptr<AudioUsageStrategyParser> audioUsageStrategyParser = make_unique<AudioUsageStrategyParser>();
@@ -103,6 +107,7 @@ private:
     std::vector<std::unique_ptr<RouterBase>> ringRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> toneRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> recordCaptureRouters_;
+    std::vector<std::unique_ptr<RouterBase>> voiceMessageRouters_;
 
     unordered_map<StreamUsage, string> renderConfigMap_;
     unordered_map<SourceType, string> capturerConfigMap_;

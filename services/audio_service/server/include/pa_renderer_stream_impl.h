@@ -127,8 +127,6 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     FILE *dumpFile_ = nullptr;
     // offload end
-
-    bool getPosFromHdi_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

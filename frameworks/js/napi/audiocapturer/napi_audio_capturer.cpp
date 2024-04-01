@@ -73,6 +73,8 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("getCurrentInputDevices", GetCurrentInputDevices),
         DECLARE_NAPI_FUNCTION("getCurrentAudioCapturerChangeInfo", GetCurrentAudioCapturerChangeInfo),
         DECLARE_NAPI_FUNCTION("getCurrentMicrophones", GetCurrentMicrophones),
+        DECLARE_NAPI_FUNCTION("getOverflowCount", GetOverflowCount),
+        DECLARE_NAPI_FUNCTION("getOverflowCountSync", GetOverflowCountSync),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_GETTER("state", GetState),
@@ -767,6 +769,48 @@ napi_value NapiAudioCapturer::GetState(napi_env env, napi_callback_info info)
 
     napi_status status = NapiParamUtils::SetValueInt32(env, capturerState, result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "SetValueInt32 capturerState fail");
+    return result;
+}
+
+napi_value NapiAudioCapturer::GetOverflowCount(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "context object state is error.");
+        context->overflowCount = napiAudioCapturer->audioCapturer_->GetOverflowCount();
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueUInt32(env, context->overflowCount, output);
+    };
+
+    return NapiAsyncWork::Enqueue(env, context, "GetOverflowCount", executor, complete);
+}
+
+napi_value NapiAudioCapturer::GetOverflowCountSync(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+
+    auto *napiAudioCapturer = GetParamWithSync(env, info, argc, nullptr);
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
+
+    uint32_t overflowCount = napiAudioCapturer->audioCapturer_->GetOverflowCount();
+
+    NapiParamUtils::SetValueUInt32(env, overflowCount, result);
     return result;
 }
 

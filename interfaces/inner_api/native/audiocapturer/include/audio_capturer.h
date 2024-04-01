@@ -41,6 +41,8 @@ struct AudioCapturerParams {
     AudioStreamType streamType = STREAM_MEDIA;
     /** audioSampleFormat */
     AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
+    /** Audio Channel Layout */
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
 };
 
 class AudioCapturerCallback {
@@ -636,6 +638,8 @@ public:
      * @since 11
      */
     virtual int32_t SetCaptureSilentState(bool state) = 0;
+
+    virtual uint32_t GetOverflowCount() = 0;
 
     virtual ~AudioCapturer();
 

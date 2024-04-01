@@ -791,8 +791,8 @@ void AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
                 desc->connectState_ = SUSPEND_CONNECTED;
             } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc->connectState_ == SUSPEND_CONNECTED &&
-                devDesc->connectState_ == DEACTIVE_CONNECTED) {
-                // sco deactive, a2dp CONNECTED
+                (devDesc->connectState_ == DEACTIVE_CONNECTED || devDesc->connectState_ == SUSPEND_CONNECTED)) {
+                // sco deactive or suspend, a2dp CONNECTED
                 desc->connectState_ = CONNECTED;
             }
         }
@@ -890,6 +890,24 @@ void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDe
 {
     RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
+    const string &macAddress, const string &networkId, ConnectState connectState)
+{
+    vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    lock_guard<mutex> connectLock(connectedDevicesMutex_);
+    for (const auto &desc : connectedDevices_) {
+        if ((devType == DEVICE_TYPE_NONE || devType == desc->deviceType_) &&
+            (devRole == DEVICE_ROLE_NONE || devRole == desc->deviceRole_) &&
+            (macAddress == "" || macAddress == desc->macAddress_) &&
+            (networkId == "" || networkId == desc->networkId_) && (connectState == desc->connectState_)) {
+            audioDeviceDescriptors.push_back(desc);
+        }
+    }
+    AUDIO_DEBUG_LOG("Filter device size %{public}zu", audioDeviceDescriptors.size());
+    return audioDeviceDescriptors;
 }
 }
 }

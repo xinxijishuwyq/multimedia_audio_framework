@@ -99,6 +99,8 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         params.audioChannel = capturerOptions.streamInfo.channels;
     }
     params.audioEncoding = capturerOptions.streamInfo.encoding;
+    params.channelLayout = capturerOptions.streamInfo.channelLayout;
+
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 
     if (capturer == nullptr) {
@@ -840,6 +842,11 @@ int32_t AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback()
         }
     }
     return SUCCESS;
+}
+
+uint32_t AudioCapturerPrivate::GetOverflowCount()
+{
+    return audioStream_->GetOverflowCount();
 }
 
 AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()
