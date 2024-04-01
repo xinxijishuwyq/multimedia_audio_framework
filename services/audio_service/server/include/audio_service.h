@@ -47,6 +47,7 @@ public:
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     void Dump(std::stringstream &dumpString);
+    float GetMaxAmplitude(bool isOutputDevice);
 
 private:
     AudioService();

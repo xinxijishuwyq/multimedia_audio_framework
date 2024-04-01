@@ -63,6 +63,8 @@ constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 300;
 
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
+
+const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 }
 class AudioRendererSinkInner : public AudioRendererSink {
 public:
@@ -99,6 +101,7 @@ public:
     int32_t Preload(const std::string &usbInfoStr) override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
+    float GetMaxAmplitude() override;
 
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
@@ -126,6 +129,12 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+    // for get amplitude
+    float maxAmplitude_ = 0;
+    int64_t lastGetMaxAmplitudeTime_ = 0;
+    int64_t last10FrameStartTime_ = 0;
+    bool startUpdate_ = false;
+    int renderFrameNum_ = 0;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 #endif
@@ -146,6 +155,7 @@ private:
     int32_t InitAdapter();
     int32_t InitRender();
     void ReleaseRunningLock();
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -524,6 +534,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     }
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    CheckUpdateState(&data, len);
 
     if (inSwitch_) {
         Trace traceInSwitch("AudioRendererSinkInner::RenderFrame::inSwitch");
@@ -556,6 +567,31 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
     return SUCCESS;
+}
+
+void AudioRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
+{
+    if (startUpdate_) {
+        if (renderFrameNum_ == 0) {
+            last10FrameStartTime_ = ClockTime::GetCurNano();
+        }
+        renderFrameNum_++;
+        maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(attr_.format), frame, replyBytes);
+        if (renderFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
+            renderFrameNum_ = 0;
+            if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
+                startUpdate_ = false;
+                maxAmplitude_ = 0;
+            }
+        }
+    }
+}
+
+float AudioRendererSinkInner::GetMaxAmplitude()
+{
+    lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
+    startUpdate_ = true;
+    return maxAmplitude_;
 }
 
 int32_t AudioRendererSinkInner::Start(void)

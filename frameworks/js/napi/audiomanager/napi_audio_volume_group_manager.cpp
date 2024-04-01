@@ -110,6 +110,7 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("getSystemVolumeInDb", GetSystemVolumeInDb),
         DECLARE_NAPI_FUNCTION("getSystemVolumeInDbSync", GetSystemVolumeInDbSync),
         DECLARE_NAPI_FUNCTION("on", On),
+        DECLARE_NAPI_FUNCTION("getMaxAmplitude", GetMaxAmplitude),
     };
 
     napi_status status = napi_define_class(env, AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME.c_str(),
@@ -1047,6 +1048,33 @@ napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info
     }
 
     return RegisterCallback(env, jsThis, argc, args, callbackName);
+}
+
+napi_value NapiAudioVolumeGroupManager::GetMaxAmplitude(napi_env env, napi_callback_info info)
+{
+    AUDIO_DEBUG_LOG("GetMaxAmplitude enter");
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "invalid valueType");
+
+    int32_t deviceId;
+    NapiParamUtils::GetValueInt32(env, deviceId, args[PARAM0]);
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
+        "audioGroupMngr_ is nullptr");
+
+    float maxAmplitude = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxAmplitude(deviceId);
+    NapiParamUtils::SetValueDouble(env, maxAmplitude, result);
+
+    return result;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

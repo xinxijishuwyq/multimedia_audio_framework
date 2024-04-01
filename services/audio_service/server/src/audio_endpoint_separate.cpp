@@ -707,5 +707,11 @@ void AudioEndpointSeparate::WriteToProcessBuffers(const BufferDesc &readBuf)
         AUDIO_DEBUG_LOG("%{public}s endpoint process buffer %{public}zu write success.", __func__, i);
     }
 }
+
+float AudioEndpointSeparate::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in audioEndpointSeparate not support");
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

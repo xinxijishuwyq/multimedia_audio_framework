@@ -60,6 +60,7 @@ constexpr uint32_t BIT_TO_BYTES = 8;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
+const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 }
 
 typedef struct {
@@ -95,6 +96,7 @@ public:
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
+    float GetMaxAmplitude() override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
 
@@ -119,6 +121,13 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+
+    // for get amplitude
+    float maxAmplitude_ = 0;
+    int64_t lastGetMaxAmplitudeTime_ = 0;
+    int64_t last10FrameStartTime_ = 0;
+    bool startUpdate_ = false;
+    int renderFrameNum_ = 0;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 #endif
@@ -128,7 +137,9 @@ private:
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
+    ConvertHdiFormat ConvertToHdiAdapterFormat(AudioFormat format);
     int64_t BytesToNanoTime(size_t lens);
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
     FILE *dumpFile_ = nullptr;
 };
 
@@ -417,6 +428,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     }
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+    CheckUpdateState(&data, len);
 
     Trace trace("BluetoothRendererSinkInner::RenderFrame");
     while (true) {
@@ -441,6 +453,55 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         break;
     }
     return ret;
+}
+
+ConvertHdiFormat BluetoothRendererSinkInner::ConvertToHdiAdapterFormat(AudioFormat format)
+{
+    ConvertHdiFormat hdiFormat;
+    switch (format) {
+        case AUDIO_FORMAT_TYPE_PCM_8_BIT:
+            hdiFormat = SAMPLE_U8_C;
+            break;
+        case AUDIO_FORMAT_TYPE_PCM_16_BIT:
+            hdiFormat = SAMPLE_S16_C;
+            break;
+        case AUDIO_FORMAT_TYPE_PCM_24_BIT:
+            hdiFormat = SAMPLE_S24_C;
+            break;
+        case AUDIO_FORMAT_TYPE_PCM_32_BIT:
+            hdiFormat = SAMPLE_S32_C;
+            break;
+        default:
+            hdiFormat = SAMPLE_S16_C;
+            break;
+    }
+
+    return hdiFormat;
+}
+
+void BluetoothRendererSinkInner::CheckUpdateState(char *frame, uint64_t replyBytes)
+{
+    if (startUpdate_) {
+        if (renderFrameNum_ == 0) {
+            last10FrameStartTime_ = ClockTime::GetCurNano();
+        }
+        renderFrameNum_++;
+        maxAmplitude_ = UpdateMaxAmplitude(ConvertToHdiAdapterFormat(attr_.format), frame, replyBytes);
+        if (renderFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
+            renderFrameNum_ = 0;
+            if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
+                startUpdate_ = false;
+                maxAmplitude_ = 0;
+            }
+        }
+    }
+}
+
+float BluetoothRendererSinkInner::GetMaxAmplitude()
+{
+    lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
+    startUpdate_ = true;
+    return maxAmplitude_;
 }
 
 int32_t BluetoothRendererSinkInner::Start(void)

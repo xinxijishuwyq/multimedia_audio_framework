@@ -5631,5 +5631,23 @@ void AudioPolicyService::ClearScoDeviceSuspendState(string macAddress)
         desc->connectState_ = DEACTIVE_CONNECTED;
     }
 }
+
+float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
+
+    if (deviceId == currentActiveDevice_.deviceId_) {
+        float outputMaxAmplitude = gsp->GetMaxAmplitude(true, currentActiveDevice_.deviceType_);
+        return outputMaxAmplitude;
+    }
+
+    if (deviceId == currentActiveInputDevice_.deviceId_) {
+        float inputMaxAmplitude = gsp->GetMaxAmplitude(false, currentActiveInputDevice_.deviceType_);
+        return inputMaxAmplitude;
+    }
+
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

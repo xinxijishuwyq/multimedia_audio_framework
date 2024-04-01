@@ -110,6 +110,7 @@ public:
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
+    float GetMaxAmplitude() override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
 
@@ -452,6 +453,12 @@ int32_t RemoteFastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, 
 {
     AUDIO_DEBUG_LOG("RenderFrame is not supported.");
     return SUCCESS;
+}
+
+float RemoteFastAudioRendererSinkInner::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in remote fast audio not support");
+    return 0;
 }
 
 int32_t RemoteFastAudioRendererSinkInner::CheckPositionTime()

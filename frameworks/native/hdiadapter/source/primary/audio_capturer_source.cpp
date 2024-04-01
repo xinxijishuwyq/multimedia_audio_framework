@@ -41,6 +41,7 @@ namespace AudioStandard {
 namespace {
     const int64_t SECOND_TO_NANOSECOND = 1000000000;
     const unsigned int DEINIT_TIME_OUT_SECONDS = 5;
+    const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 }
 class AudioCapturerSourceInner : public AudioCapturerSource {
 public:
@@ -74,6 +75,7 @@ public:
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
     int32_t Preload(const std::string &usbInfoStr) override;
+    float GetMaxAmplitude() override;
 
     explicit AudioCapturerSourceInner(const std::string &halName = "primary");
     ~AudioCapturerSourceInner();
@@ -94,6 +96,8 @@ private:
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapterAndCapture();
 
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
+
     IAudioSourceAttr attr_;
     bool sourceInited_;
     bool captureInited_;
@@ -107,6 +111,13 @@ private:
     uint32_t openMic_;
     uint32_t captureId_ = 0;
     std::string adapterNameCase_;
+
+    // for get amplitude
+    float maxAmplitude_ = 0;
+    int64_t lastGetMaxAmplitudeTime_ = 0;
+    int64_t last10FrameStartTime_ = 0;
+    bool startUpdate_ = false;
+    int capFrameNum_ = 0;
 
     struct IAudioManager *audioManager_;
     struct IAudioAdapter *audioAdapter_;
@@ -155,6 +166,7 @@ public:
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
+    float GetMaxAmplitude() override;
 
     AudioCapturerSourceWakeup() = default;
     ~AudioCapturerSourceWakeup() = default;
@@ -555,12 +567,38 @@ int32_t AudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t requestByte
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_READ_FAILED, "Capture Frame Fail");
 
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+    CheckUpdateState(frame, requestBytes);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     if (logMode_) {
         AUDIO_DEBUG_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", requestBytes, stamp);
     }
     return SUCCESS;
+}
+
+void AudioCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)
+{
+    if (startUpdate_) {
+        if (capFrameNum_ == 0) {
+            last10FrameStartTime_ = ClockTime::GetCurNano();
+        }
+        capFrameNum_++;
+        maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(attr_.format), frame, replyBytes);
+        if (capFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
+            capFrameNum_ = 0;
+            if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
+                startUpdate_ = false;
+                maxAmplitude_ = 0;
+            }
+        }
+    }
+}
+
+float AudioCapturerSourceInner::GetMaxAmplitude()
+{
+    lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
+    startUpdate_ = true;
+    return maxAmplitude_;
 }
 
 int32_t AudioCapturerSourceInner::Start(void)
@@ -1212,6 +1250,11 @@ void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(IAudioSource
 void AudioCapturerSourceWakeup::RegisterParameterCallback(IAudioSourceCallback *callback)
 {
     AUDIO_WARNING_LOG("AudioCapturerSourceWakeup: RegisterParameterCallback is not supported!");
+}
+
+float AudioCapturerSourceWakeup::GetMaxAmplitude()
+{
+    return audioCapturerSource_.GetMaxAmplitude();
 }
 } // namespace AudioStandard
 } // namesapce OHOS

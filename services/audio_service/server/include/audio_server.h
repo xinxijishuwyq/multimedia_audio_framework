@@ -120,6 +120,8 @@ public:
     int32_t ResetRouteForDisconnect(DeviceType type) override;
 
     uint32_t GetEffectLatency(const std::string &sessionId) override;
+
+    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

@@ -80,6 +80,7 @@ private:
     static napi_value GetSystemVolumeInDb(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolumeInDbSync(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
+    static napi_value GetMaxAmplitude(napi_env env, napi_callback_info info);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
