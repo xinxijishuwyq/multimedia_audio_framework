@@ -47,7 +47,7 @@ namespace {
 
 static void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
 {
-    ASSERT_NE(audioCapturer, buffer);
+    ASSERT_NE(audioCapturer, nullptr);
     int32_t ret = -1;
     bool isBlockingRead = true;
     size_t bufferLen;
@@ -75,7 +75,7 @@ static void StartCaptureThread(AudioCapturer *audioCapturer, const string filePa
 
     audioCapturer->Flush();
 
-    fclose(capFile);
+    (void)fclose(capFile);
 }
 
 /**
