@@ -6529,6 +6529,63 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_001, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test SetSpeed and Write with meta API.
+ * @tc.number: Audio_Renderer_SetSpeed_Write_002
+ * @tc.desc  : Test SetSpeed and Write with meta interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_PCMFILE_PATH.c_str(), "rb");
+    FILE *metaFile = fopen(AUDIORENDER_TEST_METAFILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+    ASSERT_NE(nullptr, metaFile);
+
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetSpeed(1.0); // 1.0 speed
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    uint8_t *buffer = nullptr;
+    uint8_t *metaBuffer = nullptr;
+    AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    size_t minBytes = 4; // 4 min bytes
+    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+
+    while (numBuffersToRender) {
+        if (numBuffersToRender == WRITE_BUFFERS_COUNT / 2) { // 2 half count
+            ret = audioRenderer->SetSpeed(2.0);              // 2.0 speed
+            EXPECT_EQ(SUCCESS, ret);
+        }
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        fread(metaBuffer, 1, AVS3METADATA_SIZE, metaFile);
+        bytesWritten = 0;
+        while ((static_cast<size_t>(bytesWritten) < bytesToWrite) &&
+            ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
+            bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
+                bytesToWrite - static_cast<size_t>(bytesWritten), metaBuffer, AVS3METADATA_SIZE);
+            EXPECT_GE(bytesWritten, VALUE_ZERO);
+        }
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    audioRenderer->Release();
+    AudioRendererUnitTest::ReleaseBufferAndFiles(buffer, metaBuffer, wavFile, metaFile);
+}
+
+/**
  * @tc.name  : Test voip can not interrupt voiceCall
  * @tc.number: SetVoipInterruptVoiceCall_001
  * @tc.desc  : When voip comes after voiceCall, voip will be deny by voiceCall
