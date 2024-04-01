@@ -67,7 +67,10 @@ ohos_fuzztest("AudioPolicyAnotherFuzzTest") {
     "safwk:system_ability_fwk",
   ]
   if (accessibility_enable == true) {
-    external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
   }
 }
 
