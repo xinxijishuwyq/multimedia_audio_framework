@@ -54,5 +54,10 @@
     { "name": "OH_AudioRenderer_GetVolume"},
     { "name": "OH_AudioRenderer_GetUnderflowCount"},
     { "name": "OH_AudioCapturer_GetOverflowCount"},
-    { "name": "OH_AudioStreamBuilder_SetRendererInterruptMode"}
+    { "name": "OH_AudioStreamBuilder_SetRendererInterruptMode"},
+    { "name": "OH_AudioRenderer_GetEffectMode"},
+    { "name": "OH_AudioRenderer_SetEffectMode"},
+    { "name": "OH_AudioRenderer_GetChannelLayout"},
+    { "name": "OH_AudioStreamBuilder_SetChannelLayout"},
+    { "name": "OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback"}
 ]
