@@ -765,6 +765,10 @@ static void SinkRenderPrimaryMixCap(pa_sink *si, size_t length, pa_mix_info *inf
         pa_silence_memchunk(chunkIn, &si->sample_spec);
     } else if (n == 1) {
         pa_memchunk tmpChunk;
+        // If chunkIn is not full filled, we need re-call SinkRenderPrimaryPeekCap.
+        if (chunkIn->length > length) {
+            chunkIn->length = length;
+        }
 
         tmpChunk = infoIn[0].chunk;
         pa_memblock_ref(tmpChunk.memblock);
