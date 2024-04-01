@@ -993,6 +993,16 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
     int64_t stamp = ClockTime::GetCurNano();
     cb->OnHandleData(clientSpanSizeInByte_);
     stamp = ClockTime::GetCurNano() - stamp;
+    if (stamp > MAX_WRITE_COST_DURATION_NANO) {
+        AUDIO_WARNING_LOG("Client write cost too long...");
+        if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
+            underflowCount_++;
+        } else {
+            overflowCount_++;
+        }
+        // todo
+        // handle write time out: send underrun msg to client, reset time model with latest server handle time.
+    }
     if (stamp > THREE_MILLISECOND_DURATION) {
         AUDIO_WARNING_LOG("Client handle callback too slow, cost %{public}" PRId64"us", stamp / AUDIO_MS_PER_SECOND);
         return;
@@ -1358,16 +1368,6 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
     tempSpan->volumeStart = processVolume_;
     tempSpan->volumeEnd = processVolume_;
     clientWriteCost = tempSpan->writeDoneTime - tempSpan->writeStartTime;
-    if (clientWriteCost > MAX_WRITE_COST_DURATION_NANO) {
-        AUDIO_WARNING_LOG("Client write cost too long...");
-        if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-            underflowCount_++;
-        } else {
-            overflowCount_++;
-        }
-        // todo
-        // handle write time out: send underrun msg to client, reset time model with latest server handle time.
-    }
 
     return true;
 }

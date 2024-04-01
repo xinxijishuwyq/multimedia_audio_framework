@@ -1261,8 +1261,11 @@ int32_t AudioStream::InitFromParams(AudioStreamParams &info)
         }
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("Initialize recording");
-        bool res = IsCapturerChannelValid(info.channels);
-        CHECK_AND_RETURN_RET_LOG(res, ERR_NOT_SUPPORTED, "Invalid source channel %{public}d", info.channels);
+        if (!IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout)) {
+            AUDIO_ERR_LOG("Invalid sink channel %{public}d or channel layout %{public}" PRIu64, info.channels,
+                info.channelLayout);
+            return ERR_NOT_SUPPORTED;
+        }
         ret = Initialize(AUDIO_SERVICE_CLIENT_RECORD);
     } else {
         AUDIO_ERR_LOG("error eMode.");

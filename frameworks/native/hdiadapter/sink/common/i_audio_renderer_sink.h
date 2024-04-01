@@ -79,7 +79,8 @@ public:
     virtual void SetAudioBalanceValue(float audioBalance) = 0;
 
     virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
-
+    virtual float GetMaxAmplitude() = 0;
+    
     virtual int32_t Preload(const std::string &usbInfoStr)
     {
         return 0;

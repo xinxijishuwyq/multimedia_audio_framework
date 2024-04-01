@@ -470,6 +470,15 @@ int AudioManagerStub::HandleGetEffectLatency(MessageParcel &data, MessageParcel 
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply)
+{
+    bool isOutputDevice = data.ReadBool();
+    int32_t deviceType = data.ReadInt32();
+    float result = GetMaxAmplitude(isOutputDevice, deviceType);
+    reply.WriteFloat(result);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),

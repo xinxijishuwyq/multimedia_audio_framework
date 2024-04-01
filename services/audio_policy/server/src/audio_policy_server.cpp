@@ -1907,6 +1907,11 @@ float AudioPolicyServer::GetMaxStreamVolume()
 int32_t AudioPolicyServer::GetMaxRendererInstances()
 {
     AUDIO_INFO_LOG("GetMaxRendererInstances");
+    int32_t retryCount = 20; // 20 * 200000us = 4s, wait up to 4s
+    while (!isFirstAudioServiceStart_ && retryCount-- > 0) {
+        AUDIO_WARNING_LOG("Audio server is not start");
+        usleep(200000); // Wait 200000us when audio server is not started
+    }
     return audioPolicyService_.GetMaxRendererInstances();
 }
 
@@ -2585,6 +2590,11 @@ int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
     }
     isHighResolutionExist_ = highResExist;
     return SUCCESS;
+}
+
+float AudioPolicyServer::GetMaxAmplitude(int32_t deviceId)
+{
+    return audioPolicyService_.GetMaxAmplitude(deviceId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

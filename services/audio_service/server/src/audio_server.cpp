@@ -1132,5 +1132,41 @@ uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     return audioEffectChainManager->GetLatency(sessionId);
 }
+
+float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        0, "GetMaxAmplitude refused for %{public}d", callingUid);
+    
+    float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);
+    if (isOutputDevice) {
+        IAudioRendererSink *iRendererInstance = nullptr;
+        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            iRendererInstance = IAudioRendererSink::GetInstance("a2dp", "");
+        } else if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            iRendererInstance = IAudioRendererSink::GetInstance("usb", "");
+        } else {
+            iRendererInstance = IAudioRendererSink::GetInstance("primary", "");
+        }
+        if (iRendererInstance != nullptr) {
+            float normalMaxAmplitude = iRendererInstance->GetMaxAmplitude();
+            return (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
+        }
+    } else {
+        AudioCapturerSource *audioCapturerSourceInstance;
+        if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+        } else {
+            audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+        }
+        if (audioCapturerSourceInstance != nullptr) {
+            float normalMaxAmplitude = audioCapturerSourceInstance->GetMaxAmplitude();
+            return (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
+        }
+    }
+
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -104,6 +104,7 @@ public:
         audioStreamParams.samplingRate = params.samplingRate;
         audioStreamParams.channels = params.audioChannel;
         audioStreamParams.encoding = params.audioEncoding;
+        audioStreamParams.channelLayout = params.channelLayout;
 
         return audioStreamParams;
     }

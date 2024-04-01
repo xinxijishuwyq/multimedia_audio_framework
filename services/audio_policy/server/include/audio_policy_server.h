@@ -362,6 +362,8 @@ public:
 
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
+    float GetMaxAmplitude(const int32_t deviceId) override;
+    
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

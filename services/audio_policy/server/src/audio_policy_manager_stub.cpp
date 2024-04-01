@@ -1117,5 +1117,12 @@ void AudioPolicyManagerStub::SetSpatializationSceneTypeInternal(MessageParcel &d
     int32_t ret = SetSpatializationSceneType(spatializationSceneType);
     reply.WriteInt32(ret);
 }
+
+void AudioPolicyManagerStub::GetMaxAmplitudeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t deviceId = data.ReadInt32();
+    float result = GetMaxAmplitude(deviceId);
+    reply.WriteFloat(result);
+}
 } // namespace audio_policy
 } // namespace OHOS

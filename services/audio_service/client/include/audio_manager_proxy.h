@@ -72,6 +72,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t ResetRouteForDisconnect(DeviceType type) override;
     uint32_t GetEffectLatency(const std::string &sessionId) override;
+    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

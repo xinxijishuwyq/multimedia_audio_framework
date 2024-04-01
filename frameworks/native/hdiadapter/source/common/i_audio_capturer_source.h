@@ -79,7 +79,8 @@ public:
     virtual void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) = 0;
     virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) = 0;
     virtual void RegisterParameterCallback(IAudioSourceCallback *callback) = 0;
-
+    virtual float GetMaxAmplitude() = 0;
+    
     virtual int32_t Preload(const std::string &usbInfoStr)
     {
         return 0;

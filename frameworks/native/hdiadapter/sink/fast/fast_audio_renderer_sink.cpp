@@ -94,6 +94,7 @@ public:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+    float GetMaxAmplitude() override;
 
     FastAudioRendererSinkInner();
     ~FastAudioRendererSinkInner();
@@ -555,6 +556,12 @@ int32_t FastAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
     AUDIO_WARNING_LOG("RenderFrame is not supported.");
     return ERR_NOT_SUPPORTED;
 #endif
+}
+
+float FastAudioRendererSinkInner::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in fast_audio_renderder_sink not support");
+    return 0;
 }
 
 int32_t FastAudioRendererSinkInner::CheckPositionTime()

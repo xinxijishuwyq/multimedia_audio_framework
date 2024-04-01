@@ -210,5 +210,11 @@ void AudioRendererFileSink::ResetOutputRouteForDisconnect(DeviceType device)
 {
     AUDIO_WARNING_LOG("not supported.");
 }
+
+float AudioRendererFileSink::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in render file sink not support");
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -87,7 +87,7 @@ void UnregisterDeviceObserver()
     g_deviceObserver = nullptr;
 }
 
-void SendUserSelectionEvent(DeviceType devType, const std::string &macAddress, int32_t eventType)
+void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string &macAddress, int32_t eventType)
 {
     AUDIO_INFO_LOG("devType is %{public}d, eventType is%{public}d.", devType, eventType);
     BluetoothRemoteDevice device;

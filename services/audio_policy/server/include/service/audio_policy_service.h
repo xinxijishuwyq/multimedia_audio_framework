@@ -425,6 +425,10 @@ public:
 
     void UnloadA2dpModule();
 
+    float GetMaxAmplitude(const int32_t deviceId);
+    
+    int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
