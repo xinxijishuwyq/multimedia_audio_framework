@@ -321,6 +321,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(std::string sceneT
         descriptor.libraryName = EnhanceToLibraryNameMap_[enhance];
         descriptor.effectName = enhance;
 
+        AUDIO_INFO_LOG("libraryName: %{public}s effectName:%{public}s", descriptor.libraryName.c_str(), descriptor.effectName.c_str());
         int32_t ret = EnhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle->createEffect(descriptor, &handle);
         CHECK_AND_CONTINUE_LOG(ret == 0, "EnhanceToLibraryEntryMap[%{public}s] createEffect fail", enhance.c_str());
         audioEnhanceChain->AddEnhanceHandle(handle, EnhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle);
