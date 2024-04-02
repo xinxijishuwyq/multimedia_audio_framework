@@ -1606,10 +1606,17 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
 {
     std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId);
 
+    bool needTriggerCallback = true;
+    if (outputDevice->isSameDevice(rendererChangeInfo->outputDeviceInfo)) {
+        needTriggerCallback = false;
+    }
+
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
 
-    audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
-        rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
+    if (needTriggerCallback) {
+        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
+            rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
+    }
 
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevice->networkId_ == LOCAL_NETWORK_ID)
