@@ -624,6 +624,29 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_023, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : Test Create API via legal input.
+ * @tc.number: Audio_Capturer_Create_024
+ * @tc.desc  : Test Create function with two types of parameters: AudioCapturerOptions and AppInfo，
+ *             and give different parameters.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_024, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    AppInfo appInfo = {};
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_VOICE_MESSAGE;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    appInfo.appTokenId = VALUE_THOUSAND;
+    appInfo.appUid = static_cast<int32_t>(getuid());
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->Release();
+}
+
+/**
 * @tc.name  : Test SetParams API via legal input
 * @tc.number: Audio_Capturer_SetParams_001
 * @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.
