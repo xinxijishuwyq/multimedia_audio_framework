@@ -27,8 +27,10 @@ extern "C" {
 #endif
 
 int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
-int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode, const char *upDevice, const char *downDevice);
-int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceMode, const char *upDevice, const char *downDevice);
+int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode,
+    const char *upDevice, const char *downDevice);
+int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceMode,
+    const char *upDevice, const char *downDevice);
 
 #ifdef __cplusplus
 }

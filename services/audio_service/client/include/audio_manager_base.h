@@ -211,7 +211,7 @@ public:
      * @return true/false.
      */
     virtual bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap, 
+        std::unordered_map<std::string, std::string> &effectMap,
         std::unordered_map<std::string, std::string> &enhanceMap) = 0;
 
     /**

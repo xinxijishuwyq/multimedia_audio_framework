@@ -3679,7 +3679,7 @@ void AudioPolicyService::LoadEffectLibrary()
     std::unordered_map<std::string, std::string> sceneTypeToEnhanceChainNameMap;
     audioEffectManager_.ConstructSceneTypeToEnhanceChainNameMap(sceneTypeToEnhanceChainNameMap);
     identity = IPCSkeleton::ResetCallingIdentity();
-    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, 
+    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains,
         sceneTypeToEffectChainNameMap, sceneTypeToEnhanceChainNameMap);
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");

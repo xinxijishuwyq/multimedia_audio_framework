@@ -24,10 +24,11 @@
 
 using namespace OHOS::AudioStandard;
 
-int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr) 
+int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr, ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
+        ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
     std::string sceneTypeString = "";
     if (sceneType) {
         sceneTypeString = sceneType;
@@ -39,10 +40,12 @@ int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
     return SUCCESS;
 }
 
-int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode, const char *upDevice, const char *downDevice)
+int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode,
+    const char *upDevice, const char *downDevice)
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr, ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
+        ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
     std::string sceneTypeString = "";
     std::string enhanceModeString = "";
     std::string upDeviceString = "";
@@ -62,13 +65,15 @@ int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMo
     std::string upAndDownDeviceString = "";
     upAndDownDeviceString = upDeviceString + "_&_" + downDeviceString;
     
-    if (audioEnhanceChainMananger->CreateAudioEnhanceChainDynamic(sceneTypeString, enhanceModeString, upAndDownDeviceString) != SUCCESS) {
+    if (audioEnhanceChainMananger->CreateAudioEnhanceChainDynamic(sceneTypeString,
+        enhanceModeString, upAndDownDeviceString) != SUCCESS) {
         return ERROR;
     }
     return SUCCESS;
 }
 
-int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceMode, const char *upDevice, const char *downDevice)
+int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceMode,
+    const char *upDevice, const char *downDevice)
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr, ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
@@ -214,25 +219,26 @@ int32_t FindEnhanceLib(const std::string &enhance,
     return ERROR;
 }
 
-int32_t CheckValidEnhanceLibEntry(AudioEffectLibEntry *libEntry, const std::string &enhance, const std::string &libName) 
+int32_t CheckValidEnhanceLibEntry(AudioEffectLibEntry *libEntry, const std::string &enhance,
+    const std::string &libName)
 {
     CHECK_AND_RETURN_RET_LOG(libEntry, ERROR, "Enhance [%{public}s] in lib [%{public}s] is nullptr",
         enhance.c_str(), libName.c_str());
-    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle, ERROR, 
-        "AudioEffectLibHandle of Enhance [%{public}s] in lib [%{public}s] is nullptr", 
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle, ERROR,
+        "AudioEffectLibHandle of Enhance [%{public}s] in lib [%{public}s] is nullptr",
         enhance.c_str(), libName.c_str());
-    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->createEffect, ERROR, 
-        "CreateEffect function of Enhance [%{public}s] in lib [%{public}s] is nullptr", 
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->createEffect, ERROR,
+        "CreateEffect function of Enhance [%{public}s] in lib [%{public}s] is nullptr",
         enhance.c_str(), libName.c_str());
-    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->releaseEffect, ERROR, 
-        "ReleaseEffect function of Enhance [%{public}s] in lib [%{public}s] is nullptr", 
+    CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle->releaseEffect, ERROR,
+        "ReleaseEffect function of Enhance [%{public}s] in lib [%{public}s] is nullptr",
         enhance.c_str(), libName.c_str());
     return SUCCESS;
 }
 
 
-void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains, 
-    std::unordered_map<std::string, std::string> &map, 
+void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
+    std::unordered_map<std::string, std::string> &map,
     std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
     std::set<std::string> enhanceSet;
@@ -266,12 +272,12 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
     }
     AUDIO_INFO_LOG("EnhanceToLibraryEntryMap_ size %{public}zu", EnhanceToLibraryEntryMap_.size());
     AUDIO_INFO_LOG("EnhanceToLibraryNameMap_ size %{public}zu", EnhanceChainToEnhancesMap_.size());
-    AUDIO_INFO_LOG("SceneTypeAndModeToEnhanceChainNameMap_ size %{public}zu", 
+    AUDIO_INFO_LOG("SceneTypeAndModeToEnhanceChainNameMap_ size %{public}zu",
         SceneTypeAndModeToEnhanceChainNameMap_.size());
     isInitialized_ = true;
 }
 
-int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(std::string sceneType, 
+int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(std::string sceneType,
     std::string enhanceMode, std::string upAndDownDevice)
 {
     upAndDownDevice_ = upAndDownDevice;
@@ -289,10 +295,11 @@ int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(std::string sce
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(std::string sceneType, std::string enhanceMode, std::string upAndDownDevice)
+int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(std::string sceneType,
+    std::string enhanceMode, std::string upAndDownDevice)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + upAndDownDevice;
-    CHECK_AND_RETURN_RET_LOG(SceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey), ERROR, 
+    CHECK_AND_RETURN_RET_LOG(SceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey), ERROR,
         "SceneType [%{public}s] does not exist, fail to set.", sceneType.c_str());
     
     AudioEnhanceChain *audioEnhanceChain = SceneTypeToEnhanceChainMap_[sceneTypeAndDeviceKey];
@@ -321,7 +328,8 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(std::string sceneT
         descriptor.libraryName = EnhanceToLibraryNameMap_[enhance];
         descriptor.effectName = enhance;
 
-        AUDIO_INFO_LOG("libraryName: %{public}s effectName:%{public}s", descriptor.libraryName.c_str(), descriptor.effectName.c_str());
+        AUDIO_INFO_LOG("libraryName: %{public}s effectName:%{public}s",
+            descriptor.libraryName.c_str(), descriptor.effectName.c_str());
         int32_t ret = EnhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle->createEffect(descriptor, &handle);
         CHECK_AND_CONTINUE_LOG(ret == 0, "EnhanceToLibraryEntryMap[%{public}s] createEffect fail", enhance.c_str());
         audioEnhanceChain->AddEnhanceHandle(handle, EnhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle);
@@ -354,7 +362,8 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(std::string sc
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(std::string sceneType, std::string upAndDownDevice, BufferAttr *bufferAttr)
+int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(std::string sceneType,
+    std::string upAndDownDevice, BufferAttr *bufferAttr)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + upAndDownDevice;
     if (!SceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey)) {

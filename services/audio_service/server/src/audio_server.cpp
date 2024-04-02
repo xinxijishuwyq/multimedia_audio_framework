@@ -448,9 +448,11 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
         return false;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectMap, audioEffectServer_->GetEffectEntries());
+    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectMap,
+        audioEffectServer_->GetEffectEntries());
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceMap, audioEffectServer_->GetEffectEntries());
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceMap,
+        audioEffectServer_->GetEffectEntries());
     return true;
 }
 

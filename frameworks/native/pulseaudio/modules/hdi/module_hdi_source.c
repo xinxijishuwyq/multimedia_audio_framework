@@ -81,7 +81,7 @@ static pa_hook_result_t SourceOutputNewCb(pa_core *c, pa_source_output *so)
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so) 
+static pa_hook_result_t SourceOutputUnlinkCb(pa_core *c, pa_source_output *so)
 {
     pa_assert(c);
     const char *sceneMode = pa_proplist_gets(so->proplist, "scene.mode");

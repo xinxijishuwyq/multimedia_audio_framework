@@ -661,7 +661,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_025, TestSize.Level0)
     capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
 
     std::vector<SourceType> sourceTypeList = {
-        SourceType::SOURCE_TYPE_MIC, 
+        SourceType::SOURCE_TYPE_MIC,
         SourceType::SOURCE_TYPE_VOICE_CALL,
         SourceType::SOURCE_TYPE_VOICE_COMMUNICATION};
     for (int32_t i = 0; i < sourceTypeList.size(); i++) {

@@ -295,7 +295,8 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
         sceneTypeToEnhanceChainNameMap[key] = value;
     }
 
-    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap, sceneTypeToEnhanceChainNameMap);
+    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap,
+        sceneTypeToEnhanceChainNameMap);
     CHECK_AND_RETURN_RET_LOG(createSuccess, AUDIO_ERR,
         "Create audio effect chain manager failed, please check log");
     return AUDIO_OK;

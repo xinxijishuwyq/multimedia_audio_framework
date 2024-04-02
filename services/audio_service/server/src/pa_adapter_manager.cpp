@@ -555,7 +555,7 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEf
     std::string downDevice = "DEVICE_TYPE_SPEAKER";
     pa_proplist_sets(propList, "device.up", upDevice.c_str());
     pa_proplist_sets(propList, "device.down", downDevice.c_str());
-    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList, 
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
@@ -566,17 +566,16 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEf
 const std::string PaAdapterManager::GetEnhanceModeName(AudioEffectMode audioEnhanceMode)
 {
     std::string name;
-    switch (audioEnhanceMode)
-    {
-    case AudioEffectMode::EFFECT_NONE:
-        name = "EFFECT_NONE";
-        break;
-    case AudioEffectMode::EFFECT_DEFAULT:
-        name = "EFFECT_DEFAULT";
-        break;
-    default:
-        name = "EFFECT_DEFAULT";
-        break;
+    switch (audioEnhanceMode) {
+        case AudioEffectMode::EFFECT_NONE:
+            name = "EFFECT_NONE";
+            break;
+        case AudioEffectMode::EFFECT_DEFAULT:
+            name = "EFFECT_DEFAULT";
+            break;
+        default:
+            name = "EFFECT_DEFAULT";
+            break;
     }
     const std::string modeName = name;
     return modeName;
@@ -719,15 +718,15 @@ const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
 {
     std::string name;
     switch (sourceType) {
-    case SOURCE_TYPE_MIC:
-        name = "SCENE_RECORD";
-        break;
-    case SOURCE_TYPE_VOICE_CALL:
-    case SOURCE_TYPE_VOICE_COMMUNICATION:
-        name = "SCENE_VOIP_3A";
-        break;
-    default:
-        name = "SCENE_OTHERS";
+        case SOURCE_TYPE_MIC:
+            name = "SCENE_RECORD";
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            name = "SCENE_VOIP_3A";
+            break;
+        default:
+            name = "SCENE_OTHERS";
     }
     const std::string sceneName = name;
     return sceneName;

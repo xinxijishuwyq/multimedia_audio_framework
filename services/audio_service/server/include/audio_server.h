@@ -51,7 +51,7 @@ public:
         std::vector<Effect>& successEffectList) override;
     bool CreatePlaybackCapturerManager() override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &effectMap, 
+        std::unordered_map<std::string, std::string> &effectMap,
         std::unordered_map<std::string, std::string> &enhanceMap) override;
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     int32_t SetMicrophoneMute(bool isMute) override;
