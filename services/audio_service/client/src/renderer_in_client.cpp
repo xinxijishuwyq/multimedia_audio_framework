@@ -1801,7 +1801,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
-    if (ProcessSpeed(buffer, bufferSize)) {
+    if (!ProcessSpeed(buffer, bufferSize)) {
         AUDIO_INFO_LOG("process speed error");
         return ERROR;
     }
