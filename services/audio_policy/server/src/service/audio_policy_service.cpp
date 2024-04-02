@@ -49,6 +49,17 @@ static const std::string RECEIVER_SINK_NAME = "Receiver";
 static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
 static const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
 
+static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
+    STREAM_VOICE_CALL,
+    STREAM_RING,
+    STREAM_MUSIC,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ALARM,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC,
+    STREAM_ALL
+};
+
 static const std::string SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
@@ -239,6 +250,18 @@ const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
 void AudioPolicyService::InitKVStore()
 {
     audioPolicyManager_.InitKVStore();
+    UpdateVolumeForLowLatency();
+}
+
+void AudioPolicyService::UpdateVolumeForLowLatency()
+{
+    // update volumes for low latency streams when loading volumes from the database.
+    Volume vol = {false, 1.0f, 0};
+    for (auto iter = VOLUME_TYPE_LIST.begin(); iter != VOLUME_TYPE_LIST.end(); iter++) {
+        int32_t volumeLevel = GetSystemVolumeLevel(*iter);
+        vol.volumeFloat = GetSystemVolumeInDb(*iter, volumeLevel, currentActiveDevice_.deviceType_);
+        SetSharedVolume(*iter, currentActiveDevice_.deviceType_, vol);
+    }
 }
 
 bool AudioPolicyService::ConnectServiceAdapter()
@@ -375,6 +398,9 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
+
+    UpdateVolumeForLowLatency();
+
     if (deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_USB_HEADSET) {
         SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {

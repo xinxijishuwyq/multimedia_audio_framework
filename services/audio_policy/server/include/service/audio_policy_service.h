@@ -596,6 +596,8 @@ private:
 
     void SetVolumeForSwitchDevice(DeviceType deviceType);
 
+    void UpdateVolumeForLowLatency();
+
     void SetVoiceCallVolume(int32_t volume);
 
     std::string GetVolumeGroupType(DeviceType deviceType);
