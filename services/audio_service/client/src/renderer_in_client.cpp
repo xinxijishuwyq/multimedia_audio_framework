@@ -242,7 +242,7 @@ private:
 
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
 
-    void FirstframeProcess();
+    void FirstFrameProcess();
 
 private:
     AudioStreamType eStreamType_;
@@ -1782,7 +1782,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
     return WriteInner(buffer, bufferSize);
 }
 
-void RendererInClientInner::FirstframeProcess()
+void RendererInClientInner::FirstFrameProcess()
 {
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
@@ -1806,7 +1806,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         return ERROR;
     }
 
-    FirstframeProcess();
+    FirstFrameProcess();
 
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
