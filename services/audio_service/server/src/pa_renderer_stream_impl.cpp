@@ -33,7 +33,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static SafeMap<PaRendererStreamImpl *, bool> rendererStreamInstanceMap_;
+static SafeMap<void *, bool> rendererStreamInstanceMap_;
 const uint32_t DOUBLE_VALUE = 2;
 const uint32_t MAX_LENGTH_OFFLOAD = 500;
 const int32_t OFFLOAD_HDI_CACHE1 = 200; // ms, should equal with val in hdi_sink.c
@@ -568,12 +568,12 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
 {
     CHECK_AND_RETURN_LOG(userdata, "PAStreamWriteCb: userdata is null");
 
-    auto streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     bool isStreamValid = true;
-    if (rendererStreamInstanceMap_.Find(streamImpl, isStreamValid) == false) {
+    if (rendererStreamInstanceMap_.Find(userdata, isStreamValid) == false) {
         AUDIO_ERR_LOG("streamImpl is nullptr");
         return;
     }
+    auto streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     Trace trace("PaRendererStreamImpl::PAStreamWriteCb sink-input:" + std::to_string(streamImpl->sinkInputIndex_) +
         " length:" + std::to_string(length));
     std::shared_ptr<IWriteCallback> writeCallback = streamImpl->writeCallback_.lock();
@@ -639,12 +639,12 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
 {
     CHECK_AND_RETURN_LOG(userdata, "PAStreamPauseSuccessCb: userdata is null");
 
-    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     bool isStreamValid = true;
-    if (rendererStreamInstanceMap_.Find(streamImpl, isStreamValid) == false) {
+    if (rendererStreamInstanceMap_.Find(userdata, isStreamValid) == false) {
         AUDIO_ERR_LOG("streamImpl is null");
         return;
     }
+    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->state_ = PAUSED;
     streamImpl->offloadTsLast_ = 0;
     streamImpl->ResetOffload();
@@ -671,12 +671,12 @@ void PaRendererStreamImpl::PAStreamDrainSuccessCb(pa_stream *stream, int32_t suc
 {
     CHECK_AND_RETURN_LOG(userdata, "PAStreamDrainSuccessCb: userdata is null");
 
-    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     bool isStreamValid = true;
-    if (rendererStreamInstanceMap_.Find(streamImpl, isStreamValid) == false) {
+    if (rendererStreamInstanceMap_.Find(userdata, isStreamValid) == false) {
         AUDIO_ERR_LOG("streamImpl is null");
         return;
     }
+    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     std::lock_guard<std::mutex> lock(streamImpl->rendererStreamLock_);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
@@ -702,7 +702,11 @@ void PaRendererStreamImpl::PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t
 {
     AUDIO_DEBUG_LOG("PAStreamAsyncStopSuccessCb in");
     CHECK_AND_RETURN_LOG(userdata, "PAStreamAsyncStopSuccessCb: userdata is null");
-
+    bool isStreamValid = true;
+    if (rendererStreamInstanceMap_.Find(userdata, isStreamValid) == false) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->state_ = STOPPED;
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
