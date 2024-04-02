@@ -128,13 +128,6 @@ public:
     virtual void OnEventCb(AudioServiceEventTypes error) const = 0;
 };
 
-enum UpdatePositionTimeNode {
-    START_NODE = 1,
-    CORKED_NODE = 2,
-    RUNNING_NODE = 3,
-    USER_NODE = 4,
-};
-
 class AudioServiceClient : public IAudioStream, public AudioTimer, public AppExecFwk::EventHandler {
 public:
     static constexpr char PA_RUNTIME_DIR[] = "/data/data/.pulse_dir/runtime";
@@ -272,14 +265,6 @@ public:
     * @return Returns {@code 0} if success; returns {@code -1} otherwise.
     */
     int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp);
-
-    /**
-    * Update the stream positon and timestamp
-    *
-    * @param node The time node for updating the stream position and its timestamp
-    * @return Returns {@code 0} if success; returns {@code -1} otherwise.
-    */
-    int32_t UpdateStreamPosition(UpdatePositionTimeNode node);
 
     /**
     * Provides the current latency for playback/record stream created using CreateStream
@@ -761,13 +746,6 @@ private:
     time_t lastOffloadUpdateFinishTime_ = 0;
     float speed_ = 1.0;
 
-    bool firstUpdatePosition_ = true;
-    uint64_t lastStreamPosition_ = 0;
-    uint64_t lastPositionTimestamp_ = 0;
-    uint64_t lastHdiPosition_ = 0;
-    uint64_t lastOffloadStreamCorkedPosition_ = 0;
-    uint64_t preFrameNum_ = 0;
-
     int32_t ConnectStreamToPA();
     int32_t HandlePAStreamConnect(const std::string &deviceNameS, int32_t latencyInMSec);
     int32_t WaitStreamReady();
@@ -797,9 +775,6 @@ private:
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
     void WriteStateChangedSysEvents();
-    int32_t UpdateOffloadStreamPosition(UpdatePositionTimeNode node, uint64_t& frames,
-        int64_t& timeSec, int64_t& timeNanoSec);
-
     int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map,
         AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);
 
