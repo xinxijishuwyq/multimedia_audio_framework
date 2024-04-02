@@ -117,9 +117,8 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
         int32_t &outBufferSize) override;
-    int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
@@ -230,18 +229,20 @@ private:
     int32_t DrainRingCache();
 
     int32_t WriteCacheData();
-    bool ProcessSpeed(BufferDesc &temp);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
+    bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
 
     int32_t RegisterSpatializationStateEventListener();
 
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
+
+    void FirstFrameProcess();
 
 private:
     AudioStreamType eStreamType_;
@@ -1016,25 +1017,6 @@ int32_t RendererInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, 
     return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
 }
 
-int32_t RendererInClientInner::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
-{
-    int32_t writeIndex = 0;
-    int32_t writeSize = bufferSize_;
-    while (speedBufferSize > 0) {
-        if (speedBufferSize < bufferSize_) {
-            writeSize = speedBufferSize;
-        }
-        int32_t writtenSize = Write(speedBuffer + writeIndex, writeSize);
-        if (writtenSize <= 0) {
-            return writtenSize;
-        }
-        writeIndex += writtenSize;
-        speedBufferSize -= writtenSize;
-    }
-
-    return bufferSize;
-}
-
 AudioRendererRate RendererInClientInner::GetRenderRate()
 {
     AUDIO_INFO_LOG("Get RenderRate %{public}d", rendererRate_);
@@ -1176,19 +1158,6 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
-bool RendererInClientInner::ProcessSpeed(BufferDesc &temp)
-{
-    int32_t speedBufferSize = 0;
-    int32_t ret = audioSpeed_->ChangeSpeedFunc(temp.buffer, temp.bufLength, speedBuffer_, speedBufferSize);
-    if (ret == 0 || speedBufferSize == 0) {
-        // Continue writing when the sonic is not full
-        return false;
-    }
-    temp.buffer = speedBuffer_.get();
-    temp.bufLength = speedBufferSize;
-    return true;
-}
-
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -1213,9 +1182,6 @@ void RendererInClientInner::WriteCallbackFunc()
             }
             if (state_ != RUNNING) { continue; }
             traceQueuePop.End();
-            if (!isEqual(speed_, 1.0f) && !ProcessSpeed(temp)) {
-                continue;
-            }
             // call write here.
             int32_t result = curStreamParams_.encoding == ENCODING_PCM
                 ? WriteInner(temp.buffer, temp.bufLength)
@@ -1768,14 +1734,36 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
-    return WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    int32_t ret = WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    return ret <= 0 ? ret : pcmBufferSize;
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
-    return WriteInner(buffer, bufferSize);
+    int32_t ret = WriteInner(buffer, bufferSize);
+    return ret <= 0 ? ret : bufferSize;
+}
+
+bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize)
+{
+#ifdef SONIC_ENABLE
+    if (!isEqual(speed_, 1.0f)) {
+        if (audioSpeed_ == nullptr) {
+            AUDIO_ERR_LOG("audioSpeed_ is nullptr, use speed default 1.0");
+            return true;
+        }
+        int32_t outBufferSize = 0;
+        audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize);
+        if (outBufferSize == 0) {
+            return false;
+        }
+        buffer = speedBuffer_.get();
+        bufferSize = outBufferSize;
+    }
+#endif
+    return true;
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
@@ -1794,6 +1782,17 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
     return WriteInner(buffer, bufferSize);
 }
 
+void RendererInClientInner::FirstFrameProcess()
+{
+    // if first call, call set thread priority. if thread tid change recall set thread priority
+    if (needSetThreadPriority_) {
+        AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
+        needSetThreadPriority_ = false;
+    }
+
+    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
+}
+
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
@@ -1802,13 +1801,12 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
-    // if first call, call set thread priority. if thread tid change recall set thread priority
-    if (needSetThreadPriority_) {
-        AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
-        needSetThreadPriority_ = false;
+    if (ProcessSpeed(buffer, bufferSize)) {
+        AUDIO_INFO_LOG("process speed error");
+        return ERROR;
     }
 
-    if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
+    FirstFrameProcess();
 
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
@@ -1854,10 +1852,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         }
         // if readable size is enough, we will call write data to server
         int32_t ret = WriteCacheData();
-        if (ret == ERR_ILLEGAL_STATE) {
-            AUDIO_INFO_LOG("Status changed while write");
-            return bufferSize - targetSize;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE, bufferSize - targetSize, "Status changed while write");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
 
