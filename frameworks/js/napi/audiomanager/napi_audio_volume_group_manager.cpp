@@ -110,7 +110,8 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("getSystemVolumeInDb", GetSystemVolumeInDb),
         DECLARE_NAPI_FUNCTION("getSystemVolumeInDbSync", GetSystemVolumeInDbSync),
         DECLARE_NAPI_FUNCTION("on", On),
-        DECLARE_NAPI_FUNCTION("getMaxAmplitude", GetMaxAmplitude),
+        DECLARE_NAPI_FUNCTION("getMaxAmplitudeForOutputDevice", GetMaxAmplitudeForOutputDevice),
+        DECLARE_NAPI_FUNCTION("getMaxAmplitudeForInputDevice", GetMaxAmplitudeForInputDevice),
     };
 
     napi_status status = napi_define_class(env, AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME.c_str(),
@@ -1050,31 +1051,86 @@ napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info
     return RegisterCallback(env, jsThis, argc, args, callbackName);
 }
 
-napi_value NapiAudioVolumeGroupManager::GetMaxAmplitude(napi_env env, napi_callback_info info)
+napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForOutputDevice(napi_env env, napi_callback_info info)
 {
     AUDIO_DEBUG_LOG("GetMaxAmplitude enter");
-    napi_value result = nullptr;
-    size_t argc = ARGS_ONE;
-    napi_value args[ARGS_ONE] = {};
-    auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetMaxAmplitude failed : no memory");
+        NapiAudioError::ThrowError(env, "GetMaxAmplitude failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
 
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid valueType");
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        NapiParamUtils::GetAudioDeviceDescriptor(env, context->outputDeviceDescriptor,
+            context->outputBArgTransFlag, argv[PARAM0]);
+    };
+    context->GetCbInfo(env, info, inputParser);
 
-    int32_t deviceId;
-    NapiParamUtils::GetValueInt32(env, deviceId, args[PARAM0]);
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->outputMaxAmplitude = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxAmplitude(
+            context->outputDeviceDescriptor->deviceId_);
+        if (FLOAT_COMPARE_EQ(context->outputMaxAmplitude, static_cast<float>(ERR_INVALID_PARAM))) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
+        } else if (context->outputMaxAmplitude < 0) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        } else if (!context->outputBArgTransFlag) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
 
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
-        "audioGroupMngr_ is nullptr");
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueDouble(env, context->outputMaxAmplitude, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetMaxAmplitudeForOutputDevice", executor, complete);
+}
 
-    float maxAmplitude = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxAmplitude(deviceId);
-    NapiParamUtils::SetValueDouble(env, maxAmplitude, result);
+napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env env, napi_callback_info info)
+{
+    AUDIO_DEBUG_LOG("GetMaxAmplitude enter");
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetMaxAmplitude failed : no memory");
+        NapiAudioError::ThrowError(env, "GetMaxAmplitude failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
 
-    return result;
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        NapiParamUtils::GetAudioDeviceDescriptor(env, context->inputDeviceDescriptor,
+            context->inputBArgTransFlag, argv[PARAM0]);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->inputMaxAmplitude = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxAmplitude(
+            context->inputDeviceDescriptor->deviceId_);
+        if (FLOAT_COMPARE_EQ(context->inputMaxAmplitude, static_cast<float>(ERR_INVALID_PARAM))) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
+        } else if (context->inputMaxAmplitude < 0) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        } else if (!context->inputBArgTransFlag) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueDouble(env, context->inputMaxAmplitude, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetMaxAmplitudeForInputDevice", executor, complete);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
