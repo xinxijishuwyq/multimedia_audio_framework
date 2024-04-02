@@ -250,7 +250,7 @@ const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
 void AudioPolicyService::InitKVStore()
 {
     audioPolicyManager_.InitKVStore();
-    UpdateVolumeForLowLatency();
+        UpdateVolumeForLowLatency();
 }
 
 void AudioPolicyService::UpdateVolumeForLowLatency()
@@ -3676,8 +3676,11 @@ void AudioPolicyService::LoadEffectLibrary()
     audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig);
     std::unordered_map<std::string, std::string> sceneTypeToEffectChainNameMap;
     audioEffectManager_.ConstructSceneTypeToEffectChainNameMap(sceneTypeToEffectChainNameMap);
+    std::unordered_map<std::string, std::string> sceneTypeToEnhanceChainNameMap;
+    audioEffectManager_.ConstructSceneTypeToEnhanceChainNameMap(sceneTypeToEnhanceChainNameMap);
     identity = IPCSkeleton::ResetCallingIdentity();
-    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, sceneTypeToEffectChainNameMap);
+    bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains, 
+        sceneTypeToEffectChainNameMap, sceneTypeToEnhanceChainNameMap);
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 

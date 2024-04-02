@@ -775,7 +775,7 @@ private:
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
     void WriteStateChangedSysEvents();
-    int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map,
+        int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map,
         AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);
 
     void UpdatePropListForFlush();

@@ -71,6 +71,9 @@ static int32_t UpdateUnsupportedScene(std::string &scene)
         (scene != "SCENE_GAME") &&
         (scene != "SCENE_SPEECH") &&
         (scene != "SCENE_RING") &&
+        (scene != "SCENE_VOIP_3A") &&
+        (scene != "SCENE_RECORD") &&
+        (scene != "SCENE_MEETING") &&
         (scene != "SCENE_OTHERS")) {
         AUDIO_INFO_LOG("[supportedEffectConfig LOG9]:stream-> The scene of %{public}s is unsupported, \
             and this scene is deleted!", scene.c_str());
@@ -511,5 +514,25 @@ void AudioEffectManager::ConstructSceneTypeToEffectChainNameMap(std::unordered_m
     AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEffectChainNameMap at policy, size is %{public}d",
         (int32_t)map.size());
 }
+
+void AudioEffectManager::ConstructSceneTypeToEnhanceChainNameMap(std::unordered_map<std::string, std::string> &map)
+{
+    std::string sceneType;
+    std::string sceneMode;
+    std::string key;
+    for (auto &scene: supportedEffectConfig_.preProcessNew.stream) {
+        sceneType = scene.scene;
+        for (auto &mode: scene.streamEffectMode) {
+            sceneMode = mode.mode;
+            for (auto &device: mode.devicePort) {
+                key = sceneType + "_&_" + sceneMode;
+                AddKeyValueIntoMap(map, key, device.chain);
+            }
+        }
+    }
+    AUDIO_INFO_LOG("Constructed SceneTypeAndModeToEnhanceChainNameMap at policy, size is %{public}d",
+        (int32_t)map.size());
+}
+
 } // namespce AudioStandard
 } // namespace OHOS

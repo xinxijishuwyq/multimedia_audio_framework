@@ -62,6 +62,7 @@ ohos_shared_library("audio_effect") {
 
   sources = [
     "src/audio_effect_chain_manager.cpp",
+    "src/audio_enhance_chain_manager.cpp",
     "src/audio_effect_hdi_param.cpp",
     "src/audio_effect_rotation.cpp",
     "src/audio_effect_volume.cpp",
