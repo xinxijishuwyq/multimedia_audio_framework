@@ -3546,7 +3546,7 @@ static int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, 
 
     u->multiChannel.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
 
-    paThreadName = "OS_write-pa-mch";
+    paThreadName = "OS_WriteMch";
     if (!(u->multiChannel.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerMultiChannel, u))) {
         AUDIO_ERR_LOG("Failed to write-pa-multiChannel thread.");
         return -1;
