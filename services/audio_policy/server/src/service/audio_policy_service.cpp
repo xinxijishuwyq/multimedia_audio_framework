@@ -2077,9 +2077,15 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
         }
     }
     AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "failed %{public}d", result);
+    std::string lastActiveA2dpDevice = activeBTDevice_;
     activeBTDevice_ = deviceDescriptor->macAddress_;
+    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
+    if (result != SUCCESS) {
+        activeBTDevice_ = lastActiveA2dpDevice;
+        AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
+            GetEncryptAddr(activeBTDevice_).c_str(), GetEncryptAddr(lastActiveA2dpDevice).c_str());
+        return result;
+    }
     {
         std::unique_lock<std::mutex> lock(a2dpDeviceMapMutex_);
         A2dpDeviceConfigInfo configInfo = connectedA2dpDeviceMap_[activeBTDevice_];
