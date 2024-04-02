@@ -498,10 +498,6 @@ private:
     int32_t DeviceParamsCheck(DeviceRole targetRole,
         std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const;
 
-    bool IsInputDevice(DeviceType deviceType) const;
-
-    bool IsOutputDevice(DeviceType deviceType) const;
-
     DeviceRole GetDeviceRole(DeviceType deviceType) const;
 
     DeviceRole GetDeviceRole(const std::string &role);

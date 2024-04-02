@@ -88,7 +88,8 @@ public:
 
     int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
 
-    int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType, std::string name, bool active);
+    int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType, std::string name, bool active,
+        DeviceFlag flag = ALL_DEVICES_FLAG);
 
     void SetVolumeForSwitchDevice(InternalDeviceType deviceType);
 
