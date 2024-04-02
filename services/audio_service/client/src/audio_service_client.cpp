@@ -39,7 +39,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-static SafeMap<AudioServiceClient *, bool> serviceClientInstanceMap_;
+static SafeMap<void *, bool> serviceClientInstanceMap_;
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
