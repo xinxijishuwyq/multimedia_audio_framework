@@ -4755,6 +4755,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid)
     g_btProxy = nullptr;
     isBtListenerRegistered = false;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
+    Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
 }
 #endif
 
