@@ -225,7 +225,7 @@ static int GetCapturerFrameFromHdi(pa_memchunk *chunk, const struct Userdata *u)
         pa_memblock_unref(chunk->memblock);
         return 0;
     }
-    
+
     chunk->index = 0;
     chunk->length = replyBytes;
     pa_source_post(u->source, chunk);

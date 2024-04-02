@@ -250,7 +250,7 @@ const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
 void AudioPolicyService::InitKVStore()
 {
     audioPolicyManager_.InitKVStore();
-        UpdateVolumeForLowLatency();
+    UpdateVolumeForLowLatency();
 }
 
 void AudioPolicyService::UpdateVolumeForLowLatency()
