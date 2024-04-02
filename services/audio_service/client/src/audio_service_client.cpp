@@ -39,7 +39,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-static SafeMap<AudioServiceClient *, bool> serviceClientInstanceMap_;
+static SafeMap<void *, bool> serviceClientInstanceMap_;
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
@@ -429,7 +429,13 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
         AUDIO_DEBUG_LOG("PAStreamReadCb Inside PA read callback");
     }
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
+    bool isUserdataExist;
+    if (serviceClientInstanceMap_.Find(userdata, isUserdataExist)) {
+        AUDIO_ERR_LOG("userdata is null");
+        return;
+    }
     auto asClient = static_cast<AudioServiceClient *>(userdata);
+    std::lock_guard<std::mutex> lock(asClient->serviceClientLock_);
     auto mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
     pa_threaded_mainloop_signal(mainLoop, 0);
 }
