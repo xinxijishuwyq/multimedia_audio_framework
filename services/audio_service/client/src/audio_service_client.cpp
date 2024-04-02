@@ -811,6 +811,18 @@ int32_t AudioServiceClient::HandleMainLoopStart()
             error = pa_context_errno(context);
             AUDIO_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop);
+
+            // if timeout occur, kill server and dump trace in server
+            static int32_t timeoutCount = 0;
+            if (error == PA_ERR_TIMEOUT) {
+                if (timeoutCount = 0) {
+                    audioSystemManager_->GetAudioParameter(FORCED_DUMP_PULSEAUDIO_STACKTRACE);
+                    ++timeoutCount;
+                } else {
+                    audioSystemManager_->GetAudioParameter(RECOVERY_AUDIO_SERVER);
+                }
+            }
+
             ResetPAAudioClient();
             return AUDIO_CLIENT_INIT_ERR;
         }

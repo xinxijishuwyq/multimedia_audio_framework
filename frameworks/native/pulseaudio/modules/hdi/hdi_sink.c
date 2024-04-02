@@ -89,6 +89,8 @@ const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 
+const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 3; // 3 min
+
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE", "SCENE_SPEECH", "SCENE_RING",
     "SCENE_OTHERS", "EFFECT_NONE"};
 
@@ -2815,6 +2817,16 @@ static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
     }
 
     pthread_rwlock_unlock(&u->rwlockSleep);
+
+    static logCnt = 0;
+    if (logCnt == 0) {
+        AUDIO_INFO_LOG("Bus thread still running");
+    } else {
+        ++logCnt;
+        if (logCnt > LOG_LOOP_THRESHOLD) {
+            logCnt = 0;
+        }
+    }
 
     bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
     if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
