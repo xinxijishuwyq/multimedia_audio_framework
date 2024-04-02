@@ -32,6 +32,9 @@
 #include "system_ability_definition.h"
 #include "securec.h"
 #include "safe_block_queue.h"
+#include "hisysevent.h"
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
 
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
@@ -52,6 +55,9 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+
+using namespace OHOS::HiviewDFX;
+using namespace OHOS::AppExecFwk;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,7 +82,41 @@ static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
+static constexpr int32_t ONE_MINUTE = 60;
+} // namespace
+
+static AppExecFwk::BundleInfo gBundleInfo_;
+static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
+{
+    std::string bundleName {""};
+    AppExecFwk::BundleInfo bundleInfo;
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        return bundleInfo;
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        return bundleInfo;
+    }
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (bundleMgrProxy == nullptr) {
+        return bundleInfo;
+    }
+    if (bundleMgrProxy != nullptr) {
+        bundleMgrProxy->GetNameForUid(appUid, bundleName);
+    }
+
+    bundleMgrProxy->GetBundleInfoForSelf(AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
+        bundleInfo);
+    return bundleInfo;
 }
+
 class SpatializationStateChangeCallbackImpl;
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
@@ -237,6 +277,7 @@ private:
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
+    void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -370,6 +411,8 @@ private:
     uint32_t spatializationRegisteredSessionID_ = 0;
     bool firstSpatializationRegistered_ = true;
     std::shared_ptr<SpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
+    std::time_t startMuteTime_ = 0;
+    bool isUpEvent_ = false;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -416,6 +459,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
     state_ = NEW;
+    gBundleInfo_ = GetBundleInfoFromUid(appUid);
 }
 
 RendererInClientInner::~RendererInClientInner()
@@ -1801,6 +1845,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
+    WriteMuteDataSysEvent(buffer, bufferSize);
+
     if (ProcessSpeed(buffer, bufferSize)) {
         AUDIO_INFO_LOG("process speed error");
         return ERROR;
@@ -1857,6 +1903,28 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     }
 
     return bufferSize - targetSize;
+}
+
+void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
+{
+    std::string name = gBundleInfo_.name;
+    int32_t versionCode = gBundleInfo_.versionCode;
+    if (buffer[0] == 0) {
+        if (startMuteTime_ == 0) {
+            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
+            AUDIO_WARNING_LOG("write silent data for some time");
+            isUpEvent_ = true;
+            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "BACKGROUND_SILENT_PLAYBACK",
+                HiviewDFX::HiSysEvent::EventType::STATISTIC,
+                "APP_NAME", name,
+                "APP_VERSION_CODE", versionCode);
+        }
+    } else if (buffer[0] != 0 && startMuteTime_ != 0) {
+        startMuteTime_ = 0;
+    }
 }
 
 int32_t RendererInClientInner::WriteCacheData()
