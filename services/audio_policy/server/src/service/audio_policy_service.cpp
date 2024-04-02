@@ -352,7 +352,7 @@ void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t vo
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "gsp null");
     float volumeDb;
-    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
         volumeDb = 1;
     } else {
         volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
@@ -5630,6 +5630,24 @@ void AudioPolicyService::ClearScoDeviceSuspendState(string macAddress)
     for (auto &desc : descs) {
         desc->connectState_ = DEACTIVE_CONNECTED;
     }
+}
+
+float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
+
+    if (deviceId == currentActiveDevice_.deviceId_) {
+        float outputMaxAmplitude = gsp->GetMaxAmplitude(true, currentActiveDevice_.deviceType_);
+        return outputMaxAmplitude;
+    }
+
+    if (deviceId == currentActiveInputDevice_.deviceId_) {
+        float inputMaxAmplitude = gsp->GetMaxAmplitude(false, currentActiveInputDevice_.deviceType_);
+        return inputMaxAmplitude;
+    }
+
+    return 0;
 }
 } // namespace AudioStandard
 } // namespace OHOS

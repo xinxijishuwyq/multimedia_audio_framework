@@ -60,6 +60,8 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
+
+    float GetMaxAmplitude() override;
 private:
     AudioRendererFileSink();
     ~AudioRendererFileSink();

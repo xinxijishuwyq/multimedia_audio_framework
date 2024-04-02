@@ -2591,5 +2591,10 @@ int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
     isHighResolutionExist_ = highResExist;
     return SUCCESS;
 }
+
+float AudioPolicyServer::GetMaxAmplitude(int32_t deviceId)
+{
+    return audioPolicyService_.GetMaxAmplitude(deviceId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

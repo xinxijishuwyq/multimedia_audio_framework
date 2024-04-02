@@ -811,5 +811,24 @@ uint32_t AudioManagerProxy::GetEffectLatency(const std::string &sessionId)
 
     return reply.ReadUint32();
 }
+
+float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteBool(isOutputDevice);
+    data.WriteInt32(deviceType);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadFloat();
+}
 } // namespace AudioStandard
 } // namespace OHOS
