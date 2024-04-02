@@ -1204,7 +1204,8 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
 
 void AudioPolicyService::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
-    StoreDistributedRoutingRoleInfo(descriptor, type);
+    sptr<AudioDeviceDescriptor> intermediateDescriptor = new AudioDeviceDescriptor(descriptor);
+    StoreDistributedRoutingRoleInfo(intermediateDescriptor, type);
     FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     FetchDevice(false);
 }
