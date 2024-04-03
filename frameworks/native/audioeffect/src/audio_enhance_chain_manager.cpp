@@ -375,6 +375,7 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(std::string &s
 int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(std::string &sceneType,
     std::string &upAndDownDevice, BufferAttr *bufferAttr)
 {
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + upAndDownDevice;
     if (!sceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey)) {
         CopyBufferEnhance(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
