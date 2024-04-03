@@ -1728,17 +1728,15 @@ static void InputsDropFromInputs(pa_mix_info *infoInputs, unsigned nInputs, pa_m
 
 static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigned nInputs, pa_memchunk *target)
 {
-    size_t length;
-    size_t blockSizeMax;
     unsigned n = 0;
     unsigned ii = 0;
     pa_mix_info info[MAX_MIX_CHANNELS];
     pa_sink_assert_ref(s);
     pa_sink_assert_io_context(s);
 
-    length = target->length;
+    size_t length = target->length;
     size_t mixlength = length;
-    blockSizeMax = pa_mempool_block_size_max(s->core->mempool);
+    size_t blockSizeMax = pa_mempool_block_size_max(s->core->mempool);
     if (length > blockSizeMax)
         length = pa_frame_align(blockSizeMax, &s->sample_spec);
 
@@ -1748,7 +1746,11 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
         pa_sink_input_assert_ref(i);
 
         AUTO_CTRACE("hdi_sink::Offload:pa_sink_input_peek:%d len:%zu", i->index, length);
+        pa_cvolume soft_volume = i->thread_info.soft_volume;
+        uint32_t volume = pa_sw_volume_from_linear(1.0f); // 1.0f reset volume, avoid volume of peek
+        pa_cvolume_set(&i->thread_info.soft_volume, i->thread_info.soft_volume.channels, volume);
         pa_sink_input_peek(i, length, &info[n].chunk, &info[n].volume);
+        i->thread_info.soft_volume = soft_volume;
         if (mixlength == 0 || info[n].chunk.length < mixlength)
             mixlength = info[n].chunk.length;
 
@@ -1764,9 +1766,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
 
         n++;
     }
-    if (mixlength > 0) {
-        length = mixlength;
-    }
+    length = mixlength > 0 ? mixlength : length;
 
     pa_assert(n == 1 || n == 0);
     if (n == 0) {
