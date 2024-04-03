@@ -2879,8 +2879,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     bool isAbsVolumeScene = AudioPolicyManager::GetInstance().IsAbsVolumeScene();
     float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType,
         systemVolumeLevel, deviceType);
-    if (volumeType == STREAM_MUSIC && isAbsVolumeScene &&
-        (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
+    if (isAbsVolumeScene && (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
         systemVolumeDb = 1.0f; // Transfer raw pcm data to bluetooth device
     }
     float vol = systemVolumeDb * client.volumeFactor_ * client.powerVolumeFactor_ * client.duckVolumeFactor_;
