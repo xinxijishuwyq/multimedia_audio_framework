@@ -244,7 +244,7 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
     std::unordered_map<std::string, std::string> &enhanceChainNameMap,
     std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
-    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    std::lock_guard<std::mutex> lock(chainMutex_);
     std::set<std::string> enhanceSet;
     for (EffectChain enhanceChain : enhanceChains) {
         for (std::string enhance : enhanceChain.apply) {
@@ -286,7 +286,7 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
 int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(std::string &sceneType,
     std::string &enhanceMode, std::string &upAndDownDevice)
 {
-    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    std::lock_guard<std::mutex> lock(chainMutex_);
     upAndDownDevice_ = upAndDownDevice;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + upAndDownDevice;
     AudioEnhanceChain *audioEnhanceChain;
@@ -353,7 +353,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(std::string &scene
 int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(std::string &sceneType,
     std::string &upAndDownDevice)
 {
-    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    std::lock_guard<std::mutex> lock(chainMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
@@ -375,7 +375,7 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(std::string &s
 int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(std::string &sceneType,
     std::string &upAndDownDevice, BufferAttr *bufferAttr)
 {
-    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    std::lock_guard<std::mutex> lock(chainMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + upAndDownDevice;
     if (!sceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey)) {
         CopyBufferEnhance(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen * bufferAttr->numChanIn);
