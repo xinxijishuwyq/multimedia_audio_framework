@@ -29,8 +29,8 @@
 #include <set>
 
 #include "audio_effect.h"
-#include "audio_enhance_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
+#include "audio_enhance_chain_adapter.h"
 
 namespace OHOS {
 namespace AudioStandard {
