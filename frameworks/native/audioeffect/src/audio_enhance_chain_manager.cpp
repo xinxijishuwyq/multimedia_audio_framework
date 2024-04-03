@@ -89,7 +89,7 @@ int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceM
     if (downDevice) {
         downDeviceString = downDevice;
     }
-    std::string upAndDownDeviceString = upAndDownDeviceString = upDeviceString + "_&_" + downDeviceString;
+    std::string upAndDownDeviceString = upDeviceString + "_&_" + downDeviceString;
     if (audioEnhanceChainMananger->ReleaseAudioEnhanceChainDynamic(sceneTypeString,
         upAndDownDeviceString) != SUCCESS) {
         return ERROR;
@@ -192,8 +192,8 @@ AudioEnhanceChainManager::AudioEnhanceChainManager()
     enhanceChainToEnhancesMap_.clear();
     enhanceToLibraryEntryMap_.clear();
     enhanceToLibraryNameMap_.clear();
-    bool isInitialized_ = false;
-    std::string upAndDownDevice_ = "";
+    isInitialized_ = false;
+    upAndDownDevice_ = "";
 }
 
 AudioEnhanceChainManager::~AudioEnhanceChainManager()
