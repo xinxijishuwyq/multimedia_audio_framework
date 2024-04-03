@@ -4399,38 +4399,6 @@ void AudioPolicyService::TriggerDeviceChangedCallback(const vector<sptr<AudioDev
     }
 }
 
-bool AudioPolicyService::IsInputDevice(DeviceType deviceType) const
-{
-    switch (deviceType) {
-        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-        case DeviceType::DEVICE_TYPE_MIC:
-        case DeviceType::DEVICE_TYPE_WAKEUP:
-        case DeviceType::DEVICE_TYPE_USB_HEADSET:
-        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool AudioPolicyService::IsOutputDevice(DeviceType deviceType) const
-{
-    switch (deviceType) {
-        case DeviceType::DEVICE_TYPE_EARPIECE:
-        case DeviceType::DEVICE_TYPE_SPEAKER:
-        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DeviceType::DEVICE_TYPE_USB_HEADSET:
-        case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
-            return true;
-        default:
-            return false;
-    }
-}
-
 DeviceRole AudioPolicyService::GetDeviceRole(DeviceType deviceType) const
 {
     switch (deviceType) {
@@ -5179,7 +5147,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
 
             IOHandles_[PRIMARY_MIC] = ioHandle;
             audioPolicyManager_.SetDeviceActive(ioHandle, currentActiveInputDevice_.deviceType_,
-                moduleInfo.name, true);
+                moduleInfo.name, true, INPUT_DEVICES_FLAG);
         }
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
     } else {

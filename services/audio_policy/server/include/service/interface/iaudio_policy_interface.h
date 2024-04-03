@@ -69,7 +69,7 @@ public:
     virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
 
     virtual int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
-                                    std::string name, bool active) = 0;
+                                    std::string name, bool active, DeviceFlag flag = ALL_DEVICES_FLAG) = 0;
 
     virtual int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) = 0;
 
