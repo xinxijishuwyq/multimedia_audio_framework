@@ -1755,8 +1755,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize)
             return true;
         }
         int32_t outBufferSize = 0;
-        int32_t ret = audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize);
-        if (ret == 0) {
+        if (audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize) == 0) {
             bufferSize = 0;
             AUDIO_ERR_LOG("process speed error");
             return false;
