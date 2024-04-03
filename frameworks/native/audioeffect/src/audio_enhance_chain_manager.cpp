@@ -16,10 +16,10 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioEnhanceChainManager"
 
+#include "audio_enhance_chain_manager.h"
+
 #include "audio_log.h"
 #include "audio_errors.h"
-
-#include "audio_enhance_chain_manager.h"
 #include "audio_enhance_chain_adapter.h"
 
 using namespace OHOS::AudioStandard;
@@ -63,7 +63,6 @@ int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMo
         downDeviceString = downDevice;
     }
     std::string upAndDownDeviceString = upDeviceString + "_&_" + downDeviceString;
-    
     if (audioEnhanceChainMananger->CreateAudioEnhanceChainDynamic(sceneTypeString,
         enhanceModeString, upAndDownDeviceString) != SUCCESS) {
         return ERROR;
@@ -90,8 +89,7 @@ int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceM
     if (downDevice) {
         downDeviceString = downDevice;
     }
-    std::string upAndDownDeviceString = "";
-    upAndDownDeviceString = upDeviceString + "_&_" + downDeviceString;
+    std::string upAndDownDeviceString = upAndDownDeviceString = upDeviceString + "_&_" + downDeviceString;
     if (audioEnhanceChainMananger->ReleaseAudioEnhanceChainDynamic(sceneTypeString,
         upAndDownDeviceString) != SUCCESS) {
         return ERROR;
@@ -110,6 +108,7 @@ AudioEnhanceChain::AudioEnhanceChain(std::string &scene)
 
 AudioEnhanceChain::~AudioEnhanceChain()
 {
+    std::lock_guard<std::mutex> lock(reloadMutex_);
     ReleaseEnhanceChain();
 }
 
@@ -167,6 +166,7 @@ void AudioEnhanceChain::ApplyEnhanceChain(float *bufIn, float *bufOut, uint32_t 
         CopyBufferEnhance(bufIn, bufOut, frameLen * dataDesc.outChannelNum);
         return;
     }
+    std::lock_guard<std::mutex> lock(reloadMutex_);
     AudioBuffer audioBufIn_ = {};
     AudioBuffer audioBufOut_ = {};
     audioBufIn_.raw = static_cast<void *>(bufIn);
@@ -181,6 +181,7 @@ void AudioEnhanceChain::ApplyEnhanceChain(float *bufIn, float *bufOut, uint32_t 
 
 bool AudioEnhanceChain::IsEmptyEnhanceHandles()
 {
+    std::lock_guard<std::mutex> lock(reloadMutex_);
     return standByEnhanceHandles_.size() == 0;
 }
 
@@ -191,6 +192,8 @@ AudioEnhanceChainManager::AudioEnhanceChainManager()
     enhanceChainToEnhancesMap_.clear();
     enhanceToLibraryEntryMap_.clear();
     enhanceToLibraryNameMap_.clear();
+    bool isInitialized_ = false;
+    std::string upAndDownDevice_ = "";
 }
 
 AudioEnhanceChainManager::~AudioEnhanceChainManager()
@@ -239,9 +242,10 @@ int32_t CheckValidEnhanceLibEntry(AudioEffectLibEntry *libEntry, std::string &en
 
 
 void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
-    std::unordered_map<std::string, std::string> &map,
+    std::unordered_map<std::string, std::string> &enhanceChainNameMap,
     std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::set<std::string> enhanceSet;
     for (EffectChain enhanceChain : enhanceChains) {
         for (std::string enhance : enhanceChain.apply) {
@@ -268,7 +272,7 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
         enhanceChainToEnhancesMap_[key] = enhances;
     }
     // Construct sceneTypeAndModeToEnhanceChainNameMap_ that stores effectMode associated with the effectChainName
-    for (auto item = map.begin(); item != map.end(); item++) {
+    for (auto item = enhanceChainNameMap.begin(); item != enhanceChainNameMap.end(); item++) {
         sceneTypeAndModeToEnhanceChainNameMap_[item->first] = item->second;
     }
     AUDIO_INFO_LOG("enhanceToLibraryEntryMap_ size %{public}zu \
@@ -283,6 +287,7 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
 int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(std::string &sceneType,
     std::string &enhanceMode, std::string &upAndDownDevice)
 {
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     upAndDownDevice_ = upAndDownDevice;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + upAndDownDevice;
     AudioEnhanceChain *audioEnhanceChain;
@@ -347,6 +352,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(std::string &scene
 
 int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(std::string &sceneType, std::string &upAndDownDevice)
 {
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 

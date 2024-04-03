@@ -64,6 +64,7 @@ public:
     bool IsEmptyEnhanceHandles();
 
 private:
+    std::mutex reloadMutex_;
     std::string sceneType_;
     std::string enhanceMode_;
     std::vector<AudioEffectHandle> standByEnhanceHandles_;
@@ -76,7 +77,7 @@ public:
     ~AudioEnhanceChainManager();
     static AudioEnhanceChainManager* GetInstance();
     void InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
-        std::unordered_map<std::string, std::string> &map,
+        std::unordered_map<std::string, std::string> &enhanceChainNameMap,
         std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
     int32_t CreateAudioEnhanceChainDynamic(std::string &sceneType,
         std::string &enhanceMode, std::string &upAndDownDevice);
@@ -93,7 +94,8 @@ private:
     std::map<std::string, std::vector<std::string>> enhanceChainToEnhancesMap_;
     std::map<std::string, AudioEffectLibEntry*> enhanceToLibraryEntryMap_;
     std::map<std::string, std::string> enhanceToLibraryNameMap_;
-    bool isInitialized_ = false;
+    std::recursive_mutex dynamicMutex_;
+    bool isInitialized_;
     std::string upAndDownDevice_;
 };
 
