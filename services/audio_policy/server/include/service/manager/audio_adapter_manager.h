@@ -257,8 +257,7 @@ public:
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
-        if (streamType == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP
-            && isAbsVolumeScene) {
+        if (activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
             return {1.0f, volumeLevel};
         }
 
