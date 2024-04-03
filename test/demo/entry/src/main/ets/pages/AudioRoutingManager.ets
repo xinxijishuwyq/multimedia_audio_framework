@@ -14,7 +14,6 @@
 */
 
 import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
 
 @Entry
 @Component

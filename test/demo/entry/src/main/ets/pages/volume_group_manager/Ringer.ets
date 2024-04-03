@@ -14,14 +14,19 @@
 */
 
 import audio from '@ohos.multimedia.audio'
+import { BusinessError } from '@kit.BasicServicesKit';
+
+class EnumValue {
+  value: string = '';
+}
 
 @Entry
 @Component
 struct Ringer {
   @State returnMsg: string = 'Hello World'
   @State message1: string = 'Hello World1'
-  private audioVolumeGroupManager = null;
-  private ringerModeSelectList = [];
+  private audioVolumeGroupManager: audio.AudioVolumeGroupManager | null = null;
+  private ringerModeSelectList: EnumValue[] = [];
   @State selectedRingerMode: number = -1;
   @State selectedRingerModeKey: string = '请选择';
   @State changedRingerMode: number = -1;
@@ -32,9 +37,9 @@ struct Ringer {
   }
   aboutToAppear() {
     let _this = this;
-    for (let key in audio.AudioRingMode) {
+    Object.keys(audio.AudioRingMode).forEach((key) => {
       this.ringerModeSelectList.push({ value: key })
-    }
+    })
     let audioManager = audio.getAudioManager();
     let audioVolumeManager = audioManager.getVolumeManager();
     let groupid = audio.DEFAULT_VOLUME_GROUP_ID;
@@ -83,6 +88,10 @@ struct Ringer {
           Button("on('ringerModeChange')").width('100%').fontSize(20).height(80).onClick(() => {
             this.isOnClickedState = "clicked"
             let _this = this;
+            if (!this.audioVolumeGroupManager) {
+              this.returnMsg = "AudioVolumeGroupManager instance had not created";
+              return;
+            }
             this.audioVolumeGroupManager.on('ringerModeChange', (ringerMode) => {
               _this.changedRingerMode = ringerMode;
               _this.isOnClickedState = "clicked_callback"
@@ -110,6 +119,10 @@ struct Ringer {
             .fontSize(20)
             .onClick(() => {
               let _this = this;
+              if (!this.audioVolumeGroupManager) {
+                this.returnMsg = "AudioVolumeGroupManager instance had not created";
+                return;
+              }
               this.audioVolumeGroupManager.setRingerMode(this.selectedRingerMode, (err) => {
                 if (err) {
                   _this.returnMsg = "setRingerMode callback:" + JSON.stringify(err);
@@ -126,9 +139,13 @@ struct Ringer {
             .fontSize(20)
             .onClick(() => {
               let _this = this;
+              if (!this.audioVolumeGroupManager) {
+                this.returnMsg = "AudioVolumeGroupManager instance had not created";
+                return;
+              }
               this.audioVolumeGroupManager.setRingerMode(this.selectedRingerMode).then(() => {
                 _this.returnMsg = "setRingerMode promise:SUCCESS"
-              }).catch(err => {
+              }).catch((err: BusinessError) => {
                 _this.returnMsg = "setRingerMode promise:" + JSON.stringify(err);
               });
             })
@@ -143,6 +160,10 @@ struct Ringer {
             .fontSize(20)
             .onClick(() => {
               let _this = this;
+              if (!this.audioVolumeGroupManager) {
+                this.returnMsg = "AudioVolumeGroupManager instance had not created";
+                return;
+              }
               this.audioVolumeGroupManager.getRingerMode((err, value) => {
                 if (err) {
                   _this.returnMsg = "getRingerMode callback:" + JSON.stringify(err);
@@ -159,10 +180,14 @@ struct Ringer {
             .fontSize(20)
             .onClick(() => {
               let _this = this;
+              if (!this.audioVolumeGroupManager) {
+                this.returnMsg = "AudioVolumeGroupManager instance had not created";
+                return;
+              }
               this.audioVolumeGroupManager.getRingerMode()
                 .then(value => {
                   _this.returnMsg = "getRingerMode promise:SUCCESS,返回值[AudioRingMode]:" + value
-                }).catch(err => {
+                }).catch((err: BusinessError) => {
                 _this.returnMsg = "getRingerMode promise:" + JSON.stringify(err);
               });
             })
