@@ -67,6 +67,7 @@ const uint64_t AUDIO_S_TO_NS = 1000000000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_MS_PER_S = 1000;
+const int64_t RECOVER_COUNT_THRESHOLD = 10;
 
 const std::string FORCED_DUMP_PULSEAUDIO_STACKTRACE = "dump_pulseaudio_stacktrace";
 const std::string RECOVERY_AUDIO_SERVER = "recovery_audio_server";
@@ -790,6 +791,20 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     return AUDIO_CLIENT_SUCCESS;
 }
 
+void AudioServiceClient::TimeoutRecover(int error)
+{
+    static int32_t timeoutCount = 0;
+    if (error == PA_ERR_TIMEOUT) {
+        if (timeoutCount == 0) {
+            audioSystemManager_->GetAudioParameter(FORCED_DUMP_PULSEAUDIO_STACKTRACE);
+        }
+        ++timeoutCount;
+        if (timeoutCount > RECOVER_COUNT_THRESHOLD) {
+            timeoutCount = 0;
+        }
+    }
+}
+
 int32_t AudioServiceClient::HandleMainLoopStart()
 {
     int error = PA_ERR_INTERNAL;
@@ -811,6 +826,10 @@ int32_t AudioServiceClient::HandleMainLoopStart()
             error = pa_context_errno(context);
             AUDIO_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop);
+
+            // if timeout occur, kill server and dump trace in server
+            TimeoutRecover(error);
+
             ResetPAAudioClient();
             return AUDIO_CLIENT_INIT_ERR;
         }

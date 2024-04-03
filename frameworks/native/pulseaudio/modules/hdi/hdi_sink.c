@@ -83,6 +83,8 @@
 #define OFFLOAD_SET_BUFFER_SIZE_NUM 5
 #define EPSILON 0.000001
 
+const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
+
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
@@ -2816,6 +2818,15 @@ static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
 
     pthread_rwlock_unlock(&u->rwlockSleep);
 
+    static int64_t logCnt = 0;
+    if (logCnt == 0) {
+        AUDIO_INFO_LOG("Bus thread still running");
+    }
+    ++logCnt;
+    if (logCnt > LOG_LOOP_THRESHOLD) {
+        logCnt = 0;
+    }
+
     bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
     if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
         pa_asyncmsgq_send(u->primary.msgq, NULL, 0, NULL, 0, NULL);
@@ -3534,7 +3545,7 @@ static int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, 
 
     u->multiChannel.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
 
-    paThreadName = "OS_write-pa-mch";
+    paThreadName = "OS_WriteMch";
     if (!(u->multiChannel.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerMultiChannel, u))) {
         AUDIO_ERR_LOG("Failed to write-pa-multiChannel thread.");
         return -1;
