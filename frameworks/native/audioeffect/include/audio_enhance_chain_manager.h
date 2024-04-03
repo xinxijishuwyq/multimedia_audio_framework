@@ -95,7 +95,7 @@ private:
     std::map<std::string, std::vector<std::string>> enhanceChainToEnhancesMap_;
     std::map<std::string, AudioEffectLibEntry*> enhanceToLibraryEntryMap_;
     std::map<std::string, std::string> enhanceToLibraryNameMap_;
-    std::recursive_mutex dynamicMutex_;
+    std::mutex dynamicMutex_;
     bool isInitialized_;
     std::string upAndDownDevice_;
 };
