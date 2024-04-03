@@ -81,14 +81,15 @@ public:
         std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
     int32_t CreateAudioEnhanceChainDynamic(std::string &sceneType,
         std::string &enhanceMode, std::string &upAndDownDevice);
-    int32_t SetAudioEnhanceChainDynamic(std::string &sceneType,
-        std::string &enhanceMode, std::string &upAndDownDevice);
     int32_t ReleaseAudioEnhanceChainDynamic(std::string &sceneType, std::string &upAndDownDevice);
     int32_t ApplyAudioEnhanceChain(std::string &sceneType,
         std::string &upAndDownDevice, BufferAttr *bufferAttr);
     std::string GetUpAndDownDevice();
 
 private:
+    int32_t SetAudioEnhanceChainDynamic(std::string &sceneType,
+        std::string &enhanceMode, std::string &upAndDownDevice);
+    
     std::map<std::string, AudioEnhanceChain*> sceneTypeToEnhanceChainMap_;
     std::map<std::string, std::string> sceneTypeAndModeToEnhanceChainNameMap_;
     std::map<std::string, std::vector<std::string>> enhanceChainToEnhancesMap_;

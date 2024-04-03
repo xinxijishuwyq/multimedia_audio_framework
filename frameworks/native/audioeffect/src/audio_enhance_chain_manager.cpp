@@ -108,7 +108,6 @@ AudioEnhanceChain::AudioEnhanceChain(std::string &scene)
 
 AudioEnhanceChain::~AudioEnhanceChain()
 {
-    std::lock_guard<std::mutex> lock(reloadMutex_);
     ReleaseEnhanceChain();
 }
 

@@ -67,8 +67,6 @@ public:
 
     int32_t GetInfo() override;
 
-    const std::string GetEnhanceSceneName(SourceType sourceType);
-
 private:
     // audio channel index
     static const uint8_t CHANNEL1_IDX = 0;
@@ -95,6 +93,7 @@ private:
 
     int32_t SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode);
     const std::string GetEnhanceModeName(AudioEffectMode audioEnhanceMode);
+    const std::string GetEnhanceSceneName(SourceType sourceType);
 
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
