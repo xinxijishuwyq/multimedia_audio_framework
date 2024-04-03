@@ -125,7 +125,7 @@ const std::string IAudioStream::GetEffectSceneName(const StreamUsage &streamUsag
         AUDIO_WARNING_LOG("Find streamUsage string failed, not in the parser's string-enum map.");
         return supportedEffectConfig.postProcessNew.stream.back().scene;
     }
-    for (SceneMappingItem &item: supportedEffectConfig.postProcessSceneMap) {
+    for (const SceneMappingItem &item: supportedEffectConfig.postProcessSceneMap) {
         if (item.name == streamUsageString) {
             return item.sceneType;
         }
