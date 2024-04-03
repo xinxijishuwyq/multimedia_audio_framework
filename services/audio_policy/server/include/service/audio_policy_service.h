@@ -676,7 +676,8 @@ private:
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
 
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void ResetToSpeaker(DeviceType devType);
 
