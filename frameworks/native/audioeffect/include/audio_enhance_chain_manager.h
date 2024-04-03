@@ -36,12 +36,12 @@ namespace OHOS {
 namespace AudioStandard {
 
 struct DataDescription {
-    uint32_t frameLength; // 10ms, 20ms
-    uint32_t sampleRate; // 16000 48000
-    uint32_t dataFormat; // 16, 24, 32
-    uint32_t micNum; // 1, 2, 4
-    uint32_t refNum; // 2, 4
-    uint32_t outChannelNum; // 1, 2, 3, 4
+    uint32_t frameLength;
+    uint32_t sampleRate;
+    uint32_t dataFormat;
+    uint32_t micNum;
+    uint32_t refNum;
+    uint32_t outChannelNum;
 } __attribute__((packed));
 
 constexpr DataDescription dataDesc = {
@@ -55,9 +55,9 @@ constexpr DataDescription dataDesc = {
 
 class AudioEnhanceChain {
 public:
-    AudioEnhanceChain(std::string scene);
+    AudioEnhanceChain(std::string &scene);
     ~AudioEnhanceChain();
-    void SetEnhanceMode(std::string mode);
+    void SetEnhanceMode(std::string &mode);
     void ReleaseEnhanceChain();
     void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle);
     void ApplyEnhanceChain(float *bufIn, float *bufOut, uint32_t frameLen);
@@ -78,18 +78,21 @@ public:
     void InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
         std::unordered_map<std::string, std::string> &map,
         std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
-    int32_t CreateAudioEnhanceChainDynamic(std::string sceneType, std::string enhanceMode, std::string upAndDownDevice);
-    int32_t SetAudioEnhanceChainDynamic(std::string sceneType, std::string enhanceMode, std::string upAndDownDevice);
-    int32_t ReleaseAudioEnhanceChainDynamic(std::string sceneType, std::string upAndDownDevice);
-    int32_t ApplyAudioEnhanceChain(std::string sceneType, std::string upAndDownDevice, BufferAttr *bufferAttr);
+    int32_t CreateAudioEnhanceChainDynamic(std::string &sceneType,
+        std::string &enhanceMode, std::string &upAndDownDevice);
+    int32_t SetAudioEnhanceChainDynamic(std::string &sceneType,
+        std::string &enhanceMode, std::string &upAndDownDevice);
+    int32_t ReleaseAudioEnhanceChainDynamic(std::string &sceneType, std::string &upAndDownDevice);
+    int32_t ApplyAudioEnhanceChain(std::string &sceneType,
+        std::string &upAndDownDevice, BufferAttr *bufferAttr);
     std::string GetUpAndDownDevice();
 
 private:
-    std::map<std::string, AudioEnhanceChain*> SceneTypeToEnhanceChainMap_;
-    std::map<std::string, std::string> SceneTypeAndModeToEnhanceChainNameMap_;
-    std::map<std::string, std::vector<std::string>> EnhanceChainToEnhancesMap_;
-    std::map<std::string, AudioEffectLibEntry*> EnhanceToLibraryEntryMap_;
-    std::map<std::string, std::string> EnhanceToLibraryNameMap_;
+    std::map<std::string, AudioEnhanceChain*> sceneTypeToEnhanceChainMap_;
+    std::map<std::string, std::string> sceneTypeAndModeToEnhanceChainNameMap_;
+    std::map<std::string, std::vector<std::string>> enhanceChainToEnhancesMap_;
+    std::map<std::string, AudioEffectLibEntry*> enhanceToLibraryEntryMap_;
+    std::map<std::string, std::string> enhanceToLibraryNameMap_;
     bool isInitialized_ = false;
     std::string upAndDownDevice_;
 };
