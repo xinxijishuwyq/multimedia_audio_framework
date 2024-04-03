@@ -1799,8 +1799,13 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize)
             return true;
         }
         int32_t outBufferSize = 0;
-        audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize);
+        if (audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize) == 0) {
+            bufferSize = 0;
+            AUDIO_ERR_LOG("process speed error");
+            return false;
+        }
         if (outBufferSize == 0) {
+            AUDIO_DEBUG_LOG("speed buffer is not full");
             return false;
         }
         buffer = speedBuffer_.get();
@@ -1845,12 +1850,11 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
-    WriteMuteDataSysEvent(buffer, bufferSize);
-
-    if (ProcessSpeed(buffer, bufferSize)) {
-        AUDIO_INFO_LOG("process speed error");
-        return ERROR;
+    if (!ProcessSpeed(buffer, bufferSize)) {
+        return bufferSize;
     }
+
+    WriteMuteDataSysEvent(buffer, bufferSize);
 
     FirstFrameProcess();
 
