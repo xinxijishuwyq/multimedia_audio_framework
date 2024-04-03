@@ -339,7 +339,8 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(std::string &scene
         AUDIO_INFO_LOG("libraryName: %{public}s effectName:%{public}s",
             descriptor.libraryName.c_str(), descriptor.effectName.c_str());
         int32_t ret = enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle->createEffect(descriptor, &handle);
-        CHECK_AND_CONTINUE_LOG(ret == 0, "EnhanceToLibraryEntryMap[%{public}s] createEffect fail", enhance.c_str());
+        CHECK_AND_CONTINUE_LOG(ret == 0, "EnhanceToLibraryEntryMap[%{public}s] createEffect fail",
+            enhance.c_str());
         audioEnhanceChain->AddEnhanceHandle(handle, enhanceToLibraryEntryMap_[enhance]->audioEffectLibHandle);
     }
 
@@ -350,7 +351,8 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(std::string &scene
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(std::string &sceneType, std::string &upAndDownDevice)
+int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(std::string &sceneType,
+    std::string &upAndDownDevice)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
