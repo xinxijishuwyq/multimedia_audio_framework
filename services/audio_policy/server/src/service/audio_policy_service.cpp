@@ -183,7 +183,6 @@ static void GetUsbModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
 AudioPolicyService::~AudioPolicyService()
 {
     AUDIO_DEBUG_LOG("~AudioPolicyService()");
-    Deinit();
 }
 
 bool AudioPolicyService::Init(void)
