@@ -71,11 +71,11 @@ private:
     ~AudioStateManager() {};
     sptr<AudioDeviceDescriptor> perferredMediaRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
     sptr<AudioDeviceDescriptor> perferredCallRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
-    std::mutex callCapturerDeviceMutex_;
     sptr<AudioDeviceDescriptor> perferredCallCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
     sptr<AudioDeviceDescriptor> perferredRingRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
     sptr<AudioDeviceDescriptor> perferredRecordCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
     sptr<AudioDeviceDescriptor> perferredToneRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    std::mutex mutex_;
 };
 
 } // namespace AudioStandard
