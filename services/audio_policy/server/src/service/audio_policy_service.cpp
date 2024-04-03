@@ -49,6 +49,17 @@ static const std::string RECEIVER_SINK_NAME = "Receiver";
 static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
 static const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
 
+static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
+    STREAM_VOICE_CALL,
+    STREAM_RING,
+    STREAM_MUSIC,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ALARM,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC,
+    STREAM_ALL
+};
+
 static const std::string SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
@@ -172,7 +183,6 @@ static void GetUsbModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
 AudioPolicyService::~AudioPolicyService()
 {
     AUDIO_DEBUG_LOG("~AudioPolicyService()");
-    Deinit();
 }
 
 bool AudioPolicyService::Init(void)
@@ -239,6 +249,18 @@ const sptr<IStandardAudioService> AudioPolicyService::GetAudioServerProxy()
 void AudioPolicyService::InitKVStore()
 {
     audioPolicyManager_.InitKVStore();
+    UpdateVolumeForLowLatency();
+}
+
+void AudioPolicyService::UpdateVolumeForLowLatency()
+{
+    // update volumes for low latency streams when loading volumes from the database.
+    Volume vol = {false, 1.0f, 0};
+    for (auto iter = VOLUME_TYPE_LIST.begin(); iter != VOLUME_TYPE_LIST.end(); iter++) {
+        int32_t volumeLevel = GetSystemVolumeLevel(*iter);
+        vol.volumeFloat = GetSystemVolumeInDb(*iter, volumeLevel, currentActiveDevice_.deviceType_);
+        SetSharedVolume(*iter, currentActiveDevice_.deviceType_, vol);
+    }
 }
 
 bool AudioPolicyService::ConnectServiceAdapter()
@@ -352,7 +374,7 @@ void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t vo
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "gsp null");
     float volumeDb;
-    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
         volumeDb = 1;
     } else {
         volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
@@ -375,6 +397,9 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
     if (audioScene_ == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
+
+    UpdateVolumeForLowLatency();
+
     if (deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_USB_HEADSET) {
         SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -1204,7 +1229,8 @@ bool AudioPolicyService::IsStreamActive(AudioStreamType streamType) const
 
 void AudioPolicyService::ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
-    StoreDistributedRoutingRoleInfo(descriptor, type);
+    sptr<AudioDeviceDescriptor> intermediateDescriptor = new AudioDeviceDescriptor(descriptor);
+    StoreDistributedRoutingRoleInfo(intermediateDescriptor, type);
     FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
     FetchDevice(false);
 }
@@ -1606,10 +1632,17 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
 {
     std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId);
 
+    bool needTriggerCallback = true;
+    if (outputDevice->isSameDevice(rendererChangeInfo->outputDeviceInfo)) {
+        needTriggerCallback = false;
+    }
+
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
 
-    audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
-        rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
+    if (needTriggerCallback) {
+        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
+            rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
+    }
 
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevice->networkId_ == LOCAL_NETWORK_ID)
@@ -2043,9 +2076,15 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
         }
     }
     AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "failed %{public}d", result);
+    std::string lastActiveA2dpDevice = activeBTDevice_;
     activeBTDevice_ = deviceDescriptor->macAddress_;
+    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
+    if (result != SUCCESS) {
+        activeBTDevice_ = lastActiveA2dpDevice;
+        AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
+            GetEncryptAddr(activeBTDevice_).c_str(), GetEncryptAddr(lastActiveA2dpDevice).c_str());
+        return result;
+    }
     {
         std::unique_lock<std::mutex> lock(a2dpDeviceMapMutex_);
         A2dpDeviceConfigInfo configInfo = connectedA2dpDeviceMap_[activeBTDevice_];
@@ -4755,6 +4794,7 @@ void AudioPolicyService::BluetoothServiceCrashedCallback(pid_t pid)
     g_btProxy = nullptr;
     isBtListenerRegistered = false;
     Bluetooth::AudioA2dpManager::DisconnectBluetoothA2dpSink();
+    Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
 }
 #endif
 
@@ -5630,6 +5670,24 @@ void AudioPolicyService::ClearScoDeviceSuspendState(string macAddress)
     for (auto &desc : descs) {
         desc->connectState_ = DEACTIVE_CONNECTED;
     }
+}
+
+float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
+
+    if (deviceId == currentActiveDevice_.deviceId_) {
+        float outputMaxAmplitude = gsp->GetMaxAmplitude(true, currentActiveDevice_.deviceType_);
+        return outputMaxAmplitude;
+    }
+
+    if (deviceId == currentActiveInputDevice_.deviceId_) {
+        float inputMaxAmplitude = gsp->GetMaxAmplitude(false, currentActiveInputDevice_.deviceType_);
+        return inputMaxAmplitude;
+    }
+
+    return 0;
 }
 } // namespace AudioStandard
 } // namespace OHOS

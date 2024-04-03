@@ -368,5 +368,10 @@ float AudioGroupManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t
         "is only supported for LOCAL_NETWORK_ID.");
     return AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
+
+float AudioGroupManager::GetMaxAmplitude(const int32_t deviceId)
+{
+    return AudioPolicyManager::GetInstance().GetMaxAmplitude(deviceId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

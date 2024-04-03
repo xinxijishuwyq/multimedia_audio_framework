@@ -425,6 +425,8 @@ public:
 
     void UnloadA2dpModule();
 
+    float GetMaxAmplitude(const int32_t deviceId);
+    
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
 
 private:
@@ -593,6 +595,8 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
     void SetVolumeForSwitchDevice(DeviceType deviceType);
+
+    void UpdateVolumeForLowLatency();
 
     void SetVoiceCallVolume(int32_t volume);
 

@@ -276,6 +276,8 @@ public:
 
     virtual int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) = 0;
 
+    virtual float GetMaxAmplitude(const int32_t deviceId) = 0;
+    
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

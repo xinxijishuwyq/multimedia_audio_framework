@@ -66,6 +66,7 @@ public:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
+    float GetMaxAmplitude() override;
 
     FastAudioCapturerSourceInner();
     ~FastAudioCapturerSourceInner() override;
@@ -638,6 +639,12 @@ int32_t FastAudioCapturerSourceInner::Flush(void)
     }
 
     return SUCCESS;
+}
+
+float FastAudioCapturerSourceInner::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in fast audio cap not support");
+    return 0;
 }
 } // namespace AudioStandard
 } // namesapce OHOS

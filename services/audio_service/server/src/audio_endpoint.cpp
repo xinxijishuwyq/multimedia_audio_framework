@@ -45,6 +45,7 @@ namespace {
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
+    const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
 }
 
 static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
@@ -121,6 +122,13 @@ public:
 
     void Release() override;
 
+    DeviceRole GetDeviceRole() override
+    {
+        return deviceInfo_.deviceRole;
+    }
+
+    float GetMaxAmplitude() override;
+
 private:
     bool ConfigInputPoint(const DeviceInfo &deviceInfo);
     int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
@@ -162,6 +170,7 @@ private:
     // Call GetMmapHandlePosition in ipc may block more than a cycle, call it in another thread.
     void AsyncGetPosTime();
 
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
@@ -217,6 +226,13 @@ private:
     bool needReSyncPosition_ = true;
     FILE *dumpDcp_ = nullptr;
     FILE *dumpHdi_ = nullptr;
+
+    // for get amplitude
+    float maxAmplitude_ = 0;
+    int64_t lastGetMaxAmplitudeTime_ = 0;
+    int64_t last10FrameStartTime_ = 0;
+    bool startUpdate_ = false;
+    int renderFrameNum_ = 0;
 };
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
@@ -984,7 +1000,37 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
 
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
         dstStreamData.bufferDesc.bufLength);
+    
+    CheckUpdateState(reinterpret_cast<char *>(dstStreamData.bufferDesc.buffer),
+        dstStreamData.bufferDesc.bufLength);
+
     return true;
+}
+
+void AudioEndpointInner::CheckUpdateState(char *frame, uint64_t replyBytes)
+{
+    if (startUpdate_) {
+        if (renderFrameNum_ == 0) {
+            last10FrameStartTime_ = ClockTime::GetCurNano();
+        }
+        renderFrameNum_++;
+        maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(dstStreamInfo_.format),
+            frame, replyBytes);
+        if (renderFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
+            renderFrameNum_ = 0;
+            if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
+                startUpdate_ = false;
+                maxAmplitude_ = 0;
+            }
+        }
+    }
+}
+
+float AudioEndpointInner::GetMaxAmplitude()
+{
+    lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
+    startUpdate_ = true;
+    return maxAmplitude_;
 }
 
 int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)

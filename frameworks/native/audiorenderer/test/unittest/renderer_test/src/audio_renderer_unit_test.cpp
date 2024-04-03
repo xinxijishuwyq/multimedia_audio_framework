@@ -5821,7 +5821,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_004, TestSize.Lev
     int32_t count = 0;
     cb->Install([&count, &audioRenderer](size_t length) {
                 // only execute once
-                if (count > 0) {
+                if (count++ > 0) {
                     return;
                 }
                 BufferDesc bufDesc {};
