@@ -5302,7 +5302,8 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
         a2dpOffloadFlag_ = receiveOffloadFlag;
     }
     if (a2dpOffloadFlag_ != preA2dpOffloadFlag_) {
-        sameDeviceSwitchFlag_ = true;
+        HandleA2dpDeviceInOffload();
+        HandleA2dpDeviceOutOffload();
     }
     if ((a2dpOffloadFlag_ != A2DP_OFFLOAD) && (a2dpOffloadFlag_ != NO_A2DP_DEVICE) &&
         (a2dpOffloadFlag_ != A2DP_NOT_OFFLOAD)) {
