@@ -682,6 +682,7 @@ static unsigned GetInputsInfo(enum HdiInputType type, bool isRun, pa_sink *s, pa
 
 static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_info *infoIn, unsigned maxInfo)
 {
+    AUTO_CTRACE("hdi_sink::SinkRenderPrimaryClusterCap:len:%zu", *length);
     pa_sink_input *sinkIn;
 
     pa_sink_assert_ref(si);
@@ -694,6 +695,12 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         if (IsInnerCapturer(sinkIn) && InputIsPrimary(sinkIn)) {
             pa_sink_input_assert_ref(sinkIn);
+
+            // max_rewind is 0 by default, need change to at least u->buffer_size for InnerCapSinkInputsRewind.
+            if (pa_memblockq_get_maxrewind(sinkIn->thread_info.render_memblockq) == 0) {
+                AUTO_CTRACE("hdi_sink::pa_sink_input_update_max_rewind:%d len:%zu", sinkIn->index, *length);
+                pa_sink_input_update_max_rewind(sinkIn, *length);
+            }
             AUTO_CTRACE("hdi_sink::ClusterCap::pa_sink_input_peek:%d len:%zu", sinkIn->index, *length);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
@@ -773,6 +780,7 @@ static void SinkRenderPrimaryMix(pa_sink *si, size_t length, pa_mix_info *infoIn
 
 static void SinkRenderPrimaryMixCap(pa_sink *si, size_t length, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
+    AUTO_CTRACE("hdi_sink::SinkRenderPrimaryMixCap:%u:len:%zu", n, chunkIn->length);
     if (n == 0) {
         if (chunkIn->length > length) {
             chunkIn->length = length;
@@ -814,6 +822,7 @@ static void SinkRenderPrimaryMixCap(pa_sink *si, size_t length, pa_mix_info *inf
 
 static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, unsigned n, pa_memchunk *chunkIn)
 {
+    AUTO_CTRACE("hdi_sink::SinkRenderPrimaryInputsDropCap:%u:len:%zu", n, chunkIn->length);
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(chunkIn);
@@ -826,11 +835,10 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
     pa_sink_input *sceneSinkInput;
     bool isCaptureSilently = IsCaptureSilently();
     for (uint32_t k = 0; k < n; k++) {
-        if (isCaptureSilently) {
-            sceneSinkInput = infoIn[k].userdata;
-            pa_sink_input_assert_ref(sceneSinkInput);
-            pa_sink_input_drop(sceneSinkInput, chunkIn->length);
-        }
+        sceneSinkInput = infoIn[k].userdata;
+        pa_sink_input_assert_ref(sceneSinkInput);
+        AUTO_CTRACE("hdi_sink::InnerCap:pa_sink_input_drop:%u:len:%zu", sceneSinkInput->index, chunkIn->length);
+        pa_sink_input_drop(sceneSinkInput, chunkIn->length);
 
         infoCur = infoIn + k;
         if (infoCur) {
@@ -850,6 +858,7 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
 
 static int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
 {
+    AUTO_CTRACE("hdi_sink::SinkRenderPrimaryPeekCap:len:%zu", chunkIn->length);
     pa_mix_info infoIn[MAX_MIX_CHANNELS];
     unsigned n;
     size_t length;
@@ -891,6 +900,7 @@ static int32_t SinkRenderPrimaryPeekCap(pa_sink *si, pa_memchunk *chunkIn)
 
 static int32_t SinkRenderPrimaryGetDataCap(pa_sink *si, pa_memchunk *chunkIn)
 {
+    AUTO_CTRACE("hdi_sink::SinkRenderPrimaryGetDataCap:len:%zu", chunkIn->length);
     pa_memchunk chunk;
     size_t l;
     size_t d;
@@ -941,14 +951,38 @@ static bool monitorLinked(pa_sink *si, bool isRunning)
     }
 }
 
+static void InnerCapSinkInputsRewind(pa_sink *si, size_t length)
+{
+    AUTO_CTRACE("hdi_sink::InnerCapSinkInputsRewind:len:%zu", length);
+
+    pa_sink_assert_ref(si);
+    pa_sink_assert_io_context(si);
+
+    pa_sink_input *sinkIn = NULL;
+    void *state = NULL;
+    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL))) {
+        if (IsInnerCapturer(sinkIn) && InputIsPrimary(sinkIn)) {
+            pa_sink_input_assert_ref(sinkIn);
+            pa_sink_input_process_rewind(sinkIn, length); // will not work well if maxrewind = 0
+        }
+    }
+}
+
 static void SinkRenderCapProcess(pa_sink *si, size_t length, pa_memchunk *capResult)
 {
+    AUTO_CTRACE("hdi_sink::SinkRenderCapProcess:len:%zu", length);
     capResult->memblock = pa_memblock_new(si->core->mempool, length);
     capResult->index = 0;
     capResult->length = length;
     SinkRenderPrimaryGetDataCap(si, capResult);
     if (monitorLinked(si, false)) {
+        AUTO_CTRACE("hdi_sink::pa_source_post:len:%zu", capResult->length);
         pa_source_post(si->monitor_source, capResult);
+    }
+
+    //If not silent capture, we need to call rewind for Speak.
+    if (!IsCaptureSilently()) {
+        InnerCapSinkInputsRewind(si, capResult->length);
     }
     return;
 }
@@ -2061,6 +2095,11 @@ static void offloadSetMaxRewind(struct Userdata *u, pa_sink_input *i)
 
 static void CheckInputChangeToOffload(struct Userdata *u, pa_sink_input *i)
 {
+    // if maxrewind is set to buffer_size while inner-cap, reset it to 0 for offload.
+    if (pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) == u->buffer_size) {
+        AUDIO_INFO_LOG("Reset maxwind to 0 to enable offload for sink-input:%{public}u", i->index);
+        pa_sink_input_update_max_rewind(i, 0);
+    }
     if (InputIsOffload(i) && pa_memblockq_get_maxrewind(i->thread_info.render_memblockq) == 0) {
         offloadSetMaxRewind(u, i);
         pa_sink_input *it;
