@@ -450,13 +450,27 @@ enum AudioDeviceUsage : int32_t {
     D_ALL_DEVICES = 15,
 };
 
+enum FilterMode : uint32_t {
+    INCLUDE = 0,
+    EXCLUDE,
+    MAX_FILTER_MODE
+};
+
+// 1.If the size of usages or pids is 0, FilterMode will not work.
+// 2.Filters will only works with FileterMode INCLUDE or EXCLUDE while the vector size is not zero.
+// 3.If usages and pids are both not empty, the result is the intersection of the two Filter.
+// 4.If usages.size() == 0, defalut usages will be filtered with FilterMode::INCLUDE.
+// 5.Default usages are MEDIA MUSIC MOVIE GAME and BOOK.
 struct CaptureFilterOptions {
     std::vector<StreamUsage> usages;
+    FilterMode usageFilterMode {FilterMode::INCLUDE};
+    std::vector<int32_t> pids;
+    FilterMode pidFilterMode {FilterMode::INCLUDE};
 };
 
 struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
-    bool silentCapture {false};
+    bool silentCapture {false}; // To be deprecated since 12
 };
 
 struct AudioCapturerOptions {

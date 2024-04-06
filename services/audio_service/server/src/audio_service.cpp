@@ -105,16 +105,15 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
     return ipcStreamInServer;
 }
 
-void AudioService::CheckFilterForAllRenderers(std::weak_ptr<RendererInServer> renderer)
+void AudioService::CheckFilterForAllRenderers(std::shared_ptr<RendererInServer> renderer)
 {
+    CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is null.");
+
     std::lock_guard<std::mutex> lock(rendererListMutex_);
     allRendererList_.push_back(renderer);
 
-    std::shared_ptr<RendererInServer> temp = renderer.lock();
     // in plan: check if meet with the workingConfig_
-    if (temp != nullptr) {
-        temp->EnableInnerCap(); // for debug
-    }
+    renderer->EnableInnerCap(); // for debug
 }
 
 int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, AudioPlaybackCaptureConfig newConfig)

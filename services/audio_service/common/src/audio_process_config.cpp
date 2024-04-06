@@ -24,6 +24,97 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    static const uint32_t MAX_VALID_USAGE_SIZE = 30; // 128 for pids
+    static const uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
+}
+int32_t ProcessConfig::WriteInnerCapConfigToParcel(const AudioPlaybackCaptureConfig &config, MessageParcel &parcel)
+{
+    // filterOptions.usages
+    size_t usageSize = config.filterOptions.usages.size();
+    CHECK_AND_RETURN_RET_LOG(usageSize < MAX_VALID_USAGE_SIZE, ERR_INVALID_PARAM, "usageSize is too large");
+    parcel.WriteUint32(usageSize);
+    for (size_t i = 0; i < usageSize; i++) {
+        parcel.WriteInt32(static_cast<int32_t>(config.filterOptions.usages[i]));
+    }
+
+    // filterOptions.usageFilterMode
+    parcel.WriteUint32(config.filterOptions.usageFilterMode);
+
+    // filterOptions.pids
+    size_t pidSize = config.filterOptions.pids.size();
+    parcel.WriteUint32(pidSize);
+    for (size_t i = 0; i < usageSize; i++) {
+        parcel.WriteUint32(config.filterOptions.pids[i]);
+    }
+
+    // filterOptions.pidFilterMode
+    parcel.WriteUint32(config.filterOptions.pidFilterMode);
+
+    // silentCapture
+    parcel.WriteBool(config.silentCapture);
+    return SUCCESS;
+}
+
+int32_t ProcessConfig::ReadInnerCapConfigFromParcel(AudioPlaybackCaptureConfig &config, MessageParcel &parcel)
+{
+    // filterOptions.usages
+    uint32_t usageSize = parcel.ReadUint32();
+    if (usageSize > MAX_VALID_USAGE_SIZE) {
+        AUDIO_ERR_LOG("Invalid param, usageSize is too large: %{public}u", usageSize);
+        return ERR_INVALID_PARAM;
+    }
+    std::vector<StreamUsage> usages = {};
+    for (uint32_t i = 0; i < usageSize; i++) {
+        int32_t tmpUsage = parcel.ReadInt32();
+        if (std::find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmpUsage) ==
+            AUDIO_SUPPORTED_STREAM_USAGES.end()) {
+            AUDIO_ERR_LOG("Invalid param, usage: %{public}d", tmpUsage);
+            return ERR_INVALID_PARAM;
+        }
+        usages.push_back(static_cast<StreamUsage>(tmpUsage));
+    }
+    config.filterOptions.usages = usages;
+
+    // filterOptions.usageFilterMode
+    uint32_t tempMode = parcel.ReadUint32();
+    if (tempMode >= FilterMode::MAX_FILTER_MODE) {
+        AUDIO_ERR_LOG("Invalid param, usageFilterMode : %{public}u", tempMode);
+        return ERR_INVALID_PARAM;
+    }
+    config.filterOptions.usageFilterMode = static_cast<FilterMode>(tempMode);
+
+    // filterOptions.pids
+    uint32_t pidSize = parcel.ReadUint32();
+    if (pidSize > MAX_VALID_PIDS_SIZE) {
+        AUDIO_ERR_LOG("Invalid param, pidSize is too large: %{public}u", pidSize);
+        return ERR_INVALID_PARAM;
+    }
+    std::vector<int32_t> pids = {};
+    for (uint32_t i = 0; i < pidSize; i++) {
+        int32_t tmpPid = parcel.ReadInt32();
+        if (tmpPid <= 0) {
+            AUDIO_ERR_LOG("Invalid param, pid: %{public}d", tmpPid);
+            return ERR_INVALID_PARAM;
+        }
+        pids.push_back(tmpPid);
+    }
+    config.filterOptions.pids = pids;
+
+    // filterOptions.pidFilterMode
+    tempMode = parcel.ReadUint32();
+    if (tempMode >= FilterMode::MAX_FILTER_MODE) {
+        AUDIO_ERR_LOG("Invalid param, pidFilterMode : %{public}u", tempMode);
+        return ERR_INVALID_PARAM;
+    }
+    config.filterOptions.pidFilterMode = static_cast<FilterMode>(tempMode);
+
+    // silentCapture
+    config.silentCapture = parcel.ReadBool();
+
+    return SUCCESS;
+}
+
 int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, MessageParcel &parcel)
 {
     // AppInfo

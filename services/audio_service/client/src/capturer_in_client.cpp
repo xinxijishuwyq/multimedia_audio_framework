@@ -74,6 +74,7 @@ public:
 
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
 
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
@@ -248,6 +249,7 @@ private:
     size_t cbBufferSize_ = 0;
     SafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
+    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     bool isInnerCapturer_ = false;
     bool isWakeupCapturer_ = false;
 
@@ -381,6 +383,13 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
     return;
+}
+
+int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    filterConfig_ = config;
+    // in plan: call CapturerInServer
+    return SUCCESS;
 }
 
 void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)

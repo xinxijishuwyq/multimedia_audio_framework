@@ -89,12 +89,12 @@ int32_t IpcStreamInServer::Config()
     return ERR_OPERATION_FAILED;
 }
 
-std::weak_ptr<RendererInServer> IpcStreamInServer::GetRenderer()
+std::shared_ptr<RendererInServer> IpcStreamInServer::GetRenderer()
 {
     if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
         AUDIO_ERR_LOG("GetRenderer failed, mode is %{public}s", (mode_ != AUDIO_MODE_PLAYBACK ? " not playback" :
             "playback, but renderer is null!"));
-        return std::weak_ptr<RendererInServer>();
+        return nullptr;
     }
     return rendererInServer_;
 }

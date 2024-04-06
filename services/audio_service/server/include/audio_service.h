@@ -59,7 +59,7 @@ private:
     void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
 
     // for inner-capturer
-    void CheckFilterForAllRenderers(std::weak_ptr<RendererInServer> renderer);
+    void CheckFilterForAllRenderers(std::shared_ptr<RendererInServer> renderer);
 
 private:
     std::mutex processListMutex_;
