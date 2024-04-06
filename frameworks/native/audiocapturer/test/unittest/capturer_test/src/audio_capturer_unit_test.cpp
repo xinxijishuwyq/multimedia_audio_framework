@@ -647,6 +647,32 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_024, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : Test Create API via legal input.
+ * @tc.number: Audio_Capturer_Create_025
+ * @tc.desc  : Test Create function maps sourceType to sceneType correctly.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_025, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+
+    std::vector<SourceType> sourceTypeList = {
+        SourceType::SOURCE_TYPE_MIC,
+        SourceType::SOURCE_TYPE_VOICE_COMMUNICATION
+    };
+    for (int32_t i = 0; i < sourceTypeList.size(); i++) {
+        capturerOptions.capturerInfo.sourceType = sourceTypeList[i];
+        unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+        ASSERT_NE(nullptr, audioCapturer);
+        audioCapturer->Release();
+    }
+}
+
+/**
 * @tc.name  : Test SetParams API via legal input
 * @tc.number: Audio_Capturer_SetParams_001
 * @tc.desc  : Test SetParams interface. Returns 0 {SUCCESS}, if the setting is successful.

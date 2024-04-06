@@ -40,6 +40,7 @@
 #include "i_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "audio_effect_chain_manager.h"
+#include "audio_enhance_chain_manager.h"
 #include "playback_capturer_manager.h"
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
@@ -439,14 +440,19 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
 }
 
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-    std::unordered_map<std::string, std::string> &map)
+    std::unordered_map<std::string, std::string> &effectMap,
+    std::unordered_map<std::string, std::string> &enhanceMap)
 {
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
         return false;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChainManager(effectChains, map, audioEffectServer_->GetEffectEntries());
+    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectMap,
+        audioEffectServer_->GetEffectEntries());
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceMap,
+        audioEffectServer_->GetEffectEntries());
     return true;
 }
 

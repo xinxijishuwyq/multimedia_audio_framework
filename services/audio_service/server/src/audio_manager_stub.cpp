@@ -285,7 +285,18 @@ int AudioManagerStub::HandleCreateAudioEffectChainManager(MessageParcel &data, M
         sceneTypeToEffectChainNameMap[key] = value;
     }
 
-    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap);
+    unordered_map<string, string> sceneTypeToEnhanceChainNameMap;
+    mapSize = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(mapSize >= 0 && mapSize <= AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT,
+        AUDIO_ERR, "Create audio enhance chain manager failed, please check log");
+    for (i = 0; i < mapSize; i++) {
+        string key = data.ReadString();
+        string value = data.ReadString();
+        sceneTypeToEnhanceChainNameMap[key] = value;
+    }
+
+    bool createSuccess = CreateEffectChainManager(effectChains, sceneTypeToEffectChainNameMap,
+        sceneTypeToEnhanceChainNameMap);
     CHECK_AND_RETURN_RET_LOG(createSuccess, AUDIO_ERR,
         "Create audio effect chain manager failed, please check log");
     return AUDIO_OK;

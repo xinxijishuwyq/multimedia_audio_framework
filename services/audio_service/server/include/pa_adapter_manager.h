@@ -22,6 +22,7 @@
 #include <pulse/thread-mainloop.h>
 #include "audio_timer.h"
 #include "i_stream_manager.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -90,6 +91,10 @@ private:
     int32_t ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec);
     int32_t ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, const std::string &deviceName);
 
+    int32_t SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode);
+    const std::string GetEnhanceModeName(AudioEffectMode audioEnhanceMode);
+    const std::string GetEnhanceSceneName(SourceType sourceType);
+
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
@@ -115,6 +120,7 @@ private:
     bool isMainLoopStarted_;
     ManagerType managerType_ = PLAYBACK;
     bool waitConnect_ = true;
+    AudioEffectMode enhanceMode_ = EFFECT_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS
