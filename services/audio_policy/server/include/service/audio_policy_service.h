@@ -522,8 +522,6 @@ private:
 
     int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
 
-    int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
-
     void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         unique_ptr<AudioDeviceDescriptor> &outputDevice,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -702,6 +700,10 @@ private:
     void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
 
     void ClearScoDeviceSuspendState(string macAddress = "");
+
+    int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
+
+    int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
