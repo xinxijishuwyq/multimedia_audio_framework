@@ -26,6 +26,7 @@ ohos_unittest("audio_policy_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../../../../services/audio_policy/client/include",
+    "../../../../../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
   ]
 
   include_dirs += [ multimedia_audio_framework_pulse_audio ]
@@ -45,6 +46,7 @@ ohos_unittest("audio_policy_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
