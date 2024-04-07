@@ -215,7 +215,13 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
     AUDIO_DEBUG_LOG("PAStreamStopSuccessCb in");
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
+    bool isUserdateExist;
+    if (!serviceClientInstanceMap_.Find(userdata, isUserdateExist)) {
+        AUDIO_ERR_LOG("userdata is null");
+        return;
+    }
     AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
+    std::lock_guard<std::mutex> lock(asClient->serviceClientLock_);
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
     asClient->state_ = STOPPED;
