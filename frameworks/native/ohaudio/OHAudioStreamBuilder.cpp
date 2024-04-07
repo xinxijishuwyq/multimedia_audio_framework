@@ -253,6 +253,11 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetChannelCount(int32_t channelCount
         case AudioChannel::CHANNEL_6:
         case AudioChannel::CHANNEL_7:
         case AudioChannel::CHANNEL_8:
+        case AudioChannel::CHANNEL_9:
+        case AudioChannel::CHANNEL_10:
+        case AudioChannel::CHANNEL_12:
+        case AudioChannel::CHANNEL_14:
+        case AudioChannel::CHANNEL_16:
             AUDIO_DEBUG_LOG("channelCount input value is valid");
             break;
         default:
