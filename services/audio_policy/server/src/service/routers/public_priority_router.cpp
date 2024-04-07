@@ -26,8 +26,12 @@ namespace AudioStandard {
 unique_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    vector<unique_ptr<AudioDeviceDescriptor>> descs =
-        AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    if (streamUsage == STREAM_USAGE_RINGTONE) {
+        descs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+    } else {
+        descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
+    }
     unique_ptr<AudioDeviceDescriptor> desc = GetLatestConnectDeivce(descs);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
         clientUID, desc->deviceType_);
