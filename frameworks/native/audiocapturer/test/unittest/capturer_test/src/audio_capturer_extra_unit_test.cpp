@@ -1653,5 +1653,28 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetParams_010, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     audioCapturer->Release();
 }
+
+/**
+ * @tc.name  : Test GetOverflowCount
+ * @tc.number: Audio_Capturer_GetOverflowCount_001
+ * @tc.desc  : Test GetOverflowCount interface get underflow value.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetOverflowCount_001, TestSize.Level1)
+{
+    AudioCapturerOptions capturerOptions;
+    AudioCapturerUnitTest::InitializeCapturerOptions(capturerOptions);
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    auto overflowClount = audioCapturer->GetOverflowCount();
+
+    EXPECT_GE(overflowClount, 0);
+
+    audioCapturer->Stop();
+    audioCapturer->Release();
+}
 } // namespace AudioStandard
 } // namespace OHOS
