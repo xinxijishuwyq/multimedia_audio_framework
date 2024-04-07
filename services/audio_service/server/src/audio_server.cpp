@@ -309,7 +309,12 @@ bool AudioServer::CheckAndPrintStacktrace(const std::string &key)
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     } else if (key == "recovery_audio_server") {
-        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+        AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+        sleep(2); // sleep 2 seconds to dump stacktrace
+        return true;
+    } else if (key == "dump_pa_stacktrace_and_kill") {
+        uint32_t targetFlag = 3; // 3 means LOG & RECOVERY
+        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr, targetFlag);
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     }

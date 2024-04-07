@@ -71,6 +71,7 @@ const int64_t RECOVER_COUNT_THRESHOLD = 10;
 
 const std::string FORCED_DUMP_PULSEAUDIO_STACKTRACE = "dump_pulseaudio_stacktrace";
 const std::string RECOVERY_AUDIO_SERVER = "recovery_audio_server";
+const std::string DUMP_AND_RECOVERY_AUDIO_SERVER = "dump_pa_stacktrace_and_kill";
 
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
@@ -802,7 +803,7 @@ void AudioServiceClient::TimeoutRecover(int error)
     static int32_t timeoutCount = 0;
     if (error == PA_ERR_TIMEOUT) {
         if (timeoutCount == 0) {
-            audioSystemManager_->GetAudioParameter(FORCED_DUMP_PULSEAUDIO_STACKTRACE);
+            audioSystemManager_->GetAudioParameter(DUMP_AND_RECOVERY_AUDIO_SERVER);
         }
         ++timeoutCount;
         if (timeoutCount > RECOVER_COUNT_THRESHOLD) {
