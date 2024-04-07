@@ -58,8 +58,8 @@ private:
         bool inputBArgTransFlag;
         bool outputBArgTransFlag;
 
-        sptr<AudioDeviceDescriptor> inputDeviceDescriptor;
-        sptr<AudioDeviceDescriptor> outputDeviceDescriptor;
+        sptr<AudioDeviceDescriptor> inputDeviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();;
+        sptr<AudioDeviceDescriptor> outputDeviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();;
     };
 
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
