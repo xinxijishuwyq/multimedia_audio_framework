@@ -916,7 +916,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     pa_threaded_mainloop_lock(mainLoop);
 
     if (HandlePAStreamConnect(deviceNameS, latency_in_msec) != SUCCESS || WaitStreamReady() != SUCCESS) {
-        pa_threaded_mainloop_unlock(mainLoop);
+        if (mainLoop != nullptr) {
+            pa_threaded_mainloop_unlock(mainLoop);
+        }
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
 
@@ -965,6 +967,7 @@ int32_t AudioServiceClient::HandlePAStreamConnect(const std::string &deviceNameS
     if (result < 0) {
         int error = pa_context_errno(context);
         AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
+        pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
