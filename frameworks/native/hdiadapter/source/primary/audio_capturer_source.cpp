@@ -27,7 +27,7 @@
 #include "power_mgr_client.h"
 #include "running_lock.h"
 #endif
-#include "v2_0/iaudio_manager.h"
+#include "v3_0/iaudio_manager.h"
 
 #include "audio_log.h"
 #include "audio_errors.h"

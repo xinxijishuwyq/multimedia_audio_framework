@@ -40,6 +40,7 @@
 #include "i_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "audio_effect_chain_manager.h"
+#include "audio_enhance_chain_manager.h"
 #include "playback_capturer_manager.h"
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
@@ -308,7 +309,12 @@ bool AudioServer::CheckAndPrintStacktrace(const std::string &key)
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     } else if (key == "recovery_audio_server") {
-        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+        AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+        sleep(2); // sleep 2 seconds to dump stacktrace
+        return true;
+    } else if (key == "dump_pa_stacktrace_and_kill") {
+        uint32_t targetFlag = 3; // 3 means LOG & RECOVERY
+        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr, targetFlag);
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     }
@@ -439,14 +445,19 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
 }
 
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-    std::unordered_map<std::string, std::string> &map)
+    std::unordered_map<std::string, std::string> &effectMap,
+    std::unordered_map<std::string, std::string> &enhanceMap)
 {
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
         return false;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChainManager(effectChains, map, audioEffectServer_->GetEffectEntries());
+    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectMap,
+        audioEffectServer_->GetEffectEntries());
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceMap,
+        audioEffectServer_->GetEffectEntries());
     return true;
 }
 

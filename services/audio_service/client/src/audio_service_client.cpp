@@ -67,9 +67,11 @@ const uint64_t AUDIO_S_TO_NS = 1000000000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_MS_PER_S = 1000;
+const int64_t RECOVER_COUNT_THRESHOLD = 10;
 
 const std::string FORCED_DUMP_PULSEAUDIO_STACKTRACE = "dump_pulseaudio_stacktrace";
 const std::string RECOVERY_AUDIO_SERVER = "recovery_audio_server";
+const std::string DUMP_AND_RECOVERY_AUDIO_SERVER = "dump_pa_stacktrace_and_kill";
 
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
@@ -214,7 +216,13 @@ void AudioServiceClient::PAStreamStopSuccessCb(pa_stream *stream, int32_t succes
     AUDIO_DEBUG_LOG("PAStreamStopSuccessCb in");
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
+    bool isUserdateExist;
+    if (!serviceClientInstanceMap_.Find(userdata, isUserdateExist)) {
+        AUDIO_ERR_LOG("userdata is null");
+        return;
+    }
     AudioServiceClient *asClient = static_cast<AudioServiceClient *>(userdata);
+    std::lock_guard<std::mutex> lock(asClient->serviceClientLock_);
     pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
 
     asClient->state_ = STOPPED;
@@ -790,6 +798,20 @@ int32_t AudioServiceClient::Initialize(ASClientType eClientType)
     return AUDIO_CLIENT_SUCCESS;
 }
 
+void AudioServiceClient::TimeoutRecover(int error)
+{
+    static int32_t timeoutCount = 0;
+    if (error == PA_ERR_TIMEOUT) {
+        if (timeoutCount == 0) {
+            audioSystemManager_->GetAudioParameter(DUMP_AND_RECOVERY_AUDIO_SERVER);
+        }
+        ++timeoutCount;
+        if (timeoutCount > RECOVER_COUNT_THRESHOLD) {
+            timeoutCount = 0;
+        }
+    }
+}
+
 int32_t AudioServiceClient::HandleMainLoopStart()
 {
     int error = PA_ERR_INTERNAL;
@@ -811,6 +833,10 @@ int32_t AudioServiceClient::HandleMainLoopStart()
             error = pa_context_errno(context);
             AUDIO_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop);
+
+            // if timeout occur, kill server and dump trace in server
+            TimeoutRecover(error);
+
             ResetPAAudioClient();
             return AUDIO_CLIENT_INIT_ERR;
         }
@@ -890,7 +916,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     pa_threaded_mainloop_lock(mainLoop);
 
     if (HandlePAStreamConnect(deviceNameS, latency_in_msec) != SUCCESS || WaitStreamReady() != SUCCESS) {
-        pa_threaded_mainloop_unlock(mainLoop);
+        if (mainLoop != nullptr) {
+            pa_threaded_mainloop_unlock(mainLoop);
+        }
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
 
@@ -939,6 +967,7 @@ int32_t AudioServiceClient::HandlePAStreamConnect(const std::string &deviceNameS
     if (result < 0) {
         int error = pa_context_errno(context);
         AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
+        pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }

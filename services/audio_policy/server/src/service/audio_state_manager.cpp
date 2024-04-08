@@ -32,6 +32,7 @@ void AudioStateManager::SetPerferredCallRenderDevice(const sptr<AudioDeviceDescr
 
 void AudioStateManager::SetPerferredCallCaptureDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     perferredCallCaptureDevice_ = deviceDescriptor;
 }
 
@@ -64,6 +65,7 @@ unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredCallRenderDevic
 
 unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredCallCaptureDevice()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredCallCaptureDevice_);
     return devDesc;
 }

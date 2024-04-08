@@ -521,6 +521,7 @@ private:
     bool volumeApplyToAll_ = false;
     std::set<uint32_t> saveAppCapTokenIdThroughMS;
     bool isHighResolutionExist_ = false;
+    std::mutex descLock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -26,8 +26,8 @@ namespace {
     const int32_t SAMPLING_RATE_WRONG_NUM = -1;
 
     const int32_t CHANNEL_COUNT_1 = 1;
-    const int32_t CHANNEL_COUNT_2 = 2;
-    const int32_t CHANNEL_COUNT_10 = 10;
+    const int32_t CHANNEL_COUNT_16 = 16;
+    const int32_t CHANNEL_COUNT_18 = 18;
 
     FILE *g_file;
     bool g_readEnd = false;
@@ -303,7 +303,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_004, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via legal state, channelCount is 2.
+* @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via legal state, channelCount is 16.
 * @tc.number: OH_AudioStreamBuilder_SetParameter_005
 * @tc.desc  : Test OH_AudioStreamBuilder_SetChannelCount interface. Returns true if result is successful.
 */
@@ -314,7 +314,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_005, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    int32_t channelCount = CHANNEL_COUNT_2;
+    int32_t channelCount = CHANNEL_COUNT_16;
     result = OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -334,7 +334,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_006, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    int32_t channelCount = CHANNEL_COUNT_10;
+    int32_t channelCount = CHANNEL_COUNT_18;
     result = OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 

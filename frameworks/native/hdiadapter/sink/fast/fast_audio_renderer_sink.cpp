@@ -32,7 +32,7 @@
 #include "running_lock.h"
 #endif
 #include "securec.h"
-#include "v2_0/iaudio_manager.h"
+#include "v3_0/iaudio_manager.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"
