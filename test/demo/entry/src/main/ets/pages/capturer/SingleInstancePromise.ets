@@ -13,14 +13,21 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
 import fs from '@ohos.file.fs';
+import { BusinessError } from '@kit.BasicServicesKit';
 
+class EnumValue {
+  value: string = '';
+}
+class Option {
+  offset: number = 0
+  length: number = 0
+}
 @Entry
 @Component
-struct SingleInstancePromise {
-  private audioCapturerOptions = {
+struct SingleInstanceCallback {
+  private audioCapturerOptions: audio.AudioCapturerOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -32,42 +39,45 @@ struct SingleInstancePromise {
       capturerFlags: 0
     }
   }
-  private audioCapturer = null
-  private audioRenderer = null
-  private samplingRateList = []
-  @State selectedSamplingRateKey: string = "SAMPLE_RATE_44100"
-  private channelsList = []
-  @State selectedChannelKey: string = "CHANNEL_2"
-  private sampleFormatList = []
-  @State selectedsampleFormatKey: string = "SAMPLE_FORMAT_S16LE"
-  private encodingTypeList = []
-  @State selectedEncodingTypeKey: string = "ENCODING_TYPE_RAW"
-  private sourceTypeList = []
-  @State selectedSourceTypeKey: string = "SOURCE_TYPE_MIC"
-  @State returnMsg: string = `hello`
-  @State bufferSize: number = 0
-  @State isBlockingRead: boolean = true
-  @State path: string = ""
-  private audioManager = null;
-  private audioStreamManager = null;
+  private audioCapturer: audio.AudioCapturer | null = null;
+  private audioRenderer: audio.AudioRenderer | null = null;
+  private samplingRateList: EnumValue[] = [];
+  @State selectedSamplingRateKey: string = "SAMPLE_RATE_44100";
+  private channelsList: EnumValue[] = [];
+  @State selectedChannelKey: string = "CHANNEL_2";
+  private sampleFormatList: EnumValue[] = [];
+  @State selectedsampleFormatKey: string = "SAMPLE_FORMAT_S16LE";
+  private encodingTypeList: EnumValue[] = [];
+  @State selectedEncodingTypeKey: string = "ENCODING_TYPE_RAW";
+  private sourceTypeList: EnumValue[] = [];
+  @State selectedSourceTypeKey: string = "SOURCE_TYPE_MIC";
+  @State returnMsg: string = `hello`;
+  @State bufferSize: number = 0;
+  @State isBlockingRead: boolean = true;
+  @State path: string = "";
+  private audioManager: audio.AudioManager | null = null;
+  private audioStreamManager: audio.AudioStreamManager | null = null;
 
   aboutToAppear() {
-
-    for (let key in audio.AudioSamplingRate) {
+    Object.keys(audio.AudioSamplingRate).forEach((key) => {
       this.samplingRateList.push({ value: key })
-    }
-    for (let key in audio.AudioChannel) {
+    })
+
+    Object.keys(audio.AudioChannel).forEach((key) => {
       this.channelsList.push({ value: key })
-    }
-    for (let key in audio.AudioSampleFormat) {
+    })
+
+    Object.keys(audio.AudioSampleFormat).forEach((key) => {
       this.sampleFormatList.push({ value: key })
-    }
-    for (let key in audio.AudioEncodingType) {
+    })
+
+    Object.keys(audio.AudioEncodingType).forEach((key) => {
       this.encodingTypeList.push({ value: key })
-    }
-    for (let key in audio.SourceType) {
+    })
+
+    Object.keys(audio.SourceType).forEach((key) => {
       this.sourceTypeList.push({ value: key })
-    }
+    })
     this.audioManager = audio.getAudioManager();
     this.audioStreamManager = this.audioManager.getStreamManager()
   }
@@ -83,22 +93,26 @@ struct SingleInstancePromise {
         _this.audioCapturer = data;
         _this.returnMsg = `采集器参数：\n 采样率：${this.selectedSamplingRateKey}\n 声道：${this.selectedChannelKey}\n 采样格式：${this.selectedsampleFormatKey}\n 编码格式：${this.selectedEncodingTypeKey}\n 音源类型：${this.selectedSourceTypeKey}\n`
         _this.returnMsg += `AudioCapturer Created : SUCCESS,state:${_this.audioCapturer.state}\n`
-      }).catch(err => {
+      }).catch((err: BusinessError) => {
       _this.returnMsg += `AudioCapturer Created : Error: ${JSON.stringify(err)}`
     })
   }
   onAudioCapturerChange(){
     let _this = this
     _this.returnMsg = `onAudioCapturerChange 注册成功\n`
-    this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) =>  {
-      _this.returnMsg += `AudioCapturerChangeInfoArray :${JSON.stringify(AudioCapturerChangeInfoArray)}\n`
-    });
+    if (this.audioStreamManager) {
+      this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) =>  {
+        _this.returnMsg += `AudioCapturerChangeInfoArray :${JSON.stringify(AudioCapturerChangeInfoArray)}\n`
+      });
+    }
+
   }
 
   offAudioCapturerChange(){
     let _this = this
-
-    this.audioStreamManager.off('audioCapturerChange');
+    if (this.audioStreamManager) {
+      this.audioStreamManager.off('audioCapturerChange');
+    }
     _this.returnMsg = `取消AudioCapturerChange监听 成功\n`
   }
   capturerStart() {
@@ -109,8 +123,11 @@ struct SingleInstancePromise {
     let _this = this
     this.audioCapturer.start()
       .then(() => {
-        _this.returnMsg += `AudioCapturer start : SUCCESS,state:${_this.audioCapturer.state}\n`
-      }).catch(err => {
+        if (_this.audioCapturer) {
+          _this.returnMsg += `AudioCapturer start : SUCCESS,state:${_this.audioCapturer.state}\n`
+        }
+
+      }).catch((err: BusinessError) => {
       _this.returnMsg += `AudioCapturer start : Error: ${JSON.stringify(err)}\n`
     })
 
@@ -122,13 +139,19 @@ struct SingleInstancePromise {
       return
     }
     let _this = this
-    _this.audioCapturer.getBufferSize()
-      .then(bufferSize => {
-        _this.returnMsg += `AudioCapturer getBufferSize : SUCCESS,bufferSize:${bufferSize},state:${_this.audioCapturer.state}\n`
-        _this.bufferSize = bufferSize
-      }).catch(err => {
-      _this.returnMsg += `AudioCapturer getBufferSize : Error: ${JSON.stringify(err)}\n`
-    })
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getBufferSize()
+        .then(bufferSize => {
+          if (_this.audioCapturer) {
+            _this.returnMsg += `AudioCapturer getBufferSize : SUCCESS,bufferSize:${bufferSize},state:${_this.audioCapturer.state}\n`
+          }
+
+          _this.bufferSize = bufferSize
+        }).catch((err: BusinessError) => {
+        _this.returnMsg += `AudioCapturer getBufferSize : Error: ${JSON.stringify(err)}\n`
+      })
+    }
+
   }
 
   async readCapturer() {
@@ -144,7 +167,7 @@ struct SingleInstancePromise {
     //READ 5S
     let start = new Date().getTime()
     let end = new Date().getTime()
-    let buffer = null
+    let buffer: ArrayBuffer | null = null
 
     _this.returnMsg += `AudioCapturer read start.....\n `
 
@@ -158,7 +181,7 @@ struct SingleInstancePromise {
       return
     }
 
-    let file
+    let file: fs.File;
     try {
       file = await fs.open(path, 0o2);
       this.returnMsg += "文件以读写模式打开成功"
@@ -172,14 +195,16 @@ struct SingleInstancePromise {
     while (end - start <= 5000) {
       try {
         buffer = await new Promise((resolve, reject) => {
-          _this.audioCapturer.read(_this.bufferSize, _this.isBlockingRead)
-            .then((buffer) => {
-              resolve(buffer)
-            }).catch(err => {
-            reject(err)
-          })
+          if (_this.audioCapturer) {
+            _this.audioCapturer.read(_this.bufferSize, _this.isBlockingRead)
+              .then((buffer) => {
+                resolve(buffer)
+              }).catch((err: BusinessError) => {
+              reject(err)
+            })
+          }
         })
-        let options = {
+        let options: Option = {
           offset: index * _this.bufferSize,
           length: _this.bufferSize
         }
@@ -193,7 +218,10 @@ struct SingleInstancePromise {
       }
       end = new Date().getTime()
     }
-    _this.returnMsg += `AudioCapturer read end, state:${_this.audioCapturer.state}\n`
+    if (_this.audioCapturer) {
+      _this.returnMsg += `AudioCapturer read end, state:${_this.audioCapturer.state}\n`
+    }
+
   }
 
   stopCapturer() {
@@ -202,12 +230,18 @@ struct SingleInstancePromise {
       return
     }
     let _this = this
-    _this.audioCapturer.stop()
-      .then(() => {
-        _this.returnMsg += `AudioCapturer stop : SUCCESS,state:${_this.audioCapturer.state}\n`
-      }).catch(err => {
-      _this.returnMsg += `AudioCapturer stop : Error: ${JSON.stringify(err)}\n`
-    })
+    if (_this.audioCapturer) {
+      _this.audioCapturer.stop()
+        .then(() => {
+          if (_this.audioCapturer) {
+            _this.returnMsg += `AudioCapturer stop : SUCCESS,state:${_this.audioCapturer.state}\n`
+          }
+
+        }).catch((err: BusinessError) => {
+        _this.returnMsg += `AudioCapturer stop : Error: ${JSON.stringify(err)}\n`
+      })
+    }
+
   }
 
   releaseCapturer() {
@@ -216,13 +250,18 @@ struct SingleInstancePromise {
       return
     }
     let _this = this
-    _this.audioCapturer.release()
-      .then(() => {
-        _this.returnMsg += `AudioCapturer release SUCCESS,state:${_this.audioCapturer.state}\n`
-        _this.audioCapturer = null
-      }).catch(err => {
-      _this.returnMsg += `AudioCapturer release : Error: ${JSON.stringify(err)}\n`
-    })
+    if (_this.audioCapturer) {
+      _this.audioCapturer.release()
+        .then(() => {
+          if (_this.audioCapturer) {
+            _this.returnMsg += `AudioCapturer release SUCCESS,state:${_this.audioCapturer.state}\n`
+          }
+          _this.audioCapturer = null
+        }).catch((err: BusinessError) => {
+        _this.returnMsg += `AudioCapturer release : Error: ${JSON.stringify(err)}\n`
+      })
+    }
+
   }
 
   async renderPlay() {
@@ -230,11 +269,10 @@ struct SingleInstancePromise {
       this.returnMsg += `AudioCapturer 尚未录音\n`
       return
     }
-    let audioRendererOptions = {
+    let audioRendererOptions: audio.AudioRendererOptions = {
       streamInfo: this.audioCapturerOptions.streamInfo,
       rendererInfo: {
-        content: audio.ContentType.CONTENT_TYPE_RINGTONE,
-        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
         rendererFlags: 0
       }
     }
@@ -246,7 +284,7 @@ struct SingleInstancePromise {
       this.returnMsg += `audioRenderer create : Error: ${JSON.stringify(err)}\n`
       return
     }
-    let bufferSize
+    let bufferSize: number = 0;
     try {
       bufferSize = await this.audioRenderer.getBufferSize()
       this.returnMsg += `audioRenderer getBufferSize success,bufferSize:${bufferSize} \n`
@@ -272,7 +310,7 @@ struct SingleInstancePromise {
       let buf = new ArrayBuffer(bufferSize);
       this.returnMsg += `audioRenderer write start.......... \n`;
       for (let i = 0;i < len; i++) {
-        let options = {
+        let options: Option = {
           offset: i * bufferSize,
           length: bufferSize
         }
@@ -289,14 +327,17 @@ struct SingleInstancePromise {
 
   getCurrentAudioCapturerInfoArray(){
     let _this = this
-    this.audioStreamManager.audioStreamManager.getCurrentAudioCapturerInfoArray().then( function (AudioCapturerChangeInfoArray) {
-      console.info('getCurrentAudioCapturerInfoArray **** Get Promise Called ****');
-      if (AudioCapturerChangeInfoArray != null) {
-        _this.returnMsg =`getCurrentAudioCapturerInfoArray :Success: ${JSON.stringify(AudioCapturerChangeInfoArray)}`;
-      }
-    }).catch((err) => {
-      _this.returnMsg =`getCurrentAudioCapturerInfoArray :ERROR: ${err}`;
-    });
+    if (this.audioStreamManager) {
+      this.audioStreamManager.getCurrentAudioCapturerInfoArray().then((AudioCapturerChangeInfoArray) => {
+        console.info('getCurrentAudioCapturerInfoArray **** Get Promise Called ****');
+        if (AudioCapturerChangeInfoArray != null) {
+          _this.returnMsg =`getCurrentAudioCapturerInfoArray :Success: ${JSON.stringify(AudioCapturerChangeInfoArray)}`;
+        }
+      }).catch((err: BusinessError) => {
+        _this.returnMsg =`getCurrentAudioCapturerInfoArray :ERROR: ${err}`;
+      });
+    }
+
   }
 
 
@@ -308,12 +349,15 @@ struct SingleInstancePromise {
       return
     }
     let _this = this
-    _this.audioCapturer.getCapturerInfo()
-      .then((capturerInfo) => {
-        _this.returnMsg = `AudioCapturer getCapturerInfo : Success: ${JSON.stringify(capturerInfo)}`
-      }).catch(err => {
-      _this.returnMsg = `AudioCapturer getCapturerInfo : Error: ${JSON.stringify(err)}`
-    })
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getCapturerInfo()
+        .then((capturerInfo) => {
+          _this.returnMsg = `AudioCapturer getCapturerInfo : Success: ${JSON.stringify(capturerInfo)}`
+        }).catch((err: BusinessError) => {
+        _this.returnMsg = `AudioCapturer getCapturerInfo : Error: ${JSON.stringify(err)}`
+      })
+    }
+
   }
 
   getStreamInfo() {
@@ -322,12 +366,15 @@ struct SingleInstancePromise {
       return
     }
     let _this = this
-    _this.audioCapturer.getStreamInfo()
-      .then(streamInfo => {
-        _this.returnMsg = `AudioCapturer getStreamInfo : Success: ${JSON.stringify(streamInfo)}`
-      }).catch(err => {
-      _this.returnMsg = `AudioCapturer getStreamInfo : Error: ${JSON.stringify(err)}`
-    })
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getStreamInfo()
+        .then(streamInfo => {
+          _this.returnMsg = `AudioCapturer getStreamInfo : Success: ${JSON.stringify(streamInfo)}`
+        }).catch((err: BusinessError) => {
+        _this.returnMsg = `AudioCapturer getStreamInfo : Error: ${JSON.stringify(err)}`
+      })
+    }
+
   }
 
   getAudioTime() {
@@ -336,12 +383,15 @@ struct SingleInstancePromise {
       return
     }
     let _this = this
-    _this.audioCapturer.getAudioTime()
-      .then(timestamp => {
-        _this.returnMsg = `AudioCapturer getAudioTime Current timestamp: ${JSON.stringify(timestamp)}`
-      }).catch(err => {
-      _this.returnMsg = `AudioCapturer getAudioTime : Error: ${JSON.stringify(err)}`
-    })
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getAudioTime()
+        .then(timestamp => {
+          _this.returnMsg = `AudioCapturer getAudioTime Current timestamp: ${JSON.stringify(timestamp)}`
+        }).catch((err: BusinessError) => {
+        _this.returnMsg = `AudioCapturer getAudioTime : Error: ${JSON.stringify(err)}`
+      })
+    }
+
   }
 
   getAudioStreamId() {
@@ -350,12 +400,15 @@ struct SingleInstancePromise {
       return
     }
     let _this = this
-    _this.audioCapturer.getAudioStreamId()
-      .then(streamid => {
-        _this.returnMsg = `audioCapturer GetStreamId: ${streamid}`
-      }).catch(err => {
-      _this.returnMsg = `AudioCapturer GetStreamId : Error: ${JSON.stringify(err)}`
-    })
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getAudioStreamId()
+        .then(streamid => {
+          _this.returnMsg = `audioCapturer GetStreamId: ${streamid}`
+        }).catch((err: BusinessError) => {
+        _this.returnMsg = `AudioCapturer GetStreamId : Error: ${JSON.stringify(err)}`
+      })
+    }
+
   }
 
   build() {
