@@ -125,7 +125,7 @@ const std::string IAudioStream::GetEffectSceneName(const StreamUsage &streamUsag
         AUDIO_WARNING_LOG("Find streamUsage string failed, not in the parser's string-enum map.");
         return supportedEffectConfig.postProcessNew.stream.back().scene;
     }
-    for (SceneMappingItem &item: supportedEffectConfig.postProcessSceneMap) {
+    for (const SceneMappingItem &item: supportedEffectConfig.postProcessSceneMap) {
         if (item.name == streamUsageString) {
             return item.sceneType;
         }
@@ -211,7 +211,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
 
     if (streamClass == PA_STREAM) {
         int32_t ipcFlag = -1;
-        GetSysPara("persist.multimedia.audioflag.ipc.renderer", ipcFlag);
+        GetSysPara("persist.multimedia.audioflag.forceipc.renderer", ipcFlag);
         if (getuid() == MEDIA_UID && ipcFlag != FORCED_IPC) {
             AUDIO_INFO_LOG("Create normal playback stream");
             return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
@@ -232,7 +232,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     }
     if (streamClass == PA_STREAM) {
         int32_t ipcFlag = -1;
-        GetSysPara("persist.multimedia.audioflag.ipc.capturer", ipcFlag);
+        GetSysPara("persist.multimedia.audioflag.forceipc.capturer", ipcFlag);
         if (getuid() == MEDIA_UID && ipcFlag != FORCED_IPC) {
             AUDIO_INFO_LOG("Create normal record stream");
             return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);

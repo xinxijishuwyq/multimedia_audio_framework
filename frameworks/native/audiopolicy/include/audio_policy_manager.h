@@ -341,6 +341,8 @@ public:
 
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
 
+    float GetMaxAmplitude(const int32_t deviceId);
+    
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

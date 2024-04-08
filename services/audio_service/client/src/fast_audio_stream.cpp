@@ -402,12 +402,6 @@ float FastAudioStream::GetSpeed()
     return static_cast<float>(ERROR);
 }
 
-int32_t FastAudioStream::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
-{
-    AUDIO_ERR_LOG("WriteSpeedBuffer is not supported");
-    return ERR_OPERATION_FAILED;
-}
-
 int32_t FastAudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
     std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
 {

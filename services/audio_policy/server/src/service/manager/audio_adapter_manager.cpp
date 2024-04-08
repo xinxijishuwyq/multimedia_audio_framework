@@ -469,7 +469,7 @@ int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceT
 }
 
 int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType,
-    std::string name, bool active)
+    std::string name, bool active, DeviceFlag flag)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
         "SetDeviceActive audio adapter null");
@@ -482,24 +482,31 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
                 return audioServiceAdapter_->SetDefaultSource(name);
             }
         }
-        case InternalDeviceType::DEVICE_TYPE_EARPIECE:
-        case InternalDeviceType::DEVICE_TYPE_SPEAKER:
-        case InternalDeviceType::DEVICE_TYPE_FILE_SINK:
-        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
-        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
-        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO: {
-            AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
-            return audioServiceAdapter_->SetDefaultSink(name);
+        default: {
+            int32_t ret = SUCCESS;
+            int32_t errs[2]{SUCCESS, SUCCESS};
+            if (IsInputDevice(deviceType) && (flag & INPUT_DEVICES_FLAG)) {
+                AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
+                errs[0] = audioServiceAdapter_->SetDefaultSource(name);
+                if (errs[0] != SUCCESS) {
+                    AUDIO_ERR_LOG("SetDefaultSource err: %{public}d", errs[0]);
+                    ret = errs[0];
+                }
+            }
+            if (IsOutputDevice(deviceType) && (flag & OUTPUT_DEVICES_FLAG)) {
+                AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
+                errs[1] = audioServiceAdapter_->SetDefaultSink(name);
+                if (errs[1] != SUCCESS) {
+                    AUDIO_ERR_LOG("SetDefaultSink err: %{public}d", errs[1]);
+                    ret = errs[1];
+                }
+            }
+            // Ensure compatibility across different platforms and versions
+            if (errs[0] == SUCCESS || errs[1] == SUCCESS) {
+                return SUCCESS;
+            }
+            return ret;
         }
-        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
-        case InternalDeviceType::DEVICE_TYPE_MIC:
-        case InternalDeviceType::DEVICE_TYPE_WAKEUP: {
-            AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
-            return audioServiceAdapter_->SetDefaultSource(name);
-        }
-        default:
-            break;
     }
     return SUCCESS;
 }

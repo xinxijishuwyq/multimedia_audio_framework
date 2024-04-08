@@ -35,6 +35,7 @@ namespace OHOS {
 namespace AudioStandard {
 const int64_t PCM_MAYBE_SILENT = 1;
 const int64_t PCM_MAYBE_NOT_SILENT = 5;
+const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
 class Trace {
 public:
     static void Count(const std::string &value, int64_t count, bool isEnable = true);
@@ -87,6 +88,21 @@ void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b);
 void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b);
 void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
+
+enum ConvertHdiFormat {
+    SAMPLE_U8_C = 0,
+    SAMPLE_S16_C = 1,
+    SAMPLE_S24_C = 2,
+    SAMPLE_S32_C = 3,
+    SAMPLE_F32_C = 4,
+    INVALID_WIDTH_C = -1
+}; // same with HdiAdapterFormat
+
+float UpdateMaxAmplitude(ConvertHdiFormat adapterFormat, char *frame, uint64_t replyBytes);
+float CalculateMaxAmplitudeForPCM8Bit(int8_t *frame, uint64_t nSamples);
+float CalculateMaxAmplitudeForPCM16Bit(int16_t *frame, uint64_t nSamples);
+float CalculateMaxAmplitudeForPCM24Bit(char *frame, uint64_t nSamples);
+float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples);
 
 template <typename T>
 bool isEqual(T a, T b, double precision = 0.01)

@@ -446,6 +446,7 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
         clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
     }
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
+    AUDIO_INFO_LOG("Set preferred callbackBuffer size:%{public}zu", clientSpanSizeInByte_);
     memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
 }
 
@@ -472,12 +473,13 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     }
 
     AUDIO_INFO_LOG("Using totalSizeInFrame_ %{public}d spanSizeInFrame_ %{public}d byteSizePerFrame_ %{public}d "
-        "spanSizeInByte_ %{public}zu clientSpanSizeInByte_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_,
-        byteSizePerFrame_, spanSizeInByte_, clientSpanSizeInByte_);
+        "spanSizeInByte_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_,
+        byteSizePerFrame_, spanSizeInByte_);
 
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(callbackBuffer_ != nullptr, false, "Init callbackBuffer_ failed.");
     memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
+    AUDIO_INFO_LOG("CallbackBufferSize is %{public}zu", clientSpanSizeInByte_);
 
     return true;
 }

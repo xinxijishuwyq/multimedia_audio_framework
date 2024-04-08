@@ -592,7 +592,8 @@ void AudioManagerProxy::RequestThreadPriority(uint32_t tid, string bundleName)
 }
 
 bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-    std::unordered_map<std::string, std::string> &map)
+    std::unordered_map<std::string, std::string> &effectMap,
+    std::unordered_map<std::string, std::string> &enhanceMap)
 {
     int32_t error;
 
@@ -622,8 +623,13 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
         }
     }
 
-    dataParcel.WriteInt32(map.size());
-    for (auto item = map.begin(); item != map.end(); ++item) {
+    dataParcel.WriteInt32(effectMap.size());
+    for (auto item = effectMap.begin(); item != effectMap.end(); ++item) {
+        dataParcel.WriteString(item->first);
+        dataParcel.WriteString(item->second);
+    }
+    dataParcel.WriteInt32(enhanceMap.size());
+    for (auto item = enhanceMap.begin(); item != enhanceMap.end(); ++item) {
         dataParcel.WriteString(item->first);
         dataParcel.WriteString(item->second);
     }
@@ -810,6 +816,25 @@ uint32_t AudioManagerProxy::GetEffectLatency(const std::string &sessionId)
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "error: %{public}d", error);
 
     return reply.ReadUint32();
+}
+
+float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteBool(isOutputDevice);
+    data.WriteInt32(deviceType);
+
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+
+    return reply.ReadFloat();
 }
 } // namespace AudioStandard
 } // namespace OHOS

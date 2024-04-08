@@ -263,6 +263,7 @@ public:
 
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
+    float GetMaxAmplitude(const int32_t deviceId) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

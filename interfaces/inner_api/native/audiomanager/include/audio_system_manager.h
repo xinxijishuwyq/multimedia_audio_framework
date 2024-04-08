@@ -71,6 +71,8 @@ public:
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
     void SetDeviceCapability(const DeviceStreamInfo &audioStreamInfo, int32_t channelMask,
         int32_t channelIndexMasks = 0);
+
+    bool isSameDevice(const DeviceInfo &deviceInfo);
 };
 
 struct DistributedRoutingInfo {

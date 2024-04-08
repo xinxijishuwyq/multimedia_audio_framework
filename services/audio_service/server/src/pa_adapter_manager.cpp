@@ -336,6 +336,9 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         return nullptr;
     }
+    if (SetStreamAudioEnhanceMode(paStream, enhanceMode_) != SUCCESS) {
+        AUDIO_ERR_LOG("set audio enhance mode failed.");
+    }
     return paStream;
 }
 
@@ -403,6 +406,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         pa_proplist_sets(propList, "stream.isIpcCapturer", std::to_string(true).c_str());
         pa_proplist_sets(propList, "stream.capturerSource",
             std::to_string(processConfig.capturerInfo.sourceType).c_str());
+        pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
     }
 
     AUDIO_INFO_LOG("Creating stream of channels %{public}d", processConfig.streamInfo.channels);
@@ -534,6 +538,47 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
         return ERR_INVALID_OPERATION;
     }
     return SUCCESS;
+}
+
+int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode)
+{
+    pa_threaded_mainloop_lock(mainLoop_);
+    const std::string enhanceModeName = GetEnhanceModeName(audioEnhanceMode);
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed.");
+        pa_threaded_mainloop_unlock(mainLoop_);
+        return ERROR;
+    }
+    pa_proplist_sets(propList, "scene.mode", enhanceModeName.c_str());
+    std::string upDevice = "DEVICE_TYPE_MIC";
+    std::string downDevice = "DEVICE_TYPE_SPEAKER";
+    pa_proplist_sets(propList, "device.up", upDevice.c_str());
+    pa_proplist_sets(propList, "device.down", downDevice.c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+    pa_threaded_mainloop_unlock(mainLoop_);
+    return SUCCESS;
+}
+
+const std::string PaAdapterManager::GetEnhanceModeName(AudioEffectMode audioEnhanceMode)
+{
+    std::string name;
+    switch (audioEnhanceMode) {
+        case AudioEffectMode::EFFECT_NONE:
+            name = "EFFECT_NONE";
+            break;
+        case AudioEffectMode::EFFECT_DEFAULT:
+            name = "EFFECT_DEFAULT";
+            break;
+        default:
+            name = "EFFECT_DEFAULT";
+            break;
+    }
+    const std::string modeName = name;
+    return modeName;
 }
 
 void PaAdapterManager::PAStreamUpdateStreamIndexSuccessCb(pa_stream *stream, int32_t success, void *userdata)
@@ -668,5 +713,24 @@ int32_t PaAdapterManager::GetInfo()
         pa_context_get_state(context_), pa_context_errno(context_));
     return SUCCESS;
 }
+
+const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
+{
+    std::string name;
+    switch (sourceType) {
+        case SOURCE_TYPE_MIC:
+            name = "SCENE_RECORD";
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            name = "SCENE_VOIP_3A";
+            break;
+        default:
+            name = "SCENE_OTHERS";
+    }
+    const std::string sceneName = name;
+    return sceneName;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

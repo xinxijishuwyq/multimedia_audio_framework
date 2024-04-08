@@ -42,50 +42,50 @@ struct Index {
           router.pushUrl({ url: 'pages/AudioCapturer' })
         })
 
-        Button() {
-          Text("音频渲染").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioRenderer' })
-        })
-
-        Button() {
-          Text("分布式音频").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/DistributedAudio' })
-        })
-
-        Button() {
-          Text("DTMF播放器").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/TonePlayer' })
-        })
-
-        Button() {
-          Text("音频焦点").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 40 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioFocus' })
-        })
-
-        Button() {
-          Text("音频框架增强").fontSize(30).fontColor(Color.White)
-        }.width('100%')
-        .margin({ bottom: 10 })
-        .height(60)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/AudioEnhance' })
-        })
+        // Button() {
+        //   Text("音频渲染").fontSize(30).fontColor(Color.White)
+        // }.width('100%')
+        // .margin({ bottom: 40 })
+        // .height(60)
+        // .onClick(() => {
+        //   router.pushUrl({ url: 'pages/AudioRenderer' })
+        // })
+        //
+        // Button() {
+        //   Text("分布式音频").fontSize(30).fontColor(Color.White)
+        // }.width('100%')
+        // .margin({ bottom: 40 })
+        // .height(60)
+        // .onClick(() => {
+        //   router.pushUrl({ url: 'pages/DistributedAudio' })
+        // })
+        //
+        // Button() {
+        //   Text("DTMF播放器").fontSize(30).fontColor(Color.White)
+        // }.width('100%')
+        // .margin({ bottom: 40 })
+        // .height(60)
+        // .onClick(() => {
+        //   router.pushUrl({ url: 'pages/TonePlayer' })
+        // })
+        //
+        // Button() {
+        //   Text("音频焦点").fontSize(30).fontColor(Color.White)
+        // }.width('100%')
+        // .margin({ bottom: 40 })
+        // .height(60)
+        // .onClick(() => {
+        //   router.pushUrl({ url: 'pages/AudioFocus' })
+        // })
+        //
+        // Button() {
+        //   Text("音频框架增强").fontSize(30).fontColor(Color.White)
+        // }.width('100%')
+        // .margin({ bottom: 10 })
+        // .height(60)
+        // .onClick(() => {
+        //   router.pushUrl({ url: 'pages/AudioEnhance' })
+        // })
 
       }.width('90%')
       .margin('5%')

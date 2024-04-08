@@ -49,6 +49,7 @@ public:
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
+    float GetMaxAmplitude() override;
 private:
     bool capturerInited_ = false;
     FILE *filePtr = nullptr;

@@ -62,8 +62,6 @@ std::shared_ptr<AudioEffectRotation> AudioEffectRotation::GetInstance()
 void AudioEffectRotation::Init()
 {
     AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
-    audioRotationListener_ = new AudioRotationListener();
-    Rosen::DisplayManager::GetInstance().RegisterDisplayListener(audioRotationListener_);
 }
 
 void AudioEffectRotation::SetRotation(uint32_t rotationState)
@@ -88,17 +86,8 @@ void AudioEffectRotation::OnDestroy(Rosen::DisplayId displayId)
 
 void AudioEffectRotation::OnChange(Rosen::DisplayId displayId)
 {
-    // get display
-    auto display = Rosen::DisplayManager::GetInstance().GetDisplayById(displayId);
-    if (!display) {
-        AUDIO_WARNING_LOG("Get display by displayId: %{public}d failed.",
-            static_cast<int32_t>(displayId));
-        return;
-    }
     // get rotation
-    Rosen::Rotation newRotationState = display->GetRotation();
-    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d rotationState: %{public}u.",
-        static_cast<int32_t>(displayId), static_cast<uint32_t>(newRotationState));
+    int32_t newRotationState = 0;
     EffectChainManagerRotationUpdate(static_cast<uint32_t>(newRotationState));
 }
 #endif

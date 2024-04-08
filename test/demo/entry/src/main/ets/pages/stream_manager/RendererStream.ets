@@ -13,26 +13,35 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
 import fs from '@ohos.file.fs';
+import { BusinessError } from '@kit.BasicServicesKit';
+
+class EnumValue {
+  value: string = '';
+}
+
+class Option {
+  offset: number = 0
+  length: number = 0
+}
 
 @Entry
 @Component
 struct RendererStream {
   @State renderIndex: number = 0;
   @State returnMsg: string = 'Hello World'
-  private volumeTypeSelectList = [];
-  private contentTypeSelectList = [];
-  private streamUsageSelectList = [];
+  private volumeTypeSelectList: EnumValue[] = [];
+  private contentTypeSelectList: EnumValue[] = [];
+  private streamUsageSelectList: EnumValue[] = [];
   @State selectedVolumeType: number = 0;
   private audioStreamManager = audio.getAudioManager().getStreamManager();
-  @State onReturnMsg: string = ""
+  @State onReturnMsg: string = "";
   @State selectedVolumeTypeKey: string = "";
   @State selectedContentTypeKey: string = "CONTENT_TYPE_MUSIC";
   @State selectedStreamUsageKey: string = "STREAM_USAGE_MEDIA";
-  private audioRenderer = null;
-  private audioRendererOptions = {
+  private audioRenderer: audio.AudioRenderer | null = null;
+  private audioRendererOptions: audio.AudioRendererOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -40,13 +49,12 @@ struct RendererStream {
       encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
     },
     rendererInfo: {
-      content: audio.ContentType.CONTENT_TYPE_UNKNOWN,
       usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
       rendererFlags: 0
     }
   }
-  //content_type@stream_usage:stream_type
-  private streamMap = {
+
+  private streamMap: Record<string, string> = {
     'CONTENT_TYPE_UNKNOWN@STREAM_USAGE_UNKNOWN': 'STREAM_MUSIC',
     'CONTENT_TYPE_UNKNOWN@STREAM_USAGE_MEDIA': 'STREAM_MUSIC',
     'CONTENT_TYPE_UNKNOWN@STREAM_USAGE_VOICE_COMMUNICATION': 'STREAM_MUSIC',
@@ -90,15 +98,15 @@ struct RendererStream {
 
   }
 
-  getVolumeType(contentType, streamUsage) {
+  getVolumeType(contentType: string, streamUsage: string) {
     let streamType = this.streamMap[contentType + '@'+streamUsage];
     this.selectedVolumeTypeKey = this.volumeMap[streamType];
     if (!this.selectedVolumeTypeKey) {
       this.selectedVolumeTypeKey = this.volumeMap['STREAM_MUSIC'];
     }
   }
-  //stream_type:volume_type
-  private volumeMap = {
+
+  private volumeMap: Record<string, string> = {
     'STREAM_RING': 'RINGTONE',
     'STREAM_MUSIC': 'MEDIA',
     'STREAM_VOICE_CALL': 'VOICE_CALL',
@@ -110,36 +118,34 @@ struct RendererStream {
   }
 
   aboutToAppear() {
-    for (let key in audio.AudioVolumeType) {
-      this.volumeTypeSelectList.push({ value: key })
-    }
+    Object.keys(audio.AudioVolumeType).forEach((key) => {
+      this.volumeTypeSelectList.push({ value: key });
+    })
 
-    for (let key in audio.ContentType) {
-      if (key === "CONTENT_TYPE_SONIFICATION") {
-        continue;
+    Object.keys(audio.AudioVolumeType).forEach((key) => {
+      if (key !== "CONTENT_TYPE_SONIFICATION") {
+        this.contentTypeSelectList.push({ value: key });
       }
-      this.contentTypeSelectList.push({ value: key })
-    }
-    for (let key in audio.StreamUsage) {
-      this.streamUsageSelectList.push({ value: key })
-    }
+    })
 
+    Object.keys(audio.AudioVolumeType).forEach((key) => {
+      this.streamUsageSelectList.push({ value: key });
+    })
     this.getVolumeType(this.selectedContentTypeKey, this.selectedStreamUsageKey)
-
   }
 
-  getInfoArray(AudioRendererChangeInfoArray) {
+  getInfoArray(AudioRendererChangeInfoArray: audio.AudioRendererChangeInfoArray) {
 
     if (AudioRendererChangeInfoArray.length > 0) {
       console.log(JSON.stringify(AudioRendererChangeInfoArray))
       let str = ``;
       for (let i = 0; i < AudioRendererChangeInfoArray.length; i++) {
         let Info = AudioRendererChangeInfoArray[i];
-        str += `第${i}条\nStreamId:${Info.streamId},ClientUid:${Info.clientUid},Source:${Info.rendererInfo.source},Flag:${Info.rendererInfo.rendererFlags},State:${Info.rendererState}\n`;
+        str += `第${i}条\nStreamId:${Info.streamId},ClientUid:${Info.clientUid},Source:${Info.rendererInfo.content},Flag:${Info.rendererInfo.rendererFlags},State:${Info.rendererState}\n`;
         for (let j = 0; j < Info.deviceDescriptors.length; j++) {
           let descriptor = Info.deviceDescriptors[j];
           str += `__deviceDescriptors_${j}\n`;
-          str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks},EncodingType:${descriptor.encodingType}\n`;
+          str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks},EncodingType:${descriptor.encodingTypes}\n`;
         }
       }
       return str;
@@ -189,7 +195,7 @@ struct RendererStream {
             this.audioStreamManager.getCurrentAudioRendererInfoArray()
               .then((AudioRendererChangeInfoArray) => {
                 _this.returnMsg = _this.getInfoArray(AudioRendererChangeInfoArray);
-              }).catch((err) => {
+              }).catch((err: BusinessError) => {
               _this.returnMsg = "getCurrentAudioRendererInfoArray :ERROR:" + JSON.stringify(err);
             })
           })
@@ -240,7 +246,7 @@ struct RendererStream {
               this.audioStreamManager.getAudioEffectInfoArray(audio.StreamUsage[this.selectedStreamUsageKey]).then((audioEffectInfoArray) => {
 
                 _this.returnMsg = '\n收到回调啦\n' +`The effect modes are: ${audioEffectInfoArray}`
-              }).catch((err) => {
+              }).catch((err: BusinessError) => {
                 _this.returnMsg = '\n收到回调啦\n' +`getAudioEffectInfoArray :ERROR: ${err}`
                 return;
               });
@@ -301,7 +307,7 @@ struct RendererStream {
               let _this = this;
               this.audioStreamManager.isActive(audio.AudioVolumeType[this.selectedVolumeTypeKey]).then(value => {
                 _this.returnMsg = "isActive promise SUCCESS 返回值：" + value;
-              }).catch(err => {
+              }).catch((err: BusinessError) => {
                 _this.returnMsg = "isActive promise ERROR:" + JSON.stringify(err);
               });
             })
@@ -315,12 +321,12 @@ struct RendererStream {
               .fontColor(Color.Blue)
               .onClick(() => {
                 if (this.renderIndex > 0) {
-                  this.returnMsg += "AudioRenderer Created already,please don't create it again "
-                  return
+                  this.returnMsg += "AudioRenderer Created already,please don't create it again ";
+                  return;
                 }
                 let _this = this;
-                this.audioRendererOptions.rendererInfo.content = audio.ContentType[this.selectedContentTypeKey]
-                this.audioRendererOptions.rendererInfo.usage = audio.StreamUsage[this.selectedStreamUsageKey]
+                this.audioRendererOptions.rendererInfo.content = audio.ContentType[this.selectedContentTypeKey];
+                this.audioRendererOptions.rendererInfo.usage = audio.StreamUsage[this.selectedStreamUsageKey];
                 _this.returnMsg = "AudioRenderer audioRendererOptions:" + JSON.stringify(this.audioRendererOptions);
                 audio.createAudioRenderer(this.audioRendererOptions, (err, data) => {
                   if (err) {
@@ -338,9 +344,13 @@ struct RendererStream {
               .backgroundColor(Color.Pink)
               .fontColor(Color.Blue)
               .onClick(async () => {
+                if (!this.audioRenderer) {
+                  this.returnMsg = "Renderer instance had not created";
+                  return;
+                }
                 try {
                   await this.audioRenderer.start();
-                  this.returnMsg += `AudioRenderer Start Success\n`
+                  this.returnMsg += `AudioRenderer Start Success\n`;
                 } catch (err) {
                   this.returnMsg += `AudioRenderer Start Error:${JSON.stringify(err)}`
                 }
@@ -354,11 +364,15 @@ struct RendererStream {
               .backgroundColor(Color.Pink)
               .fontColor(Color.Blue)
               .onClick(async () => {
+                if (!this.audioRenderer) {
+                  this.returnMsg = "Renderer instance had not created";
+                  return;
+                }
                 try {
                   let bufferSize = await this.audioRenderer.getBufferSize();
-                  this.returnMsg += `bufferSize:${bufferSize}\n`
+                  this.returnMsg += `bufferSize:${bufferSize}\n`;
                   let path = globalThis.pathDir + '/test_44100_2.wav';
-                  this.returnMsg += `path:${path}\n`
+                  this.returnMsg += `path:${path}\n`;
                   let stat = await fs.stat(path);
                   this.returnMsg += `stat:${JSON.stringify(stat)}\n`;
                   this.returnMsg += `size:${stat.size}\n`;
@@ -370,7 +384,7 @@ struct RendererStream {
                   let buf = new ArrayBuffer(bufferSize);
                   this.returnMsg += `audioRenderer write start.......... \n`;
                   for (let i = 0;i < len; i++) {
-                    let options = {
+                    let options: Option = {
                       offset: i * bufferSize,
                       length: bufferSize
                     }
@@ -379,7 +393,7 @@ struct RendererStream {
                   }
                   this.returnMsg += `audioRenderer write end. \n`;
                 } catch (err) {
-                  this.returnMsg += `AudioRenderer write Error:${JSON.stringify(err)}`
+                  this.returnMsg += `AudioRenderer write Error:${JSON.stringify(err)}`;
                 }
               })
             Button("pause")
@@ -388,11 +402,15 @@ struct RendererStream {
               .backgroundColor(Color.Pink)
               .fontColor(Color.Blue)
               .onClick(async () => {
+                if (!this.audioRenderer) {
+                  this.returnMsg = "Renderer instance had not created";
+                  return;
+                }
                 try {
                   await this.audioRenderer.pause();
                   this.returnMsg += `audioRenderer pause Success \n`;
                 } catch (err) {
-                  this.returnMsg += `AudioRenderer Pause Error:${JSON.stringify(err)}`
+                  this.returnMsg += `AudioRenderer Pause Error:${JSON.stringify(err)}`;
                 }
               })
           }.height(40).margin({ top: 10 })
@@ -404,11 +422,15 @@ struct RendererStream {
               .backgroundColor(Color.Pink)
               .fontColor(Color.Blue)
               .onClick(async () => {
+                if (!this.audioRenderer) {
+                  this.returnMsg = "Renderer instance had not created";
+                  return;
+                }
                 try {
                   await this.audioRenderer.stop();
                   this.returnMsg += `audioRenderer stop Success \n`;
                 } catch (err) {
-                  this.returnMsg += `AudioRenderer Stop Error:${JSON.stringify(err)}`
+                  this.returnMsg += `AudioRenderer Stop Error:${JSON.stringify(err)}`;
                 }
               })
             Button("release")
@@ -417,12 +439,16 @@ struct RendererStream {
               .backgroundColor(Color.Pink)
               .fontColor(Color.Blue)
               .onClick(async () => {
+                if (!this.audioRenderer) {
+                  this.returnMsg = "Renderer instance had not created";
+                  return;
+                }
                 try {
                   await this.audioRenderer.release();
                   this.returnMsg += `audioRenderer release Success \n`;
                   this.renderIndex = 0;
                 } catch (err) {
-                  this.returnMsg += `AudioRenderer release Error:${JSON.stringify(err)}`
+                  this.returnMsg += `AudioRenderer release Error:${JSON.stringify(err)}`;
                 }
               })
           }.height(40).margin({ top: 10 })

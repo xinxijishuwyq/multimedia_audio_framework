@@ -19,6 +19,7 @@
 #include <ctime>
 #include <sstream>
 #include <ostream>
+#include <climits>
 #include "audio_utils.h"
 #include "audio_utils_c.h"
 #include "audio_errors.h"
@@ -381,6 +382,94 @@ void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
         *(b++) = static_cast<int32_t>(v);
     }
+}
+
+float UpdateMaxAmplitude(ConvertHdiFormat adapterFormat, char *frame, uint64_t replyBytes)
+{
+    switch (adapterFormat) {
+        case SAMPLE_U8_C: {
+            return CalculateMaxAmplitudeForPCM8Bit(reinterpret_cast<int8_t *>(frame), replyBytes);
+        }
+        case SAMPLE_S16_C: {
+            return CalculateMaxAmplitudeForPCM16Bit(reinterpret_cast<int16_t *>(frame),
+                (replyBytes / sizeof(int16_t)));
+        }
+        case SAMPLE_S24_C: {
+            return CalculateMaxAmplitudeForPCM24Bit(frame, (replyBytes / 3)); // 3 bytes
+        }
+        case SAMPLE_S32_C: {
+            return CalculateMaxAmplitudeForPCM32Bit(reinterpret_cast<int32_t *>(frame),
+                (replyBytes / sizeof(int32_t)));
+        }
+        default: {
+            AUDIO_INFO_LOG("getMaxAmplitude: Unsupported audio format: %{public}d", adapterFormat);
+            return 0;
+        }
+    }
+}
+
+float CalculateMaxAmplitudeForPCM8Bit(int8_t *frame, uint64_t nSamples)
+{
+    int curMaxAmplitude = 0;
+    for (int i = nSamples; i > 0; --i) {
+        int8_t value = *frame++;
+        if (value < 0) {
+            value = -value;
+        }
+        if (curMaxAmplitude < value) {
+            curMaxAmplitude = value;
+        }
+    }
+    return float(curMaxAmplitude) / SCHAR_MAX;
+}
+
+float CalculateMaxAmplitudeForPCM16Bit(int16_t *frame, uint64_t nSamples)
+{
+    int curMaxAmplitude = 0;
+    for (int i = nSamples; i > 0; --i) {
+        int16_t value = *frame++;
+        if (value < 0) {
+            value = -value;
+        }
+        if (curMaxAmplitude < value) {
+            curMaxAmplitude = value;
+        }
+    }
+    return float(curMaxAmplitude) / SHRT_MAX;
+}
+
+float CalculateMaxAmplitudeForPCM24Bit(char *frame, uint64_t nSamples)
+{
+    int curMaxAmplitude = 0;
+    for (int i = 0; i < nSamples; ++i) {
+        char *curPos = frame + (i * 3); // 3 bytes
+        int curValue = 0;
+        for (int j = 0; j < 3; ++j) { // 3 bytes
+            curValue += (*(curPos + j) << (BIT_8 * j));
+        }
+        if (curValue < 0) {
+            curValue = -curValue;
+        }
+        if (curMaxAmplitude < curValue) {
+            curMaxAmplitude = curValue;
+        }
+    }
+    return float(curMaxAmplitude) / MAX_VALUE_OF_SIGNED_24_BIT;
+}
+
+float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
+{
+    int curMaxAmplitude = 0;
+    for (int i = nSamples; i > 0; --i) {
+        int32_t value = *frame++;
+        if (value < 0) {
+            value = -value;
+        }
+        if (curMaxAmplitude < value) {
+            curMaxAmplitude = value;
+        }
+    }
+    return float(curMaxAmplitude) / LONG_MAX;
 }
 
 template <typename T>

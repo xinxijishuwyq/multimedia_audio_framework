@@ -23,6 +23,12 @@
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {
+
+static const int32_t FOCUS_INFO_VALID_SIZE = 128;
+static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
+static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
+static const int32_t STATE_VALID_SIZE = 128;
+
 AudioPolicyClientStub::AudioPolicyClientStub()
 {}
 
@@ -69,6 +75,8 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
     std::list<std::pair<AudioInterrupt, AudioFocuState>> infoList;
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < FOCUS_INFO_VALID_SIZE, "get invalid size : %{public}d", size);
+
     for (int32_t i = 0; i < size; i++) {
         focusInfo.first.Unmarshalling(data);
         focusInfo.second = static_cast<AudioFocuState>(data.ReadInt32());
@@ -97,6 +105,8 @@ void AudioPolicyClientStub::HandleDeviceChange(MessageParcel &data, MessageParce
     deviceChange.type = static_cast<DeviceChangeType>(data.ReadUint32());
     deviceChange.flag = static_cast<DeviceFlag>(data.ReadUint32());
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
+
     for (int32_t i = 0; i < size; i++) {
         deviceChange.deviceDescriptors.emplace_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
@@ -120,6 +130,8 @@ void AudioPolicyClientStub::HandlePreferredOutputDeviceUpdated(MessageParcel &da
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
+
     for (int32_t i = 0; i < size; i++) {
         deviceDescriptor.push_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
@@ -130,6 +142,8 @@ void AudioPolicyClientStub::HandlePreferredInputDeviceUpdated(MessageParcel &dat
 {
     std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptor;
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
+
     for (int32_t i = 0; i < size; i++) {
         deviceDescriptor.push_back(AudioDeviceDescriptor::Unmarshalling(data));
     }
@@ -140,6 +154,8 @@ void AudioPolicyClientStub::HandleRendererStateChange(MessageParcel &data, Messa
 {
     std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRenderChangeInfo;
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < STATE_VALID_SIZE, "get invalid size : %{public}d", size);
+
     while (size > 0) {
         std::unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_unique<AudioRendererChangeInfo>();
         if (rendererChangeInfo == nullptr) {
@@ -157,6 +173,8 @@ void AudioPolicyClientStub::HandleCapturerStateChange(MessageParcel &data, Messa
 {
     std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfo;
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < STATE_VALID_SIZE, "get invalid size : %{public}d", size);
+
     while (size > 0) {
         std::unique_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_unique<AudioCapturerChangeInfo>();
         if (capturerChangeInfo == nullptr) {

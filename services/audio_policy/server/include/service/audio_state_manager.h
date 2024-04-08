@@ -75,6 +75,7 @@ private:
     sptr<AudioDeviceDescriptor> perferredRingRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
     sptr<AudioDeviceDescriptor> perferredRecordCaptureDevice_ = new(std::nothrow) AudioDeviceDescriptor();
     sptr<AudioDeviceDescriptor> perferredToneRenderDevice_ = new(std::nothrow) AudioDeviceDescriptor();
+    std::mutex mutex_;
 };
 
 } // namespace AudioStandard

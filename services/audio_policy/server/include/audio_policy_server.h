@@ -362,6 +362,8 @@ public:
 
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
+    float GetMaxAmplitude(const int32_t deviceId) override;
+    
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -519,6 +521,7 @@ private:
     bool volumeApplyToAll_ = false;
     std::set<uint32_t> saveAppCapTokenIdThroughMS;
     bool isHighResolutionExist_ = false;
+    std::mutex descLock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

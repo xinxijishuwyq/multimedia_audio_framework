@@ -33,6 +33,7 @@ typedef struct BufferAttr {
     int frameLen;
     float *tempBufIn;
     float *tempBufOut;
+    bool bufOutUsed;
 } BufferAttr;
 
 typedef struct SessionInfoPack {

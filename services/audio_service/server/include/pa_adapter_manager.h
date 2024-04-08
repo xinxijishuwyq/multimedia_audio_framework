@@ -22,13 +22,14 @@
 #include <pulse/thread-mainloop.h>
 #include "audio_timer.h"
 #include "i_stream_manager.h"
+#include "audio_effect.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 static std::map<uint8_t, AudioChannelLayout> defaultChCountToLayoutMap = {
     {1, CH_LAYOUT_MONO}, {2, CH_LAYOUT_STEREO}, {3, CH_LAYOUT_SURROUND},
-    {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1_BACK},
+    {4, CH_LAYOUT_2POINT0POINT2}, {5, CH_LAYOUT_5POINT0_BACK}, {6, CH_LAYOUT_5POINT1},
     {7, CH_LAYOUT_6POINT1_BACK}, {8, CH_LAYOUT_5POINT1POINT2}, {10, CH_LAYOUT_7POINT1POINT2},
     {12, CH_LAYOUT_7POINT1POINT4}, {14, CH_LAYOUT_9POINT1POINT4}, {16, CH_LAYOUT_9POINT1POINT6}
 };
@@ -90,6 +91,10 @@ private:
     int32_t ConnectRendererStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec);
     int32_t ConnectCapturerStreamToPA(pa_stream *paStream, pa_sample_spec sampleSpec, const std::string &deviceName);
 
+    int32_t SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode);
+    const std::string GetEnhanceModeName(AudioEffectMode audioEnhanceMode);
+    const std::string GetEnhanceSceneName(SourceType sourceType);
+
     // Callbacks to be implemented
     static void PAStreamStateCb(pa_stream *stream, void *userdata);
     static void PAContextStateCb(pa_context *context, void *userdata);
@@ -115,6 +120,7 @@ private:
     bool isMainLoopStarted_;
     ManagerType managerType_ = PLAYBACK;
     bool waitConnect_ = true;
+    AudioEffectMode enhanceMode_ = EFFECT_DEFAULT;
 };
 } // namespace AudioStandard
 } // namespace OHOS

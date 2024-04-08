@@ -51,7 +51,8 @@ public:
         std::vector<Effect>& successEffectList) override;
     bool CreatePlaybackCapturerManager() override;
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-        std::unordered_map<std::string, std::string> &map) override;
+        std::unordered_map<std::string, std::string> &effectMap,
+        std::unordered_map<std::string, std::string> &enhanceMap) override;
     bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
@@ -120,6 +121,8 @@ public:
     int32_t ResetRouteForDisconnect(DeviceType type) override;
 
     uint32_t GetEffectLatency(const std::string &sessionId) override;
+
+    float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

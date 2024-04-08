@@ -61,6 +61,18 @@ struct sessionEffectInfo {
     uint64_t channelLayout;
     std::string spatializationEnabled;
     uint32_t volume;
+} sessionEffectInfo;
+
+const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
+    CH_LAYOUT_STEREO,
+    CH_LAYOUT_5POINT1,
+    CH_LAYOUT_5POINT1POINT2,
+    CH_LAYOUT_7POINT1,
+    CH_LAYOUT_5POINT1POINT4,
+    CH_LAYOUT_7POINT1POINT2,
+    CH_LAYOUT_7POINT1POINT4,
+    CH_LAYOUT_9POINT1POINT4,
+    CH_LAYOUT_9POINT1POINT6
 };
 
 struct effectBufferAttr {
@@ -74,10 +86,6 @@ struct effectBufferAttr {
     {
     }
 };
-
-const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS{CH_LAYOUT_STEREO, CH_LAYOUT_5POINT1_BACK,
-    CH_LAYOUT_5POINT1POINT2, CH_LAYOUT_7POINT1, CH_LAYOUT_5POINT1POINT4, CH_LAYOUT_7POINT1POINT2,
-    CH_LAYOUT_7POINT1POINT4, CH_LAYOUT_9POINT1POINT4, CH_LAYOUT_9POINT1POINT6};
 
 class AudioEffectChainManager {
 public:

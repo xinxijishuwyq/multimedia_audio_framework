@@ -299,6 +299,15 @@ OH_AudioStream_Result OH_AudioRenderer_SetEffectMode(OH_AudioRenderer *renderer,
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_GetUnderflowCount(OH_AudioRenderer* renderer, uint32_t* count)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(count != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "count is nullptr");
+    *count = audioRenderer->GetUnderflowCount();
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -500,7 +509,7 @@ void OHAudioRenderer::UnsetRendererPositionCallback()
 void OHRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the fuction is nullptr");
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the function is nullptr");
     callback_(ohAudioRenderer_, framePosition, userData_);
 }
 
@@ -607,7 +616,9 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
 {
     OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
     CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnWriteData != nullptr, "pointer to the fuction is nullptr");
+    CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_PCM) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
+        ((encodingType_ == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback_ != nullptr)),
+        "pointer to the function is nullptr");
     BufferDesc bufDesc;
     audioRenderer->GetBufferDesc(bufDesc);
     if (encodingType_ == ENCODING_AUDIOVIVID) {
@@ -622,7 +633,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
 void OHAudioRendererDeviceChangeCallback::OnStateChange(const DeviceInfo &deviceInfo)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnStreamEvent != nullptr, "pointer to the fuction is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnStreamEvent != nullptr, "pointer to the function is nullptr");
 
     OH_AudioStream_Event event =  AUDIOSTREAM_EVENT_ROUTING_CHANGED;
     callbacks_.OH_AudioRenderer_OnStreamEvent(ohAudioRenderer_, userData_, event);
@@ -631,7 +642,7 @@ void OHAudioRendererDeviceChangeCallback::OnStateChange(const DeviceInfo &device
 void OHAudioRendererCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnInterruptEvent != nullptr, "pointer to the fuction is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnInterruptEvent != nullptr, "pointer to the function is nullptr");
     OH_AudioInterrupt_ForceType type = (OH_AudioInterrupt_ForceType)(interruptEvent.forceType);
     OH_AudioInterrupt_Hint hint = OH_AudioInterrupt_Hint(interruptEvent.hintType);
     callbacks_.OH_AudioRenderer_OnInterruptEvent(ohAudioRenderer_, userData_, type, hint);
@@ -640,7 +651,7 @@ void OHAudioRendererCallback::OnInterrupt(const InterruptEvent &interruptEvent)
 void OHServiceDiedCallback::OnAudioPolicyServiceDied()
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnError != nullptr, "pointer to the fuction is nullptr");
+    CHECK_AND_RETURN_LOG(callbacks_.OH_AudioRenderer_OnError != nullptr, "pointer to the function is nullptr");
     OH_AudioStream_Result error = AUDIOSTREAM_ERROR_SYSTEM;
     callbacks_.OH_AudioRenderer_OnError(ohAudioRenderer_, userData_, error);
 }
@@ -659,15 +670,6 @@ OH_AudioStream_Result OHAudioRendererErrorCallback::GetErrorResult(AudioErrors e
     }
 }
 
-OH_AudioStream_Result OH_AudioRenderer_GetUnderflowCount(OH_AudioRenderer* renderer, uint32_t* count)
-{
-    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    CHECK_AND_RETURN_RET_LOG(count != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "count is nullptr");
-    *count = audioRenderer->GetUnderflowCount();
-    return AUDIOSTREAM_SUCCESS;
-}
-
 void OHAudioRendererErrorCallback::OnError(AudioErrors errorCode)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr && callbacks_.OH_AudioRenderer_OnError != nullptr,
@@ -680,7 +682,7 @@ void OHAudioRendererDeviceChangeCallbackWithInfo::OnOutputDeviceChange(const Dev
     const AudioStreamDeviceChangeReason reason)
 {
     CHECK_AND_RETURN_LOG(ohAudioRenderer_ != nullptr, "renderer client is nullptr");
-    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the fuction is nullptr");
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the function is nullptr");
 
     callback_(ohAudioRenderer_, userData_, static_cast<OH_AudioStream_DeviceChangeReason>(reason));
 }

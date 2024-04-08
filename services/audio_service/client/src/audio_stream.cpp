@@ -1117,27 +1117,6 @@ int32_t AudioStream::ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
 {
     return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
 }
-
-int32_t AudioStream::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
-{
-    int32_t writeIndex = 0;
-    int32_t writeSize = bufferSize_;
-    while (speedBufferSize > 0) {
-        if (speedBufferSize < bufferSize_) {
-            writeSize = speedBufferSize;
-        }
-        int32_t writtenSize = Write(speedBuffer + writeIndex, writeSize);
-        if (writtenSize < 0) return writtenSize;
-        if (writtenSize == 0) {
-            AUDIO_WARNING_LOG("writeen size is zero");
-            continue;
-        }
-        writeIndex += writtenSize;
-        speedBufferSize -= writtenSize;
-    }
-
-    return bufferSize;
-}
 #endif
 
 int32_t AudioStream::SetSpeed(float speed)
