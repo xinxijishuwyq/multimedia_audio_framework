@@ -16,6 +16,7 @@
 #ifndef AUDIO_RENDERER_UNIT_TEST_H
 #define AUDIO_RENDERER_UNIT_TEST_H
 
+#include <functional>
 #include "gtest/gtest.h"
 #include "audio_renderer.h"
 
@@ -51,6 +52,30 @@ public:
 class AudioRenderModeCallbackTest : public AudioRendererWriteCallback {
 public:
     void OnWriteData(size_t length) override;
+};
+
+class AudioRendererWriteCallbackMock : public AudioRendererWriteCallback {
+public:
+    void OnWriteData(size_t length)
+    {
+        exeCount_++;
+        if (executor_) {
+            executor_(length);
+        }
+    }
+
+    void Install(std::function<void(size_t)> executor)
+    {
+        executor_ = executor;
+    }
+
+    uint32_t GetExeCount()
+    {
+        return exeCount_;
+    }
+private:
+    std::function<void(size_t)> executor_;
+    std::atomic<uint32_t> exeCount_ = 0;
 };
 
 class AudioRendererUnitTest : public testing::Test {

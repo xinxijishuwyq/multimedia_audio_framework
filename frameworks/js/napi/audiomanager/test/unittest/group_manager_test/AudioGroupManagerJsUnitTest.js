@@ -24,16 +24,42 @@ describe("AudioGroupManagerJsUnitTest", function () {
     let audioVolumeManager = audioManager.getVolumeManager();
     const GROUP_ID = audio.DEFAULT_VOLUME_GROUP_ID;
     let audioVolumeGroupManager;
+    let audioRoutingManager;
+    let audioRenderer;
+    let inputDeviceDesc;
+    let outputDeviceDesc;
     const ERROR_INPUT_INVALID = '401';
     const ERROR_INVALID_PARAM = '6800101';
     const MIN_VOLUME_LEVEL = 0;
     const MAX_VOLUME_LEVEL = 15;
+
+    let audioStreamInfo = {
+        samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_48000,
+        channels: audio.AudioChannel.CHANNEL_2,
+        sampleFormat: audio.AudioSampleFormat.SAMPLE_FORMAT_S16LE,
+        encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
+    }
+    let audioRendererInfo = {
+        content: audio.ContentType.CONTENT_TYPE_MUSIC,
+        usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
+        rendererFlags: 0
+    }
+    let audioRendererOptions = {
+        streamInfo: audioStreamInfo,
+        rendererInfo: audioRendererInfo
+    }
+    let bufferSize;
 
     beforeAll(async function () {
         audioVolumeGroupManager = await audioVolumeManager.getVolumeGroupManager(GROUP_ID).catch((err) => {
             console.error("Create audioVolumeManager error " + JSON.stringify(err));
         });
         console.info("Create audioVolumeManager finished");
+
+        audioRoutingManager = await audioManager.getRoutingManager().catch((err) => {
+            console.error("Create audioRoutingManager error " + JSON.stringify(err));
+        });
+        console.info("Create audioRoutingManager finished");
 
         // input testsuit setup step，setup invoked before all testcases
         console.info('AudioGroupManagerJsUnitTest:beforeAll called')
@@ -1428,5 +1454,172 @@ describe("AudioGroupManagerJsUnitTest", function () {
         }
     })
 
+    /*
+     * @tc.name:SUB_AUDIO_GROUP_MANAGER_GET_MAX_AMPLITUDE_FOR_OUTPUT_DEVICE_001
+     * @tc.desc:verify getMaxAmplitudeForOutputDevice get outputDevice max amplitude successfully - <SPEAKER>
+     * @tc.type: FUNC
+     * @tc.require: I7V04L
+     */
+    it("SUB_AUDIO_GROUP_MANAGER_GET_MAX_AMPLITUDE_FOR_OUTPUT_DEVICE_001", 0, async function (done) {
+        let rendererInfo = {
+            content : audio.ContentType.CONTENT_TYPE_MUSIC,
+            usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
+            rendererFlags : 0 }
 
+        audioRoutingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo).then(
+            (desc) => {
+                if (desc.length() === 0) {
+                    console.error("get ouput device failed");
+                    return;
+                } else {
+                    outputDeviceDesc = desc;
+                }
+                console.info("get outputDeviceId finished");
+            }).catch((err) => {
+                console.error("get outputDeviceId error" + JSON.stringify(err));
+                return;
+            });
+
+        audioRenderer = await audio.createAudioRenderer(audioRendererOptions).catch((err) => {
+            console.error("Create audioRenderer error " + JSON.stringify(err));
+            return;
+        });
+        console.info("Create audioRenderer finished");
+
+        try {
+            bufferSize = await audioRenderer.getBufferSize();
+            await audioRenderer.start();
+        } catch (err) {
+            console.err("audioRenderer getBufferSize/start error" + JSON.stringify(err));
+            return;
+        }
+        console.info("audioRenderer getBufferSize/start finished");
+        
+        try {
+            let buff = new ArrayBuffer(bufferSize);
+            let num = 0;
+            while (num < 10) { // add 10 frames;
+                const uInt8 = new Uint8Array(buff);
+                for (let i = 0; i < buff.byteLength; ++i) {
+                    uInt8[i] = Math.ceil((Math.random() * 100)) + 1; // data from 1 ~ 101
+                }
+                await audioRenderer.write(buff);
+                num++;
+            }
+            try {
+                audioVolumeGroupManager.getMaxAmplitudeForOutputDevice(outputDeviceDesc).then().catch();
+                audioVolumeGroupManager.getMaxAmplitudeForOutputDevice(outputDeviceDesc).then(
+                    (maxAmplitude) => {
+                        console.info(`get maxAmplitude finished ${value}.`);
+                        expect(maxAmplitude > 0).assertTrue();
+                        done();
+                    }).catch((err) => {
+                        console.error("get maxAmplitude error" + JSON.stringify(err));
+                        return;
+                    });
+            } catch (err) {
+                console.error(`Failed to getMaxAmplitude. ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        } catch (err) {
+            console.error("play render failed error " + JSON.stringify(err));
+        };
+
+        try {
+            audioRenderer.stop();
+            audioRenderer.release();
+            console.info("audioRenderer stop/release finished");
+        } catch (err) {
+            console.error("audioRenderer stop/release error " + JSON.stringify(err));
+        };
+    })
+
+    
+    /*
+     * @tc.name:SUB_AUDIO_GROUP_MANAGER_GET_MAX_AMPLITUDE_FOR_OUTPUT_DEVICE_002
+     * @tc.desc:verify getMaxAmplitudeForOutputDevice get output devive max amplitude without render successfully - <Random Id>
+     * @tc.type: FUNC
+     * @tc.require: I7V04L
+     */
+    it("SUB_AUDIO_GROUP_MANAGER_GET_MAX_AMPLITUDE_FOR_OUTPUT_DEVICE_002", 0, async function (done) {
+        let rendererInfo = {
+            content : audio.ContentType.CONTENT_TYPE_MUSIC,
+            usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
+            rendererFlags : 0 }
+
+        audioRoutingManager.getPreferredOutputDeviceForRendererInfo(rendererInfo).then(
+            (desc) => {
+                if (desc.length() === 0) {
+                    console.error("get ouput device failed");
+                    return;
+                } else {
+                    outputDeviceDesc = desc;
+                }
+                console.info("get outputDeviceId finished");
+            }).catch((err) => {
+                console.error("get outputDeviceId error" + JSON.stringify(err));
+                return;
+            });
+
+        try {
+            audioVolumeGroupManager.getMaxAmplitudeForOutputDevice(outputDeviceDesc).then(
+                (maxAmplitude) => {
+                    console.info(`get maxAmplitude finished ${value}.`);
+                    expect(maxAmplitude == 0).assertTrue();
+                    done();
+                }).catch((err) => {
+                    console.error("get maxAmplitude error" + JSON.stringify(err));
+                    return;
+                });
+        } catch (err) {
+            console.error(`Failed to getMaxAmplitude. ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_GROUP_MANAGER_GET_MAX_AMPLITUDE_FOR_INPUT_DEVICE_003
+     * @tc.desc:verify getMaxAmplitude get inputDevice max amplitude successfully - <MIC>
+     * @tc.type: FUNC
+     * @tc.require: I7V04L
+     */
+    it("SUB_AUDIO_GROUP_MANAGER_GET_MAX_AMPLITUDE_FOR_INPUT_DEVICE_003", 0, async function (done) {
+        let capturerInfo = {
+            content : audio.ContentType.CONTENT_TYPE_MUSIC,
+            usage : audio.StreamUsage.STREAM_USAGE_MEDIA,
+            capturerFlags : 0 }
+
+        audioRoutingManager.getPreferredInputDeviceForCapturerInfo(capturerInfo).then(
+            (desc) => {
+                if (desc.length() === 0) {
+                    console.error("get ouput device failed");
+                    return;
+                } else {
+                    inputDeviceDesc = desc;
+                }
+                console.info("get inputDeviceId finished");
+            }).catch((err) => {
+                console.error("get inputDeviceId error" + JSON.stringify(err));
+                return;
+            });
+
+        try {
+            audioVolumeGroupManager.getMaxAmplitudeForInputDevice(inputDeviceDesc).then(
+                (maxAmplitude) => {
+                    console.info(`get maxAmplitude finished ${value}.`);
+                    expect(maxAmplitude >= 0).assertTrue();
+                    done();
+                }).catch((err) => {
+                    console.error("get maxAmplitude error" + JSON.stringify(err));
+                    return;
+                });
+            console.info(`get max amplitude is obtained ${maxAmplitude}.`);
+        } catch (err) {
+            console.error(`Failed to getMaxAmplitude. ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
 })

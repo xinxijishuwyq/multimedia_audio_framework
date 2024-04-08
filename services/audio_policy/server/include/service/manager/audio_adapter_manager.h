@@ -88,7 +88,8 @@ public:
 
     int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
 
-    int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType, std::string name, bool active);
+    int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType, std::string name, bool active,
+        DeviceFlag flag = ALL_DEVICES_FLAG);
 
     void SetVolumeForSwitchDevice(InternalDeviceType deviceType);
 
@@ -165,6 +166,7 @@ private:
     std::string GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const;
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
+    int32_t ReInitKVStore();
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
@@ -255,8 +257,7 @@ public:
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
-        if (streamType == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP
-            && isAbsVolumeScene) {
+        if (streamForVolumeMap == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
             return {1.0f, volumeLevel};
         }
 

@@ -710,6 +710,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     AUDIO_DEBUG_LOG("GetSinkInputInfoVolumeCb enter.");
     if (eol < 0) {
+        pa_threaded_mainloop_signal(thiz->mMainLoop, 1);
         delete userData;
         AUDIO_ERR_LOG("Failed to get sink input information: %{public}s",
             pa_strerror(pa_context_errno(c)));
@@ -965,7 +966,6 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
             } else if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
                 const uint32_t sessionID = sinkIndexSessionIDMap[idx];
                 AUDIO_INFO_LOG("sessionID: %{public}d  removed", sessionID);
-                g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
             }
             break;
 

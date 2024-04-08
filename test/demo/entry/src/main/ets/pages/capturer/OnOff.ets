@@ -13,14 +13,18 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
 import fs from '@ohos.file.fs';
+
+class Option {
+  offset: number = 0
+  length: number = 0
+}
 
 @Entry
 @Component
 struct OnOff {
-  private audioCapturerOptions = {
+  private audioCapturerOptions: audio.AudioCapturerOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -32,7 +36,7 @@ struct OnOff {
       capturerFlags: 0
     }
   }
-  private audioCapturer = null
+  private audioCapturer: audio.AudioCapturer | null = null;
   @State returnMsg: string = `hello`
   @State onReturnMsg: string = `hello`
   @State onMarkReachReturnMsg: string = `hello`
@@ -42,8 +46,8 @@ struct OnOff {
   @State path: string = ""
   @State markReachFrame: number = 1000
   @State periodReachFrame: number = 1000
-  private audioManager = null;
-  private audioStreamManager = null;
+  private audioManager: audio.AudioManager | null = null;
+  private audioStreamManager: audio.AudioStreamManager | null = null;
 
   aboutToAppear() {
     this.audioManager = audio.getAudioManager();
@@ -55,11 +59,11 @@ struct OnOff {
       this.returnMsg = `AudioCapturer instance had not created,dont‘t allow to onMarkReach `
       return
     }
-    let _this = this
-    _this.onMarkReachReturnMsg = "markReach 已监听"
-    _this.audioCapturer.on('markReach', _this.markReachFrame, (position) => {
-      if (position == _this.markReachFrame) {
-        _this.onMarkReachReturnMsg = `ON Triggered successfully markReachFrame:${_this.markReachFrame} `
+    // let _this = this
+    this.onMarkReachReturnMsg = "markReach 已监听"
+    this.audioCapturer.on('markReach', this.markReachFrame, (position) => {
+      if (position == this.markReachFrame) {
+        this.onMarkReachReturnMsg = `ON Triggered successfully markReachFrame:${this.markReachFrame} `
       }
     })
   }
@@ -79,11 +83,11 @@ struct OnOff {
       return
     }
 
-    let _this = this
-    _this.onPeriodReachReturnMsg = "periodReach 已监听"
-    _this.audioCapturer.on('periodReach', _this.periodReachFrame, (position) => {
-      if (position == _this.periodReachFrame) {
-        _this.onPeriodReachReturnMsg = `ON Triggered successfully periodReachFrame:${_this.periodReachFrame} `
+    // let _this = this
+    this.onPeriodReachReturnMsg = "periodReach 已监听"
+    this.audioCapturer.on('periodReach', this.periodReachFrame, (position) => {
+      if (position == this.periodReachFrame) {
+        this.onPeriodReachReturnMsg = `ON Triggered successfully periodReachFrame:${this.periodReachFrame} `
       }
     });
   }
@@ -103,25 +107,30 @@ struct OnOff {
       return
     }
     let _this = this
-    _this.onReturnMsg ="stateChange 已监听"
-    _this.audioCapturer.on('stateChange', (state) => {
+    this.onReturnMsg ="stateChange 已监听"
+    this.audioCapturer.on('stateChange', (state) => {
       _this.onReturnMsg = `audio capturer state is: ${state}`
     });
   }
 
   onAudioCapturerChange(){
-    let _this = this
-    _this.returnMsg = `onAudioCapturerChange 注册成功\n`
-    this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) =>  {
-      _this.returnMsg += `AudioCapturerChangeInfoArray :${JSON.stringify(AudioCapturerChangeInfoArray)}\n`
-    });
+    // let _this = this
+    if (this.audioStreamManager) {
+      this.returnMsg = `onAudioCapturerChange 注册成功\n`
+      this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) =>  {
+        this.returnMsg += `AudioCapturerChangeInfoArray :${JSON.stringify(AudioCapturerChangeInfoArray)}\n`
+      });
+    }
+
   }
 
   offAudioCapturerChange(){
-    let _this = this
+    // let _this = this
+    if (this.audioStreamManager) {
+      this.audioStreamManager.off('audioCapturerChange');
+      this.returnMsg = `取消AudioCapturerChange监听 成功\n`
+    }
 
-    this.audioStreamManager.off('audioCapturerChange');
-    _this.returnMsg = `取消AudioCapturerChange监听 成功\n`
   }
 
   createAudioCapturer() {
@@ -148,12 +157,14 @@ struct OnOff {
       this.returnMsg = `AudioCapturer instance had not created,dont‘t allow to start\n`
       return
     }
-    let _this = this
+    // let _this = this
     this.audioCapturer.start((err) => {
       if (err) {
-        _this.returnMsg = `AudioCapturer start : Error: ${JSON.stringify(err)}\n`
+        this.returnMsg = `AudioCapturer start : Error: ${JSON.stringify(err)}\n`
       } else {
-        _this.returnMsg = `AudioCapturer start : SUCCESS,state:${_this.audioCapturer.state}\n`
+        if (this.audioCapturer) {
+          this.returnMsg = `AudioCapturer start : SUCCESS,state:${this.audioCapturer.state}\n`
+        }
       }
     });
   }
@@ -167,16 +178,16 @@ struct OnOff {
       this.bufferSize = await this.audioCapturer.getBufferSize()
     }
 
-    let _this = this
+    // let _this = this
     //READ 5S
     let start = new Date().getTime()
     let end = new Date().getTime()
-    let buffer = null
+    let buffer: ArrayBuffer;
 
-    _this.returnMsg += `AudioCapturer read start.....\n `
+    this.returnMsg += `AudioCapturer read start.....\n `
 
     let path = globalThis.pathDir + `/test_capturer_${new Date().getTime()}_${this.audioCapturerOptions.streamInfo.samplingRate}_${this.audioCapturerOptions.streamInfo.channels}.pcm`;
-    _this.path = path
+    this.path = path
     try {
       await fs.open(path, 0o100);
       this.returnMsg += "文件创建成功，"
@@ -185,7 +196,7 @@ struct OnOff {
       return
     }
 
-    let file
+    let file: fs.File;
     try {
       file = await fs.open(path, 0o2);
       this.returnMsg += "文件以读写模式打开成功"
@@ -199,27 +210,30 @@ struct OnOff {
     while (end - start <= 5000) {
       try {
         buffer = await new Promise((resolve, reject) => {
-          _this.audioCapturer.read(_this.bufferSize, _this.isBlockingRead, async (err, buffer) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(buffer)
-            }
-          })
+          if (this.audioCapturer) {
+            this.audioCapturer.read(this.bufferSize, this.isBlockingRead, async (err, buffer) => {
+              if (err) {
+                reject(err)
+              } else {
+                resolve(buffer)
+              }
+            })
+          }
+
         })
-        let options = {
-          offset: index * _this.bufferSize,
-          length: _this.bufferSize
+        let options: Option = {
+          offset: index * this.bufferSize,
+          length: this.bufferSize
         }
         let writeLen = await fs.write(file.fd, buffer, options)
         index++
 
       } catch (err) {
-        _this.returnMsg = `AudioCapturer read : Error: ${JSON.stringify(err)}\n`
+        this.returnMsg = `AudioCapturer read : Error: ${JSON.stringify(err)}\n`
       }
       end = new Date().getTime()
     }
-    _this.returnMsg = `AudioCapturer read end, state:${_this.audioCapturer.state}\n`
+    this.returnMsg = `AudioCapturer read end, state:${this.audioCapturer.state}\n`
   }
 
   stopCapturer() {
@@ -227,12 +241,14 @@ struct OnOff {
       this.returnMsg = `AudioCapturer instance had not created,dont‘t allow to stop\n`
       return
     }
-    let _this = this
-    _this.audioCapturer.stop((err) => {
+    // let _this = this
+    this.audioCapturer.stop((err) => {
       if (err) {
-        _this.returnMsg = `AudioCapturer stop : Error: ${JSON.stringify(err)}\n`
+        this.returnMsg = `AudioCapturer stop : Error: ${JSON.stringify(err)}\n`
       } else {
-        _this.returnMsg = `AudioCapturer stop : SUCCESS,state:${_this.audioCapturer.state}\n`
+        if (this.audioCapturer) {
+          this.returnMsg = `AudioCapturer stop : SUCCESS,state:${this.audioCapturer.state}\n`
+        }
       }
     })
   }
@@ -242,13 +258,16 @@ struct OnOff {
       this.returnMsg = `AudioCapturer instance had not created,dont‘t allow to release\n`
       return
     }
-    let _this = this
-    _this.audioCapturer.release((err) => {
+    // let _this = this
+    this.audioCapturer.release((err) => {
       if (err) {
-        _this.returnMsg = `AudioCapturer release : Error: ${JSON.stringify(err)}\n`
+        this.returnMsg = `AudioCapturer release : Error: ${JSON.stringify(err)}\n`
       } else {
-        _this.returnMsg = `AudioCapturer release SUCCESS,state:${_this.audioCapturer.state}\n`
-        _this.audioCapturer = null
+        if (this.audioCapturer) {
+          this.returnMsg = `AudioCapturer release SUCCESS,state:${this.audioCapturer.state}\n`
+          this.audioCapturer = null
+        }
+
       }
     })
   }

@@ -122,6 +122,7 @@ ohos_shared_library("module-hdi-source") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
+    "../../../audioeffect:audio_effect",
     "../../../hdiadapter/source:capturer_source_adapter",
     "//third_party/bounds_checking_function:libsec_shared",
   ]

@@ -13,63 +13,84 @@
 * limitations under the License.
 */
 
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
+import { BusinessError } from '@kit.BasicServicesKit';
+
+class EnumValue {
+  value: string = '';
+}
 
 @Entry
 @Component
 struct AudioManagerAudioRouterManager {
-  @State returnMsg: string = 'Hello World'
-  private selectDeviceFlagList = []
-  @State selectedDeviceFlag: number = 0
-  private audioRoutingManager = null
-  @State selectedDeviceFlagKey: string = "请选择设备类型"
-  @State audioManagerObj: audio.AudioManager = null
-  @State onReturnMsg: string = ''
+  @State returnMsg: string = 'Hello World';
+  private selectDeviceFlagList: EnumValue[] = [];
+  @State selectedDeviceFlag: number = 0;
+  private audioRoutingManager: audio.AudioRoutingManager | null = null;
+  @State selectedDeviceFlagKey: string = "请选择设备类型";
+  @State audioManagerObj: audio.AudioManager | null = null;
+  @State onReturnMsg: string = '';
 
   aboutToAppear() {
     this.audioManagerObj = audio.getAudioManager();
-    for (let key in audio.DeviceFlag) {
-      this.selectDeviceFlagList.push({ value: key })
-    }
+    Object.keys(audio.DeviceFlag).forEach((key) => {
+      this.selectDeviceFlagList.push({ value: key });
+    })
   }
 
   getDevicesCallback() {
+    if (!this.audioManagerObj) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
     if (this.selectedDeviceFlagKey == "请选择设备类型") {
-      this.returnMsg = `请选择设备类型`
-      return
+      this.returnMsg = `请选择设备类型`;
+      return;
     }
     this.audioManagerObj.getDevices(this.selectedDeviceFlag, (err, value) => {
       if (err) {
-        this.returnMsg = `getDevices callback Failed err:${JSON.stringify(err)}`
-        return
+        this.returnMsg = `getDevices callback Failed err:${JSON.stringify(err)}`;
+        return;
       }
-      this.returnMsg = `getDevices callback Success 返回值:${JSON.stringify(value)}`
+      this.returnMsg = `getDevices callback Success 返回值:${JSON.stringify(value)}`;
     })
   }
 
   getDevicesPromise() {
+    if (!this.audioManagerObj) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
     if (this.selectedDeviceFlagKey == "请选择设备类型") {
-      this.returnMsg = `请选择设备类型`
-      return
+      this.returnMsg = `请选择设备类型`;
+      return;
     }
     this.audioManagerObj.getDevices(this.selectedDeviceFlag)
       .then(value => {
-        this.returnMsg = `getDevices promise Success 返回值:${JSON.stringify(value)}`
-      }).catch(err => {
-      this.returnMsg = `getDevices promise Failed err:${JSON.stringify(err)}`
+        this.returnMsg = `getDevices promise Success 返回值:${JSON.stringify(value)}`;
+      }).catch((err: BusinessError) => {
+      this.returnMsg = `getDevices promise Failed err:${JSON.stringify(err)}`;
     })
   }
 
   onDeviceChange() {
-    let _this = this
-    _this.onReturnMsg = `监听已监听\n deviceFlag:${this.selectedDeviceFlag}`
+    if (!this.audioManagerObj) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
+    let _this = this;
+    _this.onReturnMsg = `监听已监听\n deviceFlag:${this.selectedDeviceFlag}`;
     this.audioManagerObj.on('deviceChange', (deviceChanged) => {
       _this.onReturnMsg = "on 收到回调了：" + JSON.stringify(deviceChanged);
     })
   }
 
   offDeviceChange() {
-    this.onReturnMsg = "off 已触发"
+    if (!this.audioManagerObj) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
+    this.onReturnMsg = "off 已触发";
     this.audioManagerObj.off('deviceChange');
   }
 

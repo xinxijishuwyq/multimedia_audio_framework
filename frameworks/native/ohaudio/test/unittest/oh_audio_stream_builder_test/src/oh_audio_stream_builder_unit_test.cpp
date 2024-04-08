@@ -26,11 +26,34 @@ namespace {
     const int32_t SAMPLING_RATE_WRONG_NUM = -1;
 
     const int32_t CHANNEL_COUNT_1 = 1;
-    const int32_t CHANNEL_COUNT_2 = 2;
-    const int32_t CHANNEL_COUNT_10 = 10;
+    const int32_t CHANNEL_COUNT_16 = 16;
+    const int32_t CHANNEL_COUNT_18 = 18;
 
     FILE *g_file;
     bool g_readEnd = false;
+}
+
+const int32_t g_samplingRate = 48000; // 48000:g_samplingRate value
+const int32_t g_channelCount = 2; // 2:g_channelCount value
+const int32_t g_latencyMode = 0;
+const int32_t g_sampleFormat = 1;
+const int32_t g_frameSize = 240; // 240:g_frameSize value
+
+static int32_t AudioRendererOnWriteDataInterrupt(OH_AudioRenderer* capturer,
+    void* userData,
+    void* buffer,
+    int32_t bufferLen)
+{
+    return 0;
+}
+
+static int32_t AudioRendererInterruptEvent(OH_AudioRenderer* renderer,
+    void* userData,
+    OH_AudioInterrupt_ForceType type,
+    OH_AudioInterrupt_Hint hint)
+{
+    printf("AudioRendererInterruptEvent type = %d, hint = %d\n", type, hint);
+    return 0;
 }
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
@@ -48,6 +71,31 @@ static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
         }
     }
 
+    return 0;
+}
+
+static int32_t AudioRendererWriteDataWithMetadataCallback(OH_AudioRenderer *renderer,
+    void *userData, void *audioData, int32_t audioDataSize, void *metadata, int32_t metadataSize)
+{
+    size_t readCount = fread(audioData, audioDataSize, 1, g_file);
+    if (!readCount) {
+        g_readEnd = true;
+        if (ferror(g_file)) {
+            printf("Error reading myfile");
+        } else if (feof(g_file)) {
+            printf("EOF found");
+        }
+        return 0;
+    }
+    readCount = fread(metadata, metadataSize, 1, g_file);
+    if (!readCount) {
+        g_readEnd = true;
+        if (ferror(g_file)) {
+            printf("Error reading myfile");
+        } else if (feof(g_file)) {
+            printf("EOF found");
+        }
+    }
     return 0;
 }
 
@@ -255,7 +303,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_004, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via legal state, channelCount is 2.
+* @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via legal state, channelCount is 16.
 * @tc.number: OH_AudioStreamBuilder_SetParameter_005
 * @tc.desc  : Test OH_AudioStreamBuilder_SetChannelCount interface. Returns true if result is successful.
 */
@@ -266,7 +314,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_005, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    int32_t channelCount = CHANNEL_COUNT_2;
+    int32_t channelCount = CHANNEL_COUNT_16;
     result = OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -286,7 +334,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_006, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    int32_t channelCount = CHANNEL_COUNT_10;
+    int32_t channelCount = CHANNEL_COUNT_18;
     result = OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
@@ -747,6 +795,306 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, 
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetChannelLayout API via legal state, AUDIOSTREAM_LATENCY_MODE_NORMAL.
+* @tc.number: OH_AudioStreamBuilder_SetChannelLayout_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetChannelLayout interface. Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetChannelLayout_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    result = OH_AudioStreamBuilder_SetChannelLayout(builder, channelLayout);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback API via legal state.
+* @tc.number: OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback interface.
+              Returns true if result is successful.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer_WriteDataWithMetadataCallback callback = AudioRendererWriteDataWithMetadataCallback;
+    result = OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(builder, callbacks, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via illegal state.
+* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with nullptr builder.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = nullptr;
+
+    OH_AudioInterrupt_Mode mode = AUDIOSTREAM_INTERRUPT_MODE_SHARE;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder, mode);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_002
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with share mode.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_002, TestSize.Level0)
+{
+    // 1. create builder1 builder2
+    OH_AudioStreamBuilder* builder1;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder1, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 2. set builder1 builder2 params
+    OH_AudioStreamBuilder_SetSamplingRate(builder1, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder1, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder1, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder1, (OH_AudioStream_SampleFormat)g_sampleFormat);
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataInterrupt;
+    callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererInterruptEvent;
+    result = OH_AudioStreamBuilder_SetRendererCallback(builder1, callbacks, nullptr);
+    result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder1, g_frameSize);
+
+    OH_AudioInterrupt_Mode mode = AUDIOSTREAM_INTERRUPT_MODE_SHARE;
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder1, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder1, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 3. create audioRenderer1 audioRenderer2
+    OH_AudioRenderer* audioRenderer1;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder1, &audioRenderer1);
+
+    OH_AudioRenderer* audioRenderer2;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder1, &audioRenderer2);
+
+    // 4. start
+    result = OH_AudioRenderer_Start(audioRenderer1);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    sleep(1);
+    result = OH_AudioRenderer_Start(audioRenderer2);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+
+    // 5. stop and release client
+    OH_AudioRenderer_Stop(audioRenderer2);
+    OH_AudioRenderer_Release(audioRenderer2);
+
+    OH_AudioRenderer_Stop(audioRenderer1);
+    OH_AudioRenderer_Release(audioRenderer1);
+
+    result = OH_AudioStreamBuilder_Destroy(builder1);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_003
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_003, TestSize.Level0)
+{
+    // 1. create builder
+    OH_AudioStreamBuilder* builder1;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder1, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 2. set builder params
+    OH_AudioStreamBuilder_SetSamplingRate(builder1, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder1, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder1, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder1, (OH_AudioStream_SampleFormat)g_sampleFormat);
+
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataInterrupt;
+    callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererInterruptEvent;
+    result = OH_AudioStreamBuilder_SetRendererCallback(builder1, callbacks, nullptr);
+    result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder1, g_frameSize);
+
+    OH_AudioInterrupt_Mode mode = AUDIOSTREAM_INTERRUPT_MODE_INDEPENDENT;
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder1, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder1, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 3. create audioRenderer1 audioRenderer2
+    OH_AudioRenderer* audioRenderer1;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder1, &audioRenderer1);
+
+    OH_AudioRenderer* audioRenderer2;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder1, &audioRenderer2);
+
+    // 4. start
+    result = OH_AudioRenderer_Start(audioRenderer1);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    sleep(1);
+    result = OH_AudioRenderer_Start(audioRenderer2);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    sleep(2);
+
+    // 5. stop and release client
+    OH_AudioRenderer_Stop(audioRenderer2);
+    OH_AudioRenderer_Release(audioRenderer2);
+
+    OH_AudioRenderer_Stop(audioRenderer1);
+    OH_AudioRenderer_Release(audioRenderer1);
+
+    result = OH_AudioStreamBuilder_Destroy(builder1);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_004
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode and share mode.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptMode_004, TestSize.Level0)
+{
+    // 1. create builder1 builder2
+    OH_AudioStreamBuilder* builder1;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder1, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStreamBuilder* builder2;
+    result = OH_AudioStreamBuilder_Create(&builder2, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 2. set builder1 builder2 params
+    OH_AudioStreamBuilder_SetSamplingRate(builder1, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder1, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder1, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder1, (OH_AudioStream_SampleFormat)g_sampleFormat);
+
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataInterrupt;
+    callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererInterruptEvent;
+    result = OH_AudioStreamBuilder_SetRendererCallback(builder1, callbacks, nullptr);
+    result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder1, g_frameSize);
+
+    OH_AudioStreamBuilder_SetSamplingRate(builder2, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder2, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder2, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder2, (OH_AudioStream_SampleFormat)g_sampleFormat);
+    result = OH_AudioStreamBuilder_SetRendererCallback(builder2, callbacks, nullptr);
+    result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder2, g_frameSize);
+
+    OH_AudioInterrupt_Mode mode = AUDIOSTREAM_INTERRUPT_MODE_INDEPENDENT;
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder1, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    mode = AUDIOSTREAM_INTERRUPT_MODE_SHARE;
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder2, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 3. create audioRenderer1 audioRenderer2
+    OH_AudioRenderer* audioRenderer1;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder1, &audioRenderer1);
+
+    OH_AudioRenderer* audioRenderer2;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder2, &audioRenderer2);
+
+    // 4. start
+    result = OH_AudioRenderer_Start(audioRenderer1);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    sleep(1);
+    result = OH_AudioRenderer_Start(audioRenderer2);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    sleep(2);
+
+    // 5. stop and release client
+    OH_AudioRenderer_Stop(audioRenderer2);
+    OH_AudioRenderer_Release(audioRenderer2);
+
+    OH_AudioRenderer_Stop(audioRenderer1);
+    OH_AudioRenderer_Release(audioRenderer1);
+
+    result = OH_AudioStreamBuilder_Destroy(builder2);
+    result = OH_AudioStreamBuilder_Destroy(builder1);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_005
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode and share mode.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptMode_005, TestSize.Level0)
+{
+    // 1. create builder1
+    OH_AudioStreamBuilder* builder1;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder1, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 2. set builder1 params
+    OH_AudioStreamBuilder_SetSamplingRate(builder1, g_samplingRate);
+    OH_AudioStreamBuilder_SetChannelCount(builder1, g_channelCount);
+    OH_AudioStreamBuilder_SetLatencyMode(builder1, (OH_AudioStream_LatencyMode)g_latencyMode);
+    OH_AudioStreamBuilder_SetSampleFormat(builder1, (OH_AudioStream_SampleFormat)g_sampleFormat);
+
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataInterrupt;
+    callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererInterruptEvent;
+    result = OH_AudioStreamBuilder_SetRendererCallback(builder1, callbacks, nullptr);
+    result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder1, g_frameSize);
+
+    OH_AudioRenderer_Callbacks callbacks2;
+    callbacks2.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataInterrupt;
+    result = OH_AudioStreamBuilder_SetRendererCallback(builder1, callbacks2, nullptr);
+
+    OH_AudioInterrupt_Mode mode = AUDIOSTREAM_INTERRUPT_MODE_SHARE;
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder1, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    mode = AUDIOSTREAM_INTERRUPT_MODE_INDEPENDENT;
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder1, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // 3. create audioRenderer1 audioRenderer2
+    OH_AudioRenderer* audioRenderer1;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder1, &audioRenderer1);
+
+    OH_AudioRenderer* audioRenderer2;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder1, &audioRenderer2);
+
+    // 4. start
+    result = OH_AudioRenderer_Start(audioRenderer1);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    sleep(1);
+    result = OH_AudioRenderer_Start(audioRenderer2);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    sleep(2);
+
+    // 5. stop and release client
+    OH_AudioRenderer_Stop(audioRenderer2);
+    OH_AudioRenderer_Release(audioRenderer2);
+
+    OH_AudioRenderer_Stop(audioRenderer1);
+    OH_AudioRenderer_Release(audioRenderer1);
+
+    result = OH_AudioStreamBuilder_Destroy(builder1);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 } // namespace AudioStandard

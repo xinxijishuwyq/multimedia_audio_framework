@@ -99,6 +99,8 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         params.audioChannel = capturerOptions.streamInfo.channels;
     }
     params.audioEncoding = capturerOptions.streamInfo.encoding;
+    params.channelLayout = capturerOptions.streamInfo.channelLayout;
+
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 
     if (capturer == nullptr) {

@@ -273,5 +273,31 @@ void AudioService::Dump(std::stringstream &dumpStringStream)
     }
     PolicyHandler::GetInstance().Dump(dumpStringStream);
 }
+
+float AudioService::GetMaxAmplitude(bool isOutputDevice)
+{
+    std::lock_guard<std::mutex> lock(processListMutex_);
+    
+    if (linkedPairedList_.size() == 0) {
+        return 0;
+    }
+
+    float fastAudioMaxAmplitude = 0;
+    for (auto paired : linkedPairedList_) {
+        if (isOutputDevice && (paired.second->GetDeviceRole() == OUTPUT_DEVICE)) {
+            float curFastAudioMaxAmplitude = paired.second->GetMaxAmplitude();
+            if (curFastAudioMaxAmplitude > fastAudioMaxAmplitude) {
+                fastAudioMaxAmplitude = curFastAudioMaxAmplitude;
+            }
+        }
+        if (!isOutputDevice && (paired.second->GetDeviceRole() == INPUT_DEVICE)) {
+            float curFastAudioMaxAmplitude = paired.second->GetMaxAmplitude();
+            if (curFastAudioMaxAmplitude > fastAudioMaxAmplitude) {
+                fastAudioMaxAmplitude = curFastAudioMaxAmplitude;
+            }
+        }
+    }
+    return fastAudioMaxAmplitude;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -180,5 +180,11 @@ int32_t AudioCapturerFileSource::Stop(void)
     }
     return SUCCESS;
 }
+
+float AudioCapturerFileSource::GetMaxAmplitude()
+{
+    AUDIO_WARNING_LOG("getMaxAmplitude in audio cap file not support");
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

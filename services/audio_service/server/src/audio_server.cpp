@@ -40,6 +40,7 @@
 #include "i_audio_renderer_sink.h"
 #include "i_standard_audio_server_manager_listener.h"
 #include "audio_effect_chain_manager.h"
+#include "audio_enhance_chain_manager.h"
 #include "playback_capturer_manager.h"
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
@@ -308,7 +309,12 @@ bool AudioServer::CheckAndPrintStacktrace(const std::string &key)
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     } else if (key == "recovery_audio_server") {
-        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+        AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+        sleep(2); // sleep 2 seconds to dump stacktrace
+        return true;
+    } else if (key == "dump_pa_stacktrace_and_kill") {
+        uint32_t targetFlag = 3; // 3 means LOG & RECOVERY
+        AudioXCollie audioXCollie("AudioServer::PrintStackTraceAndKill", 1, nullptr, nullptr, targetFlag);
         sleep(2); // sleep 2 seconds to dump stacktrace
         return true;
     }
@@ -439,14 +445,19 @@ bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries,
 }
 
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
-    std::unordered_map<std::string, std::string> &map)
+    std::unordered_map<std::string, std::string> &effectMap,
+    std::unordered_map<std::string, std::string> &enhanceMap)
 {
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
         return false;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    audioEffectChainManager->InitAudioEffectChainManager(effectChains, map, audioEffectServer_->GetEffectEntries());
+    audioEffectChainManager->InitAudioEffectChainManager(effectChains, effectMap,
+        audioEffectServer_->GetEffectEntries());
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceMap,
+        audioEffectServer_->GetEffectEntries());
     return true;
 }
 
@@ -1131,6 +1142,42 @@ uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     return audioEffectChainManager->GetLatency(sessionId);
+}
+
+float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        0, "GetMaxAmplitude refused for %{public}d", callingUid);
+    
+    float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);
+    if (isOutputDevice) {
+        IAudioRendererSink *iRendererInstance = nullptr;
+        if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            iRendererInstance = IAudioRendererSink::GetInstance("a2dp", "");
+        } else if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            iRendererInstance = IAudioRendererSink::GetInstance("usb", "");
+        } else {
+            iRendererInstance = IAudioRendererSink::GetInstance("primary", "");
+        }
+        if (iRendererInstance != nullptr) {
+            float normalMaxAmplitude = iRendererInstance->GetMaxAmplitude();
+            return (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
+        }
+    } else {
+        AudioCapturerSource *audioCapturerSourceInstance;
+        if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
+            audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+        } else {
+            audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
+        }
+        if (audioCapturerSourceInstance != nullptr) {
+            float normalMaxAmplitude = audioCapturerSourceInstance->GetMaxAmplitude();
+            return (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
+        }
+    }
+
+    return 0;
 }
 } // namespace AudioStandard
 } // namespace OHOS

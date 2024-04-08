@@ -2073,5 +2073,21 @@ int32_t AudioPolicyProxy::SetSpatializationSceneType(const AudioSpatializationSc
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
+
+float AudioPolicyProxy::GetMaxAmplitude(const int32_t deviceId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(deviceId);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MAX_AMPLITUDE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadFloat();
+}
 } // namespace AudioStandard
 } // namespace OHOS

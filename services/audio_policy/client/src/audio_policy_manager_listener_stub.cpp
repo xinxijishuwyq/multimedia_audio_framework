@@ -21,6 +21,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
+
 AudioPolicyManagerListenerStub::AudioPolicyManagerListenerStub()
 {
 }
@@ -45,6 +48,7 @@ void AudioPolicyManagerListenerStub::ReadAudioDeviceChangeData(MessageParcel &da
     int32_t type = data.ReadInt32();
     int32_t flag = data.ReadInt32();
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
         deviceChangeDesc.push_back(AudioDeviceDescriptor::Unmarshalling(data));

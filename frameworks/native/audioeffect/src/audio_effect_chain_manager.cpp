@@ -1092,7 +1092,8 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
         return false;
     }
 
-    if ((spatializationEnabled == "0") && (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+    if ((!spatializationEnabled_ || spatializationEnabled == "0") &&
+        (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
         return false;
     }
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
@@ -1620,6 +1621,8 @@ uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
         return 0;
     }
     std::string sceneTypeAndDeviceKey = SessionIDToEffectInfoMap_[sessionId].sceneType + "_&_" + GetDeviceTypeName();
+    CHECK_AND_RETURN_RET_LOG(SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
+        SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, 0, "no such sceneTypeAndDeviceKey in map");
     return SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->GetLatency();
 }
 

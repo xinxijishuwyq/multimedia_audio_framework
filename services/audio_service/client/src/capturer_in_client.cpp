@@ -98,9 +98,8 @@ public:
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
         int32_t &outBufferSize) override;
-    int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) override;
 
     // callback mode api
     AudioRenderMode GetRenderMode() override;
@@ -430,9 +429,13 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
         info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND);
-    if (!IsFormatValid(info.format) || !IsCapturerChannelValid(info.channels) || !IsEncodingTypeValid(info.encoding) ||
-        !IsSamplingRateValid(info.samplingRate)) {
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) || !IsSamplingRateValid(info.samplingRate)) {
         AUDIO_ERR_LOG("CapturerInClient: Unsupported audio parameter");
+        return ERR_NOT_SUPPORTED;
+    }
+    if (!IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout)) {
+        AUDIO_ERR_LOG("Invalid sink channel %{public}d or channel layout %{public}" PRIu64, info.channels,
+                info.channelLayout);
         return ERR_NOT_SUPPORTED;
     }
 
@@ -658,6 +661,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
+    config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(streamParams_.channelLayout);
 
     config.audioMode = AUDIO_MODE_RECORD;
 
@@ -882,13 +886,6 @@ int32_t CapturerInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, 
     AUDIO_ERR_LOG("ChangeSpeed is not supported");
     return ERROR;
 }
-
-int32_t CapturerInClientInner::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
-{
-    AUDIO_ERR_LOG("Speed is not supported");
-    return ERROR;
-}
-
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {

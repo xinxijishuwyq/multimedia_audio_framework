@@ -425,6 +425,10 @@ public:
 
     void UnloadA2dpModule();
 
+    float GetMaxAmplitude(const int32_t deviceId);
+    
+    int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -494,10 +498,6 @@ private:
     int32_t DeviceParamsCheck(DeviceRole targetRole,
         std::vector<sptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const;
 
-    bool IsInputDevice(DeviceType deviceType) const;
-
-    bool IsOutputDevice(DeviceType deviceType) const;
-
     DeviceRole GetDeviceRole(DeviceType deviceType) const;
 
     DeviceRole GetDeviceRole(const std::string &role);
@@ -521,8 +521,6 @@ private:
     int32_t HandleFileDevice(DeviceType deviceType);
 
     int32_t ActivateNormalNewDevice(DeviceType deviceType, bool isSceneActivation);
-
-    int32_t ActivateNewDevice(DeviceType deviceType, bool isSceneActivation);
 
     void SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         unique_ptr<AudioDeviceDescriptor> &outputDevice,
@@ -591,6 +589,8 @@ private:
     std::vector<sptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
 
     void SetVolumeForSwitchDevice(DeviceType deviceType);
+
+    void UpdateVolumeForLowLatency();
 
     void SetVoiceCallVolume(int32_t volume);
 
@@ -674,7 +674,8 @@ private:
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
 
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
+        vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void ResetToSpeaker(DeviceType devType);
 
@@ -699,6 +700,10 @@ private:
     void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
 
     void ClearScoDeviceSuspendState(string macAddress = "");
+
+    int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
+
+    int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

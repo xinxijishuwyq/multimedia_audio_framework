@@ -296,7 +296,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         await audiorender1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         audiorender1.on("audioInterrupt", async(eventAction) => {
             console.log("77.eventAction=" + JSON.stringify(eventAction))
-            interruptPauseType(eventAction);
+            interruptType(eventAction);
         })
         await start(audiorender1, done)
 
@@ -462,7 +462,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
             console.log("87.eventAction=" + JSON.stringify(eventAction))
-            interruptPauseType(eventAction);
+            interruptType(eventAction);
         })
         await start(render1, done)
 
@@ -632,7 +632,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render1.on("audioInterrupt", async(eventAction) => {
             console.log("97.eventAction=" + JSON.stringify(eventAction))
-            interruptPauseType(eventAction);
+            interruptType(eventAction);
         })
         await start(render1, done)
 

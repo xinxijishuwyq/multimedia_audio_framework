@@ -13,19 +13,19 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 
 @Entry
 @Component
 struct CapturerStream {
   @State returnMsg: string = 'Hello World'
-  private audioCapturer = null;
+  private audioCapturer: audio.AudioCapturer | null = null;
   @State index: number = 0;
   @State selectedVolumeType: number = 0;
   private audioStreamManager = audio.getAudioManager().getStreamManager();
-  @State onReturnMsg: string = ""
-  private audioCapturerOptions = {
+  @State onReturnMsg: string = "";
+  private audioCapturerOptions: audio.AudioCapturerOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -38,10 +38,9 @@ struct CapturerStream {
     }
   }
 
-  getInfoArray(AudioCapturerChangeInfoArray) {
-
+  getInfoArray(AudioCapturerChangeInfoArray: audio.AudioCapturerChangeInfoArray) {
     if (AudioCapturerChangeInfoArray != null) {
-      console.log(JSON.stringify(AudioCapturerChangeInfoArray))
+      console.log(JSON.stringify(AudioCapturerChangeInfoArray));
       let str = ``;
       for (let i = 0; i < AudioCapturerChangeInfoArray.length; i++) {
         let Info = AudioCapturerChangeInfoArray[i];
@@ -49,12 +48,12 @@ struct CapturerStream {
         for (let j = 0; j < Info.deviceDescriptors.length; j++) {
           let descriptor = Info.deviceDescriptors[j];
           str += `__deviceDescriptors_${j}\n`;
-          str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks},EncodingType:${descriptor.encodingType}\n`;
+          str += `Id:${descriptor.id},Type:${descriptor.deviceType},Role:${descriptor.deviceRole},Name:${descriptor.name},Address:${descriptor.address},SampleRates:${descriptor.sampleRates[0]},ChannelCounts:${descriptor.channelCounts[0]},ChannelMask:${descriptor.channelMasks},EncodingType:${descriptor.encodingTypes}\n`;
         }
       }
       return str;
     }
-    return "没有数据"
+    return "没有数据";
   }
 
   build() {
@@ -96,7 +95,7 @@ struct CapturerStream {
           this.audioStreamManager.getCurrentAudioCapturerInfoArray()
             .then((AudioCapturerChangeInfoArray) => {
               _this.returnMsg = _this.getInfoArray(AudioCapturerChangeInfoArray);
-            }).catch((err) => {
+            }).catch((err: BusinessError) => {
             _this.returnMsg = "getCurrentAudioCapturerInfoArray :ERROR:" + JSON.stringify(err);
           })
         })
@@ -107,7 +106,7 @@ struct CapturerStream {
           }.width('80%').height(60).margin({ top: 10 })
           .onClick(() => {
             let _this = this;
-            _this.onReturnMsg = '监听已触发\n'
+            _this.onReturnMsg = '监听已触发\n';
             this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) => {
               _this.onReturnMsg = '收到回调啦\n' + _this.getInfoArray(AudioCapturerChangeInfoArray);
             });
@@ -119,7 +118,7 @@ struct CapturerStream {
           .onClick(() => {
             let _this = this;
             this.audioStreamManager.off('audioCapturerChange');
-            _this.onReturnMsg = '监听已取消\n'
+            _this.onReturnMsg = '监听已取消\n';
           })
         }
 
@@ -135,15 +134,15 @@ struct CapturerStream {
             .onClick(() => {
               let _this = this;
               if (_this.index > 0) {
-                _this.returnMsg = `Capturer create already Success.`
+                _this.returnMsg = `Capturer create already Success.`;
                 return;
               }
-              console.log(JSON.stringify(this.audioCapturerOptions))
+              console.log(JSON.stringify(this.audioCapturerOptions));
               audio.createAudioCapturer(this.audioCapturerOptions, (err, data) => {
                 if (err) {
                   _this.returnMsg = `createAudioCapturer err:${JSON.stringify(err)}}`
                 } else {
-                  _this.returnMsg = `createAudioCapturer Success:${JSON.stringify(data)}}`
+                  _this.returnMsg = `createAudioCapturer Success:${JSON.stringify(data)}}`;
                   _this.audioCapturer = data;
                   _this.index++;
                 }
@@ -156,11 +155,15 @@ struct CapturerStream {
             .fontColor(Color.Blue)
             .onClick(() => {
               let _this = this;
+              if (!this.audioCapturer) {
+                _this.returnMsg = "Capturer instance had not created";
+                return;
+              }
               this.audioCapturer.start((err) => {
                 if (err) {
-                  _this.returnMsg = `Capturer start failed err:${JSON.stringify(err)}}`
+                  _this.returnMsg = `Capturer start failed err:${JSON.stringify(err)}}`;
                 } else {
-                  _this.returnMsg = `Capturer start success.`
+                  _this.returnMsg = `Capturer start success.`;
                 }
               });
             })
@@ -173,17 +176,21 @@ struct CapturerStream {
             .backgroundColor(Color.Pink)
             .fontColor(Color.Blue)
             .onClick(async () => {
+              if (!this.audioCapturer) {
+                this.returnMsg = "Capturer instance had not created";
+                return;
+              }
               try {
                 let bufferSize = await this.audioCapturer.getBufferSize();
-                this.returnMsg = `bufferSize:${bufferSize}\n`
-                this.returnMsg += `Capturer read start...\n`
+                this.returnMsg = `bufferSize:${bufferSize}\n`;
+                this.returnMsg += `Capturer read start...\n`;
                 for (let i = 0;i < 10; i++) {
-                  let ArrayBuffer = await this.audioCapturer.read(bufferSize, true)
-                  this.returnMsg += `${JSON.stringify(ArrayBuffer)}--`
+                  let ArrayBuffer = await this.audioCapturer.read(bufferSize, true);
+                  this.returnMsg += `${JSON.stringify(ArrayBuffer)}--`;
                 }
-                this.returnMsg += `Capturer read end...\n`
+                this.returnMsg += `Capturer read end...\n`;
               } catch (err) {
-                this.returnMsg = `Capturer read failed err:${JSON.stringify(err)}`
+                this.returnMsg = `Capturer read failed err:${JSON.stringify(err)}`;
               }
             })
           Button("stop")
@@ -192,11 +199,15 @@ struct CapturerStream {
             .backgroundColor(Color.Pink)
             .fontColor(Color.Blue)
             .onClick(async () => {
+              if (!this.audioCapturer) {
+                this.returnMsg = "Capturer instance had not created";
+                return;
+              }
               try {
                 await this.audioCapturer.stop();
-                this.returnMsg += `Capturer stop success \n`
+                this.returnMsg += `Capturer stop success \n`;
               } catch (err) {
-                this.returnMsg = `Capturer stop failed err:${JSON.stringify(err)}}`
+                this.returnMsg = `Capturer stop failed err:${JSON.stringify(err)}}`;
               }
             })
         }.height(40).margin({ top: 10 })
@@ -208,12 +219,16 @@ struct CapturerStream {
             .backgroundColor(Color.Pink)
             .fontColor(Color.Blue)
             .onClick(async () => {
+              if (!this.audioCapturer) {
+                this.returnMsg = "Capturer instance had not created";
+                return;
+              }
               try {
                 await this.audioCapturer.release();
-                this.returnMsg += `Capturer release success \n`
+                this.returnMsg += `Capturer release success \n`;
                 this.index = 0;
               } catch (err) {
-                this.returnMsg = `Capturer release failed err:${JSON.stringify(err)}}`
+                this.returnMsg = `Capturer release failed err:${JSON.stringify(err)}}`;
               }
             })
         }.height(40).margin({ top: 10 })

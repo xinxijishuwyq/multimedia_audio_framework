@@ -13,22 +13,31 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
 import fs from '@ohos.file.fs';
+import { BusinessError } from '@kit.BasicServicesKit';
+
+class EnumValue {
+  value: string = '';
+}
+
+class Options {
+  offset: number = 0
+  length: number = 0
+}
 
 @Entry
 @Component
 struct PreferredOutputDevice {
-  @State returnMsg: string = 'Hello World'
-  @State onReturnMsg: string = 'on 未监听'
-  @State offReturnMsg: string = 'off 未监听'
-  private audioRoutingManager = null
-  private contentTypeList = []
-  @State selectedContentTypeKey: string = "CONTENT_TYPE_SPEECH"
-  private streamUsageList = []
-  @State selectedStreamUsageKey: string = "STREAM_USAGE_VOICE_COMMUNICATION"
-  private audioRendererOptions = {
+  @State returnMsg: string = 'Hello World';
+  @State onReturnMsg: string = 'on 未监听';
+  @State offReturnMsg: string = 'off 未监听';
+  private audioRoutingManager: audio.AudioRoutingManager | null = null;
+  private contentTypeList: EnumValue[] = [];
+  @State selectedContentTypeKey: string = "CONTENT_TYPE_SPEECH";
+  private streamUsageList: EnumValue[] = [];
+  @State selectedStreamUsageKey: string = "STREAM_USAGE_VOICE_COMMUNICATION";
+  private audioRendererOptions: audio.AudioRendererOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -36,114 +45,140 @@ struct PreferredOutputDevice {
       encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
     },
     rendererInfo: {
-      content: audio.ContentType.CONTENT_TYPE_SPEECH,
       usage: audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
       rendererFlags: 0
     }
   }
-  private outputDeviceList = []
-  private selectOutputDeviceList = [{ value: "无数据" }]
-  @State selectedOutputIndex: number = 0
-  @State outputDeviceListTag: number = 0
-  private audioRenderer = null
+  private outputDeviceList: audio.AudioDeviceDescriptor[] = [];
+  private selectOutputDeviceList: EnumValue[] = [{ value: "无数据" }];
+  @State selectedOutputIndex: number = 0;
+  @State outputDeviceListTag: number = 0;
+  private audioRenderer: audio.AudioRenderer | null = null;
 
   aboutToAppear() {
 
     let audioManager = audio.getAudioManager();
     this.audioRoutingManager = audioManager.getRoutingManager();
-
-    for (let key in audio.ContentType) {
-      this.contentTypeList.push({ value: key })
-    }
-    for (let key in audio.StreamUsage) {
-      this.streamUsageList.push({ value: key })
-    }
+    Object.keys(audio.ContentType).forEach((key) => {
+      this.contentTypeList.push({ value: key });
+    })
+    Object.keys(audio.StreamUsage).forEach((key) => {
+      this.streamUsageList.push({ value: key });
+    })
     this.getSelectOutputDeviceList()
   }
 
-  async onBackPress() {
+  onBackPress() {
     if (this.audioRenderer !== null) {
-      await this.audioRenderer.release()
-      this.audioRenderer = null
+      this.audioRenderer.release().then(() => {
+        console.info('Renderer released successfully');
+        this.audioRenderer = null;
+      }).catch((err: BusinessError) => {
+        console.error(`ERROR: ${err}`);
+      });
     }
   }
 
   async getSelectOutputDeviceList() {
-    let deviceFlag = audio.DeviceFlag.OUTPUT_DEVICES_FLAG
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
+    let deviceFlag = audio.DeviceFlag.OUTPUT_DEVICES_FLAG;
     try {
-      this.outputDeviceList = await this.audioRoutingManager.getDevices(deviceFlag)
+      this.outputDeviceList = await this.audioRoutingManager.getDevices(deviceFlag);
       if (this.outputDeviceList.length > 0) {
-        this.selectOutputDeviceList = this.getDeviceList(this.outputDeviceList)
-        this.outputDeviceListTag = 1
+        this.selectOutputDeviceList = this.getDeviceList(this.outputDeviceList);
+        this.outputDeviceListTag = 1;
       }
 
-      this.returnMsg = `getOutputDeviceList SUccess:${JSON.stringify(this.selectOutputDeviceList)}`
+      this.returnMsg = `getOutputDeviceList SUccess:${JSON.stringify(this.selectOutputDeviceList)}`;
     } catch (err) {
       this.returnMsg = `getOutputDeviceList Fail:${JSON.stringify(err)}`
     }
   }
 
   getPreferredOutputDeviceForRendererInfoCallback() {
-    this.audioRoutingManager.getPreferredOutputDeviceForRendererInfo(this.audioRendererOptions.rendererInfo, (err, data) => {
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
+    this.audioRoutingManager.getPreferOutputDeviceForRendererInfo(this.audioRendererOptions.rendererInfo, (err, data) => {
       if (err) {
-        this.returnMsg = `getPreferredOutputDeviceForRendererInfo callback Fail:${JSON.stringify(err)}`
+        this.returnMsg = `getPreferOutputDeviceForRendererInfo callback Fail:${JSON.stringify(err)}`;
       } else {
-        this.returnMsg = `getPreferredOutputDeviceForRendererInfo callback Success:${JSON.stringify(data)} \n`
-        this.returnMsg += `优先设备为：${JSON.stringify(this.getDeviceList(data))}`
+        this.returnMsg = `getPreferOutputDeviceForRendererInfo callback Success:${JSON.stringify(data)} \n`;
+        this.returnMsg += `优先设备为：${JSON.stringify(this.getDeviceList(data))}`;
       }
     })
   }
 
   getPreferredOutputDeviceForRendererInfoPromise() {
-    this.audioRoutingManager.getPreferredOutputDeviceForRendererInfo(this.audioRendererOptions.rendererInfo)
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
+    this.audioRoutingManager.getPreferOutputDeviceForRendererInfo(this.audioRendererOptions.rendererInfo)
       .then(data => {
-        this.returnMsg = `getPreferredOutputDeviceForRendererInfo promise Success:${JSON.stringify(data)} \n`
-        this.returnMsg += `优先设备为：${JSON.stringify(this.getDeviceList(data))}`
-      }).catch(err => {
-      this.returnMsg = `getPreferredOutputDeviceForRendererInfo promise Fail:${JSON.stringify(err)}`
+        this.returnMsg = `getPreferOutputDeviceForRendererInfo promise Success:${JSON.stringify(data)} \n`;
+        this.returnMsg += `优先设备为：${JSON.stringify(this.getDeviceList(data))}`;
+      }).catch((err: BusinessError) => {
+      this.returnMsg = `getPreferOutputDeviceForRendererInfo promise Fail:${JSON.stringify(err)}`;
     })
   }
 
   onPreferredOutputDeviceChangeForRendererInfo() {
-    this.onReturnMsg = "on 监听中..."
-    this.audioRoutingManager.on('preferredOutputDeviceChangeForRendererInfo', this.audioRendererOptions.rendererInfo, (audioDeviceDescriptors) => {
-      this.onReturnMsg = `on 收到回调：\n`
-      this.onReturnMsg = `${JSON.stringify(audioDeviceDescriptors)}`
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
+    this.onReturnMsg = "on 监听中...";
+    this.audioRoutingManager.on('preferOutputDeviceChangeForRendererInfo', this.audioRendererOptions.rendererInfo, (audioDeviceDescriptors) => {
+      this.onReturnMsg = `on 收到回调：\n`;
+      this.onReturnMsg = `${JSON.stringify(audioDeviceDescriptors)}`;
     })
   }
 
   offPreferredOutputDeviceChangeForRendererInfo() {
-    this.offReturnMsg = "off 监听中..."
-    this.audioRoutingManager.off('preferredOutputDeviceChangeForRendererInfo', this.audioRendererOptions.rendererInfo, (audioDeviceDescriptors) => {
-      this.offReturnMsg = `off 收到回调：\n`
-      this.offReturnMsg = `${JSON.stringify(audioDeviceDescriptors)}`
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
+    this.offReturnMsg = "off 监听中...";
+    this.audioRoutingManager.off('preferOutputDeviceChangeForRendererInfo', (audioDeviceDescriptors) => {
+      this.offReturnMsg = `off 收到回调：\n`;
+      this.offReturnMsg = `${JSON.stringify(audioDeviceDescriptors)}`;
     })
   }
 
   selectOutputDevice() {
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     let _this = this;
     if (this.outputDeviceList.length == 0) {
-      _this.returnMsg = `没有输出设备类`
-      return
+      _this.returnMsg = `没有输出设备类`;
+      return;
     }
     let outputAudioDeviceDescriptor = this.outputDeviceList.filter((value, index) => {
-      return index == _this.selectedOutputIndex
+      return index == _this.selectedOutputIndex;
     })
     if (outputAudioDeviceDescriptor.length == 0) {
-      _this.returnMsg = `尚未选择输出设备`
-      return
+      _this.returnMsg = `尚未选择输出设备`;
+      return;
     }
     this.audioRoutingManager.selectOutputDevice(outputAudioDeviceDescriptor)
       .then(() => {
-        _this.returnMsg = `selectOutputDevice promise Success,所选的输出设备为: \n`
-        _this.returnMsg += `${JSON.stringify(this.getDeviceList(outputAudioDeviceDescriptor))} \n`
-      }).catch(err => {
-      _this.returnMsg = `selectOutputDevice promise Failed err:${JSON.stringify(err)}`
+        _this.returnMsg = `selectOutputDevice promise Success,所选的输出设备为: \n`;
+        _this.returnMsg += `${JSON.stringify(this.getDeviceList(outputAudioDeviceDescriptor))} \n`;
+      }).catch((err: BusinessError) => {
+      _this.returnMsg = `selectOutputDevice promise Failed err:${JSON.stringify(err)}`;
     })
   }
 
-  getDeviceList(deviceDescriptors) {
-    let deviceList = [];
+  getDeviceList(deviceDescriptors: audio.AudioDeviceDescriptor[]) {
+    let deviceList: EnumValue[] = [];
     for (let i = 0;i < deviceDescriptors.length; i++) {
       let deviceTypeName = this.getDeviceTypeNameByValue(deviceDescriptors[i].deviceType)
       deviceList.push({ value: deviceTypeName })
@@ -151,12 +186,14 @@ struct PreferredOutputDevice {
     return deviceList;
   }
 
-  getDeviceTypeNameByValue(value) {
-    for (let key in audio.DeviceType) {
+  getDeviceTypeNameByValue(value: audio.DeviceType) {
+    let keyValue: string = '';
+    Object.keys(audio.AudioVolumeType).forEach((key) => {
       if (audio.DeviceType[key] == value) {
-        return key;
+        keyValue = key;
       }
-    }
+    })
+    return keyValue;
   }
 
   async renderPlay() {
@@ -171,7 +208,7 @@ struct PreferredOutputDevice {
       this.returnMsg += `audioRenderer create : Error: ${JSON.stringify(err)}\n`
       return
     }
-    let bufferSize
+    let bufferSize: number;
     try {
       bufferSize = await this.audioRenderer.getBufferSize()
       this.returnMsg += `audioRenderer getBufferSize success,bufferSize:${bufferSize} \n`
@@ -199,7 +236,7 @@ struct PreferredOutputDevice {
         if (this.audioRenderer.state > audio.AudioState.STATE_RUNNING) {
           return
         }
-        let options = {
+        let options: Options = {
           offset: i * bufferSize,
           length: bufferSize
         }

@@ -13,149 +13,186 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
+import { BusinessError } from '@kit.BasicServicesKit';
+
+class EnumValue {
+  value: string = '';
+}
 
 @Entry
 @Component
 struct Settings {
-  private audioManager = null;
-  @State returnMsg: string = 'Hello World'
-  private selectAudioSceneList = []
-  @State selectedAudioSceneKey: string = "请选择音频场景"
+  private audioManager: audio.AudioManager | null = null;
+  @State returnMsg: string = 'Hello World';
+  private selectAudioSceneList: EnumValue[] = [];
+  @State selectedAudioSceneKey: string = "请选择音频场景";
   keyController: TextInputController = new TextInputController();
   valueController: TextInputController = new TextInputController();
   @State keyStr: string = "";
   @State valueStr: string = "";
 
   aboutToAppear() {
-    this.audioManager = audio.getAudioManager()
-    for (let key in audio.AudioScene) {
-      this.selectAudioSceneList.push({ value: key })
-    }
+    this.audioManager = audio.getAudioManager();
+    Object.keys(audio.AudioScene).forEach((key) => {
+      this.selectAudioSceneList.push({ value: key });
+    })
   }
 
   setAudioSceneCallback() {
+    if (!this.audioManager) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
     if (this.selectedAudioSceneKey == "请选择音频场景") {
-      this.returnMsg = "请选择音频场景"
-      return
+      this.returnMsg = "请选择音频场景";
+      return;
     }
     let _this = this
     this.audioManager.setAudioScene(audio.AudioScene[this.selectedAudioSceneKey], (err) => {
       if (err) {
-        _this.returnMsg = `setAudioScene callback Error:${JSON.stringify(err)}`
+        _this.returnMsg = `setAudioScene callback Error:${JSON.stringify(err)}`;
         return;
       }
-      _this.returnMsg = `setAudioScene callback Success`
+      _this.returnMsg = `setAudioScene callback Success`;
     });
   }
 
   setAudioScenePromise() {
+    if (!this.audioManager) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
     if (this.selectedAudioSceneKey == "请选择音频场景") {
-      this.returnMsg = "请选择音频场景"
-      return
+      this.returnMsg = "请选择音频场景";
+      return;
     }
     let _this = this
     this.audioManager.setAudioScene(audio.AudioScene[this.selectedAudioSceneKey])
       .then(() => {
-        _this.returnMsg = `setAudioScene promise Success`
-      }).catch(err => {
-      _this.returnMsg = `setAudioScene promise Error:${JSON.stringify(err)}`
+        _this.returnMsg = `setAudioScene promise Success`;
+      }).catch((err: BusinessError) => {
+      _this.returnMsg = `setAudioScene promise Error:${JSON.stringify(err)}`;
     })
   }
 
   getAudioSceneCallback() {
+    if (!this.audioManager) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
     let _this = this
     this.audioManager.getAudioScene((err, value) => {
       if (err) {
-        _this.returnMsg = `getAudioScene callback Error:${JSON.stringify(err)}`
+        _this.returnMsg = `getAudioScene callback Error:${JSON.stringify(err)}`;
         return;
       }
-      _this.returnMsg = `getAudioScene callback Success,返回值：${value}`
+      _this.returnMsg = `getAudioScene callback Success,返回值：${value}`;
     })
   }
 
   getAudioScenePromise() {
+    if (!this.audioManager) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
     let _this = this
     this.audioManager.getAudioScene()
       .then(value => {
-        _this.returnMsg = `getAudioScene promise Success,返回值：${value}`
-      }).catch(err => {
-      _this.returnMsg = `getAudioScene promise Error:${JSON.stringify(err)}`
+        _this.returnMsg = `getAudioScene promise Success,返回值：${value}`;
+      }).catch((err: BusinessError) => {
+      _this.returnMsg = `getAudioScene promise Error:${JSON.stringify(err)}`;
     })
   }
 
   setAudioParameterCallback() {
-    let _this = this
+
+    let _this = this;
+    if (!_this.audioManager) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
     if (this.keyStr == "") {
-      _this.returnMsg = `key 值尚未输入`
-      return
+      _this.returnMsg = `key 值尚未输入`;
+      return;
     }
 
     if (this.valueStr == "") {
-      _this.returnMsg = `value 值尚未输入`
-      return
+      _this.returnMsg = `value 值尚未输入`;
+      return;
     }
-    _this.returnMsg = `key:${this.keyStr},value:${this.valueStr} \n`
+    _this.returnMsg = `key:${this.keyStr},value:${this.valueStr} \n`;
 
     _this.audioManager.setAudioParameter(this.keyStr, this.valueStr, (err) => {
       if (err) {
-        _this.returnMsg += `setAudioParameter callback Error:${JSON.stringify(err)}`
+        _this.returnMsg += `setAudioParameter callback Error:${JSON.stringify(err)}`;
         return;
       }
-      _this.returnMsg += `setAudioParameter callback Success`
+      _this.returnMsg += `setAudioParameter callback Success`;
     });
   }
 
   setAudioParameterPromise() {
-    let _this = this
+    let _this = this;
+    if (!_this.audioManager) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
+    }
     if (this.keyStr == "") {
-      _this.returnMsg = `key 值尚未输入`
-      return
+      _this.returnMsg = `key 值尚未输入`;
+      return;
     }
 
     if (this.valueStr == "") {
-      _this.returnMsg = `value 值尚未输入`
-      return
+      _this.returnMsg = `value 值尚未输入`;
+      return;
     }
 
-    _this.returnMsg = `key:${this.keyStr},value:${this.valueStr} \n`
+    _this.returnMsg = `key:${this.keyStr},value:${this.valueStr} \n`;
     _this.audioManager.setAudioParameter(this.keyStr, this.valueStr)
-      .then(() => {
-        _this.returnMsg += `setAudioParameter promise Success`
-      }).cacth(err => {
-      _this.returnMsg += `setAudioParameter promise Error:${JSON.stringify(err)}`
+      .then(value => {
+        _this.returnMsg += `setAudioParameter promise Success`;
+      }).catch((err: BusinessError) => {
+      _this.returnMsg += `setAudioParameter promise Error:${JSON.stringify(err)}`;
     })
   }
 
   getAudioParameterCallback() {
     let _this = this
-    if (this.keyStr == "") {
-      _this.returnMsg = `key 值尚未输入`
-      return
+    if (!_this.audioManager) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
     }
-    _this.returnMsg = `key:${this.keyStr} \n`
+    if (this.keyStr == "") {
+      _this.returnMsg = `key 值尚未输入`;
+      return;
+    }
+    _this.returnMsg = `key:${this.keyStr} \n`;
     _this.audioManager.getAudioParameter(this.keyStr, (err, value) => {
       if (err) {
-        _this.returnMsg += `getAudioParameter callback Error:${JSON.stringify(err)}`
+        _this.returnMsg += `getAudioParameter callback Error:${JSON.stringify(err)}`;
         return;
       }
-      _this.returnMsg += `setAudioParameter callback Success,返回值：${value}`
+      _this.returnMsg += `setAudioParameter callback Success,返回值：${value}`;
     });
   }
 
   getAudioParameterPromise() {
     let _this = this
-    if (this.keyStr == "") {
-      _this.returnMsg = `key 值尚未输入`
-      return
+    if (!_this.audioManager) {
+      this.returnMsg = "AudioManager instance had not created";
+      return;
     }
-    _this.returnMsg = `key:${this.keyStr} \n`
+    if (this.keyStr == "") {
+      _this.returnMsg = `key 值尚未输入`;
+      return;
+    }
+    _this.returnMsg = `key:${this.keyStr} \n`;
     _this.audioManager.getAudioParameter(this.keyStr)
       .then(value => {
-        _this.returnMsg += `setAudioParameter promise Success,返回值：${value}`
-      }).catch(err => {
-      _this.returnMsg += `getAudioParameter promise Error:${JSON.stringify(err)}`
+        _this.returnMsg += `setAudioParameter promise Success,返回值：${value}`;
+      }).catch((err: BusinessError) => {
+      _this.returnMsg += `getAudioParameter promise Error:${JSON.stringify(err)}`;
     })
   }
 

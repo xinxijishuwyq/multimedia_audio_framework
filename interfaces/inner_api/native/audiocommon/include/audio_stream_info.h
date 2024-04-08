@@ -555,7 +555,9 @@ public:
     AudioChannel channels;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     constexpr AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
-        AudioChannel channels_) : samplingRate(samplingRate_), encoding(encoding_), format(format_), channels(channels_)
+        AudioChannel channels_, AudioChannelLayout channelLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN)
+        : samplingRate(samplingRate_), encoding(encoding_), format(format_), channels(channels_),
+        channelLayout(channelLayout_)
     {}
     AudioStreamInfo() = default;
     bool Marshalling(Parcel &parcel) const

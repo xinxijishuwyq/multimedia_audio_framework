@@ -81,6 +81,9 @@ public:
 
     virtual void Dump(std::stringstream &dumpStringStream) = 0;
 
+    virtual DeviceRole GetDeviceRole() = 0;
+    virtual float GetMaxAmplitude() = 0;
+
     virtual ~AudioEndpoint() = default;
 private:
     virtual bool Config(const DeviceInfo &deviceInfo) = 0;
@@ -124,6 +127,12 @@ public:
 
     void Release() override;
 
+    DeviceRole GetDeviceRole() override
+    {
+        return deviceInfo_.deviceRole;
+    }
+
+    float GetMaxAmplitude() override;
 private:
     int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
     int32_t GetAdapterBufferInfo(const DeviceInfo &deviceInfo);

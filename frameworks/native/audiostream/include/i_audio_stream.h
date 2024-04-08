@@ -139,7 +139,6 @@ public:
     virtual float GetSpeed() = 0;
     virtual int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
         std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize) = 0;
-    virtual int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) = 0;
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
@@ -259,7 +258,11 @@ public:
 
     bool IsRendererChannelLayoutValid(uint64_t channelLayout);
 
+    bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
+
     bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
+
+    bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -49,6 +49,30 @@ public:
     virtual void OnReadData(size_t length) {};
 };
 
+class AudioCapturerReadCallbackMock : public AudioCapturerReadCallback {
+public:
+    void OnReadData(size_t length) override
+    {
+        exeCount_++;
+        if (executor_) {
+            executor_(length);
+        }
+    }
+
+    void Install(std::function<void(size_t)> executor)
+    {
+        executor_ = executor;
+    }
+
+    uint32_t GetExeCount()
+    {
+        return exeCount_;
+    }
+private:
+    std::function<void(size_t)> executor_;
+    std::atomic<uint32_t> exeCount_ = 0;
+};
+
 class AudioCapturerDeviceChangeCallbackTest : public AudioCapturerDeviceChangeCallback {
 public:
     virtual ~AudioCapturerDeviceChangeCallbackTest() = default;

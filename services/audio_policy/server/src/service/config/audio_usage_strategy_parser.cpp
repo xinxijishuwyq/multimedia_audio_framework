@@ -170,6 +170,8 @@ void AudioUsageStrategyParser::ParserSourceTypeInfo(const std::string &strategyN
         ParserSourceTypes(buf, "RecordCaptureRouters");
     } else if (strategyName == "CALL_CAPTURE") {
         ParserSourceTypes(buf, "CallCaptureRouters");
+    } else if (strategyName == "VOICE_MESSAGE") {
+        ParserSourceTypes(buf, "VoiceMessages");
     }
 }
 } // namespace AudioStandard

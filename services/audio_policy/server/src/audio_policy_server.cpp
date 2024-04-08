@@ -2110,6 +2110,7 @@ int32_t AudioPolicyServer::ConfigDistributedRoutingRole(const sptr<AudioDeviceDe
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
+    std::lock_guard<std::mutex> lock(descLock_);
     audioPolicyService_.ConfigDistributedRoutingRole(descriptor, type);
     OnDistributedRoutingRoleChange(descriptor, type);
     return SUCCESS;
@@ -2590,6 +2591,11 @@ int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
     }
     isHighResolutionExist_ = highResExist;
     return SUCCESS;
+}
+
+float AudioPolicyServer::GetMaxAmplitude(int32_t deviceId)
+{
+    return audioPolicyService_.GetMaxAmplitude(deviceId);
 }
 } // namespace AudioStandard
 } // namespace OHOS
