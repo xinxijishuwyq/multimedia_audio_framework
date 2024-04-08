@@ -4833,20 +4833,6 @@ int32_t AudioPolicyService::SetCaptureSilentState(bool state)
     return gsp->SetCaptureSilentState(state);
 }
 
-void AudioPolicyService::UpdateOutputDeviceSelectedByCalling(DeviceType deviceType)
-{
-    if ((deviceType == DEVICE_TYPE_DEFAULT) || (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
-        return;
-    }
-    auto uid = IPCSkeleton::GetCallingUid();
-    std::lock_guard<std::mutex> lock(outputDeviceSelectedByCallingMutex_);
-    if (deviceType == DEVICE_TYPE_NONE) {
-        outputDeviceSelectedByCalling_.erase(uid);
-        return;
-    }
-    outputDeviceSelectedByCalling_[uid] = deviceType;
-}
-
 bool AudioPolicyService::IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc)
 {
     DeviceType deviceType = desc->deviceType_;
