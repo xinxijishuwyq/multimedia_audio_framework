@@ -1124,5 +1124,12 @@ void AudioPolicyManagerStub::GetMaxAmplitudeInternal(MessageParcel &data, Messag
     float result = GetMaxAmplitude(deviceId);
     reply.WriteFloat(result);
 }
+
+void AudioPolicyManagerStub::IsHeadTrackingDataRequestedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string macAddress = data.ReadString();
+    bool result = IsHeadTrackingDataRequested(macAddress);
+    reply.WriteBool(result);
+}
 } // namespace audio_policy
 } // namespace OHOS

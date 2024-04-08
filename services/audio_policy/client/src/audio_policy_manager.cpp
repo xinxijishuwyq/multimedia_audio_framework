@@ -1484,5 +1484,40 @@ float AudioPolicyManager::GetMaxAmplitude(const int32_t deviceId)
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_DEFAULT, "audio policy manager proxy is NULL.");
     return gsp->GetMaxAmplitude(deviceId);
 }
+
+bool AudioPolicyManager::IsHeadTrackingDataRequested(const std::string &macAddress)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    return gsp->IsHeadTrackingDataRequested(macAddress);
+}
+
+int32_t AudioPolicyManager::RegisterHeadTrackingDataRequestedEventListener(const std::string &macAddress,
+    const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Start to register");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (audioPolicyClientStubCB_ == nullptr) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    audioPolicyClientStubCB_->AddHeadTrackingDataRequestedChangeCallback(macAddress, callback);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress)
+{
+    AUDIO_DEBUG_LOG("Start to unregister");
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveHeadTrackingDataRequestedChangeCallback(macAddress);
+    }
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

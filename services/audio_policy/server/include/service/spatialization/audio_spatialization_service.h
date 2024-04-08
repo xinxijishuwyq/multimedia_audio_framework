@@ -70,9 +70,13 @@ public:
     void UpdateCurrentDevice(const std::string macAddress);
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
+    bool IsHeadTrackingDataRequested(const std::string &macAddress);
+    void UpdateRendererChangeInfoForSpatialization(
+        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
 private:
     AudioSpatializationService()
-        :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
+        :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+        audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
     {}
 
     ~AudioSpatializationService();
@@ -81,24 +85,31 @@ private:
     void HandleSpatializationStateChange(bool outputDeviceChange);
     void InitSpatializationState();
     void WriteSpatializationStateToDb();
+    void UpdateHeadTrackingDeviceState();
+    void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
     IAudioPolicyInterface &audioPolicyManager_;
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::string currentDeviceAddress_ = "";
     bool isSpatializationSupported_ = false;
     bool isHeadTrackingSupported_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
+    bool isHeadTrackingDataRequested_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;
     std::mutex headTrackingEnabledChangeListnerMutex_;
     std::mutex spatializationStateChangeListnerMutex_;
+    std::mutex spatializationRendererInfoMutex_;
     std::unordered_map<int32_t, std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledCBMap_;
     std::unordered_map<uint32_t, std::pair<std::shared_ptr<AudioSpatializationStateChangeCallback>, StreamUsage>>
         spatializationStateCBMap_;
     std::map<std::string, AudioSpatialDeviceState> addressToSpatialDeviceStateMap_;
+    std::vector<std::string> headTrackingDataRequestedDeviceList_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

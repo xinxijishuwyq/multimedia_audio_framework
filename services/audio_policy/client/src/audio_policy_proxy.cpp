@@ -2089,5 +2089,21 @@ float AudioPolicyProxy::GetMaxAmplitude(const int32_t deviceId)
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
     return reply.ReadFloat();
 }
+
+bool AudioPolicyProxy::IsHeadTrackingDataRequested(const std::string &macAddress)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteString(macAddress);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_HEAD_TRACKING_DATA_REQUESTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %d", error);
+    return reply.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS

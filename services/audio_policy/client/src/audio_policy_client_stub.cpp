@@ -197,5 +197,20 @@ void AudioPolicyClientStub::HandleRendererDeviceChange(MessageParcel &data, Mess
 
     OnRendererDeviceChange(sessionId, deviceInfo, reason);
 }
+
+void AudioPolicyClientStub::HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply)
+{
+    std::unordered_map<std::string, bool> changeInfo;
+    int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < DEVICE_CHANGE_VALID_SIZE, "get invalid size : %{public}d", size);
+
+    while (size > 0) {
+        std::string macAddress = data.ReadString();
+        bool isHeadTrackingDataRequested = data.ReadBool();
+        changeInfo[macAddress] = isHeadTrackingDataRequested;
+        size--;
+    }
+    OnHeadTrackingDeviceChange(changeInfo);
+}
 } // namespace AudioStandard
 } // namespace OHOS

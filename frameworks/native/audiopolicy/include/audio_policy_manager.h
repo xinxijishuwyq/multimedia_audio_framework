@@ -342,7 +342,14 @@ public:
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
 
     float GetMaxAmplitude(const int32_t deviceId);
-    
+
+    bool IsHeadTrackingDataRequested(const std::string &macAddress);
+
+    int32_t RegisterHeadTrackingDataRequestedEventListener(const std::string &macAddress,
+        const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &callback);
+
+    int32_t UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress);
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

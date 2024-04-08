@@ -2597,5 +2597,10 @@ float AudioPolicyServer::GetMaxAmplitude(int32_t deviceId)
 {
     return audioPolicyService_.GetMaxAmplitude(deviceId);
 }
+
+bool AudioPolicyServer::IsHeadTrackingDataRequested(const std::string &macAddress)
+{
+    return audioSpatializationService_.IsHeadTrackingDataRequested(macAddress);
+}
 } // namespace AudioStandard
 } // namespace OHOS
