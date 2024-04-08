@@ -146,7 +146,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
         for (auto &router : voiceMessageRouters_) {
             unique_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID);
             if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                AUDIO_INFO_LOG("CallCapture sourceType %{public}d clientUID %{public}d fetch input device %{public}d",
+                AUDIO_INFO_LOG("VoiceMessages sourceType %{public}d clientUID %{public}d fetch input device %{public}d",
                     sourceType, clientUID, desc->deviceType_);
                 return desc;
             }
