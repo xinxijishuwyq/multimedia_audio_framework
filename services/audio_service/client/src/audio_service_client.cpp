@@ -900,6 +900,9 @@ int32_t AudioServiceClient::ConnectStreamToPA()
     pa_threaded_mainloop_lock(mainLoop);
 
     if (HandlePAStreamConnect(deviceNameS, latency_in_msec) != SUCCESS || WaitStreamReady() != SUCCESS) {
+        if (mainLoop != nullptr) {
+            pa_threaded_mainloop_unlock(mainLoop);
+        }
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
 
@@ -933,12 +936,10 @@ int32_t AudioServiceClient::HandlePAStreamConnect(const std::string &deviceNameS
         preBuf_ = make_unique<uint8_t[]>(bufferAttr.maxlength);
         if (preBuf_ == nullptr) {
             AUDIO_ERR_LOG("Allocate memory for buffer failed.");
-            pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_INIT_ERR;
         }
         if (memset_s(preBuf_.get(), bufferAttr.maxlength, 0, bufferAttr.maxlength) != 0) {
             AUDIO_ERR_LOG("memset_s for buffer failed.");
-            pa_threaded_mainloop_unlock(mainLoop);
             return AUDIO_CLIENT_INIT_ERR;
         }
     } else {
@@ -950,7 +951,6 @@ int32_t AudioServiceClient::HandlePAStreamConnect(const std::string &deviceNameS
     if (result < 0) {
         int error = pa_context_errno(context);
         AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
-        pa_threaded_mainloop_unlock(mainLoop);
         ResetPAAudioClient();
         return AUDIO_CLIENT_CREATE_STREAM_ERR;
     }
@@ -967,7 +967,6 @@ int32_t AudioServiceClient::WaitStreamReady()
         if (!PA_STREAM_IS_GOOD(state)) {
             int error = pa_context_errno(context);
             AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
-            pa_threaded_mainloop_unlock(mainLoop);
             ResetPAAudioClient();
             return AUDIO_CLIENT_CREATE_STREAM_ERR;
         }
@@ -986,7 +985,6 @@ int32_t AudioServiceClient::WaitStreamReady()
             StopTimer();
             if (IsTimeOut()) {
                 AUDIO_ERR_LOG("Initialize timeout");
-                pa_threaded_mainloop_unlock(mainLoop);
                 return AUDIO_CLIENT_CREATE_STREAM_ERR;
             }
         }
