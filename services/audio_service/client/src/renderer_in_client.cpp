@@ -984,7 +984,12 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
     frameCount = spanSizeInFrame_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
-        frameCount = cbBufferSize_ / sizePerFrameInByte_;
+        int32_t metaSize = 0;
+        if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+            CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_OPERATION_FAILED, "conveter is nullptr");
+            metaSize = converter_->GetMetaSize();
+        }
+        frameCount = (cbBufferSize_ - metaSize) / sizePerFrameInByte_;
     }
     AUDIO_INFO_LOG("Frame count is %{public}u, mode is %{public}s", frameCount, renderMode_ == RENDER_MODE_NORMAL ?
         "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
