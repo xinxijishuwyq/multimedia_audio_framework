@@ -984,12 +984,7 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
     frameCount = spanSizeInFrame_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
-        int32_t metaSize = 0;
-        if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
-            CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_OPERATION_FAILED, "conveter is nullptr");
-            metaSize = converter_->GetMetaSize();
-        }
-        frameCount = (cbBufferSize_ - metaSize) / sizePerFrameInByte_;
+        frameCount = cbBufferSize_ / sizePerFrameInByte_;
     }
     AUDIO_INFO_LOG("Frame count is %{public}u, mode is %{public}s", frameCount, renderMode_ == RENDER_MODE_NORMAL ?
         "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
@@ -1852,7 +1847,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
         "invalid size is %{public}zu", bufferSize);
-    CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
+
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     if (!ProcessSpeed(buffer, bufferSize)) {
@@ -1902,7 +1897,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         size_t readableSize = result.size;
         Trace::Count("RendererInClient::CacheBuffer->readableSize", readableSize);
 
-        if (readableSize < clientSpanSizeInByte_) { continue; }
+        if (readableSize < clientSpanSizeInByte_) {
+            continue;
+        }
         // if readable size is enough, we will call write data to server
         int32_t ret = WriteCacheData();
         CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE, bufferSize - targetSize, "Status changed while write");
