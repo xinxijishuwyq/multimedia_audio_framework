@@ -33,6 +33,7 @@ namespace AudioStandard {
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 8; // 8S
+static const uint32_t DEFAULT_HIGHRESOLUTION_INDEX = 99999; // Not in the value range of sessionId
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -115,9 +116,9 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
-    AUDIO_INFO_LOG("current stream marked as non-high resolution");
-    PolicyHandler::GetInstance().SetHighResolutionExist(false);
-
+    if (highResolutionIndex_ == streamIndex) {
+        highResolutionIndex_ = DEFAULT_HIGHRESOLUTION_INDEX;
+    }
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
@@ -352,18 +353,25 @@ bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
     return false;
 }
 
-void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig)
+void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId)
 {
-    bool isHighResolution = PolicyHandler::GetInstance().GetHighResolutionExist();
-    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
-        deviceType, processConfig.streamType, processConfig.streamInfo.samplingRate, processConfig.streamInfo.format);
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && processConfig.streamType == STREAM_MUSIC &&
-        processConfig.streamInfo.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
-        processConfig.streamInfo.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolution == false) {
-        PolicyHandler::GetInstance().SetHighResolutionExist(true);
+    bool spatializationEnabled = processConfig.rendererInfo.spatializationEnabled;
+    bool isHighResolution = highResolutionIndex_ == DEFAULT_HIGHRESOLUTION_INDEX;
+    DeviceType deviceType = processConfig.deviceType;
+    AudioStreamType streamType = processConfig.streamType;
+    AudioSamplingRate sampleRate = processConfig.streamInfo.samplingRate;
+    AudioSampleFormat sampleFormat = processConfig.streamInfo.format;
+    
+    AUDIO_DEBUG_LOG("spatializationEnabled : %{public}d, isHighResolution : %{public}d, deviceType : %{public}d",
+        spatializationEnabled, isHighResolution, deviceType);
+    AUDIO_DEBUG_LOG("streamType : %{public}d, sampleRate : %{public}d, sampleFormat : %{public}d",
+        streamType, sampleRate, sampleFormat);
+
+    if (spatializationEnabled == false && isHighResolution == true && deviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        streamType == STREAM_MUSIC && sampleRate >= SAMPLE_RATE_48000 && sampleFormat >= SAMPLE_S24LE) {
         AUDIO_INFO_LOG("current stream marked as high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "1");
+        highResolutionIndex_ = sessionId;
     } else {
         AUDIO_INFO_LOG("current stream marked as non-high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "0");
@@ -399,7 +407,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
         pa_proplist_sets(propList, "headtracking.enabled",
             std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
-        SetHighResolution(propList, processConfig);
+        SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());

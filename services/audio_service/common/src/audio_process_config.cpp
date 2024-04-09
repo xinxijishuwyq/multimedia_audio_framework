@@ -59,6 +59,9 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     // streamType
     parcel.WriteInt32(config.streamType);
 
+    // deviceType
+    parcel.WriteInt32(config.deviceType);
+
     // Recorder only
     parcel.WriteBool(config.isInnerCapturer);
     parcel.WriteBool(config.isWakeupCapturer);
@@ -100,6 +103,9 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
 
     // streamType
     config.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+
+    // deviceType
+    config.deviceType = static_cast<DeviceType>(parcel.ReadInt32());
 
     // Recorder only
     config.isInnerCapturer = parcel.ReadBool();
