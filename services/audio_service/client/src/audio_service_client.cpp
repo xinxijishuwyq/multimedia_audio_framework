@@ -40,7 +40,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 static SafeMap<void *, bool> serviceClientInstanceMap_;
-static uint32_t userdataNum_ = 0;
+static uint32_t userdataNum = 0;
 AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
@@ -440,9 +440,9 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
     bool isUserdataExist;
     if (serviceClientInstanceMap_.Find(userdata, isUserdataExist)) {
-        if (userdataNum_ < USERDATA_CONTINUE_FREQUENCY) {
-            userdataNum_++;
-            AUDIO_ERR_LOG("userdata is nullptr, userdataNum: %{public}d!", userdataNum_);
+        if (userdataNum < USERDATA_CONTINUE_FREQUENCY) {
+            userdataNum++;
+            AUDIO_ERR_LOG("userdata is nullptr, userdataNum: %{public}d!", userdataNum);
         }
         return;
     }
