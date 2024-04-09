@@ -32,7 +32,6 @@ const int USER_SELECTION = 1;
 const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
 const int END_POS = 13;
-const int HFP_AG_SCO_REMOTE_USER_TERMINATED = 2;
 const std::map<std::pair<int, int>, DeviceCategory> bluetoothDeviceCategoryMap_ = {
     {std::make_pair(BluetoothDevice::MAJOR_AUDIO_VIDEO, BluetoothDevice::AUDIO_VIDEO_HEADPHONES), BT_HEADPHONE},
     {std::make_pair(BluetoothDevice::MAJOR_AUDIO_VIDEO, BluetoothDevice::AUDIO_VIDEO_WEARABLE_HEADSET), BT_HEADPHONE},

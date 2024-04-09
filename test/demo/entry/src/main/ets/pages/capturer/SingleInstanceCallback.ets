@@ -13,14 +13,19 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
 import fs from '@ohos.file.fs';
-
+class EnumValue {
+  value: string = '';
+}
+class Option {
+  offset: number = 0
+  length: number = 0
+}
 @Entry
 @Component
 struct SingleInstanceCallback {
-  private audioCapturerOptions = {
+  private audioCapturerOptions: audio.AudioCapturerOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -32,141 +37,158 @@ struct SingleInstanceCallback {
       capturerFlags: 0
     }
   }
-  private audioCapturer = null
-  private audioRenderer = null
-  private samplingRateList = []
-  @State selectedSamplingRateKey: string = "SAMPLE_RATE_44100"
-  private channelsList = []
-  @State selectedChannelKey: string = "CHANNEL_2"
-  private sampleFormatList = []
-  @State selectedsampleFormatKey: string = "SAMPLE_FORMAT_S16LE"
-  private encodingTypeList = []
-  @State selectedEncodingTypeKey: string = "ENCODING_TYPE_RAW"
-  private sourceTypeList = []
-  @State selectedSourceTypeKey: string = "SOURCE_TYPE_MIC"
-  @State returnMsg: string = `hello`
-  @State bufferSize: number = 0
-  @State isBlockingRead: boolean = true
-  @State path: string = ""
-  private audioManager = null;
-  private audioStreamManager = null;
+  private audioCapturer: audio.AudioCapturer | null = null;
+  private audioRenderer: audio.AudioRenderer | null = null;
+  private samplingRateList: EnumValue[] = [];
+  @State selectedSamplingRateKey: string = "SAMPLE_RATE_44100";
+  private channelsList: EnumValue[] = [];
+  @State selectedChannelKey: string = "CHANNEL_2";
+  private sampleFormatList: EnumValue[] = [];
+  @State selectedsampleFormatKey: string = "SAMPLE_FORMAT_S16LE";
+  private encodingTypeList: EnumValue[] = [];
+  @State selectedEncodingTypeKey: string = "ENCODING_TYPE_RAW";
+  private sourceTypeList: EnumValue[] = [];
+  @State selectedSourceTypeKey: string = "SOURCE_TYPE_MIC";
+  @State returnMsg: string = `hello`;
+  @State bufferSize: number = 0;
+  @State isBlockingRead: boolean = true;
+  @State path: string = "";
+  private audioManager: audio.AudioManager | null = null;
+  private audioStreamManager: audio.AudioStreamManager | null = null;
 
   aboutToAppear() {
-
-    for (let key in audio.AudioSamplingRate) {
+    Object.keys(audio.AudioSamplingRate).forEach((key) => {
       this.samplingRateList.push({ value: key })
-    }
-    for (let key in audio.AudioChannel) {
+    })
+
+    Object.keys(audio.AudioChannel).forEach((key) => {
       this.channelsList.push({ value: key })
-    }
-    for (let key in audio.AudioSampleFormat) {
+    })
+
+    Object.keys(audio.AudioSampleFormat).forEach((key) => {
       this.sampleFormatList.push({ value: key })
-    }
-    for (let key in audio.AudioEncodingType) {
+    })
+
+    Object.keys(audio.AudioEncodingType).forEach((key) => {
       this.encodingTypeList.push({ value: key })
-    }
-    for (let key in audio.SourceType) {
+    })
+
+    Object.keys(audio.SourceType).forEach((key) => {
       this.sourceTypeList.push({ value: key })
-    }
+    })
+
     this.audioManager = audio.getAudioManager();
-    this.audioStreamManager = this.audioManager.getStreamManager()
+    this.audioStreamManager = this.audioManager.getStreamManager();
   }
 
   createAudioCapturer() {
     if (this.audioCapturer !== null) {
-      this.returnMsg += `AudioCapturer Created already,don't create anymore`
-      return
+      this.returnMsg += `AudioCapturer Created already,don't create anymore`;
+      return;
     }
-    let _this = this
+    let _this = this;
     audio.createAudioCapturer(this.audioCapturerOptions, async (err, data) => {
       if (err) {
-        _this.returnMsg += `AudioCapturer Created : Error: ${JSON.stringify(err)}`
+        _this.returnMsg += `AudioCapturer Created : Error: ${JSON.stringify(err)}`;
       } else {
         _this.audioCapturer = data;
-        _this.returnMsg = `采集器参数：\n 采样率：${this.selectedSamplingRateKey}\n 声道：${this.selectedChannelKey}\n 采样格式：${this.selectedsampleFormatKey}\n 编码格式：${this.selectedEncodingTypeKey}\n 音源类型：${this.selectedSourceTypeKey}\n`
-        _this.returnMsg += `AudioCapturer Created : SUCCESS,state:${_this.audioCapturer.state}\n`
-
+        _this.returnMsg = `采集器参数：\n 采样率：${this.selectedSamplingRateKey}\n 声道：${this.selectedChannelKey}\n 采样格式：${this.selectedsampleFormatKey}\n 编码格式：${this.selectedEncodingTypeKey}\n 音源类型：${this.selectedSourceTypeKey}\n`;
+        _this.returnMsg += `AudioCapturer Created : SUCCESS,state:${_this.audioCapturer.state}\n`;
       }
     })
   }
 
   onAudioCapturerChange(){
-    let _this = this
-    _this.returnMsg = `onAudioCapturerChange 注册成功\n`
-    this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) =>  {
-      _this.returnMsg += `AudioCapturerChangeInfoArray :${JSON.stringify(AudioCapturerChangeInfoArray)}\n`
-    });
+    let _this = this;
+    _this.returnMsg = `onAudioCapturerChange 注册成功\n`;
+    if (this.audioStreamManager) {
+      this.audioStreamManager.on('audioCapturerChange', (AudioCapturerChangeInfoArray) =>  {
+        _this.returnMsg += `AudioCapturerChangeInfoArray :${JSON.stringify(AudioCapturerChangeInfoArray)}\n`;
+      });
+    }
+
   }
 
   offAudioCapturerChange(){
-    let _this = this
+    let _this = this;
+    if (this.audioStreamManager) {
+      this.audioStreamManager.off('audioCapturerChange');
+      _this.returnMsg = `取消AudioCapturerChange监听 成功\n`;
+    }
 
-    this.audioStreamManager.off('audioCapturerChange');
-    _this.returnMsg = `取消AudioCapturerChange监听 成功\n`
   }
 
   getCurrentAudioCapturerInfoArray(){
-    let _this = this
-    this.audioStreamManager.getCurrentAudioCapturerInfoArray(async (err, AudioCapturerChangeInfoArray) => {
-      console.info('getCurrentAudioCapturerInfoArray **** Get Callback Called ****');
-      if (err) {
-        _this.returnMsg =`getCurrentAudioCapturerInfoArray :ERROR: ${err}`;
-      } else {
-        if (AudioCapturerChangeInfoArray != null) {
-          _this.returnMsg =`getCurrentAudioCapturerInfoArray :Success: ${JSON.stringify(AudioCapturerChangeInfoArray)}`;
+    let _this = this;
+    if (this.audioStreamManager) {
+      this.audioStreamManager.getCurrentAudioCapturerInfoArray(async (err, AudioCapturerChangeInfoArray) => {
+        console.info('getCurrentAudioCapturerInfoArray **** Get Callback Called ****');
+        if (err) {
+          _this.returnMsg =`getCurrentAudioCapturerInfoArray :ERROR: ${err}`;
+        } else {
+          if (AudioCapturerChangeInfoArray != null) {
+            _this.returnMsg =`getCurrentAudioCapturerInfoArray :Success: ${JSON.stringify(AudioCapturerChangeInfoArray)}`;
+          }
         }
-      }
-    });
+      });
+    }
+
   }
 
   capturerStart() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to start\n`
-      return
+      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to start\n`;
+      return;
     }
-    let _this = this
+    let _this = this;
     this.audioCapturer.start((err) => {
       if (err) {
-        _this.returnMsg += `AudioCapturer start : Error: ${JSON.stringify(err)}\n`
+        _this.returnMsg += `AudioCapturer start : Error: ${JSON.stringify(err)}\n`;
       } else {
-        _this.returnMsg += `AudioCapturer start : SUCCESS,state:${_this.audioCapturer.state}\n`
+        if (_this.audioCapturer) {
+          _this.returnMsg += `AudioCapturer start : SUCCESS,state:${_this.audioCapturer.state}\n`;
+        }
       }
     });
   }
 
   getBufferSize() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to getBufferSize`
-      return
+      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to getBufferSize`;
+      return;
     }
     let _this = this
-    _this.audioCapturer.getBufferSize((err, bufferSize) => {
-      if (err) {
-        _this.returnMsg += `AudioCapturer getBufferSize : Error: ${JSON.stringify(err)}\n`
-      } else {
-        _this.returnMsg += `AudioCapturer getBufferSize : SUCCESS,bufferSize:${bufferSize},state:${_this.audioCapturer.state}\n`
-        _this.bufferSize = bufferSize
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getBufferSize((err, bufferSize) => {
+        if (err) {
+          _this.returnMsg += `AudioCapturer getBufferSize : Error: ${JSON.stringify(err)}\n`;
+        } else {
+          if (_this.audioCapturer) {
+            _this.returnMsg += `AudioCapturer getBufferSize : SUCCESS,bufferSize:${bufferSize},state:${_this.audioCapturer.state}\n`;
+          }
+          _this.bufferSize = bufferSize;
+        }
+      });
+    }
 
-      }
-    });
   }
 
   async readCapturer() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to read\n`
-      return
+      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to read\n`;
+      return;
     }
     if (this.bufferSize == 0) {
-      this.bufferSize = await this.audioCapturer.getBufferSize()
+      this.bufferSize = await this.audioCapturer.getBufferSize();
     }
 
-    let _this = this
+    let _this = this;
     //READ 5S
-    let start = new Date().getTime()
-    let end = new Date().getTime()
-    let buffer = null
+    let start = new Date().getTime();
+    let end = new Date().getTime();
+    let buffer: ArrayBuffer | null = null;
 
-    _this.returnMsg += `AudioCapturer read start.....\n `
+    _this.returnMsg += `AudioCapturer read start.....\n `;
 
     let path = globalThis.pathDir + `/test_capturer_${new Date().getTime()}_${this.audioCapturerOptions.streamInfo.samplingRate}_${this.audioCapturerOptions.streamInfo.channels}.pcm`;
     _this.path = path
@@ -178,7 +200,7 @@ struct SingleInstanceCallback {
       return
     }
 
-    let file
+    let file: fs.File;
     try {
       file = await fs.open(path, 0o2);
       this.returnMsg += "文件以读写模式打开成功"
@@ -192,60 +214,75 @@ struct SingleInstanceCallback {
     while (end - start <= 5000) {
       try {
         buffer = await new Promise((resolve, reject) => {
-          _this.audioCapturer.read(_this.bufferSize, _this.isBlockingRead, async (err, buffer) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(buffer)
-            }
-          })
+          if (_this.audioCapturer) {
+            _this.audioCapturer.read(_this.bufferSize, _this.isBlockingRead, async (err, buffer) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(buffer);
+              }
+            })
+          }
         })
-        let options = {
+
+        let options: Option = {
           offset: index * _this.bufferSize,
           length: _this.bufferSize
         }
-        console.log('options::::' + JSON.stringify(options))
-        let writeLen = await fs.write(file.fd, buffer, options)
-        console.log('fs.write writeLen:' + writeLen)
-        index++
+        console.log('options::::' + JSON.stringify(options));
+        let writeLen = await fs.write(file.fd, buffer, options);
+        console.log('fs.write writeLen:' + writeLen);
+        index++;
 
       } catch (err) {
-        _this.returnMsg += `AudioCapturer read : Error: ${JSON.stringify(err)}\n`
+        _this.returnMsg += `AudioCapturer read : Error: ${JSON.stringify(err)}\n`;
       }
-      end = new Date().getTime()
+      end = new Date().getTime();
     }
-    _this.returnMsg += `AudioCapturer read end, state:${_this.audioCapturer.state}\n`
+    if (_this.audioCapturer) {
+      _this.returnMsg += `AudioCapturer read end, state:${_this.audioCapturer.state}\n`;
+    }
+
   }
 
   stopCapturer() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to stop\n`
-      return
+      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to stop\n`;
+      return;
     }
-    let _this = this
-    _this.audioCapturer.stop((err) => {
-      if (err) {
-        _this.returnMsg += `AudioCapturer stop : Error: ${JSON.stringify(err)}\n`
-      } else {
-        _this.returnMsg += `AudioCapturer stop : SUCCESS,state:${_this.audioCapturer.state}\n`
-      }
-    })
+    let _this = this;
+    if (_this.audioCapturer) {
+      _this.audioCapturer.stop((err) => {
+        if (err) {
+          _this.returnMsg += `AudioCapturer stop : Error: ${JSON.stringify(err)}\n`;
+        } else {
+          if (_this.audioCapturer) {
+            _this.returnMsg += `AudioCapturer stop : SUCCESS,state:${_this.audioCapturer.state}\n`;
+          }
+        }
+      })
+    }
   }
 
   releaseCapturer() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to release\n`
-      return
+      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to release\n`;
+      return;
     }
-    let _this = this
-    _this.audioCapturer.release((err) => {
-      if (err) {
-        _this.returnMsg += `AudioCapturer release : Error: ${JSON.stringify(err)}\n`
-      } else {
-        _this.returnMsg += `AudioCapturer release SUCCESS,state:${_this.audioCapturer.state}\n`
-        _this.audioCapturer = null
-      }
-    })
+    let _this = this;
+    if (_this.audioCapturer) {
+      _this.audioCapturer.release((err) => {
+        if (err) {
+          _this.returnMsg += `AudioCapturer release : Error: ${JSON.stringify(err)}\n`
+        } else {
+          if (_this.audioCapturer) {
+            _this.returnMsg += `AudioCapturer release SUCCESS,state:${_this.audioCapturer.state}\n`
+            _this.audioCapturer = null
+          }
+        }
+      })
+    }
+
   }
 
   async renderPlay() {
@@ -253,11 +290,10 @@ struct SingleInstanceCallback {
       this.returnMsg += `AudioCapturer 尚未录音\n`
       return
     }
-    let audioRendererOptions = {
+    let audioRendererOptions: audio.AudioRendererOptions = {
       streamInfo: this.audioCapturerOptions.streamInfo,
       rendererInfo: {
-        content: audio.ContentType.CONTENT_TYPE_RINGTONE,
-        usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+        usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
         rendererFlags: 0
       }
     }
@@ -269,7 +305,7 @@ struct SingleInstanceCallback {
       this.returnMsg += `audioRenderer create : Error: ${JSON.stringify(err)}\n`
       return
     }
-    let bufferSize
+    let bufferSize: number = 0;
     try {
       bufferSize = await this.audioRenderer.getBufferSize()
       this.returnMsg += `audioRenderer getBufferSize success,bufferSize:${bufferSize} \n`
@@ -295,7 +331,7 @@ struct SingleInstanceCallback {
       let buf = new ArrayBuffer(bufferSize);
       this.returnMsg += `audioRenderer write start.......... \n`;
       for (let i = 0;i < len; i++) {
-        let options = {
+        let options: Option = {
           offset: i * bufferSize,
           length: bufferSize
         }
@@ -304,55 +340,62 @@ struct SingleInstanceCallback {
       }
       this.returnMsg += `audioRenderer write end. \n`;
     } catch (err) {
-      this.returnMsg += `audioRenderer write : Error: ${JSON.stringify(err)}\n`
+      this.returnMsg += `audioRenderer write : Error: ${JSON.stringify(err)}\n`;
     }
 
-    await this.audioRenderer.release()
+    await this.audioRenderer.release();
   }
 
   getCapturerInfo() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to getCapturerInfo\n`
-      return
+      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to getCapturerInfo\n`;
+      return;
     }
-    let _this = this
-    _this.audioCapturer.getCapturerInfo((err, capturerInfo) => {
-      if (err) {
-        _this.returnMsg = `AudioCapturer getCapturerInfo : Error: ${JSON.stringify(err)}`
-      } else {
-        _this.returnMsg = `AudioCapturer getCapturerInfo : Success: ${JSON.stringify(capturerInfo)}`
-      }
-    })
+    let _this = this;
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getCapturerInfo((err, capturerInfo) => {
+        if (err) {
+          _this.returnMsg = `AudioCapturer getCapturerInfo : Error: ${JSON.stringify(err)}`;
+        } else {
+          _this.returnMsg = `AudioCapturer getCapturerInfo : Success: ${JSON.stringify(capturerInfo)}`;
+        }
+      })
+    }
   }
 
   getStreamInfo() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to getStreamInfo\n`
-      return
+      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to getStreamInfo\n`;
+      return;
     }
-    let _this = this
-    _this.audioCapturer.getStreamInfo((err, streamInfo) => {
-      if (err) {
-        _this.returnMsg = `AudioCapturer getStreamInfo : Error: ${JSON.stringify(err)}`
-      } else {
-        _this.returnMsg = `AudioCapturer getStreamInfo : Success: ${JSON.stringify(streamInfo)}`
-      }
-    })
+    let _this = this;
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getStreamInfo((err, streamInfo) => {
+        if (err) {
+          _this.returnMsg = `AudioCapturer getStreamInfo : Error: ${JSON.stringify(err)}`;
+        } else {
+          _this.returnMsg = `AudioCapturer getStreamInfo : Success: ${JSON.stringify(streamInfo)}`;
+        }
+      })
+    }
   }
 
   getAudioTime() {
     if (this.audioCapturer == null) {
-      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to getAudioTime\n`
-      return
+      this.returnMsg += `AudioCapturer instance had not created,dont‘t allow to getAudioTime\n`;
+      return;
     }
-    let _this = this
-    _this.audioCapturer.getAudioTime((err, timestamp) => {
-      if (err) {
-        _this.returnMsg = `AudioCapturer getAudioTime : Error: ${JSON.stringify(err)}`
-      } else {
-        _this.returnMsg = `AudioCapturer getAudioTime Current timestamp: ${JSON.stringify(timestamp)}`
-      }
-    })
+    let _this = this;
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getAudioTime((err, timestamp) => {
+        if (err) {
+          _this.returnMsg = `AudioCapturer getAudioTime : Error: ${JSON.stringify(err)}`;
+        } else {
+          _this.returnMsg = `AudioCapturer getAudioTime Current timestamp: ${JSON.stringify(timestamp)}`;
+        }
+      })
+    }
+
   }
 
   getAudioStreamId() {
@@ -361,13 +404,16 @@ struct SingleInstanceCallback {
       return
     }
     let _this = this
-    _this.audioCapturer.getAudioStreamId((err, streamid) => {
-      if (err) {
-        _this.returnMsg = `AudioCapturer GetStreamId : Error: ${JSON.stringify(err)}`
-      } else {
-        _this.returnMsg = `audioCapturer GetStreamId: ${streamid}`
-      }
-    });
+    if (_this.audioCapturer) {
+      _this.audioCapturer.getAudioStreamId((err, streamid) => {
+        if (err) {
+          _this.returnMsg = `AudioCapturer GetStreamId : Error: ${JSON.stringify(err)}`
+        } else {
+          _this.returnMsg = `audioCapturer GetStreamId: ${streamid}`
+        }
+      });
+    }
+
   }
 
   build() {

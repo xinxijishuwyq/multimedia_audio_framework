@@ -1100,23 +1100,9 @@ void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const in
     AUDIO_DEBUG_LOG("Removed SessionId: %{public}" PRIu64, sessionID);
 }
 
-void AudioPolicyServer::OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo)
-{
-    AudioCapturerInfo capturerInfo;
-    capturerInfo.sourceType = sessionInfo.sourceType;
-
-    AudioStreamInfo streamInfo;
-    streamInfo.samplingRate = static_cast<AudioSamplingRate>(sessionInfo.rate);
-    streamInfo.channels = static_cast<AudioChannel>(sessionInfo.channels);
-
-    int32_t error = SUCCESS;
-    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
-    audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionID, false, error);
-}
-
 void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
 {
-    audioPolicyService_.OnCapturerSessionAdded(sessionEvent.sessionID, sessionEvent.sessionInfo_);
+    AUDIO_DEBUG_LOG("Added Session");
 }
 
 void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
@@ -1127,30 +1113,6 @@ void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
 void AudioPolicyServer::OnPlaybackCapturerStop()
 {
     audioPolicyService_.UnloadLoopback();
-}
-
-void AudioPolicyServer::OnWakeupCapturerStop(uint32_t sessionID)
-{
-    sessionProcessor_.Post({SessionEvent::Type::CLOSE_WAKEUP_SOURCE, sessionID});
-}
-
-void AudioPolicyServer::OnDstatusUpdated(bool isConnected)
-{
-    static std::mutex mtx;
-    static int count = 0;
-    std::lock_guard<std::mutex> {mtx};
-    if (isConnected) {
-        if (count == 0) {
-            sessionProcessor_.Post({SessionEvent::Type::ADD, DSTATUS_SESSION_ID,
-                {SOURCE_TYPE_MIC, DSTATUS_DEFAULT_RATE}});
-        }
-        count++;
-    } else {
-        count--;
-        if (count == 0) {
-            sessionProcessor_.Post({SessionEvent::Type::REMOVE, DSTATUS_SESSION_ID});
-        }
-    }
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)
