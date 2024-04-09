@@ -439,7 +439,10 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
     CHECK_AND_RETURN_LOG(userdata, "userdata is null");
     bool isUserdataExist;
     if (serviceClientInstanceMap_.Find(userdata, isUserdataExist)) {
-        AUDIO_ERR_LOG("userdata is null");
+        if (userdataNum_ < USERDATA_CONTINUE_FREQUENCY) {
+            userdataNum_++;
+            AUDIO_ERR_LOG("userdata is nullptr, userdataNum: %{public}d!", userdataNum_);
+        }
         return;
     }
     auto asClient = static_cast<AudioServiceClient *>(userdata);
