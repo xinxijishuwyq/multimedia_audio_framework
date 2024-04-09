@@ -21,6 +21,7 @@
 #include "ipc_stream_in_server.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

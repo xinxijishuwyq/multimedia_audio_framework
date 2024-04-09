@@ -36,7 +36,7 @@ public:
     ~AudioService();
 
     // override for ICapturerFilterListener
-    int32_t OnCapturerFilterChange(uint32_t sessionId, AudioPlaybackCaptureConfig newConfig) override;
+    int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) override;
     int32_t OnCapturerFilterRemove(uint32_t sessionId) override;
 
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
@@ -54,12 +54,18 @@ public:
     void Dump(std::stringstream &dumpString);
     float GetMaxAmplitude(bool isOutputDevice);
 
+    void RemoveRenderer(uint32_t sessionId);
+
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
 
+    void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     // for inner-capturer
-    void CheckFilterForAllRenderers(std::shared_ptr<RendererInServer> renderer);
+    void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+    bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
+    int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
+    int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
 
 private:
     std::mutex processListMutex_;
@@ -72,12 +78,12 @@ private:
 
     // for inner-capturer
     PlaybackCapturerManager *innerCapturerMgr_ = nullptr;
-    uint32_t innerCapSessionId_ = 0; // invalid sessionId
-    std::unique_ptr<AudioPlaybackCaptureConfig> workingConfig_ = nullptr;
+    uint32_t workingInnerCapId_ = 0; // invalid sessionId
+    AudioPlaybackCaptureConfig workingConfig_;
 
-    std::mutex rendererListMutex_;
-    std::vector<std::weak_ptr<RendererInServer>> allRendererList_ = {};
-    std::vector<std::weak_ptr<RendererInServer>> filteredRendererList_ = {};
+    std::mutex rendererMapMutex_;
+    std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
+    std::vector<std::weak_ptr<RendererInServer>> filteredRendererMap_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

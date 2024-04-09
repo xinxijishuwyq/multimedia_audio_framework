@@ -76,6 +76,8 @@ constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
 const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const std::string INNER_CAPTURER_SINK = "InnerCapturerSink";
+const std::string NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
 const std::string REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
 

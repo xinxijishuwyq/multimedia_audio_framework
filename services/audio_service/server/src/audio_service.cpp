@@ -99,56 +99,149 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
 
     // in plan: Put playback into list, check if EnableInnerCap is need.
     if (ipcStreamInServer != nullptr && config.audioMode == AUDIO_MODE_PLAYBACK) {
-        CheckFilterForAllRenderers(ipcStreamInServer->GetRenderer());
+        uint32_t sessionId = 0;
+        std::shared_ptr<RendererInServer> renderer = ipcStreamInServer->GetRenderer();
+        if (renderer != nullptr && renderer->GetSessionId(sessionId) == SUCCESS) {
+            InsertRenderer(sessionId, renderer); // for all renderers
+            CheckInnerCapForRenderer(sessionId, renderer);
+        }
     }
 
     return ipcStreamInServer;
 }
 
-void AudioService::CheckFilterForAllRenderers(std::shared_ptr<RendererInServer> renderer)
+void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
+{
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    AUDIO_INFO_LOG("Insert renderer:%{public}u into map", sessionId);
+    allRendererMap_[sessionId] = renderer;
+}
+
+void AudioService::RemoveRenderer(uint32_t sessionId)
+{
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    AUDIO_INFO_LOG("Renderer:%{public}u will be removed.", sessionId);
+    if (!allRendererMap_.count(sessionId)) {
+        AUDIO_WARNING_LOG("Renderer in not in map!");
+        return;
+    }
+    allRendererMap_.erase(sessionId);
+}
+
+void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
 {
     CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is null.");
 
-    std::lock_guard<std::mutex> lock(rendererListMutex_);
-    allRendererList_.push_back(renderer);
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
 
+    // inner-cap not working
+    if (workingInnerCapId_ == 0) {
+        return;
+    }
     // in plan: check if meet with the workingConfig_
-    renderer->EnableInnerCap(); // for debug
+    if (ShouldBeInnerCap(renderer->processConfig_)) {
+        filteredRendererMap_.push_back(renderer);
+        renderer->EnableInnerCap(); // for debug
+    }
 }
 
-int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, AudioPlaybackCaptureConfig newConfig)
+bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
 {
-    // debug: wait for modify
-    innerCapSessionId_ = sessionId;
-    workingConfig_ = std::make_unique<AudioPlaybackCaptureConfig>(newConfig);
+    StreamUsage usage = rendererConfig.rendererInfo.streamUsage;
 
+    // in plan: enable filter with workingConfig_
+    if (usage == STREAM_USAGE_MUSIC) {
+        return true;
+    }
+
+    return false;
+}
+
+int32_t AudioService::OnInitInnerCapList()
+{
+    AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
+        std::shared_ptr<RendererInServer> renderer = it->second.lock();
+        if (renderer == nullptr) {
+            AUDIO_WARNING_LOG("Renderer is already released!");
+            continue;
+        }
+        if (ShouldBeInnerCap(renderer->processConfig_)) {
+            renderer->EnableInnerCap();
+            filteredRendererMap_.push_back(renderer);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioService::OnUpdateInnerCapList()
+{
+    AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
+
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    for (size_t i = 0;i < filteredRendererMap_.size();i++) {
+        std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[i].lock();
+        if (renderer == nullptr) {
+            AUDIO_WARNING_LOG("Renderer is already released!");
+            continue;
+        }
+        if (!ShouldBeInnerCap(renderer->processConfig_)) {
+            renderer->DisableInnerCap();
+        }
+    }
+    filteredRendererMap_.clear();
+    lock.unlock();
+    // EnableInnerCap will be called twice as it's already in filteredRendererMap_.
+    return OnInitInnerCapList();
+}
+
+// Only one session is working at the same time.
+int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig)
+{
     // in plan:
-    // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererList_
+    // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
     // step 2: if sessionId is already in using, this means the config is changed. Check the filtered renderer before,
-    // call disable inner-cap for those not meet with the new config, than filter all allRendererList_.
+    // call disable inner-cap for those not meet with the new config, than filter all allRendererMap_.
+    if (workingInnerCapId_ == 0) {
+        workingInnerCapId_ = sessionId;
+        workingConfig_ = newConfig;
+        return OnInitInnerCapList();
+    }
 
+    if (workingInnerCapId_ == sessionId) {
+        workingConfig_ = newConfig;
+        return OnUpdateInnerCapList();
+    }
+
+    AUDIO_WARNING_LOG("%{public}u is working, comming %{public}u will not work!", workingInnerCapId_, sessionId);
     return ERR_OPERATION_FAILED;
 }
 
 int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
 {
-    innerCapSessionId_ = 0;
-    workingConfig_ = nullptr;
+    if (workingInnerCapId_ != sessionId) {
+        AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", workingInnerCapId_, sessionId);
+        return SUCCESS;
+    }
+    workingInnerCapId_ = 0;
+    workingConfig_ = {};
     // in plan:
-    // disable inner-cap in the filteredRendererList_
-    std::lock_guard<std::mutex> lock(rendererListMutex_);
-    for (size_t i = 0; i < filteredRendererList_.size(); i++) {
-        std::shared_ptr<RendererInServer> renderer = filteredRendererList_[i].lock();
+    // disable inner-cap in the filteredRendererMap_
+    std::lock_guard<std::mutex> lock(rendererMapMutex_);
+    for (size_t i = 0; i < filteredRendererMap_.size(); i++) {
+        std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[i].lock();
         if (renderer == nullptr) {
             AUDIO_WARNING_LOG("Find renderer is already released!");
             continue;
         }
         renderer->DisableInnerCap();
     }
+    AUDIO_INFO_LOG("Filter removed, clear %{public}zu filtered renderer.", filteredRendererMap_.size());
 
-    filteredRendererList_.clear();
+    filteredRendererMap_.clear();
 
-    return ERR_OPERATION_FAILED;
+    return SUCCESS;
 }
 
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)

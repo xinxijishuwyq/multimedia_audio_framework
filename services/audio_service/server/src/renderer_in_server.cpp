@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "audio_service.h"
 #include "i_stream_manager.h"
 
 namespace OHOS {
@@ -31,9 +32,9 @@ namespace {
     static const uint32_t UNDERRUN_LOG_LOOP_COUNT = 100;
 }
 
-RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
+RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener) :
+    processConfig_(processConfig)
 {
-    processConfig_ = processConfig;
     streamListener_ = streamListener;
 }
 
@@ -450,6 +451,7 @@ int32_t RendererInServer::Stop()
 
 int32_t RendererInServer::Release()
 {
+    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
@@ -535,13 +537,71 @@ int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 int32_t RendererInServer::EnableInnerCap()
 {
     // in plan
-    return ERROR;
+    if (isInnerCapEnabled_) {
+        AUDIO_INFO_LOG("InnerCap is already enabled");
+        return SUCCESS;
+    }
+    int32_t ret = InitDupStream();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    if (status_ == I_STATUS_STARTED) {
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
+        dupStream_->Start();
+    }
+    return SUCCESS;
 }
 
 int32_t RendererInServer::DisableInnerCap()
 {
-    // in plan
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    if (!isInnerCapEnabled_) {
+        AUDIO_WARNING_LOG("InnerCap is already disabled.");
+        return ERR_INVALID_OPERATION;
+    }
+    isInnerCapEnabled_ = false;
+    // in plan: call stop?
+    IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    dupStream_ = nullptr;
+
     return ERROR;
+}
+
+int32_t RendererInServer::InitDupStream()
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(processConfig_, dupStream_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dupStream_ != nullptr, ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
+    dupStreamIndex_ = dupStream_->GetStreamIndex();
+
+    dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex_);
+    dupStream_->RegisterStatusCallback(dupStreamCallback_);
+    dupStream_->RegisterWriteCallback(dupStreamCallback_);
+
+    // eg: /data/local/tmp/100001_48000_2_1_c2s_dup.pcm
+    AudioStreamInfo tempInfo = processConfig_.streamInfo;
+    std::string dupDumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
+        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_c2s_dup.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dupDumpName, &dumpC2SDup_);
+
+    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
+
+    isInnerCapEnabled_ = true;
+    return SUCCESS;
+}
+
+StreamCallbacks::StreamCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
+{
+    AUDIO_INFO_LOG("DupStream %{public}u create StreamCallbacks", streamIndex_);
+}
+
+void StreamCallbacks::OnStatusUpdate(IOperation operation)
+{
+    AUDIO_INFO_LOG("DupStream %{public}u recv operation: %{public}d", streamIndex_, operation);
+}
+
+int32_t StreamCallbacks::OnWriteData(size_t length)
+{
+    Trace trace("StreamCallbacks::OnWriteData length " + std::to_string(length));
+    return SUCCESS;
 }
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)

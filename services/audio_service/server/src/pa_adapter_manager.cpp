@@ -80,7 +80,7 @@ static bool IsEnhanceMode(SourceType sourceType)
 
 PaAdapterManager::PaAdapterManager(ManagerType type)
 {
-    AUDIO_DEBUG_LOG("Constructor PaAdapterManager");
+    AUDIO_INFO_LOG("Constructor with type:%{public}d", type);
     mainLoop_ = nullptr;
     api_ = nullptr;
     context_ = nullptr;
@@ -137,6 +137,7 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
 int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream)
 {
     AUDIO_DEBUG_LOG("Create capturer start");
+    CHECK_AND_RETURN_RET_LOG(managerType_ == RECORDER, ERROR, "Invalid managerType:%{public}d", managerType_);
     int32_t ret = InitPaContext();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
 
@@ -212,8 +213,12 @@ int32_t PaAdapterManager::InitPaContext()
     api_ = pa_threaded_mainloop_get_api(mainLoop_);
     if (managerType_ == PLAYBACK) {
         pa_threaded_mainloop_set_name(mainLoop_, "OS_RendererML");
-    } else {
+    } else if (managerType_ == DUP_PLAYBACK) {
+        pa_threaded_mainloop_set_name(mainLoop_, "OS_DRendererML");
+    } else if (managerType_ == RECORDER) {
         pa_threaded_mainloop_set_name(mainLoop_, "OS_CapturerML");
+    } else {
+        AUDIO_ERR_LOG("Not supported managerType:%{public}d", managerType_);
     }
     if (api_ == nullptr) {
         pa_threaded_mainloop_free(mainLoop_);
@@ -294,6 +299,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
             }
         } else if (processConfig.isInnerCapturer) {
             deviceName = INNER_CAPTURER_SOURCE;
+            // deviceName = NEW_INNER_CAPTURER_SOURCE;
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
             deviceName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
         }
@@ -490,10 +496,11 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
 
     PaLockGuard lock(mainLoop_);
     int32_t XcollieFlag = 0; // flag 0 do nothing but the caller defined function
-    if (managerType_ == PLAYBACK) {
+    if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK) {
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
-    } else {
+    }
+    if (managerType_ == RECORDER) {
         XcollieFlag = 2; // flag 2 die when timeout, restart server
         int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
@@ -526,19 +533,27 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     uint32_t maxlength = 4; // 4 is max buffer length of playback
     uint32_t prebuf = 1; // 1 is prebuf of playback
 
-    AUDIO_INFO_LOG("Create ipc playback stream tlength: %{public}u, maxlength: %{public}u", tlength, maxlength);
+    if (managerType_ == DUP_PLAYBACK) {
+        maxlength *= 2; // double
+        prebuf = 2; // more prebuf for dup stream
+    }
+    AUDIO_INFO_LOG("Create ipc playback stream tlength: %{public}u, maxlength: %{public}u prebuf: %{public}u", tlength,
+        maxlength, prebuf);
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
     bufferAttr.prebuf = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * prebuf, &sampleSpec);
     bufferAttr.maxlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * maxlength, &sampleSpec);
     bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
-    AUDIO_INFO_LOG("bufferAttr, maxLength: %{public}u, tlength: %{public}u, prebuf: %{public}u",
-        maxlength, tlength, prebuf);
 
-    int32_t result = pa_stream_connect_playback(paStream, nullptr, &bufferAttr,
-        (pa_stream_flags_t)(PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
-        PA_STREAM_VARIABLE_RATE), nullptr, nullptr);
+    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK.c_str() : nullptr;
+    int flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+        PA_STREAM_VARIABLE_RATE;
+    if (managerType_ == DUP_PLAYBACK) {
+        flags |= PA_STREAM_DONT_MOVE; // should not move dup streams
+    }
+    int32_t result = pa_stream_connect_playback(paStream, sinkName, &bufferAttr, static_cast<pa_stream_flags_t>(flags),
+        nullptr, nullptr);
     if (result < 0) {
         int32_t error = pa_context_errno(context_);
         AUDIO_ERR_LOG("connection to stream error: %{public}d", error);

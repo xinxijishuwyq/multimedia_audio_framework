@@ -22,6 +22,7 @@
 #include "audio_utils.h"
 #include "audio_log.h"
 #include "i_stream_manager.h"
+#include "playback_capturer_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -363,6 +364,17 @@ int32_t CapturerInServer::Release()
     return SUCCESS;
 }
 
+int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE,
+        ERR_INVALID_OPERATION, "This not a inner-cap source!");
+    filterConfig_ = config;
+
+    // in plan: add more check and print config
+    PlaybackCapturerManager::GetInstance()->SetPlaybackCapturerFilterInfo(streamIndex_, filterConfig_);
+    return SUCCESS;
+}
+
 int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
     if (status_ == I_STATUS_STOPPED) {
@@ -381,11 +393,6 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 int32_t CapturerInServer::GetLatency(uint64_t &latency)
 {
     return stream_->GetLatency(latency);
-}
-
-void CapturerInServer::RegisterTestCallback(const std::weak_ptr<CapturerListener> &callback)
-{
-    testCallback_ = callback;
 }
 
 int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)

@@ -146,7 +146,8 @@ bool PlaybackCapturerManager::RegisterCapturerFilterListener(ICapturerFilterList
     return true;
 }
 
-int32_t PlaybackCapturerManager::SetPlaybackCapturerFilterInfo(uint32_t sessionId, AudioPlaybackCaptureConfig config)
+int32_t PlaybackCapturerManager::SetPlaybackCapturerFilterInfo(uint32_t sessionId,
+    const AudioPlaybackCaptureConfig &config)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
 

@@ -34,7 +34,7 @@ public:
     virtual ~ICapturerFilterListener() = default;
 
     // This will be called when a filter is first enabled or changed.
-    virtual int32_t OnCapturerFilterChange(uint32_t sessionId, AudioPlaybackCaptureConfig newConfig) = 0;
+    virtual int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) = 0;
 
     // This will be called when a filter released.
     virtual int32_t OnCapturerFilterRemove(uint32_t sessionId) = 0;
@@ -55,7 +55,7 @@ public:
 
     // add for new playback-capturer
     bool RegisterCapturerFilterListener(ICapturerFilterListener *listener);
-    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, AudioPlaybackCaptureConfig config);
+    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config);
     int32_t RemovePlaybackCapturerFilterInfo(uint32_t sessionId);
 private:
     std::unordered_set<int32_t> supportStreamUsageSet_;

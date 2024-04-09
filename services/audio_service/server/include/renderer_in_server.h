@@ -23,6 +23,16 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class StreamCallbacks : public IStatusCallback, public IWriteCallback {
+public:
+    StreamCallbacks(uint32_t streamIndex);
+    virtual ~StreamCallbacks() = default;
+    void OnStatusUpdate(IOperation operation) override;
+    int32_t OnWriteData(size_t length) override;
+private:
+    uint32_t streamIndex_ = 0;
+};
+
 class RendererInServer : public IStatusCallback, public IWriteCallback,
     public std::enable_shared_from_this<RendererInServer> {
 public:
@@ -72,6 +82,9 @@ public:
     // for inner-cap
     int32_t EnableInnerCap();
     int32_t DisableInnerCap();
+    int32_t InitDupStream();
+public:
+    const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
     std::mutex statusLock_;
@@ -81,8 +94,15 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
+    // for inner-cap
+    std::mutex dupMutex_;
+    bool isInnerCapEnabled_ = false;
+    uint32_t dupStreamIndex_ = 0;
+    std::shared_ptr<StreamCallbacks> dupStreamCallback_ = nullptr;
+    std::shared_ptr<IRendererStream> dupStream_ = nullptr;
+    FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
+
     std::weak_ptr<IStreamListener> streamListener_;
-    AudioProcessConfig processConfig_;
     size_t totalSizeInFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
     size_t spanSizeInByte_ = 0;

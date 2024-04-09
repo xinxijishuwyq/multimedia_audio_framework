@@ -24,11 +24,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class CapturerListener {
-public:
-    virtual void OnReadEvent() = 0;
-    virtual void ReceivedBuffer() = 0;
-};
 class CapturerInServer : public IStatusCallback, public IReadCallback,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
@@ -49,7 +44,6 @@ public:
     int32_t GetLatency(uint64_t &latency);
 
     int32_t Init();
-    void RegisterTestCallback(const std::weak_ptr<CapturerListener> &callback);
 
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
@@ -57,6 +51,9 @@ public:
     BufferDesc DequeueBuffer(size_t length);
     void ReadData(size_t length);
     int32_t DrainAudioBuffer();
+
+    // for inner-cap.
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config);
 
 private:
     int32_t InitCacheBuffer(size_t targetSize);
@@ -68,8 +65,8 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
+    AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;
-    std::weak_ptr<CapturerListener> testCallback_;
     AudioProcessConfig processConfig_;
     size_t totalSizeInFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
