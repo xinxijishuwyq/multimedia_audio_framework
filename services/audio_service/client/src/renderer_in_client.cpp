@@ -963,7 +963,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
 
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
     bufferSize = clientSpanSizeInByte_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
@@ -980,11 +980,14 @@ int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 
 int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
     frameCount = spanSizeInFrame_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         frameCount = cbBufferSize_ / sizePerFrameInByte_;
+        if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+            frameCount = frameCount * curStreamParams_.channels / streamParams_.channels;
+        }
     }
     AUDIO_INFO_LOG("Frame count is %{public}u, mode is %{public}s", frameCount, renderMode_ == RENDER_MODE_NORMAL ?
         "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
