@@ -1368,7 +1368,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_006, TestSize.Level1)
 /**
  * @tc.name  : Test GetFrameCount API via legal input when playing audiovivid in callback mode.
  * @tc.number: Audio_Renderer_GetFrameCount_007
- * @tc.desc  : test GetFrameCount interface, Returns 0 {SUCCESS}, if the getting is successful. The frame count should be const 1024.
+ * @tc.desc  : Test GetFrameCount interface, Returns 0 {SUCCESS}, if the getting is successful.
+ *             The frame count should be const 1024 in this situation.
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_007, TestSize.Level1)
 {
