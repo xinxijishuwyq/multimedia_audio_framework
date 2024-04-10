@@ -58,6 +58,7 @@ namespace {
     constexpr size_t MAX_RENDERER_INSTANCES = 16;
 
     constexpr size_t AVS3METADATA_SIZE = 19824;
+    constexpr size_t AUDIOVIVID_FRAME_COUNT = 1024;
 
     static size_t g_reqBufLen = 0;
 } // namespace
@@ -1360,6 +1361,31 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_006, TestSize.Level1)
     uint32_t frameCount;
     ret = audioRenderer->GetFrameCount(frameCount);
     EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test GetFrameCount API via legal input when playing audiovivid in callback mode.
+ * @tc.number: Audio_Renderer_GetFrameCount_007
+ * @tc.desc  : Test GetFrameCount interface, Returns 0 {SUCCESS}, if the getting is successful.
+ *             The frame count should be const 1024 in this situation.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetFrameCount_007, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererSpatialOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint32_t frameCount;
+    ret = audioRenderer->GetFrameCount(frameCount);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(AUDIOVIVID_FRAME_COUNT, frameCount);
 
     audioRenderer->Release();
 }
