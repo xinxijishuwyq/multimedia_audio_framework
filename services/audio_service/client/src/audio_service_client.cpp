@@ -446,6 +446,7 @@ void AudioServiceClient::PAStreamReadCb(pa_stream *stream, size_t length, void *
         }
         return;
     }
+    userdataLogLimit = 0;
     auto asClient = static_cast<AudioServiceClient *>(userdata);
     std::lock_guard<std::mutex> lock(asClient->serviceClientLock_);
     auto mainLoop = static_cast<pa_threaded_mainloop *>(asClient->mainLoop);
