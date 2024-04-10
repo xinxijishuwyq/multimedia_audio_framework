@@ -952,7 +952,7 @@ bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::Access
 {
     bool hasRecordVoiceCallPermission = VerifyClientPermission(RECORD_VOICE_CALL_PERMISSION, tokenId);
     CHECK_AND_RETURN_RET_LOG(hasRecordVoiceCallPermission, false, "No permission");
-    return SUCCESS;
+    return true;
 }
 
 int32_t AudioServer::OffloadDrain()
