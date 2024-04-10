@@ -669,7 +669,7 @@ private:
 
     void FetchInputDeviceWhenNoRunningStream();
 
-    void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag);
 
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,

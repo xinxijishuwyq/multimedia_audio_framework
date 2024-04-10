@@ -516,7 +516,8 @@ int32_t AudioServer::OffloadSetVolume(float volume)
     return audioRendererSinkInstance->SetVolume(volume, 0);
 }
 
-int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+    DeviceType activeInputDevice)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
 
@@ -526,24 +527,27 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeDevic
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS);
     AudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
-    if (activeDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+    if (activeOutputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
     } else {
-        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+    }
+    if (activeInputDevice == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
+    } else {
+        audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
     }
 
     if (audioCapturerSourceInstance == nullptr || !audioCapturerSourceInstance->IsInited()) {
         AUDIO_WARNING_LOG("Capturer is not initialized.");
     } else {
-        audioCapturerSourceInstance->SetAudioScene(audioScene, activeDevice);
+        audioCapturerSourceInstance->SetAudioScene(audioScene, activeInputDevice);
     }
 
     if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
-        audioRendererSinkInstance->SetAudioScene(audioScene, activeDevice);
+        audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevice);
     }
 
     audioScene_ = audioScene;

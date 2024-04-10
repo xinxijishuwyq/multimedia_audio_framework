@@ -37,7 +37,8 @@ public:
     int32_t OffloadDrain() override;
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+        DeviceType activeInputDevice) override;
     const std::string GetAudioParameter(const std::string &key) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
