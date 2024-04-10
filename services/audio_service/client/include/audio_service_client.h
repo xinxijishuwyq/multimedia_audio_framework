@@ -794,7 +794,6 @@ private:
     static const int32_t AUDIO_CLIENT_PERMISSION_ERR = -9;
 
     // Default values
-    static const uint32_t USERDATA_CONTINUE_FREQUENCY = 3;
     static const uint32_t MINIMUM_BUFFER_SIZE = 1024;
     static const uint32_t DEFAULT_SAMPLING_RATE = 44100;
     static const uint8_t DEFAULT_CHANNEL_COUNT = 2;
