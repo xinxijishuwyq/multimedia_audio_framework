@@ -77,7 +77,6 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
-const int32_t MEDIA_SERVICE_UID = 1013; // open or close offload of MEDIA_SERVICE
 const int32_t UID_AUDIO = 1041;
 const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
@@ -575,17 +574,12 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         AUDIO_DEBUG_LOG("offloadUID not valid, Skipped");
         return;
     }
-    if (offloadUID == MEDIA_SERVICE_UID || offloadUID == UID_AUDIO) { // not support avplayer in current version
-        AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
+    if (offloadUID == UID_AUDIO) {
+        AUDIO_DEBUG_LOG("Skip anco_audio out of offload mode");
         return;
     }
 
     auto CallingUid = IPCSkeleton::GetCallingUid();
-    if (CallingUid == MEDIA_SERVICE_UID) { // not support avplayer in current version
-        AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
-        return;
-    }
-
     AUDIO_INFO_LOG("sessionId[%{public}d] UID[%{public}d] CallingUid[%{public}d] StreamType[%{public}d] "
                    "Getting offload stream", sessionId, offloadUID, CallingUid, streamType);
     lock_guard<mutex> lock(offloadMutex_);
