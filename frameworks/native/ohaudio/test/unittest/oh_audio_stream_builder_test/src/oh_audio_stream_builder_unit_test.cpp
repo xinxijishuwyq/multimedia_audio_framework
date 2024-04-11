@@ -23,6 +23,9 @@ namespace AudioStandard {
 namespace {
     const int32_t SAMPLING_RATE_44100 = 44100;
     const int32_t SAMPLING_RATE_48000 = 48000;
+    const int32_t SAMPLING_RATE_88200 = 88200;
+    const int32_t SAMPLING_RATE_176400 = 176400;
+    const int32_t SAMPLING_RATE_192000 = 192000;
     const int32_t SAMPLING_RATE_WRONG_NUM = -1;
 
     const int32_t CHANNEL_COUNT_1 = 1;
@@ -224,10 +227,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_003, Tes
 
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 176400.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_004
+* @tc.number: OH_AudioStreamBuilder_SetParameter_018
 * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
 */
-HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_004, TestSize.Level0)
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_018, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
@@ -244,10 +247,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_004, Tes
 
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 192000.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_005
+* @tc.number: OH_AudioStreamBuilder_SetParameter_019
 * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
 */
-HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_005, TestSize.Level0)
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_019, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
@@ -264,10 +267,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_005, Tes
 
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_006
+* @tc.number: OH_AudioStreamBuilder_SetParameter_020
 * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns error code, if samplingRate is -1.
 */
-HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_006, TestSize.Level0)
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_020, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
@@ -375,7 +378,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_008, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
@@ -395,7 +398,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_009, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_COMMUNICATION;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -416,7 +419,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_010, Tes
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_COMMUNICATION;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
@@ -770,9 +773,9 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, 
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
-    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
@@ -790,7 +793,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, 
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MEDIA;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
@@ -832,7 +835,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetWriteDataWithMetad
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioRenderer_WriteDataWithMetadataCallback callback = AudioRendererWriteDataWithMetadataCallback;
-    result = OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(builder, callbacks, nullptr);
+    result = OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(builder, callback, nullptr);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);

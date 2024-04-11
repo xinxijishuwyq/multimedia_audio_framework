@@ -343,7 +343,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_003, TestSize.Le
     OH_AudioStream_State state;
     result = OH_AudioCapturer_GetCurrentState(audioCapturer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_LT(state, AUDIOSTREAM_STATE_PAUSED);
+    EXPECT_EQ(state, AUDIOSTREAM_STATE_PAUSED);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -365,7 +365,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_004, TestSize.Le
     OH_AudioStream_State state;
     result = OH_AudioCapturer_GetCurrentState(audioCapturer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_LT(state, AUDIOSTREAM_STATE_STOPPED);
+    EXPECT_EQ(state, AUDIOSTREAM_STATE_STOPPED);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -387,7 +387,9 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_005, TestSize.Le
     OH_AudioStream_State state;
     result = OH_AudioCapturer_GetCurrentState(audioCapturer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(state == AUDIOSTREAM_STATE_RELEASED);
+
+    // The internal capturer has been released, returning an error.
+    EXPECT_EQ(state, AUDIOSTREAM_STATE_INVALID);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
