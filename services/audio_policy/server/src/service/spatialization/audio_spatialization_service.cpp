@@ -394,9 +394,9 @@ void AudioSpatializationService::UpdateRendererInfo(
 
         spatializationRendererInfoList_.clear();
         for (const auto &it : rendererChangeInfo) {
-            spatializationRendererInfo.rendererState = it.rendererState;
-            spatializationRendererInfo.deviceMacAddress = it.outputDeviceInfo.macAddress;
-            spatializationRendererInfo.streamUsage = it.rendererInfo.streamUsage;
+            spatializationRendererInfo.rendererState = it->rendererState;
+            spatializationRendererInfo.deviceMacAddress = it->outputDeviceInfo.macAddress;
+            spatializationRendererInfo.streamUsage = it->rendererInfo.streamUsage;
             spatializationRendererInfoList_.push_back(spatializationRendererInfo);
         }
     }
@@ -404,8 +404,7 @@ void AudioSpatializationService::UpdateRendererInfo(
     UpdateHeadTrackingDeviceState(false);
 }
 
-int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDeviceChange,
-    std::string preDeviceAddress = "")
+int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress)
 {
     bool spatializationEnabled = spatializationStateFlag_.spatializationEnabled && IsSpatializationSupported() &&
         IsSpatializationSupportedForDevice(currentDeviceAddress_);
@@ -521,8 +520,7 @@ bool AudioSpatializationService::IsHeadTrackingDataRequestedForCurrentDevice()
     return (isStreamRunning && headTrackingEnabledReal_);
 }
 
-void AudioSpatializationService::UpdateHeadTrackingDeviceState(bool outputDeviceChange,
-    std::string preDeviceAddress = "")
+void AudioSpatializationService::UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress)
 {
     std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
     if (outputDeviceChange && !preDeviceAddress.empty()) {

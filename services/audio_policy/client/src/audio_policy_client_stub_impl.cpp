@@ -377,7 +377,7 @@ void AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unordered_
             continue;
         }
         std::shared_ptr<HeadTrackingDataRequestedChangeCallback> headTrackingDataRequestedChangeCallback =
-            headTrackingDataRequestedChangeCallbackMap_[pair.first].lock();
+            headTrackingDataRequestedChangeCallbackMap_[pair.first];
         if (headTrackingDataRequestedChangeCallback != nullptr) {
             AUDIO_DEBUG_LOG("head tracking data requested change event of the specified device has been notified");
             headTrackingDataRequestedChangeCallback->OnHeadTrackingDataRequestedChange(pair.second);

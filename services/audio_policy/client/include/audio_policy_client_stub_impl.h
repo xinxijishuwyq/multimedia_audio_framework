@@ -22,6 +22,7 @@
 #include "audio_interrupt_info.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
+#include "audio_spatialization_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
