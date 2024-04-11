@@ -22,6 +22,7 @@
 #include "ipc_skeleton.h"
 #include "i_standard_client_tracker.h"
 #include "hisysevent.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -129,6 +130,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "audioPolicyServerHandler_ is nullptr, callback error");
     audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
+    AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
     return SUCCESS;
 }
 
@@ -287,6 +289,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             if (audioPolicyServerHandler_ != nullptr) {
                 audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
             }
+            AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
 
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
@@ -372,6 +375,9 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(DeviceInfo &outputDeviceI
     if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
     }
+    if (deviceInfoUpdated) {
+        AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
+    }
 
     return SUCCESS;
 }
@@ -413,6 +419,9 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
 
     if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
+    }
+    if (deviceInfoUpdated) {
+        AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
     }
     return SUCCESS;
 }
@@ -553,6 +562,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         if (audioPolicyServerHandler_ != nullptr) {
             audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
         }
+        AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
         rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID,
             audioRendererChangeInfo->sessionId));
         auto temp = audioRendererBegin;

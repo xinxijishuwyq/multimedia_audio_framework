@@ -71,8 +71,7 @@ public:
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
-    void UpdateRendererChangeInfoForSpatialization(
-        const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
+    void UpdateRendererInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
 private:
     AudioSpatializationService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -80,12 +79,13 @@ private:
     {}
 
     ~AudioSpatializationService();
-    int32_t UpdateSpatializationStateReal(bool outputDeviceChange);
+    int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
     int32_t UpdateSpatializationState();
     void HandleSpatializationStateChange(bool outputDeviceChange);
     void InitSpatializationState();
     void WriteSpatializationStateToDb();
-    void UpdateHeadTrackingDeviceState();
+    bool IsHeadTrackingDataRequestedForCurrentDevice();
+    void UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress = "");
     void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
     IAudioPolicyInterface &audioPolicyManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
