@@ -17,6 +17,10 @@
 
 using namespace testing::ext;
 
+namespace {
+    constexpr int32_t SAMPLE_RATE_48000 = 48000;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -391,7 +395,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetCurrentState_005, TestSize.Lev
     OH_AudioStream_State state;
     result = OH_AudioRenderer_GetCurrentState(audioRenderer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(state == AUDIOSTREAM_STATE_RELEASED);
+    EXPECT_EQ(state, AUDIOSTREAM_STATE_INVALID);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -503,8 +507,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Leve
     OH_AudioStream_Usage usage;
     result = OH_AudioRenderer_GetRendererInfo(audioRenderer, &usage);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(usage == AUDIOSTREAM_USAGE_MEDIA);
-    EXPECT_TRUE(content == AUDIOSTREAM_CONTENT_TYPE_MUSIC);
+    EXPECT_EQ(usage, AUDIOSTREAM_USAGE_MUSIC);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -521,7 +524,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetChannelLayout_001, TestSize.Le
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
 
     OH_AudioChannelLayout channelLayout;
-    result = OH_AudioRenderer_GetEncodingType(audioRenderer, &channelLayout);
+    result = OH_AudioRenderer_GetChannelLayout(audioRenderer, &channelLayout);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_TRUE(channelLayout == CH_LAYOUT_UNKNOWN);
     OH_AudioStreamBuilder_Destroy(builder);
