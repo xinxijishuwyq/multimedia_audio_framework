@@ -33,7 +33,6 @@ namespace AudioStandard {
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint64_t BUF_LENGTH_IN_MSEC = 20;
 static const int32_t CONNECT_STREAM_TIMEOUT_IN_SEC = 8; // 8S
-static const uint32_t DEFAULT_HIGHRESOLUTION_INDEX = 99999; // Not in the value range of sessionId
 static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_STRING_MAP = {
     {STREAM_VOICE_CALL, "voice_call"},
     {STREAM_MUSIC, "music"},
@@ -116,8 +115,8 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
-    if (highResolutionIndex_ == streamIndex) {
-        highResolutionIndex_ = DEFAULT_HIGHRESOLUTION_INDEX;
+    if (isHighResolutionExist_ == true && highResolutionIndex_ == streamIndex) {
+        isHighResolutionExist_ = false;
     }
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
@@ -353,24 +352,33 @@ bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
     return false;
 }
 
-void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId)
+bool PaAdapterManager::CheckHighResolution(const AudioProcessConfig &processConfig)
 {
-    bool spatializationEnabled = processConfig.rendererInfo.spatializationEnabled;
-    bool isHighResolution = highResolutionIndex_ == DEFAULT_HIGHRESOLUTION_INDEX;
     DeviceType deviceType = processConfig.deviceType;
     AudioStreamType streamType = processConfig.streamType;
     AudioSamplingRate sampleRate = processConfig.streamInfo.samplingRate;
     AudioSampleFormat sampleFormat = processConfig.streamInfo.format;
-    
-    AUDIO_DEBUG_LOG("spatializationEnabled : %{public}d, isHighResolution : %{public}d, deviceType : %{public}d",
-        spatializationEnabled, isHighResolution, deviceType);
-    AUDIO_DEBUG_LOG("streamType : %{public}d, sampleRate : %{public}d, sampleFormat : %{public}d",
-        streamType, sampleRate, sampleFormat);
 
-    if (spatializationEnabled == false && isHighResolution == true && deviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        streamType == STREAM_MUSIC && sampleRate >= SAMPLE_RATE_48000 && sampleFormat >= SAMPLE_S24LE) {
+    AUDIO_DEBUG_LOG("deviceType:%{public}d, streamType:%{public}d, sampleRate:%{public}d, sampleFormat:%{public}d",
+        deviceType, streamType, sampleRate, sampleFormat);
+
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType == STREAM_MUSIC &&
+        sampleRate >= SAMPLE_RATE_48000 && sampleFormat >= SAMPLE_S24LE) {
+        return true;
+    }
+    return false;
+}
+
+void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId)
+{
+    bool spatializationEnabled = processConfig.rendererInfo.spatializationEnabled;
+    AUDIO_DEBUG_LOG("spatializationEnabled : %{public}d, isHighResolutionExist_ : %{public}d",
+        spatializationEnabled, isHighResolutionExist_);
+
+    if (spatializationEnabled == false && isHighResolutionExist_ == false && CheckHighResolution(processConfig)) {
         AUDIO_INFO_LOG("current stream marked as high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "1");
+        isHighResolutionExist_ = true;
         highResolutionIndex_ = sessionId;
     } else {
         AUDIO_INFO_LOG("current stream marked as non-high resolution");

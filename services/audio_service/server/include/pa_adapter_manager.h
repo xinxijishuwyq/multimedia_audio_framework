@@ -108,6 +108,7 @@ private:
         uint32_t sessionId, std::string &deviceName);
     
     void SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId);
+    bool CheckHighResolution(const AudioProcessConfig &processConfig);
 
     std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;
@@ -121,7 +122,8 @@ private:
     ManagerType managerType_ = PLAYBACK;
     bool waitConnect_ = true;
     AudioEffectMode enhanceMode_ = EFFECT_DEFAULT;
-    uint32_t highResolutionIndex_ = 99999;
+    uint32_t highResolutionIndex_ = 0;
+    bool isHighResolutionExist_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
