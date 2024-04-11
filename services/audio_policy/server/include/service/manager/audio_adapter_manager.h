@@ -88,7 +88,8 @@ public:
 
     int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
 
-    int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType, std::string name, bool active);
+    int32_t SetDeviceActive(AudioIOHandle ioHandle, InternalDeviceType deviceType, std::string name, bool active,
+        DeviceFlag flag = ALL_DEVICES_FLAG);
 
     void SetVolumeForSwitchDevice(InternalDeviceType deviceType);
 
@@ -172,6 +173,7 @@ private:
     void WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     bool LoadVolumeFromKvStore(DeviceType type, AudioStreamType streamType);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
+    std::string GetVolumeGroupForDevice(DeviceType deviceType);
     void InitRingerMode(bool isFirstBoot);
     bool LoadRingerMode(void);
     void WriteRingerModeToKvStore(AudioRingerMode ringerMode);
@@ -255,8 +257,7 @@ public:
 
         bool isAbsVolumeScene = audioAdapterManager_->IsAbsVolumeScene();
         DeviceType activeDevice = audioAdapterManager_->GetActiveDevice();
-        if (streamType == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP
-            && isAbsVolumeScene) {
+        if (streamForVolumeMap == STREAM_MUSIC && activeDevice == DEVICE_TYPE_BLUETOOTH_A2DP && isAbsVolumeScene) {
             return {1.0f, volumeLevel};
         }
 
@@ -286,17 +287,6 @@ public:
         }
     }
 
-    void OnCapturerSessionAdded(const uint64_t sessionID, SessionInfo sessionInfo)
-    {
-        AUDIO_DEBUG_LOG("PolicyCallbackImpl OnCapturerSessionAdded: Session ID %{public}" PRIu64"", sessionID);
-        if (audioAdapterManager_->sessionCallback_ == nullptr) {
-            AUDIO_ERR_LOG("PolicyCallbackImpl audioAdapterManager_->sessionCallback_ == nullptr"
-                "not firing OnCapturerSessionAdded");
-        } else {
-            audioAdapterManager_->sessionCallback_->OnCapturerSessionAdded(sessionID, sessionInfo);
-        }
-    }
-
     void OnPlaybackCapturerStop()
     {
         AUDIO_INFO_LOG("PolicyCallbackImpl OnPlaybackCapturerStop");
@@ -307,25 +297,6 @@ public:
         }
     }
 
-    void OnWakeupCapturerStop(uint32_t sessionID)
-    {
-        AUDIO_INFO_LOG("PolicyCallbackImpl OnWakeupCapturerStop");
-        if (audioAdapterManager_->sessionCallback_ == nullptr) {
-            AUDIO_DEBUG_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
-        } else {
-            audioAdapterManager_->sessionCallback_->OnWakeupCapturerStop(sessionID);
-        }
-    }
-
-    void OnDstatusUpdated(bool isConnected)
-    {
-        AUDIO_INFO_LOG("PolicyCallbackImpl OnDstatusUpdated");
-        if (audioAdapterManager_->sessionCallback_ == nullptr) {
-            AUDIO_ERR_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
-        } else {
-            audioAdapterManager_->sessionCallback_->OnDstatusUpdated(isConnected);
-        }
-    }
 private:
     AudioAdapterManager *audioAdapterManager_;
 };

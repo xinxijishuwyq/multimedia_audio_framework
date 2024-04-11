@@ -51,6 +51,9 @@ using OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortRole;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
+}
 
 class RemoteAudioCapturerSourceInner : public RemoteAudioCapturerSource, public IAudioDeviceAdapterCallback {
 public:
@@ -82,19 +85,27 @@ public:
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
-
+    
+    float GetMaxAmplitude() override;
 private:
     int32_t CreateCapture(const AudioPort &capturePort);
     int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source);
     AudioCategory GetAudioCategory(AudioScene audioScene);
     void ClearCapture();
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
+    void CheckUpdateState(char *frame, uint64_t replyBytes);
 
 private:
     static constexpr uint32_t REMOTE_INPUT_STREAM_ID = 30; // 14 + 2 * 8
     const uint32_t maxInt32 = 0x7fffffff;
     const uint32_t audioBufferSize = 16 * 1024;
     const uint32_t deepBufferCapturePeriodSize = 4096;
+    // for get amplitude
+    float maxAmplitude_ = 0;
+    int64_t lastGetMaxAmplitudeTime_ = 0;
+    int64_t last10FrameStartTime_ = 0;
+    bool startUpdate_ = false;
+    int capFrameNum_ = 0;
 
     IAudioSourceAttr attr_;
     std::string deviceNetworkId_;
@@ -311,8 +322,34 @@ int32_t RemoteAudioCapturerSourceInner::CaptureFrame(char *frame, uint64_t reque
     replyBytes = requestBytes;
 
     DumpFileUtil::WriteDumpFile(dumpFile_, frame, requestBytes);
+    CheckUpdateState(frame, requestBytes);
 
     return SUCCESS;
+}
+
+void RemoteAudioCapturerSourceInner::CheckUpdateState(char *frame, uint64_t replyBytes)
+{
+    if (startUpdate_) {
+        if (capFrameNum_ == 0) {
+            last10FrameStartTime_ = ClockTime::GetCurNano();
+        }
+        capFrameNum_++;
+        maxAmplitude_ = UpdateMaxAmplitude(static_cast<ConvertHdiFormat>(attr_.format), frame, replyBytes);
+        if (capFrameNum_ == GET_MAX_AMPLITUDE_FRAMES_THRESHOLD) {
+            capFrameNum_ = 0;
+            if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
+                startUpdate_ = false;
+                maxAmplitude_ = 0;
+            }
+        }
+    }
+}
+
+float RemoteAudioCapturerSourceInner::GetMaxAmplitude()
+{
+    lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
+    startUpdate_ = true;
+    return maxAmplitude_;
 }
 
 int32_t RemoteAudioCapturerSourceInner::Start(void)

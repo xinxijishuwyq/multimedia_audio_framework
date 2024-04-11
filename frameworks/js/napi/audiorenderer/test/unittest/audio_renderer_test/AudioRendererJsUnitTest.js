@@ -349,4 +349,86 @@ describe("AudioRendererJsUnitTest", function() {
             done();
         }
     })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_VOLUME_TEST_001
+     * @tc.desc:getVolume success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_001', 0, async function (done) {
+        try {
+            let data = audioRenderer.getVolume();
+            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_VOLUME_TEST_001 SUCCESS: ${data}`);
+            expect(data).assertEqual(1);
+            done();
+        } catch (error) {
+            console.error(`setVolume ERROR: ${err}`);
+            expect(false).assertTrue();
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_VOLUME_TEST_002
+     * @tc.desc:setVolume and getVolume success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_002', 0, async function (done) {
+        await audioRenderer.setVolume(0).then(() => {
+            try {
+                let data = audioRenderer.getVolume();
+                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_VOLUME_TEST_002 SUCCESS: ${data}`);
+                expect(data).assertEqual(0);
+                done();
+            } catch (error) {
+                console.error(`setVolume ERROR: ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        })
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_VOLUME_TEST_003
+     * @tc.desc:setVolume and getVolume success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_003', 0, async function (done) {
+        await audioRenderer.setVolume(0.5).then(() => {
+            try {
+                let data = audioRenderer.getVolume();
+                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_VOLUME_TEST_003 SUCCESS: ${data}`);
+                expect(data).assertEqual(0.5);
+                done();
+            } catch (error) {
+                console.error(`setVolume ERROR: ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        })
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_VOLUME_TEST_004
+     * @tc.desc:setVolume and getVolume success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_004', 0, async function (done) {
+        await audioRenderer.setVolume(1).then(() => {
+            try {
+                let data = audioRenderer.getVolume();
+                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_VOLUME_TEST_004 SUCCESS: ${data}`);
+                expect(data).assertEqual(1);
+                done();
+            } catch (error) {
+                console.error(`setVolume ERROR: ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        })
+    })
 })

@@ -78,6 +78,7 @@ public:
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
     int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+    float GetMaxAmplitude(const int32_t deviceId);
 private:
     int32_t groupId_;
     ConnectType connectType_ = CONNECT_TYPE_LOCAL;

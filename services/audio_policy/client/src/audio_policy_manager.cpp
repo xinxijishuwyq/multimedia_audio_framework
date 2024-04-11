@@ -1477,5 +1477,12 @@ int32_t AudioPolicyManager::SetSpatializationSceneType(const AudioSpatialization
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->SetSpatializationSceneType(spatializationSceneType);
 }
+
+float AudioPolicyManager::GetMaxAmplitude(const int32_t deviceId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_DEFAULT, "audio policy manager proxy is NULL.");
+    return gsp->GetMaxAmplitude(deviceId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

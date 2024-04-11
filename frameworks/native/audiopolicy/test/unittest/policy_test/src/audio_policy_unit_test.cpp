@@ -26,13 +26,16 @@
 #include "system_ability_definition.h"
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_policy_client_stub_impl.h"
+#include "audio_adapter_manager.h"
 
 using namespace std;
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t FAILURE = -1;
+static const int32_t FAILURE = -1;
+static const uint32_t SINK_LATENCY_FROM_XML = 40;
+static const uint32_t AUDIO_LATENCY_FROM_XML = 20;
 void AudioPolicyUnitTest::SetUpTestCase(void) {}
 void AudioPolicyUnitTest::TearDownTestCase(void) {}
 void AudioPolicyUnitTest::SetUp(void) {}
@@ -792,6 +795,199 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_HighResolutionExist_002, TestSi
     EXPECT_EQ(SUCCESS, ret);
     bool isHighResExist = AudioPolicyManager::GetInstance().IsHighResolutionExist();
     EXPECT_EQ(false, isHighResExist);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_GetSinkLatencyFromXml_001
+ * @tc.number: Audio_Policy_Manager_GetSinkLatencyFromXml_001
+ * @tc.desc  : Test GetSinkLatencyFromXml, return real value.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSinkLatencyFromXml_001, TestSize.Level1)
+{
+    AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    uint32_t ret = audioPolicyProxy->GetSinkLatencyFromXml();
+    EXPECT_EQ(ERR_NONE, ret);
+
+    ret = audioPolicyProxy->GetAudioLatencyFromXml();
+    EXPECT_EQ(ERR_TRANSACTION_FAILED, ret);
+
+    ret = AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
+    EXPECT_EQ(SINK_LATENCY_FROM_XML, ret);
+
+    ret = AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
+    EXPECT_EQ(AUDIO_LATENCY_FROM_XML, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_SetCaptureSlientState_001
+ * @tc.number: Audio_Policy_Manager_SetCaptureSlientState_001
+ * @tc.desc  : Test SetCaptureSlientState with no permission.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetCaptureSlientState_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    bool state = true;
+    int32_t ret = audioPolicyProxy->SetCaptureSilentState(state);
+    EXPECT_EQ(ERROR, ret);
+    ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
+    EXPECT_EQ(ERROR, ret);
+
+    state = false;
+    ret = audioPolicyProxy->SetCaptureSilentState(state);
+    EXPECT_EQ(ERROR, ret);
+    ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_IsAbsVolumeScene_001
+ * @tc.number: Audio_Policy_Manager_IsAbsVolumeScene_001
+ * @tc.desc  : Test IsAbsVolumeScene interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAbsVolumeScene_001, TestSize.Level1)
+{
+    bool isEnable = true;
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable);
+    int32_t ret = AudioAdapterManager::GetInstance().IsAbsVolumeScene();
+    EXPECT_EQ(false, ret);
+
+    isEnable = false;
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable);
+    ret = AudioAdapterManager::GetInstance().IsAbsVolumeScene();
+    EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_IsSpatializationEnabled_001
+ * @tc.number: Audio_Policy_Manager_IsSpatializationEnabled_001
+ * @tc.desc  : Test IsSpatializationEnabled interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsSpatializationEnabled_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    bool isEnable = true;
+    int32_t ret = audioPolicyProxy->SetSpatializationEnabled(isEnable);
+    EXPECT_EQ(ERROR, ret);
+    ret = audioPolicyProxy->IsSpatializationEnabled();
+    EXPECT_EQ(false, ret);
+
+    ret = AudioPolicyManager::GetInstance().SetSpatializationEnabled(isEnable);
+    EXPECT_EQ(SUCCESS, ret);
+    isEnable = AudioPolicyManager::GetInstance().IsSpatializationEnabled();
+    EXPECT_EQ(true, isEnable);
+
+    isEnable = false;
+    ret = audioPolicyProxy->SetSpatializationEnabled(isEnable);
+    EXPECT_EQ(ERROR, ret);
+    ret = audioPolicyProxy->IsSpatializationEnabled();
+    EXPECT_EQ(false, ret);
+
+    ret = AudioPolicyManager::GetInstance().SetSpatializationEnabled(isEnable);
+    EXPECT_EQ(SUCCESS, ret);
+    isEnable = AudioPolicyManager::GetInstance().IsSpatializationEnabled();
+    EXPECT_EQ(false, isEnable);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_IsHeadTrackingEnabled_001
+ * @tc.number: Audio_Policy_Manager_IsHeadTrackingEnabled_001
+ * @tc.desc  : Test IsHeadTrackingEnabled interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsHeadTrackingEnabled_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    bool isEnable = true;
+    int32_t ret = audioPolicyProxy->SetHeadTrackingEnabled(isEnable);
+    EXPECT_EQ(ERROR, ret);
+    ret = audioPolicyProxy->IsHeadTrackingEnabled();
+    EXPECT_EQ(false, ret);
+    ret = AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(isEnable);
+    EXPECT_EQ(SUCCESS, ret);
+    isEnable = AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
+    EXPECT_EQ(true, isEnable);
+
+    isEnable = false;
+    ret = audioPolicyProxy->SetHeadTrackingEnabled(isEnable);
+    EXPECT_EQ(ERROR, ret);
+    ret = audioPolicyProxy->IsHeadTrackingEnabled();
+    EXPECT_EQ(false, ret);
+    ret = AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(isEnable);
+    EXPECT_EQ(SUCCESS, ret);
+    isEnable = AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
+    EXPECT_EQ(false, isEnable);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_RegisterSpatializationEnabledEventListener_001
+ * @tc.number: Audio_Policy_Manager_RegisterSpatializationEnabledEventListener_001
+ * @tc.desc  : Test RegisterSpatializationEnabledEventListener interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterSpatializationEnabledEventListener_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioSpatializationEnabledChangeCallback> callback =
+        std::make_shared<AudioSpatializationEnabledChangeCallbackTest>();
+
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+    
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = audioPolicyProxy->RegisterSpatializationEnabledEventListener(object);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    AudioPolicyUnitTest::GetIRemoteObject(object);
+    ret = audioPolicyProxy->RegisterSpatializationEnabledEventListener(object);
+    EXPECT_EQ(ERROR, ret);
+    ret = AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioPolicyProxy->UnregisterSpatializationEnabledEventListener();
+    EXPECT_EQ(ERROR, ret);
+    ret = AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledEventListener();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_Manager_RegisterHeadTrackingEnabledEventListener_001
+ * @tc.number: Audio_Policy_Manager_RegisterHeadTrackingEnabledEventListener_001
+ * @tc.desc  : Test RegisterHeadTrackingEnabledEventListener interface.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterHeadTrackingEnabledEventListener_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> callback =
+        std::make_shared<AudioHeadTrackingEnabledChangeCallbackTest>();
+
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = audioPolicyProxy->RegisterHeadTrackingEnabledEventListener(object);
+    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+
+    AudioPolicyUnitTest::GetIRemoteObject(object);
+    ret = audioPolicyProxy->RegisterHeadTrackingEnabledEventListener(object);
+    EXPECT_EQ(ERROR, ret);
+    ret = AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(callback);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioPolicyProxy->UnregisterHeadTrackingEnabledEventListener();
+    EXPECT_EQ(ERROR, ret);
+    ret = AudioPolicyManager::GetInstance().UnregisterHeadTrackingEnabledEventListener();
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

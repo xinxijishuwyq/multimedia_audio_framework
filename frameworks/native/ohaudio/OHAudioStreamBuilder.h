@@ -29,8 +29,8 @@ public:
 
     ~OHAudioStreamBuilder();
 
-    OH_AudioStream_Result Generate(OH_AudioRenderer** renderer);
-    OH_AudioStream_Result Generate(OH_AudioCapturer** capturer);
+    OH_AudioStream_Result Generate(OH_AudioRenderer **renderer);
+    OH_AudioStream_Result Generate(OH_AudioCapturer **capturer);
 
     OH_AudioStream_Result SetSamplingRate(int32_t rate);
     OH_AudioStream_Result SetChannelCount(int32_t channelCount);
@@ -38,14 +38,17 @@ public:
     OH_AudioStream_Result SetEncodingType(AudioEncodingType encodingType);
     OH_AudioStream_Result SetPreferredFrameSize(int32_t frameSize);
     OH_AudioStream_Result SetLatencyMode(int32_t latencyMode);
+    OH_AudioStream_Result SetChannelLayout(AudioChannelLayout channelLayout);
 
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage, ContentType contentType);
-    OH_AudioStream_Result SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void* userData);
+    OH_AudioStream_Result SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void *userData);
     OH_AudioStream_Result SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
-    void* userData);
+    void *userData);
+    OH_AudioStream_Result SetWriteDataWithMetadataCallback(OH_AudioRenderer_WriteDataWithMetadataCallback callback,
+        void *userData);
 
     OH_AudioStream_Result SetSourceType(SourceType type);
-    OH_AudioStream_Result SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void* userData);
+    OH_AudioStream_Result SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void *userData);
     OH_AudioStream_Result SetInterruptMode(InterruptMode mode);
 
 private:
@@ -58,6 +61,7 @@ private:
     int32_t channelCount_ = STEREO;
     AudioEncodingType encodingType_ = ENCODING_PCM;
     AudioSampleFormat sampleFormat_ = SAMPLE_S16LE;
+    AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
 
     // renderer params
     StreamUsage usage_  = STREAM_USAGE_MEDIA;
@@ -72,10 +76,12 @@ private:
     OH_AudioCapturer_Callbacks capturerCallbacks_ = {
         NULL
     };
-    void* userData_;
+    void *userData_;
 
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
-    void* outputDeviceChangeuserData_ = nullptr;
+    void *outputDeviceChangeuserData_ = nullptr;
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_ = nullptr;
+    void *metadataUserData_ = nullptr;
     InterruptMode interruptMode_ = SHARE_MODE;
 };
 }  // namespace AudioStandard

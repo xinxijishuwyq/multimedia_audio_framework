@@ -68,7 +68,7 @@ typedef struct sessionEffectInfo {
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
-    CH_LAYOUT_5POINT1_BACK,
+    CH_LAYOUT_5POINT1,
     CH_LAYOUT_5POINT1POINT2,
     CH_LAYOUT_7POINT1,
     CH_LAYOUT_5POINT1POINT4,

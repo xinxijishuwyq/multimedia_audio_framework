@@ -127,6 +127,18 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilde
 OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder* builder,
     OH_AudioStream_LatencyMode latencyMode);
 
+/**
+ * @brief Set the channel layout to the stream client
+ *
+ * @since 12
+ *
+ * @param builder Reference provided by OH_AudioStreamBuilder_Create()
+ * @param channelLayout is the layout of the speaker.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetChannelLayout(OH_AudioStreamBuilder* builder,
+    OH_AudioChannelLayout channelLayout);
+
 /*
  * Set the renderer information of the stream client
  *
@@ -227,6 +239,19 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetFrameSizeInCallback(OH_AudioStrea
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStreamBuilder* builder,
     OH_AudioInterrupt_Mode mode);
+
+/**
+ * @brief Set the callback of writing metadata to the renderer client
+ *
+ * @since 12
+ *
+ * @param builder Reference provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback to the functions that will write audio data with metadata to the renderer.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_WriteDataWithMetadataCallback callback, void* userData);
 #ifdef __cplusplus
 }
 #endif

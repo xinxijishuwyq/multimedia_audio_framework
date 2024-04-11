@@ -28,9 +28,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-#ifdef SONIC_ENABLE
-static const int32_t MAX_BUFFER_SIZE = 100000;
-#endif
 static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -521,17 +518,6 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
-#ifdef SONIC_ENABLE
-    if (!isEqual(speed_, 1.0f)) {
-        auto outBuffer = std::make_unique<uint8_t[]>(MAX_BUFFER_SIZE);
-        int32_t outBufferSize = 0;
-        int32_t ret = audioStream_->ChangeSpeed(buffer, bufferSize, outBuffer, outBufferSize);
-        if (ret == 0) return ret; // Sonic write error
-        if (outBufferSize == 0) return bufferSize; // Continue writing when the sonic is not full
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(outBuffer.get()), outBufferSize);
-        return audioStream_->WriteSpeedBuffer(bufferSize, outBuffer.get(), outBufferSize);
-    }
-#endif
     int32_t size = audioStream_->Write(buffer, bufferSize);
     if (size > 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), size);
@@ -543,6 +529,9 @@ int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t 
 {
     Trace trace("Write");
     int32_t size = audioStream_->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);
+    if (size > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(pcmBuffer), size);
+    }
     return size;
 }
 

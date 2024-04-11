@@ -13,51 +13,55 @@
 * limitations under the License.
 */
 
-import router from '@ohos.router';
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
+import { BusinessError } from '@kit.BasicServicesKit';
+
+class EnumValue {
+  value: string = '';
+}
 
 @Entry
 @Component
 struct BasicDevice {
-  @State returnMsg: string = 'Hello World'
-  @State onReturnMsg: string = ''
-  private selectDeviceFlagList = []
-  @State selectedDeviceFlagKey: string = "请选择设备类型"
-  @State selectedDeviceFlag: number = 0
-  private audioRoutingManager = null
-  private audioDeviceDescriptors = []
-  private InputDeviceDescriptors = []
-  private OutputDeviceDescriptors = []
-  private selectInputDeviceList = []
-  private selectOutputDeviceList = []
-  @State selectedInputIndex: number = 0
-  @State selectedOutputIndex: number = 0
-  @State tag: number = -1
+  @State returnMsg: string = 'Hello World';
+  @State onReturnMsg: string = '';
+  private selectDeviceFlagList: EnumValue[] = [];
+  @State selectedDeviceFlagKey: string = "请选择设备类型";
+  @State selectedDeviceFlag: number = 0;
+  private audioRoutingManager: audio.AudioRoutingManager | null = null;
+  private audioDeviceDescriptors: audio.AudioDeviceDescriptor[] = [];
+  private InputDeviceDescriptors = [];
+  private OutputDeviceDescriptors = [];
+  private selectInputDeviceList: EnumValue[] = [];
+  private selectOutputDeviceList: EnumValue[] = [];
+  @State selectedInputIndex: number = 0;
+  @State selectedOutputIndex: number = 0;
+  @State tag: number = -1;
 
   aboutToAppear() {
     let audioManager = audio.getAudioManager();
     this.audioRoutingManager = audioManager.getRoutingManager();
-    for (let key in audio.DeviceFlag) {
-      this.selectDeviceFlagList.push({ value: key })
-    }
+    Object.keys(audio.DeviceFlag).forEach((key) => {
+      this.selectDeviceFlagList.push({ value: key });
+    })
   }
 
-  getDeviceList(deviceDescriptors) {
-    let deviceList = [];
-    for (let i = 0;i < deviceDescriptors.length; i++) {
-      let deviceTypeName = this.getDeviceTypeNameByValue(deviceDescriptors[i].deviceType)
-      deviceList.push({ value: deviceTypeName })
-    }
-    return deviceList;
-  }
+  // getDeviceList(deviceDescriptors) {
+  //   let deviceList: EnumValue[] = [];
+  //   for (let i = 0;i < deviceDescriptors.length; i++) {
+  //     let deviceTypeName = this.getDeviceTypeNameByValue(deviceDescriptors[i].deviceType)
+  //     deviceList.push({ value: deviceTypeName })
+  //   }
+  //   return deviceList;
+  // }
 
-  getDeviceTypeNameByValue(value) {
-    for (let key in audio.DeviceType) {
-      if (audio.DeviceType[key] == value) {
-        return key;
-      }
-    }
-  }
+  // getDeviceTypeNameByValue(value) {
+  //   for (let key in audio.DeviceType) {
+  //     if (audio.DeviceType[key] == value) {
+  //       return key;
+  //     }
+  //   }
+  // }
 
   getDevicesCallback() {
     if (this.selectedDeviceFlagKey == "请选择设备类型") {
@@ -65,6 +69,10 @@ struct BasicDevice {
       return
     }
     let _this = this;
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     this.audioRoutingManager.getDevices(this.selectedDeviceFlag, (err, value) => {
       if (err) {
         _this.returnMsg = `getDevices callback Failed err:${JSON.stringify(err)}`
@@ -80,17 +88,25 @@ struct BasicDevice {
       this.returnMsg = `请选择设备类型`
       return
     }
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     let _this = this;
     this.audioRoutingManager.getDevices(this.selectedDeviceFlag)
       .then(value => {
         _this.audioDeviceDescriptors = value;
         _this.returnMsg = `getDevices promise Success 返回值:${JSON.stringify(value)}`
-      }).catch(err => {
+      }).catch((err: BusinessError) => {
       _this.returnMsg = `getDevices promise Failed err:${JSON.stringify(err)}`
     })
   }
 
   onDeviceChange() {
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     let _this = this
     _this.onReturnMsg = `监听已监听\n deviceFlag:${this.selectedDeviceFlag}`
     this.audioRoutingManager.on('deviceChange', this.selectedDeviceFlag, (deviceChanged) => {
@@ -99,6 +115,10 @@ struct BasicDevice {
   }
 
   offDeviceChange() {
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     this.audioRoutingManager.off('deviceChange', (deviceChanged) => {
       let _this = this
       _this.onReturnMsg = "off 已触发"
@@ -107,6 +127,10 @@ struct BasicDevice {
   }
 
   selectInputDeviceCallback() {
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     let _this = this;
     if (this.InputDeviceDescriptors.length == 0) {
       _this.returnMsg = `没有输入设备类`
@@ -129,6 +153,10 @@ struct BasicDevice {
   }
 
   selectInputDevicePromise() {
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     let _this = this;
     if (this.InputDeviceDescriptors.length == 0) {
       _this.returnMsg = `没有输入设备类`
@@ -145,12 +173,16 @@ struct BasicDevice {
     this.audioRoutingManager.selectInputDevice(inputAudioDeviceDescriptor)
       .then(() => {
         _this.returnMsg = `selectInputDevice promise Success`
-      }).catch(err => {
+      }).catch((err: BusinessError) => {
       _this.returnMsg = `selectInputDevice promise Failed err:${JSON.stringify(err)}`
     })
   }
 
   selectOutputDeviceCallback() {
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     let _this = this;
     if (this.OutputDeviceDescriptors.length == 0) {
       _this.returnMsg = `没有输出设备类`
@@ -173,6 +205,10 @@ struct BasicDevice {
   }
 
   selectOutputDevicePromise() {
+    if (!this.audioRoutingManager) {
+      this.returnMsg = "AudioRoutingManager instance had not created";
+      return;
+    }
     let _this = this;
     if (this.OutputDeviceDescriptors.length == 0) {
       _this.returnMsg = `没有输出设备类`
@@ -188,7 +224,7 @@ struct BasicDevice {
     this.audioRoutingManager.selectOutputDevice(outputAudioDeviceDescriptor)
       .then(() => {
         _this.returnMsg = `selectOutputDevice promise Success`
-      }).catch(err => {
+      }).catch((err: BusinessError) => {
       _this.returnMsg = `selectOutputDevice promise Failed err:${JSON.stringify(err)}`
     })
   }

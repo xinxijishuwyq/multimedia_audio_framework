@@ -40,6 +40,14 @@ class AudioCapturerStateChangeCallbackTest : public AudioCapturerStateChangeCall
         const std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) {}
 };
 
+class AudioSpatializationEnabledChangeCallbackTest : public AudioSpatializationEnabledChangeCallback {
+    virtual void OnSpatializationEnabledChange(const bool &enabled) {}
+};
+
+class AudioHeadTrackingEnabledChangeCallbackTest : public AudioHeadTrackingEnabledChangeCallback {
+    virtual void OnHeadTrackingEnabledChange(const bool &enabled) {}
+};
+
 class AudioRingerModeCallbackTest : public AudioRingerModeCallback {
 public:
     virtual ~AudioRingerModeCallbackTest() = default;

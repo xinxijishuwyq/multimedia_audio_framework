@@ -32,6 +32,9 @@
 #include "system_ability_definition.h"
 #include "securec.h"
 #include "safe_block_queue.h"
+#include "hisysevent.h"
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
 
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
@@ -52,6 +55,9 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+
+using namespace OHOS::HiviewDFX;
+using namespace OHOS::AppExecFwk;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,7 +82,41 @@ static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
+static constexpr int32_t ONE_MINUTE = 60;
+} // namespace
+
+static AppExecFwk::BundleInfo gBundleInfo_;
+static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
+{
+    std::string bundleName {""};
+    AppExecFwk::BundleInfo bundleInfo;
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        return bundleInfo;
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (remoteObject == nullptr) {
+        return bundleInfo;
+    }
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (bundleMgrProxy == nullptr) {
+        return bundleInfo;
+    }
+    if (bundleMgrProxy != nullptr) {
+        bundleMgrProxy->GetNameForUid(appUid, bundleName);
+    }
+
+    bundleMgrProxy->GetBundleInfoForSelf(AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
+        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
+        bundleInfo);
+    return bundleInfo;
 }
+
 class SpatializationStateChangeCallbackImpl;
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
@@ -117,9 +157,8 @@ public:
     void OnFirstFrameWriting() override;
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t []> &outBuffer,
+    int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize, std::unique_ptr<uint8_t[]> &outBuffer,
         int32_t &outBufferSize) override;
-    int32_t WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize) override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;
@@ -230,18 +269,21 @@ private:
     int32_t DrainRingCache();
 
     int32_t WriteCacheData();
-    bool ProcessSpeed(BufferDesc &temp);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
+    bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
+    void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
 
     int32_t RegisterSpatializationStateEventListener();
 
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
+
+    void FirstFrameProcess();
 
 private:
     AudioStreamType eStreamType_;
@@ -369,6 +411,8 @@ private:
     uint32_t spatializationRegisteredSessionID_ = 0;
     bool firstSpatializationRegistered_ = true;
     std::shared_ptr<SpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
+    std::time_t startMuteTime_ = 0;
+    bool isUpEvent_ = false;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -415,6 +459,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
     state_ = NEW;
+    gBundleInfo_ = GetBundleInfoFromUid(appUid);
 }
 
 RendererInClientInner::~RendererInClientInner()
@@ -422,6 +467,13 @@ RendererInClientInner::~RendererInClientInner()
     AUDIO_INFO_LOG("~RendererInClientInner()");
     DumpFileUtil::CloseDumpFile(&dumpOutFd_);
     RendererInClientInner::ReleaseAudioStream(true);
+    std::lock_guard<std::mutex> runnerlock(runnerMutex_);
+    if (!runnerReleased_ && callbackHandler_ != nullptr) {
+        AUDIO_INFO_LOG("runner remove");
+        callbackHandler_->ReleaseEventRunner();
+        runnerReleased_ = true;
+        callbackHandler_ = nullptr;
+    }
 }
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
@@ -911,7 +963,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
 
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
     bufferSize = clientSpanSizeInByte_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
@@ -928,11 +980,14 @@ int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 
 int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
     frameCount = spanSizeInFrame_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         frameCount = cbBufferSize_ / sizePerFrameInByte_;
+        if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+            frameCount = frameCount * curStreamParams_.channels / streamParams_.channels;
+        }
     }
     AUDIO_INFO_LOG("Frame count is %{public}u, mode is %{public}s", frameCount, renderMode_ == RENDER_MODE_NORMAL ?
         "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
@@ -1007,25 +1062,6 @@ int32_t RendererInClientInner::ChangeSpeed(uint8_t *buffer, int32_t bufferSize, 
     int32_t &outBufferSize)
 {
     return audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, outBuffer, outBufferSize);
-}
-
-int32_t RendererInClientInner::WriteSpeedBuffer(int32_t bufferSize, uint8_t *speedBuffer, size_t speedBufferSize)
-{
-    int32_t writeIndex = 0;
-    int32_t writeSize = bufferSize_;
-    while (speedBufferSize > 0) {
-        if (speedBufferSize < bufferSize_) {
-            writeSize = speedBufferSize;
-        }
-        int32_t writtenSize = Write(speedBuffer + writeIndex, writeSize);
-        if (writtenSize <= 0) {
-            return writtenSize;
-        }
-        writeIndex += writtenSize;
-        speedBufferSize -= writtenSize;
-    }
-
-    return bufferSize;
 }
 
 AudioRendererRate RendererInClientInner::GetRenderRate()
@@ -1169,19 +1205,6 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
-bool RendererInClientInner::ProcessSpeed(BufferDesc &temp)
-{
-    int32_t speedBufferSize = 0;
-    int32_t ret = audioSpeed_->ChangeSpeedFunc(temp.buffer, temp.bufLength, speedBuffer_, speedBufferSize);
-    if (ret == 0 || speedBufferSize == 0) {
-        // Continue writing when the sonic is not full
-        return false;
-    }
-    temp.buffer = speedBuffer_.get();
-    temp.bufLength = speedBufferSize;
-    return true;
-}
-
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -1206,9 +1229,6 @@ void RendererInClientInner::WriteCallbackFunc()
             }
             if (state_ != RUNNING) { continue; }
             traceQueuePop.End();
-            if (!isEqual(speed_, 1.0f) && !ProcessSpeed(temp)) {
-                continue;
-            }
             // call write here.
             int32_t result = curStreamParams_.encoding == ENCODING_PCM
                 ? WriteInner(temp.buffer, temp.bufLength)
@@ -1761,14 +1781,41 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
-    return WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    int32_t ret = WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    return ret <= 0 ? ret : pcmBufferSize;
 }
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
-    return WriteInner(buffer, bufferSize);
+    int32_t ret = WriteInner(buffer, bufferSize);
+    return ret <= 0 ? ret : bufferSize;
+}
+
+bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize)
+{
+#ifdef SONIC_ENABLE
+    if (!isEqual(speed_, 1.0f)) {
+        if (audioSpeed_ == nullptr) {
+            AUDIO_ERR_LOG("audioSpeed_ is nullptr, use speed default 1.0");
+            return true;
+        }
+        int32_t outBufferSize = 0;
+        if (audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize) == 0) {
+            bufferSize = 0;
+            AUDIO_ERR_LOG("process speed error");
+            return false;
+        }
+        if (outBufferSize == 0) {
+            AUDIO_DEBUG_LOG("speed buffer is not full");
+            return false;
+        }
+        buffer = speedBuffer_.get();
+        bufferSize = outBufferSize;
+    }
+#endif
+    return true;
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
@@ -1787,14 +1834,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
     return WriteInner(buffer, bufferSize);
 }
 
-int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
+void RendererInClientInner::FirstFrameProcess()
 {
-    Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
-        "invalid size is %{public}zu", bufferSize);
-
-    std::lock_guard<std::mutex> lock(writeMutex_);
-
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_) {
         AudioSystemManager::GetInstance()->RequestThreadPriority(gettid());
@@ -1802,6 +1843,23 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     }
 
     if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
+}
+
+int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
+{
+    Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
+        "invalid size is %{public}zu", bufferSize);
+    CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
+    std::lock_guard<std::mutex> lock(writeMutex_);
+
+    if (!ProcessSpeed(buffer, bufferSize)) {
+        return bufferSize;
+    }
+
+    WriteMuteDataSysEvent(buffer, bufferSize);
+
+    FirstFrameProcess();
 
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
         "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
@@ -1842,19 +1900,36 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         size_t readableSize = result.size;
         Trace::Count("RendererInClient::CacheBuffer->readableSize", readableSize);
 
-        if (readableSize < clientSpanSizeInByte_) {
-            continue;
-        }
+        if (readableSize < clientSpanSizeInByte_) { continue; }
         // if readable size is enough, we will call write data to server
         int32_t ret = WriteCacheData();
-        if (ret == ERR_ILLEGAL_STATE) {
-            AUDIO_INFO_LOG("Status changed while write");
-            return bufferSize - targetSize;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE, bufferSize - targetSize, "Status changed while write");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
 
     return bufferSize - targetSize;
+}
+
+void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
+{
+    std::string name = gBundleInfo_.name;
+    int32_t versionCode = gBundleInfo_.versionCode;
+    if (buffer[0] == 0) {
+        if (startMuteTime_ == 0) {
+            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
+            AUDIO_WARNING_LOG("write silent data for some time");
+            isUpEvent_ = true;
+            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "BACKGROUND_SILENT_PLAYBACK",
+                HiviewDFX::HiSysEvent::EventType::STATISTIC,
+                "APP_NAME", name,
+                "APP_VERSION_CODE", versionCode);
+        }
+    } else if (buffer[0] != 0 && startMuteTime_ != 0) {
+        startMuteTime_ = 0;
+    }
 }
 
 int32_t RendererInClientInner::WriteCacheData()

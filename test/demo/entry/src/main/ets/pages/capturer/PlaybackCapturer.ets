@@ -13,9 +13,8 @@
 * limitations under the License.
 */
 
-import audio from '@ohos.multimedia.audio'
+import { audio } from '@kit.AudioKit';
 import fs from '@ohos.file.fs';
-import common from '@ohos.app.ability.common'
 
 const MAX_RENDER_NUM = 19
 const RENDER_MEDIA_IDX = 0
@@ -37,14 +36,20 @@ const RENDER_ENFORCED_TONE_IDX = 15
 const RENDER_ULTRASONIC_IDX = 16
 const RENDER_NOTIFICATION_RINGTONE_IDX = 17
 const RENDER_MOVIE_IDX = 18
-
+class EnumValue {
+  value: string = '';
+}
+class Option {
+  offset: number = 0
+  length: number = 0
+}
 
 @Entry
 @Component
 
 struct PlaybackCapturer {
 
-  private audioCapturerOptions = {
+  private audioCapturerOptions: audio.AudioCapturerOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -61,7 +66,7 @@ struct PlaybackCapturer {
       }
     }
   }
-  private audioRendererOptions = {
+  private audioRendererOptions: audio.AudioRendererOptions = {
     streamInfo: {
       samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_44100,
       channels: audio.AudioChannel.CHANNEL_2,
@@ -69,17 +74,16 @@ struct PlaybackCapturer {
       encodingType: audio.AudioEncodingType.ENCODING_TYPE_RAW
     },
     rendererInfo: {
-      content: audio.ContentType.CONTENT_TYPE_MUSIC,
-      usage: audio.StreamUsage.STREAM_USAGE_MEDIA,
+      usage: audio.StreamUsage.STREAM_USAGE_MUSIC,
       rendererFlags: 0
     },
     privacyType: 1
   }
   @State returnMsg: string = `hello`
   @State  StreamText : string  = 'getStreamInfo'
-  private capturer_ = null
-  private renderers_ = [null, null, null, null,null, null, null, null,null, null, null, null,null, null, null, null,null, null, null]
-  private capRender_ = null;
+  private capturer_: audio.AudioCapturer | null = null
+  private renderers_: audio.AudioRenderer[] = [];
+  private capRender_: audio.AudioRenderer | null = null;
   private rendererSelectState_ = [0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0]
   private rendererPrivacy_ = [0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0]
   private capturerFilter_ = [0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0]
@@ -88,63 +92,63 @@ struct PlaybackCapturer {
   @State recordSec: number = 0
   @State capRenderState_: number = 0
   @State capRenderText_: string = '播放录音数据'
-  private streamUsageList = []
+  private streamUsageList: EnumValue[] = [];
   @State selectedStreamUsageKey: Array<String> = []
-  private samplingRateList = []
+  private samplingRateList: EnumValue[] = [];
   @State selectedSamplingRateKey: string = "SAMPLE_RATE_44100"
-  private channelsList = []
+  private channelsList: EnumValue[] = [];
   @State selectedChannelKey: string = "CHANNEL_2"
-  private sampleFormatList = []
+  private sampleFormatList: EnumValue[] = [];
   @State selectedSampleFormatKey: string = "SAMPLE_FORMAT_S16LE"
-  private encodingTypeList = []
+  private encodingTypeList: EnumValue[] = [];
   @State selectedEncodingTypeKey: string = "ENCODING_TYPE_RAW"
 
   private capturerPath = ''
   @State recordText: string = '音频录制'
-  private SUPPORT_STREAM_USAGE = [
-      audio.StreamUsage.STREAM_USAGE_MEDIA,
-      audio.StreamUsage.STREAM_USAGE_ALARM,
-      audio.StreamUsage.STREAM_USAGE_VOICE_ASSISTANT,
-      audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
-      audio.StreamUsage.STREAM_USAGE_UNKNOWN,
-      audio.StreamUsage.STREAM_USAGE_MUSIC,
-      audio.StreamUsage.STREAM_USAGE_VOICE_MESSAGE,
+  private SUPPORT_STREAM_USAGE: number[] = [
+    audio.StreamUsage.STREAM_USAGE_MUSIC,
+    audio.StreamUsage.STREAM_USAGE_ALARM,
+    audio.StreamUsage.STREAM_USAGE_VOICE_ASSISTANT,
+    audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION,
+    audio.StreamUsage.STREAM_USAGE_UNKNOWN,
+    audio.StreamUsage.STREAM_USAGE_MUSIC,
+    audio.StreamUsage.STREAM_USAGE_VOICE_MESSAGE,
 
-      audio.StreamUsage.STREAM_USAGE_RINGTONE,
-      audio.StreamUsage.STREAM_USAGE_NOTIFICATION,
-      audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
-      audio.StreamUsage.STREAM_USAGE_SYSTEM,
-      audio.StreamUsage.STREAM_USAGE_GAME,
-      audio.StreamUsage.STREAM_USAGE_AUDIOBOOK,
-      audio.StreamUsage.STREAM_USAGE_NAVIGATION,
-      audio.StreamUsage.STREAM_USAGE_DTMF,
-      audio.StreamUsage.STREAM_USAGE_ENFORCED_TONE,
-      audio.StreamUsage.STREAM_USAGE_NOTIFICATION_RINGTONE,
-      audio.StreamUsage.STREAM_USAGE_ULTRASONIC,
-      audio.StreamUsage.STREAM_USAGE_MOVIE,
+    audio.StreamUsage.STREAM_USAGE_RINGTONE,
+    audio.StreamUsage.STREAM_USAGE_NOTIFICATION,
+    audio.StreamUsage.STREAM_USAGE_ACCESSIBILITY,
+    audio.StreamUsage.STREAM_USAGE_GAME,
+    audio.StreamUsage.STREAM_USAGE_AUDIOBOOK,
+    audio.StreamUsage.STREAM_USAGE_NAVIGATION,
+    audio.StreamUsage.STREAM_USAGE_RINGTONE,
+    audio.StreamUsage.STREAM_USAGE_MOVIE,
 
   ]
 
 
   aboutToAppear() {
-    for (let key in audio.AudioSamplingRate) {
+    Object.keys(audio.AudioSamplingRate).forEach((key) => {
       this.samplingRateList.push({ value: key })
-    }
-    for (let key in audio.AudioChannel) {
+    })
+
+    Object.keys(audio.AudioChannel).forEach((key) => {
       this.channelsList.push({ value: key })
-    }
-    for (let key in audio.AudioSampleFormat) {
+    })
+
+    Object.keys(audio.AudioSampleFormat).forEach((key) => {
       this.sampleFormatList.push({ value: key })
-    }
-    for (let key in audio.AudioEncodingType) {
+    })
+
+    Object.keys(audio.AudioEncodingType).forEach((key) => {
       this.encodingTypeList.push({ value: key })
-    }
-    for (let key in audio.StreamUsage) {
+    })
+
+    Object.keys(audio.StreamUsage).forEach((key) => {
       this.streamUsageList.push({ value: key })
-    }
+    })
   }
 
-  async CreateRendersByIndex(idx: number, usage) {
+  async CreateRendersByIndex(idx: number, usage: number) {
     if (idx < 0 || idx >= MAX_RENDER_NUM) {
       return
     }
@@ -174,11 +178,11 @@ struct PlaybackCapturer {
     }
 
 
-    this.audioCapturerOptions.playbackCaptureConfig.filterOptions.usages = []
+    // this.audioCapturerOptions.playbackCaptureConfig.filterOptions.usages = [];
     setTimeout(async () => {
       if (this.rendererSelectState_[RENDER_MEDIA_IDX] == 1) {
         // create AudioRender instance of STREAM_USAGE_MEDIA
-        await this.CreateRendersByIndex(RENDER_MEDIA_IDX, audio.StreamUsage.STREAM_USAGE_MEDIA)
+        await this.CreateRendersByIndex(RENDER_MEDIA_IDX, audio.StreamUsage.STREAM_USAGE_MUSIC)
         await this.Play(RENDER_MEDIA_IDX, 'safe_and_sound_32.wav')
       }
     }, 0)
@@ -194,7 +198,7 @@ struct PlaybackCapturer {
     setTimeout(async () => {
       if (this.rendererSelectState_[RENDER_ASS_IDX] == 1) {
         // create AudioRender instance of STREAM_USAGE_SYSTEM
-       await this.CreateRendersByIndex(RENDER_ASS_IDX, audio.StreamUsage.STREAM_USAGE_VOICE_ASSISTANT)
+        await this.CreateRendersByIndex(RENDER_ASS_IDX, audio.StreamUsage.STREAM_USAGE_VOICE_ASSISTANT)
         await this.Play(RENDER_ASS_IDX, 'safe_and_sound_32.wav')
       }
     }, 0)
@@ -202,7 +206,7 @@ struct PlaybackCapturer {
     setTimeout(async () => {
       if (this.rendererSelectState_[RENDER_VOICE_IDX] == 1) {
         // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
-       await this.CreateRendersByIndex(RENDER_VOICE_IDX, audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION)
+        await this.CreateRendersByIndex(RENDER_VOICE_IDX, audio.StreamUsage.STREAM_USAGE_VOICE_COMMUNICATION)
         await this.Play(RENDER_VOICE_IDX, 'test_44100_2.wav')
       }
     }, 0)
@@ -255,13 +259,13 @@ struct PlaybackCapturer {
       }
     }, 0)
 
-    setTimeout(async () => {
-      if (this.rendererSelectState_[RENDER_SYSTEM_IDX] == 1) {
-        // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
-        await this.CreateRendersByIndex(RENDER_SYSTEM_IDX, audio.StreamUsage.STREAM_USAGE_SYSTEM)
-        await this.Play(RENDER_SYSTEM_IDX, 'safe_and_sound_32.wav')
-      }
-    }, 0)
+    // setTimeout(async () => {
+    //   if (this.rendererSelectState_[RENDER_SYSTEM_IDX] == 1) {
+    //     // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
+    //     await this.CreateRendersByIndex(RENDER_SYSTEM_IDX, audio.StreamUsage.STREAM_USAGE_SYSTEM)
+    //     await this.Play(RENDER_SYSTEM_IDX, 'safe_and_sound_32.wav')
+    //   }
+    // }, 0)
 
     setTimeout(async () => {
       if (this.rendererSelectState_[RENDER_GAME_IDX] == 1) {
@@ -287,29 +291,29 @@ struct PlaybackCapturer {
       }
     }, 0)
 
-    setTimeout(async () => {
-      if (this.rendererSelectState_[RENDER_DTMF_IDX] == 1) {
-        // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
-        await this.CreateRendersByIndex(RENDER_DTMF_IDX, audio.StreamUsage.STREAM_USAGE_DTMF)
-        await this.Play(RENDER_DTMF_IDX, 'safe_and_sound_32.wav')
-      }
-    }, 0)
+    // setTimeout(async () => {
+    //   if (this.rendererSelectState_[RENDER_DTMF_IDX] == 1) {
+    //     // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
+    //     await this.CreateRendersByIndex(RENDER_DTMF_IDX, audio.StreamUsage.STREAM_USAGE_DTMF)
+    //     await this.Play(RENDER_DTMF_IDX, 'safe_and_sound_32.wav')
+    //   }
+    // }, 0)
 
-    setTimeout(async () => {
-      if (this.rendererSelectState_[RENDER_ENFORCED_TONE_IDX] == 1) {
-        // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
-        await this.CreateRendersByIndex(RENDER_ENFORCED_TONE_IDX, audio.StreamUsage.STREAM_USAGE_ENFORCED_TONE)
-        await this.Play(RENDER_ENFORCED_TONE_IDX, 'test_44100_2.wav')
-      }
-    }, 0)
+    // setTimeout(async () => {
+    //   if (this.rendererSelectState_[RENDER_ENFORCED_TONE_IDX] == 1) {
+    //     // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
+    //     await this.CreateRendersByIndex(RENDER_ENFORCED_TONE_IDX, audio.StreamUsage.STREAM_USAGE_ENFORCED_TONE)
+    //     await this.Play(RENDER_ENFORCED_TONE_IDX, 'test_44100_2.wav')
+    //   }
+    // }, 0)
 
-    setTimeout(async () => {
-      if (this.rendererSelectState_[RENDER_ULTRASONIC_IDX] == 1) {
-        // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
-        await this.CreateRendersByIndex(RENDER_ULTRASONIC_IDX, audio.StreamUsage.STREAM_USAGE_ULTRASONIC)
-        await this.Play(RENDER_ULTRASONIC_IDX, 'safe_and_sound_32.wav')
-      }
-    }, 0)
+    // setTimeout(async () => {
+    //   if (this.rendererSelectState_[RENDER_ULTRASONIC_IDX] == 1) {
+    //     // create AudioRender instance of STREAM_USAGE_VOICE_COMMUNICATION
+    //     await this.CreateRendersByIndex(RENDER_ULTRASONIC_IDX, audio.StreamUsage.STREAM_USAGE_ULTRASONIC)
+    //     await this.Play(RENDER_ULTRASONIC_IDX, 'safe_and_sound_32.wav')
+    //   }
+    // }, 0)
 
     setTimeout(async () => {
       if (this.rendererSelectState_[RENDER_NOTIFICATION_RINGTONE_IDX] == 1) {
@@ -333,12 +337,12 @@ struct PlaybackCapturer {
     for (let i = 0;i < this.rendererSelectState_.length; i++) {
       if (this.renderers_[i] !== null) {
         await this.renderers_[i].release()
-        this.renderers_[i] = null
       }
     }
+    this.renderers_ = [];
   }
 
-  async Play(idx, pathName) {
+  async Play(idx: number, pathName: string) {
     let path = globalThis.pathDir + '/' + pathName;
     await this.renderers_[idx].start();
     let bufferSize = await this.renderers_[idx].getBufferSize()
@@ -359,12 +363,12 @@ struct PlaybackCapturer {
           if (this.renderStateList_[idx] === audio.AudioState.STATE_RELEASED) {
             break
           }
-          let options = {
+          let options: Option = {
             offset: i * bufferSize,
             length: bufferSize
           }
           let readsize = await fs.read(file.fd, buf, options);
-          let writeSize = await new Promise((resolve, reject) => {
+          let writeSize: number = await new Promise((resolve, reject) => {
             this.renderers_[idx].write(buf, (err, writeSize) => {
               if (err) {
                 reject(err)
@@ -403,13 +407,14 @@ struct PlaybackCapturer {
       this.returnMsg =`没有正在播放的流`
       return;
     }
-
-    this.audioCapturerOptions.playbackCaptureConfig.filterOptions.usages = []
-    for (let i = 0; i < MAX_RENDER_NUM; i++) {
-      if (this.capturerFilter_[i] === 1) {
-        this.audioCapturerOptions.playbackCaptureConfig.filterOptions.usages.push(this.SUPPORT_STREAM_USAGE[i])
-        console.log('ZLMDBG capturer filter add usage:' + this.SUPPORT_STREAM_USAGE[i])
-        this.returnMsg =`ZLMDBG capturer filter add usage: ${this.SUPPORT_STREAM_USAGE[i]} `
+    if (this.audioCapturerOptions.playbackCaptureConfig) {
+      this.audioCapturerOptions.playbackCaptureConfig.filterOptions.usages = []
+      for (let i = 0; i < MAX_RENDER_NUM; i++) {
+        if (this.capturerFilter_[i] === 1) {
+          this.audioCapturerOptions.playbackCaptureConfig.filterOptions.usages.push(this.SUPPORT_STREAM_USAGE[i])
+          console.log('ZLMDBG capturer filter add usage:' + this.SUPPORT_STREAM_USAGE[i])
+          this.returnMsg =`ZLMDBG capturer filter add usage: ${this.SUPPORT_STREAM_USAGE[i]} `
+        }
       }
     }
     try {
@@ -433,11 +438,11 @@ struct PlaybackCapturer {
 
       await this.stopRecord()
       //录制结束后，关闭音频资源播放
-//      for (let i = 0;i < this.rendererSelectState_.length; i++) {
-//        if (this.rendererSelectState_[i] === 1) {
-//          await this.renderers_[i].release()
-//        }
-//      }
+      //      for (let i = 0;i < this.rendererSelectState_.length; i++) {
+      //        if (this.rendererSelectState_[i] === 1) {
+      //          await this.renderers_[i].release()
+      //        }
+      //      }
     } catch (err) {
       console.log(`startRecord err = ${JSON.stringify(err)}`)
       this.returnMsg =  `startRecord err = ${JSON.stringify(err)}`
@@ -446,11 +451,15 @@ struct PlaybackCapturer {
 
   async stopRecord() {
     try {
-//      await this.capturer_.stop()
-      await this.capturer_.release()
-      await this.PlayStop()
-      this.capturer_ = null
-      this.recordText = '音频录制'
+      //      await this.capturer_.stop()
+      if (this.capturer_) {
+        await this.capturer_.release()
+        await this.PlayStop()
+        this.capturer_ = null
+        this.recordText = '音频录制'
+      }
+
+
     } catch (err) {
       console.log(`stopRecord err = ${JSON.stringify(err)}`)
       this.returnMsg = `stopRecord err = ${JSON.stringify(err)}`
@@ -458,13 +467,17 @@ struct PlaybackCapturer {
   }
 
   async readCapturer() {
+    if (!this.capturer_) {
+      this.returnMsg = `AudioCapturer instance had not created`
+      return
+    }
     let bufferSize = await this.capturer_.getBufferSize()
 
-    let _this = this
+    // let _this = this
     //READ 5S
     let start = new Date().getTime()
     let end = new Date().getTime()
-    let buffer = null
+    let buffer: ArrayBuffer;
 
     console.log('AudioCapturer read start.....')
     this.returnMsg = `AudioCapturer read start.....`
@@ -483,7 +496,7 @@ struct PlaybackCapturer {
       return
     }
 
-    let file
+    let file: fs.File;
     try {
       file = await fs.open(path, 0o2);
       console.log("文件以读写模式打开成功")
@@ -499,20 +512,23 @@ struct PlaybackCapturer {
     this.returnMsg += `fd:${file.fd}\n`;
     let index = 0;
     while (end - start <= 5000 * 6) {
-      if (_this.capturer_.state === audio.AudioState.STATE_STOPPED) {
+      if (this.capturer_.state === audio.AudioState.STATE_STOPPED) {
         break;
       }
       try {
         buffer = await new Promise((resolve, reject) => {
-          _this.capturer_.read(bufferSize, true, async (err, buffer) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(buffer)
-            }
-          })
+          if (this.capturer_) {
+            this.capturer_.read(bufferSize, true, async (err, buffer) => {
+              if (err) {
+                reject(err)
+              } else {
+                resolve(buffer)
+              }
+            })
+          }
+
         })
-        let options = {
+        let options: Option = {
           offset: index * bufferSize,
           length: bufferSize
         }
@@ -521,13 +537,13 @@ struct PlaybackCapturer {
 
       } catch (err) {
         console.log(`AudioCapturer read : Error: ${JSON.stringify(err)}\n`)
-         _this.returnMsg = `AudioCapturer read : Error: ${JSON.stringify(err)}\n`
+        this.returnMsg = `AudioCapturer read : Error: ${JSON.stringify(err)}\n`
       }
       end = new Date().getTime()
     }
 
-//    await _this.capturer_.release()
-//    console.log(`AudioCapturer read end, state:${_this.capturer_.state}\n`)
+    //    await _this.capturer_.release()
+    //    console.log(`AudioCapturer read end, state:${_this.capturer_.state}\n`)
     //_this.returnMsg = `AudioCapturer read end, state:${_this.capturer_.state}\n`
 
   }
@@ -549,7 +565,7 @@ struct PlaybackCapturer {
       this.returnMsg =`AudioCapturer  尚未录音\n`
       return
     }
-    let audioRendererOptions = {
+    let audioRendererOptions: audio.AudioRendererOptions = {
       streamInfo: this.audioCapturerOptions.streamInfo,
       rendererInfo: {
         content: audio.ContentType.CONTENT_TYPE_RINGTONE,
@@ -568,7 +584,7 @@ struct PlaybackCapturer {
       this.returnMsg = `playRecordData audioRenderer  create : Error: ${JSON.stringify(err)}\n`
       return
     }
-    let bufferSize
+    let bufferSize: number;
     try {
       bufferSize = await _this.capRender_.getBufferSize()
       await _this.capRender_.start()
@@ -598,7 +614,7 @@ struct PlaybackCapturer {
       this.returnMsg =`audioRenderer  write start.......... \n`
 
       for (let i = 0;i < len; i++) {
-        let options = {
+        let options: Option = {
           offset: i * bufferSize,
           length: bufferSize
         }
@@ -618,21 +634,13 @@ struct PlaybackCapturer {
   }
 
   async getStreamInfo(){
+    if (!this.capturer_) {
+      this.returnMsg = `AudioCapturer instance had not created`
+      return
+    }
     try {
 
-      await this.capturer_.getStreamInfo((err, streamInfo) => {
-        if (err) {
-          this.returnMsg = `getstreamInfo err = ${JSON.stringify(err)}`
-          console.error('Failed to get stream info');
-        } else {
-          this.returnMsg = `streamInfo : ${JSON.stringify(streamInfo)}`
-          console.info('Capturer GetStreamInfo:');
-          console.info(`Capturer sampling rate: ${streamInfo.samplingRate}`);
-          console.info(`Capturer channel: ${streamInfo.channels}`);
-          console.info(`Capturer format: ${streamInfo.sampleFormat}`);
-          console.info(`Capturer encoding type: ${streamInfo.encodingType}`);
-        }
-      });
+      this.capturer_.getStreamInfoSync();
 
 
       this.StreamText = 'getStreamInfo'
@@ -645,11 +653,11 @@ struct PlaybackCapturer {
 
   build() {
     Column() {
-//      Row() {
-//        Column() {
-//          Text("【音频内录】").fontWeight(FontWeight.Bolder).position({ x: 10, y: 5 }).fontSize(18)
-//        }.width('98%').height(40).backgroundColor(Color.Orange).position({ x: '1%' })
-//      }.position({ x: 0, y: 0 }).width('100%').zIndex(999)
+      //      Row() {
+      //        Column() {
+      //          Text("【音频内录】").fontWeight(FontWeight.Bolder).position({ x: 10, y: 5 }).fontSize(18)
+      //        }.width('98%').height(40).backgroundColor(Color.Orange).position({ x: '1%' })
+      //      }.position({ x: 0, y: 0 }).width('100%').zIndex(999)
 
       Row() {
         Column() {
@@ -661,7 +669,7 @@ struct PlaybackCapturer {
       Scroll() {
         Column() {
           Row() {
-//             全选按钮
+            //             全选按钮
             Flex({ justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
               CheckboxGroup({ group: 'checkboxGroup' })
                 .selectedColor('#007DFF')
@@ -1364,7 +1372,7 @@ struct PlaybackCapturer {
           }
 
           Row() {
-//             选项18:STREAM_USAGE_NOTIFICATION_RINGTONE
+            //             选项18:STREAM_USAGE_NOTIFICATION_RINGTONE
             Flex({ justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
               Checkbox({ name: 'CheckBox_voice', group: 'checkboxGroup' })
                 .selectedColor('#007DFF')
