@@ -20,6 +20,7 @@
 #include "audio_renderer.h"
 #include "audio_capturer.h"
 #include "audio_stream_manager.h"
+#include "audio_spatialization_manager.h"
 
 #include <chrono>
 #include <thread>
@@ -103,6 +104,11 @@ void AudioFocusInfoChangeCallbackTest::OnAudioFocusInfoChange(
     g_audioFocusInfoList.clear();
     g_audioFocusInfoList = focusInfoList;
     g_isCallbackReceived = true;
+}
+
+void HeadTrackingDataRequestedChangeCallbackTest::OnHeadTrackingDataRequestedChange(bool isRequested)
+{
+    return;
 }
 
 /**
@@ -2880,6 +2886,45 @@ HWTEST(AudioManagerUnitTest, SetCallDeviceActive_001, TestSize.Level1)
     std::string address = "";
     auto ret = AudioSystemManager::GetInstance()->SetCallDeviceActive(ActiveDeviceType::BLUETOOTH_SCO, true, address);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+* @tc.name   : Test IsHeadTrackingDataRequested API
+* @tc.number : IsHeadTrackingDataRequested_001
+* @tc.desc   : Test IsHeadTrackingDataRequested interface.
+*/
+HWTEST(AudioManagerUnitTest, IsHeadTrackingDataRequested_001, TestSize.Level1)
+{
+    std::string address = "";
+    auto ret = AudioSpatializationManager::GetInstance()->IsHeadTrackingDataRequested(address);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name   : Test RegisterHeadTrackingDataRequestedEventListener API
+* @tc.number : RegisterHeadTrackingDataRequestedEventListener_001
+* @tc.desc   : Test RegisterHeadTrackingDataRequestedEventListener interface.
+*/
+HWTEST(AudioManagerUnitTest, RegisterHeadTrackingDataRequestedEventListener_001, TestSize.Level1)
+{
+    std::string address = "123";
+    std::shared_ptr<HeadTrackingDataRequestedChangeCallback> callback =
+        make_shared<HeadTrackingDataRequestedChangeCallbackTest>();
+    auto ret = AudioSpatializationManager::GetInstance()->RegisterHeadTrackingDataRequestedEventListener(address,
+        callback);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name   : Test UnregisterHeadTrackingDataRequestedEventListener API
+* @tc.number : UnregisterHeadTrackingDataRequestedEventListener_001
+* @tc.desc   : Test UnregisterHeadTrackingDataRequestedEventListener interface.
+*/
+HWTEST(AudioManagerUnitTest, UnregisterHeadTrackingDataRequestedEventListener_001, TestSize.Level1)
+{
+    std::string address = "123";
+    auto ret = AudioSpatializationManager::GetInstance()->UnregisterHeadTrackingDataRequestedEventListener(address);
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

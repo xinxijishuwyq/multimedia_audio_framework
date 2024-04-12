@@ -67,6 +67,12 @@ public:
     ~AudioFocusInfoChangeCallbackTest() = default;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
 };
+
+class HeadTrackingDataRequestedChangeCallbackTest : public HeadTrackingDataRequestedChangeCallback {
+public:
+    ~HeadTrackingDataRequestedChangeCallbackTest() = default;
+    void OnHeadTrackingDataRequestedChange(bool isRequested) override;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

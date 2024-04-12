@@ -371,16 +371,14 @@ int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingDataRequestedChangeCallback
 void AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingDataRequestedChangeMutex_);
-    for (const auto &pair : changeInfo) {
-        if (!headTrackingDataRequestedChangeCallbackMap_.count(pair.first)) {
-            AUDIO_WARNING_LOG("the specified device has not been registered");
+    for (const auto &pair : headTrackingDataRequestedChangeCallbackMap_) {
+        if (!changeInfo.count(pair.first)) {
             continue;
         }
-        std::shared_ptr<HeadTrackingDataRequestedChangeCallback> headTrackingDataRequestedChangeCallback =
-            headTrackingDataRequestedChangeCallbackMap_[pair.first];
+        std::shared_ptr<HeadTrackingDataRequestedChangeCallback> headTrackingDataRequestedChangeCallback = pair.second;
         if (headTrackingDataRequestedChangeCallback != nullptr) {
             AUDIO_DEBUG_LOG("head tracking data requested change event of the specified device has been notified");
-            headTrackingDataRequestedChangeCallback->OnHeadTrackingDataRequestedChange(pair.second);
+            headTrackingDataRequestedChangeCallback->OnHeadTrackingDataRequestedChange(changeInfo[pair.first]);
         }
     }
 }
