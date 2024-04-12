@@ -102,19 +102,6 @@ OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceChannelCounts(OH_AudioDe
     return deviceDescriptor->GetDeviceChannelCounts(channelCounts, size);
 }
 
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceChannelMasks(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
-                                                                     uint32_t **channelMask, uint32_t *size)
-{
-    OHOS::AudioStandard::OHAudioDeviceDescriptor* deviceDescriptor = convertDeviceDescriptor(audioDeviceDescriptor);
-    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptor is nullptr");
-    CHECK_AND_RETURN_RET_LOG(channelMask != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "channelMask is nullptr");
-    CHECK_AND_RETURN_RET_LOG(size != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "size is nullptr");
-    return deviceDescriptor->GetDeviceChannelMasks(channelMask, size);
-}
-
 OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceDisplayName(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
                                                                     char **displayName)
 {
@@ -250,19 +237,6 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceChannelCounts(uint32_t *
     }
     *size = channelsSize;
     *channelCounts = audioChannel_;
-    return AUDIOCOMMON_RESULT_SUCCESS;
-}
-
-OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceChannelMasks(uint32_t **channelMasks, uint32_t *size)
-{
-    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
-        "audioDeviceDescriptor_ is nullptr");
-    if (audioChannelMask_ == nullptr) {
-        audioChannelMask_ = new uint32_t[1];
-        audioChannelMask_[0] = audioDeviceDescriptor_->channelMasks_;
-    }
-    *size = 1;
-    *channelMasks = audioChannelMask_;
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 

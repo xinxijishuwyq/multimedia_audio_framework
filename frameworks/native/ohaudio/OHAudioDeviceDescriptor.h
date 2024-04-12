@@ -18,9 +18,9 @@
 
 #include "audio_info.h"
 #include "audio_log.h"
-#include "native_audioroutingmanager.h"
-#include "native_audiocommon_base.h"
-#include "native_audiodevice_base.h"
+#include "native_audio_routing_manager.h"
+#include "native_common_base.h"
+#include "native_audio_device_base.h"
 #include "audio_system_manager.h"
 #include "audio_routing_manager.h"
 
@@ -39,7 +39,6 @@ public:
     OH_AudioCommon_Result GetDeviceAddress(char **address);
     OH_AudioCommon_Result GetDeviceSampleRates(uint32_t **sampleRates, uint32_t *size);
     OH_AudioCommon_Result GetDeviceChannelCounts(uint32_t **channelCounts, uint32_t *size);
-    OH_AudioCommon_Result GetDeviceChannelMasks(uint32_t **channelMasks, uint32_t *size);
     OH_AudioCommon_Result GetDeviceDisplayName(char **displayName);
     OH_AudioCommon_Result GetDeviceEncodingTypes(OH_AudioStream_EncodingType **encodingTypes, uint32_t *size);
 

@@ -30,6 +30,7 @@
  *
  * @brief Declare the audio common base data structure.
  *
+ * @library libohaudio.so
  * @syscap SystemCapability.Multimedia.Audio.Core
  * @since 12
  * @version 1.0
@@ -45,64 +46,48 @@ extern "C" {
 #endif
 
 /**
- * Define the result of the function execution.
+ * @brief Define the result of the function execution.
  *
  * @since 12
  */
 typedef enum {
     /**
-     * The call was successful.
-     *
-     * @since 12
+     * @brief The call was successful.
      */
     AUDIOCOMMON_RESULT_SUCCESS = 0,
 
     /**
-     * This means that the input parameter is invalid.
-     *
-     * @since 12
+     * @brief This means that the input parameter is invalid.
      */
     AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM = 6800101,
 
     /**
-     * This means there is no memory left.
-     *
-     * @since 12
+     * @brief This means there is no memory left.
      */
     AUDIOCOMMON_RESULT_ERROR_NO_MEMORY = 6800102,
 
     /**
-     * Execution status exception.
-     *
-     * @since 12
+     * @brief Execution status exception.
      */
     AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE = 6800103,
 
     /**
-     * This means the operation is unsupported.
-     *
-     * @since 12
+     * @brief This means the operation is unsupported.
      */
     AUDIOCOMMON_RESULT_UNSUPPORTED = 6800104,
 
     /**
-     * This means the operation is timeout.
-     *
-     * @since 12
+     * @brief This means the operation is timeout.
      */
     AUDIOCOMMON_RESULT_TIMEOUT = 6800105,
 
     /**
-     * This means reached stream limit.
-     *
-     * @since 12
+     * @brief This means reached stream limit.
      */
     AUDIOCOMMON_RESULT_STREAM_LIMIT = 6800201,
 
     /**
-     * An system error has occurred.
-     *
-     * @since 12
+     * @brief An system error has occurred.
      */
     AUDIOCOMMON_RESULT_ERROR_SYSTEM = 6800301,
 } OH_AudioCommon_Result;
