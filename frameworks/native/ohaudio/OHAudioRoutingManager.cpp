@@ -33,16 +33,16 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingMana
 }
 
 OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(OH_AudioRoutingManager *audioRoutingManager,
-    OH_AudioDevice_DeviceFlag deviceFlag, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)
+    OH_AudioDevice_Flag deviceFlag, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)
 {
     OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG((
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_NONE_DEVICES_FLAG ||
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_OUTPUT_DEVICES_FLAG ||
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_INPUT_DEVICES_FLAG ||
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG),
+        deviceFlag == AUDIO_DEVICE_FLAG_NONE ||
+        deviceFlag == AUDIO_DEVICE_FLAG_OUTPUT ||
+        deviceFlag == AUDIO_DEVICE_FLAG_INPUT ||
+        deviceFlag == AUDIO_DEVICE_FLAG_ALL),
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceFlag is invalid");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptorArray is nullptr");
@@ -54,17 +54,17 @@ OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(OH_AudioRoutingManager *
 }
 
 OH_AudioCommon_Result OH_AudioRoutingManager_RegisterDeviceChangeCallback(
-    OH_AudioRoutingManager *audioRoutingManager, OH_AudioDevice_DeviceFlag deviceFlag,
+    OH_AudioRoutingManager *audioRoutingManager, OH_AudioDevice_Flag deviceFlag,
     OH_AudioRoutingManager_OnDeviceChangedCallback callback)
 {
     OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG((
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_NONE_DEVICES_FLAG ||
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_OUTPUT_DEVICES_FLAG ||
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_INPUT_DEVICES_FLAG ||
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG),
+        deviceFlag == AUDIO_DEVICE_FLAG_NONE ||
+        deviceFlag == AUDIO_DEVICE_FLAG_OUTPUT ||
+        deviceFlag == AUDIO_DEVICE_FLAG_INPUT ||
+        deviceFlag == AUDIO_DEVICE_FLAG_ALL),
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceFlag is invalid");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
     DeviceFlag flag = static_cast<DeviceFlag>(deviceFlag);
@@ -80,7 +80,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
-    DeviceFlag flag = static_cast<DeviceFlag>(AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG);
+    DeviceFlag flag = static_cast<DeviceFlag>(AUDIO_DEVICE_FLAG_ALL);
     ohAudioRoutingManager->UnsetDeviceChangeCallback(flag, callback);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }

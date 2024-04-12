@@ -26,9 +26,13 @@
  */
 
 /**
- * @file native_audioroutingmanager.h
+ * @file native_audio_routing_manager.h
  *
  * @brief Declare audio routing manager related interfaces.
+ *
+ * This file interface is used for the creation of audioRoutingManager
+ * as well as the registration and deregistration functions when the device connection status changes
+ * as well as the release of pointer arrays storing device information.
  *
  * @library libohaudio.so
  * @syscap SystemCapability.Multimedia.Audio.Core
@@ -39,7 +43,6 @@
 #ifndef NATIVE_AUDIO_ROUTING_MANAGER_H
 #define NATIVE_AUDIO_ROUTING_MANAGER_H
 
-#include <time.h>
 #include "native_audio_device_base.h"
 #ifdef __cplusplus
 extern "C" {
@@ -57,19 +60,27 @@ typedef struct OH_AudioRoutingManager OH_AudioRoutingManager;
  * @brief This function pointer will point to the callback function that
  * is used to return the changing audio device descriptors.
  * There may be more than one audio device descriptor returned.
- * @param type device changetype is connect or disconnect.
- * @param AudioDeviceDescriptorArray pointer variable which will be set the audio device descriptors value.
+ *
+ * @param type the {@link OH_AudioDevice_ChangeType} is connect or disconnect.
+ * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
+ * pointer variable which will be set the audio device descriptors value.
+ * Do not release the audioDeviceDescriptorArray pointer separately
+ * instead call {@link OH_AudioRoutingManager_ReleaseDevices} to relase all the DeviceDescriptor array
+ * when it is no use anymore.
  * @since 12
  */
 typedef int32_t (*OH_AudioRoutingManager_OnDeviceChangedCallback) (
     OH_AudioDevice_ChangeType type,
-    OH_AudioDeviceDescriptorArray *AudioDeviceDescriptorArray
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray
 );
 
 /**
- * @brief Query the audio routing manager handle
+ * @brief Query the audio routing manager handle.
  * which should be set as the first parameter in routing releated functions.
- * @param audioRoutingManager handle returned by OH_AudioManager_GetAudioRoutingManager.
+ *
+ * @param audioRoutingManager the {@link OH_AudioRoutingManager}
+ * handle returned by {@link OH_AudioManager_GetAudioRoutingManager}.
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS}
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingManager **audioRoutingManager);
@@ -77,36 +88,47 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingMana
 /**
  * @brief Query the available devices according to the input deviceFlag.
  *
- * @param audioRoutingManager handle returned by OH_AudioManager_GetAudioRoutingManager.
- * @param deviceFlag which is used as the filter parameter for selecting the target devices.
- * @param audioDeviceDescriptorArray pointer variable which will be set the audio device descriptors value.
- * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
+ * @param audioRoutingManager the {@link OH_AudioRoutingManager}
+ * handle returned by {@link OH_AudioManager_GetAudioRoutingManager}.
+ * @param deviceFlag the {@link OH_AudioDevice_DeviceFlag} which is used as
+ * the filter parameter for selecting the target devices.
+ * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
+ * pointer variable which will be set the audio device descriptors value
+ * Do not release the audioDeviceDescriptorArray pointer separately
+ * instead call {@link OH_AudioRoutingManager_ReleaseDevices} to relase all the DeviceDescriptor array
+ * when it is no use anymore.
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_NO_MEMORY}.
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(
     OH_AudioRoutingManager *audioRoutingManager,
-    OH_AudioDevice_DeviceFlag deviceFlag,
+    OH_AudioDevice_Flag deviceFlag,
     OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray);
 
 /**
  * @brief Register the device change callback of the audio routing manager.
  *
- * @param audioRoutingManager handle returned by OH_AudioManager_GetAudioRoutingManager.
- * @param deviceFlag which is used to register callback.
- * @param callback Callback function which will be called when devices changed.
- * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
+ * @param audioRoutingManager the {@link OH_AudioRoutingManager}
+ * handle returned by {@link OH_AudioManager_GetAudioRoutingManager}.
+ * @param deviceFlag the {@link OH_AudioDevice_DeviceFlag} which is used to register callback.
+ * @param callback the {@link OH_AudioRoutingManager_OnDeviceChangedCallback}
+ * Callback function which will be called when devices changed.
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}.
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_RegisterDeviceChangeCallback(
-    OH_AudioRoutingManager *audioRoutingManager, OH_AudioDevice_DeviceFlag deviceFlag,
+    OH_AudioRoutingManager *audioRoutingManager, OH_AudioDevice_Flag deviceFlag,
     OH_AudioRoutingManager_OnDeviceChangedCallback callback);
 
 /**
  * @brief Unregister the device change callback of the audio routing manager.
  *
- * @param audioRoutingManager handle returned by OH_AudioManager_GetAudioRoutingManager.
- * @param callback Callback function which will be called when devices changed.
- * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
+ * @param audioRoutingManager the {@link OH_AudioRoutingManager}
+ * handle returned by {@link OH_AudioManager_GetAudioRoutingManager}.
+ * @param callback the {@link OH_AudioRoutingManager_OnDeviceChangedCallback}
+ * Callback function which will be called when devices changed.
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}.
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
@@ -116,9 +138,11 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
 /**
  * @brief Release the audio device descriptor array object.
  *
- * @param audioRoutingManager handle returned by OH_AudioManager_GetAudioRoutingManager.
+ * @param audioRoutingManager the {@link OH_AudioRoutingManager}
+ * handle returned by {@link OH_AudioManager_GetAudioRoutingManager}.
  * @param audioDeviceDescriptorArray Audio device descriptors should be released.
- * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
+ * and get from {@link OH_AudioRoutingManager_GetDevices}
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}.
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
@@ -127,4 +151,5 @@ OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
 #ifdef __cplusplus
 }
 #endif
+/** @} */
 #endif // NATIVE_AUDIO_ROUTING_MANAGER_H

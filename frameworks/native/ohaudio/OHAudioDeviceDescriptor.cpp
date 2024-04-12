@@ -22,7 +22,7 @@ static OHOS::AudioStandard::OHAudioDeviceDescriptor *convertDeviceDescriptor(
 }
 
 OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
-                                                             OH_AudioDevice_DeviceRole *deviceRole)
+                                                             OH_AudioDevice_Role *deviceRole)
 {
     OHOS::AudioStandard::OHAudioDeviceDescriptor* deviceDescriptor = convertDeviceDescriptor(audioDeviceDescriptor);
     CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr,
@@ -33,7 +33,7 @@ OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescr
 }
 
 OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceType(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
-                                                             OH_AudioDevice_DeviceType *deviceType)
+                                                             OH_AudioDevice_Type *deviceType)
 {
     OHOS::AudioStandard::OHAudioDeviceDescriptor* deviceDescriptor = convertDeviceDescriptor(audioDeviceDescriptor);
     CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr,
@@ -142,29 +142,32 @@ OHAudioDeviceDescriptor::~OHAudioDeviceDescriptor()
         audioDeviceDescriptor_ = nullptr;
     }
     if (audioSamplingRate_ != nullptr) {
+        free(audioSamplingRate_);
         audioSamplingRate_ = nullptr;
     }
     if (audioChannel_ != nullptr) {
+        free(audioChannel_);
         audioChannel_ = nullptr;
     }
     if (encodingType_ != nullptr) {
+        free(encodingType_);
         encodingType_ = nullptr;
     }
 }
 
-OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceRole(OH_AudioDevice_DeviceRole *deviceRole)
+OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceRole(OH_AudioDevice_Role *deviceRole)
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    *deviceRole = (OH_AudioDevice_DeviceRole)audioDeviceDescriptor_->deviceRole_;
+    *deviceRole = (OH_AudioDevice_Role)audioDeviceDescriptor_->deviceRole_;
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
-OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceType(OH_AudioDevice_DeviceType *deviceType)
+OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceType(OH_AudioDevice_Type *deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    *deviceType = (OH_AudioDevice_DeviceType)audioDeviceDescriptor_->deviceType_;
+    *deviceType = (OH_AudioDevice_Type)audioDeviceDescriptor_->deviceType_;
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 

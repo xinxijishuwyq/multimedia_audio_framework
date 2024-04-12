@@ -32,8 +32,8 @@ public:
     explicit OHAudioDeviceDescriptor(sptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     ~OHAudioDeviceDescriptor();
 
-    OH_AudioCommon_Result GetDeviceRole(OH_AudioDevice_DeviceRole *deviceRole);
-    OH_AudioCommon_Result GetDeviceType(OH_AudioDevice_DeviceType *deviceType);
+    OH_AudioCommon_Result GetDeviceRole(OH_AudioDevice_Role *deviceRole);
+    OH_AudioCommon_Result GetDeviceType(OH_AudioDevice_Type *deviceType);
     OH_AudioCommon_Result GetDeviceId(uint32_t *id);
     OH_AudioCommon_Result GetDeviceName(char **name);
     OH_AudioCommon_Result GetDeviceAddress(char **address);

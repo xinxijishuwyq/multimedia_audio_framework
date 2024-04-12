@@ -26,9 +26,11 @@
  */
 
 /**
- * @file native_audiocommon_base.h
+ * @file native_audio_common.h
  *
  * @brief Declare the audio common base data structure.
+ *
+ * Defines the types of public return values for audio interfaces.
  *
  * @library libohaudio.so
  * @syscap SystemCapability.Multimedia.Audio.Core
@@ -74,17 +76,17 @@ typedef enum {
     /**
      * @brief This means the operation is unsupported.
      */
-    AUDIOCOMMON_RESULT_UNSUPPORTED = 6800104,
+    AUDIOCOMMON_RESULT_ERROR_UNSUPPORTED = 6800104,
 
     /**
      * @brief This means the operation is timeout.
      */
-    AUDIOCOMMON_RESULT_TIMEOUT = 6800105,
+    AUDIOCOMMON_RESULT_ERROR_TIMEOUT = 6800105,
 
     /**
      * @brief This means reached stream limit.
      */
-    AUDIOCOMMON_RESULT_STREAM_LIMIT = 6800201,
+    AUDIOCOMMON_RESULT_ERROR_STREAM_LIMIT = 6800201,
 
     /**
      * @brief An system error has occurred.
@@ -95,4 +97,5 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
+/** @} */
 #endif // NATIVE_AUDIO_COMMON_H
