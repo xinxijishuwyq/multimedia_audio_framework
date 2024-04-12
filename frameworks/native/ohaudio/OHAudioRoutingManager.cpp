@@ -42,8 +42,8 @@ OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(OH_AudioRoutingManager *
         deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_NONE_DEVICES_FLAG ||
         deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_OUTPUT_DEVICES_FLAG ||
         deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_INPUT_DEVICES_FLAG ||
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG)
-    , AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceFlag is invalid");
+        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceFlag is invalid");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptorArray is nullptr");
     DeviceFlag flag = static_cast<DeviceFlag>(deviceFlag);
@@ -64,8 +64,8 @@ OH_AudioCommon_Result OH_AudioRoutingManager_RegisterDeviceChangeCallback(
         deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_NONE_DEVICES_FLAG ||
         deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_OUTPUT_DEVICES_FLAG ||
         deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_INPUT_DEVICES_FLAG ||
-        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG)
-    , AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceFlag is invalid");
+        deviceFlag == AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceFlag is invalid");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
     DeviceFlag flag = static_cast<DeviceFlag>(deviceFlag);
     ohAudioRoutingManager->SetDeviceChangeCallback(flag, callback);
@@ -80,7 +80,8 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
-    DeviceFlag flag = static_cast<DeviceFlag>(AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG);;
+    DeviceFlag flag = OHOS::AudioStandard::ALL_DEVICES_FLAG;
+    flag = static_cast<DeviceFlag>(AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG);;
     ohAudioRoutingManager->UnsetDeviceChangeCallback(flag, callback);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -142,7 +143,10 @@ OH_AudioDeviceDescriptorArray* OHAudioRoutingManager::GetDevices(DeviceFlag devi
         nullptr, "failed, audioSystemManager is null");
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = audioSystemManager_->GetDevices(deviceFlag);
     uint32_t size = audioDeviceDescriptors.size();
-    CHECK_AND_RETURN_RET_LOG(size != 0 , nullptr, "audioDeviceDescriptors is null");
+    if (size <= 0) {
+        AUDIO_ERR_LOG("audioDeviceDescriptors is null");
+        return nullptr;
+    }
     OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
         (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
     
@@ -202,6 +206,10 @@ void OHAudioDeviceChangedCallback::OnDeviceChange(const DeviceChangeAction &devi
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the fuction is nullptr");
     OH_AudioDevice_ChangeType type = static_cast<OH_AudioDevice_ChangeType>(deviceChangeAction.type);
     uint32_t size = deviceChangeAction.deviceDescriptors.size();
+    if (size <= 0) {
+        AUDIO_ERR_LOG("audioDeviceDescriptors is null");
+        return;
+    }
     
     OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
         (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));

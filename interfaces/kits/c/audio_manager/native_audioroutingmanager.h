@@ -85,8 +85,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingMana
 OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(
     OH_AudioRoutingManager *audioRoutingManager,
     OH_AudioDevice_DeviceFlag deviceFlag,
-    OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray
-);
+    OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray);
 
 /**
  * Register the device change callback of the audio routing manager.

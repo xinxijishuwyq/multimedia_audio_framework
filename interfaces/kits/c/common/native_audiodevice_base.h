@@ -244,7 +244,7 @@ typedef struct OH_AudioDeviceDescriptorArray {
  * @param device role pointer variable that will be set the device role value.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  */
-OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescriptor*audioDeviceDescriptor,
+OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescriptor *audioDeviceDescriptor,
     OH_AudioDevice_DeviceRole *deviceRole);
 
 /**

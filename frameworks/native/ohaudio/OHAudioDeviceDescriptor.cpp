@@ -16,7 +16,7 @@
 #include "OHAudioDeviceDescriptor.h"
 
 static OHOS::AudioStandard::OHAudioDeviceDescriptor *convertDeviceDescriptor(
-        OH_AudioDeviceDescriptor* deviceDescriptor)
+    OH_AudioDeviceDescriptor* deviceDescriptor)
 {
     return (OHOS::AudioStandard::OHAudioDeviceDescriptor*) deviceDescriptor;
 }
@@ -217,8 +217,7 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceSampleRates(uint32_t **s
     DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->audioStreamInfo_;
 
     uint32_t samplingRateSize = (uint32_t)audioStreamInfo.samplingRate.size();
-    if (samplingRateSize == 0)
-    {
+    if (samplingRateSize == 0) {
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     if (audioSamplingRate_ == nullptr) {
@@ -239,8 +238,7 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceChannelCounts(uint32_t *
         "audioDeviceDescriptor_ is nullptr");
     DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->audioStreamInfo_;
     uint32_t channelsSize = (uint32_t)audioStreamInfo.channels.size();
-    if (channelsSize == 0)
-    {
+    if (channelsSize == 0) {
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     if (audioChannel_ == nullptr) {

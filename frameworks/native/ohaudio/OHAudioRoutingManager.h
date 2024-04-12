@@ -29,7 +29,8 @@ namespace AudioStandard {
 
 class OHAudioDeviceChangedCallback : public AudioManagerDeviceChangeCallback {
 public:
-    OHAudioDeviceChangedCallback(OH_AudioRoutingManager_OnDeviceChangedCallback callback) : callback_(callback)
+    explicit OHAudioDeviceChangedCallback(OH_AudioRoutingManager_OnDeviceChangedCallback callback)
+        : callback_(callback)
     {
     }
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
@@ -39,7 +40,8 @@ public:
         return callback_;
     }
 
-    ~OHAudioDeviceChangedCallback() {
+    ~OHAudioDeviceChangedCallback()
+    {
         AUDIO_INFO_LOG("~OHAudioDeviceChangedCallback called.");
         if (callback_ != nullptr) {
             callback_ = nullptr;
@@ -54,7 +56,8 @@ class OHAudioRoutingManager {
 public:
     ~OHAudioRoutingManager();
 
-    static OHAudioRoutingManager* GetInstance() {
+    static OHAudioRoutingManager* GetInstance()
+    {
         if (!ohAudioRoutingManager_) {
             ohAudioRoutingManager_ = new OHAudioRoutingManager();
         }

@@ -109,7 +109,5 @@ typedef enum {
 
 #ifdef __cplusplus
 }
-
 #endif
-
 #endif // NATIVE_AUDIOCOMMON_BASE_H

@@ -45,17 +45,17 @@ ohos_shared_library("ohaudio") {
     "../../../interfaces/kits/c/audio_renderer/",
     "../../../interfaces/kits/c/audio_capturer/",
     "../../../interfaces/kits/c/audio_manager/",
-    "../../native/audiopolicy/include/"
+    "../../native/audiopolicy/include/",
   ]
 
   configs = [ ":audio_config" ]
 
   sources = [
     "./OHAudioCapturer.cpp",
+    "./OHAudioDeviceDescriptor.cpp",
     "./OHAudioRenderer.cpp",
-    "./OHAudioStreamBuilder.cpp",
     "./OHAudioRoutingManager.cpp",
-    "./OHAudioDeviceDescriptor.cpp"
+    "./OHAudioStreamBuilder.cpp",
   ]
 
   deps = [
