@@ -80,8 +80,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
-    DeviceFlag flag = OHOS::AudioStandard::ALL_DEVICES_FLAG;
-    flag = static_cast<DeviceFlag>(AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG);;
+    DeviceFlag flag = static_cast<DeviceFlag>(AUDIO_DEVICE_DEVICE_FLAG_ALL_DEVICES_FLAG);
     ohAudioRoutingManager->UnsetDeviceChangeCallback(flag, callback);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
