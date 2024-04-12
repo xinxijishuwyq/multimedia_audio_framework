@@ -94,15 +94,16 @@ public:
     static AudioEffectChainManager *GetInstance();
     void InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
         std::unordered_map<std::string, std::string> &map,
-        std::vector<std::unique_ptr<AudioEffectLibEntry>> &effectLibraryList);
-    bool CheckAndAddSessionID(std::string sessionID);
-    int32_t CreateAudioEffectChainDynamic(std::string sceneType);
-    int32_t SetAudioEffectChainDynamic(std::string sceneType, std::string effectMode);
-    bool CheckAndRemoveSessionID(std::string sessionID);
-    int32_t ReleaseAudioEffectChainDynamic(std::string sceneType);
-    bool ExistAudioEffectChain(std::string sceneType, std::string effectMode, std::string spatializationEnabled);
-    int32_t ApplyAudioEffectChain(std::string sceneType, std::unique_ptr<effectBufferAttr> &bufferAttr);
-    int32_t SetOutputDeviceSink(int32_t device, std::string &sinkName);
+        std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
+    bool CheckAndAddSessionID(const std::string &sessionID);
+    int32_t CreateAudioEffectChainDynamic(const std::string &sceneType);
+    int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
+    bool CheckAndRemoveSessionID(const std::string &sessionID);
+    int32_t ReleaseAudioEffectChainDynamic(const std::string &sceneType);
+    bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
+        const std::string &spatializationEnabled);
+    int32_t ApplyAudioEffectChain(const std::string &sceneType, const std::unique_ptr<effectBufferAttr> &bufferAttr);
+    int32_t SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     std::string GetDeviceTypeName();
     std::string GetDeviceSinkName();
     int32_t GetFrameLen();
@@ -110,17 +111,17 @@ public:
     bool GetOffloadEnabled();
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
-    int32_t InitAudioEffectChainDynamic(std::string sceneType);
+    int32_t InitAudioEffectChainDynamic(const std::string &sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
-    int32_t SetHdiParam(std::string sceneType, std::string effectMode, bool enabled);
-    int32_t SessionInfoMapAdd(std::string sessionID, sessionEffectInfo info);
-    int32_t SessionInfoMapDelete(std::string sceneType, std::string sessionID);
+    int32_t SetHdiParam(const std::string &sceneType, const std::string &effectMode, bool enabled);
+    int32_t SessionInfoMapAdd(const std::string &sessionID, const sessionEffectInfo &info);
+    int32_t SessionInfoMapDelete(const std::string &sceneType, const std::string &sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
     int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
-    void RegisterEffectChainCountBackupMap(std::string sceneType, std::string operation);
+    void RegisterEffectChainCountBackupMap(const std::string &sceneType, const std::string &operation);
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume);
-    uint32_t GetLatency(std::string sessionId);
+    uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
 
 private:
@@ -137,11 +138,11 @@ private:
     int32_t EffectApRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
 #endif
-    std::map<std::string, AudioEffectLibEntry *> EffectToLibraryEntryMap_;
+    std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> EffectToLibraryEntryMap_;
     std::map<std::string, std::string> EffectToLibraryNameMap_;
     std::map<std::string, std::vector<std::string>> EffectChainToEffectsMap_;
     std::map<std::string, std::string> SceneTypeAndModeToEffectChainNameMap_;
-    std::map<std::string, AudioEffectChain*> SceneTypeToEffectChainMap_;
+    std::map<std::string, std::shared_ptr<AudioEffectChain>> SceneTypeToEffectChainMap_;
     std::map<std::string, int32_t> SceneTypeToEffectChainCountMap_;
     std::set<std::string> SessionIDSet_;
     std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
