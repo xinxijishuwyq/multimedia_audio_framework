@@ -767,6 +767,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.streamType = eStreamType_;
 
+    config.deviceType = AudioPolicyManager::GetInstance().GetActiveOutputDevice();
+
     config.privacyType = privacyType_;
 
     clientConfig_ = config;

@@ -115,9 +115,9 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
 
-    AUDIO_INFO_LOG("current stream marked as non-high resolution");
-    PolicyHandler::GetInstance().SetHighResolutionExist(false);
-
+    if (isHighResolutionExist_ == true && highResolutionIndex_ == streamIndex) {
+        isHighResolutionExist_ = false;
+    }
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
     if (rendererStreamMap_.size() == 0) {
         AUDIO_INFO_LOG("Release the last stream");
@@ -352,18 +352,34 @@ bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
     return false;
 }
 
-void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig)
+bool PaAdapterManager::CheckHighResolution(const AudioProcessConfig &processConfig)
 {
-    bool isHighResolution = PolicyHandler::GetInstance().GetHighResolutionExist();
-    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    AUDIO_INFO_LOG("deviceType : %{public}d, streamType : %{public}d, samplingRate : %{public}d, format : %{public}d",
-        deviceType, processConfig.streamType, processConfig.streamInfo.samplingRate, processConfig.streamInfo.format);
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && processConfig.streamType == STREAM_MUSIC &&
-        processConfig.streamInfo.samplingRate >= AudioSamplingRate::SAMPLE_RATE_48000 &&
-        processConfig.streamInfo.format >= AudioSampleFormat::SAMPLE_S24LE && isHighResolution == false) {
-        PolicyHandler::GetInstance().SetHighResolutionExist(true);
+    DeviceType deviceType = processConfig.deviceType;
+    AudioStreamType streamType = processConfig.streamType;
+    AudioSamplingRate sampleRate = processConfig.streamInfo.samplingRate;
+    AudioSampleFormat sampleFormat = processConfig.streamInfo.format;
+
+    AUDIO_DEBUG_LOG("deviceType:%{public}d, streamType:%{public}d, sampleRate:%{public}d, sampleFormat:%{public}d",
+        deviceType, streamType, sampleRate, sampleFormat);
+
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && streamType == STREAM_MUSIC &&
+        sampleRate >= SAMPLE_RATE_48000 && sampleFormat >= SAMPLE_S24LE) {
+        return true;
+    }
+    return false;
+}
+
+void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId)
+{
+    bool spatializationEnabled = processConfig.rendererInfo.spatializationEnabled;
+    AUDIO_DEBUG_LOG("spatializationEnabled : %{public}d, isHighResolutionExist_ : %{public}d",
+        spatializationEnabled, isHighResolutionExist_);
+
+    if (spatializationEnabled == false && isHighResolutionExist_ == false && CheckHighResolution(processConfig)) {
         AUDIO_INFO_LOG("current stream marked as high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "1");
+        isHighResolutionExist_ = true;
+        highResolutionIndex_ = sessionId;
     } else {
         AUDIO_INFO_LOG("current stream marked as non-high resolution");
         pa_proplist_sets(propList, "stream.highResolution", "0");
@@ -399,7 +415,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             std::to_string(processConfig.rendererInfo.spatializationEnabled).c_str());
         pa_proplist_sets(propList, "headtracking.enabled",
             std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
-        SetHighResolution(propList, processConfig);
+        SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
         pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
