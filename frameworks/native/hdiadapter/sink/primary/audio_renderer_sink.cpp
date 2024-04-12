@@ -135,6 +135,10 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
+    bool signalDetected_ = false;
+    size_t detectedTime_ = 0;
+    bool latencyMeasEnabled_ = false;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
 #endif
@@ -150,6 +154,9 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
+    void InitLatencyMeasurement();
+    void DeinitLatencyMeasurement();
+    void CheckLatencySignal(uint8_t *data, size_t len);
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
     int32_t InitAdapter();
@@ -557,6 +564,7 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     } else {
         Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
     }
+    CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED,
@@ -616,6 +624,7 @@ int32_t AudioRendererSinkInner::Start(void)
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
 
     int32_t ret;
+    InitLatencyMeasurement();
     if (!started_) {
         ret = audioRender_->Start(audioRender_);
         if (!ret) {
@@ -892,6 +901,8 @@ int32_t AudioRendererSinkInner::Stop(void)
     Trace trace("AudioRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop.");
 
+    DeinitLatencyMeasurement();
+
     int32_t ret;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -1120,6 +1131,59 @@ void AudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
 {
     if (currentActiveDevice_ == device) {
         currentActiveDevice_ = DEVICE_TYPE_NONE;
+    }
+}
+
+void AudioRendererSinkInner::InitLatencyMeasurement()
+{
+    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
+        return;
+    }
+    AUDIO_INFO_LOG("LatencyMeas PrimaryRendererSinkInit");
+    signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    signalDetectAgent_->sampleFormat_ = attr_.format;
+    signalDetectAgent_->formatByteSize_ = GetFormatByteSize(attr_.format);
+    latencyMeasEnabled_ = true;
+    signalDetected_ = false;
+}
+
+void AudioRendererSinkInner::DeinitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+}
+
+void AudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    int32_t byteSize = GetFormatByteSize(attr_.format);
+    size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
+        (byteSize * sizeof(uint8_t) * attr_.channel);
+    detectedTime_ += newlyCheckedTime;
+    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
+        !signalDetectAgent_->dspTimestampGot_) {
+            char value[GET_EXTRA_PARAM_LEN];
+            AudioParamKey key = NONE;
+            AudioExtParamKey hdiKey = AudioExtParamKey(key);
+            std::string condition = "debug_audio_latency_measurement";
+            int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey,
+                condition.c_str(), value, GET_EXTRA_PARAM_LEN);
+            AUDIO_DEBUG_LOG("GetExtraParameter ret:%{public}d", ret);
+            LatencyMonitor::GetInstance().UpdateDspTime(value);
+            LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
+                signalDetectAgent_->lastPeakBufferTime_);
+            LatencyMonitor::GetInstance().ShowTimestamp(true);
+            signalDetectAgent_->dspTimestampGot_ = true;
+            signalDetectAgent_->signalDetected_ = false;
+    }
+    signalDetected_ = signalDetectAgent_->CheckAudioData(data, len);
+    if (signalDetected_) {
+        AUDIO_INFO_LOG("LatencyMeas primarySink signal detected");
+        detectedTime_ = 0;
     }
 }
 } // namespace AudioStandard

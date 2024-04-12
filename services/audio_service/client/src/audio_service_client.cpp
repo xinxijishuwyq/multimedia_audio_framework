@@ -22,6 +22,8 @@
 
 #include "safe_map.h"
 #include "iservice_registry.h"
+#include "audio_manager_base.h"
+#include "audio_server_death_recipient.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "hisysevent.h"
@@ -3668,6 +3670,60 @@ float AudioServiceClient::GetStreamSpeed()
 uint32_t AudioServiceClient::GetAppTokenId() const
 {
     return appTokenId_;
+}
+
+std::mutex g_audioStreamServerProxyMutex;
+sptr<IStandardAudioService> gAudioStreamServerProxy_ = nullptr;
+const sptr<IStandardAudioService> AudioServiceClient::GetAudioServerProxy()
+{
+    std::lock_guard<std::mutex> lock(g_audioStreamServerProxyMutex);
+    if (gAudioStreamServerProxy_ == nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (samgr == nullptr) {
+            AUDIO_ERR_LOG("get sa manager failed");
+            return nullptr;
+        }
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("get audio service remote object failed");
+            return nullptr;
+        }
+        gAudioStreamServerProxy_ = iface_cast<IStandardAudioService>(object);
+        if (gAudioStreamServerProxy_ == nullptr) {
+            AUDIO_ERR_LOG("get audio service proxy failed");
+            return nullptr;
+        }
+
+        // register death recipent to restore proxy
+        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        if (asDeathRecipient != nullptr) {
+            asDeathRecipient->SetNotifyCb(std::bind(&AudioServiceClient::AudioServerDied,
+                std::placeholders::_1));
+            bool result = object->AddDeathRecipient(asDeathRecipient);
+            if (!result) {
+                AUDIO_ERR_LOG("failed to add deathRecipient");
+            }
+        }
+    }
+    sptr<IStandardAudioService> gasp = gAudioStreamServerProxy_;
+    return gasp;
+}
+
+void AudioServiceClient::AudioServerDied(pid_t pid)
+{
+    AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
+    std::lock_guard<std::mutex> lock(g_audioStreamServerProxyMutex);
+    gAudioStreamServerProxy_ = nullptr;
+}
+
+void AudioServiceClient::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
+{
+    sptr<IStandardAudioService> gasp = AudioServiceClient::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("failed to get AudioServerProxy");
+        return;
+    }
+    gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
 AudioSpatializationStateChangeCallbackImpl::AudioSpatializationStateChangeCallbackImpl()

@@ -124,6 +124,8 @@ public:
     uint32_t GetEffectLatency(const std::string &sessionId) override;
 
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

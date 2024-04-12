@@ -1191,5 +1191,15 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
 
     return 0;
 }
+
+void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
+{
+    if (isRenderer) {
+        LatencyMonitor::GetInstance().UpdateClientTime(true, timestamp);
+    } else {
+        LatencyMonitor::GetInstance().UpdateClientTime(false, timestamp);
+        LatencyMonitor::GetInstance().ShowTimestamp(false);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

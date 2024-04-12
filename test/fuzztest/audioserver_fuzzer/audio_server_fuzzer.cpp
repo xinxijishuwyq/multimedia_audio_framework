@@ -265,6 +265,26 @@ void AudioServerGetEffectLatencyTest(const uint8_t *rawData, size_t size)
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_LATENCY),
         data, reply, option);
 }
+
+void AudioServerUpdateLatencyTimestampTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    std::string timestamp(reinterpret_cast<const char*>(rawData), size - 1);
+    bool isRenderer = *reinterpret_cast<const bool*>(rawData);
+    data.WriteString(timestamp);
+    data.WriteBool(isRenderer);
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP),
+        data, reply, option);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 

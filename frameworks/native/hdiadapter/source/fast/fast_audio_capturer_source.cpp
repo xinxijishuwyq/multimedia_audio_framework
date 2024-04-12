@@ -57,6 +57,7 @@ public:
 
     int32_t SetInputRoute(DeviceType inputDevice) override;
 
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
@@ -552,6 +553,22 @@ int32_t FastAudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, Audi
 int32_t FastAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
 {
     return ERR_DEVICE_NOT_SUPPORTED;
+}
+
+std::string FastAudioCapturerSourceInner::GetAudioParameter(const AudioParamKey key,
+                                                            const std::string &condition)
+{
+    AUDIO_INFO_LOG("GetAudioParameter, key: %{public}d, condition: %{public}s",
+        key, condition.c_str());
+    AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    char value[PARAM_VALUE_LENTH];
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "",
+        "GetAudioParameter failed, audioAdapter_ is null");
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
+        value, PARAM_VALUE_LENTH);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "",
+        "FRSource GetAudioParameter failed, error code:%{public}d", ret);
+    return value;
 }
 
 uint64_t FastAudioCapturerSourceInner::GetTransactionId()

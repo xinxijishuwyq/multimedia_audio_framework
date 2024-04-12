@@ -39,6 +39,7 @@
 
 #include "audio_capturer.h"
 #include "audio_policy_manager.h"
+#include "audio_manager_base.h"
 #include "audio_renderer.h"
 #include "audio_system_manager.h"
 #include "i_audio_stream.h"
@@ -598,6 +599,12 @@ public:
     float GetStreamSpeed();
 
     uint32_t GetAppTokenId() const;
+
+    static const sptr<IStandardAudioService> GetAudioServerProxy();
+
+    static void AudioServerDied(pid_t pid);
+
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;

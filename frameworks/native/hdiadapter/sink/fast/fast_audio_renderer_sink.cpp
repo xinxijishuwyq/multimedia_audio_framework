@@ -704,8 +704,17 @@ void FastAudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, cons
 
 std::string FastAudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
-    AUDIO_ERR_LOG("FastAudioRendererSink GetAudioParameter not supported.");
-    return "";
+    AUDIO_INFO_LOG("GetAudioParameter, key: %{public}d, condition: %{public}s",
+        key, condition.c_str());
+    AudioExtParamKey hdiKey = AudioExtParamKey(key);
+    char value[PARAM_VALUE_LENTH];
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "",
+        "GetAudioParameter failed, audioAdapter_ is null");
+    int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(),
+        value, PARAM_VALUE_LENTH);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "",
+        "FRSink GetAudioParameter failed, error code:%{public}d", ret);
+    return value;
 }
 
 void FastAudioRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* callback)
