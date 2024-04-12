@@ -16,13 +16,13 @@
 #ifndef OH_AUDIO_DEVICE_DESCRIPTOR_H
 #define OH_AUDIO_DEVICE_DESCRIPTOR_H
 
+#include "audio_info.h"
+#include "audio_log.h"
 #include "native_audioroutingmanager.h"
 #include "native_audiocommon_base.h"
 #include "native_audiodevice_base.h"
 #include "audio_system_manager.h"
 #include "audio_routing_manager.h"
-#include "audio_info.h"
-#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,10 +45,10 @@ public:
 
 private:
     sptr<AudioDeviceDescriptor> audioDeviceDescriptor_;
-    uint32_t* audioSamplingRate_ = nullptr;
-    uint32_t* audioChannel_ = nullptr;
-    uint32_t* audioChannelMask_ = nullptr;
-    OH_AudioStream_EncodingType * encodingType_ = nullptr;
+    uint32_t *audioSamplingRate_ = nullptr;
+    uint32_t *audioChannel_ = nullptr;
+    uint32_t *audioChannelMask_ = nullptr;
+    OH_AudioStream_EncodingType *encodingType_ = nullptr;
 };
 
 } // namespace AudioStandard

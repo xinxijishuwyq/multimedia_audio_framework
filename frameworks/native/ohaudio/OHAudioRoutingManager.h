@@ -16,20 +16,20 @@
 #ifndef OH_AUDIO_ROUTING_MANAGER_H
 #define OH_AUDIO_ROUTING_MANAGER_H
 
+#include "audio_info.h"
+#include "audio_log.h"
 #include "native_audioroutingmanager.h"
 #include "native_audiocommon_base.h"
 #include "native_audiodevice_base.h"
 #include "audio_system_manager.h"
 #include "OHAudioDeviceDescriptor.h"
-#include "audio_info.h"
-#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class OHAudioOnDeviceChangedCallback : public AudioManagerDeviceChangeCallback {
+class OHAudioDeviceChangedCallback : public AudioManagerDeviceChangeCallback {
 public:
-    OHAudioOnDeviceChangedCallback(OH_AudioRoutingManager_OnDeviceChangedCallback callback) : callback_(callback)
+    OHAudioDeviceChangedCallback(OH_AudioRoutingManager_OnDeviceChangedCallback callback) : callback_(callback)
     {
     }
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
@@ -39,8 +39,8 @@ public:
         return callback_;
     }
 
-    ~OHAudioOnDeviceChangedCallback() {
-        AUDIO_INFO_LOG("~OHAudioOnDeviceChangedCallback called.\n");
+    ~OHAudioDeviceChangedCallback() {
+        AUDIO_INFO_LOG("~OHAudioDeviceChangedCallback called.");
         if (callback_ != nullptr) {
             callback_ = nullptr;
         }
@@ -52,7 +52,6 @@ private:
 
 class OHAudioRoutingManager {
 public:
-    OHAudioRoutingManager();
     ~OHAudioRoutingManager();
 
     static OHAudioRoutingManager* GetInstance() {
@@ -68,9 +67,10 @@ public:
         OH_AudioRoutingManager_OnDeviceChangedCallback ohOnDeviceChangedcallback);
 
 private:
+    OHAudioRoutingManager();
     static OHAudioRoutingManager *ohAudioRoutingManager_;
-    AudioSystemManager* audioSystemManager_ = AudioSystemManager::GetInstance();
-    std::vector<std::shared_ptr<OHAudioOnDeviceChangedCallback>> ohAudioOnDeviceChangedCallbackArray_;
+    AudioSystemManager *audioSystemManager_ = AudioSystemManager::GetInstance();
+    std::vector<std::shared_ptr<OHAudioDeviceChangedCallback>> ohAudioOnDeviceChangedCallbackArray_;
 };
 OHAudioRoutingManager* OHAudioRoutingManager::ohAudioRoutingManager_ = nullptr;
 

@@ -87,27 +87,27 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
 
 OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
     OH_AudioRoutingManager *audioRoutingManager,
-    OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
 {
     OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(*audioDeviceDescriptorArray != nullptr,
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptorArray is nullptr");
-    if (*audioDeviceDescriptorArray) {
-        for (int32_t index = 0; index < (*audioDeviceDescriptorArray)->size; index++) {
-            OHAudioDeviceDescriptor* ohAudioDeviceDescriptor =
-                (OHAudioDeviceDescriptor*)(*audioDeviceDescriptorArray)->descriptors[index];
-            delete ohAudioDeviceDescriptor;
-            (*audioDeviceDescriptorArray)->descriptors[index] = nullptr;
-        }
-        free((*audioDeviceDescriptorArray)->descriptors);
-        (*audioDeviceDescriptorArray)->descriptors = nullptr;
-        free((*audioDeviceDescriptorArray));
-        *audioDeviceDescriptorArray = nullptr;
-        return AUDIOCOMMON_RESULT_SUCCESS;
+    if (audioDeviceDescriptorArray == nullptr) {
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
-    return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    for (int32_t index = 0; index < audioDeviceDescriptorArray->size; index++) {
+        OHAudioDeviceDescriptor* ohAudioDeviceDescriptor =
+            (OHAudioDeviceDescriptor*)audioDeviceDescriptorArray->descriptors[index];
+        delete ohAudioDeviceDescriptor;
+        audioDeviceDescriptorArray->descriptors[index] = nullptr;
+    }
+    free(audioDeviceDescriptorArray->descriptors);
+    audioDeviceDescriptorArray->descriptors = nullptr;
+    free(audioDeviceDescriptorArray);
+    audioDeviceDescriptorArray = nullptr;
+    return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
 namespace OHOS {
@@ -170,8 +170,8 @@ OH_AudioCommon_Result OHAudioRoutingManager::SetDeviceChangeCallback(const Devic
 {
     CHECK_AND_RETURN_RET_LOG(audioSystemManager_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSystemManager is null");
-    std::shared_ptr<OHAudioOnDeviceChangedCallback> ohAudioOnDeviceChangedCallback =
-        std::make_shared<OHAudioOnDeviceChangedCallback>(callback);
+    std::shared_ptr<OHAudioDeviceChangedCallback> ohAudioOnDeviceChangedCallback =
+        std::make_shared<OHAudioDeviceChangedCallback>(callback);
     if (ohAudioOnDeviceChangedCallback) {
         audioSystemManager_->SetDeviceChangeCallback(deviceFlag, ohAudioOnDeviceChangedCallback);
         ohAudioOnDeviceChangedCallbackArray_.push_back(ohAudioOnDeviceChangedCallback);
@@ -186,7 +186,7 @@ OH_AudioCommon_Result OHAudioRoutingManager::UnsetDeviceChangeCallback(DeviceFla
     CHECK_AND_RETURN_RET_LOG(audioSystemManager_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSystemManager is null");
     auto iter = std::find_if(ohAudioOnDeviceChangedCallbackArray_.begin(), ohAudioOnDeviceChangedCallbackArray_.end(),
-        [&](const std::shared_ptr<OHAudioOnDeviceChangedCallback> &item) {
+        [&](const std::shared_ptr<OHAudioDeviceChangedCallback> &item) {
         return item->GetCallback() == ohOnDeviceChangedcallback;
     });
     if (iter == ohAudioOnDeviceChangedCallbackArray_.end()) {
@@ -197,7 +197,7 @@ OH_AudioCommon_Result OHAudioRoutingManager::UnsetDeviceChangeCallback(DeviceFla
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
-void OHAudioOnDeviceChangedCallback::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
+void OHAudioDeviceChangedCallback::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the fuction is nullptr");
     OH_AudioDevice_ChangeType type = static_cast<OH_AudioDevice_ChangeType>(deviceChangeAction.type);
