@@ -93,3 +93,87 @@ ohos_unittest("audio_fast_renderer_unit_test") {
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }
+
+ohos_unittest("renderer_capture_interrupt_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../include",
+    "../../../../audiocapturer/include",
+    "../../../../audiorenderer/include",
+    "../../../../audiostream/include",
+    "../../../../common/include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../../../../services/audio_policy/client/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_build_path/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  sources = [ "src/renderer_capture_interrupt_unit_test.cpp" ]
+
+  deps = [
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../audiocapturer:audio_capturer",
+    "../../../../audiorenderer:audio_renderer",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+
+  resource_config_file =
+      "../../../../../../test/resource/audio_renderer/ohos_test.xml"
+}
+
+ohos_unittest("capture_renderer_interrupt_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../include",
+    "../../../../audiocapturer/include",
+    "../../../../audiorenderer/include",
+    "../../../../audiostream/include",
+    "../../../../common/include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../../../../services/audio_policy/client/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+    "$pulseaudio_dir/include",
+    "$pulseaudio_build_path/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  sources = [ "src/capture_renderer_interrupt_unit_test.cpp" ]
+
+  deps = [
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../audiocapturer:audio_capturer",
+    "../../../../audiorenderer:audio_renderer",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+
+  resource_config_file =
+      "../../../../../../test/resource/audio_renderer/ohos_test.xml"
+}
