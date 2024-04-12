@@ -1397,7 +1397,20 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 AUDIO_WARNING_LOG("set hdi destroy failed");
             }
             btOffloadEnabled_ = false;
-            RecoverAllChains();
+            if (!spkOffloadEnabled_) {
+                RecoverAllChains();
+            }
+
+            // effectHdiInput[0] = HDI_INIT;
+            // ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
+            // if (ret != 0) {
+            //     AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
+            //     spkOffloadEnabled_ = false;
+            // } else {
+            //     AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
+            //     spkOffloadEnabled_ = true;
+            // }
+
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
