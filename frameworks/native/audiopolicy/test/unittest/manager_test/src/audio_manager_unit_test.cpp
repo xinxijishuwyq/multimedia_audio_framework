@@ -20,7 +20,6 @@
 #include "audio_renderer.h"
 #include "audio_capturer.h"
 #include "audio_stream_manager.h"
-#include "audio_spatialization_manager.h"
 
 #include <chrono>
 #include <thread>
