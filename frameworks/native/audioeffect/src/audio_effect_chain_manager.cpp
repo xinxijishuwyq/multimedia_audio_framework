@@ -37,11 +37,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static int32_t CheckValidEffectLibEntry(AudioEffectLibEntry *libEntry, const std::string &effect,
+static int32_t CheckValidEffectLibEntry(const std::shared_ptr<AudioEffectLibEntry> &libEntry, const std::string &effect,
     const std::string &libName)
 {
-    CHECK_AND_RETURN_RET_LOG(libEntry, ERROR, "Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(),
-        libName.c_str());
+    CHECK_AND_RETURN_RET_LOG(libEntry != nullptr, ERROR, "Effect [%{public}s] in lib [%{public}s] is nullptr",
+        effect.c_str(), libName.c_str());
 
     CHECK_AND_RETURN_RET_LOG(libEntry->audioEffectLibHandle, ERROR,
         "AudioEffectLibHandle of Effect [%{public}s] in lib [%{public}s] is nullptr", effect.c_str(), libName.c_str());
@@ -114,7 +114,7 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 }
 
 static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink, const bool isInitialized,
-    int32_t device, std::string &sinkName)
+    int32_t device, const std::string &sinkName)
 {
     if (!isInitialized) {
         deviceType = (DeviceType)device;
@@ -137,7 +137,7 @@ static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink,
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string &sinkName)
+int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (UpdateDeviceInfo(deviceType_, deviceSink_, isInitialized_, device, sinkName) != SUCCESS) {
@@ -165,7 +165,6 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
         AudioEffectConfig ioBufferConfig;
         if (audioEffectChain != nullptr) {
             audioEffectChain->StoreOldEffectChainInfo(sceneMode, ioBufferConfig);
-            delete audioEffectChain;
         } else {
             sceneMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
         }
@@ -300,15 +299,11 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
-    AudioEffectChain *audioEffectChain;
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         if (!SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) ||
             SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] < 1) {
-            audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-            if (audioEffectChain != nullptr) {
-                delete audioEffectChain;
-            }
             SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
             SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
             return ERROR;
@@ -317,9 +312,9 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
         return SUCCESS;
     } else {
 #ifdef SENSOR_ENABLE
-        audioEffectChain = new AudioEffectChain(sceneType, headTracker_);
+        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
 #else
-        audioEffectChain = new AudioEffectChain(sceneType);
+        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
 #endif
 
         SceneTypeToEffectChainMap_.insert(std::make_pair(sceneTypeAndDeviceKey, audioEffectChain));
@@ -345,7 +340,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
     CHECK_AND_RETURN_RET_LOG(SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey), ERROR,
         "SceneType [%{public}s] does not exist, failed to set", sceneType.c_str());
 
-    AudioEffectChain *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
 
     std::string effectChain;
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
@@ -408,7 +403,6 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
-    AudioEffectChain *audioEffectChain;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
@@ -417,11 +411,6 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] > 1) {
         SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]--;
         return SUCCESS;
-    } else {
-        audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    }
-    if (audioEffectChain != nullptr) {
-        delete audioEffectChain;
     }
 
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
@@ -500,8 +489,8 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
 void AudioEffectChainManager::Dump()
 {
     AUDIO_INFO_LOG("Dump START");
-    for (auto item = SceneTypeToEffectChainMap_.begin(); item != SceneTypeToEffectChainMap_.end(); ++item) {
-        AudioEffectChain *audioEffectChain = item->second;
+    for (auto item : SceneTypeToEffectChainMap_) {
+        std::shared_ptr<AudioEffectChain> audioEffectChain = item.second;
         audioEffectChain->Dump();
     }
 }
@@ -680,7 +669,7 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
-    AudioEffectChain *audioEffectChain = nullptr;
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         return SUCCESS;

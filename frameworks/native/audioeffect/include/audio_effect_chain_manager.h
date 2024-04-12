@@ -61,7 +61,7 @@ struct sessionEffectInfo {
     uint64_t channelLayout;
     std::string spatializationEnabled;
     uint32_t volume;
-} sessionEffectInfo;
+};
 
 const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_STEREO,
