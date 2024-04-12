@@ -851,7 +851,6 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
     }
 
     SetSpkOffloadState();
-    RecoverAllChains();
     return SUCCESS;
 }
 
