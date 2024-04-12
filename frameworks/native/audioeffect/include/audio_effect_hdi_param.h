@@ -29,6 +29,7 @@ public:
     ~AudioEffectHdiParam();
     void InitHdi();
     int32_t UpdateHdiState(int8_t *effectHdiInput);
+    int32_t UpdateHdiState(int8_t *effectHdiInput, DeviceType deviceType);
 private:
     static const uint32_t GET_HDI_BUFFER_LEN = 10;
     void CreateHdiControl();
@@ -38,7 +39,7 @@ private:
     std::string libName_;
     std::string effectId_;
     IEffectModel *hdiModel_;
-    std::vector<IEffectControl *> libHdiControls_;
+    std::map<DeviceType, IEffectControl *> DeviceTypeToHdiControlMap_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

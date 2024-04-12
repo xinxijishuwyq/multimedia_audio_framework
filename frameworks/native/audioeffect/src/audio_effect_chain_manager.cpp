@@ -179,18 +179,6 @@ int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t vol
     return SUCCESS;
 }
 
-#ifdef WINDOW_MANAGER_ENABLE
-int32_t EffectChainManagerRotationUpdate(const uint32_t rotationState)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    if (audioEffectChainManager->EffectRotationUpdate(rotationState) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-#endif
-
 bool IsChannelLayoutHVSSupported(const uint64_t channelLayout)
 {
     return find(HVS_SUPPORTED_CHANNELLAYOUTS.begin(), HVS_SUPPORTED_CHANNELLAYOUTS.end(),
@@ -270,8 +258,9 @@ bool EffectChainManagerCheckA2dpOffload()
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     std::string effectChainManagerDeviceType = audioEffectChainManager->GetDeviceTypeName();
     std::string effectChainManagerDeviceSink = audioEffectChainManager->GetDeviceSinkName();
-    if ((effectChainManagerDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") &&
-        (effectChainManagerDeviceSink == "Speaker")) {
+    if ((effectChainManagerDeviceSink == "Speaker") &&
+        ((effectChainManagerDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") ||
+        (effectChainManagerDeviceType == "DEVICE_TYPE_SPEAKER"))) {
         return true;
     }
     return false;
@@ -567,7 +556,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         std::lock_guard<std::mutex> lock(reloadMutex);
         for (AudioEffectHandle handle: standByEffectHandles) {
 #ifdef SENSOR_ENABLE
-            if ((!procInfo.offloadEnabled) && procInfo.headTrackingEnabled) {
+            if ((!procInfo.btOffloadEnabled) && procInfo.headTrackingEnabled) {
             (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
             }
 #endif
@@ -735,6 +724,10 @@ AudioEffectChainManager::AudioEffectChainManager()
     headTracker_ = std::make_shared<HeadTracker>();
 #endif
 
+#ifdef WINDOW_MANAGER_ENABLE
+    audioRotationListener_ = new AudioRotationListener();
+#endif
+
     audioEffectHdiParam_ = std::make_shared<AudioEffectHdiParam>();
     memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
 }
@@ -744,6 +737,8 @@ AudioEffectChainManager::~AudioEffectChainManager()
     for (auto effChain = SceneTypeToEffectChainMap_.begin(); effChain != SceneTypeToEffectChainMap_.end(); ++effChain) {
         effChain->second->ReleaseEffectChain();
     }
+    delete audioRotationListener_;
+    audioRotationListener_ = nullptr;
 }
 
 AudioEffectChainManager *AudioEffectChainManager::GetInstance()
@@ -774,6 +769,32 @@ static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink,
 
     deviceType = (DeviceType)device;
     return SUCCESS;
+}
+
+void AudioEffectChainManager::SetSpkOffloadState() {
+    int32_t ret;
+    if (deviceType_ == DEVICE_TYPE_SPEAKER) {
+        if (!spkOffloadEnabled_) {
+            effectHdiInput[0] = HDI_INIT;
+            ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
+                spkOffloadEnabled_ = false;
+            } else {
+                AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
+                spkOffloadEnabled_ = true;
+            }
+        }
+    } else {
+        if (spkOffloadEnabled_) {
+            effectHdiInput[0] = HDI_DESTROY;
+            ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
+            }
+            spkOffloadEnabled_ = false;
+        }
+    }
 }
 
 int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string &sinkName)
@@ -828,6 +849,9 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
         audioEffectChain->UpdateMultichannelIoBufferConfig(ioBufferConfig.inputCfg.channels,
             ioBufferConfig.inputCfg.channelLayout);
     }
+
+    SetSpkOffloadState();
+    RecoverAllChains();
     return SUCCESS;
 }
 
@@ -859,7 +883,11 @@ int32_t AudioEffectChainManager::GetFrameLen()
 
 bool AudioEffectChainManager::GetOffloadEnabled()
 {
-    return offloadEnabled_;
+    if (deviceType_ == DEVICE_TYPE_SPEAKER) {
+        return spkOffloadEnabled_;
+    } else {
+        return btOffloadEnabled_;
+    }
 }
 
 // Boot initialize
@@ -908,17 +936,22 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     effectHdiInput[0] = HDI_BLUETOOTH_MODE;
     effectHdiInput[1] = 1;
     AUDIO_INFO_LOG("set hdi bluetooth mode: %{public}d", effectHdiInput[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
     }
-#ifdef WINDOW_MANAGER_ENABLE
-    std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
-    if (audioEffectRotation == nullptr) {
-        AUDIO_DEBUG_LOG("null audioEffectRotation");
+    effectHdiInput[0] = HDI_INIT;
+    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
+        spkOffloadEnabled_ = false;
     } else {
-        audioEffectRotation->Init();
+        AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
+        spkOffloadEnabled_ = true;
     }
+#ifdef WINDOW_MANAGER_ENABLE
+    AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
+    Rosen::DisplayManager::GetInstance().RegisterDisplayListener(audioRotationListener_);
 #endif
     isInitialized_ = true;
 }
@@ -1088,14 +1121,16 @@ bool AudioEffectChainManager::ExistAudioEffectChain(std::string sceneType, std::
         return false;
     }
 #endif
-    if (offloadEnabled_) {
+    if ((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) {
         return false;
     }
 
-    if ((!spatializationEnabled_ || spatializationEnabled == "0") &&
-        (GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_ || (spatializationEnabled == "0"))) {
         return false;
     }
+
+    effectMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
+
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     if (!SceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
         return false;
@@ -1128,7 +1163,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(std::string sceneType, Bu
 #endif
 
     auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    AudioEffectProcInfo procInfo = {headTrackingEnabled_, offloadEnabled_};
+    AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
 
     return SUCCESS;
@@ -1160,9 +1195,10 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
     if (audioEffectVolume->GetDspVolume() != volumeMax) {
         audioEffectVolume->SetDspVolume(volumeMax);
         effectHdiInput[0] = HDI_VOLUME;
-        effectHdiInput[1] = volumeMax;
-        AUDIO_INFO_LOG("set hdi volume: %{public}d", effectHdiInput[1]);
-        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+        int32_t ret = memcpy_s(&effectHdiInput[1], SEND_HDI_COMMAND_LEN, &volumeMax, sizeof(uint32_t));
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy volume failed");
+        AUDIO_INFO_LOG("set hdi volume: %{public}u", *(reinterpret_cast<uint32_t *>(&effectHdiInput[1])));
+        ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi volume failed");
     }
     return SUCCESS;
@@ -1175,7 +1211,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
         uint32_t volumeMax = 0;
-        std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
+        std::set<std::string> sessions = it->second;
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
             sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
             volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
@@ -1215,7 +1251,8 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate(const std::string sessionIDS
     }
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     int32_t ret;
-    if (offloadEnabled_) {
+    if (((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) ||
+        ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_))) {
         ret = EffectDspVolumeUpdate(audioEffectVolume);
     } else {
         ret = EffectApVolumeUpdate(audioEffectVolume);
@@ -1283,7 +1320,8 @@ int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationSta
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
     int32_t ret;
-    if (offloadEnabled_) {
+    if (((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) ||
+        ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_))) {
         ret = EffectDspRotationUpdate(audioEffectRotation, rotationState);
     } else {
         ret = EffectApRotationUpdate(audioEffectRotation, rotationState);
@@ -1342,23 +1380,23 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
         memset_s(static_cast<void *>(effectHdiInput), sizeof(effectHdiInput), 0, sizeof(effectHdiInput));
         if (spatializationEnabled_) {
             effectHdiInput[0] = HDI_INIT;
-            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
             if (ret != 0) {
                 AUDIO_WARNING_LOG("set hdi init failed, backup spatialization entered");
-                offloadEnabled_ = false;
+                btOffloadEnabled_ = false;
             } else {
                 AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
-                offloadEnabled_ = true;
+                btOffloadEnabled_ = true;
                 DeleteAllChains();
             }
         } else {
             effectHdiInput[0] = HDI_DESTROY;
             AUDIO_INFO_LOG("set hdi destroy.");
-            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
             if (ret != 0) {
                 AUDIO_WARNING_LOG("set hdi destroy failed");
             }
-            offloadEnabled_ = false;
+            btOffloadEnabled_ = false;
             RecoverAllChains();
         }
     }
@@ -1474,7 +1512,7 @@ int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string 
     effectHdiInput[0] = HDI_BYPASS;
     effectHdiInput[1] = enabled == true ? 0 : 1;
     AUDIO_INFO_LOG("set hdi bypass: %{public}d", effectHdiInput[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi bypass failed");
         return ret;
@@ -1492,7 +1530,7 @@ int32_t AudioEffectChainManager::SetHdiParam(std::string sceneType, std::string 
     effectHdiInput[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
     AUDIO_INFO_LOG("set hdi room mode sceneType: %{public}d, effectMode: %{public}d",
         effectHdiInput[1], effectHdiInput[HDI_ROOM_MODE_INDEX_TWO]);
-    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
         return ret;
@@ -1505,14 +1543,14 @@ void AudioEffectChainManager::UpdateSensorState()
     effectHdiInput[0] = HDI_HEAD_MODE;
     effectHdiInput[1] = headTrackingEnabled_ == true ? 1 : 0;
     AUDIO_INFO_LOG("set hdi head mode: %{public}d", effectHdiInput[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi head mode failed");
     }
 
     if (headTrackingEnabled_) {
 #ifdef SENSOR_ENABLE
-        if (offloadEnabled_) {
+        if (btOffloadEnabled_) {
             headTracker_->SensorInit();
             ret = headTracker_->SensorSetConfig(DSP_SPATIALIZER_ENGINE);
         } else {
@@ -1531,7 +1569,7 @@ void AudioEffectChainManager::UpdateSensorState()
         return;
     }
 
-    if (offloadEnabled_) {
+    if (btOffloadEnabled_) {
         return;
     }
 
@@ -1605,7 +1643,8 @@ void AudioEffectChainManager::RegisterEffectChainCountBackupMap(std::string scen
 
 uint32_t AudioEffectChainManager::GetLatency(std::string sessionId)
 {
-    if (offloadEnabled_) {
+    if (((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) ||
+        ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_))) {
         AUDIO_DEBUG_LOG("offload enabled, return 0");
         return 0;
     }
@@ -1680,5 +1719,34 @@ void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType
         }
     }
 }
+
+#ifdef WINDOW_MANAGER_ENABLE
+void AudioEffectChainManager::AudioRotationListener::OnCreate(Rosen::DisplayId displayId)
+{
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d.", static_cast<int32_t>(displayId));
+}
+
+void AudioEffectChainManager::AudioRotationListener::OnDestroy(Rosen::DisplayId displayId)
+{
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d.", static_cast<int32_t>(displayId));
+}
+
+void AudioEffectChainManager::AudioRotationListener::OnChange(Rosen::DisplayId displayId)
+{
+    // get display
+    auto display = Rosen::DisplayManager::GetInstance().GetDisplayById(displayId);
+    if (!display) {
+        AUDIO_WARNING_LOG("Get display by displayId: %{public}d failed.",
+            static_cast<int32_t>(displayId));
+        return;
+    }
+    // get rotation
+    Rosen::Rotation newRotationState = display->GetRotation();
+    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d rotationState: %{public}u.",
+        static_cast<int32_t>(displayId), static_cast<uint32_t>(newRotationState));
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    audioEffectChainManager->EffectRotationUpdate(static_cast<uint32_t>(newRotationState));
+}
+#endif
 }
 }
