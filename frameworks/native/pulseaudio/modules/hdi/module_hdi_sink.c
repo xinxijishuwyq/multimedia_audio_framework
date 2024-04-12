@@ -30,6 +30,7 @@
 
 pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver);
 void PaHdiSinkFree(pa_sink *s);
+void PaInputVolumeChangeCb(pa_sink_input *i);
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION("OpenHarmony HDI Sink");
@@ -207,6 +208,19 @@ static pa_hook_result_t SinkInputVolumeChangedCb(pa_core *c, pa_sink_input *si, 
     return PA_HOOK_OK;
 }
 
+static pa_hook_result_t SinkMuteChangedCb(pa_core *c, pa_sink *s, void *u)
+{
+    AUDIO_DEBUG_LOG("mute changed. muted: %{public}d, soft_muted: %{public}d", s->muted, s->thread_info.soft_muted);
+    pa_sink_input *i;
+    void *state = NULL;
+    pa_sink_assert_ref(s);
+    pa_sink_assert_io_context(s);
+    while ((i = pa_hashmap_iterate(s->thread_info.inputs, &state, NULL))) {
+        PaInputVolumeChangeCb(i);
+    }
+    return PA_HOOK_OK;
+}
+
 int pa__init(pa_module *m)
 {
     pa_modargs *ma = NULL;
@@ -231,6 +245,8 @@ int pa__init(pa_module *m)
         (pa_hook_cb_t)SinkInputStateChangedCb, NULL);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_VOLUME_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputVolumeChangedCb, NULL);
+    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_MUTE_CHANGED], PA_HOOK_LATE,
+        (pa_hook_cb_t)SinkMuteChangedCb, NULL);
 
     pa_modargs_free(ma);
 
