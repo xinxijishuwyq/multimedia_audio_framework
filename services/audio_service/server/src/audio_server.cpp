@@ -907,7 +907,8 @@ bool AudioServer::PermissionChecker(const AudioProcessConfig &config)
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         return CheckPlaybackPermission(config.appInfo.appTokenId, config.rendererInfo.streamUsage);
     } else {
-        return CheckRecorderPermission(config.appInfo.appTokenId, config.capturerInfo.sourceType);
+        return CheckRecorderPermission(config.appInfo.appTokenId, config.capturerInfo.sourceType,
+            config.appInfo.appUid);
     }
 }
 
@@ -928,8 +929,15 @@ bool AudioServer::CheckPlaybackPermission(Security::AccessToken::AccessTokenID t
     return true;
 }
 
-bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType)
+bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType,
+    int32_t appUid)
 {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    if (appUid == ROOT_UID) {
+        return true;
+    }
+#endif
+
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
         CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false,

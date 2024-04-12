@@ -132,7 +132,8 @@ private:
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
     bool CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage);
-    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType);
+    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType,
+        int32_t appUid);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
 
     void AudioServerDied(pid_t pid);
