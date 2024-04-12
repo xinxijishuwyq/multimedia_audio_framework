@@ -67,7 +67,8 @@ typedef int32_t (*OH_AudioRoutingManager_OnDeviceChangedCallback) (
 );
 
 /**
- * @brief Query the audio routing manager handle which should be set as the first parameter in routing releated functions.
+ * @brief Query the audio routing manager handle
+ * which should be set as the first parameter in routing releated functions.
  * @param audioRoutingManager handle returned by OH_AudioManager_GetAudioRoutingManager.
  * @since 12
  */
@@ -91,7 +92,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(
  * @brief Register the device change callback of the audio routing manager.
  *
  * @param audioRoutingManager handle returned by OH_AudioManager_GetAudioRoutingManager.
- * @param deviceFlag which is used to register callback. 
+ * @param deviceFlag which is used to register callback.
  * @param callback Callback function which will be called when devices changed.
  * @return {@link #AUDIOCOMMON_SUCCESS} or an undesired error.
  * @since 12

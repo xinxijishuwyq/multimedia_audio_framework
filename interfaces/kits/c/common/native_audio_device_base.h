@@ -64,7 +64,7 @@ typedef enum {
 
 /**
  * @brief Defines the audio device device role.
- * 
+ *
  * @since 12
  */
 typedef enum {
