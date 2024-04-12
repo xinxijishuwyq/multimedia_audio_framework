@@ -573,6 +573,11 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEf
     pa_proplist_sets(propList, "device.down", downDevice.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
+    if (updatePropOperation == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_proplist_update failed.");
+        pa_threaded_mainloop_unlock(mainLoop_);
+        return ERROR;
+    }
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
     pa_threaded_mainloop_unlock(mainLoop_);
