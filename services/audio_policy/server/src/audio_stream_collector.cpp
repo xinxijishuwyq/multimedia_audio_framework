@@ -850,7 +850,8 @@ void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStre
             "TRANSACTIONID", transactionId,
             "STREAMTYPE", streamType,
             "STATE", streamChangeInfo.audioRendererChangeInfo.rendererState,
-            "DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType);
+            "DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType,
+            "NETWORKID", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId);
     } else {
         isOutput = false;
         streamType = GetStreamTypeFromSourceType(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
@@ -866,7 +867,8 @@ void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStre
             "TRANSACTIONID", transactionId,
             "STREAMTYPE", streamType,
             "STATE", streamChangeInfo.audioCapturerChangeInfo.capturerState,
-            "DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType);
+            "DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType,
+            "NETWORKID", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId);
     }
 }
 
@@ -887,7 +889,8 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
         "TRANSACTIONID", transactionId,
         "STREAMTYPE", streamType,
         "STATE", audioRendererChangeInfo->rendererState,
-        "DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType);
+        "DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType,
+        "NETWORKID", audioRendererChangeInfo->outputDeviceInfo.networkId);
 }
 
 void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
@@ -905,7 +908,8 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
         "TRANSACTIONID", transactionId,
         "STREAMTYPE", streamType,
         "STATE", audioCapturerChangeInfo->capturerState,
-        "DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType);
+        "DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType,
+        "NETWORKID", audioCapturerChangeInfo->inputDeviceInfo.networkId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

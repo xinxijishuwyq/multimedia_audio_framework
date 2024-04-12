@@ -4109,7 +4109,8 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
                         "ISOUTPUT", 1,
                         "STREAMID", sinkInput.streamId,
                         "STREAMTYPE", sinkInput.streamType,
-                        "DEVICETYPE", deviceDescriptor->deviceType_);
+                        "DEVICETYPE", deviceDescriptor->deviceType_,
+                        "NETWORKID", deviceDescriptor->networkId_);
                 }
             } else if (deviceDescriptor->deviceRole_ == INPUT_DEVICE) {
                 vector<SourceOutput> sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
@@ -4119,7 +4120,8 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
                         "ISOUTPUT", 0,
                         "STREAMID", sourceOutput.streamId,
                         "STREAMTYPE", sourceOutput.streamType,
-                        "DEVICETYPE", deviceDescriptor->deviceType_);
+                        "DEVICETYPE", deviceDescriptor->deviceType_,
+                        "NETWORKID", deviceDescriptor->networkId_);
                 }
             }
         }
