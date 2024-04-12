@@ -627,6 +627,16 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
+// LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
+// LEGACY_MUTE_CAP: Called from hap build with api >= 12, will cap mute data.
+// MODERN_INNER_CAP: Called from SA with inner-cap right, work with filter.
+enum InnerCapMode : uint32_t {
+    LEGACY_INNER_CAP = 0,
+    LEGACY_MUTE_CAP,
+    MODERN_INNER_CAP,
+    INVALID_CAP_MODE
+};
+
 struct AudioProcessConfig {
     AppInfo appInfo;
 
@@ -648,7 +658,7 @@ struct AudioProcessConfig {
 
     AudioPrivacyType privacyType;
 
-    // Waiting for review:  add isWakeupCapturer  isInnerCapturer
+    InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
 };
 
 struct Volume {

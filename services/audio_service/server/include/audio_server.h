@@ -140,10 +140,12 @@ private:
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
-    bool CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage);
-    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType,
-        int32_t appUid);
+    bool CheckPlaybackPermission(const AudioProcessConfig &config);
+    bool CheckRecorderPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
+
+    AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
+    int32_t GetHapBuildApiVersion(int32_t callerUid);
 
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
@@ -171,7 +173,6 @@ private:
     std::mutex setWakeupCloseCallbackMutex_;
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
-    bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };
 } // namespace AudioStandard

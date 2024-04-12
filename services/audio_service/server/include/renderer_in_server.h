@@ -96,7 +96,7 @@ private:
 
     // for inner-cap
     std::mutex dupMutex_;
-    bool isInnerCapEnabled_ = false;
+    std::atomic<bool> isInnerCapEnabled_ = false;
     uint32_t dupStreamIndex_ = 0;
     std::shared_ptr<StreamCallbacks> dupStreamCallback_ = nullptr;
     std::shared_ptr<IRendererStream> dupStream_ = nullptr;

@@ -70,6 +70,7 @@ static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_ULTRASONIC,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
+static const int32_t MODERN_INNER_API_VERSION = 12;
 static constexpr int32_t VM_MANAGER_UID = 5010;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID
@@ -897,17 +898,21 @@ int32_t AudioServer::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
     return SUCCESS;
 }
 
-sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
+int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
 {
-    bool ret = IsParamEnabled("persist.multimedia.audio.mmap.enable", isGetProcessEnabled_);
-    CHECK_AND_RETURN_RET_LOG(ret, nullptr, "CreateAudioProcess is not enabled!");
+    // in plan
+    int32_t hapApiVersion = 11; // for debug
+    return hapApiVersion;
+}
 
-    // client pid uid check.
+AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config)
+{
+    AudioProcessConfig resetConfig(config);
+
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    AUDIO_DEBUG_LOG("Create process for uid:%{public}d pid:%{public}d", callerUid, callerPid);
 
-    AudioProcessConfig resetConfig(config);
+    // client pid uid check.
     if (callerUid == MEDIA_SERVICE_UID) {
         AUDIO_INFO_LOG("Create process for media service.");
     } else if (RECORD_CHECK_FORWARD_LIST.count(callerUid)) {
@@ -921,6 +926,21 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
     }
 
+    if (resetConfig.audioMode == AUDIO_MODE_RECORD && resetConfig.capturerInfo.sourceType ==
+        SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        resetConfig.innerCapMode = LEGACY_INNER_CAP;
+        if (callerUid == MEDIA_SERVICE_UID) {
+            resetConfig.innerCapMode = MODERN_INNER_CAP;
+        } else if (GetHapBuildApiVersion(callerUid) >= MODERN_INNER_API_VERSION) { // not media, check build api-version
+            resetConfig.innerCapMode = LEGACY_MUTE_CAP;
+        }
+    }
+    return resetConfig;
+}
+
+sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
+{
+    AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
     if ((resetConfig.audioMode == AUDIO_MODE_PLAYBACK && resetConfig.rendererInfo.rendererFlags == 0) ||
@@ -1108,15 +1128,21 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
 bool AudioServer::PermissionChecker(const AudioProcessConfig &config)
 {
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-        return CheckPlaybackPermission(config.appInfo.appTokenId, config.rendererInfo.streamUsage);
-    } else {
-        return CheckRecorderPermission(config.appInfo.appTokenId, config.capturerInfo.sourceType,
-            config.appInfo.appUid);
+        return CheckPlaybackPermission(config);
     }
+
+    if (config.audioMode == AUDIO_MODE_RECORD) {
+        return CheckRecorderPermission(config);
+    }
+
+    AUDIO_ERR_LOG("Check failed invalid mode.");
+    return false;
 }
 
-bool AudioServer::CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage)
+bool AudioServer::CheckPlaybackPermission(const AudioProcessConfig &config)
 {
+    StreamUsage streamUsage = config.rendererInfo.streamUsage;
+
     bool needVerifyPermission = false;
     for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
         if (streamUsage == item) {
@@ -1132,9 +1158,11 @@ bool AudioServer::CheckPlaybackPermission(Security::AccessToken::AccessTokenID t
     return true;
 }
 
-bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType,
-    int32_t appUid)
+bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
+    Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
+    SourceType sourceType = config.capturerInfo.sourceType;
+    int32_t appUid = config.appInfo.appUid;
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     if (appUid == ROOT_UID) {
         return true;

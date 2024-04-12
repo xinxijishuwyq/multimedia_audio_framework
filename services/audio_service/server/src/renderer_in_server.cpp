@@ -248,6 +248,13 @@ int32_t RendererInServer::WriteData()
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+        if (isInnerCapEnabled_) {
+            Trace traceDup("RendererInServer::WriteData DupSteam write");
+            std::lock_guard<std::mutex> lock(dupMutex_);
+            if (dupStream_ != nullptr) {
+                dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+            }
+        }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
@@ -351,6 +358,13 @@ int32_t RendererInServer::Start()
     audioServerBuffer_->SetHandleInfo(currentReadFrame, tempTime);
     AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
     resetTime_ = true;
+
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Start();
+        }
+    }
     return SUCCESS;
 }
 
@@ -364,6 +378,12 @@ int32_t RendererInServer::Pause()
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Pause();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     return SUCCESS;
 }
@@ -445,6 +465,12 @@ int32_t RendererInServer::Stop()
         status_ = I_STATUS_STOPPING;
     }
     int ret = stream_->Stop();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Stop();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     return SUCCESS;
 }
@@ -466,6 +492,11 @@ int32_t RendererInServer::Release()
         return ret;
     }
     status_ = I_STATUS_RELEASED;
+
+    if (isInnerCapEnabled_) {
+        DisableInnerCap();
+    }
+
     return SUCCESS;
 }
 
@@ -543,10 +574,6 @@ int32_t RendererInServer::EnableInnerCap()
     }
     int32_t ret = InitDupStream();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
-    if (status_ == I_STATUS_STARTED) {
-        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
-        dupStream_->Start();
-    }
     return SUCCESS;
 }
 
@@ -585,6 +612,11 @@ int32_t RendererInServer::InitDupStream()
     AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
 
     isInnerCapEnabled_ = true;
+
+    if (status_ == I_STATUS_STARTED) {
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
+        dupStream_->Start();
+    }
     return SUCCESS;
 }
 
@@ -600,7 +632,7 @@ void StreamCallbacks::OnStatusUpdate(IOperation operation)
 
 int32_t StreamCallbacks::OnWriteData(size_t length)
 {
-    Trace trace("StreamCallbacks::OnWriteData length " + std::to_string(length));
+    Trace trace("DupStream::OnWriteData length " + std::to_string(length));
     return SUCCESS;
 }
 
