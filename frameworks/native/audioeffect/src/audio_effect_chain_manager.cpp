@@ -1400,7 +1400,6 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 RecoverAllChains();
             }
 
-
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
