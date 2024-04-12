@@ -36,11 +36,11 @@
  * @version 1.0
  */
 
-#ifndef NATIVE_AUDIODEVICE_BASE_H
-#define NATIVE_AUDIODEVICE_BASE_H
+#ifndef NATIVE_AUDIO_DEVICE_BASE_H
+#define NATIVE_AUDIO_DEVICE_BASE_H
 
 #include "native_audiostream_base.h"
-#include "native_common_base.h"
+#include "native_audio_common_base.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,7 +133,7 @@ typedef enum {
     /**
      * @brief Display port device.
      */
-    AUDIO_DEVICE_DEVICE_TYPE_DISPLAY_PORT = 24,
+    AUDIO_DEVICE_DEVICE_TYPE_DISPLAY_PORT = 23,
 
     /**
      * @brief Default device type.
@@ -306,4 +306,4 @@ OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceEncodingTypes(OH_AudioDe
 #ifdef __cplusplus
 }
 #endif
-#endif // NATIVE_AUDIODEVICE_BASE_H
+#endif // NATIVE_AUDIO_DEVICE_BASE_H

@@ -36,8 +36,8 @@
  * @version 1.0
  */
 
-#ifndef NATIVE_AUDIOROUTINGMANAGER_H
-#define NATIVE_AUDIOROUTINGMANAGER_H
+#ifndef NATIVE_AUDIO_ROUTING_MANAGER_H
+#define NATIVE_AUDIO_ROUTING_MANAGER_H
 
 #include <time.h>
 #include "native_audio_device_base.h"
@@ -127,4 +127,4 @@ OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
 #ifdef __cplusplus
 }
 #endif
-#endif // NATIVE_AUDIOROUTINGMANAGER_H
+#endif // NATIVE_AUDIO_ROUTING_MANAGER_H
