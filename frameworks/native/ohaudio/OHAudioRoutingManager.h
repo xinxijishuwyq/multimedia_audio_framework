@@ -19,7 +19,7 @@
 #include "audio_info.h"
 #include "audio_log.h"
 #include "native_audio_routing_manager.h"
-#include "native_audio_common_base.h"
+#include "native_audio_common.h"
 #include "native_audio_device_base.h"
 #include "audio_system_manager.h"
 #include "OHAudioDeviceDescriptor.h"

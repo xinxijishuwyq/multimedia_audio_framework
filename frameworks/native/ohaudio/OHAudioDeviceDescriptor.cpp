@@ -147,9 +147,6 @@ OHAudioDeviceDescriptor::~OHAudioDeviceDescriptor()
     if (audioChannel_ != nullptr) {
         audioChannel_ = nullptr;
     }
-    if (audioChannelMask_ != nullptr) {
-        audioChannelMask_ = nullptr;
-    }
     if (encodingType_ != nullptr) {
         encodingType_ = nullptr;
     }

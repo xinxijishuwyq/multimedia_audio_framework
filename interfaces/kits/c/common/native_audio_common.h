@@ -36,8 +36,8 @@
  * @version 1.0
  */
 
-#ifndef NATIVE_AUDIO_COMMON_BASE_H
-#define NATIVE_AUDIO_COMMON_BASE_H
+#ifndef NATIVE_AUDIO_COMMON_H
+#define NATIVE_AUDIO_COMMON_H
 
 #include <stdint.h>
 
@@ -95,4 +95,4 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
-#endif // NATIVE_AUDIO_COMMON_BASE_H
+#endif // NATIVE_AUDIO_COMMON_H
