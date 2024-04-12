@@ -77,7 +77,6 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
 const std::string AUDIO_SERVICE_PKG = "audio_manager_service";
-const int32_t MEDIA_SERVICE_UID = 1013; // open or close offload of MEDIA_SERVICE
 const int32_t UID_AUDIO = 1041;
 const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
@@ -575,17 +574,12 @@ void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
         AUDIO_DEBUG_LOG("offloadUID not valid, Skipped");
         return;
     }
-    if (offloadUID == MEDIA_SERVICE_UID || offloadUID == UID_AUDIO) { // not support avplayer in current version
-        AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
+    if (offloadUID == UID_AUDIO) {
+        AUDIO_DEBUG_LOG("Skip anco_audio out of offload mode");
         return;
     }
 
     auto CallingUid = IPCSkeleton::GetCallingUid();
-    if (CallingUid == MEDIA_SERVICE_UID) { // not support avplayer in current version
-        AUDIO_DEBUG_LOG("Skip avplayer out of offload mode");
-        return;
-    }
-
     AUDIO_INFO_LOG("sessionId[%{public}d] UID[%{public}d] CallingUid[%{public}d] StreamType[%{public}d] "
                    "Getting offload stream", sessionId, offloadUID, CallingUid, streamType);
     lock_guard<mutex> lock(offloadMutex_);
@@ -1617,7 +1611,7 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
     return deviceList;
 }
 
-void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType)
+void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag)
 {
     Trace trace("AudioPolicyService::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
     AUDIO_INFO_LOG("Active route with type[%{public}d]", deviceType);
@@ -1628,38 +1622,10 @@ void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType)
     if (deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
         deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
     }
-
-    switch (deviceType) {
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET: {
-            std::string identity = IPCSkeleton::ResetCallingIdentity();
-            ret = g_adProxy->UpdateActiveDeviceRoute(deviceType, DeviceFlag::ALL_DEVICES_FLAG);
-            IPCSkeleton::SetCallingIdentity(identity);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
-            break;
-        }
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_EARPIECE:
-        case DEVICE_TYPE_SPEAKER: {
-            std::string identity = IPCSkeleton::ResetCallingIdentity();
-            ret = g_adProxy->UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
-            IPCSkeleton::SetCallingIdentity(identity);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
-            break;
-        }
-        case DEVICE_TYPE_MIC: {
-            std::string identity = IPCSkeleton::ResetCallingIdentity();
-            ret = g_adProxy->UpdateActiveDeviceRoute(deviceType, DeviceFlag::INPUT_DEVICES_FLAG);
-            IPCSkeleton::SetCallingIdentity(identity);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
-            break;
-        }
-        default:
-            break;
-    }
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    ret = g_adProxy->UpdateActiveDeviceRoute(deviceType, deviceFlag);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}d", deviceType);
 }
 
 void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -1687,7 +1653,7 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
         rendererChangeInfo->sessionId, outputDevice->deviceType_);
     SetVolumeForSwitchDevice(outputDevice->deviceType_);
     if (isUpdateRouteSupported_) {
-        UpdateActiveDeviceRoute(outputDevice->deviceType_);
+        UpdateActiveDeviceRoute(outputDevice->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
@@ -1708,7 +1674,7 @@ void AudioPolicyService::SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         capturerChangeInfo->sessionId, inputDevice->deviceType_);
     if (isUpdateRouteSupported_) {
-        UpdateActiveDeviceRoute(inputDevice->deviceType_);
+        UpdateActiveDeviceRoute(inputDevice->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
     }
     UpdateDeviceInfo(capturerChangeInfo->inputDeviceInfo, new AudioDeviceDescriptor(*inputDevice), true, true);
     streamCollector_.UpdateCapturerDeviceInfo(capturerChangeInfo->clientUID, capturerChangeInfo->sessionId,
@@ -2255,7 +2221,7 @@ int32_t AudioPolicyService::HandleActiveDevice(DeviceType deviceType)
         deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
     }
     if (isUpdateRouteSupported_) {
-        UpdateActiveDeviceRoute(deviceType);
+        UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
     std::string sinkPortName = GetSinkPortName(deviceType);
     std::string sourcePortName = GetSourcePortName(deviceType);
@@ -2338,7 +2304,7 @@ int32_t AudioPolicyService::HandleFileDevice(DeviceType deviceType)
         audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
     }
     if (isUpdateRouteSupported_) {
-        UpdateActiveDeviceRoute(deviceType);
+        UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
 
     UpdateInputDeviceInfo(deviceType);
@@ -2360,13 +2326,13 @@ int32_t AudioPolicyService::ActivateNormalNewDevice(DeviceType deviceType, bool 
             switchThread.detach();
             int32_t beforSwitchDelay = 300000; // 300 ms
             usleep(beforSwitchDelay);
-        }
-        UpdateActiveDeviceRoute(deviceType);
-        if (GetDeviceRole(deviceType) == OUTPUT_DEVICE) {
+            UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
             if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(deviceType)) {
                 SetVolumeForSwitchDevice(deviceType);
             }
             isVolumeSwitched = true;
+        } else {
+            UpdateActiveDeviceRoute(deviceType, DeviceFlag::INPUT_DEVICES_FLAG);
         }
     }
     if (GetDeviceRole(deviceType) == OUTPUT_DEVICE && !isVolumeSwitched &&
@@ -2515,11 +2481,12 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     int32_t result = SUCCESS;
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
         std::string identity = IPCSkeleton::ResetCallingIdentity();
-        result = gsp->SetAudioScene(audioScene, DEVICE_TYPE_USB_ARM_HEADSET);
+        result = gsp->SetAudioScene(audioScene, DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET);
         IPCSkeleton::SetCallingIdentity(identity);
     } else {
         std::string identity = IPCSkeleton::ResetCallingIdentity();
-        result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_);
+        result = gsp->SetAudioScene(audioScene, currentActiveDevice_.deviceType_,
+            currentActiveInputDevice_.deviceType_);
         IPCSkeleton::SetCallingIdentity(identity);
     }
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
@@ -2850,7 +2817,7 @@ void AudioPolicyService::ResetToSpeaker(DeviceType devType)
     }
     if (devType == DEVICE_TYPE_BLUETOOTH_SCO || (devType == DEVICE_TYPE_USB_HEADSET && !isArmUsbDevice_) ||
         devType == DEVICE_TYPE_WIRED_HEADSET || devType == DEVICE_TYPE_WIRED_HEADPHONES) {
-        UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER);
+        UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
 }
 
@@ -4831,20 +4798,6 @@ int32_t AudioPolicyService::SetCaptureSilentState(bool state)
     }
 
     return gsp->SetCaptureSilentState(state);
-}
-
-void AudioPolicyService::UpdateOutputDeviceSelectedByCalling(DeviceType deviceType)
-{
-    if ((deviceType == DEVICE_TYPE_DEFAULT) || (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
-        return;
-    }
-    auto uid = IPCSkeleton::GetCallingUid();
-    std::lock_guard<std::mutex> lock(outputDeviceSelectedByCallingMutex_);
-    if (deviceType == DEVICE_TYPE_NONE) {
-        outputDeviceSelectedByCalling_.erase(uid);
-        return;
-    }
-    outputDeviceSelectedByCalling_[uid] = deviceType;
 }
 
 bool AudioPolicyService::IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc)

@@ -232,7 +232,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     }
     if (streamClass == PA_STREAM) {
         int32_t ipcFlag = -1;
-        GetSysPara("persist.multimedia.audioflag.forceipc.capturer", ipcFlag);
+        GetSysPara("persist.multimedia.audioflag.ipc.capturer", ipcFlag);
         if (getuid() == MEDIA_UID && ipcFlag != FORCED_IPC) {
             AUDIO_INFO_LOG("Create normal record stream");
             return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);

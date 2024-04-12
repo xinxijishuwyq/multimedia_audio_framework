@@ -119,8 +119,9 @@ int AudioManagerStub::HandleSetMicrophoneMute(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &reply)
 {
     AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
-    DeviceType activeDevice = (static_cast<DeviceType>(data.ReadInt32()));
-    int32_t result = SetAudioScene(audioScene, activeDevice);
+    DeviceType activeOutputDevice = (static_cast<DeviceType>(data.ReadInt32()));
+    DeviceType activeInputDevice = (static_cast<DeviceType>(data.ReadInt32()));
+    int32_t result = SetAudioScene(audioScene, activeOutputDevice, activeInputDevice);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }

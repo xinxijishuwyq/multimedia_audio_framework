@@ -207,7 +207,8 @@ int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
     return result;
 }
 
-int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+    DeviceType activeInputDevice)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -217,7 +218,8 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activ
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(audioScene));
-    data.WriteInt32(static_cast<int32_t>(activeDevice));
+    data.WriteInt32(static_cast<int32_t>(activeOutputDevice));
+    data.WriteInt32(static_cast<int32_t>(activeInputDevice));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE), data, reply, option);

@@ -349,8 +349,6 @@ public:
 
     void UnloadLoopback();
 
-    void UpdateOutputDeviceSelectedByCalling(DeviceType deviceType);
-
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
 
     vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
@@ -671,7 +669,7 @@ private:
 
     void FetchInputDeviceWhenNoRunningStream();
 
-    void UpdateActiveDeviceRoute(InternalDeviceType deviceType);
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag);
 
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
@@ -787,9 +785,6 @@ private:
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
     AudioEffectManager& audioEffectManager_;
-
-    std::mutex outputDeviceSelectedByCallingMutex_;
-    std::unordered_map<decltype(IPCSkeleton::GetCallingUid()), DeviceType> outputDeviceSelectedByCalling_;
 
     bool isMicrophoneMute_ = false;
 

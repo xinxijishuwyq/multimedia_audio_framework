@@ -62,7 +62,8 @@ public:
      * @param activeDevice Currently active priority device
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+        DeviceType activeInputDevice) = 0;
 
     /**
      * Set Audio Parameter.

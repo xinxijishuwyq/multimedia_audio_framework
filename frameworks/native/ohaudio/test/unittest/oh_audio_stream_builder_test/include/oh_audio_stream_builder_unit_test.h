@@ -18,7 +18,6 @@
 
 #include "gtest/gtest.h"
 #include "audio_errors.h"
-#include "audio_info.h"
 #include "native_audiostreambuilder.h"
 
 namespace OHOS {
