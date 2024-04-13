@@ -285,6 +285,8 @@ ClassType XMLParser::GetDeviceClassType(const std::string &deviceClass)
         return ClassType::TYPE_A2DP;
     else if (deviceClass == USB_CLASS)
         return ClassType::TYPE_USB;
+    else if (deviceClass == DP_CLASS)
+        return ClassType::TYPE_DP;
     else if (deviceClass == FILE_CLASS)
         return ClassType::TYPE_FILE_IO;
     else

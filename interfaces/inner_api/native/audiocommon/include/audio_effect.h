@@ -249,7 +249,7 @@ struct AudioEffectConfig {
     AudioBufferConfig inputCfg;
     AudioBufferConfig outputCfg;
 };
- 
+
 struct AudioEffectTransInfo {
     uint32_t size;
     void *data;

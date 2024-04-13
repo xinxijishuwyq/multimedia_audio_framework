@@ -1504,7 +1504,12 @@ static void ProcessRenderUseTiming(struct Userdata *u, pa_usec_t now)
 
     AUTO_CTRACE("hdi_sink::SinkRenderPrimary");
     // Change from pa_sink_render to pa_sink_render_full for alignment issue in 3516
-    SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
+
+    if (!strcmp(u->sink->name, "DP_speaker")) {
+        pa_sink_render_full(u->sink, u->sink->thread_info.max_request, &chunk);
+    } else {
+        SinkRenderPrimary(u->sink, u->sink->thread_info.max_request, &chunk);
+    }
     pa_assert(chunk.length > 0);
 
     StartPrimaryHdiIfRunning(u);
