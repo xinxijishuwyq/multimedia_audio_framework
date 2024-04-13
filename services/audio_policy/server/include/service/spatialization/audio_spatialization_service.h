@@ -110,7 +110,6 @@ private:
     std::unordered_map<uint32_t, std::pair<std::shared_ptr<AudioSpatializationStateChangeCallback>, StreamUsage>>
         spatializationStateCBMap_;
     std::map<std::string, AudioSpatialDeviceState> addressToSpatialDeviceStateMap_;
-    std::vector<std::string> headTrackingDataRequestedDeviceList_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -348,7 +348,7 @@ void AudioPolicyClientStubImpl::OnCapturerStateChange(
 }
 
 int32_t AudioPolicyClientStubImpl::AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
-        const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb)
+    const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingDataRequestedChangeMutex_);
     if (!headTrackingDataRequestedChangeCallbackMap_.count(macAddress)) {
@@ -371,14 +371,19 @@ int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingDataRequestedChangeCallback
 void AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingDataRequestedChangeMutex_);
-    for (const auto &pair : headTrackingDataRequestedChangeCallbackMap_) {
-        if (!changeInfo.count(pair.first)) {
+    if (headTrackingDataRequestedChangeCallbackMap_.size() == 0) {
+        return;
+    }
+    for (const auto &pair : changeInfo) {
+        if (!headTrackingDataRequestedChangeCallbackMap_.count(pair.first)) {
+            AUDIO_WARNING_LOG("the specified device has not been registered");
             continue;
         }
-        std::shared_ptr<HeadTrackingDataRequestedChangeCallback> headTrackingDataRequestedChangeCallback = pair.second;
+        std::shared_ptr<HeadTrackingDataRequestedChangeCallback> headTrackingDataRequestedChangeCallback =
+            headTrackingDataRequestedChangeCallbackMap_[pair.first];
         if (headTrackingDataRequestedChangeCallback != nullptr) {
             AUDIO_DEBUG_LOG("head tracking data requested change event of the specified device has been notified");
-            headTrackingDataRequestedChangeCallback->OnHeadTrackingDataRequestedChange(changeInfo.at(pair.first));
+            headTrackingDataRequestedChangeCallback->OnHeadTrackingDataRequestedChange(pair.second);
         }
     }
 }
