@@ -167,6 +167,7 @@ private:
     AudioEffectScene GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType);
     void UpdateEffectChainParams(AudioEffectScene sceneType);
     void SetSpkOffloadState();
+    void InitHdiState();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);

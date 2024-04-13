@@ -46,7 +46,7 @@ AudioEffectHdiParam::~AudioEffectHdiParam()
 
 void AudioEffectHdiParam::CreateHdiControl()
 {
-    for (const auto &item : HDI_EFFECT_LIB_MAP){
+    for (const auto &item : HDI_EFFECT_LIB_MAP) {
         libName_ = strdup(item.second[0].c_str());
         effectId_ = strdup(item.second[1].c_str());
         EffectInfo info = {

@@ -771,7 +771,8 @@ static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink,
     return SUCCESS;
 }
 
-void AudioEffectChainManager::SetSpkOffloadState() {
+void AudioEffectChainManager::SetSpkOffloadState()
+{
     int32_t ret;
     if (deviceType_ == DEVICE_TYPE_SPEAKER) {
         if (!spkOffloadEnabled_) {
@@ -889,6 +890,27 @@ bool AudioEffectChainManager::GetOffloadEnabled()
     }
 }
 
+void AudioEffectChainManager::InitHdiState()
+{
+    audioEffectHdiParam_->InitHdi();
+    effectHdiInput[0] = HDI_BLUETOOTH_MODE;
+    effectHdiInput[1] = 1;
+    AUDIO_INFO_LOG("set hdi bluetooth mode: %{public}d", effectHdiInput[1]);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
+    }
+    effectHdiInput[0] = HDI_INIT;
+    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
+        spkOffloadEnabled_ = false;
+    } else {
+        AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
+        spkOffloadEnabled_ = true;
+    }
+}
+
 // Boot initialize
 void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
     std::unordered_map<std::string, std::string> &map,
@@ -931,23 +953,7 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     AUDIO_DEBUG_LOG("EffectChainToEffectsMap size %{public}zu", EffectChainToEffectsMap_.size());
     AUDIO_DEBUG_LOG("SceneTypeAndModeToEffectChainNameMap size %{public}zu",
         SceneTypeAndModeToEffectChainNameMap_.size());
-    audioEffectHdiParam_->InitHdi();
-    effectHdiInput[0] = HDI_BLUETOOTH_MODE;
-    effectHdiInput[1] = 1;
-    AUDIO_INFO_LOG("set hdi bluetooth mode: %{public}d", effectHdiInput[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
-    }
-    effectHdiInput[0] = HDI_INIT;
-    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
-        spkOffloadEnabled_ = false;
-    } else {
-        AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
-        spkOffloadEnabled_ = true;
-    }
+    InitHdiState();
 #ifdef WINDOW_MANAGER_ENABLE
     AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
     Rosen::DisplayManager::GetInstance().RegisterDisplayListener(audioRotationListener_);
@@ -1399,7 +1405,6 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
             if (!spkOffloadEnabled_) {
                 RecoverAllChains();
             }
-
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
