@@ -458,13 +458,13 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
 #ifdef DEVICE_FLAG
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
-            "memcpy error in no effect copy");
+            "memcpy error when no effect applied");
         return ERROR;
     }
 #else
     if (deviceType_ != DEVICE_TYPE_SPEAKER || !SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
-            "memcpy error in no effect copy");
+            "memcpy error when no effect applied");
         return SUCCESS;
     }
 #endif

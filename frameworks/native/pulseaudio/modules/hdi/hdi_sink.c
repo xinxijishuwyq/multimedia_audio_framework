@@ -2362,7 +2362,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     }
 }
 
-static void PaInputVolumeChangeCb(pa_sink_input *i)
+void PaInputVolumeChangeCb(pa_sink_input *i)
 {
     struct Userdata *u;
 
@@ -2384,6 +2384,9 @@ static void PaInputVolumeChangeCb(pa_sink_input *i)
         }
 
         u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, volumeResult, 0);
+
+        AUDIO_DEBUG_LOG("PaInputVolumeChangeCb, soft_muted:%{public}d, volume muted:%{public}d",
+            i->sink->thread_info.soft_muted, pa_cvolume_is_muted(&volume));
 
         char str[SPRINTF_STR_LEN] = {0};
         GetSinkInputName(i, str, SPRINTF_STR_LEN);

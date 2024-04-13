@@ -17,6 +17,7 @@
 
 #include "audio_system_manager.h"
 
+#include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
@@ -183,6 +184,23 @@ int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
     }
 
     return SUCCESS;
+}
+
+std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
+{
+    std::string bundleName = "";
+
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
+
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
+
+    iBundleMgr->GetNameForUid(uid, bundleName);
+    return bundleName;
 }
 
 AudioRingerMode AudioSystemManager::GetRingerMode()

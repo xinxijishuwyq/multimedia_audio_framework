@@ -17,6 +17,7 @@
 #define AUDIO_CAPTURER_PRIVATE_H
 
 #include <mutex>
+#include "audio_utils.h"
 #include "audio_interrupt_callback.h"
 #include "i_audio_stream.h"
 #include "audio_capturer_proxy_obj.h"
@@ -111,6 +112,9 @@ public:
 
 private:
     int32_t InitAudioInterruptCallback();
+    void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
+    int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
+    void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     AppInfo appInfo_ = {};
@@ -125,6 +129,8 @@ private:
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
     std::shared_ptr<CapturerPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
+    bool latencyMeasEnabled_ = false;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

@@ -604,6 +604,8 @@ struct AudioProcessConfig {
 
     AudioStreamType streamType;
 
+    DeviceType deviceType;
+
     bool isInnerCapturer;
 
     bool isWakeupCapturer;
