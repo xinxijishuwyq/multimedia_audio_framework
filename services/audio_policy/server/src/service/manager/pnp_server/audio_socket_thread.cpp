@@ -496,11 +496,6 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         msgTmp += strlen(msgTmp) + 1;
     }
 
-    AUDIO_INFO_LOG("AudioPnpUeventParse action:[%{public}s] devName: [%{public}s] name: [%{public}s] state: "\
-        "[%{public}s], devType: [%{public}s], subSystem: [%{public}s] switchName: [%{public}s] switchState: "\
-        "[%{public}s] hidName: [%{public}s]", audioPnpUevent.action, audioPnpUevent.devName,
-        audioPnpUevent.name, audioPnpUevent.state, audioPnpUevent.devType,
-        audioPnpUevent.subSystem, audioPnpUevent.switchName, audioPnpUevent.switchState, audioPnpUevent.hidName);
     if (AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
         return true;
     }

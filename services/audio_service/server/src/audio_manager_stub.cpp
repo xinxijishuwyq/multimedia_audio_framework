@@ -60,15 +60,6 @@ int AudioManagerStub::HandleGetAudioParameter(MessageParcel &data, MessageParcel
     return AUDIO_OK;
 }
 
-int AudioManagerStub::HandleGetAudioParameterByCondition(MessageParcel &data, MessageParcel &reply)
-{
-    const std::string key = data.ReadString();
-    const std::string condition = data.ReadString();
-    const std::string value = GetAudioParameter(key, condition);
-    reply.WriteString(value);
-    return AUDIO_OK;
-}
-
 int AudioManagerStub::HandleSetAudioParameter(MessageParcel &data, MessageParcel &reply)
 {
     const std::string key = data.ReadString();

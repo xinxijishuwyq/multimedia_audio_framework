@@ -250,28 +250,6 @@ const std::string AudioManagerProxy::GetAudioParameter(const std::string &key)
     return value;
 }
 
-const std::string AudioManagerProxy::GetAudioParameter(const std::string &key, const std::string &condition)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, "", "WriteInterfaceToken failed");
-    data.WriteString(static_cast<std::string>(key));
-    data.WriteString(static_cast<std::string>(condition));
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER_BY_CONDITION), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("Get audio parameter failed, error: %d", error);
-        const std::string value = "";
-        return value;
-    }
-
-    const std::string value = reply.ReadString();
-    return value;
-}
-
 const std::string AudioManagerProxy::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
     const std::string& condition)
 {

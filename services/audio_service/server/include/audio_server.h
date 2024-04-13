@@ -68,7 +68,6 @@ public:
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     const std::string GetAudioParameter(const std::string &key) override;
-    const std::string GetAudioParameter(const std::string &key, const std::string& condition) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
@@ -144,6 +143,8 @@ private:
     void RegisterAudioCapturerSourceCallback();
     int32_t SetIORoute(DeviceType type, DeviceFlag flag);
     bool CheckAndPrintStacktrace(const std::string &key);
+    const std::string GetDPParameter(const std::string &condition);
+    const std::string GetUsbParameter();
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

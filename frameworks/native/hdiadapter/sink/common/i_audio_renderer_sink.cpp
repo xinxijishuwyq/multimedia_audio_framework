@@ -35,7 +35,7 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
 {
     CHECK_AND_RETURN_RET_LOG(devceClass != nullptr && deviceNetworkId != nullptr, nullptr,
         "GetInstance null class or networkid");
-    AUDIO_INFO_LOG("%{public}s Sink:GetInstance[%{public}s]", devceClass, deviceNetworkId);
+    AUDIO_DEBUG_LOG("%{public}s Sink:GetInstance[%{public}s]", devceClass, deviceNetworkId);
     const char *deviceClassPrimary = "primary";
     const char *deviceClassUsb = "usb";
     const char *deviceClassDp = "dp";

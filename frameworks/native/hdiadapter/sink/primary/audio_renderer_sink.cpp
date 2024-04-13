@@ -59,6 +59,7 @@ const uint32_t STEREO_CHANNEL_COUNT = 2;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int BUFFER_CALC_20MS = 20;
 const unsigned int BUFFER_CALC_1000MS = 1000;
+const unsigned int FORMAT_1_BYTE = 1;
 const unsigned int FORMAT_2_BYTE = 2;
 const unsigned int FORMAT_3_BYTE = 3;
 const unsigned int FORMAT_4_BYTE = 4;
@@ -71,6 +72,59 @@ const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 }
+
+int32_t ConvertByteToAudioFormat(int32_t format)
+{
+    int32_t audioSampleFormat = 0;
+    switch (format) {
+        case FORMAT_1_BYTE:
+            audioSampleFormat = SAMPLE_U8;
+            break;
+        case FORMAT_2_BYTE:
+            audioSampleFormat = SAMPLE_S16LE;
+            break;
+        case FORMAT_3_BYTE:
+            audioSampleFormat = SAMPLE_S24LE;
+            break;
+        case FORMAT_4_BYTE:
+            audioSampleFormat = SAMPLE_S32LE;
+            break;
+        default:
+            audioSampleFormat = SAMPLE_S16LE;
+    }
+    return audioSampleFormat;
+}
+
+static string ParseAudioFormatToStr(int32_t format)
+{
+    switch (format) {
+        case FORMAT_1_BYTE:
+            return "u8";
+        case FORMAT_2_BYTE:
+            return "s16";
+        case FORMAT_3_BYTE:
+            return "s24";
+        case FORMAT_4_BYTE:
+            return "s32";
+        default:
+            return "s16";
+    }
+    return "";
+}
+
+static HdiAdapterFormat ParseAudioFormat(const std::string &format)
+{
+    if (format == "AUDIO_FORMAT_PCM_16_BIT") {
+        return HdiAdapterFormat::SAMPLE_S16;
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
+        return HdiAdapterFormat::SAMPLE_S24;
+    } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
+        return HdiAdapterFormat::SAMPLE_S32;
+    } else {
+        return HdiAdapterFormat::SAMPLE_S16;
+    }
+}
+
 class AudioRendererSinkInner : public AudioRendererSink {
 public:
     int32_t Init(const IAudioSinkAttr &attr) override;
@@ -197,8 +251,7 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
 {
-    AUDIO_INFO_LOG("halName: %{public}s",
-        halName.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s", halName.c_str());
     if (halName == "usb") {
         static AudioRendererSinkInner audioRendererUsb(halName);
         return &audioRendererUsb;
@@ -251,25 +304,11 @@ void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const st
     }
 }
 
-static string ParseAudioFormat(int32_t format)
-{
-    if (format == FORMAT_2_BYTE) {
-        return "AUDIO_FORMAT_PCM_16_BIT";
-    } else if (format == FORMAT_3_BYTE) {
-        return "AUDIO_FORMAT_PCM_24_BIT";
-    } else if (format == FORMAT_4_BYTE)  {
-        return "AUDIO_FORMAT_PCM_32_BIT";
-    } else {
-        return "";
-    }
-}
-
 bool AudioRendererSinkInner::AttributesCheck(AudioSampleAttributes &attrInfo)
 {
     CHECK_AND_RETURN_RET_LOG(attrInfo.sampleRate > 0, false, "rate failed %{public}d", attrInfo.sampleRate);
-    // CHECK_AND_RETURN_RET_LOG(attrInfo.format > 0, false, "format failed %{public}d", attrInfo.format);
+    CHECK_AND_RETURN_RET_LOG(attrInfo.format > 0, false, "format failed %{public}d", attrInfo.format);
     CHECK_AND_RETURN_RET_LOG(attrInfo.channelCount > 0, false, "channel failed %{public}d", attrInfo.channelCount);
-    if (attrInfo.format <= 0) attrInfo.format = AUDIO_FORMAT_TYPE_PCM_32_BIT;
     return true;
 }
 
@@ -278,7 +317,7 @@ int32_t AudioRendererSinkInner::SetAudioAttrInfo(AudioSampleAttributes &attrInfo
     CHECK_AND_RETURN_RET_LOG(AttributesCheck(attrInfo), ERROR, "AttributesCheck failed");
     int32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
         BUFFER_CALC_20MS / BUFFER_CALC_1000MS;
-    audioAttrInfo_ = "rate="+to_string(attrInfo.sampleRate)+" format=" + ParseAudioFormat(attrInfo.format) +
+    audioAttrInfo_ = "rate="+to_string(attrInfo.sampleRate)+" format=" + ParseAudioFormatToStr(attrInfo.format) +
         " channels=" + to_string(attrInfo.channelCount) + " buffer_size="+to_string(bufferSize);
     AUDIO_INFO_LOG("audio attributes %{public}s ", audioAttrInfo_.c_str());
     return SUCCESS;
@@ -301,10 +340,11 @@ std::string AudioRendererSinkInner::GetDPDeviceAttrInfo(const std::string &condi
     ret = InitRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetDPDeviceAttrInfo failed when init render");
 
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, "", "GetDPDeviceAttrInfo failed when audioRender_ is null");
     struct AudioSampleAttributes attrInfo = {};
     ret = audioRender_->GetSampleAttributes(audioRender_, &attrInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetDPDeviceAttrInfo failed when GetSampleAttributes");
-    AUDIO_INFO_LOG("GetSampleAttributes: sampleRate %{public}d, format: %{public}d, channelCount: %{public}d," \
+    AUDIO_DEBUG_LOG("GetSampleAttributes: sampleRate %{public}d, format: %{public}d, channelCount: %{public}d," \
         "size: %{public}d", attrInfo.sampleRate, attrInfo.format, attrInfo.channelCount, attrInfo.frameSize);
     ret = SetAudioAttrInfo(attrInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "SetAudioAttrInfo failed when SetAudioAttrInfo");
@@ -323,7 +363,7 @@ std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, c
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init adapter failed for get usb info param");
     }
     if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
-        // Init adapter to get parameter before load sink module (need fix)
+        // Init adapter and render to get parameter before load sink module (need fix)
         return GetDPDeviceAttrInfo(condition);
     }
 
@@ -1115,19 +1155,6 @@ int32_t AudioRendererSinkInner::Preload(const std::string &usbInfoStr)
     return SUCCESS;
 }
 
-static HdiAdapterFormat ParseAudioFormat(const std::string &format)
-{
-    if (format == "AUDIO_FORMAT_PCM_16_BIT") {
-        return HdiAdapterFormat::SAMPLE_S16;
-    } else if (format == "AUDIO_FORMAT_PCM_24_BIT") {
-        return HdiAdapterFormat::SAMPLE_S24;
-    } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
-        return HdiAdapterFormat::SAMPLE_S32;
-    } else {
-        return HdiAdapterFormat::SAMPLE_S16;
-    }
-}
-
 int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
 {
     CHECK_AND_RETURN_RET_LOG(usbInfoStr != "", ERR_INVALID_PARAM, "usb info string error");
@@ -1161,10 +1188,10 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
     std::string sampleRateStr = usbInfoStr.substr(sinkRate_begin + std::strlen("rate="),
         sinkRate_end - sinkRate_begin - std::strlen("rate="));
 
-    auto sinkFormat_begin = usbInfoStr.find("buffer_size=");
-    auto sinkFormat_end = usbInfoStr.find_first_of(" ", sinkFormat_begin);
-    std::string bufferSize = usbInfoStr.substr(sinkFormat_begin + std::strlen("buffer_size="),
-        sinkFormat_end - sinkFormat_begin - std::strlen("buffer_size="));
+    auto sinkBuffer_begin = usbInfoStr.find("buffer_size=");
+    auto sinkBuffer_end = usbInfoStr.find_first_of(" ", sinkBuffer_begin);
+    std::string bufferSize = usbInfoStr.substr(sinkBuffer_begin + std::strlen("buffer_size="),
+        sinkBuffer_end - sinkBuffer_begin - std::strlen("buffer_size="));
 
     auto sinkChannel_begin = usbInfoStr.find("channels=");
     auto sinkChannel_end = usbInfoStr.find_first_of(" ", sinkChannel_begin);
@@ -1173,10 +1200,13 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
 
     attr_.sampleRate = stoi(sampleRateStr);
     attr_.channel = stoi(channeltStr);
-    int32_t format = stoi(bufferSize) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
-    attr_.format = ParseAudioFormat(ParseAudioFormat(format));
+    if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
+        AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
+    }
+    int32_t formatByte = stoi(bufferSize) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
+    attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
 
-    AUDIO_INFO_LOG("UpdateDPAttrs sampleRate %{public}d, format: %{public}d,channelCount: %{public}d",
+    AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d, format: %{public}d,channelCount: %{public}d",
         attr_.sampleRate, attr_.format, attr_.channel);
 
     adapterNameCase_ = "dp";
