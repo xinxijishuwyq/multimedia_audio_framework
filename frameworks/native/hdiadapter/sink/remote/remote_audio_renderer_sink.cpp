@@ -347,6 +347,7 @@ int32_t RemoteAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint
         AUDIO_ERR_LOG("Copy render frame failed, error code %d.", ret);
         return ERR_OPERATION_FAILED;
     }
+
     ret = audioRender_->RenderFrame(frameHal, writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "Render frame fail, ret %{public}x.", ret);
     writeLen = len;

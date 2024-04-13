@@ -56,6 +56,9 @@ static DeviceType GetInternalDeviceType(AudioDeviceType hdiDeviceType)
         case AudioDeviceType::AUDIO_ADAPTER_DEVICE:
             internalDeviceType = DEVICE_TYPE_EXTERN_CABLE;
             break;
+        case AudioDeviceType::AUDIO_DP_DEVICE:
+            internalDeviceType = DEVICE_TYPE_DP;
+            break;
         default:
             internalDeviceType = DEVICE_TYPE_NONE;
             break;
@@ -100,6 +103,7 @@ static void OnDeviceStatusChange(const std::string &info, DeviceStatusListener *
     }
 
     DeviceType internalDevice = GetInternalDeviceType(hdiDeviceType);
+    AUDIO_DEBUG_LOG("internalDevice = %{public}d, hdiDeviceType = %{public}d", internalDevice, hdiDeviceType);
     CHECK_AND_RETURN_LOG(internalDevice != DEVICE_TYPE_NONE, "Unsupported device %{public}d", hdiDeviceType);
 
     bool isConnected = (hdiEventType == AUDIO_DEVICE_ADD) ? true : false;
