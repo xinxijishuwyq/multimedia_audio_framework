@@ -59,27 +59,27 @@ public:
     void ReleaseEffectChain();
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
-    void SetIOBufferConfig(bool isInput, uint32_t samplingRate, uint32_t channels);
     bool IsEmptyEffectHandles();
     void Dump();
     int32_t UpdateMultichannelIoBufferConfig(const uint32_t &channels, const uint64_t &channelLayout);
     void StoreOldEffectChainInfo(std::string &sceneMode, AudioEffectConfig &ioBufferConfig);
-    AudioEffectConfig GetIoBufferConfig();
     void InitEffectChain();
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
     int32_t SetEffectParam(AudioEffectScene currSceneType);
 
 private:
-    std::mutex reloadMutex;
-    std::string sceneType;
-    std::string effectMode;
+    AudioEffectConfig GetIoBufferConfig();
+
+    std::mutex reloadMutex_;
+    std::string sceneType_;
+    std::string effectMode_;
     uint32_t latency_ = 0;
-    std::vector<AudioEffectHandle> standByEffectHandles;
-    std::vector<AudioEffectLibrary *> libHandles;
-    AudioEffectConfig ioBufferConfig;
-    AudioBuffer audioBufIn;
-    AudioBuffer audioBufOut;
+    std::vector<AudioEffectHandle> standByEffectHandles_;
+    std::vector<AudioEffectLibrary *> libHandles_;
+    AudioEffectConfig ioBufferConfig_;
+    AudioBuffer audioBufIn_;
+    AudioBuffer audioBufOut_;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
