@@ -246,7 +246,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 
     // In case if KvStore didnot connect during bootup
     if (audioPolicyKvStore_ == nullptr) {
-        InitKVStore();
+        InitKVStoreInternal();
     }
 
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
