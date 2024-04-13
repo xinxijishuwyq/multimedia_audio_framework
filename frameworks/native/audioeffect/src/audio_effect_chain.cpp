@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -211,7 +211,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 {
     if (IsEmptyEffectHandles()) {
         size_t totlen = frameLen * ioBufferConfig.outputCfg.channels * sizeof(float);
-        memcpy_s(bufOut, totlen, bufIn, totlen);
+        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, totlen, bufIn, totlen) == 0, "memcpy error in apply effect");
         return;
     }
 
@@ -249,7 +249,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     if ((count & 1) == 0) {
         size_t totlen = frameLen * ioBufferConfig.outputCfg.channels * sizeof(float);
-        memcpy_s(bufOut, totlen, bufIn, totlen);
+        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, totlen, bufIn, totlen), "memcpy error when last copy");
     }
 }
 

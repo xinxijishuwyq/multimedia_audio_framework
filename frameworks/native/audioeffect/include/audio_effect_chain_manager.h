@@ -97,7 +97,6 @@ public:
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList);
     bool CheckAndAddSessionID(const std::string &sessionID);
     int32_t CreateAudioEffectChainDynamic(const std::string &sceneType);
-    int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     bool CheckAndRemoveSessionID(const std::string &sessionID);
     int32_t ReleaseAudioEffectChainDynamic(const std::string &sceneType);
     bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
@@ -106,8 +105,6 @@ public:
     int32_t SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     std::string GetDeviceTypeName();
     std::string GetDeviceSinkName();
-    int32_t GetFrameLen();
-    int32_t SetFrameLen(int32_t frameLen);
     bool GetOffloadEnabled();
     void Dump();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
@@ -125,6 +122,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
 
 private:
+    int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
     void DeleteAllChains();
     void RecoverAllChains();
@@ -148,7 +146,6 @@ private:
     std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
     std::map<std::string, sessionEffectInfo> SessionIDToEffectInfoMap_;
     std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
-    uint32_t frameLen_ = DEFAULT_FRAMELEN;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;

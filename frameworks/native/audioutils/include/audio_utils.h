@@ -235,15 +235,15 @@ T *ObjectRefMap<T>::GetPtr()
     return obj_;
 }
 
-template <typename T, typename V>
-T GetKeyFromValue(const std::unordered_map<T, V> &map, const V &value)
+template <typename EnumType, typename V>
+int32_t GetKeyFromValue(const std::unordered_map<EnumType, V> &map, const V &value)
 {
-    for (auto it = map.begin(); it != map.end(); ++it) {
-        if (it->second == value) {
-            return it->first;
+    for (auto it : map) {
+        if (it.second == value) {
+            return it.first;
         }
     }
-    return T{};
+    return -1;
 }
 } // namespace AudioStandard
 } // namespace OHOS

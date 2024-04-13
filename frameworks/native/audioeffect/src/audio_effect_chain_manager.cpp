@@ -87,7 +87,6 @@ AudioEffectChainManager::AudioEffectChainManager()
     SceneTypeToSessionIDMap_.clear();
     SessionIDToEffectInfoMap_.clear();
     SceneTypeToEffectChainCountBackupMap_.clear();
-    frameLen_ = DEFAULT_FRAMELEN;
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
     isInitialized_ = false;
@@ -204,17 +203,6 @@ std::string AudioEffectChainManager::GetDeviceTypeName()
 std::string AudioEffectChainManager::GetDeviceSinkName()
 {
     return deviceSink_;
-}
-
-int32_t AudioEffectChainManager::SetFrameLen(int32_t frameLength)
-{
-    frameLen_ = frameLength;
-    return SUCCESS;
-}
-
-int32_t AudioEffectChainManager::GetFrameLen()
-{
-    return frameLen_;
 }
 
 bool AudioEffectChainManager::GetOffloadEnabled()
@@ -469,12 +457,14 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     size_t totLen = bufferAttr->frameLen * bufferAttr->numChans * sizeof(float);
 #ifdef DEVICE_FLAG
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-        memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen);
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
+            "memcpy error in no effect copy");
         return ERROR;
     }
 #else
     if (deviceType_ != DEVICE_TYPE_SPEAKER || !SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-        memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen);
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
+            "memcpy error in no effect copy");
         return SUCCESS;
     }
 #endif
