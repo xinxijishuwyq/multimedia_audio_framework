@@ -104,6 +104,7 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
+    int32_t SetPaPower(int32_t flag) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
@@ -725,6 +726,13 @@ void RemoteAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType devi
 OHOS::AudioStandard::IAudioSinkCallback* RemoteAudioRendererSinkInner::GetParamCallback()
 {
     return callback_;
+}
+
+int32_t RemoteAudioRendererSinkInner::SetPaPower(int32_t flag)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

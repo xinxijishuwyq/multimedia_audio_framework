@@ -62,6 +62,7 @@ public:
     void ResetOutputRouteForDisconnect(DeviceType device) override;
 
     float GetMaxAmplitude() override;
+    int32_t SetPaPower(int32_t flag) override;
 private:
     AudioRendererFileSink();
     ~AudioRendererFileSink();
