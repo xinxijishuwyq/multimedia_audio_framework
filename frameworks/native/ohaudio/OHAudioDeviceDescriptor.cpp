@@ -142,15 +142,15 @@ OHAudioDeviceDescriptor::~OHAudioDeviceDescriptor()
         audioDeviceDescriptor_ = nullptr;
     }
     if (audioSamplingRate_ != nullptr) {
-        free(audioSamplingRate_);
+        delete audioSamplingRate_;
         audioSamplingRate_ = nullptr;
     }
     if (audioChannel_ != nullptr) {
-        free(audioChannel_);
+        delete audioChannel_;
         audioChannel_ = nullptr;
     }
     if (encodingType_ != nullptr) {
-        free(encodingType_);
+        delete encodingType_;
         encodingType_ = nullptr;
     }
 }
@@ -183,7 +183,7 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceName(char **name)
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    const char* deviceName = audioDeviceDescriptor_->deviceName_.c_str();
+    const char *deviceName = audioDeviceDescriptor_->deviceName_.c_str();
     *name = const_cast<char*>(deviceName);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -192,7 +192,7 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceAddress(char **address)
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    const char* macAddress = audioDeviceDescriptor_->macAddress_.c_str();
+    const char *macAddress = audioDeviceDescriptor_->macAddress_.c_str();
     *address = const_cast<char*>(macAddress);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -244,7 +244,7 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceDisplayName(char **displ
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    const char* name = audioDeviceDescriptor_->displayName_.c_str();
+    const char *name = audioDeviceDescriptor_->displayName_.c_str();
     *displayName = const_cast<char*>(name);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
