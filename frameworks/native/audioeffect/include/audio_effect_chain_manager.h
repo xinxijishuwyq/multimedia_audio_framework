@@ -163,7 +163,7 @@ private:
 #endif
 
     std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam_;
-    int8_t effectHdiInput[SEND_HDI_COMMAND_LEN];
+    int8_t effectHdiInput_[SEND_HDI_COMMAND_LEN];
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
