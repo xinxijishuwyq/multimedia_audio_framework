@@ -40,6 +40,7 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
         DeviceType activeInputDevice) override;
     const std::string GetAudioParameter(const std::string &key) override;
+    const std::string GetAudioParameter(const std::string &key, const std::string& condition) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
         const std::string& condition) override;
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,

@@ -57,6 +57,11 @@ const uint32_t PCM_32_BIT = 32;
 const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 const unsigned int TIME_OUT_SECONDS = 10;
+const unsigned int BUFFER_CALC_20MS = 20;
+const unsigned int BUFFER_CALC_1000MS = 1000;
+const unsigned int FORMAT_2_BYTE = 2;
+const unsigned int FORMAT_3_BYTE = 3;
+const unsigned int FORMAT_4_BYTE = 4;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
@@ -103,6 +108,8 @@ public:
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     float GetMaxAmplitude() override;
 
+    std::string GetDPDeviceAttrInfo(const std::string &condition);
+
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
     ~AudioRendererSinkInner();
 private:
@@ -147,6 +154,7 @@ private:
     std::atomic<int32_t> renderEmptyFrameCount_ = 0;
     std::mutex switchMutex_;
     std::condition_variable switchCV_;
+    std::string audioAttrInfo_ = "";
 
 private:
     int32_t CreateRender(const struct AudioPort &renderPort);
@@ -163,6 +171,11 @@ private:
     int32_t InitRender();
     void ReleaseRunningLock();
     void CheckUpdateState(char *frame, uint64_t replyBytes);
+
+    int32_t UpdateDPAttrs(const std::string &usbInfoStr);
+    bool AttributesCheck(AudioSampleAttributes &attrInfo);
+    int32_t SetAudioAttrInfo(AudioSampleAttributes &attrInfo);
+    std::string GetAudioAttrInfo();
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -184,10 +197,16 @@ AudioRendererSinkInner::~AudioRendererSinkInner()
 
 AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
 {
+    AUDIO_INFO_LOG("halName: %{public}s",
+        halName.c_str());
     if (halName == "usb") {
         static AudioRendererSinkInner audioRendererUsb(halName);
         return &audioRendererUsb;
+    } else if (halName == "dp") {
+        static AudioRendererSinkInner audioRendererDp(halName);
+        return &audioRendererDp;
     }
+
     static AudioRendererSinkInner audioRenderer;
     return &audioRenderer;
 }
@@ -201,6 +220,8 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
+        AUDIO_INFO_LOG("size: %{public}d, adapterNameCase %{public}s, adapterName %{public}s",
+            size, adapterNameCase.c_str(), desc->adapterName);
         if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
             for (uint32_t port = 0; port < desc->portsLen; port++) {
                 // Only find out the port of out in the sound card
@@ -230,24 +251,89 @@ void AudioRendererSinkInner::SetAudioParameter(const AudioParamKey key, const st
     }
 }
 
+static string ParseAudioFormat(int32_t format)
+{
+    if (format == FORMAT_2_BYTE) {
+        return "AUDIO_FORMAT_PCM_16_BIT";
+    } else if (format == FORMAT_3_BYTE) {
+        return "AUDIO_FORMAT_PCM_24_BIT";
+    } else if (format == FORMAT_4_BYTE)  {
+        return "AUDIO_FORMAT_PCM_32_BIT";
+    } else {
+        return "";
+    }
+}
+
+bool AudioRendererSinkInner::AttributesCheck(AudioSampleAttributes &attrInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(attrInfo.sampleRate > 0, false, "rate failed %{public}d", attrInfo.sampleRate);
+    // CHECK_AND_RETURN_RET_LOG(attrInfo.format > 0, false, "format failed %{public}d", attrInfo.format);
+    CHECK_AND_RETURN_RET_LOG(attrInfo.channelCount > 0, false, "channel failed %{public}d", attrInfo.channelCount);
+    if (attrInfo.format <= 0) attrInfo.format = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+    return true;
+}
+
+int32_t AudioRendererSinkInner::SetAudioAttrInfo(AudioSampleAttributes &attrInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(AttributesCheck(attrInfo), ERROR, "AttributesCheck failed");
+    int32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
+        BUFFER_CALC_20MS / BUFFER_CALC_1000MS;
+    audioAttrInfo_ = "rate="+to_string(attrInfo.sampleRate)+" format=" + ParseAudioFormat(attrInfo.format) +
+        " channels=" + to_string(attrInfo.channelCount) + " buffer_size="+to_string(bufferSize);
+    AUDIO_INFO_LOG("audio attributes %{public}s ", audioAttrInfo_.c_str());
+    return SUCCESS;
+}
+
+std::string AudioRendererSinkInner::GetAudioAttrInfo()
+{
+    return audioAttrInfo_;
+}
+
+std::string AudioRendererSinkInner::GetDPDeviceAttrInfo(const std::string &condition)
+{
+    int32_t ret = UpdateDPAttrs(condition);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetDPDeviceAttrInfo failed when init attr");
+
+    adapterNameCase_ = "dp";
+    ret = InitAdapter();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetDPDeviceAttrInfo failed when init adapter");
+
+    ret = InitRender();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetDPDeviceAttrInfo failed when init render");
+
+    struct AudioSampleAttributes attrInfo = {};
+    ret = audioRender_->GetSampleAttributes(audioRender_, &attrInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "GetDPDeviceAttrInfo failed when GetSampleAttributes");
+    AUDIO_INFO_LOG("GetSampleAttributes: sampleRate %{public}d, format: %{public}d, channelCount: %{public}d," \
+        "size: %{public}d", attrInfo.sampleRate, attrInfo.format, attrInfo.channelCount, attrInfo.frameSize);
+    ret = SetAudioAttrInfo(attrInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "SetAudioAttrInfo failed when SetAudioAttrInfo");
+
+    return GetAudioAttrInfo();
+}
+
 std::string AudioRendererSinkInner::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
-    AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s", key,
-        condition.c_str());
+    AUDIO_INFO_LOG("GetAudioParameter: key %{public}d, condition: %{public}s, halName: %{public}s",
+        key, condition.c_str(), halName_.c_str());
     if (condition == "get_usb_info") {
         // Init adapter to get parameter before load sink module (need fix)
         adapterNameCase_ = "usb";
         int32_t ret = InitAdapter();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "Init adapter failed for get usb info param");
     }
+    if (key == AudioParamKey::GET_DP_DEVICE_INFO) {
+        // Init adapter to get parameter before load sink module (need fix)
+        return GetDPDeviceAttrInfo(condition);
+    }
 
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     char value[PARAM_VALUE_LENTH];
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "",
-        "GetAudioParameter failed, audioAdapter_ is null");
+    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, "", "GetAudioParameter failed, audioAdapter_ is null");
     int32_t ret = audioAdapter_->GetExtraParams(audioAdapter_, hdiKey, condition.c_str(), value, PARAM_VALUE_LENTH);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "",
         "GetAudioParameter failed, error code: %d", ret);
+
     return value;
 }
 
@@ -482,15 +568,21 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     } else if (param.channelCount == STEREO) {
         param.channelLayout = CH_LAYOUT_STEREO;
     }
+    if (halName_ == "dp") {
+        param.type = AUDIO_DP;
+    }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
-    AUDIO_DEBUG_LOG("Create render format: %{public}d", param.format);
+    AUDIO_INFO_LOG("Create render halname: %{public}s format: %{public}d, sampleRate:%{public}u channel%{public}u",
+        halName_.c_str(), param.format, param.sampleRate, param.channelCount);
     deviceDesc.portId = renderPort.portId;
     deviceDesc.desc = const_cast<char *>("");
     deviceDesc.pins = PIN_OUT_SPEAKER;
     if (halName_ == "usb") {
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
+    } else if (halName_ == "dp") {
+        deviceDesc.pins = PIN_OUT_DP;
     }
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
@@ -506,6 +598,7 @@ int32_t AudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName;
+    AUDIO_INFO_LOG("adapterNameCase_ :%{public}s", adapterNameCase_.c_str());
     openSpeaker_ = attr_.openMicSpeaker;
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
     Trace trace("AudioRendererSinkInner::Init " + adapterNameCase_);
@@ -843,6 +936,8 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
         if (halName_ == "usb") {
             audioSceneOutPort = PIN_OUT_USB_HEADSET;
+        } else if (halName_ == "dp") {
+            audioSceneOutPort = PIN_OUT_DP;
         }
 
         AUDIO_DEBUG_LOG("OUTPUT port is %{public}d", audioSceneOutPort);
@@ -1057,6 +1152,39 @@ int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
     return SUCCESS;
 }
 
+int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
+{
+    CHECK_AND_RETURN_RET_LOG(usbInfoStr != "", ERR_INVALID_PARAM, "usb info string error");
+
+    auto sinkRate_begin = usbInfoStr.find("rate=");
+    auto sinkRate_end = usbInfoStr.find_first_of(" ", sinkRate_begin);
+    std::string sampleRateStr = usbInfoStr.substr(sinkRate_begin + std::strlen("rate="),
+        sinkRate_end - sinkRate_begin - std::strlen("rate="));
+
+    auto sinkFormat_begin = usbInfoStr.find("buffer_size=");
+    auto sinkFormat_end = usbInfoStr.find_first_of(" ", sinkFormat_begin);
+    std::string bufferSize = usbInfoStr.substr(sinkFormat_begin + std::strlen("buffer_size="),
+        sinkFormat_end - sinkFormat_begin - std::strlen("buffer_size="));
+
+    auto sinkChannel_begin = usbInfoStr.find("channels=");
+    auto sinkChannel_end = usbInfoStr.find_first_of(" ", sinkChannel_begin);
+    std::string channeltStr = usbInfoStr.substr(sinkChannel_begin + std::strlen("channels="),
+        sinkChannel_end - sinkChannel_begin - std::strlen("channels="));
+
+    attr_.sampleRate = stoi(sampleRateStr);
+    attr_.channel = stoi(channeltStr);
+    int32_t format = stoi(bufferSize) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
+    attr_.format = ParseAudioFormat(ParseAudioFormat(format));
+
+    AUDIO_INFO_LOG("UpdateDPAttrs sampleRate %{public}d, format: %{public}d,channelCount: %{public}d",
+        attr_.sampleRate, attr_.format, attr_.channel);
+
+    adapterNameCase_ = "dp";
+    openSpeaker_ = 0;
+
+    return SUCCESS;
+}
+
 int32_t AudioRendererSinkInner::InitAdapter()
 {
     AUDIO_INFO_LOG("Init adapter start");
@@ -1114,6 +1242,8 @@ int32_t AudioRendererSinkInner::InitRender()
         int32_t ret = SUCCESS;
         if (halName_ == "usb") {
             ret = SetOutputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
+        } else if (halName_ == "dp") {
+            ret = SetOutputRoute(DEVICE_TYPE_DP);
         } else {
             ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
         }

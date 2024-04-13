@@ -35,9 +35,10 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
 {
     CHECK_AND_RETURN_RET_LOG(devceClass != nullptr && deviceNetworkId != nullptr, nullptr,
         "GetInstance null class or networkid");
-    AUDIO_DEBUG_LOG("%{public}s Sink:GetInstance[%{public}s]", devceClass, deviceNetworkId);
+    AUDIO_INFO_LOG("%{public}s Sink:GetInstance[%{public}s]", devceClass, deviceNetworkId);
     const char *deviceClassPrimary = "primary";
     const char *deviceClassUsb = "usb";
+    const char *deviceClassDp = "dp";
     const char *deviceClassA2DP = "a2dp";
     const char *deviceClassFile = "file_io";
     const char *deviceClassRemote = "remote";
@@ -50,6 +51,9 @@ IAudioRendererSink *IAudioRendererSink::GetInstance(const char *devceClass, cons
     }
     if (!strcmp(devceClass, deviceClassUsb)) {
         iAudioRendererSink = AudioRendererSink::GetInstance("usb");
+    }
+    if (!strcmp(devceClass, deviceClassDp)) {
+        iAudioRendererSink = AudioRendererSink::GetInstance("dp");
     }
     if (!strcmp(devceClass, deviceClassA2DP)) {
         iAudioRendererSink = BluetoothRendererSink::GetInstance();

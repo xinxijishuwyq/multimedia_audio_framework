@@ -35,6 +35,7 @@ const int32_t CLASS_TYPE_FILE = 2;
 const int32_t CLASS_TYPE_REMOTE = 3;
 const int32_t CLASS_TYPE_USB = 4;
 const int32_t CLASS_TYPE_OFFLOAD = 5;
+const int32_t CLASS_TYPE_DP = 7;
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
 const char *DEVICE_CLASS_USB = "usb";
@@ -42,6 +43,7 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_FILE = "file_io";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
+const char *DEVICE_CLASS_DP = "dp";
 
 int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter)
 {
@@ -63,6 +65,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_FILE) ? CLASS_TYPE_FILE : adapter->deviceClass;
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_REMOTE) ? CLASS_TYPE_REMOTE : adapter->deviceClass;
     adapter->deviceClass = !strcmp(device, DEVICE_CLASS_OFFLOAD) ? CLASS_TYPE_OFFLOAD : adapter->deviceClass;
+    adapter->deviceClass = !strcmp(device, DEVICE_CLASS_DP) ? CLASS_TYPE_DP : adapter->deviceClass;
 
     adapter->RendererSinkInit = IAudioRendererSinkInit;
     adapter->RendererSinkDeInit = IAudioRendererSinkDeInit;
@@ -111,6 +114,8 @@ const char *GetDeviceClass(int32_t deviceClass)
         return DEVICE_CLASS_REMOTE;
     } else if (deviceClass == CLASS_TYPE_OFFLOAD) {
         return DEVICE_CLASS_OFFLOAD;
+    } else if (deviceClass == CLASS_TYPE_DP) {
+        return DEVICE_CLASS_DP;
     } else {
         return "";
     }

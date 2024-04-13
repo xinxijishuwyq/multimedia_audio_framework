@@ -779,6 +779,7 @@ enum AudioPin {
     AUDIO_PIN_OUT_DAUDIO_DEFAULT = 1 << 7, // Daudio default output pin
     AUDIO_PIN_OUT_HEADPHONE = 1 << 8, // Wired headphone output pin
     AUDIO_PIN_OUT_USB_HEADSET = 1 << 9,  // Arm usb output pin
+    AUDIO_PIN_OUT_DP = 1 << 11,
     AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
     AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
     AUDIO_PIN_IN_LINEIN = 1 << 27 | 1 << 2, // Line-in pin
@@ -797,6 +798,7 @@ enum AudioParamKey {
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
     A2DP_OFFLOAD_STATE = 9, //for a2dp offload
+    GET_DP_DEVICE_INFO = 10, //for dp sink
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,

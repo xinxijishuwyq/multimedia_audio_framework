@@ -512,9 +512,15 @@ private:
 
     int32_t LoadUsbModule(string deviceInfo);
 
+    int32_t LoadDpModule(string deviceInfo);
+
     int32_t LoadDefaultUsbModule();
 
     int32_t HandleArmUsbDevice(DeviceType deviceType);
+
+    int32_t HandleDpDevice(DeviceType deviceType);
+
+    int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
 
     int32_t HandleFileDevice(DeviceType deviceType);
 
@@ -767,6 +773,7 @@ private:
     std::vector<DeviceType> outputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
         DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_DP,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_SPEAKER

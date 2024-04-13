@@ -95,6 +95,15 @@ public:
     virtual const std::string GetAudioParameter(const std::string &key) = 0;
 
     /**
+     * Get Audio Parameter.
+     *
+     * @param  key for the audio parameter to be set
+     * @param  condition for the audio parameter to be set
+     * @return Returns value associated to the key requested.
+     */
+    virtual const std::string GetAudioParameter(const std::string &key, const std::string& condition) = 0;
+
+    /**
      * Set Audio Parameter.
      *
      * @param  networkId for the distributed device
@@ -359,6 +368,7 @@ private:
     int HandleResetRouteForDisconnect(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectLatency(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAudioParameterByCondition(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int (AudioManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -401,6 +411,7 @@ private:
         &AudioManagerStub::HandleResetRouteForDisconnect,
         &AudioManagerStub::HandleGetEffectLatency,
         &AudioManagerStub::HandleUpdateLatencyTimestamp,
+        &AudioManagerStub::HandleGetAudioParameterByCondition,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),

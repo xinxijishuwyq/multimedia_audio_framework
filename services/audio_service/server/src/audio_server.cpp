@@ -328,7 +328,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
     }
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
-    AUDIO_DEBUG_LOG("server: get audio parameter");
+    AUDIO_INFO_LOG("get audio parameter %{public}s", key.c_str());
     if (key == "get_usb_info") {
         IAudioRendererSink *usbAudioRendererSinkInstance = IAudioRendererSink::GetInstance("usb", "");
         IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
@@ -341,6 +341,7 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
             return usbInfoStr;
         }
     }
+
     IAudioRendererSink *audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
     if (audioRendererSinkInstance != nullptr) {
         AudioParamKey parmKey = AudioParamKey::NONE;
@@ -374,6 +375,23 @@ const std::string AudioServer::GetAudioParameter(const std::string &key)
     } else {
         return "";
     }
+}
+
+const std::string AudioServer::GetAudioParameter(const std::string &key, const std::string &condition)
+{
+    std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
+    AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS);
+    AUDIO_INFO_LOG("get audio parameter key %{public}s condition %{public}s", key.c_str(), condition.c_str());
+
+    if (key == "get_dp_info") {
+        IAudioRendererSink *dpAudioRendererSinkInstance = IAudioRendererSink::GetInstance("dp", "");
+        if (dpAudioRendererSinkInstance != nullptr) {
+            std::string dpInfoStr =
+                dpAudioRendererSinkInstance->GetAudioParameter(AudioParamKey::GET_DP_DEVICE_INFO, condition);
+            return dpInfoStr;
+        }
+    }
+    return "";
 }
 
 const std::string AudioServer::GetAudioParameter(const std::string& networkId, const AudioParamKey key,
