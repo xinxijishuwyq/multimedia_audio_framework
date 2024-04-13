@@ -54,7 +54,7 @@ const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
 
-struct sessionEffectInfo {
+struct SessionEffectInfo {
     std::string sceneMode;
     std::string sceneType;
     uint32_t channels;
@@ -75,13 +75,13 @@ const std::vector<AudioChannelLayout> HVS_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_9POINT1POINT6
 };
 
-struct effectBufferAttr {
+struct EffectBufferAttr {
     float *bufIn;
     float *bufOut;
     int numChans;
     int frameLen;
 
-    effectBufferAttr(float *bufIn, float *bufOut, int numChans, int frameLen)
+    EffectBufferAttr(float *bufIn, float *bufOut, int numChans, int frameLen)
         : bufIn(bufIn), bufOut(bufOut), numChans(numChans), frameLen(frameLen)
     {
     }
@@ -101,7 +101,7 @@ public:
     int32_t ReleaseAudioEffectChainDynamic(const std::string &sceneType);
     bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
         const std::string &spatializationEnabled);
-    int32_t ApplyAudioEffectChain(const std::string &sceneType, const std::unique_ptr<effectBufferAttr> &bufferAttr);
+    int32_t ApplyAudioEffectChain(const std::string &sceneType, const std::unique_ptr<EffectBufferAttr> &bufferAttr);
     int32_t SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     std::string GetDeviceTypeName();
     std::string GetDeviceSinkName();
@@ -111,7 +111,7 @@ public:
     int32_t InitAudioEffectChainDynamic(const std::string &sceneType);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(const std::string &sceneType, const std::string &effectMode, bool enabled);
-    int32_t SessionInfoMapAdd(const std::string &sessionID, const sessionEffectInfo &info);
+    int32_t SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info);
     int32_t SessionInfoMapDelete(const std::string &sceneType, const std::string &sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t *channels, uint64_t *channelLayout);
     int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
@@ -144,7 +144,7 @@ private:
     std::map<std::string, int32_t> SceneTypeToEffectChainCountMap_;
     std::set<std::string> SessionIDSet_;
     std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
-    std::map<std::string, sessionEffectInfo> SessionIDToEffectInfoMap_;
+    std::map<std::string, SessionEffectInfo> SessionIDToEffectInfoMap_;
     std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;

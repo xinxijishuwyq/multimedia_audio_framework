@@ -77,7 +77,7 @@ int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
     if (sceneType) {
         sceneTypeString = sceneType;
     }
-    auto eBufferAttr = std::make_unique<effectBufferAttr>(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->numChanIn,
+    auto eBufferAttr = std::make_unique<EffectBufferAttr>(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->numChanIn,
         bufferAttr->frameLen);
     if (audioEffectChainManager->ApplyAudioEffectChain(sceneTypeString, eBufferAttr) != SUCCESS) {
         return ERROR;
@@ -290,7 +290,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
         return ERROR;
     }
 
-    sessionEffectInfo info;
+    SessionEffectInfo info;
     info.sceneMode = sceneModeString;
     info.sceneType = sceneTypeString;
     info.channels = pack.channels;

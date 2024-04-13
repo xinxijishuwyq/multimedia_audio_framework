@@ -451,7 +451,7 @@ bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType
 }
 
 int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneType,
-    const std::unique_ptr<effectBufferAttr> &bufferAttr)
+    const std::unique_ptr<EffectBufferAttr> &bufferAttr)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     size_t totLen = bufferAttr->frameLen * bufferAttr->numChans * sizeof(float);
@@ -494,7 +494,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
-            sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+            SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
             volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
         }
     }
@@ -519,7 +519,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
         uint32_t volumeMax = 0;
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
-            sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+            SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
             volumeMax = info.volume > volumeMax ? info.volume : volumeMax;
         }
         if (audioEffectVolume->GetApVolume(it->first) != volumeMax) {
@@ -720,7 +720,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     }
     std::set<std::string> sessions = SceneTypeToSessionIDMap_[sceneType];
     for (auto s = sessions.begin(); s != sessions.end(); ++s) {
-        sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+        SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
         uint32_t TmpChannelCount;
         uint64_t TmpChannelLayout;
         if (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP"
@@ -747,7 +747,7 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
     for (auto it = SceneTypeToSessionIDMap_.begin(); it != SceneTypeToSessionIDMap_.end(); it++) {
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); ++s) {
-            sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+            SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
             uint32_t TmpChannelCount = DEFAULT_MCH_NUM_CHANNEL;
             uint64_t TmpChannelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
             if (info.channels > DEFAULT_NUM_CHANNEL &&
@@ -766,7 +766,7 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
     return SUCCESS;
 }
 
-int32_t AudioEffectChainManager::SessionInfoMapAdd(const std::string &sessionID, const sessionEffectInfo &info)
+int32_t AudioEffectChainManager::SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (!SessionIDToEffectInfoMap_.count(sessionID)) {
