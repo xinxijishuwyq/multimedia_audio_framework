@@ -585,6 +585,7 @@ int32_t RendererInServer::DisableInnerCap()
         return ERR_INVALID_OPERATION;
     }
     isInnerCapEnabled_ = false;
+    AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_);
     // in plan: call stop?
     IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
     dupStream_ = nullptr;

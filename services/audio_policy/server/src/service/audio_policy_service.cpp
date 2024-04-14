@@ -46,7 +46,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-static const std::string INNER_CAPTURER_SINK_NAME = "InnerCapturer";
+static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 static const std::string RECEIVER_SINK_NAME = "Receiver";
 static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
 
@@ -3506,6 +3506,8 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         }
         audioEffectManager_.SetMasterSinkAvailable();
     }
+    // load inner-cap-sink
+    LoadModernInnerCapSink();
     RegisterBluetoothListener();
 }
 
@@ -3649,12 +3651,12 @@ void AudioPolicyService::LoadLoopback()
     std::string moduleName;
     AUDIO_INFO_LOG("Start");
     std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    CHECK_AND_RETURN_LOG(IOHandles_.count(INNER_CAPTURER_SINK_NAME) == 1u,
+    CHECK_AND_RETURN_LOG(IOHandles_.count(INNER_CAPTURER_SINK_LEGACY) == 1u,
         "failed for InnerCapturer not loaded");
 
     LoopbackModuleInfo moduleInfo = {};
     moduleInfo.lib = "libmodule-loopback.z.so";
-    moduleInfo.sink = INNER_CAPTURER_SINK_NAME;
+    moduleInfo.sink = INNER_CAPTURER_SINK_LEGACY;
 
     for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++sceneType) {
@@ -3683,12 +3685,28 @@ void AudioPolicyService::UnloadLoopback()
 
     for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++sceneType) {
-        module = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_NAME;
+        module = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_LEGACY;
         ClosePortAndEraseIOHandle(module);
     }
 
-    module = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_NAME;
+    module = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_LEGACY;
     ClosePortAndEraseIOHandle(module);
+}
+
+void AudioPolicyService::LoadModernInnerCapSink()
+{
+    AUDIO_INFO_LOG("Start");
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
+    moduleInfo.name = INNER_CAPTURER_SINK;
+
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = 2; // 2 channel
+    moduleInfo.rate = "48000";
+    moduleInfo.bufferSize = "3840"; // 20ms
+
+    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 }
 
 void AudioPolicyService::LoadEffectLibrary()

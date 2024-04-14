@@ -227,6 +227,8 @@ public:
 
     void OnAudioBalanceChanged(float audioBalance);
 
+    void LoadModernInnerCapSink();
+
     void LoadEffectLibrary();
 
     int32_t SetAudioSessionCallback(AudioSessionCallback *callback);

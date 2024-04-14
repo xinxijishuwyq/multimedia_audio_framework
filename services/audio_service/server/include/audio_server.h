@@ -144,6 +144,7 @@ private:
     bool CheckRecorderPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
 
+    void ResetRecordConfig(int32_t callerUid, AudioProcessConfig &config);
     AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 

@@ -905,6 +905,27 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     return hapApiVersion;
 }
 
+void AudioServer::ResetRecordConfig(int32_t callerUid, AudioProcessConfig &config)
+{
+    if (config.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        config.isInnerCapturer = true;
+        config.innerCapMode = LEGACY_INNER_CAP;
+        if (callerUid == MEDIA_SERVICE_UID) {
+            config.innerCapMode = MODERN_INNER_CAP;
+        } else if (GetHapBuildApiVersion(callerUid) >= MODERN_INNER_API_VERSION) { // not media, check build api-version
+            config.innerCapMode = LEGACY_MUTE_CAP;
+        }
+    } else {
+        config.isInnerCapturer = false;
+    }
+
+    if (config.capturerInfo.sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
+        config.isWakeupCapturer = true;
+    } else {
+        config.isWakeupCapturer = false;
+    }
+}
+
 AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config)
 {
     AudioProcessConfig resetConfig(config);
@@ -926,14 +947,8 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
     }
 
-    if (resetConfig.audioMode == AUDIO_MODE_RECORD && resetConfig.capturerInfo.sourceType ==
-        SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        resetConfig.innerCapMode = LEGACY_INNER_CAP;
-        if (callerUid == MEDIA_SERVICE_UID) {
-            resetConfig.innerCapMode = MODERN_INNER_CAP;
-        } else if (GetHapBuildApiVersion(callerUid) >= MODERN_INNER_API_VERSION) { // not media, check build api-version
-            resetConfig.innerCapMode = LEGACY_MUTE_CAP;
-        }
+    if (resetConfig.audioMode == AUDIO_MODE_RECORD) {
+        ResetRecordConfig(callerUid, resetConfig);
     }
     return resetConfig;
 }

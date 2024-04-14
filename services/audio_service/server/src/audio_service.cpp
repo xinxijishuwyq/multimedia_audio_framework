@@ -95,6 +95,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
     }
 
     // in plan: GetDeviceInfoForProcess(config) and stream limit check
+    // in plan: call GetProcessDeviceInfo to load inner-cap-sink
     sptr<IpcStreamInServer> ipcStreamInServer = IpcStreamInServer::Create(config, ret);
 
     // in plan: Put playback into list, check if EnableInnerCap is need.

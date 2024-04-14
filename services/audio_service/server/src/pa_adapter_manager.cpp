@@ -297,9 +297,14 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
             if (no < WAKEUP_LIMIT) {
                 deviceName = WAKEUP_NAMES[no];
             }
-        } else if (processConfig.isInnerCapturer) {
-            deviceName = INNER_CAPTURER_SOURCE;
-            // deviceName = NEW_INNER_CAPTURER_SOURCE;
+        }
+        if (processConfig.isInnerCapturer) {
+            if (processConfig.innerCapMode == MODERN_INNER_CAP) {
+                AUDIO_INFO_LOG("Create the modern inner-cap.");
+                deviceName = NEW_INNER_CAPTURER_SOURCE;
+            } else {
+                deviceName = INNER_CAPTURER_SOURCE;
+            }
         } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
             deviceName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
         }
