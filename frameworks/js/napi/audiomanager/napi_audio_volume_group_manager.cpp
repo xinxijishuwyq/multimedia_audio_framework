@@ -311,7 +311,7 @@ napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_in
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolume(
-            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel);
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel, 0);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setvolume failed", NAPI_ERR_SYSTEM);
     };
 

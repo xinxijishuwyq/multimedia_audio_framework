@@ -527,7 +527,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
         return ERR_NOT_SUPPORTED;
     }
 
-    return SetSystemVolumeLevelInternal(streamType, volumeLevel, flag == FLAG_SHOW_UI);
+    return SetSystemVolumeLevelInternal(streamType, volumeLevel, volumeFlag == FLAG_SHOW_UI);
 }
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
