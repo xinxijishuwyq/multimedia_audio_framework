@@ -336,8 +336,11 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         return nullptr;
     }
-    if (SetStreamAudioEnhanceMode(paStream, enhanceMode_) != SUCCESS) {
-        AUDIO_ERR_LOG("set audio enhance mode failed.");
+    if (processConfig.audioMode == AUDIO_MODE_RECORD) {
+        int32_t ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
+        }
     }
     return paStream;
 }
