@@ -355,7 +355,7 @@ napi_value NapiAudioVolumeGroupManager::SetVolumeWithFlag(napi_env env, napi_cal
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
-        context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolumeWithFlag(
+        context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel, context->volFlag);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setvolumeWithFlag failed", NAPI_ERR_SYSTEM);
     };
