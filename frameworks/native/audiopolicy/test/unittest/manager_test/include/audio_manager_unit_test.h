@@ -18,7 +18,6 @@
 
 #include "gtest/gtest.h"
 #include "audio_system_manager.h"
-#include "audio_spatialization_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,12 +66,6 @@ class AudioFocusInfoChangeCallbackTest : public AudioFocusInfoChangeCallback {
 public:
     ~AudioFocusInfoChangeCallbackTest() = default;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-};
-
-class HeadTrackingDataRequestedChangeCallbackTest : public HeadTrackingDataRequestedChangeCallback {
-public:
-    ~HeadTrackingDataRequestedChangeCallbackTest() = default;
-    void OnHeadTrackingDataRequestedChange(bool isRequested) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS
