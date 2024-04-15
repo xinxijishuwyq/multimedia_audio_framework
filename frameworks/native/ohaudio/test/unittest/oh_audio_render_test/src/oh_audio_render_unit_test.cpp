@@ -13,12 +13,16 @@
  * limitations under the License.
  */
 
+#include <thread>
+#include <chrono>
 #include "oh_audio_render_unit_test.h"
 
 using namespace testing::ext;
+using namespace std::chrono;
 
 namespace {
     constexpr int32_t SAMPLE_RATE_48000 = 48000;
+    constexpr int32_t CHANNEL_2 = 2;
 }
 
 namespace OHOS {
@@ -54,6 +58,43 @@ static void AudioRendererOnMarkReachedCb(OH_AudioRenderer* renderer, uint32_t sa
 {
     g_flag = samplePos;
     printf("AudioRendererOnMarkReachedCb samplePos: %d \n", samplePos);
+}
+
+class OHAudioRendererWriteCallbackMock {
+public:
+    void OnWriteData(OH_AudioRenderer* renderer, void* userData,
+    void* buffer,
+    int32_t bufferLen)
+    {
+        exeCount_++;
+        if (executor_) {
+            executor_(renderer, userData, buffer, bufferLen);
+        }
+    }
+
+    void Install(std::function<void(OH_AudioRenderer*, void*, void*, int32_t)> executor)
+    {
+        executor_ = executor;
+    }
+
+    uint32_t GetExeCount()
+    {
+        return exeCount_;
+    }
+private:
+    std::function<void(OH_AudioRenderer*, void*, void*, int32_t)> executor_;
+    std::atomic<uint32_t> exeCount_ = 0;
+};
+
+static int32_t AudioRendererOnWriteDataMock(OH_AudioRenderer* renderer,
+    void* userData,
+    void* buffer,
+    int32_t bufferLen)
+{
+    OHAudioRendererWriteCallbackMock *mockPtr = static_cast<OHAudioRendererWriteCallbackMock*>(userData);
+    mockPtr->OnWriteData(renderer, userData, buffer, bufferLen);
+
+    return 0;
 }
 
 OH_AudioStreamBuilder* OHAudioRenderUnitTest::CreateRenderBuilder()
@@ -922,6 +963,271 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_CancelMark_003, TestSize.Level0)
     result = OH_AudioRenderer_Release(audioRenderer);
 
     // 6. destroy the builder
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetUnderflowCount API.
+* @tc.number: OH_AudioRenderer_GetUnderflowCount_001
+* @tc.desc  : Test OH_AudioRenderer_GetUnderflowCount interface.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+    OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
+    OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+
+    OHAudioRendererWriteCallbackMock writeCallbackMock;
+
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
+    OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    std::mutex mutex;
+    std::condition_variable cv;
+    int32_t count = 0;
+    writeCallbackMock.Install([&count, &mutex, &cv](OH_AudioRenderer* renderer, void* userData,
+        void* buffer,
+        int32_t bufferLen) {
+            std::lock_guard lock(mutex);
+            cv.notify_one();
+
+            // sleep time trigger underflow
+            if (count == 1) {
+                std::this_thread::sleep_for(200ms);
+            }
+            count++;
+        });
+
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    std::unique_lock lock(mutex);
+    cv.wait_for(lock, 1s, [&count] {
+        // count > 1 ensure sleeped
+        return count > 1;
+    });
+    lock.unlock();
+
+    uint32_t underFlowCount;
+    result = OH_AudioRenderer_GetUnderflowCount(audioRenderer, &underFlowCount);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_GE(underFlowCount, 1);
+
+    OH_AudioRenderer_Stop(audioRenderer);
+    OH_AudioRenderer_Release(audioRenderer);
+
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetUnderflowCount API.
+* @tc.number: OH_AudioRenderer_GetUnderflowCount_002
+* @tc.desc  : Test OH_AudioRenderer_GetUnderflowCount interface.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+    OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
+    OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+
+    OHAudioRendererWriteCallbackMock writeCallbackMock;
+
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
+    OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    std::mutex mutex;
+    std::condition_variable cv;
+    int32_t count = 0;
+    writeCallbackMock.Install([&count, &mutex, &cv](OH_AudioRenderer* renderer, void* userData,
+        void* buffer,
+        int32_t bufferLen) {
+            std::lock_guard lock(mutex);
+            cv.notify_one();
+
+            // sleep time trigger underflow
+            if (count == 0) {
+                std::this_thread::sleep_for(200ms);
+            }
+            count++;
+        });
+
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    std::unique_lock lock(mutex);
+    cv.wait_for(lock, 1s, [&count] {
+        // count > 1 ensure sleeped
+        return count > 1;
+    });
+    lock.unlock();
+
+    uint32_t underFlowCount;
+    result = OH_AudioRenderer_GetUnderflowCount(audioRenderer, &underFlowCount);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(underFlowCount, 0);
+
+    OH_AudioRenderer_Stop(audioRenderer);
+    OH_AudioRenderer_Release(audioRenderer);
+
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetUnderflowCount API.
+* @tc.number: OH_AudioRenderer_GetUnderflowCount_003
+* @tc.desc  : Test OH_AudioRenderer_GetUnderflowCount interface.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+    OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
+    OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+
+    OHAudioRendererWriteCallbackMock writeCallbackMock;
+
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
+    OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    uint32_t underFlowCount;
+    result = OH_AudioRenderer_GetUnderflowCount(audioRenderer, &underFlowCount);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(underFlowCount, 0);
+
+    OH_AudioRenderer_Stop(audioRenderer);
+    OH_AudioRenderer_Release(audioRenderer);
+
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetUnderflowCount API.
+* @tc.number: OH_AudioRenderer_GetUnderflowCount_004
+* @tc.desc  : Test OH_AudioRenderer_GetUnderflowCount interface.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_004, TestSize.Level0)
+{
+    uint32_t lastUnderFlowCount = 0;
+    for (auto sleepTimes : {200ms, 400ms, 600ms}) {
+        OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+        OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
+        OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
+        OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
+        OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+
+        OHAudioRendererWriteCallbackMock writeCallbackMock;
+
+        OH_AudioRenderer_Callbacks callbacks;
+        callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
+        OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
+
+        OH_AudioRenderer* audioRenderer;
+        OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+        EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+        std::mutex mutex;
+        std::condition_variable cv;
+        int32_t count = 0;
+        writeCallbackMock.Install([&count, &mutex, &cv, sleepTimes](OH_AudioRenderer* renderer, void* userData,
+            void* buffer,
+            int32_t bufferLen) {
+                std::lock_guard lock(mutex);
+                cv.notify_one();
+
+                // sleep time trigger underflow
+                if (count == 1) {
+                    std::this_thread::sleep_for(sleepTimes);
+                }
+                count++;
+            });
+
+        result = OH_AudioRenderer_Start(audioRenderer);
+        EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+        std::unique_lock lock(mutex);
+        cv.wait_for(lock, 1s, [&count] {
+            // count > 1 ensure sleeped
+            return count > 10;
+        });
+        lock.unlock();
+
+        uint32_t underFlowCount = 0;
+        result = OH_AudioRenderer_GetUnderflowCount(audioRenderer, &underFlowCount);
+        EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+        EXPECT_GT(underFlowCount, lastUnderFlowCount);
+        lastUnderFlowCount = underFlowCount;
+
+        OH_AudioRenderer_Stop(audioRenderer);
+        OH_AudioRenderer_Release(audioRenderer);
+
+        OH_AudioStreamBuilder_Destroy(builder);
+    }
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetUnderflowCount API.
+* @tc.number: OH_AudioRenderer_GetUnderflowCount_005
+* @tc.desc  : Test OH_AudioRenderer_GetUnderflowCount interface.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetUnderflowCount_005, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+
+    OH_AudioStreamBuilder_SetSamplingRate(builder, SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, CHANNEL_2);
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_VOICE_COMMUNICATION;
+    OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+
+    OHAudioRendererWriteCallbackMock writeCallbackMock;
+
+    OH_AudioRenderer_Callbacks callbacks;
+    callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteDataMock;
+    OH_AudioStreamBuilder_SetRendererCallback(builder, callbacks, &writeCallbackMock);
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    std::this_thread::sleep_for(1s);
+
+    uint32_t underFlowCount;
+    result = OH_AudioRenderer_GetUnderflowCount(audioRenderer, &underFlowCount);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(underFlowCount, 0);
+
+    OH_AudioRenderer_Stop(audioRenderer);
+    OH_AudioRenderer_Release(audioRenderer);
+
     OH_AudioStreamBuilder_Destroy(builder);
 }
 } // namespace AudioStandard

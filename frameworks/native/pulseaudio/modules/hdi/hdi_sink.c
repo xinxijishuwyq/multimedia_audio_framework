@@ -1114,9 +1114,14 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
                 mixlength = infoIn->chunk.length;
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+                if (sinkIn->process_underrun && (pa_atomic_load(&sinkIn->isFirstReaded) == 1)) {
+                    sinkIn->process_underrun(sinkIn);
+                }
                 pa_memblock_unref(infoIn->chunk.memblock);
                 continue;
             }
+
+            pa_atomic_store(&sinkIn->isFirstReaded, 1);
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
@@ -2352,6 +2357,10 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
+
+    if (corking) {
+        pa_atomic_store(&i->isFirstReaded, 0);
+    }
 
     if (!corking && !starting && !stopping) {
         AUDIO_WARNING_LOG("PaInputStateChangeCb, input state change: invalid");
