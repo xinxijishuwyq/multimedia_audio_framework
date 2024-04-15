@@ -87,7 +87,6 @@ private:
     bool IsHeadTrackingDataRequestedForCurrentDevice();
     void UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress = "");
     void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
-    IAudioPolicyInterface &audioPolicyManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::string currentDeviceAddress_ = "";
     bool isSpatializationSupported_ = false;
