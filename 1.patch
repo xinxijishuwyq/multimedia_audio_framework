@@ -1,0 +1,271 @@
+diff --git a/frameworks/js/napi/audiomanager/napi_audio_volume_group_manager.cpp b/frameworks/js/napi/audiomanager/napi_audio_volume_group_manager.cpp
+index f33cdcf01b5c9dae65c50290420e4d29938955a9..da9f31f202ef5a8c44b031701aba5bda13c0e72a 100644
+--- a/frameworks/js/napi/audiomanager/napi_audio_volume_group_manager.cpp
++++ b/frameworks/js/napi/audiomanager/napi_audio_volume_group_manager.cpp
+@@ -90,6 +90,7 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
+         DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
+         DECLARE_NAPI_FUNCTION("getVolumeSync", GetVolumeSync),
+         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
++        DECLARE_NAPI_FUNCTION("setVolumeWithFlag", SetVolumeWithFlag),
+         DECLARE_NAPI_FUNCTION("getMaxVolume", GetMaxVolume),
+         DECLARE_NAPI_FUNCTION("getMaxVolumeSync", GetMaxVolumeSync),
+         DECLARE_NAPI_FUNCTION("getMinVolume", GetMinVolume),
+@@ -320,6 +321,51 @@ napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_in
+     return NapiAsyncWork::Enqueue(env, context, "SetVolume", executor, complete);
+ }
+ 
++napi_value NapiAudioVolumeGroupManager::SetVolumeWithFlag(napi_env env, napi_callback_info info)
++{
++    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
++    if (context == nullptr) {
++        AUDIO_ERR_LOG("SetVolumeiWithFlag failed : no memory");
++        NapiAudioError::ThrowError(env, "SetVolumeWithFlag failed : no memory", NAPI_ERR_NO_MEMORY);
++        return NapiParamUtils::GetUndefinedValue(env);
++    }
++
++    auto inputParser = [env, context](size_t argc, napi_value *argv) {
++        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_THREE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
++        context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
++        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INVALID_PARAM);
++        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
++            context->SignError(context->errCode ==
++                NAPI_ERR_INVALID_PARAM? NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
++        }
++        context->status = NapiParamUtils::GetValueInt32(env, context->volLevel, argv[PARAM1]);
++        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed", NAPI_ERR_INVALID_PARAM);
++        context->status = NapiParamUtils::GetValueInt32(env, context->volFlag, argv[PARAM2]);
++        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volFlag failed", NAPI_ERR_INVALID_PARAM);
++    };
++    context->GetCbInfo(env, info, inputParser);
++#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
++    HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
++#endif
++
++    auto executor = [context]() {
++        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
++        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
++        ObjectRefMap objectGuard(obj);
++        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
++        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
++            "audio volume group manager state is error.");
++        context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolumeWithFlag(
++            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel, context->volFlag);
++        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setvolumeWithFlag failed", NAPI_ERR_SYSTEM);
++    };
++
++    auto complete = [env](napi_value &output) {
++        output = NapiParamUtils::GetUndefinedValue(env);
++    };
++    return NapiAsyncWork::Enqueue(env, context, "SetVolumeWithFlag", executor, complete);
++}
++
+ napi_value NapiAudioVolumeGroupManager::GetMaxVolume(napi_env env, napi_callback_info info)
+ {
+     auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+diff --git a/frameworks/js/napi/audiomanager/napi_audio_volume_group_manager.h b/frameworks/js/napi/audiomanager/napi_audio_volume_group_manager.h
+index 3fdc2f5e638a489cf6c8936b8403c729988fa2e6..ef72f73466fb22ae4471ccfc5dc6e11453d0a3e9 100644
+--- a/frameworks/js/napi/audiomanager/napi_audio_volume_group_manager.h
++++ b/frameworks/js/napi/audiomanager/napi_audio_volume_group_manager.h
+@@ -38,6 +38,7 @@ private:
+     struct AudioVolumeGroupManagerAsyncContext : public ContextBase {
+         int32_t volType;
+         int32_t volLevel;
++        int32_t volFlag;
+         int32_t deviceType;
+         int32_t ringMode;
+         int32_t scene;
+@@ -67,6 +68,7 @@ private:
+     static napi_value GetVolume(napi_env env, napi_callback_info info);
+     static napi_value GetVolumeSync(napi_env env, napi_callback_info info);
+     static napi_value SetVolume(napi_env env, napi_callback_info info);
++    static napi_value SetVolumeWithFlag(napi_env env, napi_callback_info info);
+     static napi_value GetMaxVolume(napi_env env, napi_callback_info info);
+     static napi_value GetMaxVolumeSync(napi_env env, napi_callback_info info);
+     static napi_value GetMinVolume(napi_env env, napi_callback_info info);
+diff --git a/frameworks/native/audiopolicy/include/audio_policy_manager.h b/frameworks/native/audiopolicy/include/audio_policy_manager.h
+index cbe9f7f3f2ed0110c8d2a59419fb2fa22ee98ec3..81430bd20e5ef045d590d828ef2bb688e3b975e8 100644
+--- a/frameworks/native/audiopolicy/include/audio_policy_manager.h
++++ b/frameworks/native/audiopolicy/include/audio_policy_manager.h
+@@ -51,7 +51,8 @@ public:
+ 
+     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+ 
+-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v = API_9);
++    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v = API_9
++        int32_t volumeFlag = 0);
+ 
+     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
+ 
+diff --git a/interfaces/inner_api/native/audiomanager/include/audio_group_manager.h b/interfaces/inner_api/native/audiomanager/include/audio_group_manager.h
+index 17ce071c4bc1daa7e675116be7325c54b4aac6b1..510225a119a4b974eddcb774a922ef97b91fcea8 100755
+--- a/interfaces/inner_api/native/audiomanager/include/audio_group_manager.h
++++ b/interfaces/inner_api/native/audiomanager/include/audio_group_manager.h
+@@ -55,7 +55,7 @@ public:
+     AudioGroupManager(int32_t groupId);
+     virtual ~AudioGroupManager();
+ 
+-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume);
++    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t flag);
+     int32_t GetVolume(AudioVolumeType volumeType);
+     int32_t GetMaxVolume(AudioVolumeType volumeType);
+     int32_t GetMinVolume(AudioVolumeType volumeType);
+diff --git a/services/audio_policy/client/include/audio_policy_base.h b/services/audio_policy/client/include/audio_policy_base.h
+index 8fcd8409aaa9a26f13b6babbdb3c378ae264164c..e4b2d6537481fadd455eebfaf763d23a9b18c4a9 100644
+--- a/services/audio_policy/client/include/audio_policy_base.h
++++ b/services/audio_policy/client/include/audio_policy_base.h
+@@ -39,7 +39,7 @@ public:
+     virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
+ 
+     virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
+-        API_VERSION api_v = API_9) = 0;
++        API_VERSION api_v = API_9, int32_t volumeFlag = 0) = 0;
+ 
+     virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
+ 
+diff --git a/services/audio_policy/client/include/audio_policy_proxy.h b/services/audio_policy/client/include/audio_policy_proxy.h
+index 2726fb318d9e5707595b12f79e7110434f3b4f30..5d6a5cc81b11e48a8bd70feb188bf0288c8cda80 100644
+--- a/services/audio_policy/client/include/audio_policy_proxy.h
++++ b/services/audio_policy/client/include/audio_policy_proxy.h
+@@ -34,7 +34,8 @@ public:
+ 
+     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
+ 
+-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v) override;
++    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v,
++        int32_t volumeFlag = 0) override;
+ 
+     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
+ 
+diff --git a/services/audio_policy/client/src/audio_policy_manager.cpp b/services/audio_policy/client/src/audio_policy_manager.cpp
+index f8a2bb6d191e996a371be638cf4d1fcbe1633c9a..b8934f8cde5e46acd6e3608ee8932f625dc99af3 100644
+--- a/services/audio_policy/client/src/audio_policy_manager.cpp
++++ b/services/audio_policy/client/src/audio_policy_manager.cpp
+@@ -168,12 +168,13 @@ int32_t AudioPolicyManager::GetMinVolumeLevel(AudioVolumeType volumeType)
+     return gsp->GetMinVolumeLevel(volumeType);
+ }
+ 
+-int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v)
++int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v,
++    int32_t volumeFlag)
+ {
+     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+ 
+-    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, api_v);
++    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, api_v, volumeFlag);
+ }
+ 
+ int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode, API_VERSION api_v)
+diff --git a/services/audio_policy/client/src/audio_policy_proxy.cpp b/services/audio_policy/client/src/audio_policy_proxy.cpp
+index e97b813e3d6ee894bde015c4ee25ced9d4266f30..db6f981cfe64b723decc7ae68896bdc2885ac7f8 100644
+--- a/services/audio_policy/client/src/audio_policy_proxy.cpp
++++ b/services/audio_policy/client/src/audio_policy_proxy.cpp
+@@ -74,7 +74,8 @@ int32_t AudioPolicyProxy::GetMinVolumeLevel(AudioVolumeType volumeType)
+     return reply.ReadInt32();
+ }
+ 
+-int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v)
++int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v,
++    int32_t volumeFlag)
+ {
+     MessageParcel data;
+     MessageParcel reply;
+@@ -85,6 +86,7 @@ int32_t AudioPolicyProxy::SetSystemVolumeLevel(AudioVolumeType volumeType, int32
+     data.WriteInt32(static_cast<int32_t>(volumeType));
+     data.WriteInt32(volumeLevel);
+     data.WriteInt32(static_cast<int32_t>(api_v));
++    data.WriteInt32(volumeFlag);
+     int32_t error = Remote()->SendRequest(
+         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SYSTEM_VOLUMELEVEL), data, reply, option);
+     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set volume failed, error: %d", error);
+diff --git a/services/audio_policy/server/include/audio_policy_server.h b/services/audio_policy/server/include/audio_policy_server.h
+index 82a23f2d4e20d648b508cc9a57afe6d0955225f5..c2ce90bc913f974b55f7c25334ce72b5c011cdb7 100644
+--- a/services/audio_policy/server/include/audio_policy_server.h
++++ b/services/audio_policy/server/include/audio_policy_server.h
+@@ -99,7 +99,8 @@ public:
+ 
+     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
+ 
+-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9) override;
++    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9,
++        int32_t volumeFlag) override;
+ 
+     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
+ 
+diff --git a/services/audio_policy/server/src/audio_policy_manager_stub.cpp b/services/audio_policy/server/src/audio_policy_manager_stub.cpp
+index f5d0e6778517b6fd1d7441fbbc72eae1d807cb7c..0f8ef82ead4e09f91a947cd2b83a7a601d207b08 100644
+--- a/services/audio_policy/server/src/audio_policy_manager_stub.cpp
++++ b/services/audio_policy/server/src/audio_policy_manager_stub.cpp
+@@ -60,7 +60,8 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
+     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+     int32_t volumeLevel = data.ReadInt32();
+     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
+-    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v);
++    int32_t volumeFlag = data.ReadInt32();
++    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v, volumeFlag);
+     reply.WriteInt32(result);
+ }
+ 
+diff --git a/services/audio_policy/server/src/audio_policy_server.cpp b/services/audio_policy/server/src/audio_policy_server.cpp
+index cbc0082e1faa1cc1f96a8a08a852e8112c45a170..9c4de06d8d9de322dc762ab93417d1e0e71675fe 100644
+--- a/services/audio_policy/server/src/audio_policy_server.cpp
++++ b/services/audio_policy/server/src/audio_policy_server.cpp
+@@ -57,6 +57,7 @@ using namespace std;
+ namespace OHOS {
+ namespace AudioStandard {
+ 
++constexpr int32_t FLAG_SHOW_UI = 1;
+ constexpr int32_t PARAMS_VOLUME_NUM = 5;
+ constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
+ constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
+@@ -511,7 +512,8 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(AudioVolumeType volumeType)
+     return audioPolicyService_.GetMinVolumeLevel(volumeType);
+ }
+ 
+-int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v)
++int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v,
++    int32_t volumeFlag)
+ {
+     if (api_v == API_9 && !PermissionUtil::VerifySystemPermission()) {
+         AUDIO_ERR_LOG("SetSystemVolumeLevel: No system permission");
+@@ -525,7 +527,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
+         return ERR_NOT_SUPPORTED;
+     }
+ 
+-    return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
++    return SetSystemVolumeLevelInternal(streamType, volumeLevel, flag == FLAG_SHOW_UI);
+ }
+ 
+ int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
+diff --git a/services/audio_service/client/src/audio_group_manager.cpp b/services/audio_service/client/src/audio_group_manager.cpp
+index ffa614b13fa36b2cf949347ff66e96fca1404ffb..83f266f14dd6c72c578a2c1a4bca65c00c2f9285 100755
+--- a/services/audio_service/client/src/audio_group_manager.cpp
++++ b/services/audio_service/client/src/audio_group_manager.cpp
+@@ -39,7 +39,7 @@ AudioGroupManager::~AudioGroupManager()
+     }
+ }
+ 
+-int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
++int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
+ {
+     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
+         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
+@@ -49,7 +49,8 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
+         return SUCCESS;
+     }
+ 
+-    AUDIO_INFO_LOG("SetVolume volumeType[%{public}d], volume[%{public}d]", volumeType, volume);
++    AUDIO_INFO_LOG("SetVolume volumeType[%{public}d], volume[%{public}d], flag[%{public}d]", volumeType, volume,
++        volumeFlag);
+ 
+     /* Validate volume type and return INVALID_PARAMS error */
+ 
+@@ -74,7 +75,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
+     }
+ 
+     /* Call Audio Policy SetSystemVolumeLevel */
+-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, API_9);
++    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, API_9, volumeFlag);
+ }
+ 
+ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)

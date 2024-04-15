@@ -55,7 +55,7 @@ public:
     AudioGroupManager(int32_t groupId);
     virtual ~AudioGroupManager();
 
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume);
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t flag);
     int32_t GetVolume(AudioVolumeType volumeType);
     int32_t GetMaxVolume(AudioVolumeType volumeType);
     int32_t GetMinVolume(AudioVolumeType volumeType);

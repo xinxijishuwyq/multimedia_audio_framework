@@ -51,7 +51,8 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v = API_9);
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v = API_9,
+        int32_t volumeFlag = 0);
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 

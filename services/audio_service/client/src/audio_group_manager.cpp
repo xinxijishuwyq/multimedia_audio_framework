@@ -39,7 +39,7 @@ AudioGroupManager::~AudioGroupManager()
     }
 }
 
-int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
+int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
@@ -49,7 +49,8 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
         return SUCCESS;
     }
 
-    AUDIO_INFO_LOG("SetVolume volumeType[%{public}d], volume[%{public}d]", volumeType, volume);
+    AUDIO_INFO_LOG("SetVolume volumeType[%{public}d], volume[%{public}d], flag[%{public}d]", volumeType, volume,
+        volumeFlag);
 
     /* Validate volume type and return INVALID_PARAMS error */
 
@@ -74,7 +75,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume)
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, API_9);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, API_9, volumeFlag);
 }
 
 int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
