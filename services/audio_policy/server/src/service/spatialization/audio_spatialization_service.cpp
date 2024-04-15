@@ -394,7 +394,7 @@ void AudioSpatializationService::UpdateRendererInfo(
 {
     AUDIO_DEBUG_LOG("Start");
     {
-        std::lock_guard<std::mutex> lock(spatializationRendererInfoMutex_);
+        std::lock_guard<std::mutex> lock(rendererInfoChangingMutex_);
         AudioRendererInfoForSpatialization spatializationRendererInfo;
 
         spatializationRendererInfoList_.clear();
@@ -513,7 +513,7 @@ void AudioSpatializationService::WriteSpatializationStateToDb()
 
 bool AudioSpatializationService::IsHeadTrackingDataRequestedForCurrentDevice()
 {
-    std::lock_guard<std::mutex> lock(spatializationRendererInfoMutex_);
+    std::lock_guard<std::mutex> lock(rendererInfoChangingMutex_);
     bool isStreamRunning = false;
     for (const auto &rendererInfo : spatializationRendererInfoList_) {
         if (rendererInfo.rendererState == RENDERER_RUNNING && rendererInfo.deviceMacAddress == currentDeviceAddress_ &&
@@ -532,14 +532,14 @@ void AudioSpatializationService::UpdateHeadTrackingDeviceState(bool outputDevice
         headTrackingDeviceChangeInfo.insert(std::make_pair(preDeviceAddress, false));
     }
 
-    bool isHeadTrackingDataRequested = IsHeadTrackingDataRequestedForCurrentDevice();
+    bool isRequested = IsHeadTrackingDataRequestedForCurrentDevice();
     if (!currentDeviceAddress_.empty() &&
-        ((!outputDeviceChange && (isHeadTrackingDataRequested_ != isHeadTrackingDataRequested)) ||
-        (outputDeviceChange && isHeadTrackingDataRequested))) {
-        headTrackingDeviceChangeInfo.insert(std::make_pair(currentDeviceAddress_, isHeadTrackingDataRequested));
+        ((!outputDeviceChange && (isHeadTrackingDataRequested_ != isRequested)) ||
+        (outputDeviceChange && isRequested))) {
+        headTrackingDeviceChangeInfo.insert(std::make_pair(currentDeviceAddress_, isRequested));
     }
 
-    isHeadTrackingDataRequested_ = isHeadTrackingDataRequested;
+    isHeadTrackingDataRequested_ = isRequested;
 
     HandleHeadTrackingDeviceChange(headTrackingDeviceChangeInfo);
 }

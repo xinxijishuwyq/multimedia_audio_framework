@@ -75,8 +75,7 @@ public:
     void UpdateRendererInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
 private:
     AudioSpatializationService()
-        :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
+        :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
     {}
 
     ~AudioSpatializationService();
@@ -104,7 +103,7 @@ private:
     std::mutex spatializationEnabledChangeListnerMutex_;
     std::mutex headTrackingEnabledChangeListnerMutex_;
     std::mutex spatializationStateChangeListnerMutex_;
-    std::mutex spatializationRendererInfoMutex_;
+    std::mutex rendererInfoChangingMutex_;
     std::unordered_map<int32_t, std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledCBMap_;
     std::unordered_map<uint32_t, std::pair<std::shared_ptr<AudioSpatializationStateChangeCallback>, StreamUsage>>
