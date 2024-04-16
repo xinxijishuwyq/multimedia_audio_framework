@@ -84,6 +84,7 @@ int32_t PaRendererStreamImpl::InitParams()
     pa_stream_set_write_callback(paStream_, PAStreamWriteCb, reinterpret_cast<void *>(this));
     pa_stream_set_underflow_callback(paStream_, PAStreamUnderFlowCb, reinterpret_cast<void *>(this));
     pa_stream_set_started_callback(paStream_, PAStreamSetStartedCb, reinterpret_cast<void *>(this));
+    pa_stream_set_underflow_ohos_callback(paStream_, PAStreamUnderFlowCountAddCb, reinterpret_cast<void *>(this));
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
@@ -612,6 +613,17 @@ void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata
     AUDIO_WARNING_LOG("PaRendererStreamImpl underrun: %{public}d!", streamImpl->underFlowCount_);
 }
 
+void PaRendererStreamImpl::PAStreamUnderFlowCountAddCb(pa_stream *stream, void *userdata)
+{
+    Trace trace("PaRendererStreamImpl::PAStreamUnderFlowCountAddCb");
+    CHECK_AND_RETURN_LOG(userdata, "PAStreamUnderFlowCountAddCb: userdata is null");
+
+    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
+    std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
+    if (statusCallback != nullptr) {
+        statusCallback->OnStatusUpdate(OPERATION_UNDERFLOW);
+    }
+}
 
 void PaRendererStreamImpl::PAStreamSetStartedCb(pa_stream *stream, void *userdata)
 {
