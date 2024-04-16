@@ -108,7 +108,8 @@ void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 void AudioA2dpManager::DisconnectBluetoothA2dpSink()
 {
     int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
-    a2dpListener_->OnConnectionStateChanged(activeA2dpDevice_, connectionState);
+    a2dpListener_->OnConnectionStateChanged(activeA2dpDevice_, connectionState,
+        static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
     MediaBluetoothDeviceManager::ClearAllA2dpBluetoothDevice();
 }
 
@@ -201,7 +202,7 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
     return a2dpInstance_->OffloadStopPlaying(activeA2dpDevice_, sessionsID);
 }
 
-void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
+void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
     AUDIO_INFO_LOG("AudioA2dpListener OnConnectionStateChanged: state: %{public}d", state);
     // Record connection state and device for hdi start time to check
@@ -353,7 +354,8 @@ int8_t AudioHfpManager::GetScoCategoryFromScene(AudioScene scene)
 void AudioHfpManager::DisconnectBluetoothHfpSink()
 {
     int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
-    hfpListener_->OnConnectionStateChanged(activeHfpDevice_, connectionState);
+    hfpListener_->OnConnectionStateChanged(activeHfpDevice_, connectionState,
+        static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
     HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice();
 }
 
@@ -390,7 +392,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     }
 }
 
-void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
+void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
     AUDIO_INFO_LOG("AudioHfpListener::OnConnectionStateChanged: state: %{public}d", state);
     if (state == static_cast<int>(BTConnectState::CONNECTED)) {
