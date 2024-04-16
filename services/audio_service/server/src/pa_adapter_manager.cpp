@@ -69,6 +69,15 @@ static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
     return CHECK_UTIL_SUCCESS;
 }
 
+static bool IsEnhanceMode(SourceType sourceType)
+{
+    if (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
+        sourceType == SOURCE_TYPE_VOICE_CALL) {
+        return true;
+    }
+    return false;
+}
+
 PaAdapterManager::PaAdapterManager(ManagerType type)
 {
     AUDIO_DEBUG_LOG("Constructor PaAdapterManager");
@@ -292,15 +301,6 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
     return SUCCESS;
 }
 
-static bool IsEnhanceNone(SourceType sourceType)
-{
-    if (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
-        sourceType == SOURCE_TYPE_VOICE_CALL) {
-        return false;
-    }
-    return true;
-}
-
 pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool isRecording)
 {
     AUDIO_DEBUG_LOG("Enter InitPaStream");
@@ -346,7 +346,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         return nullptr;
     }
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
-        enhanceMode_ = IsEnhanceNone(processConfig.capturerInfo.sourceType) ? EFFECT_NONE : EFFECT_DEFAULT;
+        enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
         int32_t ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
