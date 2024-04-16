@@ -22,6 +22,7 @@
 #include "audio_interrupt_info.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
+#include "audio_spatialization_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,6 +53,9 @@ public:
     int32_t AddOutputDeviceChangeWithInfoCallback(
     const uint32_t sessionId, const std::shared_ptr<OutputDeviceChangeWithInfoCallback> &cb);
     int32_t RemoveOutputDeviceChangeWithInfoCallback(const uint32_t sessionId);
+    int32_t AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
+        const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb);
+    int32_t RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress);
 
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
@@ -68,6 +72,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void OnRendererDeviceChange(const uint32_t sessionId,
         const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
 
 private:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
@@ -86,6 +91,9 @@ private:
     std::unordered_map<uint32_t,
         std::shared_ptr<OutputDeviceChangeWithInfoCallback>> outputDeviceChangeWithInfoCallbackMap_;
 
+    std::unordered_map<std::string,
+        std::shared_ptr<HeadTrackingDataRequestedChangeCallback>> headTrackingDataRequestedChangeCallbackMap_;
+
     std::mutex volumeKeyEventMutex_;
     std::mutex focusInfoChangeMutex_;
     std::mutex deviceChangeMutex_;
@@ -96,6 +104,7 @@ private:
     std::mutex rendererStateChangeMutex_;
     std::mutex capturerStateChangeMutex_;
     std::mutex outputDeviceChangeWithInfoCallbackMutex_;
+    std::mutex headTrackingDataRequestedChangeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

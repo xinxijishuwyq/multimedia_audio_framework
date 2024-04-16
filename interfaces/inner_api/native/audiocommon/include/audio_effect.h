@@ -300,6 +300,12 @@ enum AudioSpatializationSceneType {
     SPATIALIZATION_SCENE_TYPE_MOVIE = 2,
     SPATIALIZATION_SCENE_TYPE_AUDIOBOOK = 3,
 };
+
+struct AudioRendererInfoForSpatialization {
+    RendererState rendererState;
+    std::string deviceMacAddress;
+    StreamUsage streamUsage;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 
