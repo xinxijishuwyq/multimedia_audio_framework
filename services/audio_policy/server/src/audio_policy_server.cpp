@@ -57,7 +57,6 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr int32_t FLAG_SHOW_UI = 1;
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
@@ -527,7 +526,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
         return ERR_NOT_SUPPORTED;
     }
 
-    return SetSystemVolumeLevelInternal(streamType, volumeLevel, volumeFlag == FLAG_SHOW_UI);
+    return SetSystemVolumeLevelInternal(streamType, volumeLevel, volumeFlag == VolumeFlag.FLAG_SHOW_SYSTEM_UI);
 }
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
