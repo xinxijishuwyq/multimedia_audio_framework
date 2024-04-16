@@ -3603,7 +3603,7 @@ void AudioPolicyService::LoadSinksForCapturer()
 {
     AUDIO_INFO_LOG("Start");
     AudioStreamInfo streamInfo;
-    LoadInnerCapturerSink(INNER_CAPTURER_SINK_NAME, streamInfo);
+    LoadInnerCapturerSink(INNER_CAPTURER_SINK_LEGACY, streamInfo);
     LoadReceiverSink();
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
@@ -3700,9 +3700,8 @@ void AudioPolicyService::LoadModernInnerCapSink()
     moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
     moduleInfo.name = INNER_CAPTURER_SINK;
 
-    moduleInfo.networkId = LOCAL_NETWORK_ID;
     moduleInfo.format = "s16le";
-    moduleInfo.channels = 2; // 2 channel
+    moduleInfo.channels = "2"; // 2 channel
     moduleInfo.rate = "48000";
     moduleInfo.bufferSize = "3840"; // 20ms
 

@@ -116,9 +116,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         capturer->cachePath_ = cachePath;
     }
 
-    if (capturer->InitPlaybackCapturer(sourceType, capturerOptions.playbackCaptureConfig) != SUCCESS) {
-        return nullptr;
-    }
+    // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
 
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;

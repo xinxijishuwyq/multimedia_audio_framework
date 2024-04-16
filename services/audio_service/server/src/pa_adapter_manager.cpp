@@ -432,9 +432,11 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
     if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        // mark dup stream for dismissing volume handle
+        pa_proplist_sets(propList, "stream.mode", managerType_ == DUP_PLAYBACK ? DUP_STREAM.c_str() :
+            NORMAL_STREAM.c_str());
         pa_proplist_sets(propList, "stream.flush", "false");
-        AudioPrivacyType privacyType = processConfig.privacyType;
-        pa_proplist_sets(propList, "stream.privacyType", std::to_string(privacyType).c_str());
+        pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
         pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
         pa_proplist_sets(propList, "spatialization.enabled",

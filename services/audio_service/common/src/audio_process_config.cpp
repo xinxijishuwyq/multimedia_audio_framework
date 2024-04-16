@@ -115,6 +115,51 @@ int32_t ProcessConfig::ReadInnerCapConfigFromParcel(AudioPlaybackCaptureConfig &
     return SUCCESS;
 }
 
+// INCLUDE 3 usages { 1 2 4 } && EXCLUDE 1 pids { 1234 }
+std::string ProcessConfig::DumpInnerCapConfig(const AudioPlaybackCaptureConfig &config)
+{
+    std::stringstream temp;
+
+    // filterOptions
+    switch (config.filterOptions.usageFilterMode) {
+        case FilterMode::INCLUDE:
+            temp << "INCLUDE";
+            break;
+        case FilterMode::EXCLUDE:
+            temp << "EXCLUDE";
+            break;
+        default:
+            temp << "INVALID";
+            break;
+    }
+    temp << " " << config.filterOptions.usages.size() << " usages { ";
+    for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
+        temp << config.filterOptions.usages[i] << " ";
+    }
+    temp << "} && ";
+
+    // INCLUDE 3 pids { 1 2 4 }
+    switch (config.filterOptions.pidFilterMode) {
+        case FilterMode::INCLUDE:
+            temp << "INCLUDE";
+            break;
+        case FilterMode::EXCLUDE:
+            temp << "EXCLUDE";
+            break;
+        default:
+            temp << "INVALID";
+            break;
+    }
+    temp << " " << config.filterOptions.pids.size() << " pids { ";
+    for (size_t i = 0; i < config.filterOptions.pids.size(); i++) {
+        temp << config.filterOptions.pids[i] << " ";
+    }
+    temp << "}";
+    // silentCapture will not be dumped.
+
+    return temp.str();
+}
+
 int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, MessageParcel &parcel)
 {
     // AppInfo

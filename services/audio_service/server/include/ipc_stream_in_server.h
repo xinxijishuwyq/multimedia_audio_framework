@@ -69,6 +69,8 @@ public:
 
     int32_t Drain() override;
 
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
+
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override;
 
     int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp) override;

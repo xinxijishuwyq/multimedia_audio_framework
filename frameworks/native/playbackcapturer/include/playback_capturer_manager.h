@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <unordered_set>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -58,6 +59,7 @@ public:
     int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config);
     int32_t RemovePlaybackCapturerFilterInfo(uint32_t sessionId);
 private:
+    std::mutex setMutex_;
     std::unordered_set<int32_t> supportStreamUsageSet_;
     bool isCaptureSilently_;
     bool isInnerCapturerRunning_ = false;

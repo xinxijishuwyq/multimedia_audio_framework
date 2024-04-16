@@ -80,6 +80,8 @@ const std::string INNER_CAPTURER_SINK = "InnerCapturerSink";
 const std::string NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
 const std::string REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
+const std::string DUP_STREAM = "DupStream";
+const std::string NORMAL_STREAM = "NormalStream";
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment

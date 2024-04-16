@@ -44,6 +44,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
+#include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
@@ -388,8 +389,10 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
 int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
     filterConfig_ = config;
-    // in plan: call CapturerInServer
-    return SUCCESS;
+    AUDIO_INFO_LOG("client %{public}s", ProcessConfig::DumpInnerCapConfig(filterConfig_).c_str());
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is already nullptr");
+
+    return ipcStream_->UpdatePlaybackCaptureConfig(config);
 }
 
 void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)

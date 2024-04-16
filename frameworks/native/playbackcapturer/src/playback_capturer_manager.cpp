@@ -90,9 +90,10 @@ PlaybackCapturerManager* PlaybackCapturerManager::GetInstance()
 
 void PlaybackCapturerManager::SetSupportStreamUsage(std::vector<int32_t> usage)
 {
+    std::lock_guard<std::mutex> lock(setMutex_);
     supportStreamUsageSet_.clear();
     if (usage.empty()) {
-        AUDIO_DEBUG_LOG("Clear support streamUsage");
+        AUDIO_INFO_LOG("Clear support streamUsage");
         return;
     }
     for (size_t i = 0; i < usage.size(); i++) {
@@ -102,6 +103,7 @@ void PlaybackCapturerManager::SetSupportStreamUsage(std::vector<int32_t> usage)
 
 bool PlaybackCapturerManager::IsStreamSupportInnerCapturer(int32_t streamUsage)
 {
+    std::lock_guard<std::mutex> lock(setMutex_);
     if (supportStreamUsageSet_.empty()) {
         return streamUsage == STREAM_USAGE_MEDIA || streamUsage == STREAM_USAGE_MUSIC ||
             streamUsage == STREAM_USAGE_MOVIE || streamUsage == STREAM_USAGE_GAME ||

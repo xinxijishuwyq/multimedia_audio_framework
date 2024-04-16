@@ -18,6 +18,7 @@
 #include "ipc_stream_proxy.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_process_config.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -178,6 +179,22 @@ int32_t IpcStreamProxy::Drain()
 
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_DRAIN, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Drain failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
+}
+
+int32_t IpcStreamProxy::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int32_t ret = ProcessConfig::WriteInnerCapConfigToParcel(config, data);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Write config failed");
+
+    ret = Remote()->SendRequest(IpcStreamMsg::ON_UPDATA_PLAYBACK_CAPTURER_CONFIG, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "Failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
 

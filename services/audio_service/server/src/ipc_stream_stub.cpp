@@ -18,6 +18,7 @@
 #include "ipc_stream_stub.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_process_config.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -127,6 +128,17 @@ int32_t IpcStreamStub::HandleDrain(MessageParcel &data, MessageParcel &reply)
 {
     (void)data;
     reply.WriteInt32(Drain());
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleUpdatePlaybackCaptureConfig(MessageParcel &data, MessageParcel &reply)
+{
+    AudioPlaybackCaptureConfig config;
+    int32_t ret = ProcessConfig::ReadInnerCapConfigFromParcel(config, data);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, AUDIO_ERR, "Read config failed");
+
+    reply.WriteInt32(UpdatePlaybackCaptureConfig(config));
+
     return AUDIO_OK;
 }
 

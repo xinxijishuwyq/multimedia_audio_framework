@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_log.h"
+#include "audio_process_config.h"
 #include "i_stream_manager.h"
 #include "playback_capturer_manager.h"
 
@@ -364,11 +365,43 @@ int32_t CapturerInServer::Release()
     return SUCCESS;
 }
 
+int32_t CapturerInServer::UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybackCaptureConfig &config)
+{
+    // Legacy mode, only usage filter works.
+
+    AUDIO_INFO_LOG("Update config in legacy mode with %{public}zu usage", config.filterOptions.usages.size());
+
+    std::vector<int32_t> usage;
+    for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
+        usage.push_back(config.filterOptions.usages[i]);
+    }
+
+    PlaybackCapturerManager::GetInstance()->SetSupportStreamUsage(usage);
+    return SUCCESS;
+}
+
 int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE,
         ERR_INVALID_OPERATION, "This not a inner-cap source!");
     filterConfig_ = config;
+
+    AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
+
+    for (auto &usg : config.filterOptions.usages) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
+            continue;
+        }
+
+        if (!PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, processConfig_.appInfo.appTokenId)) {
+            AUDIO_ERR_LOG("downlink capturer permission check failed");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+
+    if (processConfig_.innerCapMode != MODERN_INNER_CAP) {
+        return UpdatePlaybackCaptureConfigInLegacy(filterConfig_);
+    }
 
     // in plan: add more check and print config
     PlaybackCapturerManager::GetInstance()->SetPlaybackCapturerFilterInfo(streamIndex_, filterConfig_);

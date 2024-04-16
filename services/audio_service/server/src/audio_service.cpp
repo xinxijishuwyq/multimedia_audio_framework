@@ -412,6 +412,9 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
 void AudioService::Dump(std::stringstream &dumpStringStream)
 {
     AUDIO_INFO_LOG("AudioService dump begin");
+    if (workingInnerCapId_ != 0) {
+        dumpStringStream << "InnerCap filter:" << ProcessConfig::DumpInnerCapConfig(workingConfig_) << std::endl;
+    }
     // dump process
     for (auto paired : linkedPairedList_) {
         paired.first->Dump(dumpStringStream);
