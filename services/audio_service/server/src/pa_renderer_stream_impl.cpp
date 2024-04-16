@@ -604,6 +604,12 @@ void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata
     Trace trace("PaRendererStreamImpl::PAStreamUnderFlowCb");
     CHECK_AND_RETURN_LOG(userdata, "PAStreamUnderFlowCb: userdata is null");
 
+    bool isStreamValid = true;
+    if (rendererStreamInstanceMap_.Find(userdata, isStreamValid) == false) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
+
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     streamImpl->underFlowCount_++;
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
@@ -617,6 +623,12 @@ void PaRendererStreamImpl::PAStreamUnderFlowCountAddCb(pa_stream *stream, void *
 {
     Trace trace("PaRendererStreamImpl::PAStreamUnderFlowCountAddCb");
     CHECK_AND_RETURN_LOG(userdata, "PAStreamUnderFlowCountAddCb: userdata is null");
+
+    bool isStreamValid = true;
+    if (rendererStreamInstanceMap_.Find(userdata, isStreamValid) == false) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
 
     PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
