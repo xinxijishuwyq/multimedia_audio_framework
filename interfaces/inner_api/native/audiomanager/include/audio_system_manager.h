@@ -342,6 +342,8 @@ public:
      * @since 9
      */
     void RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback);
+
+    std::mutex cbListMutex_;
 private:
     std::list<std::weak_ptr<AudioFocusInfoChangeCallback>> callbackList_;
     std::shared_ptr<AudioFocusInfoChangeCallback> cb_;
