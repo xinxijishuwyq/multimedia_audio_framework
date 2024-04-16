@@ -179,7 +179,7 @@ int32_t AudioAdapterManager::ReInitKVStore()
     status = manager.DeleteKvStore(appId, storeId, options.baseDir);
     CHECK_AND_RETURN_RET_LOG(status == Status::SUCCESS, ERR_ILLEGAL_STATE, "CloseKvStore failed!");
 
-    InitKVStore();
+    InitKVStoreInternal();
     return SUCCESS;
 }
 
