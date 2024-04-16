@@ -337,12 +337,22 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         return nullptr;
     }
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
+        enhanceMode_ = IsEnhanceNone ? EFFECT_NONE : EFFECT_DEFAULT;
         int32_t ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
         }
     }
     return paStream;
+}
+
+bool PaAdapterManager::IsEnhanceNone(SourceType sourceType)
+{
+    if (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
+        sourceType == SOURCE_TYPE_VOICE_MESSAGE) {
+        return false;
+    }
+    return true;
 }
 
 bool PaAdapterManager::IsEffectNone(StreamUsage streamUsage)
