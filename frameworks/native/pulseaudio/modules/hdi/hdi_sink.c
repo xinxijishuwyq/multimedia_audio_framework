@@ -81,7 +81,6 @@
 #define DEFAULT_MULTICHANNEL_CHANNELLAYOUT 1551
 #define DEFAULT_CHANNELLAYOUT 3
 #define OFFLOAD_SET_BUFFER_SIZE_NUM 5
-#define EPSILON 0.000001
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
@@ -369,19 +368,6 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
             }
             break;
     }
-}
-
-static bool IsEqualFloat(unsigned n, const float *a, const float *b)
-{
-    pa_assert(a);
-    pa_assert(b);
-    for (; n > 0; n--) {
-        float e = *(a++) - *(b++);
-        if (e > EPSILON || e < -EPSILON) {
-            return false;
-        }
-    }
-    return true;
 }
 
 static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool mchFlag)
@@ -1851,53 +1837,6 @@ static void OffloadReset(struct Userdata *u)
     u->offload.fullTs = 0;
 }
 
-static void RenderWriteOffloadEffect(struct Userdata *u, pa_sink_input *i, pa_memchunk *pchunk)
-{
-    pa_assert_se(u);
-    pa_assert(pchunk);
-    pa_assert(i);
-    const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
-    const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
-    const char *sinkSpatialEnabled = pa_proplist_gets(i->proplist, "spatialization.enabled");
-    if (!EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatialEnabled)) {
-        AUDIO_DEBUG_LOG("no effect chain, scene type: %{public}s, scene mode: %{public}s,"
-            "spatialization enabled: %{public}s", sinkSceneType, sinkSceneMode, sinkSpatialEnabled);
-        return;
-    }
-    size_t length = pchunk->length;
-    memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, u->processSize);
-    memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, u->processSize);
-    int32_t byteSize = pa_sample_size_of_format(u->format);
-    int32_t frameLen = byteSize > 0 ? (int32_t)(length / byteSize) : 0;
-    AUDIO_DEBUG_LOG("frameLen: %{public}d, tempBufIn: %{public}d, length: %{public}zu, byteSize: %{public}d",
-        frameLen, u->processLen, length, byteSize);
-    if (frameLen > u->processLen) {
-        AUDIO_DEBUG_LOG("the length is too large");
-        return;
-    }
-
-    void *src = pa_memblock_acquire_chunk(pchunk);
-    ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
-    pa_memblock_release(pchunk->memblock);
-    if (!u->bufferAttr->bufOutUsed && IsEqualFloat(frameLen, u->bufferAttr->tempBufIn, u->bufferAttr->bufIn)) {
-        AUDIO_DEBUG_LOG("repeated frames by effect, not need for effect");
-    } else {
-        memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
-        u->bufferAttr->numChanIn = i->sample_spec.channels;
-        u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
-        AUTO_CTRACE("hdi_sink::RenderWriteOffloadEffect:%{public}s", sinkSceneType);
-        if (EffectChainManagerProcess((char*)sinkSceneType, u->bufferAttr) != 0) {
-            AUDIO_DEBUG_LOG("failed to effect chain, scene type: %{public}s, scene mode: %{public}s,"
-                "spatialization enabled: %{public}s", sinkSceneType, sinkSceneMode, sinkSpatialEnabled);
-            return;
-        }
-    }
-    void *dst = pa_memblock_acquire_chunk(pchunk);
-    ConvertFromFloat(u->format, frameLen, u->bufferAttr->bufOut, dst);
-    u->bufferAttr->bufOutUsed = true;
-    pa_memblock_release(pchunk->memblock);
-}
-
 static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_info *infoInputs, unsigned nInputs,
     int32_t *writen)
 {
@@ -1927,7 +1866,7 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     if (l < 0) {
         chunk->length += -l;
     }
-    RenderWriteOffloadEffect(u, i, chunk);
+
     int ret = RenderWriteOffload(u, i, chunk);
     *writen = ret == 0 ? chunk->length : 0;
     if (ret == 1) { // 1 indicates full
@@ -1939,7 +1878,6 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
             u->offload.fullTs = pa_rtclock_now();
         }
         pa_memblockq_rewind(i->thread_info.render_memblockq, chunk->length);
-        u->bufferAttr->bufOutUsed = false;
     }
 
     u->offload.pos += pa_bytes_to_usec(*writen, &u->sink->sample_spec);
