@@ -5646,7 +5646,7 @@ ConverterConfig AudioPolicyService::GetConverterConfig()
 
 void AudioPolicyService::ClearScoDeviceSuspendState(string macAddress)
 {
-    AUDIO_DEBUG_LOG("Clear sco suspend state %{public}s", macAddress.c_str());
+    AUDIO_DEBUG_LOG("Clear sco suspend state %{public}s", GetEncryptAddr(macAddress).c_str());
     vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetDevicesByFilter(
         DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE, macAddress, "", SUSPEND_CONNECTED);
     for (auto &desc : descs) {
