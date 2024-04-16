@@ -83,7 +83,6 @@ private:
     int32_t HandleMainLoopStart();
     pa_stream *InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool isRecording);
     bool IsEffectNone(StreamUsage streamUsage);
-    bool IsEnhanceNone(SourceType sourceType);
     int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
         const std::string &streamName, uint32_t sessionId);
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig, pa_stream *paStream);
