@@ -295,7 +295,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
 static bool IsEnhanceNone(SourceType sourceType)
 {
     if (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
-        sourceType == SOURCE_TYPE_VOICE_MESSAGE) {
+        sourceType == SOURCE_TYPE_VOICE_CALL) {
         return false;
     }
     return true;
