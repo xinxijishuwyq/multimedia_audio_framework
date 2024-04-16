@@ -980,7 +980,6 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
 
 bool AudioPolicyServer::IsMicrophoneMute(API_VERSION api_v)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     bool ret = VerifyPermission(MICROPHONE_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(api_v != API_7 || ret, ERR_PERMISSION_DENIED,
         "MICROPHONE permission denied");
