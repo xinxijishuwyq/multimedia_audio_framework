@@ -137,7 +137,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
     virtual int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                            AudioStreamType audioStreamType) = 0;
+                                            StreamUsage streamUsage) = 0;
 
     virtual int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;

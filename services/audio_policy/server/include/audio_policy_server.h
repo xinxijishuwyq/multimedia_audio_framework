@@ -232,7 +232,7 @@ public:
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-        AudioStreamType audioStreamType) override;
+        StreamUsage streamUsage) override;
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 

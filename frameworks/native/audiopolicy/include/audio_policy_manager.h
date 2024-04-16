@@ -188,7 +188,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    AudioStreamType audioStreamType);
+                                    StreamUsage streamUsage);
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos);
 

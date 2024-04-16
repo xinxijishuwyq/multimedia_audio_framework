@@ -723,7 +723,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Client_Tracker_Callback_Stub_001, TestSize.Lev
         std::make_shared<AudioClientTrackerCallbackStub>();
 
     StreamSetStateEventInternal streamSetStateEventInternal = {};
-    streamSetStateEventInternal.audioStreamType = AudioStreamType::STREAM_MUSIC;
+    streamSetStateEventInternal.streamUsage = STREAM_USAGE_MUSIC;
     std::weak_ptr<AudioClientTrackerTest> callback = std::make_shared<AudioClientTrackerTest>();
 
     float volume = 0.5;

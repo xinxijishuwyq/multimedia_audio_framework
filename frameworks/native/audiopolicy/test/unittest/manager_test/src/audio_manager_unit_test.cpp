@@ -2066,7 +2066,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
-        StreamSetState::STREAM_PAUSE, AudioStreamType::STREAM_MEDIA);
+        StreamSetState::STREAM_PAUSE, STREAM_USAGE_MEDIA);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -2078,7 +2078,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
-        StreamSetState::STREAM_RESUME, AudioStreamType::STREAM_MEDIA);
+        StreamSetState::STREAM_RESUME, STREAM_USAGE_MEDIA);
     EXPECT_EQ(SUCCESS, ret);
 }
 

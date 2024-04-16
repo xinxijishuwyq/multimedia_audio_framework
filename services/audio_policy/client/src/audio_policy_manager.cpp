@@ -907,12 +907,12 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
 }
 
 int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
-    StreamSetState streamSetState, AudioStreamType audioStreamType)
+    StreamSetState streamSetState, StreamUsage streamUsage)
 {
     AUDIO_DEBUG_LOG("UpdateStreamState");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return  gsp->UpdateStreamState(clientUid, streamSetState, audioStreamType);
+    return  gsp->UpdateStreamState(clientUid, streamSetState, streamUsage);
 }
 
 int32_t AudioPolicyManager::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
