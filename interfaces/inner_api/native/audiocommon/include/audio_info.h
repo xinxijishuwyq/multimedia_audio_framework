@@ -180,6 +180,13 @@ enum ConnectType {
 
 typedef AudioStreamType AudioVolumeType;
 
+enum VolumeFlag {
+    /**
+     * Show system volume bar
+     */
+    FLAG_SHOW_SYSTEM_UI = 1,
+};
+
 enum AudioOffloadType {
     /**
      * Indicates audio offload state default.
