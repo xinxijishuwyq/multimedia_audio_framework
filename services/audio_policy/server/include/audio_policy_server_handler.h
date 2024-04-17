@@ -61,6 +61,7 @@ public:
         ON_CAPTURER_CREATE,
         ON_CAPTURER_REMOVED,
         ON_WAKEUP_CLOSE,
+        HEAD_TRACKING_DEVICE_CHANGE,
     };
     /* event data */
     class EventContextObj {
@@ -78,6 +79,7 @@ public:
         CastType type;
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+        std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
     };
 
     struct RendererDeviceChangeEvent {
@@ -141,6 +143,7 @@ public:
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
     bool SendWakeupCloseEvent(bool isSync);
+    bool SendHeadTrackingDeviceChangeEvent(const std::unordered_map<std::string, bool> &changeInfo);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -167,6 +170,7 @@ private:
     void HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleWakeupCloaseEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

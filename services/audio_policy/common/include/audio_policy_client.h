@@ -42,7 +42,8 @@ enum class AudioPolicyClientCode {
     ON_RENDERERSTATE_CHANGE,
     ON_CAPTURERSTATE_CHANGE,
     ON_RENDERER_DEVICE_CHANGE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_RENDERER_DEVICE_CHANGE,
+    ON_HEAD_TRACKING_DEVICE_CHANGE,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_HEAD_TRACKING_DEVICE_CHANGE,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -61,6 +62,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     virtual void OnRendererDeviceChange(const uint32_t sessionId,
         const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) = 0;
+    virtual void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;

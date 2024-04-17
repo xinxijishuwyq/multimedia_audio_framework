@@ -34,7 +34,8 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v) override;
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v,
+        int32_t volumeFlag = 0) override;
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
 
@@ -264,6 +265,8 @@ public:
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
     float GetMaxAmplitude(const int32_t deviceId) override;
+
+    bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

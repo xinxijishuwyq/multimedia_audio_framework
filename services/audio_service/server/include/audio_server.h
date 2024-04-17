@@ -124,6 +124,8 @@ public:
     uint32_t GetEffectLatency(const std::string &sessionId) override;
 
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -132,7 +134,8 @@ private:
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
     bool CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage);
-    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType);
+    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType,
+        int32_t appUid);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
 
     void AudioServerDied(pid_t pid);
@@ -140,6 +143,8 @@ private:
     void RegisterAudioCapturerSourceCallback();
     int32_t SetIORoute(DeviceType type, DeviceFlag flag);
     bool CheckAndPrintStacktrace(const std::string &key);
+    const std::string GetDPParameter(const std::string &condition);
+    const std::string GetUsbParameter();
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

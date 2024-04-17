@@ -140,6 +140,7 @@ public:
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) override;
     void SetPreferredFrameSize(int32_t frameSize) override;
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
     void OnFirstFrameWriting() override;
@@ -1462,6 +1463,16 @@ bool CapturerInClientInner::DrainAudioStream()
 void CapturerInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
     AUDIO_WARNING_LOG("Not Supported Yet");
+}
+
+void CapturerInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
+{
+    sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
+        return;
+    }
+    gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
 int32_t CapturerInClientInner::SetRendererFirstFrameWritingCallback(

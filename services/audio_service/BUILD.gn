@@ -396,6 +396,12 @@ ohos_shared_library("audio_service") {
     external_deps += [ "config_policy:configpolicy_util" ]
   }
 
+  if (build_variant == "user") {
+    cflags = [ "-DAUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    cflags = [ "-DAUDIO_BUILD_VARIANT_ROOT" ]
+  }
+
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }

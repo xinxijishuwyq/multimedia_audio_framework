@@ -31,6 +31,7 @@
 
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
+#include "audio_policy_server_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -70,30 +71,38 @@ public:
     void UpdateCurrentDevice(const std::string macAddress);
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
+    bool IsHeadTrackingDataRequested(const std::string &macAddress);
+    void UpdateRendererInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
 private:
     AudioSpatializationService()
-        :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
+        :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
     {}
 
     ~AudioSpatializationService();
-    int32_t UpdateSpatializationStateReal(bool outputDeviceChange);
+    int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
     int32_t UpdateSpatializationState();
     void HandleSpatializationStateChange(bool outputDeviceChange);
     void InitSpatializationState();
     void WriteSpatializationStateToDb();
-    IAudioPolicyInterface &audioPolicyManager_;
+    bool IsHeadTrackingDataRequestedForCurrentDevice();
+    void UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress = "");
+    void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::string currentDeviceAddress_ = "";
     bool isSpatializationSupported_ = false;
     bool isHeadTrackingSupported_ = false;
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
+    bool isHeadTrackingDataRequested_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
     std::mutex spatializationEnabledChangeListnerMutex_;
     std::mutex headTrackingEnabledChangeListnerMutex_;
     std::mutex spatializationStateChangeListnerMutex_;
+    std::mutex rendererInfoChangingMutex_;
     std::unordered_map<int32_t, std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledCBMap_;
     std::unordered_map<int32_t, std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledCBMap_;
     std::unordered_map<uint32_t, std::pair<std::shared_ptr<AudioSpatializationStateChangeCallback>, StreamUsage>>

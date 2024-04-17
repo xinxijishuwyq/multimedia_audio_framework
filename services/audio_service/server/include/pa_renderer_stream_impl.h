@@ -98,7 +98,7 @@ private:
     int32_t streamDrainStatus_;
     int32_t streamFlushStatus_;
     State state_;
-    uint32_t underFlowCount_;
+    uint32_t underFlowCount_ = 0;
     bool isDrain_ = false;
     pa_threaded_mainloop *mainloop_;
 

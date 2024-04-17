@@ -130,5 +130,21 @@ int32_t AudioSpatializationManager::SetSpatializationSceneType(
 {
     return AudioPolicyManager::GetInstance().SetSpatializationSceneType(spatializationSceneType);
 }
+
+bool AudioSpatializationManager::IsHeadTrackingDataRequested(const std::string &macAddress)
+{
+    return AudioPolicyManager::GetInstance().IsHeadTrackingDataRequested(macAddress);
+}
+
+int32_t AudioSpatializationManager::RegisterHeadTrackingDataRequestedEventListener(const std::string &macAddress,
+    const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().RegisterHeadTrackingDataRequestedEventListener(macAddress, callback);
+}
+
+int32_t AudioSpatializationManager::UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress)
+{
+    return AudioPolicyManager::GetInstance().UnregisterHeadTrackingDataRequestedEventListener(macAddress);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -66,6 +66,19 @@ public:
     virtual void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) = 0;
 };
 
+class HeadTrackingDataRequestedChangeCallback {
+public:
+    virtual ~HeadTrackingDataRequestedChangeCallback() = default;
+    /**
+     * @brief HeadTrackingDataRequestedChangeCallback will be executed when
+     * whether head tracking data is requested changes
+     *
+     * @param isRequested whethet the head tracking data is requested.
+     * @since 12
+     */
+    virtual void OnHeadTrackingDataRequestedChange(bool isRequested) = 0;
+};
+
 /**
  * @brief The AudioSpatializationManager class is an abstract definition of audio spatialization manager.
  *        Provides a series of client/interfaces for audio spatialization management
@@ -200,6 +213,33 @@ public:
      * @since 12
      */
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
+
+    /**
+     * @brief Check whether head tracking data is requested
+     *
+     * @return Returns <b>true</b> if the head tracking data is requested; returns <b>false</b> otherwise.
+     * @since 12
+     */
+    bool IsHeadTrackingDataRequested(const std::string &macAddress);
+
+    /**
+     * @brief Register the head tracking data requested change callback listener for the specified device
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t RegisterHeadTrackingDataRequestedEventListener(const std::string &macAddress,
+        const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &callback);
+
+    /**
+     * @brief Unregister the head tracking data requested change callback listener for the specified device
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress);
 private:
     AudioSpatializationManager();
     virtual ~AudioSpatializationManager();

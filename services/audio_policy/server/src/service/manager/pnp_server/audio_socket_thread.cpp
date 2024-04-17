@@ -381,6 +381,38 @@ bool AudioSocketThread::DeleteAudioUsbDevice(const char *devName)
     return false;
 }
 
+int32_t AudioSocketThread::AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUevent)
+{
+    AudioEvent audioEvent = {0};
+    if (audioPnpUevent == NULL) {
+        return HDF_ERR_INVALID_PARAM;
+    }
+    if ((strcmp(audioPnpUevent->subSystem, "switch") != 0) ||
+        (strcmp(audioPnpUevent->switchName, "hdmi_audio") != 0) ||
+        (strcmp(audioPnpUevent->action, "change") != 0)) {
+        return HDF_ERR_INVALID_PARAM;
+    }
+
+    if (strcmp(audioPnpUevent->switchState, "1") == 0) {
+        audioEvent.eventType = AUDIO_DEVICE_ADD;
+    } else if (strcmp(audioPnpUevent->switchState, "0") == 0) {
+        audioEvent.eventType = AUDIO_DEVICE_REMOVE;
+    } else {
+        AUDIO_ERR_LOG("audio dp device [%{public}d]", audioEvent.eventType);
+        return ERROR;
+    }
+    audioEvent.deviceType = AUDIO_DP_DEVICE;
+    AUDIO_INFO_LOG("audio dp device [%{public}s]", audioEvent.eventType == AUDIO_DEVICE_ADD ? "add" : "removed");
+
+    if (!IsUpdatePnpDeviceState(&audioEvent)) {
+        AUDIO_ERR_LOG("audio usb device[%{public}u] state[%{public}u] not need flush !", audioEvent.deviceType,
+            audioEvent.eventType);
+        return SUCCESS;
+    }
+    UpdatePnpDeviceState(&audioEvent);
+    return SUCCESS;
+}
+
 int32_t AudioSocketThread::AudioUsbHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent)
 {
     AudioEvent audioEvent = {0};
@@ -463,12 +495,17 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         }
         msgTmp += strlen(msgTmp) + 1;
     }
+
     if (AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
         return true;
     }
     if (AudioUsbHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) {
         return true;
     }
+    if (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) {
+        return true;
+    }
+
     return false;
 }
 
