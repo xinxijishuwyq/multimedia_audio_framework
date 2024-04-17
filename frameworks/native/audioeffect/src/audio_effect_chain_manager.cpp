@@ -15,17 +15,6 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioEffectChainManager"
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <cstdint>
-#include <cassert>
-#include <cstddef>
-#include <map>
-#include <memory>
-#include <vector>
-#include <set>
-
 #include "audio_effect_chain_manager.h"
 #include "audio_effect.h"
 #include "audio_errors.h"
@@ -99,12 +88,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
 }
 
-AudioEffectChainManager::~AudioEffectChainManager()
-{
-    for (auto effChain = SceneTypeToEffectChainMap_.begin(); effChain != SceneTypeToEffectChainMap_.end(); ++effChain) {
-        effChain->second->ReleaseEffectChain();
-    }
-}
+AudioEffectChainManager::~AudioEffectChainManager() {}
 
 AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 {

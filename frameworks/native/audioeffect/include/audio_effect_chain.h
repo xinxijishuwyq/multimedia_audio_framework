@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,18 +15,6 @@
 
 #ifndef AUDIO_EFFECT_CHAIN_H
 #define AUDIO_EFFECT_CHAIN_H
-
-#include <cstdio>
-#include <cstdint>
-#include <cassert>
-#include <cstdint>
-#include <cstddef>
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-#include <mutex>
-#include <set>
 
 #include "audio_effect.h"
 
@@ -55,8 +43,7 @@ public:
 #endif
     ~AudioEffectChain();
     std::string GetEffectMode();
-    void SetEffectMode(std::string mode);
-    void ReleaseEffectChain();
+    void SetEffectMode(const std::string &mode);
     void AddEffectHandle(AudioEffectHandle effectHandle, AudioEffectLibrary *libHandle, AudioEffectScene currSceneType);
     void ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo);
     bool IsEmptyEffectHandles();
@@ -70,6 +57,7 @@ public:
 
 private:
     AudioEffectConfig GetIoBufferConfig();
+    void ReleaseEffectChain();
 
     std::mutex reloadMutex_;
     std::string sceneType_;

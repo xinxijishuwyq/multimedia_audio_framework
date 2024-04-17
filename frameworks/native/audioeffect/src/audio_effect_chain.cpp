@@ -68,7 +68,6 @@ AudioEffectChain::AudioEffectChain(std::string scene)
 
 AudioEffectChain::~AudioEffectChain()
 {
-    std::lock_guard<std::mutex> lock(reloadMutex_);
     ReleaseEffectChain();
 }
 
@@ -86,7 +85,7 @@ std::string AudioEffectChain::GetEffectMode()
     return effectMode_;
 }
 
-void AudioEffectChain::SetEffectMode(std::string mode)
+void AudioEffectChain::SetEffectMode(const std::string &mode)
 {
     effectMode_ = mode;
 }
@@ -226,28 +225,25 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufIn_.frameLength = frameLen;
     audioBufOut_.frameLength = frameLen;
     int32_t count = 0;
-    {
-        std::lock_guard<std::mutex> lock(reloadMutex_);
-        for (AudioEffectHandle handle : standByEffectHandles_) {
+    std::lock_guard<std::mutex> lock(reloadMutex_);
+    for (AudioEffectHandle handle : standByEffectHandles_) {
 #ifdef SENSOR_ENABLE
-            if ((!procInfo.offloadEnabled) && procInfo.headTrackingEnabled) {
-                (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
-            }
-#endif
-            if ((count & 1) == 0) {
-                audioBufIn_.raw = bufIn;
-                audioBufOut_.raw = bufOut;
-            } else {
-                audioBufOut_.raw = bufIn;
-                audioBufIn_.raw = bufOut;
-            }
-            int32_t ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
-            CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs process fail",
-                sceneType_.c_str(), effectMode_.c_str());
-            count++;
+        if ((!procInfo.offloadEnabled) && procInfo.headTrackingEnabled) {
+            (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
         }
+#endif
+        if ((count & 1) == 0) {
+            audioBufIn_.raw = bufIn;
+            audioBufOut_.raw = bufOut;
+        } else {
+            audioBufOut_.raw = bufIn;
+            audioBufIn_.raw = bufOut;
+        }
+        int32_t ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
+        CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs process fail",
+            sceneType_.c_str(), effectMode_.c_str());
+        count++;
     }
-
     if ((count & 1) == 0) {
         size_t totlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
         CHECK_AND_RETURN_LOG(memcpy_s(bufOut, totlen, bufIn, totlen), "memcpy error when last copy");

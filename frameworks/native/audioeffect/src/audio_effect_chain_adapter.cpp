@@ -15,17 +15,6 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioEffectChainAdapter"
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <cstdint>
-#include <cassert>
-#include <cstddef>
-#include <map>
-#include <memory>
-#include <vector>
-#include <set>
-
 #include "audio_effect_chain_adapter.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_effect.h"
@@ -205,25 +194,25 @@ uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *
     uint32_t channelNum = 0;
     uint64_t mode = (channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET;
     switch (mode) {
-    case 0: {
-        for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
-            if ((channelLayout & (bit->first)) != 0) {
-                paMap->map[channelNum++] = bit->second;
+        case 0: {
+            for (auto bit = chSetToPaPositionMap.begin(); bit != chSetToPaPositionMap.end(); ++bit) {
+                if ((channelLayout & (bit->first)) != 0) {
+                    paMap->map[channelNum++] = bit->second;
+                }
             }
+            break;
         }
-        break;
-    }
-    case 1: {
-        uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
-        channelNum = (order + 1) * (order + 1);
-        for (uint32_t i = 0; i < channelNum; ++i) {
-            paMap->map[i] = chSetToPaPositionMap[FRONT_LEFT];
+        case 1: {
+            uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+            channelNum = (order + 1) * (order + 1);
+            for (uint32_t i = 0; i < channelNum; ++i) {
+                paMap->map[i] = chSetToPaPositionMap[FRONT_LEFT];
+            }
+            break;
         }
-        break;
-    }
-    default:
-        channelNum = 0;
-        break;
+        default:
+            channelNum = 0;
+            break;
     }
     return channelNum;
 }
