@@ -361,7 +361,7 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
-    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
+    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
 
     void OnCapturerSessionRemoved(uint64_t sessionID);
 
@@ -426,6 +426,8 @@ public:
     float GetMaxAmplitude(const int32_t deviceId);
     
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
+
+    int32_t TriggerFetchDevice();
 
 private:
     AudioPolicyService()
@@ -629,7 +631,7 @@ private:
 
     void LoadSinksForCapturer();
 
-    void LoadInnerCapturerSink();
+    void LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo);
 
     void LoadReceiverSink();
 
@@ -708,6 +710,10 @@ private:
     int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
 
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
+
+    void UnloadInnerCapturerSink(string moduleName);
+
+    void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -829,7 +835,8 @@ private:
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
         SOURCE_TYPE_PLAYBACK_CAPTURE,
         SOURCE_TYPE_WAKEUP,
-        SOURCE_TYPE_VIRTUAL_CAPTURE
+        SOURCE_TYPE_VIRTUAL_CAPTURE,
+        SOURCE_TYPE_REMOTE_CAST
     };
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;

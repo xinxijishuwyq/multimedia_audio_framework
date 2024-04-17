@@ -841,6 +841,9 @@ std::string AudioAdapterManager::GetVolumeGroupForDevice(DeviceType deviceType)
         case DEVICE_TYPE_DP:
             volumeGroup = "wired";
             break;
+        case DEVICE_TYPE_REMOTE_CAST:
+            volumeGroup = "remote-cast";
+            break;
         default:
             AUDIO_ERR_LOG("Device %{public}d is not invalid value for volume group", deviceType);
             return "";
@@ -1002,6 +1005,15 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         }
     } else {
         LoadVolumeMap();
+    }
+}
+
+void AudioAdapterManager::ResetRemoteCastDeviceVolume()
+{
+    for (auto &streamType: VOLUME_TYPE_LIST) {
+        AudioStreamType streamAlias = GetStreamForVolumeMap(streamType);
+        int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
+        WriteVolumeToKvStore(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
     }
 }
 

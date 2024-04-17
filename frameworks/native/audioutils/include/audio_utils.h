@@ -141,6 +141,7 @@ const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
 const std::string DUMP_APP_DIR = "/data/storage/el2/base/cache/";
 const std::string DUMP_AUDIO_RENDERER_FILENAME = "dump_client_audio.pcm";
+const std::string DUMP_AUDIO_CAPTURER_FILENAME = "dump_client_capturer_audio.pcm";
 const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
 const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
 const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";

@@ -361,6 +361,12 @@ public:
 
     bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
 
+    int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioDeviceRefinerCallback() override;
+
+    int32_t TriggerFetchDevice() override;
+    
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -414,6 +420,7 @@ private:
     static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
+    static constexpr int32_t AUDIO_UID = 1041;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
@@ -519,6 +526,7 @@ private:
     std::set<uint32_t> saveAppCapTokenIdThroughMS;
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
+    AudioRouterCenter &audioRouterCenter_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

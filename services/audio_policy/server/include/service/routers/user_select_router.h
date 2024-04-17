@@ -33,6 +33,11 @@ public:
         return name_;
     }
 
+    RouterType GetRouterType() override
+    {
+        return ROUTER_TYPE_USER_SELECT;
+    }
+
     std::unique_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
     std::unique_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
     std::unique_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) override;

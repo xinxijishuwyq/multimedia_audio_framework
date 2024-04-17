@@ -163,6 +163,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_DEFAULT = 1000,
     /**
+     * Indicates a virtual remote cast device
+     */
+    DEVICE_TYPE_REMOTE_CAST = 1001,
+    /**
      * Indicates device type max count.
      */
     DEVICE_TYPE_MAX
@@ -194,6 +198,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_DP,
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SINK,
+    DeviceType::DEVICE_TYPE_REMOTE_CAST,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType)

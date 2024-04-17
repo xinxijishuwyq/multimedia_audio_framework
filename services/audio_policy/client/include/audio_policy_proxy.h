@@ -267,6 +267,11 @@ public:
     float GetMaxAmplitude(const int32_t deviceId) override;
 
     bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
+    int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioDeviceRefinerCallback() override;
+
+    int32_t TriggerFetchDevice() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

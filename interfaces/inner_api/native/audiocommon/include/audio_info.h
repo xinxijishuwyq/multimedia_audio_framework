@@ -74,6 +74,8 @@ constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
 const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const std::string REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
+const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -909,6 +911,25 @@ struct SourceInfo {
     SourceType sourceType_;
     uint32_t rate_;
     uint32_t channels_;
+};
+
+enum RouterType {
+    ROUTER_TYPE_NONE = 0,
+    ROUTER_TYPE_DEFAULT,
+    ROUTER_TYPE_STREAM_FILTER,
+    ROUTER_TYPE_PACKAGE_FILTER,
+    ROUTER_TYPE_COCKPIT_PHONE,
+    ROUTER_TYPE_PRIVACY_PRIORITY,
+    ROUTER_TYPE_PUBLIC_PRIORITY,
+    ROUTER_TYPE_PAIR_DEVICE,
+    ROUTER_TYPE_USER_SELECT,
+};
+
+enum RenderMode {
+    PRIMARY,
+    VOIP,
+    OFFLOAD,
+    LOW_LATENCY,
 };
 } // namespace AudioStandard
 } // namespace OHOS

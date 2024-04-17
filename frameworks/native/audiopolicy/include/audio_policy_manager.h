@@ -351,6 +351,12 @@ public:
 
     int32_t UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress);
 
+    int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
+
+    int32_t UnsetAudioDeviceRefinerCallback();
+
+    int32_t TriggerFetchDevice();
+    
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

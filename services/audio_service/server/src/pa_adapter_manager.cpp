@@ -294,6 +294,8 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
             }
         } else if (processConfig.isInnerCapturer) {
             deviceName = INNER_CAPTURER_SOURCE;
+        } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
+            deviceName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
         }
         return PolicyHandler::GetInstance().NotifyCapturerAdded(processConfig.capturerInfo,
             processConfig.streamInfo, sessionId);
