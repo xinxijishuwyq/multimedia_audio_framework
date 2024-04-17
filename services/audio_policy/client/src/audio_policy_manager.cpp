@@ -1525,7 +1525,6 @@ int32_t AudioPolicyManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     if (callback == nullptr) {
-        AUDIO_ERR_LOG("SetAudioDeviceRefinerCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
     };
 

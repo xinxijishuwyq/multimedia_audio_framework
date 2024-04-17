@@ -1136,7 +1136,6 @@ void AudioPolicyManagerStub::IsHeadTrackingDataRequestedInternal(MessageParcel &
 void AudioPolicyManagerStub::SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(object != nullptr, "SetAudioDeviceRefinerCallback obj is null");
     int32_t result = SetAudioDeviceRefinerCallback(object);
     reply.WriteInt32(result);
 }

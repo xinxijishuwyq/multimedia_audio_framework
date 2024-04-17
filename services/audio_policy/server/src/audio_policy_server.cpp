@@ -2571,7 +2571,6 @@ int32_t AudioPolicyServer::SetAudioDeviceRefinerCallback(const sptr<IRemoteObjec
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetAudioDeviceRefinerCallback object is nullptr");
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
-        AUDIO_ERR_LOG("SetAudioDeviceRefinerCallback: Error caller uid: %{public}d", callerUid);
         return ERROR;
     }
     return audioRouterCenter_.SetAudioDeviceRefinerCallback(object);
@@ -2581,7 +2580,6 @@ int32_t AudioPolicyServer::UnsetAudioDeviceRefinerCallback()
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
-        AUDIO_ERR_LOG("UnsetAudioDeviceRefinerCallback: Error caller uid: %{public}d", callerUid);
         return ERROR;
     }
     return audioRouterCenter_.UnsetAudioDeviceRefinerCallback();
@@ -2591,7 +2589,6 @@ int32_t AudioPolicyServer::TriggerFetchDevice()
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
-        AUDIO_ERR_LOG("TriggerFetchDevice: Error caller uid: %{public}d", callerUid);
         return ERROR;
     }
     return audioPolicyService_.TriggerFetchDevice();

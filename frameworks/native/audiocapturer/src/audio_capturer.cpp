@@ -15,6 +15,8 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioCapturer"
 
+#include <cinttypes>
+
 #include "audio_capturer.h"
 
 #include "audio_capturer_private.h"
@@ -22,7 +24,6 @@
 #include "audio_utils.h"
 #include "audio_log.h"
 #include "audio_policy_manager.h"
-#include <cinttypes>
 
 namespace OHOS {
 namespace AudioStandard {

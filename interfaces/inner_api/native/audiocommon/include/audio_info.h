@@ -914,21 +914,73 @@ struct SourceInfo {
 };
 
 enum RouterType {
+    /**
+     * None router.
+     * @since 12
+     */
     ROUTER_TYPE_NONE = 0,
+    /**
+     * Default router.
+     * @since 12
+     */
     ROUTER_TYPE_DEFAULT,
+    /**
+     * Stream filter router.
+     * @since 12
+     */
     ROUTER_TYPE_STREAM_FILTER,
+    /**
+     * Package filter router.
+     * @since 12
+     */
     ROUTER_TYPE_PACKAGE_FILTER,
+    /**
+     * Cockpit phone router.
+     * @since 12
+     */
     ROUTER_TYPE_COCKPIT_PHONE,
+    /**
+     * Privacy priority router.
+     * @since 12
+     */
     ROUTER_TYPE_PRIVACY_PRIORITY,
+    /**
+     * Public priority router.
+     * @since 12
+     */
     ROUTER_TYPE_PUBLIC_PRIORITY,
+    /**
+     * Pair device router.
+     * @since 12
+     */
     ROUTER_TYPE_PAIR_DEVICE,
+    /**
+     * User select router.
+     * @since 12
+     */
     ROUTER_TYPE_USER_SELECT,
 };
 
 enum RenderMode {
+    /**
+     * Primary render mode.
+     * @since 12
+     */
     PRIMARY,
+    /**
+     * VOIP render mode.
+     * @since 12
+     */
     VOIP,
+    /**
+     * Offload render mode.
+     * @since 12
+     */
     OFFLOAD,
+    /**
+     * Low latency render mode.
+     * @since 12
+     */
     LOW_LATENCY,
 };
 } // namespace AudioStandard

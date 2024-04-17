@@ -56,7 +56,6 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
     int32_t clientUid, RenderMode renderMode)
 {
-    AUDIO_DEBUG_LOG("AudioRoutingManagerListenerProxy: OnAudioOutputDeviceRefined as listener proxy");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -92,7 +91,6 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
     int32_t clientUid, RenderMode renderMode)
 {
-    AUDIO_DEBUG_LOG("AudioRoutingManagerListenerProxy: OnAudioInputDeviceRefined as listener proxy");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;

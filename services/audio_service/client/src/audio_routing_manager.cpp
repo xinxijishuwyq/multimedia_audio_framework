@@ -117,7 +117,6 @@ std::unique_ptr<AudioDeviceDescriptor> AudioRoutingManager::GetActiveBluetoothDe
 
 int32_t AudioRoutingManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback)
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     return AudioPolicyManager::GetInstance().SetAudioDeviceRefinerCallback(callback);
@@ -125,15 +124,11 @@ int32_t AudioRoutingManager::SetAudioDeviceRefinerCallback(const std::shared_ptr
 
 int32_t AudioRoutingManager::UnsetAudioDeviceRefinerCallback()
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-
     return AudioPolicyManager::GetInstance().UnsetAudioDeviceRefinerCallback();
 }
 
 int32_t AudioRoutingManager::TriggerFetchDevice()
 {
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-
     return AudioPolicyManager::GetInstance().TriggerFetchDevice();
 }
 } // namespace AudioStandard

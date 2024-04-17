@@ -41,8 +41,8 @@
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/rtpoll.h>
 
-#include "audio_log.h"
 #include "securec.h"
+#include "audio_log.h"
 #include "audio_utils_c.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");

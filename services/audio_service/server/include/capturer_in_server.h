@@ -60,6 +60,7 @@ public:
 
 private:
     int32_t InitCacheBuffer(size_t targetSize);
+
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<ICapturerStream> stream_ = nullptr;
