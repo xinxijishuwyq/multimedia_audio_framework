@@ -853,8 +853,6 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
                 ioBufferConfig.inputCfg.channelLayout);
         }
     }
-
-    // SetSpkOffloadState();
     return SUCCESS;
 }
 
