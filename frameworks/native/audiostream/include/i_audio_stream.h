@@ -228,6 +228,8 @@ public:
 
     virtual void SetCapturerSource(int capturerSource) = 0;
 
+    virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
+
     virtual int32_t RegisterRendererOrCapturerPolicyServiceDiedCB(
         const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback)
     {

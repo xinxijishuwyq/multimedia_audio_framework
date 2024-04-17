@@ -164,6 +164,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"MIC", DEVICE_TYPE_MIC},
     {"WAKEUP", DEVICE_TYPE_WAKEUP},
     {"USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
+    {"DISPLAY_PORT", DEVICE_TYPE_DP},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
     {"MAX", DEVICE_TYPE_MAX},
 };

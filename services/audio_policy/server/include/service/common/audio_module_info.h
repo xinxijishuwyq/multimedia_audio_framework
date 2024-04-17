@@ -28,10 +28,12 @@ namespace AudioStandard {
 static const std::string PRIMARY_CLASS = "primary";
 static const std::string A2DP_CLASS = "a2dp";
 static const std::string USB_CLASS = "usb";
+static const std::string DP_CLASS = "dp";
 static const std::string FILE_CLASS = "file_io";
 static const std::string BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const std::string PRIMARY_SPEAKER = "Speaker";
 static const std::string USB_SPEAKER = "Usb_arm_speaker";
+static const std::string DP_SINK = "DP_speaker";
 static const std::string USB_MIC = "Usb_arm_mic";
 static const std::string PRIMARY_MIC = "Built_in_mic";
 static const std::string FILE_SINK = "file_sink";
@@ -64,6 +66,7 @@ enum ClassType {
     TYPE_USB,
     TYPE_FILE_IO,
     TYPE_REMOTE_AUDIO,
+    TYPE_DP,
     TYPE_INVALID
 };
 

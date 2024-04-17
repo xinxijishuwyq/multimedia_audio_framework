@@ -346,5 +346,46 @@ void AudioPolicyClientStubImpl::OnCapturerStateChange(
         }
     }
 }
+
+int32_t AudioPolicyClientStubImpl::AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
+    const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(headTrackingDataRequestedChangeMutex_);
+    if (!headTrackingDataRequestedChangeCallbackMap_.count(macAddress)) {
+        AUDIO_INFO_LOG("First registeration for the specified device");
+        headTrackingDataRequestedChangeCallbackMap_.insert(std::make_pair(macAddress, cb));
+    } else {
+        AUDIO_INFO_LOG("Repeated registeration for the specified device, replaced by the new one");
+        headTrackingDataRequestedChangeCallbackMap_[macAddress] = cb;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress)
+{
+    std::lock_guard<std::mutex> lockCbMap(headTrackingDataRequestedChangeMutex_);
+    headTrackingDataRequestedChangeCallbackMap_.erase(macAddress);
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo)
+{
+    std::lock_guard<std::mutex> lockCbMap(headTrackingDataRequestedChangeMutex_);
+    if (headTrackingDataRequestedChangeCallbackMap_.size() == 0) {
+        return;
+    }
+    for (const auto &pair : changeInfo) {
+        if (!headTrackingDataRequestedChangeCallbackMap_.count(pair.first)) {
+            AUDIO_WARNING_LOG("the specified device has not been registered");
+            continue;
+        }
+        std::shared_ptr<HeadTrackingDataRequestedChangeCallback> headTrackingDataRequestedChangeCallback =
+            headTrackingDataRequestedChangeCallbackMap_[pair.first];
+        if (headTrackingDataRequestedChangeCallback != nullptr) {
+            AUDIO_DEBUG_LOG("head tracking data requested change event of the specified device has been notified");
+            headTrackingDataRequestedChangeCallback->OnHeadTrackingDataRequestedChange(pair.second);
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

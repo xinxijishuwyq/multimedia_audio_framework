@@ -99,7 +99,8 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9) override;
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9,
+        int32_t volumeFlag = 0) override;
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
@@ -357,7 +358,9 @@ public:
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
     float GetMaxAmplitude(const int32_t deviceId) override;
-    
+
+    bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

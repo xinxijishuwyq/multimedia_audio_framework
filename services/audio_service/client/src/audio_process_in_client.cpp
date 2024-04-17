@@ -45,6 +45,7 @@ namespace AudioStandard {
 
 namespace {
 static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 }
 
 class ProcessCbImpl;
@@ -104,6 +105,8 @@ public:
     void SetApplicationCachePath(const std::string &cachePath) override;
 
     void SetPreferredFrameSize(int32_t frameSize) override;
+
+    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     
     bool Init(const AudioProcessConfig &config);
 
@@ -183,6 +186,7 @@ private:
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     bool isInited_ = false;
     bool needReSyncPosition_ = true;
+    int64_t lastPausedTime_ = INT64_MAX;
 
     float volumeInFloat_ = 1.0f;
     int32_t processVolume_ = PROCESS_VOLUME_MAX; // 0 ~ 65536
@@ -448,6 +452,16 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     AUDIO_INFO_LOG("Set preferred callbackBuffer size:%{public}zu", clientSpanSizeInByte_);
     memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
+}
+
+void AudioProcessInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
+{
+    sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
+        return;
+    }
+    gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
 bool AudioProcessInClientInner::InitAudioBuffer()
@@ -894,6 +908,8 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
     }
     streamStatus_->store(StreamStatus::STREAM_PAUSED);
 
+    lastPausedTime_ = ClockTime::GetCurNano();
+
     return SUCCESS;
 }
 
@@ -919,7 +935,14 @@ int32_t AudioProcessInClientInner::Resume()
         threadStatusCV_.notify_all();
         return ERR_OPERATION_FAILED;
     }
-    UpdateHandleInfo();
+
+    if (ClockTime::GetCurNano() - lastPausedTime_ > DELAY_RESYNC_TIME) {
+        UpdateHandleInfo(false, true);
+        lastPausedTime_ = INT64_MAX;
+    } else {
+        UpdateHandleInfo();
+    }
+
     streamStatus_->store(StreamStatus::STREAM_RUNNING);
     threadStatusCV_.notify_all();
 

@@ -39,7 +39,7 @@ public:
     virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
 
     virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
-        API_VERSION api_v = API_9) = 0;
+        API_VERSION api_v = API_9, int32_t volumeFlag = 0) = 0;
 
     virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
 
@@ -277,7 +277,9 @@ public:
     virtual int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) = 0;
 
     virtual float GetMaxAmplitude(const int32_t deviceId) = 0;
-    
+
+    virtual bool IsHeadTrackingDataRequested(const std::string &macAddress) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

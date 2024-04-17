@@ -60,7 +60,8 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v);
+    int32_t volumeFlag = data.ReadInt32();
+    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v, volumeFlag);
     reply.WriteInt32(result);
 }
 
@@ -1123,6 +1124,13 @@ void AudioPolicyManagerStub::GetMaxAmplitudeInternal(MessageParcel &data, Messag
     int32_t deviceId = data.ReadInt32();
     float result = GetMaxAmplitude(deviceId);
     reply.WriteFloat(result);
+}
+
+void AudioPolicyManagerStub::IsHeadTrackingDataRequestedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string macAddress = data.ReadString();
+    bool result = IsHeadTrackingDataRequested(macAddress);
+    reply.WriteBool(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

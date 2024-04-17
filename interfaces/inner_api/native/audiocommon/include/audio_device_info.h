@@ -139,9 +139,13 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_HEADSET = 22,
     /**
+     * Indicates a display device.
+     */
+    DEVICE_TYPE_DP = 23,
+    /**
      * Indicates a usb-arm device.
      */
-    DEVICE_TYPE_USB_ARM_HEADSET = 23,
+    DEVICE_TYPE_USB_ARM_HEADSET = 24,
     /**
      * Indicates a debug sink device
      */
@@ -187,6 +191,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
     DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP,
     DeviceType::DEVICE_TYPE_USB_HEADSET,
+    DeviceType::DEVICE_TYPE_DP,
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SINK,
 };

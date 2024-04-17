@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioRenderer"
 
 #include <sstream>
+#include "securec.h"
 
 #include "audio_renderer.h"
 #include "audio_renderer_private.h"
@@ -300,6 +301,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
 
     ret = GetAudioStreamId(sessionID_);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "GetAudioStreamId err");
+    InitLatencyMeasurement(audioStreamParams);
 
     return SUCCESS;
 }
@@ -518,6 +520,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("Write");
+    MockPcmData(buffer, bufferSize);
     int32_t size = audioStream_->Write(buffer, bufferSize);
     if (size > 0) {
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(buffer), size);
@@ -896,6 +899,7 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
+    MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
     std::lock_guard<std::mutex> lock(switchStreamMutex_);
     return audioStream_->Enqueue(bufDesc);
@@ -1492,6 +1496,31 @@ float AudioRendererPrivate::GetSpeed()
 bool AudioRendererPrivate::IsFastRenderer()
 {
     return isFastRenderer_;
+}
+
+void AudioRendererPrivate::InitLatencyMeasurement(const AudioStreamParams &audioStreamParams)
+{
+    latencyMeasEnabled_ = AudioLatencyMeasurement::CheckIfEnabled();
+    AUDIO_INFO_LOG("LatencyMeas enabled in renderer:%{public}d", latencyMeasEnabled_);
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
+    uint32_t sessionId = 0;
+    audioStream_->GetAudioSessionID(sessionId);
+    latencyMeasurement_ = std::make_shared<AudioLatencyMeasurement>(audioStreamParams.samplingRate,
+        audioStreamParams.channels, audioStreamParams.format, bundleName, sessionId);
+}
+
+void AudioRendererPrivate::MockPcmData(uint8_t *buffer, size_t bufferSize) const
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    if (latencyMeasurement_->MockPcmData(buffer, bufferSize)) {
+        std::string timestamp = GetTime();
+        audioStream_->UpdateLatencyTimestamp(timestamp, true);
+    }
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

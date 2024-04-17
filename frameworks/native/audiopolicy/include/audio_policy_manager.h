@@ -51,7 +51,8 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v = API_9);
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v = API_9,
+        int32_t volumeFlag = 0);
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 
@@ -342,7 +343,14 @@ public:
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
 
     float GetMaxAmplitude(const int32_t deviceId);
-    
+
+    bool IsHeadTrackingDataRequested(const std::string &macAddress);
+
+    int32_t RegisterHeadTrackingDataRequestedEventListener(const std::string &macAddress,
+        const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &callback);
+
+    int32_t UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress);
+
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

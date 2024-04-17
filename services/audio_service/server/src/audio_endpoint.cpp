@@ -43,6 +43,7 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
+    static constexpr int64_t DELAY_STOP_HDI_TIME = 10000000000; // 10s
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
@@ -169,6 +170,12 @@ private:
 
     // Call GetMmapHandlePosition in ipc may block more than a cycle, call it in another thread.
     void AsyncGetPosTime();
+    bool DelayStopDevice();
+
+    void InitLatencyMeasurement();
+    void DeinitLatencyMeasurement();
+    void CheckPlaySignal(uint8_t *buffer, size_t bufferSize);
+    void CheckRecordSignal(uint8_t *buffer, size_t bufferSize);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 private:
@@ -207,6 +214,8 @@ private:
     std::shared_ptr<OHAudioBuffer> dstAudioBuffer_ = nullptr;
 
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
+    bool isStarted_ = false;
+    int64_t delayStopTime_ = INT64_MAX;
 
     std::atomic<ThreadStatus> threadStatus_ = WAITTING;
     std::thread endpointWorkThread_;
@@ -233,6 +242,11 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
+
+    bool signalDetected_ = false;
+    bool latencyMeasEnabled_ = false;
+    size_t detectedTime_ = 0;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 };
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
@@ -637,21 +651,23 @@ bool AudioEndpointInner::StartDevice()
 {
     AUDIO_INFO_LOG("StartDevice enter.");
     // how to modify the status while unlinked and started?
-    CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL, false,
-        "Endpoint status is not IDEL");
+    CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL, false, "Endpoint status is %{public}s",
+        GetStatusStr(endpointStatus_).c_str());
     endpointStatus_ = STARTING;
-    bool isStartSuccess = true;
     if (deviceInfo_.deviceRole == INPUT_DEVICE) {
         CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Start() == SUCCESS,
             false, "Source start failed.");
+        isStarted_ = true;
     } else {
         if (fastSink_ == nullptr || fastSink_->Start() != SUCCESS) {
             AUDIO_ERR_LOG("Sink start failed.");
-            isStartSuccess = false;
+            isStarted_ = false;
+        } else {
+            isStarted_ = true;
         }
     }
 
-    if (isStartSuccess == false) {
+    if (isStarted_ == false) {
         endpointStatus_ = IDEL;
         workThreadCV_.notify_all();
         return false;
@@ -665,8 +681,35 @@ bool AudioEndpointInner::StartDevice()
     return true;
 }
 
+// will not change state to stopped
+bool AudioEndpointInner::DelayStopDevice()
+{
+    AUDIO_INFO_LOG("Status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+
+    // Clear data buffer to avoid noise in some case.
+    if (dstAudioBuffer_ != nullptr) {
+        int32_t ret = memset_s(dstAudioBuffer_->GetDataBase(), dstAudioBuffer_->GetDataSize(), 0,
+            dstAudioBuffer_->GetDataSize());
+        if (ret != EOK) {
+            AUDIO_WARNING_LOG("reset buffer fail, ret %{public}d.", ret);
+        }
+    }
+
+    if (deviceInfo_.deviceRole == INPUT_DEVICE) {
+        CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Stop() == SUCCESS,
+            false, "Source stop failed.");
+    } else {
+        CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr && fastSink_->Stop() == SUCCESS,
+            false, "Sink stop failed.");
+    }
+    isStarted_ = false;
+    return true;
+}
+
 bool AudioEndpointInner::StopDevice()
 {
+    DeinitLatencyMeasurement();
+
     AUDIO_INFO_LOG("StopDevice with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     // todo
     endpointStatus_ = STOPPING;
@@ -684,21 +727,26 @@ bool AudioEndpointInner::StopDevice()
             false, "Sink stop failed.");
     }
     endpointStatus_ = STOPPED;
+    isStarted_ = false;
     return true;
 }
 
 int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
+    InitLatencyMeasurement();
     AUDIO_INFO_LOG("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
         return SUCCESS;
     }
-    if (endpointStatus_ == IDEL && !isDeviceRunningInIdel_) {
+    if (endpointStatus_ == IDEL) {
         // call sink start
-        StartDevice();
-        endpointStatus_ = RUNNING;
+        if (!isStarted_) {
+            StartDevice();
+        }
     }
+    endpointStatus_ = RUNNING;
+    delayStopTime_ = INT64_MAX;
     return SUCCESS;
 }
 
@@ -708,9 +756,10 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
     if (endpointStatus_ == RUNNING) {
         endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
     }
-    if (endpointStatus_ == IDEL && !isDeviceRunningInIdel_) {
-        // call sink stop when no process running?
-        AUDIO_INFO_LOG("OnPause status is IDEL, call stop");
+    if (endpointStatus_ == IDEL) {
+        // delay call sink stop when no process running
+        AUDIO_INFO_LOG("OnPause status is IDEL, need delay call stop");
+        delayStopTime_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME;
     }
     // todo
     return SUCCESS;
@@ -765,8 +814,7 @@ int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStrea
             // For output device, handle info is updated in CheckAllBufferReady
             processBuffer->GetHandleInfo(proHandleFrame, proHandleTime);
         }
-        AUDIO_INFO_LOG("OnUpdateHandleInfo set process handle pos[%{public}" PRIu64"] time [%{public}" PRId64"], "
-            "deviceRole %{public}d.", proHandleFrame, proHandleTime, deviceInfo_.deviceRole);
+
         isFind = true;
         break;
     }
@@ -807,6 +855,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         endpointStatus_ = IDEL; // handle push_back in IDEL
         if (isDeviceRunningInIdel_) {
             StartDevice();
+            delayStopTime_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME;
         }
     }
 
@@ -962,6 +1011,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;
         if (curReadSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READING)) {
             processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
+            CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
             audioDataList.push_back(streamData);
             curReadSpan->readStartTime = ClockTime::GetCurNano();
             DumpFileUtil::WriteDumpFile(dumpDcp_, static_cast<void *>(streamData.bufferDesc.buffer),
@@ -1160,6 +1210,14 @@ void AudioEndpointInner::AsyncGetPosTime()
         if (stopUpdateThread_) {
             break;
         }
+        if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_) {
+            AUDIO_INFO_LOG("IDEL for too long, let's call hdi stop");
+            DelayStopDevice();
+            continue;
+        }
+        if (endpointStatus_ == IDEL && !isStarted_) {
+            continue;
+        }
         // get signaled, call get pos-time
         uint64_t curHdiHandlePos = posInFrame_;
         int64_t handleTime = timeInNano_;
@@ -1205,10 +1263,12 @@ bool AudioEndpointInner::KeepWorkloopRunning()
         case RUNNING:
             return true;
         case IDEL:
+            if (ClockTime::GetCurNano() > delayStopTime_) {
+                targetStatus = RUNNING;
+                break;
+            }
             if (isDeviceRunningInIdel_) {
                 return true;
-            } else {
-                targetStatus = STARTING;
             }
             break;
         case UNLINKED:
@@ -1268,6 +1328,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
 
 void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
 {
+    CheckRecordSignal(readBuf.buffer, readBuf.bufLength);
     std::lock_guard<std::mutex> lock(listLock_);
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr,
@@ -1402,6 +1463,74 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         ClockTime::AbsoluteSleep(wakeUpTime);
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end, ret %{public}d", ret);
+}
+
+void AudioEndpointInner::InitLatencyMeasurement()
+{
+    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
+        return;
+    }
+    signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    signalDetectAgent_->sampleFormat_ = SAMPLE_S16LE;
+    signalDetectAgent_->formatByteSize_ = GetFormatByteSize(SAMPLE_S16LE);
+    latencyMeasEnabled_ = true;
+    signalDetected_ = false;
+}
+
+void AudioEndpointInner::DeinitLatencyMeasurement()
+{
+    signalDetectAgent_ = nullptr;
+    latencyMeasEnabled_ = false;
+}
+
+void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    int32_t byteSize = GetFormatByteSize(dstStreamInfo_.format);
+    size_t newlyCheckedTime = bufferSize / (dstStreamInfo_.samplingRate /
+        MILLISECOND_PER_SECOND) / (byteSize * sizeof(uint8_t) * dstStreamInfo_.channels);
+    detectedTime_ += newlyCheckedTime;
+    if (detectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_ &&
+        !signalDetectAgent_->dspTimestampGot_) {
+            AudioParamKey key = NONE;
+            std::string condition = "debug_audio_latency_measurement";
+            std::string dspTime = fastSink_->GetAudioParameter(key, condition);
+            LatencyMonitor::GetInstance().UpdateDspTime(dspTime);
+            LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
+                signalDetectAgent_->lastPeakBufferTime_);
+            AUDIO_INFO_LOG("LatencyMeas fastSink signal detected");
+            LatencyMonitor::GetInstance().ShowTimestamp(true);
+            signalDetectAgent_->dspTimestampGot_ = true;
+            signalDetectAgent_->signalDetected_ = false;
+    }
+    signalDetected_ = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
+    if (signalDetected_) {
+        AUDIO_INFO_LOG("LatencyMeas fastSink signal detected");
+        detectedTime_ = 0;
+    }
+}
+
+void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
+{
+    if (!latencyMeasEnabled_) {
+        return;
+    }
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
+    signalDetected_ = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
+    if (signalDetected_) {
+        AudioParamKey key = NONE;
+        std::string condition = "debug_audio_latency_measurement";
+        std::string dspTime = fastSource_->GetAudioParameter(key, condition);
+        LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(false,
+            signalDetectAgent_->lastPeakBufferTime_);
+        LatencyMonitor::GetInstance().UpdateDspTime(dspTime);
+        AUDIO_INFO_LOG("LatencyMeas fastSource signal detected");
+        signalDetected_ = false;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

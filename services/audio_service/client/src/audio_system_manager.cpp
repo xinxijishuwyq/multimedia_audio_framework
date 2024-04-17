@@ -17,6 +17,7 @@
 
 #include "audio_system_manager.h"
 
+#include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "bundle_mgr_interface.h"
@@ -183,6 +184,23 @@ int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
     }
 
     return SUCCESS;
+}
+
+std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
+{
+    std::string bundleName = "";
+
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
+
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
+
+    iBundleMgr->GetNameForUid(uid, bundleName);
+    return bundleName;
 }
 
 AudioRingerMode AudioSystemManager::GetRingerMode()
@@ -1020,7 +1038,7 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     AUDIO_INFO_LOG("clientUid:%{public}d streamSetState:%{public}d",
         clientUid, streamSetState);
     int32_t result = 0;
-    
+
     result = AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, audioStreamType);
     return result;
 }
@@ -1143,6 +1161,9 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             }
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_DP:
+            pin = AUDIO_PIN_OUT_DP;
+            break;
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
         case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:

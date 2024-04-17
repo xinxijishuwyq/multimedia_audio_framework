@@ -15,12 +15,13 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioUtils"
 
+#include "audio_utils.h"
 #include <cinttypes>
 #include <ctime>
 #include <sstream>
 #include <ostream>
 #include <climits>
-#include "audio_utils.h"
+#include <string>
 #include "audio_utils_c.h"
 #include "audio_errors.h"
 #include "audio_log.h"
@@ -34,6 +35,7 @@
 #include "accesstoken_kit.h"
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
+#include "securec.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
 
@@ -476,7 +478,7 @@ template <typename T>
 bool GetSysPara(const char *key, T &value)
 {
     CHECK_AND_RETURN_RET_LOG(key != nullptr, false, "key is nullptr");
-    char paraValue[20] = {0}; // 20 for system parameter
+    char paraValue[30] = {0}; // 30 for system parameter
     auto res = GetParameter(key, "-1", paraValue, sizeof(paraValue));
 
     CHECK_AND_RETURN_RET_LOG(res > 0, false, "GetSysPara fail, key:%{public}s res:%{public}d", key, res);
@@ -589,6 +591,292 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
     }
 }
 
+static void MemcpyToI32FromI16(int16_t *src, int32_t *dst, size_t count)
+{
+    for (size_t i = 0; i < count; i++) {
+        *(dst + i) = static_cast<int32_t>(*(src + i));
+    }
+}
+
+static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
+{
+    for (size_t i = 0; i < count; i++) {
+        uint8_t *tmp = src + 3 * i; // 3 is byte size of SAMPLE_S24LE;
+        *(dst + i) = static_cast<int32_t>(tmp[2] << (2 * sizeof(uint8_t))) |
+            static_cast<int32_t>(tmp[1] << sizeof(uint8_t)) | static_cast<int32_t>(tmp[0]);
+    }
+}
+
+bool NearZero(int16_t number)
+{
+    return number >= -DETECTED_ZERO_THRESHOLD && number <= DETECTED_ZERO_THRESHOLD;
+}
+
+std::string GetTime()
+{
+    std::string curTime;
+    struct timeval tv;
+    struct timezone tz;
+    struct tm *t;
+    gettimeofday(&tv, &tz);
+    t = localtime(&tv.tv_sec);
+    curTime += std::to_string(YEAR_BASE + t->tm_year);
+    curTime += (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
+        std::to_string(1 + t->tm_mon));
+    curTime += (t->tm_mday < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_mday) :
+        std::to_string(t->tm_mday));
+    curTime += (t->tm_hour < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_hour) :
+        std::to_string(t->tm_hour));
+    curTime += (t->tm_min < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_min) :
+        std::to_string(t->tm_min));
+    curTime += (t->tm_sec < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_sec) :
+        std::to_string(t->tm_sec));
+    int64_t mSec = static_cast<int64_t>(tv.tv_usec / AUDIO_MS_PER_SECOND);
+    curTime += (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0")
+        + std::to_string(mSec) : std::to_string(mSec));
+    return curTime;
+}
+
+int32_t GetFormatByteSize(int32_t format)
+{
+    int32_t formatByteSize;
+    switch (format) {
+        case SAMPLE_S16LE:
+            formatByteSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            formatByteSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            formatByteSize = 4; // size is 4
+            break;
+        default:
+            formatByteSize = 2; // size is 2
+            break;
+    }
+    return formatByteSize;
+}
+
+bool SignalDetectAgent::CheckAudioData(uint8_t *buffer, size_t bufferLen)
+{
+    CHECK_AND_RETURN_RET_LOG(formatByteSize_ != 0, false, "LatencyMeas checkAudioData failed, "
+        "formatByteSize_ %{public}d", formatByteSize_);
+    frameCountIgnoreChannel_ = bufferLen / formatByteSize_;
+    if (cacheAudioData_.capacity() < frameCountIgnoreChannel_) {
+        cacheAudioData_.clear();
+        cacheAudioData_.reserve(frameCountIgnoreChannel_);
+    }
+    int32_t *cache = cacheAudioData_.data();
+    if (sampleFormat_ == SAMPLE_S32LE) {
+        int32_t ret = memcpy_s(cache, sizeof(int32_t) * cacheAudioData_.capacity(), buffer, bufferLen);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "LatencyMeas checkAudioData failed, dstSize "
+            "%{public}zu, srcSize %{public}zu", sizeof(int32_t) * cacheAudioData_.capacity(), bufferLen);
+    } else if (sampleFormat_ == SAMPLE_S24LE) {
+        MemcpyToI32FromI24(buffer, cache, frameCountIgnoreChannel_);
+    } else {
+        int16_t *cp = reinterpret_cast<int16_t*>(buffer);
+        MemcpyToI32FromI16(cp, cache, frameCountIgnoreChannel_);
+    }
+    if (DetectSignalData(cache, frameCountIgnoreChannel_)) {
+        ResetDetectResult();
+        return true;
+    }
+    return false;
+}
+
+bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
+{
+    std::string curTime = GetTime();
+    int32_t rightZeroSignal = 0;
+    int32_t currentPeakIndex = -1;
+    int32_t currentPeakSignal = SHRT_MIN;
+    int32_t tempMax;
+    int32_t tempMin;
+    bool hasNoneZero;
+    size_t frameCount = bufferLen / channels_;
+    for (size_t index = 0; index < frameCount; index++) {
+        tempMax = SHRT_MIN;
+        tempMin = SHRT_MAX;
+        for (int channel = 0; channel < channels_; channel++) {
+            int16_t temp = buffer[index * channels_ + channel];
+            tempMax = temp > tempMax ? temp : tempMax;
+            tempMin = temp < tempMin ? temp : tempMin;
+        }
+        if (!NearZero(tempMax) || !NearZero(tempMin)) {
+            rightZeroSignal = index + 1;
+            hasNoneZero = true;
+            if (currentPeakIndex == -1 || tempMax > currentPeakSignal) {
+                currentPeakIndex = index;
+                currentPeakSignal = tempMax;
+            }
+        }
+    }
+    if (!hasNoneZero) {
+        blankPeriod_ += frameCount;
+    } else {
+        if (!hasFirstNoneZero_) {
+            lastPeakBufferTime_ = curTime;
+            hasFirstNoneZero_ = true;
+        }
+        if (currentPeakSignal > lastPeakSignal_) {
+            lastPeakSignal_ = currentPeakSignal;
+            lastPeakSignalPos_ = currentPeakIndex;
+        }
+        blankHaveOutput_ = false;
+        blankPeriod_ = frameCount - rightZeroSignal;
+    }
+    int32_t thresholdBlankPeriod = BLANK_THRESHOLD_MS * sampleRate_ / MILLISECOND_PER_SECOND;
+    if (blankPeriod_ > thresholdBlankPeriod) {
+        return !blankHaveOutput_;
+    }
+    return false;
+}
+
+void SignalDetectAgent::ResetDetectResult()
+{
+    blankHaveOutput_ = true;
+    hasFirstNoneZero_ = false;
+    lastPeakSignal_ = SHRT_MIN;
+    signalDetected_ = true;
+    dspTimestampGot_ = false;
+    return;
+}
+
+bool AudioLatencyMeasurement::MockPcmData(uint8_t *buffer, size_t bufferLen)
+{
+    memset_s(buffer, bufferLen, 0, bufferLen);
+    int16_t *signal = signalData_.get();
+    size_t newlyMocked = bufferLen * MILLISECOND_PER_SECOND /
+        (channelCount_ * sampleRate_ * formatByteSize_);
+    mockedTime_ += newlyMocked;
+    if (mockedTime_ >= MOCK_INTERVAL) {
+        mockedTime_ = 0;
+        if (format_ == SAMPLE_S32LE) {
+            MemcpyToI32FromI16(signal, reinterpret_cast<int32_t*>(buffer), SIGNAL_DATA_SIZE);
+        } else {
+            int32_t ret = memcpy_s(buffer, bufferLen, signal, SIGNAL_DATA_SIZE * sizeof(uint8_t));
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "LatencyMeas mockPcmData failed, dstSize "
+                "%{public}zu, srcSize %{public}zu", bufferLen, SIGNAL_DATA_SIZE * sizeof(uint8_t));
+        }
+        return true;
+    }
+    return false;
+}
+
+AudioLatencyMeasurement::AudioLatencyMeasurement(const int32_t &sampleRate,
+                                                 const int32_t &channelCount, const int32_t &sampleFormat,
+                                                 const std::string &appName, const uint32_t &sessionId)
+    :format_(sampleFormat),
+     sampleRate_(sampleRate),
+     channelCount_(channelCount),
+     sessionId_(sessionId),
+     appName_(appName)
+{
+    std::string appToMock = "com.example.null";
+    GetSysPara("persist.multimedia.apptomock", appToMock);
+    AUDIO_INFO_LOG("LatencyMeas appName:%{public}s, appToMock:%{public}s, g_sessionId:%{public}u",
+        appName.c_str(), appToMock.c_str(), g_sessionToMock);
+    if (appToMock == appName && g_sessionToMock == 0) {
+        mockThisStream_ = true;
+        g_sessionToMock = sessionId;
+    }
+    formatByteSize_ = GetFormatByteSize(sampleFormat);
+    InitSignalData();
+}
+
+AudioLatencyMeasurement::~AudioLatencyMeasurement()
+{
+    if (mockThisStream_ && g_sessionToMock == sessionId_) {
+        g_sessionToMock = 0;
+    }
+}
+
+void AudioLatencyMeasurement::InitSignalData()
+{
+    signalData_ = std::make_unique<int16_t[]>(SIGNAL_DATA_SIZE);
+    memset_s(signalData_.get(), SIGNAL_DATA_SIZE, 0, SIGNAL_DATA_SIZE);
+    const int16_t channels = 2; // 2 channels
+    const int16_t samplePerChannel = SIGNAL_DATA_SIZE / channels;
+    int16_t *signalBuffer = signalData_.get();
+    for (int16_t index = 0; index < samplePerChannel; index++) {
+        signalBuffer[index * channels] = SIGNAL_THRESHOLD + static_cast<int16_t>(sinf(2.0f *
+            static_cast<float>(M_PI) * index / samplePerChannel) * (SHRT_MAX - SIGNAL_THRESHOLD));
+        for (int16_t k = 1; k < channels; k++) {
+            signalBuffer[channels * index + k] = signalBuffer[channels * index];
+        }
+    }
+    AUDIO_INFO_LOG("LatencyMeas signalData inited");
+    return;
+}
+
+bool AudioLatencyMeasurement::CheckIfEnabled()
+{
+    int32_t latencyMeasure = -1;
+    GetSysPara("persist.multimedia.audiolatency", latencyMeasure);
+    return (latencyMeasure == 1);
+}
+
+void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
+{
+    if (isRenderer) {
+        rendererMockTime_ = timestamp;
+    } else {
+        capturerDetectedTime_ = timestamp;
+    }
+}
+
+void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp)
+{
+    if (isRenderer) {
+        sinkDetectedTime_ = timestamp;
+    } else {
+        sourceDetectedTime_ = timestamp;
+    }
+}
+
+void LatencyMonitor::UpdateDspTime(std::string timestamp)
+{
+    dspDetectedTime_ = timestamp;
+}
+
+void LatencyMonitor::ShowTimestamp(bool isRenderer)
+{
+    if (extraStrLen_ == 0) {
+        extraStrLen_ = dspDetectedTime_.find("20");
+    }
+    if (isRenderer) {
+        if (dspDetectedTime_.length() == 0) {
+            AUDIO_ERR_LOG("LatencyMeas GetExtraParameter failed!");
+            AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s",
+                rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+            return;
+        }
+        dspBeforeSmartPa_ = dspDetectedTime_.substr(extraStrLen_, DATE_LENGTH);
+        dspAfterSmartPa_ = dspDetectedTime_.substr(extraStrLen_ + DATE_LENGTH + 1 +
+            extraStrLen_, DATE_LENGTH);
+        AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s, "
+                       "DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s", rendererMockTime_.c_str(),
+                       sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
+    } else {
+        if (dspDetectedTime_.length() == 0) {
+            AUDIO_ERR_LOG("LatencyMeas GetExtraParam failed!");
+            AUDIO_INFO_LOG("LatencyMeas CapturerDetectedTime:%{public}s, SourceDetectedTime:%{public}s",
+                capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str());
+            return;
+        }
+        dspMockTime_ = dspDetectedTime_.substr(extraStrLen_ + DATE_LENGTH + extraStrLen_ + 1 +
+            DATE_LENGTH + extraStrLen_ + 1, DATE_LENGTH);
+        AUDIO_INFO_LOG("LatencyMeas CapturerDetectedTime:%{public}s, SourceDetectedTime:%{public}s, "
+                       "DspMockTime:%{public}s", capturerDetectedTime_.c_str(), sourceDetectedTime_.c_str(),
+                       dspMockTime_.c_str());
+    }
+}
+
+void LatencyMonitor::ShowBluetoothTimestamp()
+{
+    AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
+        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

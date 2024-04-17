@@ -50,6 +50,7 @@ public:
     void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
     float GetMaxAmplitude() override;
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 private:
     bool capturerInited_ = false;
     FILE *filePtr = nullptr;

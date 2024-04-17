@@ -22,6 +22,8 @@
 
 #include "safe_map.h"
 #include "iservice_registry.h"
+#include "audio_manager_base.h"
+#include "audio_server_death_recipient.h"
 #include "audio_log.h"
 #include "audio_utils.h"
 #include "hisysevent.h"
@@ -49,6 +51,7 @@ const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
 const uint32_t CORK_TIMEOUT_IN_SEC = 3;
 const uint32_t WRITE_TIMEOUT_IN_SEC = 8;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
+const uint32_t MAX_COUNT_OF_READING_TIMEOUT = 60;
 const uint32_t FLUSH_TIMEOUT_IN_SEC = 5;
 const uint32_t MAINLOOP_WAIT_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
@@ -2042,11 +2045,18 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                     if (IsTimeOut()) {
                         AUDIO_ERR_LOG("Read timeout");
                         pa_threaded_mainloop_unlock(mainLoop);
+                        readTimeoutCount_++;
+                        if (readTimeoutCount_ >= MAX_COUNT_OF_READING_TIMEOUT) {
+                            AUDIO_ERR_LOG("The maximum of timeout count has been exceeded. Restart pulseaudio!");
+                            audioSystemManager_->GetAudioParameter(DUMP_AND_RECOVERY_AUDIO_SERVER);
+                        }
                         return AUDIO_CLIENT_READ_STREAM_ERR;
                     }
+                    readTimeoutCount_ = 0; // Reset the timeout count if IsTimeOut() is false.
                 } else {
                     pa_threaded_mainloop_unlock(mainLoop);
                     HandleCapturePositionCallbacks(readSize);
+                    readTimeoutCount_ = 0; // Reset the timeout count if isBlocking is false.
                     return readSize;
                 }
             } else if (!internalReadBuffer_) {
@@ -3668,6 +3678,60 @@ float AudioServiceClient::GetStreamSpeed()
 uint32_t AudioServiceClient::GetAppTokenId() const
 {
     return appTokenId_;
+}
+
+std::mutex g_audioStreamServerProxyMutex;
+sptr<IStandardAudioService> gAudioStreamServerProxy_ = nullptr;
+const sptr<IStandardAudioService> AudioServiceClient::GetAudioServerProxy()
+{
+    std::lock_guard<std::mutex> lock(g_audioStreamServerProxyMutex);
+    if (gAudioStreamServerProxy_ == nullptr) {
+        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (samgr == nullptr) {
+            AUDIO_ERR_LOG("get sa manager failed");
+            return nullptr;
+        }
+        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+        if (object == nullptr) {
+            AUDIO_ERR_LOG("get audio service remote object failed");
+            return nullptr;
+        }
+        gAudioStreamServerProxy_ = iface_cast<IStandardAudioService>(object);
+        if (gAudioStreamServerProxy_ == nullptr) {
+            AUDIO_ERR_LOG("get audio service proxy failed");
+            return nullptr;
+        }
+
+        // register death recipent to restore proxy
+        sptr<AudioServerDeathRecipient> asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid());
+        if (asDeathRecipient != nullptr) {
+            asDeathRecipient->SetNotifyCb(std::bind(&AudioServiceClient::AudioServerDied,
+                std::placeholders::_1));
+            bool result = object->AddDeathRecipient(asDeathRecipient);
+            if (!result) {
+                AUDIO_ERR_LOG("failed to add deathRecipient");
+            }
+        }
+    }
+    sptr<IStandardAudioService> gasp = gAudioStreamServerProxy_;
+    return gasp;
+}
+
+void AudioServiceClient::AudioServerDied(pid_t pid)
+{
+    AUDIO_INFO_LOG("audio server died clear proxy, will restore proxy in next call");
+    std::lock_guard<std::mutex> lock(g_audioStreamServerProxyMutex);
+    gAudioStreamServerProxy_ = nullptr;
+}
+
+void AudioServiceClient::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
+{
+    sptr<IStandardAudioService> gasp = AudioServiceClient::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("failed to get AudioServerProxy");
+        return;
+    }
+    gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
 AudioSpatializationStateChangeCallbackImpl::AudioSpatializationStateChangeCallbackImpl()
