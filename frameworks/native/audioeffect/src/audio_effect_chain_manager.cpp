@@ -805,53 +805,56 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
         return SUCCESS;
     }
 
-    std::vector<std::string> keys;
-    for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
-        keys.push_back(it->first);
-    }
-    std::string deviceName = GetDeviceTypeName();
-    for (auto key: keys) {
-        std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
-        std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
-        if (SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey)) {
-            SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
-        } else {
-            SceneTypeToEffectChainCountMap_.insert(
-                std::make_pair(sceneTypeAndDeviceKey, SceneTypeToEffectChainCountMap_[key]));
+    SetSpkOffloadState();
+    if (!spkOffloadEnabled_) {
+        std::vector<std::string> keys;
+        for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
+            keys.push_back(it->first);
         }
-        SceneTypeToEffectChainCountMap_.erase(key);
+        std::string deviceName = GetDeviceTypeName();
+        for (auto key: keys) {
+            std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
+            std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
+            if (SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey)) {
+                SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
+            } else {
+                SceneTypeToEffectChainCountMap_.insert(
+                    std::make_pair(sceneTypeAndDeviceKey, SceneTypeToEffectChainCountMap_[key]));
+            }
+            SceneTypeToEffectChainCountMap_.erase(key);
 
-        auto *audioEffectChain = SceneTypeToEffectChainMap_[key];
-        std::string sceneMode;
-        AudioEffectConfig ioBufferConfig;
-        if (audioEffectChain != nullptr) {
-            audioEffectChain->StoreOldEffectChainInfo(sceneMode, ioBufferConfig);
-            delete audioEffectChain;
-        } else {
-            sceneMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
-        }
-        SceneTypeToEffectChainMap_.erase(key);
+            auto *audioEffectChain = SceneTypeToEffectChainMap_[key];
+            std::string sceneMode;
+            AudioEffectConfig ioBufferConfig;
+            if (audioEffectChain != nullptr) {
+                audioEffectChain->StoreOldEffectChainInfo(sceneMode, ioBufferConfig);
+                delete audioEffectChain;
+            } else {
+                sceneMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
+            }
+            SceneTypeToEffectChainMap_.erase(key);
 
 #ifdef SENSOR_ENABLE
-        audioEffectChain = new AudioEffectChain(sceneType, headTracker_);
+            audioEffectChain = new AudioEffectChain(sceneType, headTracker_);
 #else
-        audioEffectChain = new AudioEffectChain(sceneType);
+            audioEffectChain = new AudioEffectChain(sceneType);
 #endif
 
-        if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-            SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-        } else {
-            SceneTypeToEffectChainMap_.insert(std::make_pair(sceneTypeAndDeviceKey, audioEffectChain));
-        }
+            if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
+                SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+            } else {
+                SceneTypeToEffectChainMap_.insert(std::make_pair(sceneTypeAndDeviceKey, audioEffectChain));
+            }
 
-        if (SetAudioEffectChainDynamic(sceneType, sceneMode) != SUCCESS) {
-            AUDIO_ERR_LOG("Fail to set effect chain for [%{public}s]", sceneType.c_str());
+            if (SetAudioEffectChainDynamic(sceneType, sceneMode) != SUCCESS) {
+                AUDIO_ERR_LOG("Fail to set effect chain for [%{public}s]", sceneType.c_str());
+            }
+            audioEffectChain->UpdateMultichannelIoBufferConfig(ioBufferConfig.inputCfg.channels,
+                ioBufferConfig.inputCfg.channelLayout);
         }
-        audioEffectChain->UpdateMultichannelIoBufferConfig(ioBufferConfig.inputCfg.channels,
-            ioBufferConfig.inputCfg.channelLayout);
     }
 
-    SetSpkOffloadState();
+    // SetSpkOffloadState();
     return SUCCESS;
 }
 
@@ -956,7 +959,6 @@ void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChai
     InitHdiState();
 #ifdef WINDOW_MANAGER_ENABLE
     AUDIO_DEBUG_LOG("Call RegisterDisplayListener.");
-    Rosen::DisplayManager::GetInstance().RegisterDisplayListener(audioRotationListener_);
 #endif
     isInitialized_ = true;
 }
@@ -1424,9 +1426,10 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
         sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
         uint32_t TmpChannelCount;
         uint64_t TmpChannelLayout;
-        if (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP"
-            || !ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
-            || !IsChannelLayoutHVSSupported(info.channelLayout)) {
+        std::string deviceType = GetDeviceTypeName();
+        if ((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER")
+            && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
+            && IsChannelLayoutHVSSupported(info.channelLayout)) {
             TmpChannelCount = DEFAULT_NUM_CHANNEL;
             TmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
         } else {
@@ -1738,17 +1741,7 @@ void AudioEffectChainManager::AudioRotationListener::OnDestroy(Rosen::DisplayId 
 
 void AudioEffectChainManager::AudioRotationListener::OnChange(Rosen::DisplayId displayId)
 {
-    // get display
-    auto display = Rosen::DisplayManager::GetInstance().GetDisplayById(displayId);
-    if (!display) {
-        AUDIO_WARNING_LOG("Get display by displayId: %{public}d failed.",
-            static_cast<int32_t>(displayId));
-        return;
-    }
-    // get rotation
-    Rosen::Rotation newRotationState = display->GetRotation();
-    AUDIO_DEBUG_LOG("Onchange displayId: %{public}d rotationState: %{public}u.",
-        static_cast<int32_t>(displayId), static_cast<uint32_t>(newRotationState));
+    int32_t newRotationState = 0;
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     audioEffectChainManager->EffectRotationUpdate(static_cast<uint32_t>(newRotationState));
 }
