@@ -112,7 +112,7 @@ public:
 
     virtual std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const = 0;
 
-    virtual void ResetRemoteCastDeviceVolume(); 
+    virtual void ResetRemoteCastDeviceVolume();
 };
 } // namespace AudioStandard
 } // namespace OHOS

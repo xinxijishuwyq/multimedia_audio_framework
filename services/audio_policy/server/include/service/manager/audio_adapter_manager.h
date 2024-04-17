@@ -138,7 +138,7 @@ public:
     bool IsAbsVolumeScene() const;
     std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
 
-    void ResetRemoteCastDeviceVolume(); 
+    void ResetRemoteCastDeviceVolume();
 private:
     friend class PolicyCallbackImpl;
 

@@ -113,7 +113,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsa
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     if (audioDeviceRefinerCb_ != nullptr) {
-        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUID, PRIMARY);
+        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUid, PRIMARY);
     }
     AUDIO_INFO_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage, clientUID,
         descs[0]->deviceType_);
@@ -149,15 +149,14 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
                 break;
             }
         }
-    }
-    else {
+    } else {
         AUDIO_INFO_LOG("sourceType %{public}d didn't config router strategy, skipped", sourceType);
         return desc;
     }
     vector<unique_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(make_unique<AudioDeviceDescriptor>(*desc));
     if (audioDeviceRefinerCb_ != nullptr) {
-        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID                                                                       , PRIMARY);
+        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PRIMARY);
     }
     AUDIO_INFO_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
         descs[0]->deviceType_);

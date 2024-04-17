@@ -5737,7 +5737,8 @@ int32_t AudioPolicyService::ClosePortAndEraseIOHandle(const std::string &moduleN
 
 void AudioPolicyService::HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo)
 {
-    AudioDeviceDescriptor updatedDesc = AudioDeviceDescriptor(DEVICE_TYPE_REMOTE_CAST, GetDeviceRole(DEVICE_TYPE_REMOTE_CAST));
+    AudioDeviceDescriptor updatedDesc = AudioDeviceDescriptor(DEVICE_TYPE_REMOTE_CAST,
+        GetDeviceRole(DEVICE_TYPE_REMOTE_CAST));
     std::vector<sptr<AudioDeviceDescriptor>> descForCb = {};
     auto isPresent = [&updatedDesc] (const sptr<AudioDeviceDescriptor> &descriptor) {
         return descriptor->deviceType_ == updatedDesc.deviceType_ &&

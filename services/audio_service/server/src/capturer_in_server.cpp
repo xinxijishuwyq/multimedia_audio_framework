@@ -218,8 +218,7 @@ void CapturerInServer::ReadData(size_t length)
     {
         BufferDesc dstBuffer = {nullptr, 0, 0};
         uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
-        int32_t ret = audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer);
-        if (ret < 0) {
+        if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
             return;
         }
         ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});

@@ -141,7 +141,8 @@ int32_t AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefined(
     CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr,
         ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
 
-    return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUid, renderMode);
+    return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUid,
+        renderMode);
 }
 
 int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(
@@ -150,7 +151,7 @@ int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(
 {
     std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr, ERR_CALLBACK_NOT_REGISTERED,
-         "audioDeviceRefinerCallback_ is nullptr");
+        "audioDeviceRefinerCallback_ is nullptr");
 
     return audioDeviceRefinerCallback->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUid, renderMode);
 }
