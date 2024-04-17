@@ -63,10 +63,9 @@ ohos_shared_library("module-inner-capturer-sink") {
     "../../../audioutils:audio_utils",
   ]
 
-  external_deps = [
-    "hilog:libhilog",
-    "${third_party_path}/bounds_checking_function:libsec_shared",
-  ]
+  external_deps = [ "hilog:libhilog" ]
+
+  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
