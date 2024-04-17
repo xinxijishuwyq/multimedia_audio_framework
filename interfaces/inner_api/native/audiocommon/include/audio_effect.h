@@ -306,6 +306,12 @@ const std::unordered_map<DeviceType, std::vector<std::string>> HDI_EFFECT_LIB_MA
     {DEVICE_TYPE_SPEAKER, {"libhisten_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966oo"}},
     {DEVICE_TYPE_BLUETOOTH_A2DP, {"libspatialization_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966gg"}},
 };
+
+struct AudioRendererInfoForSpatialization {
+    RendererState rendererState;
+    std::string deviceMacAddress;
+    StreamUsage streamUsage;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 

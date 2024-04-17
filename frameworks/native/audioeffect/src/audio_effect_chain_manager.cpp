@@ -1427,14 +1427,14 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
         uint32_t TmpChannelCount;
         uint64_t TmpChannelLayout;
         std::string deviceType = GetDeviceTypeName();
-        if ((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER")
+        if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
             && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
             && IsChannelLayoutHVSSupported(info.channelLayout)) {
-            TmpChannelCount = DEFAULT_NUM_CHANNEL;
-            TmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-        } else {
             TmpChannelLayout = info.channelLayout;
             TmpChannelCount = info.channels;
+        } else {
+            TmpChannelCount = DEFAULT_NUM_CHANNEL;
+            TmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
         }
 
         if (TmpChannelCount >= *channels) {
