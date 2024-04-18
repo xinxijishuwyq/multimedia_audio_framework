@@ -15,9 +15,9 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioCapturer"
 
-#include <cinttypes>
-
 #include "audio_capturer.h"
+
+#include <cinttypes>
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"

@@ -91,6 +91,9 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     AudioPolicyServerPtr->ConfigDistributedRoutingRole(deviceDescriptor, type);
     AudioPolicyServerPtr->SetDistributedRoutingRoleCallback(object);
     AudioPolicyServerPtr->UnsetDistributedRoutingRoleCallback();
+    AudioPolicyServerPtr->SetAudioDeviceRefinerCallback(object);
+    AudioPolicyServerPtr->UnsetAudioDeviceRefinerCallback();
+    AudioPolicyServerPtr->TriggerFetchDevice();
 }
 
 void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
@@ -235,6 +238,7 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     MessageOption option;
     listener->OnRemoteRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
 }
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
