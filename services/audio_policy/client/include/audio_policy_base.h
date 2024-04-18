@@ -280,6 +280,12 @@ public:
 
     virtual bool IsHeadTrackingDataRequested(const std::string &macAddress) = 0;
 
+    virtual int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetAudioDeviceRefinerCallback() = 0;
+
+    virtual int32_t TriggerFetchDevice() = 0;
+    
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

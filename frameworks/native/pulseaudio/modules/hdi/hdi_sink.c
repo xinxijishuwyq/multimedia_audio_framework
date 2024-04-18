@@ -89,6 +89,7 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
+const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE", "SCENE_SPEECH", "SCENE_RING",
     "SCENE_OTHERS", "EFFECT_NONE"};
@@ -2271,6 +2272,10 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
     pa_assert(i);
     pa_sink_input_assert_ref(i);
     pa_assert(i->sink);
+    if (!strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
+        AUDIO_INFO_LOG("PaInputStateChangeCb inner_cap return");
+        return;
+    }
     pa_assert_se(u = i->sink->userdata);
 
     char str[SPRINTF_STR_LEN] = {0};
@@ -2319,6 +2324,10 @@ void PaInputVolumeChangeCb(pa_sink_input *i)
     struct Userdata *u;
 
     pa_sink_input_assert_ref(i);
+    if (!strcmp(i->sink->name, SINK_NAME_REMOTE_CAST_INNER_CAPTURER)) {
+        AUDIO_INFO_LOG("PaInputVolumeChangeCb inner_cap return");
+        return;
+    }
     pa_assert_se(u = i->sink->userdata);
 
     if (u->offload_enable && InputIsOffload(i)) {

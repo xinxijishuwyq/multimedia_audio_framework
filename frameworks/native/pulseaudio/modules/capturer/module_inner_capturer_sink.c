@@ -41,7 +41,9 @@
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/rtpoll.h>
 
+#include "securec.h"
 #include "audio_log.h"
+#include "audio_utils_c.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Inner Capturer Sink"));
@@ -218,6 +220,8 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         pa_memchunk chunk;
 
         pa_sink_render(u->sink, u->sink->thread_info.max_request, &chunk);
+        AUTO_CTRACE("inner_capturer_sink: ProcessRender len %zu, max_request %zu", chunk.length,
+            u->sink->thread_info.max_request);
         pa_memblock_unref(chunk.memblock);
 
         u->timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);

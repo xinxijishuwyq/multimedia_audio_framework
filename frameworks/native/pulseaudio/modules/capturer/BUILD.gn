@@ -60,9 +60,12 @@ ohos_shared_library("module-inner-capturer-sink") {
     "$pulseaudio_build_path/src:pulsecommon",
     "$pulseaudio_build_path/src/pulse:pulse",
     "$pulseaudio_build_path/src/pulsecore:pulsecore",
+    "../../../audioutils:audio_utils",
   ]
 
   external_deps = [ "hilog:libhilog" ]
+
+  public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

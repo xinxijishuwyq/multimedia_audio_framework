@@ -15,6 +15,8 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioCapturer"
 
+#include <cinttypes>
+
 #include "audio_capturer.h"
 
 #include "audio_capturer_private.h"
@@ -47,6 +49,7 @@ AudioCapturerPrivate::~AudioCapturerPrivate()
     if (audioStateChangeCallback_ != nullptr) {
         audioStateChangeCallback_->HandleCapturerDestructor();
     }
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
@@ -207,6 +210,8 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
     RegisterCapturerPolicyServiceDiedCallback();
+
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_CAPTURER_FILENAME, &dumpFile_);
 
     return InitAudioInterruptCallback();
 }
@@ -422,7 +427,11 @@ bool AudioCapturerPrivate::Start() const
 int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const
 {
     CheckSignalData(&buffer, userSize);
-    return audioStream_->Read(buffer, userSize, isBlockingRead);
+    int size = audioStream_->Read(buffer, userSize, isBlockingRead);
+    if (size > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&buffer), size);
+    }
+    return size;
 }
 
 CapturerState AudioCapturerPrivate::GetStatus() const

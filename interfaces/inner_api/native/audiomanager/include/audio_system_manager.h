@@ -382,6 +382,16 @@ private:
     std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
 };
 
+class AudioDeviceRefiner {
+public:
+    virtual ~AudioDeviceRefiner() = default;
+
+    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, RenderMode renderMode) = 0;
+    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, SourceType sourceType, int32_t clientUid, RenderMode renderMode) = 0;
+};
+
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management

@@ -76,7 +76,8 @@ public:
         TYPE_VOICE_CALL = 4,
         TYPE_PLAYBACK_CAPTURE = 2,
         TYPE_COMMUNICATION = 7,
-        TYPE_MESSAGE = 10
+        TYPE_MESSAGE = 10,
+        TYPE_REMOTE_CAST = 11
     };
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);

@@ -65,6 +65,9 @@ int32_t CapturerInServer::ConfigServerBuffer()
         return ERR_INVALID_PARAM;
     }
 
+    int32_t ret = InitCacheBuffer(2 * spanSizeInBytes_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitCacheBuffer failed %{public}d", ret);
+
     // create OHAudioBuffer in server
     audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
@@ -72,7 +75,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
     // we need to clear data buffer to avoid dirty data.
     memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
         audioServerBuffer_->GetDataSize());
-    int32_t ret = InitBufferStatus();
+    ret = InitBufferStatus();
     AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
     isBufferConfiged_ = true;
     isInited_ = true;
@@ -176,10 +179,8 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
 
 void CapturerInServer::ReadData(size_t length)
 {
-    if (length < spanSizeInBytes_) {
-        AUDIO_WARNING_LOG("Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
-        return;
-    }
+    CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
+        "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
 
@@ -203,16 +204,24 @@ void CapturerInServer::ReadData(size_t length)
     } else {
         overFlowLogFlag = false;
     }
-    
-    BufferDesc srcBuffer = stream_->DequeueBuffer(length);
+
+    OptResult result = ringCache_->GetWritableSize();
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "RingCache write invalid size %{public}zu", result.size);
+    BufferDesc srcBuffer = stream_->DequeueBuffer(result.size);
+    ringCache_->Enqueue({srcBuffer.buffer, srcBuffer.bufLength});
+    result = ringCache_->GetReadableSize();
+    if (result.ret != OPERATION_SUCCESS || result.size < spanSizeInBytes_) {
+        AUDIO_INFO_LOG("RingCache size not full, return");
+        stream_->EnqueueBuffer(srcBuffer);
+        return;
+    }
     {
         BufferDesc dstBuffer = {nullptr, 0, 0};
         uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
-        int32_t ret = audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer);
-        if (ret < 0) {
+        if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
             return;
         }
-        memcpy_s(dstBuffer.buffer, spanSizeInBytes_, srcBuffer.buffer, spanSizeInBytes_);
+        ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
 
         uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
         AUDIO_DEBUG_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
@@ -379,6 +388,26 @@ int32_t CapturerInServer::GetLatency(uint64_t &latency)
 void CapturerInServer::RegisterTestCallback(const std::weak_ptr<CapturerListener> &callback)
 {
     testCallback_ = callback;
+}
+
+int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)
+{
+    CHECK_AND_RETURN_RET_LOG(spanSizeInBytes_ != 0, ERR_OPERATION_FAILED, "spanSizeInByte_ invalid");
+
+    AUDIO_INFO_LOG("old size:%{public}zu, new size:%{public}zu", cacheSizeInBytes_, targetSize);
+    cacheSizeInBytes_ = targetSize;
+
+    if (ringCache_ == nullptr) {
+        ringCache_ = AudioRingCache::Create(cacheSizeInBytes_);
+    } else {
+        OptResult result = ringCache_->ReConfig(cacheSizeInBytes_, false); // false --> clear buffer
+        if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_ERR_LOG("ReConfig AudioRingCache to size %{public}u failed:ret%{public}zu", result.ret, targetSize);
+            return ERR_OPERATION_FAILED;
+        }
+    }
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

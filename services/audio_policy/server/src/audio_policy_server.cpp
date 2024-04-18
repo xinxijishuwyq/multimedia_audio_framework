@@ -102,7 +102,8 @@ const std::set<uid_t> RECORD_CHECK_FORWARD_LIST = {
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
-      audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService())
+      audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
+      audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter())
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
@@ -2563,6 +2564,34 @@ float AudioPolicyServer::GetMaxAmplitude(int32_t deviceId)
 bool AudioPolicyServer::IsHeadTrackingDataRequested(const std::string &macAddress)
 {
     return audioSpatializationService_.IsHeadTrackingDataRequested(macAddress);
+}
+
+int32_t AudioPolicyServer::SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetAudioDeviceRefinerCallback object is nullptr");
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        return ERROR;
+    }
+    return audioRouterCenter_.SetAudioDeviceRefinerCallback(object);
+}
+
+int32_t AudioPolicyServer::UnsetAudioDeviceRefinerCallback()
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        return ERROR;
+    }
+    return audioRouterCenter_.UnsetAudioDeviceRefinerCallback();
+}
+
+int32_t AudioPolicyServer::TriggerFetchDevice()
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    if (callerUid != UID_AUDIO) {
+        return ERROR;
+    }
+    return audioPolicyService_.TriggerFetchDevice();
 }
 } // namespace AudioStandard
 } // namespace OHOS

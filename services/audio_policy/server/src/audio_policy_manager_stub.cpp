@@ -1132,5 +1132,24 @@ void AudioPolicyManagerStub::IsHeadTrackingDataRequestedInternal(MessageParcel &
     bool result = IsHeadTrackingDataRequested(macAddress);
     reply.WriteBool(result);
 }
+
+void AudioPolicyManagerStub::SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    int32_t result = SetAudioDeviceRefinerCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = UnsetAudioDeviceRefinerCallback();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = TriggerFetchDevice();
+    reply.WriteInt32(result);
+}
 } // namespace audio_policy
 } // namespace OHOS

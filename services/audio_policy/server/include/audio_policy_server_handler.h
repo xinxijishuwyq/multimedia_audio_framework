@@ -144,6 +144,8 @@ public:
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
     bool SendWakeupCloseEvent(bool isSync);
     bool SendHeadTrackingDeviceChangeEvent(const std::unordered_map<std::string, bool> &changeInfo);
+    void AddAudioDeviceRefinerCb(const sptr<IStandardAudioRoutingManagerListener> &callback);
+    int32_t RemoveAudioDeviceRefinerCb();
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;

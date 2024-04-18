@@ -74,6 +74,8 @@ constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
 const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const std::string REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
+const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -909,6 +911,77 @@ struct SourceInfo {
     SourceType sourceType_;
     uint32_t rate_;
     uint32_t channels_;
+};
+
+enum RouterType {
+    /**
+     * None router.
+     * @since 12
+     */
+    ROUTER_TYPE_NONE = 0,
+    /**
+     * Default router.
+     * @since 12
+     */
+    ROUTER_TYPE_DEFAULT,
+    /**
+     * Stream filter router.
+     * @since 12
+     */
+    ROUTER_TYPE_STREAM_FILTER,
+    /**
+     * Package filter router.
+     * @since 12
+     */
+    ROUTER_TYPE_PACKAGE_FILTER,
+    /**
+     * Cockpit phone router.
+     * @since 12
+     */
+    ROUTER_TYPE_COCKPIT_PHONE,
+    /**
+     * Privacy priority router.
+     * @since 12
+     */
+    ROUTER_TYPE_PRIVACY_PRIORITY,
+    /**
+     * Public priority router.
+     * @since 12
+     */
+    ROUTER_TYPE_PUBLIC_PRIORITY,
+    /**
+     * Pair device router.
+     * @since 12
+     */
+    ROUTER_TYPE_PAIR_DEVICE,
+    /**
+     * User select router.
+     * @since 12
+     */
+    ROUTER_TYPE_USER_SELECT,
+};
+
+enum RenderMode {
+    /**
+     * Primary render mode.
+     * @since 12
+     */
+    PRIMARY,
+    /**
+     * VOIP render mode.
+     * @since 12
+     */
+    VOIP,
+    /**
+     * Offload render mode.
+     * @since 12
+     */
+    OFFLOAD,
+    /**
+     * Low latency render mode.
+     * @since 12
+     */
+    LOW_LATENCY,
 };
 } // namespace AudioStandard
 } // namespace OHOS

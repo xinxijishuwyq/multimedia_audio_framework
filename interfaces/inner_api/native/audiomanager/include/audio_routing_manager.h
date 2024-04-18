@@ -28,6 +28,7 @@ namespace AudioStandard {
 
 class AudioDeviceDescriptor;
 class AudioRendererFilter;
+class AudioDeviceRefiner;
 class AudioPreferredOutputDeviceChangeCallback {
 public:
     virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
@@ -70,6 +71,9 @@ public:
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
     std::unique_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
+    int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
+    int32_t UnsetAudioDeviceRefinerCallback();
+    int32_t TriggerFetchDevice();
 private:
     uint32_t GetCallingPid();
 };

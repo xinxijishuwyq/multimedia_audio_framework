@@ -110,7 +110,8 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDevi
 
 void AudioDeviceManager::AddRemoteRenderDev(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (devDesc->networkId_ != LOCAL_NETWORK_ID && devDesc->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
+    if ((devDesc->networkId_ != LOCAL_NETWORK_ID || devDesc->deviceType_ == DEVICE_TYPE_REMOTE_CAST) &&
+        devDesc->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
         remoteRenderDevices_.push_back(devDesc);
     }
 }
@@ -338,7 +339,7 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     }
     AddConnectedDevices(devDesc);
 
-    if (devDesc->networkId_ != LOCAL_NETWORK_ID) {
+    if (devDesc->networkId_ != LOCAL_NETWORK_ID || devDesc->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
         AddRemoteRenderDev(devDesc);
         AddRemoteCaptureDev(devDesc);
     } else {

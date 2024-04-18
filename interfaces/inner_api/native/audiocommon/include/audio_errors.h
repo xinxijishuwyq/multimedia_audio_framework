@@ -131,6 +131,9 @@ const int32_t ERR_MICROPHONE_DISABLED_BY_EDM = BASE_AUDIO_ERR_OFFSET - 22;
 /** system permission denied */
 const int32_t ERR_SYSTEM_PERMISSION_DENIED = BASE_AUDIO_ERR_OFFSET - 23;
 
+/** callback not registered */
+const int32_t ERR_CALLBACK_NOT_REGISTERED = BASE_AUDIO_ERR_OFFSET - 24;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard

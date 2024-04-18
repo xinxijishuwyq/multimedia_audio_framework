@@ -639,7 +639,7 @@ void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::Inner
         eventContextObj->streamInfo_.channels};
 
     eventContextObj->error_ = AudioPolicyService::GetAudioPolicyService().OnCapturerSessionAdded(sessionId,
-        sessionInfo);
+        sessionInfo, eventContextObj->streamInfo_);
 }
 
 void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event)
