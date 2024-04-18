@@ -1531,13 +1531,13 @@ int32_t AudioPolicyManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
     auto activeDistributedRoutingRoleCb = new (std::nothrow) AudioRoutingManagerListenerStub();
     if (activeDistributedRoutingRoleCb == nullptr) {
-        AUDIO_ERR_LOG("SetAudioDeviceRefinerCallback: object is nullptr");
+        AUDIO_ERR_LOG("object is nullptr");
         return ERROR;
     }
     activeDistributedRoutingRoleCb->SetAudioDeviceRefinerCallback(callback);
     sptr<IRemoteObject> object = activeDistributedRoutingRoleCb->AsObject();
     if (object == nullptr) {
-        AUDIO_ERR_LOG("SetAudioDeviceRefinerCallback: listenerStub is nullptr");
+        AUDIO_ERR_LOG("listenerStub is nullptr");
         delete activeDistributedRoutingRoleCb;
         return ERROR;
     }
