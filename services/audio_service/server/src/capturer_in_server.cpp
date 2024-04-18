@@ -29,6 +29,7 @@ namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
+    static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
 }
 
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -190,19 +191,16 @@ void CapturerInServer::ReadData(size_t length)
         "avaliable frame:%{public}d, spanSizeInFrame:%{public}zu", currentWriteFrame, currentReadFrame,
         audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_);
     if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
-        if (!overFlowLogFlag) {
+        if (overFlowLogFlag_ == 0) {
             AUDIO_INFO_LOG("OverFlow!!!");
-            overFlowLogFlag = true;
-        } else {
-            AUDIO_DEBUG_LOG("OverFlow!!!");
+        } else if (overFlowLogFlag_ == OVERFLOW_LOG_LOOP_COUNT) {
+            overFlowLogFlag_ = 0;
         }
-
+        overFlowLogFlag_++;
         BufferDesc dstBuffer = stream_->DequeueBuffer(length);
         stream_->EnqueueBuffer(dstBuffer);
         stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
         return;
-    } else {
-        overFlowLogFlag = false;
     }
 
     OptResult result = ringCache_->GetWritableSize();
