@@ -815,12 +815,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, std::string
         for (auto key: keys) {
             std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
             std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
-            if (SceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey)) {
-                SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
-            } else {
-                SceneTypeToEffectChainCountMap_.insert(
-                    std::make_pair(sceneTypeAndDeviceKey, SceneTypeToEffectChainCountMap_[key]));
-            }
+            SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
             SceneTypeToEffectChainCountMap_.erase(key);
 
             auto *audioEffectChain = SceneTypeToEffectChainMap_[key];
