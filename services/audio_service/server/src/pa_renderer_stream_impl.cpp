@@ -602,7 +602,7 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata)
 {
     Trace trace("PaRendererStreamImpl::PAStreamUnderFlowCb");
-    CHECK_AND_RETURN_LOG(userdata, "PAStreamUnderFlowCb: userdata is null");
+    CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
     bool isStreamValid = true;
     if (rendererStreamInstanceMap_.Find(userdata, isStreamValid) == false) {
@@ -622,7 +622,7 @@ void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata
 void PaRendererStreamImpl::PAStreamUnderFlowCountAddCb(pa_stream *stream, void *userdata)
 {
     Trace trace("PaRendererStreamImpl::PAStreamUnderFlowCountAddCb");
-    CHECK_AND_RETURN_LOG(userdata, "PAStreamUnderFlowCountAddCb: userdata is null");
+    CHECK_AND_RETURN_LOG(userdata, "userdata is null");
 
     bool isStreamValid = true;
     if (rendererStreamInstanceMap_.Find(userdata, isStreamValid) == false) {
