@@ -893,6 +893,10 @@ bool AudioEffectChainManager::GetOffloadEnabled()
 
 void AudioEffectChainManager::InitHdiState()
 {
+    if (audioEffectHdiParam_ == nullptr) {
+        AUDIO_INFO_LOG("audioEffectHdiParam_ is nullptr.");
+        return;
+    }
     audioEffectHdiParam_->InitHdi();
     effectHdiInput[0] = HDI_BLUETOOTH_MODE;
     effectHdiInput[1] = 1;
