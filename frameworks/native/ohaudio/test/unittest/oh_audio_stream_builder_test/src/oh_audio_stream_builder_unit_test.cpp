@@ -471,6 +471,63 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_012, Tes
 }
 
 /**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
+* @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_001
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via illegal strean type.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, PRIVACY_TYPE_PUBLIC);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
+* @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_002
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via public privacy.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, PRIVACY_TYPE_PUBLIC);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
+* @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_003
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via private privacy.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, PRIVACY_TYPE_PRIVATE);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
 * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via legal state,
 *             sourceType is AUDIOSTREAM_SOURCE_TYPE_MIC.
 * @tc.number: OH_AudioStreamBuilder_SetParameter_013
