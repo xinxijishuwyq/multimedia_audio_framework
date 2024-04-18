@@ -1104,7 +1104,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptM
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via illegal state.
 * @tc.number: OH_AudioStreamBuilder_SetInterruptMode_006
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with nullptr builder.
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with invalid interrupt mode.
 */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_006, TestSize.Level0)
 {
