@@ -56,6 +56,13 @@ public:
     virtual ~AudioFocusInfoChangeCallbackFuzz() = default;
     virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) {};
 };
+
+class AudioRingerModeCallbackFuzz : public AudioRingerModeCallback {
+public:
+    explicit AudioRingerModeCallbackFuzz() = default;
+    virtual ~AudioRingerModeCallbackFuzz() = default;
+    virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) {};
+};
 } // namespace AudioStandard
 } // namesapce OHOS
 

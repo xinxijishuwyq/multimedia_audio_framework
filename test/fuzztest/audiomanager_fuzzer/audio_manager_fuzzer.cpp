@@ -133,6 +133,12 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
     deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(data);
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(data);
     AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(deviceDescriptor);
+
+    AudioStreamInfo audioStreamInfo = *reinterpret_cast<const AudioStreamInfo *>(data);
+    AudioStreamManager::GetInstance()->IsAudioRendererLowLatencySupported(audioStreamInfo);
+
+    AudioVolumeType volumeType = *reinterpret_cast<const AudioVolumeType *>(data);
+    AudioStreamManager::GetInstance()->IsStreamActive(volumeType);
 }
 
 void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
@@ -145,6 +151,12 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
     AudioVolumeType type = *reinterpret_cast<const AudioVolumeType *>(data);
     VolumeAdjustType adjustType = *reinterpret_cast<const VolumeAdjustType *>(data);
     DeviceType device = *reinterpret_cast<const DeviceType *>(data);
+    int32_t clientld = *reinterpret_cast<const int32_t *>(data);
+    int32_t deviceId = *reinterpret_cast<const int32_t *>(data);
+    API_VERSION api_v = *reinterpret_cast<const API_VERSION *>(data);
+    AudioRingerMode ringMode = *reinterpret_cast<const AudioRingerMode *>(data);
+    shared_ptr<AudioRingerModeCallbackFuzz> ringerModeCallbackFuzz =
+        std::make_shared<AudioRingerModeCallbackFuzz>();
     std::vector<sptr<VolumeGroupInfo>> infos;
     AudioSystemManager::GetInstance()->GetVolumeGroups(g_networkId, infos);
     if (infos.empty() || infos[0] == nullptr) {
@@ -156,6 +168,12 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
     audioGroupMngr_->AdjustVolumeByStep(adjustType);
     audioGroupMngr_->AdjustSystemVolumeByStep(type, adjustType);
     audioGroupMngr_->GetSystemVolumeInDb(type, volume, device);
+    audioGroupMngr_->GetMaxAmplitude(deviceId);
+    audioGroupMngr_->SetRingerMode(ringMode);
+    audioGroupMngr_->GetRingerMode();
+    audioGroupMngr_->IsMicrophoneMute(api_v);
+    audioGroupMngr_->SetRingerModeCallback(clientld, ringerModeCallbackFuzz);
+    audioGroupMngr_->UnsetRingerModeCallback(clientld);
 }
 } // namespace AudioStandard
 } // namesapce OHOS

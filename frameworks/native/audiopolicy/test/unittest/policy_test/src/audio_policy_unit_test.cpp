@@ -856,7 +856,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAbsVolumeScene_001, TestSize.
     bool isEnable = true;
     AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable);
     int32_t ret = AudioAdapterManager::GetInstance().IsAbsVolumeScene();
-    EXPECT_EQ(false, ret);
+    EXPECT_EQ(true, ret);
 
     isEnable = false;
     AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable);
