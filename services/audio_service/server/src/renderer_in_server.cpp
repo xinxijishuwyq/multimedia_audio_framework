@@ -151,7 +151,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             stateListener->OnOperationHandled(BUFFER_UNDERRUN, 0);
             break;
         case OPERATION_UNDERFLOW:
-            stateListener->OnOperationHandled(BUFFER_OVERFLOW, 0);
+            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
