@@ -1101,9 +1101,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
                 mixlength = infoIn->chunk.length;
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
-                if (sinkIn->process_underrun && (pa_atomic_load(&sinkIn->isFirstReaded) == 1)) {
-                    sinkIn->process_underrun(sinkIn);
-                }
+                pa_sink_input_handle_ohos_underrun(sinkIn);
                 pa_memblock_unref(infoIn->chunk.memblock);
                 continue;
             }

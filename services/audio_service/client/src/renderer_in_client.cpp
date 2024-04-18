@@ -494,7 +494,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         writeDataCV_.notify_all();
         return SUCCESS;
     }
-    if (operation == BUFFER_UNDERRUN) {
+    if (operation == UNDERFLOW_COUNT_ADD) {
         if (!offloadEnable_) {
             underrunCount_++;
         }
