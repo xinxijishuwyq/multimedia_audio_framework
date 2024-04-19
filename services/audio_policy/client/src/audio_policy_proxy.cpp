@@ -1076,7 +1076,7 @@ int32_t AudioPolicyProxy::GetCurrentCapturerChangeInfos(
 }
 
 int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-    AudioStreamType audioStreamType)
+    StreamUsage streamUsage)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1087,7 +1087,7 @@ int32_t AudioPolicyProxy::UpdateStreamState(const int32_t clientUid, StreamSetSt
 
     data.WriteInt32(static_cast<int32_t>(clientUid));
     data.WriteInt32(static_cast<int32_t>(streamSetState));
-    data.WriteInt32(static_cast<int32_t>(audioStreamType));
+    data.WriteInt32(static_cast<int32_t>(streamUsage));
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_STREAM_STATE), data, reply, option);

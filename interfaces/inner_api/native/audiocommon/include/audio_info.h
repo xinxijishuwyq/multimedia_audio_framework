@@ -637,7 +637,7 @@ enum StreamSetState {
 
 struct StreamSetStateEventInternal {
     StreamSetState streamSetState;
-    AudioStreamType audioStreamType;
+    StreamUsage streamUsage;
 };
 
 class AudioRendererChangeInfo {

@@ -957,13 +957,13 @@ public:
      *
      * @param clientUid client Uid
      * @param streamSetState streamSetState
-     * @param audioStreamType audioStreamType
+     * @param streamUsage streamUsage
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    AudioStreamType audioStreamType);
+                                    StreamUsage streamUsage);
 
     /**
      * @brief Get Pin Value From Type

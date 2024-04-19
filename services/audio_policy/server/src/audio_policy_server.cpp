@@ -1614,7 +1614,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid)
 }
 
 int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
-    StreamSetState streamSetState, AudioStreamType audioStreamType)
+    StreamSetState streamSetState, StreamUsage streamUsage)
 {
     constexpr int32_t avSessionUid = 6700; // "uid" : "av_session"
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -1622,8 +1622,8 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     CHECK_AND_RETURN_RET_LOG(callerUid == avSessionUid, ERROR,
         "UpdateStreamState callerUid is error: not av_session");
 
-    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d streamSetState:%{public}d audioStreamType:%{public}d",
-        clientUid, streamSetState, audioStreamType);
+    AUDIO_INFO_LOG("UpdateStreamState::uid:%{public}d streamSetState:%{public}d audioStreamUsage:%{public}d",
+        clientUid, streamSetState, streamUsage);
     StreamSetState setState = StreamSetState::STREAM_PAUSE;
     if (streamSetState == StreamSetState::STREAM_RESUME) {
         setState  = StreamSetState::STREAM_RESUME;
@@ -1633,7 +1633,7 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
     }
     StreamSetStateEventInternal setStateEvent = {};
     setStateEvent.streamSetState = setState;
-    setStateEvent.audioStreamType = audioStreamType;
+    setStateEvent.streamUsage = streamUsage;
 
     return audioPolicyService_.UpdateStreamState(clientUid, setStateEvent);
 }

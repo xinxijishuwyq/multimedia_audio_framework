@@ -184,8 +184,8 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
 
     int32_t clientUid = *reinterpret_cast<const int32_t *>(rawData);
     StreamSetState streamSetState = *reinterpret_cast<const StreamSetState *>(rawData);
-    AudioStreamType audioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-    AudioPolicyServerPtr->UpdateStreamState(clientUid, streamSetState, audioStreamType);
+    StreamUsage streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    AudioPolicyServerPtr->UpdateStreamState(clientUid, streamSetState, streamUsage);
     
     int32_t sessionId = *reinterpret_cast<const int32_t *>(rawData);
     AudioPolicyServerPtr->GetAudioCapturerMicrophoneDescriptors(sessionId);

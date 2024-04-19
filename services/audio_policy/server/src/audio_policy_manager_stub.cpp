@@ -568,9 +568,9 @@ void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, Mess
 {
     int32_t clientUid = data.ReadInt32();
     StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
-    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
 
-    int32_t result = UpdateStreamState(clientUid, streamSetState, streamType);
+    int32_t result = UpdateStreamState(clientUid, streamSetState, streamUsage);
     reply.WriteInt32(result);
 }
 
