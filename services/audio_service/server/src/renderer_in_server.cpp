@@ -28,6 +28,7 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const int64_t MOCK_LATENCY = 45000000; // 45000000 -> 45ms
+    static const uint32_t UNDERRUN_LOG_LOOP_COUNT = 100;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -226,20 +227,17 @@ int32_t RendererInServer::WriteData()
     Trace::Count("RendererInServer::WriteData", (currentWriteFrame - currentReadFrame) / spanSizeInFrame_);
     Trace trace1("RendererInServer::WriteData");
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
-        if (!underRunLogFlag_) {
+        if (underRunLogFlag_ == 0) {
             AUDIO_INFO_LOG("near underrun");
-            underRunLogFlag_ = true;
-        } else {
-            AUDIO_DEBUG_LOG("near underrun");
+        } else if (underRunLogFlag_ == UNDERRUN_LOG_LOOP_COUNT) {
+            underRunLogFlag_ = 0;
         }
-
+        underRunLogFlag_++;
         Trace trace2("RendererInServer::Underrun");
         std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
         CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
         stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
         return ERR_OPERATION_FAILED;
-    } else {
-        underRunLogFlag_ = false;
     }
 
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
@@ -286,7 +284,7 @@ int32_t RendererInServer::OnWriteData(size_t length)
     size_t maxEmptyCount = 1;
     size_t writableSize = stream_->GetWritableSize();
     if (mayNeedForceWrite && writableSize >= spanSizeInByte_ * maxEmptyCount) {
-        AUDIO_WARNING_LOG("Server need force write to recycle callback");
+        AUDIO_DEBUG_LOG("Server need force write to recycle callback");
         needForceWrite_ =
             writableSize / spanSizeInByte_ > 3 ? 0 : 3 - writableSize / spanSizeInByte_; // 3 is maxlength - 1
     }
@@ -312,7 +310,7 @@ int32_t RendererInServer::UpdateWriteIndex()
 
     if (afterDrain == true) {
         afterDrain = false;
-        AUDIO_WARNING_LOG("After drain, start write data");
+        AUDIO_DEBUG_LOG("After drain, start write data");
         WriteData();
     }
     return SUCCESS;
