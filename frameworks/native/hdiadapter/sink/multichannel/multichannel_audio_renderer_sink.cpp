@@ -469,7 +469,6 @@ int32_t MultiChannelRendererSinkInner::CreateRender(const struct AudioPort &rend
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
-        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
         return ERR_NOT_STARTED;
     }
 

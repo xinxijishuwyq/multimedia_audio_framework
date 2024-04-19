@@ -2700,8 +2700,7 @@ static void SetHdiParam(struct Userdata *userdata)
         const char *sinkSpatialization = pa_proplist_gets(i->proplist, "spatialization.enabled");
         const char *sinkSessionStr = pa_proplist_gets(i->proplist, "stream.sessionID");
         bool spatializationEnabled = pa_safe_streq(sinkSpatialization, "1") ? true : false;
-        bool effectEnabled = pa_safe_streq(sinkSceneMode, "EFFECT_DEFAULT") ? true : false;
-        bool hdiEffectEnabled = spatializationEnabled && effectEnabled;
+        bool hdiEffectEnabled = spatializationEnabled;
         int sessionID = atoi(sinkSessionStr == NULL ? "-1" : sinkSessionStr);
         if (sinkSceneType && sinkSceneMode && sinkSpatialization) {
             if (sessionID > sessionIDMax) {
