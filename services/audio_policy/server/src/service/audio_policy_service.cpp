@@ -3637,7 +3637,7 @@ void AudioPolicyService::LoadInnerCapturerSink(string moduleName, AudioStreamInf
     AudioModuleInfo moduleInfo = {};
     moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
     moduleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
-    moduleInfo.name = INNER_CAPTURER_SINK_NAME;
+    moduleInfo.name = moduleName;
     moduleInfo.networkId = "LocalDevice";
     moduleInfo.channels = std::to_string(streamInfo.channels);
     moduleInfo.rate = std::to_string(streamInfo.samplingRate);
