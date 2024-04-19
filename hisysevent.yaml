@@ -19,6 +19,7 @@ DEVICE_CHANGE:
   STREAMID: {type: INT32, desc: stream id}
   STREAMTYPE: {type: INT32, desc: stream type}
   DEVICETYPE: {type: INT32, desc: device type}
+  NETWORKID: {type: STRING, desc: network id}
 
 VOLUME_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: audio input device}
@@ -42,6 +43,7 @@ STREAM_CHANGE:
   STREAMTYPE: {type: INT32, desc: stream type}
   STATE: {type: INT32, desc: audio state}
   DEVICETYPE: {type: INT32, desc: device type}
+  NETWORKID: {type: STRING, desc: network id}
 
 HEADSET_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, tag: PowerStats, desc: headset connection state}
