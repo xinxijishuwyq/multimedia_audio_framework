@@ -693,7 +693,7 @@ void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFoc
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     bool hasCallback = false;
-    unique_lock<mutex> cbListLock(cbListMutex_);
+    std::unique_lock<mutex> cbListLock(cbListMutex_);
     for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
         if ((*it).lock() == callback.lock()) {
             hasCallback = true;
@@ -708,7 +708,7 @@ void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFoc
 void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    unique_lock<mutex> cbListLock(cbListMutex_);
+    std::unique_lock<mutex> cbListLock(cbListMutex_);
     callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
         return callback_.lock() == callback.lock();
     });
@@ -720,7 +720,7 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
 {
     AUDIO_DEBUG_LOG("on callback Entered AudioFocusInfoChangeCallbackImpl %{public}s", __func__);
 
-    unique_lock<mutex> cbListLock(cbListMutex_);
+    std::unique_lock<mutex> cbListLock(cbListMutex_);
     for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
         cb_ = (*callback).lock();
         cbListLock.unlock();
@@ -738,7 +738,7 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusRequested(const AudioInterrup
 {
     AUDIO_DEBUG_LOG("on callback Entered OnAudioFocusRequested %{public}s", __func__);
 
-    unique_lock<mutex> cbListLock(cbListMutex_);
+    std::unique_lock<mutex> cbListLock(cbListMutex_);
     for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
         cb_ = (*callback).lock();
         cbListLock.unlock();
@@ -756,7 +756,7 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusAbandoned(const AudioInterrup
 {
     AUDIO_DEBUG_LOG("on callback Entered OnAudioFocusAbandoned %{public}s", __func__);
 
-    unique_lock<mutex> cbListLock(cbListMutex_);
+    std::unique_lock<mutex> cbListLock(cbListMutex_);
     for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
         cb_ = (*callback).lock();
         cbListLock.unlock();
