@@ -79,8 +79,7 @@ void AudioEffectHdiParam::InitHdi()
 
 int32_t AudioEffectHdiParam::SetHdiCommand(IEffectControl *hdiControl, int8_t *effectHdiInput)
 {
-    int32_t ret;
-    ret = memcpy_s(static_cast<void *>(input_), sizeof(input_),
+    int32_t ret = memcpy_s(static_cast<void *>(input_), sizeof(input_),
         static_cast<void *>(effectHdiInput), sizeof(input_));
     if (ret != 0) {
         AUDIO_WARNING_LOG("hdi memcpy failed");
@@ -108,13 +107,12 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
 
 int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput, DeviceType deviceType)
 {
-    int32_t ret;
     IEffectControl *hdiControl = DeviceTypeToHdiControlMap_[deviceType];
     if (hdiControl == nullptr) {
         AUDIO_WARNING_LOG("hdiControl is nullptr.");
         return ERROR;
     }
-    ret = SetHdiCommand(hdiControl, effectHdiInput);
+    int32_t ret = SetHdiCommand(hdiControl, effectHdiInput);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "hdi send command failed");
     return ret;
 }
