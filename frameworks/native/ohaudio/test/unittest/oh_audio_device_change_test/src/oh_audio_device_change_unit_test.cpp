@@ -31,7 +31,7 @@ void OHAudioDeviceChangeUnitTest::TearDown(void) { }
 static int32_t DeviceChangeCallback(OH_AudioDevice_ChangeType type,
     OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
 {
-    printf("DeviceChangeCallback triggrred, ChangeType: %d\n", type);
+    AUDIO_DEBUG_LOG("DeviceChangeCallback triggrred, ChangeType: %d\n", type);
     int size = audioDeviceDescriptorArray->size;
     if (type == AUDIO_DEVICE_CHANGE_TYPE_CONNECT) {
         for (int index = 0; index < size; index++) {
@@ -41,7 +41,7 @@ static int32_t DeviceChangeCallback(OH_AudioDevice_ChangeType type,
                 OH_AudioDeviceDescriptor_GetDeviceRole(audioDeviceDescriptor, &deviceRole);
                 OH_AudioDevice_Type deviceType = AUDIO_DEVICE_TYPE_INVALID;
                 OH_AudioDeviceDescriptor_GetDeviceType(audioDeviceDescriptor, &deviceType);
-                printf("Receive new device: DeviceRole: %d, DeviceType: %d\n", deviceRole, deviceType);
+                AUDIO_DEBUG_LOG("Receive new device: DeviceRole: %d, DeviceType: %d\n", deviceRole, deviceType);
             }
         }
     }
@@ -388,7 +388,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceType_001, 
             OH_AudioDevice_Type deviceType = AUDIO_DEVICE_TYPE_INVALID;
             result = OH_AudioDeviceDescriptor_GetDeviceType(descriptor, &deviceType);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceType: %d\n", deviceType);
+            AUDIO_DEBUG_LOG("DeviceType: %d\n", deviceType);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -421,7 +421,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceType_002, 
             OH_AudioDevice_Type deviceType = AUDIO_DEVICE_TYPE_INVALID;
             result = OH_AudioDeviceDescriptor_GetDeviceType(descriptor, &deviceType);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceType: %d\n", deviceType);
+            AUDIO_DEBUG_LOG("DeviceType: %d\n", deviceType);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -454,7 +454,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceType_003, 
             OH_AudioDevice_Type deviceType = AUDIO_DEVICE_TYPE_INVALID;
             result = OH_AudioDeviceDescriptor_GetDeviceType(descriptor, &deviceType);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceType: %d\n", deviceType);
+            AUDIO_DEBUG_LOG("DeviceType: %d\n", deviceType);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -530,7 +530,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceRole_001, 
             OH_AudioDevice_Role deviceRole = AUDIO_DEVICE_ROLE_OUTPUT;
             result = OH_AudioDeviceDescriptor_GetDeviceRole(descriptor, &deviceRole);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceRole: %d\n", deviceRole);
+            AUDIO_DEBUG_LOG("DeviceRole: %d\n", deviceRole);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -563,7 +563,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceRole_002, 
             OH_AudioDevice_Role deviceRole = AUDIO_DEVICE_ROLE_OUTPUT;
             result = OH_AudioDeviceDescriptor_GetDeviceRole(descriptor, &deviceRole);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceRole: %d\n", deviceRole);
+            AUDIO_DEBUG_LOG("DeviceRole: %d\n", deviceRole);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -596,7 +596,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceRole_003, 
             OH_AudioDevice_Role deviceRole = AUDIO_DEVICE_ROLE_OUTPUT;
             result = OH_AudioDeviceDescriptor_GetDeviceRole(descriptor, &deviceRole);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceRole: %d\n", deviceRole);
+            AUDIO_DEBUG_LOG("DeviceRole: %d\n", deviceRole);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -672,7 +672,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceId_001, Te
             uint32_t id = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceId(descriptor, &id);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceId: %d\n", id);
+            AUDIO_DEBUG_LOG("DeviceId: %d\n", id);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -705,7 +705,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceId_002, Te
             uint32_t id = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceId(descriptor, &id);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceId: %d\n", id);
+            AUDIO_DEBUG_LOG("DeviceId: %d\n", id);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -738,7 +738,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceId_003, Te
             uint32_t id = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceId(descriptor, &id);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceId: %d\n", id);
+            AUDIO_DEBUG_LOG("DeviceId: %d\n", id);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -814,7 +814,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceName_001, 
             char* deviceName;
             result = OH_AudioDeviceDescriptor_GetDeviceName(descriptor, &deviceName);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceName: %s\n", deviceName);
+            AUDIO_DEBUG_LOG("DeviceName: %s\n", deviceName);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -847,7 +847,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceName_002, 
             char* deviceName;
             result = OH_AudioDeviceDescriptor_GetDeviceName(descriptor, &deviceName);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceName: %s\n", deviceName);
+            AUDIO_DEBUG_LOG("DeviceName: %s\n", deviceName);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -880,7 +880,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceName_003, 
             char* deviceName;
             result = OH_AudioDeviceDescriptor_GetDeviceName(descriptor, &deviceName);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceName: %s\n", deviceName);
+            AUDIO_DEBUG_LOG("DeviceName: %s\n", deviceName);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -956,7 +956,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceAddress_00
             char *address;
             result = OH_AudioDeviceDescriptor_GetDeviceAddress(descriptor, &address);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceAddress: %s\n", address);
+            AUDIO_DEBUG_LOG("DeviceAddress: %s\n", address);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -989,7 +989,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceAddress_00
             char *address;
             result = OH_AudioDeviceDescriptor_GetDeviceAddress(descriptor, &address);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceAddress: %s\n", address);
+            AUDIO_DEBUG_LOG("DeviceAddress: %s\n", address);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1022,7 +1022,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceAddress_00
             char *address;
             result = OH_AudioDeviceDescriptor_GetDeviceAddress(descriptor, &address);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceAddress: %s\n", address);
+            AUDIO_DEBUG_LOG("DeviceAddress: %s\n", address);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1099,7 +1099,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceSampleRate
             uint32_t size = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceSampleRates(descriptor, &sampleRates, &size);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceSampleRates: %d, size = %d\n", *sampleRates, size);
+            AUDIO_DEBUG_LOG("DeviceSampleRates: %d, size = %d\n", *sampleRates, size);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1133,7 +1133,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceSampleRate
             uint32_t size = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceSampleRates(descriptor, &sampleRates, &size);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceSampleRates: %d, size = %d\n", *sampleRates, size);
+            AUDIO_DEBUG_LOG("DeviceSampleRates: %d, size = %d\n", *sampleRates, size);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1167,7 +1167,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceSampleRate
             uint32_t size = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceSampleRates(descriptor, &sampleRates, &size);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceSampleRates: %d, size = %d\n", *sampleRates, size);
+            AUDIO_DEBUG_LOG("DeviceSampleRates: %d, size = %d\n", *sampleRates, size);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1276,7 +1276,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceChannelCou
             uint32_t channelSize = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceChannelCounts(descriptor, &channelCounts, &channelSize);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceChannelCounts: %d, channelSize = %d\n", *channelCounts, channelSize);
+            AUDIO_DEBUG_LOG("DeviceChannelCounts: %d, channelSize = %d\n", *channelCounts, channelSize);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1310,7 +1310,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceChannelCou
             uint32_t channelSize = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceChannelCounts(descriptor, &channelCounts, &channelSize);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceChannelCounts: %d, channelSize = %d\n", *channelCounts, channelSize);
+            AUDIO_DEBUG_LOG("DeviceChannelCounts: %d, channelSize = %d\n", *channelCounts, channelSize);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1344,7 +1344,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceChannelCou
             uint32_t channelSize = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceChannelCounts(descriptor, &channelCounts, &channelSize);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceChannelCounts: %d, channelSize = %d\n", *channelCounts, channelSize);
+            AUDIO_DEBUG_LOG("DeviceChannelCounts: %d, channelSize = %d\n", *channelCounts, channelSize);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1453,7 +1453,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceDisplayNam
             char *displayName;
             result = OH_AudioDeviceDescriptor_GetDeviceDisplayName(descriptor, &displayName);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceDisplayName: %s\n", displayName);
+            AUDIO_DEBUG_LOG("DeviceDisplayName: %s\n", displayName);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1486,7 +1486,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceDisplayNam
             char *displayName;
             result = OH_AudioDeviceDescriptor_GetDeviceDisplayName(descriptor, &displayName);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceDisplayName: %s\n", displayName);
+            AUDIO_DEBUG_LOG("DeviceDisplayName: %s\n", displayName);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1519,7 +1519,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceDisplayNam
             char *displayName;
             result = OH_AudioDeviceDescriptor_GetDeviceDisplayName(descriptor, &displayName);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceDisplayName: %s\n", displayName);
+            AUDIO_DEBUG_LOG("DeviceDisplayName: %s\n", displayName);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1596,7 +1596,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceEncodingTy
             uint32_t encodingTypeSize = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceEncodingTypes(descriptor, &encodingTypes, &encodingTypeSize);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceEncodingTypes: %d, encodingTypeSize: %d\n", *encodingTypes, encodingTypeSize);
+            AUDIO_DEBUG_LOG("DeviceEncodingTypes: %d, encodingTypeSize: %d\n", *encodingTypes, encodingTypeSize);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1630,7 +1630,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceEncodingTy
             uint32_t encodingTypeSize = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceEncodingTypes(descriptor, &encodingTypes, &encodingTypeSize);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceEncodingTypes: %d, encodingTypeSize: %d\n", *encodingTypes, encodingTypeSize);
+            AUDIO_DEBUG_LOG("DeviceEncodingTypes: %d, encodingTypeSize: %d\n", *encodingTypes, encodingTypeSize);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
@@ -1664,7 +1664,7 @@ HWTEST(OHAudioDeviceChangeUnitTest, OH_AudioDeviceDescriptor_GetDeviceEncodingTy
             uint32_t encodingTypeSize = 0;
             result = OH_AudioDeviceDescriptor_GetDeviceEncodingTypes(descriptor, &encodingTypes, &encodingTypeSize);
             EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-            printf("DeviceEncodingTypes: %d, encodingTypeSize: %d\n", *encodingTypes, encodingTypeSize);
+            AUDIO_DEBUG_LOG("DeviceEncodingTypes: %d, encodingTypeSize: %d\n", *encodingTypes, encodingTypeSize);
         }
     }
     result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, array);
