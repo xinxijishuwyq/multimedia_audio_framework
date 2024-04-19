@@ -53,6 +53,7 @@ public:
     static int32_t GetA2dpDeviceStreamInfo(const std::string& macAddress,
         AudioStandard::AudioStreamInfo &streamInfo);
     static bool HasA2dpDeviceConnected();
+    static void CheckA2dpDeviceReconnect();
     static int32_t A2dpOffloadSessionRequest(const std::vector<A2dpStreamInfo> &info);
     static int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsID);
     static int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsID);

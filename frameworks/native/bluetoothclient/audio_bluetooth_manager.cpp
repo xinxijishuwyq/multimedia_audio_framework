@@ -202,6 +202,19 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
     return a2dpInstance_->OffloadStopPlaying(activeA2dpDevice_, sessionsID);
 }
 
+void AudioA2dpManager::CheckA2dpDeviceReconnect()
+{
+    a2dpInstance_ = A2dpSource::GetProfile();
+    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
+    std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
+    std::vector<BluetoothRemoteDevice> devices;
+    a2dpInstance_->GetDevicesByStates(states, devices);
+    for (auto &device : devices) {
+        a2dpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
+            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+    }
+}
+
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
     AUDIO_INFO_LOG("AudioA2dpListener OnConnectionStateChanged: state: %{public}d", state);
