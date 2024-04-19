@@ -80,13 +80,11 @@ void AudioEffectHdiParam::InitHdi()
 int32_t AudioEffectHdiParam::SetHdiCommand(IEffectControl *hdiControl, int8_t *effectHdiInput)
 {
     int32_t ret;
-    if (hdiControl == nullptr) {
-        AUDIO_WARNING_LOG("hdiControl is nullptr.");
-        continue;
-    }
     ret = memcpy_s(static_cast<void *>(input_), sizeof(input_),
         static_cast<void *>(effectHdiInput), sizeof(input_));
-    CHECK_AND_CONTINUE_LOG(ret == 0, "hdi memcpy failed");
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("hdi memcpy failed");
+    }
     uint32_t replyLen = GET_HDI_BUFFER_LEN;
     ret = hdiControl->SendCommand(hdiControl, HDI_SET_PATAM, input_, SEND_HDI_COMMAND_LEN,
         output_, &replyLen);
@@ -97,6 +95,10 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
 {
     int32_t ret;
     for (const auto &item : DeviceTypeToHdiControlMap_) {
+        if (hdiControl == nullptr) {
+            AUDIO_WARNING_LOG("hdiControl is nullptr.");
+            continue;
+        }
         IEffectControl *hdiControl = item.second;
         ret = SetHdiCommand(hdiControl, effectHdiInput);
         CHECK_AND_CONTINUE_LOG(ret == 0, "hdi send command failed");
@@ -108,6 +110,10 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput, DeviceType d
 {
     int32_t ret;
     IEffectControl *hdiControl = DeviceTypeToHdiControlMap_[deviceType];
+    if (hdiControl == nullptr) {
+        AUDIO_WARNING_LOG("hdiControl is nullptr.");
+        return ERROR;
+    }
     ret = SetHdiCommand(hdiControl, effectHdiInput);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "hdi send command failed");
     return ret;
