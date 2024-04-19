@@ -693,7 +693,7 @@ void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFoc
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     bool hasCallback = false;
-    std::unique_lock<mutex> cbListLock(cbListMutex_);
+    lock_guard<mutex> cbListLock(cbListMutex_);
     for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
         if ((*it).lock() == callback.lock()) {
             hasCallback = true;
@@ -702,17 +702,15 @@ void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFoc
     if (!hasCallback) {
         callbackList_.push_back(callback);
     }
-    cbListLock.unlock();
 }
 
 void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    std::unique_lock<mutex> cbListLock(cbListMutex_);
+    lock_guard<mutex> cbListLock(cbListMutex_);
     callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
         return callback_.lock() == callback.lock();
     });
-    cbListLock.unlock();
 }
 
 void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
@@ -730,6 +728,7 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusInfoChange(
         } else {
             AUDIO_ERR_LOG("OnAudioFocusInfoChange: callback is null");
         }
+        cbListLock.lock();
     }
     return;
 }
@@ -748,6 +747,7 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusRequested(const AudioInterrup
         } else {
             AUDIO_ERR_LOG("OnAudioFocusRequested: callback is null");
         }
+        cbListLock.lock();
     }
     return;
 }
@@ -766,6 +766,7 @@ void AudioFocusInfoChangeCallbackImpl::OnAudioFocusAbandoned(const AudioInterrup
         } else {
             AUDIO_ERR_LOG("OnAudioFocusAbandoned: callback is null");
         }
+        cbListLock.lock();
     }
     return;
 }
