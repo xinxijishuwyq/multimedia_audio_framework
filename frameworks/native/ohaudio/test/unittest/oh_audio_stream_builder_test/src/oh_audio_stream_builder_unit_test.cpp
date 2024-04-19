@@ -1100,5 +1100,21 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptM
     result = OH_AudioStreamBuilder_Destroy(builder1);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
+
+/**
+* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via illegal state.
+* @tc.number: OH_AudioStreamBuilder_SetInterruptMode_006
+* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with invalid interrupt mode.
+*/
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_006, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = nullptr;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioInterrupt_Mode mode = (OH_AudioInterrupt_Mode)(-2);
+    result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder, mode);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
 } // namespace AudioStandard
 } // namespace OHOS
