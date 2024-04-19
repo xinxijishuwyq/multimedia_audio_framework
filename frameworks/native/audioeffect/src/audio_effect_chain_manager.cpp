@@ -1421,22 +1421,22 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     std::set<std::string> sessions = SceneTypeToSessionIDMap_[sceneType];
     for (auto s = sessions.begin(); s != sessions.end(); ++s) {
         sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
-        uint32_t TmpChannelCount;
-        uint64_t TmpChannelLayout;
+        uint32_t tmpChannelCount;
+        uint64_t tmpChannelLayout;
         std::string deviceType = GetDeviceTypeName();
         if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
             && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
             && IsChannelLayoutHVSSupported(info.channelLayout)) {
-            TmpChannelLayout = info.channelLayout;
-            TmpChannelCount = info.channels;
+            tmpChannelLayout = info.channelLayout;
+            tmpChannelCount = info.channels;
         } else {
-            TmpChannelCount = DEFAULT_NUM_CHANNEL;
-            TmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+            tmpChannelCount = DEFAULT_NUM_CHANNEL;
+            tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
         }
 
-        if (TmpChannelCount >= *channels) {
-            *channels = TmpChannelCount;
-            *channelLayout = TmpChannelLayout;
+        if (tmpChannelCount >= *channels) {
+            *channels = tmpChannelCount;
+            *channelLayout = tmpChannelLayout;
         }
     }
     return SUCCESS;
@@ -1449,18 +1449,18 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
         std::set<std::string> sessions = SceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); ++s) {
             sessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
-            uint32_t TmpChannelCount = DEFAULT_MCH_NUM_CHANNEL;
-            uint64_t TmpChannelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
+            uint32_t tmpChannelCount = DEFAULT_MCH_NUM_CHANNEL;
+            uint64_t tmpChannelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
             if (info.channels > DEFAULT_NUM_CHANNEL &&
                 !ExistAudioEffectChain(it->first, info.sceneMode, info.spatializationEnabled) &&
                 IsChannelLayoutHVSSupported(info.channelLayout)) {
-                TmpChannelLayout = info.channelLayout;
-                TmpChannelCount = info.channels;
+                tmpChannelLayout = info.channelLayout;
+                tmpChannelCount = info.channels;
             }
 
-            if (TmpChannelCount >= *channels) {
-                *channels = TmpChannelCount;
-                *channelLayout = TmpChannelLayout;
+            if (tmpChannelCount >= *channels) {
+                *channels = tmpChannelCount;
+                *channelLayout = tmpChannelLayout;
             }
         }
     }
