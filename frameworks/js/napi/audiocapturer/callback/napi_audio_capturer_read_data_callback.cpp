@@ -163,7 +163,7 @@ void NapiCapturerReadDataCallback::WorkCallbackCapturerReadData(uv_work_t *work,
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call %{public}s callback", request.c_str());
 
         CHECK_AND_BREAK_LOG(event->capturerNapiObj->audioCapturer_ != nullptr && event->capturerNapiObj != nullptr,
-         "audioCapturer_ is null");
+            "audioCapturer_ is null");
         event->capturerNapiObj->audioCapturer_->Enqueue(event->bufDesc);
     } while (0);
     napi_close_handle_scope(env, scope);
