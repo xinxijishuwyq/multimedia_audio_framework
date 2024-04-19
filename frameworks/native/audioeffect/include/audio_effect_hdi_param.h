@@ -40,6 +40,7 @@ private:
     std::string effectId_;
     IEffectModel *hdiModel_;
     std::map<DeviceType, IEffectControl *> DeviceTypeToHdiControlMap_;
+    int32_t SetHdiCommand(IEffectControl *hdiControl, int8_t *effectHdiInput);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

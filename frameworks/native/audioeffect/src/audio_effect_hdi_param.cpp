@@ -95,6 +95,7 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
 {
     int32_t ret;
     for (const auto &item : DeviceTypeToHdiControlMap_) {
+        IEffectControl *hdiControl = item.second;
         if (hdiControl == nullptr) {
             AUDIO_WARNING_LOG("hdiControl is nullptr.");
             continue;
