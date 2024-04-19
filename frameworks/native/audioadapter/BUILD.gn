@@ -20,7 +20,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "src/pulse_audio_service_adapter_impl.cpp" ]

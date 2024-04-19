@@ -22,7 +22,6 @@ ohos_shared_library("audio_utils") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "../../../cfi_blocklist.txt"
   }
   public_configs = [ ":audio_utils_public_config" ]
   install_enable = true
