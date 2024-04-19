@@ -100,7 +100,6 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
             AUDIO_WARNING_LOG("hdiControl is nullptr.");
             continue;
         }
-        IEffectControl *hdiControl = item.second;
         ret = SetHdiCommand(hdiControl, effectHdiInput);
         CHECK_AND_CONTINUE_LOG(ret == 0, "hdi send command failed");
     }
