@@ -169,70 +169,11 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
     return SPATIALIZATION_SERVICE_OK;
 }
 
-int32_t AudioSpatializationService::RegisterSpatializationEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object, bool hasSystemPermission)
-{
-    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "set spatialization enabled event listener object is nullptr");
-    sptr<IStandardSpatializationEnabledChangeListener> listener =
-        iface_cast<IStandardSpatializationEnabledChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "spatialization enabled obj cast failed");
-
-    std::shared_ptr<AudioSpatializationEnabledChangeCallback> callback =
-        std::make_shared<AudioSpatializationEnabledChangeListenerCallback>(listener, hasSystemPermission);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "failed to create spatialization enabled cb obj");
-
-    spatializationEnabledCBMap_[clientPid] = callback;
-    return SUCCESS;
-}
-
-int32_t AudioSpatializationService::RegisterHeadTrackingEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object, bool hasSystemPermission)
-{
-    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "set head tracking enabled event listener object is nullptr");
-    sptr<IStandardHeadTrackingEnabledChangeListener> listener =
-        iface_cast<IStandardHeadTrackingEnabledChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "head tracking enabled obj cast failed");
-
-    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> callback =
-        std::make_shared<AudioHeadTrackingEnabledChangeListenerCallback>(listener, hasSystemPermission);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "failed to create head tracking enabled cb obj");
-
-    headTrackingEnabledCBMap_[clientPid] = callback;
-    return SUCCESS;
-}
-
-int32_t AudioSpatializationService::UnregisterSpatializationEnabledEventListener(int32_t clientPid)
-{
-    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
-    spatializationEnabledCBMap_.erase(clientPid);
-    return SUCCESS;
-}
-
-int32_t AudioSpatializationService::UnregisterHeadTrackingEnabledEventListener(int32_t clientPid)
-{
-    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
-    headTrackingEnabledCBMap_.erase(clientPid);
-    return SUCCESS;
-}
-
 void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &enabled)
 {
     AUDIO_INFO_LOG("Spatialization enabled callback is triggered: state is %{public}d", enabled);
-    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
-    for (auto it = spatializationEnabledCBMap_.begin(); it != spatializationEnabledCBMap_.end(); ++it) {
-        std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCb = it->second;
-        if (spatializationEnabledChangeCb == nullptr) {
-            AUDIO_ERR_LOG("spatializationEnabledChangeCb : nullptr for client : %{public}d", it->first);
-            it = spatializationEnabledCBMap_.erase(it);
-            continue;
-        }
-        spatializationEnabledChangeCb->OnSpatializationEnabledChange(enabled);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendSpatializatonEnabledChangeEvent(enabled);
     }
 }
 
@@ -240,14 +181,8 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &ena
 {
     AUDIO_INFO_LOG("Head tracking enabled callback is triggered: state is %{public}d", enabled);
     std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
-    for (auto it = headTrackingEnabledCBMap_.begin(); it != headTrackingEnabledCBMap_.end(); ++it) {
-        std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> headTrackingEnabledChangeCb = it->second;
-        if (headTrackingEnabledChangeCb == nullptr) {
-            AUDIO_ERR_LOG("headTrackingEnabledChangeCb : nullptr for client : %{public}d", it->first);
-            it = headTrackingEnabledCBMap_.erase(it);
-            continue;
-        }
-        headTrackingEnabledChangeCb->OnHeadTrackingEnabledChange(enabled);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendHeadTrackingEnabledChangeEvent(enabled);
     }
 }
 

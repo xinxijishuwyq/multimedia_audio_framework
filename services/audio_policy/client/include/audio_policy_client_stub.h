@@ -43,6 +43,8 @@ private:
     void HandleCapturerStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply);
+    void HandleSpatializationEnabledChange(MessageParcel &data, MessageParcel &reply);
+    void HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void (AudioPolicyClientStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[]  = {
@@ -59,6 +61,8 @@ private:
         &AudioPolicyClientStub::HandleCapturerStateChange,
         &AudioPolicyClientStub::HandleRendererDeviceChange,
         &AudioPolicyClientStub::HandleHeadTrackingDeviceChange,
+        &AudioPolicyClientStub::HandleSpatializationEnabledChange,
+        &AudioPolicyClientStub::HandleHeadTrackingEnabledChange,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyClientCode::AUDIO_POLICY_CLIENT_CODE_MAX) + 1),

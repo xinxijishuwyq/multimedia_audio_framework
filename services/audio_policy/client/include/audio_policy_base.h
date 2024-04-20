@@ -219,14 +219,6 @@ public:
 
     virtual int32_t SetHeadTrackingEnabled(const bool enable) = 0;
 
-    virtual int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) = 0;
-
-    virtual int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) = 0;
-
-    virtual int32_t UnregisterSpatializationEnabledEventListener() = 0;
-
-    virtual int32_t UnregisterHeadTrackingEnabledEventListener() = 0;
-
     virtual AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) = 0;
 
     virtual bool IsSpatializationSupported() = 0;

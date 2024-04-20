@@ -387,5 +387,54 @@ void AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unordered_
         }
     }
 }
+
+int32_t AudioPolicyClientStubImpl::AddSpatializationEnabledChangeCallback(
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
+    spatializationEnabledChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveSpatializationEnabledChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
+    spatializationEnabledChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnSpatializationEnabledChange(const bool &enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
+    for (const auto &callback : spatializationEnabledChangeCallbackList_) {
+        callback.OnSpatializationEnabledChange(enabled);
+    }
+}
+
+int32_t AudioPolicyClientStubImpl::AddHeadTrackingEnabledChangeCallback(
+    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
+    headTrackingEnabledChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingEnabledChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
+    headTrackingEnabledChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(const bool &enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
+    if (headTrackingDataRequestedChangeCallbackMap_.size() == 0) {
+        return;
+    }
+    for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
+        callback.OnHeadTrackingEnabledChange(enabled);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

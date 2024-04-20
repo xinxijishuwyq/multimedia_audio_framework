@@ -888,38 +888,6 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data,
     reply.WriteInt32(result);
 }
 
-void AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "AudioSpatializationEnabledChangeCallback obj is null");
-    int32_t ret = RegisterSpatializationEnabledEventListener(remoteObject);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "AudioHeadTrackingEnabledChangeCallback obj is null");
-    int32_t ret = RegisterHeadTrackingEnabledEventListener(remoteObject);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    int32_t ret = UnregisterSpatializationEnabledEventListener();
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    int32_t ret = UnregisterHeadTrackingEnabledEventListener();
-    reply.WriteInt32(ret);
-}
-
 void AudioPolicyManagerStub::GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());

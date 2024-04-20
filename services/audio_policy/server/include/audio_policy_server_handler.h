@@ -62,6 +62,8 @@ public:
         ON_CAPTURER_REMOVED,
         ON_WAKEUP_CLOSE,
         HEAD_TRACKING_DEVICE_CHANGE,
+        SPATIALIZATION_ENABLED_CHANGE,
+        HEAD_TRACKING_ENABLED_CHANGE,
     };
     /* event data */
     class EventContextObj {
@@ -77,6 +79,8 @@ public:
         int32_t clientId;
         sptr<AudioDeviceDescriptor> descriptor;
         CastType type;
+        bool spatializationEnabled;
+        bool headTrackingEnabled;
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
@@ -146,6 +150,8 @@ public:
     bool SendHeadTrackingDeviceChangeEvent(const std::unordered_map<std::string, bool> &changeInfo);
     void AddAudioDeviceRefinerCb(const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveAudioDeviceRefinerCb();
+    bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
+    bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -173,6 +179,8 @@ private:
     void HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleWakeupCloaseEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

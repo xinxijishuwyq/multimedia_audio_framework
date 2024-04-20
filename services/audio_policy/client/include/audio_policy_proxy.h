@@ -211,14 +211,6 @@ public:
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
 
-    int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t UnregisterSpatializationEnabledEventListener() override;
-
-    int32_t UnregisterHeadTrackingEnabledEventListener() override;
-
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
     bool IsSpatializationSupported() override;
