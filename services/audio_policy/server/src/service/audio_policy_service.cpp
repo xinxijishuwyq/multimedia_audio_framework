@@ -2036,65 +2036,6 @@ bool AudioPolicyService::IsSessionIdValid(int32_t callerUid, int32_t sessionId)
     return true;
 }
 
-int32_t AudioPolicyService::SelectNewDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor)
-{
-    Trace trace("AudioPolicyService::SelectNewDevice:" + std::to_string(deviceDescriptor->deviceType_));
-    DeviceType deviceType = deviceDescriptor->deviceType_;
-    if (deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
-        deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
-    }
-    if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
-        std::string activePort = GetSinkPortName(currentActiveDevice_.deviceType_);
-        AUDIO_INFO_LOG("port %{public}s, active device %{public}d",
-            activePort.c_str(), currentActiveDevice_.deviceType_);
-        audioPolicyManager_.SuspendAudioDevice(activePort, true);
-    }
-
-    std::string portName = (deviceRole == DeviceRole::OUTPUT_DEVICE) ?
-        GetSinkPortName(deviceType) : GetSourcePortName(deviceType);
-    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, ERR_INVALID_PARAM,
-        "Invalid port name %{public}s", portName.c_str());
-
-    if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
-        int32_t muteDuration = 200000; // us
-        std::thread switchThread(&AudioPolicyService::KeepPortMute, this, muteDuration, portName, deviceType);
-        switchThread.detach(); // add another sleep before switch local can avoid pop in some case
-    }
-
-    if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        deviceDescriptor->macAddress_ != activeBTDevice_) {
-        // switch to a connected a2dp device
-        int32_t res = SwitchActiveA2dpDevice(deviceDescriptor);
-        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "HandleActiveA2dpDevice failed.");
-    }
-
-    int32_t result = audioPolicyManager_.SelectDevice(deviceRole, deviceType, portName);
-    CHECK_AND_RETURN_RET_LOG(portName != PORT_NONE, result, "failed %{public}d", result);
-    audioPolicyManager_.SuspendAudioDevice(portName, false);
-
-    if (isUpdateRouteSupported_) {
-        DeviceFlag deviceFlag = deviceRole == DeviceRole::OUTPUT_DEVICE ? OUTPUT_DEVICES_FLAG : INPUT_DEVICES_FLAG;
-        const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
-        std::string identity = IPCSkeleton::ResetCallingIdentity();
-        gsp->UpdateActiveDeviceRoute(deviceType, deviceFlag);
-        IPCSkeleton::SetCallingIdentity(identity);
-    }
-
-    if (deviceRole == DeviceRole::OUTPUT_DEVICE) {
-        if (GetVolumeGroupType(currentActiveDevice_.deviceType_) != GetVolumeGroupType(deviceDescriptor->deviceType_)) {
-            SetVolumeForSwitchDevice(deviceDescriptor->deviceType_);
-        }
-        currentActiveDevice_.deviceType_ = deviceDescriptor->deviceType_;
-        currentActiveDevice_.macAddress_ = deviceDescriptor->macAddress_;
-        OnPreferredOutputDeviceUpdated(currentActiveDevice_);
-    } else {
-        currentActiveInputDevice_.deviceType_ = deviceDescriptor->deviceType_;
-        OnPreferredInputDeviceUpdated(currentActiveInputDevice_.deviceType_, LOCAL_NETWORK_ID);
-    }
-    return SUCCESS;
-}
-
 int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     auto iter = connectedA2dpDeviceMap_.find(deviceDescriptor->macAddress_);

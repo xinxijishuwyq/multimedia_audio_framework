@@ -502,8 +502,6 @@ private:
 
     DeviceRole GetDeviceRole(const std::string &role);
 
-    int32_t SelectNewDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor);
-
     int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     int32_t HandleActiveDevice(DeviceType deviceType);

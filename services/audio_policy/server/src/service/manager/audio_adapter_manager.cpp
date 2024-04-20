@@ -541,6 +541,10 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     }
 #endif
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()) {
+        SetVolumeDb(STREAM_MUSIC);
+        return;
+    }
     if (GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType)) {
         AUDIO_INFO_LOG("Old device: %{public}d. New device: %{public}d. No need to update volume",
             currentActiveDevice_, deviceType);
