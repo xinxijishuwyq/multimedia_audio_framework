@@ -228,7 +228,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     std::lock_guard<std::mutex> lock(reloadMutex_);
     for (AudioEffectHandle handle : standByEffectHandles_) {
 #ifdef SENSOR_ENABLE
-        if ((!procInfo.offloadEnabled) && procInfo.headTrackingEnabled) {
+        if ((!procInfo.btOffloadEnabled) && procInfo.headTrackingEnabled) {
             (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
         }
 #endif
@@ -298,17 +298,15 @@ void AudioEffectChain::SetHeadTrackingDisabled()
         return;
     }
 
-    {
-        std::lock_guard<std::mutex> lock(reloadMutex_);
-        for (AudioEffectHandle handle : standByEffectHandles_) {
-            int32_t replyData = 0;
-            HeadPostureData imuDataDisabled = {1, 1.0, 0.0, 0.0, 0.0};
-            AudioEffectTransInfo cmdInfo = {sizeof(HeadPostureData), &imuDataDisabled};
-            AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-            int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
-            if (ret != 0) {
-                AUDIO_WARNING_LOG("SetHeadTrackingDisabled failed");
-            }
+    std::lock_guard<std::mutex> lock(reloadMutex_);
+    for (AudioEffectHandle handle : standByEffectHandles_) {
+        int32_t replyData = 0;
+        HeadPostureData imuDataDisabled = {1, 1.0, 0.0, 0.0, 0.0};
+        AudioEffectTransInfo cmdInfo = {sizeof(HeadPostureData), &imuDataDisabled};
+        AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+        int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("SetHeadTrackingDisabled failed");
         }
     }
 }

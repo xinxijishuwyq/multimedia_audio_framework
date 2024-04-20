@@ -89,7 +89,6 @@ ohos_shared_library("audio_dump") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "server/src/service/dump/audio_service_dump.cpp" ]
@@ -133,7 +132,6 @@ ohos_shared_library("audio_policy_service") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [
@@ -389,7 +387,6 @@ ohos_shared_library("audio_policy_client") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 

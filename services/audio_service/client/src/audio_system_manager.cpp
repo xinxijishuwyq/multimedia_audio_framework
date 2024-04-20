@@ -1033,14 +1033,11 @@ uint32_t AudioSystemManager::GetSinkLatencyFromXml() const
 }
 
 int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
-    StreamSetState streamSetState, AudioStreamType audioStreamType)
+    StreamSetState streamSetState, StreamUsage streamUsage)
 {
-    AUDIO_INFO_LOG("clientUid:%{public}d streamSetState:%{public}d",
-        clientUid, streamSetState);
-    int32_t result = 0;
-    
-    result = AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, audioStreamType);
-    return result;
+    AUDIO_INFO_LOG("clientUid:%{public}d streamSetState:%{public}d streamUsage:%{public}d",
+        clientUid, streamSetState, streamUsage);
+    return AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, streamUsage);
 }
 
 std::string AudioSystemManager::GetSelfBundleName()
@@ -1161,6 +1158,9 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             }
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_DP:
+            pin = AUDIO_PIN_OUT_DP;
+            break;
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
         case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:

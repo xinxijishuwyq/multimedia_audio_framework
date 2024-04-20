@@ -38,6 +38,7 @@ private:
     struct AudioVolumeGroupManagerAsyncContext : public ContextBase {
         int32_t volType;
         int32_t volLevel;
+        int32_t volFlag;
         int32_t deviceType;
         int32_t ringMode;
         int32_t scene;
@@ -67,6 +68,7 @@ private:
     static napi_value GetVolume(napi_env env, napi_callback_info info);
     static napi_value GetVolumeSync(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
+    static napi_value SetVolumeWithFlag(napi_env env, napi_callback_info info);
     static napi_value GetMaxVolume(napi_env env, napi_callback_info info);
     static napi_value GetMaxVolumeSync(napi_env env, napi_callback_info info);
     static napi_value GetMinVolume(napi_env env, napi_callback_info info);

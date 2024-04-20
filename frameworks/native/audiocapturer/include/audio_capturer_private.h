@@ -131,6 +131,7 @@ private:
     DeviceInfo currentDeviceInfo_ = {};
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    FILE *dumpFile_ = nullptr;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

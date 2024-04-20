@@ -75,7 +75,7 @@ const float AUDIO_VOLOMUE_EPSILON = 0.0001;
 const float AUDIO_MAX_VOLUME = 1.0f;
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
-static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
+static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 3000; // 3000ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
@@ -494,7 +494,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         writeDataCV_.notify_all();
         return SUCCESS;
     }
-    if (operation == BUFFER_UNDERRUN) {
+    if (operation == UNDERFLOW_COUNT_ADD) {
         if (!offloadEnable_) {
             underrunCount_++;
         }
@@ -1371,6 +1371,7 @@ float RendererInClientInner::GetLowPowerVolume()
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 {
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->SetOffloadMode(state, isAppBack);
 }
 

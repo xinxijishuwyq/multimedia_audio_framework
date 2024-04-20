@@ -361,7 +361,7 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
-    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
+    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
 
     void OnCapturerSessionRemoved(uint64_t sessionID);
 
@@ -426,6 +426,8 @@ public:
     float GetMaxAmplitude(const int32_t deviceId);
     
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
+
+    int32_t TriggerFetchDevice();
 
 private:
     AudioPolicyService()
@@ -512,9 +514,15 @@ private:
 
     int32_t LoadUsbModule(string deviceInfo);
 
+    int32_t LoadDpModule(string deviceInfo);
+
     int32_t LoadDefaultUsbModule();
 
     int32_t HandleArmUsbDevice(DeviceType deviceType);
+
+    int32_t HandleDpDevice(DeviceType deviceType);
+
+    int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
 
     int32_t HandleFileDevice(DeviceType deviceType);
 
@@ -623,7 +631,7 @@ private:
 
     void LoadSinksForCapturer();
 
-    void LoadInnerCapturerSink();
+    void LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo);
 
     void LoadReceiverSink();
 
@@ -703,6 +711,10 @@ private:
 
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
 
+    void UnloadInnerCapturerSink(string moduleName);
+
+    void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
@@ -767,6 +779,7 @@ private:
     std::vector<DeviceType> outputPriorityList_ = {
         DEVICE_TYPE_BLUETOOTH_SCO,
         DEVICE_TYPE_BLUETOOTH_A2DP,
+        DEVICE_TYPE_DP,
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_SPEAKER
@@ -822,7 +835,8 @@ private:
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
         SOURCE_TYPE_PLAYBACK_CAPTURE,
         SOURCE_TYPE_WAKEUP,
-        SOURCE_TYPE_VIRTUAL_CAPTURE
+        SOURCE_TYPE_VIRTUAL_CAPTURE,
+        SOURCE_TYPE_REMOTE_CAST
     };
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;

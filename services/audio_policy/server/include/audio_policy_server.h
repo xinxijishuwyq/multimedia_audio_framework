@@ -99,7 +99,8 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9) override;
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, API_VERSION api_v = API_9,
+        int32_t volumeFlag = 0) override;
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
 
@@ -231,7 +232,7 @@ public:
     bool IsAudioRendererLowLatencySupported(const AudioStreamInfo &audioStreamInfo) override;
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-        AudioStreamType audioStreamType) override;
+        StreamUsage streamUsage) override;
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
@@ -357,6 +358,14 @@ public:
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
     float GetMaxAmplitude(const int32_t deviceId) override;
+
+    bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
+
+    int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioDeviceRefinerCallback() override;
+
+    int32_t TriggerFetchDevice() override;
     
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -411,6 +420,7 @@ private:
     static constexpr int32_t EDM_SERVICE_UID = 3057;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
+    static constexpr int32_t AUDIO_UID = 1041;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
@@ -516,6 +526,7 @@ private:
     std::set<uint32_t> saveAppCapTokenIdThroughMS;
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
+    AudioRouterCenter &audioRouterCenter_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

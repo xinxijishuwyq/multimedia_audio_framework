@@ -52,7 +52,6 @@ if (!audio_framework_feature_opensl_es) {
       cfi = true
       cfi_cross_dso = true
       debug = false
-      blocklist = "../../../cfi_blocklist.txt"
     }
     include_dirs = [
       "$opensles_dir/api/$opensles_version",

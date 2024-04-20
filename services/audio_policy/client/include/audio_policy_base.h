@@ -39,7 +39,7 @@ public:
     virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
 
     virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
-        API_VERSION api_v = API_9) = 0;
+        API_VERSION api_v = API_9, int32_t volumeFlag = 0) = 0;
 
     virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
 
@@ -137,7 +137,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
     virtual int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                            AudioStreamType audioStreamType) = 0;
+                                            StreamUsage streamUsage) = 0;
 
     virtual int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
@@ -277,6 +277,14 @@ public:
     virtual int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) = 0;
 
     virtual float GetMaxAmplitude(const int32_t deviceId) = 0;
+
+    virtual bool IsHeadTrackingDataRequested(const std::string &macAddress) = 0;
+
+    virtual int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetAudioDeviceRefinerCallback() = 0;
+
+    virtual int32_t TriggerFetchDevice() = 0;
     
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");

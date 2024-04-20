@@ -143,6 +143,8 @@ private:
     void RegisterAudioCapturerSourceCallback();
     int32_t SetIORoute(DeviceType type, DeviceFlag flag);
     bool CheckAndPrintStacktrace(const std::string &key);
+    const std::string GetDPParameter(const std::string &condition);
+    const std::string GetUsbParameter();
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

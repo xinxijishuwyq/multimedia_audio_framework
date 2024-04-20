@@ -31,7 +31,7 @@ public:
     AudioA2dpListener() = default;
     virtual ~AudioA2dpListener() = default;
 
-    virtual void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state);
+    virtual void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause);
     virtual void OnConfigurationChanged(const BluetoothRemoteDevice &device, const A2dpCodecInfo &info, int error);
     virtual void OnPlayingStatusChanged(const BluetoothRemoteDevice &device, int playingState, int error);
     virtual void OnMediaStackChanged(const BluetoothRemoteDevice &device, int action);
@@ -53,6 +53,7 @@ public:
     static int32_t GetA2dpDeviceStreamInfo(const std::string& macAddress,
         AudioStandard::AudioStreamInfo &streamInfo);
     static bool HasA2dpDeviceConnected();
+    static void CheckA2dpDeviceReconnect();
     static int32_t A2dpOffloadSessionRequest(const std::vector<A2dpStreamInfo> &info);
     static int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionsID);
     static int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionsID);
@@ -84,7 +85,7 @@ public:
     virtual ~AudioHfpListener() = default;
 
     void OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason);
-    void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state);
+    void OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause);
     void OnActiveDeviceChanged(const BluetoothRemoteDevice &device) {}
     void OnHfEnhancedDriverSafetyChanged(const BluetoothRemoteDevice &device, int indValue) {}
     virtual void OnHfpStackChanged(const BluetoothRemoteDevice &device, int action);

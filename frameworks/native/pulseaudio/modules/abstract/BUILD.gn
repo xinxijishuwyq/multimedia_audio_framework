@@ -43,7 +43,6 @@ ohos_shared_library("module-loopback") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../../../../cfi_blocklist.txt"
   }
   sources = [ "module_loopback.c" ]
 

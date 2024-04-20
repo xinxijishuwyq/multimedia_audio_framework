@@ -179,7 +179,7 @@ int32_t AudioAdapterManager::ReInitKVStore()
     status = manager.DeleteKvStore(appId, storeId, options.baseDir);
     CHECK_AND_RETURN_RET_LOG(status == Status::SUCCESS, ERR_ILLEGAL_STATE, "CloseKvStore failed!");
 
-    InitKVStore();
+    InitKVStoreInternal();
     return SUCCESS;
 }
 
@@ -246,7 +246,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 
     // In case if KvStore didnot connect during bootup
     if (audioPolicyKvStore_ == nullptr) {
-        InitKVStore();
+        InitKVStoreInternal();
     }
 
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
@@ -575,7 +575,7 @@ int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
 
     // In case if KvStore didnot connect during bootup
     if (audioPolicyKvStore_ == nullptr) {
-        InitKVStore();
+        InitKVStoreInternal();
     }
 
     WriteRingerModeToKvStore(ringerMode);
@@ -838,7 +838,11 @@ std::string AudioAdapterManager::GetVolumeGroupForDevice(DeviceType deviceType)
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             volumeGroup = "wired";
+            break;
+        case DEVICE_TYPE_REMOTE_CAST:
+            volumeGroup = "remote-cast";
             break;
         default:
             AUDIO_ERR_LOG("Device %{public}d is not invalid value for volume group", deviceType);
@@ -919,6 +923,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_DP:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;
@@ -1000,6 +1005,15 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
         }
     } else {
         LoadVolumeMap();
+    }
+}
+
+void AudioAdapterManager::ResetRemoteCastDeviceVolume()
+{
+    for (auto &streamType: VOLUME_TYPE_LIST) {
+        AudioStreamType streamAlias = GetStreamForVolumeMap(streamType);
+        int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
+        WriteVolumeToKvStore(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
     }
 }
 
@@ -1202,6 +1216,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_DP:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             type = "wired";
             break;

@@ -51,6 +51,7 @@ const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
 const uint32_t CORK_TIMEOUT_IN_SEC = 3;
 const uint32_t WRITE_TIMEOUT_IN_SEC = 8;
 const uint32_t READ_TIMEOUT_IN_SEC = 5;
+const uint32_t MAX_COUNT_OF_READING_TIMEOUT = 60;
 const uint32_t FLUSH_TIMEOUT_IN_SEC = 5;
 const uint32_t MAINLOOP_WAIT_TIMEOUT_IN_SEC = 5;
 const uint32_t DOUBLE_VALUE = 2;
@@ -2044,11 +2045,18 @@ int32_t AudioServiceClient::ReadStream(StreamBuffer &stream, bool isBlocking)
                     if (IsTimeOut()) {
                         AUDIO_ERR_LOG("Read timeout");
                         pa_threaded_mainloop_unlock(mainLoop);
+                        readTimeoutCount_++;
+                        if (readTimeoutCount_ >= MAX_COUNT_OF_READING_TIMEOUT) {
+                            AUDIO_ERR_LOG("The maximum of timeout count has been exceeded. Restart pulseaudio!");
+                            audioSystemManager_->GetAudioParameter(DUMP_AND_RECOVERY_AUDIO_SERVER);
+                        }
                         return AUDIO_CLIENT_READ_STREAM_ERR;
                     }
+                    readTimeoutCount_ = 0; // Reset the timeout count if IsTimeOut() is false.
                 } else {
                     pa_threaded_mainloop_unlock(mainLoop);
                     HandleCapturePositionCallbacks(readSize);
+                    readTimeoutCount_ = 0; // Reset the timeout count if isBlocking is false.
                     return readSize;
                 }
             } else if (!internalReadBuffer_) {

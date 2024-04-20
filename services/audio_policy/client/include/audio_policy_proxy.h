@@ -34,7 +34,8 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) override;
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v) override;
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, API_VERSION api_v,
+        int32_t volumeFlag = 0) override;
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
 
@@ -142,7 +143,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-        AudioStreamType audioStreamType) override;
+        StreamUsage streamUsage) override;
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
@@ -264,6 +265,13 @@ public:
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType) override;
 
     float GetMaxAmplitude(const int32_t deviceId) override;
+
+    bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
+    int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioDeviceRefinerCallback() override;
+
+    int32_t TriggerFetchDevice() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

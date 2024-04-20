@@ -34,6 +34,7 @@ static const std::string ADAPTER_A2DP_TYPE = "a2dp";
 static const std::string ADAPTER_REMOTE_TYPE = "remote";
 static const std::string ADAPTER_FILE_TYPE = "file";
 static const std::string ADAPTER_USB_TYPE = "usb";
+static const std::string ADAPTER_DP_TYPE = "dp";
 
 static const std::string ADAPTER_DEVICE_PRIMARY_SPEAKER = "Speaker";
 static const std::string ADAPTER_DEVICE_PRIMARY_EARPIECE = "Earpicece";
@@ -55,6 +56,7 @@ static const std::string ADAPTER_DEVICE_PIPE_SINK = "fifo_output";
 static const std::string ADAPTER_DEVICE_PIPE_SOURCE = "fifo_input";
 static const std::string ADAPTER_DEVICE_WAKEUP = "Built_in_wakeup";
 static const std::string ADAPTER_DEVICE_NONE = "none";
+static const std::string ADAPTER_DEVICE_DP = "DP Sink";
 
 static const std::string MODULE_TYPE_SINK = "sink";
 static const std::string MODULE_TYPE_SOURCE = "source";
@@ -81,6 +83,7 @@ enum class AdaptersType {
     TYPE_REMOTE,
     TYPE_FILE,
     TYPE_USB,
+    TYPE_DP,
     TYPE_INVALID
 };
 

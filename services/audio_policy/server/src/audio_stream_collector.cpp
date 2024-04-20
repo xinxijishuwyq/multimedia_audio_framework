@@ -22,6 +22,7 @@
 #include "ipc_skeleton.h"
 #include "i_standard_client_tracker.h"
 #include "hisysevent.h"
+#include "audio_spatialization_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -129,6 +130,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "audioPolicyServerHandler_ is nullptr, callback error");
     audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
+    AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
     return SUCCESS;
 }
 
@@ -287,6 +289,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             if (audioPolicyServerHandler_ != nullptr) {
                 audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
             }
+            AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
 
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
@@ -372,6 +375,9 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(DeviceInfo &outputDeviceI
     if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
     }
+    if (deviceInfoUpdated) {
+        AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
+    }
 
     return SUCCESS;
 }
@@ -413,6 +419,9 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
 
     if (deviceInfoUpdated && audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
+    }
+    if (deviceInfoUpdated) {
+        AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
     }
     return SUCCESS;
 }
@@ -553,6 +562,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         if (audioPolicyServerHandler_ != nullptr) {
             audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
         }
+        AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
         rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID,
             audioRendererChangeInfo->sessionId));
         auto temp = audioRendererBegin;
@@ -586,8 +596,10 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     }
 }
 
-bool AudioStreamCollector::GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo)
+bool AudioStreamCollector::GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo)
 {
+    AudioStreamType requiredType = GetStreamType(CONTENT_TYPE_UNKNOWN, targetUsage);
+    AUDIO_INFO_LOG("GetAndCompareStreamType:requiredType:%{public}d ", requiredType);
     AudioStreamType defaultStreamType = STREAM_MUSIC;
     auto pos = streamTypeMap_.find(make_pair(rendererInfo.contentType, rendererInfo.streamUsage));
     if (pos != streamTypeMap_.end()) {
@@ -616,8 +628,10 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->clientUID == clientUid &&
-            GetAndCompareStreamType(streamSetStateEventInternal.audioStreamType, changeInfo->rendererInfo)) {
-            AUDIO_INFO_LOG("UpdateStreamState Found matching uid and type");
+            streamSetStateEventInternal.streamUsage == changeInfo->rendererInfo.streamUsage &&
+            GetAndCompareStreamType(streamSetStateEventInternal.streamUsage, changeInfo->rendererInfo)) {
+            AUDIO_INFO_LOG("UpdateStreamState Found matching uid=%{public}d and usage=%{public}d",
+                clientUid, streamSetStateEventInternal.streamUsage);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
                 AUDIO_ERR_LOG("UpdateStreamState callback failed sId:%{public}d",
@@ -850,7 +864,8 @@ void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStre
             "TRANSACTIONID", transactionId,
             "STREAMTYPE", streamType,
             "STATE", streamChangeInfo.audioRendererChangeInfo.rendererState,
-            "DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType);
+            "DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType,
+            "NETWORKID", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId);
     } else {
         isOutput = false;
         streamType = GetStreamTypeFromSourceType(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
@@ -866,7 +881,8 @@ void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStre
             "TRANSACTIONID", transactionId,
             "STREAMTYPE", streamType,
             "STATE", streamChangeInfo.audioCapturerChangeInfo.capturerState,
-            "DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType);
+            "DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType,
+            "NETWORKID", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId);
     }
 }
 
@@ -887,7 +903,8 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
         "TRANSACTIONID", transactionId,
         "STREAMTYPE", streamType,
         "STATE", audioRendererChangeInfo->rendererState,
-        "DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType);
+        "DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType,
+        "NETWORKID", audioRendererChangeInfo->outputDeviceInfo.networkId);
 }
 
 void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
@@ -905,7 +922,8 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
         "TRANSACTIONID", transactionId,
         "STREAMTYPE", streamType,
         "STATE", audioCapturerChangeInfo->capturerState,
-        "DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType);
+        "DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType,
+        "NETWORKID", audioCapturerChangeInfo->inputDeviceInfo.networkId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

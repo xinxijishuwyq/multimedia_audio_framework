@@ -378,6 +378,19 @@ bool AudioPolicyServerHandler::SendWakeupCloseEvent(bool isSync)
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendHeadTrackingDeviceChangeEvent(
+    const std::unordered_map<std::string, bool> &changeInfo)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->headTrackingDeviceChangeInfo = changeInfo;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::HEAD_TRACKING_DEVICE_CHANGE,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send HEAD_TRACKING_DEVICE_CHANGE event failed");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -626,7 +639,7 @@ void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::Inner
         eventContextObj->streamInfo_.channels};
 
     eventContextObj->error_ = AudioPolicyService::GetAudioPolicyService().OnCapturerSessionAdded(sessionId,
-        sessionInfo);
+        sessionInfo, eventContextObj->streamInfo_);
 }
 
 void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -642,6 +655,21 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
 void AudioPolicyServerHandler::HandleWakeupCloaseEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     AudioPolicyService::GetAudioPolicyService().CloseWakeUpAudioCapturer();
+}
+
+void AudioPolicyServerHandler::HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> headTrackingDeviceChangeCb = it->second;
+        if (headTrackingDeviceChangeCb == nullptr) {
+            AUDIO_ERR_LOG("headTrackingDeviceChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        headTrackingDeviceChangeCb->OnHeadTrackingDeviceChange(eventContextObj->headTrackingDeviceChangeInfo);
+    }
 }
 
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
@@ -720,6 +748,9 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::DISTRIBUTED_ROUTING_ROLE_CHANGE:
             HandleDistributedRoutingRoleChangeEvent(event);
+            break;
+        case EventAudioServerCmd::HEAD_TRACKING_DEVICE_CHANGE:
+            HandleHeadTrackingDeviceChangeEvent(event);
             break;
         default:
             break;

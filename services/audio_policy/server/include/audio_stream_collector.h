@@ -55,7 +55,7 @@ public:
     int32_t SetOffloadMode(int32_t streamId, int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode(int32_t streamId);
     float GetSingleStreamVolume(int32_t streamId);
-    bool GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo);
+    bool GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo);
     int32_t UpdateCapturerInfoMuteStatus(int32_t uid, bool muteStatus);
     AudioStreamType GetStreamType(int32_t sessionId);
     int32_t GetChannelCount(int32_t sessionId);

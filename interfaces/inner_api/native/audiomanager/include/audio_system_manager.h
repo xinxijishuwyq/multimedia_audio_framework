@@ -382,6 +382,16 @@ private:
     std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
 };
 
+class AudioDeviceRefiner {
+public:
+    virtual ~AudioDeviceRefiner() = default;
+
+    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, RenderMode renderMode) = 0;
+    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, SourceType sourceType, int32_t clientUid, RenderMode renderMode) = 0;
+};
+
 /**
  * @brief The AudioSystemManager class is an abstract definition of audio manager.
  *        Provides a series of client/interfaces for audio management
@@ -947,13 +957,13 @@ public:
      *
      * @param clientUid client Uid
      * @param streamSetState streamSetState
-     * @param audioStreamType audioStreamType
+     * @param streamUsage streamUsage
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    AudioStreamType audioStreamType);
+                                    StreamUsage streamUsage);
 
     /**
      * @brief Get Pin Value From Type

@@ -40,6 +40,8 @@ public:
     }
     std::unique_ptr<AudioDeviceDescriptor> FetchOutputDevice(StreamUsage streamUsage, int32_t clientUID);
     std::unique_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID);
+    int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
+    int32_t UnsetAudioDeviceRefinerCallback();
 
 private:
     AudioRouterCenter()
@@ -97,8 +99,10 @@ private:
 
     ~AudioRouterCenter() {}
 
-    unique_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID);
-    unique_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID);
+    unique_ptr<AudioDeviceDescriptor> FetchMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        RouterType &routerType);
+    unique_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        RouterType &routerType);
     bool HasScoDevice();
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
@@ -111,6 +115,8 @@ private:
 
     unordered_map<StreamUsage, string> renderConfigMap_;
     unordered_map<SourceType, string> capturerConfigMap_;
+
+    sptr<IStandardAudioRoutingManagerListener> audioDeviceRefinerCb_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

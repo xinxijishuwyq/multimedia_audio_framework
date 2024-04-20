@@ -32,7 +32,6 @@ ohos_shared_library("audio_common") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
 
   install_enable = true
@@ -126,9 +125,9 @@ config("audio_sasdk_public_config") {
 ohos_shared_library("audio_client") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
     integer_overflow = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [
@@ -270,7 +269,6 @@ ohos_shared_library("audio_process_service") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -336,7 +334,6 @@ ohos_shared_library("audio_service") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 

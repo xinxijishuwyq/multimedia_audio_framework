@@ -20,6 +20,7 @@
 #include "i_capturer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
+#include "audio_ring_cache.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,6 +59,8 @@ public:
     int32_t DrainAudioBuffer();
 
 private:
+    int32_t InitCacheBuffer(size_t targetSize);
+
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<ICapturerStream> stream_ = nullptr;
@@ -79,7 +82,9 @@ private:
     int32_t underflowCount = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
-    bool overFlowLogFlag = false;
+    uint32_t overFlowLogFlag_ = 0;
+    std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
+    size_t cacheSizeInBytes_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

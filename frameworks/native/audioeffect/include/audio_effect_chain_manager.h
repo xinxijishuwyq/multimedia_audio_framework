@@ -130,6 +130,8 @@ private:
     int32_t EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     AudioEffectScene GetSceneTypeFromSpatializationSceneType(AudioEffectScene sceneType);
     void UpdateEffectChainParams(AudioEffectScene sceneType);
+    void SetSpkOffloadState();
+    void InitHdiState();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -152,7 +154,8 @@ private:
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;
     bool headTrackingEnabled_ = false;
-    bool offloadEnabled_ = false;
+    bool btOffloadEnabled_ = false;
+    bool spkOffloadEnabled_ = false;
     bool initializedLogFlag_ = true;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     int32_t hdiSceneType_ = 0;
@@ -160,6 +163,17 @@ private:
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
+#endif
+
+#ifdef WINDOW_MANAGER_ENABLE
+    class AudioRotationListener : public OHOS::Rosen::DisplayManager::IDisplayListener {
+    public:
+        void OnCreate(Rosen::DisplayId displayId) override;
+        void OnDestroy(Rosen::DisplayId displayId) override;
+        void OnChange(Rosen::DisplayId displayId) override;
+    };
+
+    sptr<AudioRotationListener> audioRotationListener_;
 #endif
 
     std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam_;

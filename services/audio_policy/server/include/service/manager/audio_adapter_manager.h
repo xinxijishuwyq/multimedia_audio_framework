@@ -136,6 +136,9 @@ public:
     void SetAbsVolumeScene(bool isAbsVolumeScene);
 
     bool IsAbsVolumeScene() const;
+    std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
+
+    void ResetRemoteCastDeviceVolume();
 private:
     friend class PolicyCallbackImpl;
 
@@ -162,7 +165,6 @@ private:
         InitVolumeMapIndex();
     }
 
-    std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const;
     std::string GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const;
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);

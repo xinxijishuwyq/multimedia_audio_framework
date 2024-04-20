@@ -91,6 +91,9 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     AudioPolicyServerPtr->ConfigDistributedRoutingRole(deviceDescriptor, type);
     AudioPolicyServerPtr->SetDistributedRoutingRoleCallback(object);
     AudioPolicyServerPtr->UnsetDistributedRoutingRoleCallback();
+    AudioPolicyServerPtr->SetAudioDeviceRefinerCallback(object);
+    AudioPolicyServerPtr->UnsetAudioDeviceRefinerCallback();
+    AudioPolicyServerPtr->TriggerFetchDevice();
 }
 
 void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
@@ -181,8 +184,8 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
 
     int32_t clientUid = *reinterpret_cast<const int32_t *>(rawData);
     StreamSetState streamSetState = *reinterpret_cast<const StreamSetState *>(rawData);
-    AudioStreamType audioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-    AudioPolicyServerPtr->UpdateStreamState(clientUid, streamSetState, audioStreamType);
+    StreamUsage streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    AudioPolicyServerPtr->UpdateStreamState(clientUid, streamSetState, streamUsage);
     
     int32_t sessionId = *reinterpret_cast<const int32_t *>(rawData);
     AudioPolicyServerPtr->GetAudioCapturerMicrophoneDescriptors(sessionId);
@@ -235,6 +238,7 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     MessageOption option;
     listener->OnRemoteRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
 }
+
 } // namespace AudioStandard
 } // namesapce OHOS
 

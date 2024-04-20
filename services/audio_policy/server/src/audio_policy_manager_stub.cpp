@@ -60,7 +60,8 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());
-    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v);
+    int32_t volumeFlag = data.ReadInt32();
+    int result = SetSystemVolumeLevel(volumeType, volumeLevel, api_v, volumeFlag);
     reply.WriteInt32(result);
 }
 
@@ -567,9 +568,9 @@ void AudioPolicyManagerStub::UpdateStreamStateInternal(MessageParcel &data, Mess
 {
     int32_t clientUid = data.ReadInt32();
     StreamSetState streamSetState = static_cast<StreamSetState>(data.ReadInt32());
-    AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
 
-    int32_t result = UpdateStreamState(clientUid, streamSetState, streamType);
+    int32_t result = UpdateStreamState(clientUid, streamSetState, streamUsage);
     reply.WriteInt32(result);
 }
 
@@ -1123,6 +1124,32 @@ void AudioPolicyManagerStub::GetMaxAmplitudeInternal(MessageParcel &data, Messag
     int32_t deviceId = data.ReadInt32();
     float result = GetMaxAmplitude(deviceId);
     reply.WriteFloat(result);
+}
+
+void AudioPolicyManagerStub::IsHeadTrackingDataRequestedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string macAddress = data.ReadString();
+    bool result = IsHeadTrackingDataRequested(macAddress);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    int32_t result = SetAudioDeviceRefinerCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = UnsetAudioDeviceRefinerCallback();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = TriggerFetchDevice();
+    reply.WriteInt32(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

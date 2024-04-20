@@ -31,7 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 struct AudioEffectProcInfo {
     bool headTrackingEnabled;
-    bool offloadEnabled;
+    bool btOffloadEnabled;
 };
 
 class AudioEffectChain {

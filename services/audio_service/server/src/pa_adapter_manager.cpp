@@ -69,6 +69,15 @@ static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
     return CHECK_UTIL_SUCCESS;
 }
 
+static bool IsEnhanceMode(SourceType sourceType)
+{
+    if (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_VOICE_COMMUNICATION ||
+        sourceType == SOURCE_TYPE_VOICE_CALL) {
+        return true;
+    }
+    return false;
+}
+
 PaAdapterManager::PaAdapterManager(ManagerType type)
 {
     AUDIO_DEBUG_LOG("Constructor PaAdapterManager");
@@ -285,6 +294,8 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
             }
         } else if (processConfig.isInnerCapturer) {
             deviceName = INNER_CAPTURER_SOURCE;
+        } else if (processConfig.capturerInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
+            deviceName = REMOTE_CAST_INNER_CAPTURER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
         }
         return PolicyHandler::GetInstance().NotifyCapturerAdded(processConfig.capturerInfo,
             processConfig.streamInfo, sessionId);
@@ -336,8 +347,12 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         AUDIO_ERR_LOG("ConnectStreamToPA Failed");
         return nullptr;
     }
-    if (SetStreamAudioEnhanceMode(paStream, enhanceMode_) != SUCCESS) {
-        AUDIO_ERR_LOG("set audio enhance mode failed.");
+    if (processConfig.audioMode == AUDIO_MODE_RECORD) {
+        enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
+        int32_t ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
+        }
     }
     return paStream;
 }
