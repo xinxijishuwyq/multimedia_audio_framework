@@ -362,6 +362,14 @@ int32_t CapturerInServer::Release()
         return ret;
     }
     status_ = I_STATUS_RELEASED;
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        AUDIO_INFO_LOG("Disable inner capturer for %{public}u", streamIndex_);
+        if (processConfig_.innerCapMode == MODERN_INNER_CAP) {
+            PlaybackCapturerManager::GetInstance()->RemovePlaybackCapturerFilterInfo(streamIndex_);
+        } else {
+            PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(false);
+        }
+    }
     return SUCCESS;
 }
 
@@ -377,6 +385,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybac
     }
 
     PlaybackCapturerManager::GetInstance()->SetSupportStreamUsage(usage);
+    PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(true);
     return SUCCESS;
 }
 

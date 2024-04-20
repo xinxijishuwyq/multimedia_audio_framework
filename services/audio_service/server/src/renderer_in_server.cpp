@@ -422,6 +422,12 @@ int32_t RendererInServer::Flush()
 
     int ret = stream_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Flush();
+        }
+    }
     return SUCCESS;
 }
 
@@ -450,6 +456,12 @@ int32_t RendererInServer::Drain()
     DrainAudioBuffer();
     int ret = stream_->Drain();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Drain();
+        }
+    }
     return SUCCESS;
 }
 
