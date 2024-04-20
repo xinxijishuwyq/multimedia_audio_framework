@@ -133,8 +133,8 @@ void AudioEffectChainManager::SetSpkOffloadState()
     int32_t ret;
     if (deviceType_ == DEVICE_TYPE_SPEAKER) {
         if (!spkOffloadEnabled_) {
-            effectHdiInput[0] = HDI_INIT;
-            ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
+            effectHdiInput_[0] = HDI_INIT;
+            ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
             if (ret != 0) {
                 AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
                 spkOffloadEnabled_ = false;
@@ -145,8 +145,8 @@ void AudioEffectChainManager::SetSpkOffloadState()
         }
     } else {
         if (spkOffloadEnabled_) {
-            effectHdiInput[0] = HDI_DESTROY;
-            ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
+            effectHdiInput_[0] = HDI_DESTROY;
+            ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
             if (ret != 0) {
                 AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
             }
@@ -238,15 +238,15 @@ void AudioEffectChainManager::InitHdiState()
         return;
     }
     audioEffectHdiParam_->InitHdi();
-    effectHdiInput[0] = HDI_BLUETOOTH_MODE;
-    effectHdiInput[1] = 1;
-    AUDIO_INFO_LOG("set hdi bluetooth mode: %{public}d", effectHdiInput[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
+    effectHdiInput_[0] = HDI_BLUETOOTH_MODE;
+    effectHdiInput_[1] = 1;
+    AUDIO_INFO_LOG("set hdi bluetooth mode: %{public}d", effectHdiInput_[1]);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
     }
-    effectHdiInput[0] = HDI_INIT;
-    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_SPEAKER);
+    effectHdiInput_[0] = HDI_INIT;
+    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
         spkOffloadEnabled_ = false;
@@ -503,7 +503,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     }
 #endif
 
-    auto *audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    auto audioEffectChain = SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
 
@@ -535,11 +535,11 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
     // send volume to dsp
     if (audioEffectVolume->GetDspVolume() != volumeMax) {
         audioEffectVolume->SetDspVolume(volumeMax);
-        effectHdiInput[0] = HDI_VOLUME;
-        int32_t ret = memcpy_s(&effectHdiInput[1], SEND_HDI_COMMAND_LEN, &volumeMax, sizeof(uint32_t));
+        effectHdiInput_[0] = HDI_VOLUME;
+        int32_t ret = memcpy_s(&effectHdiInput_[1], SEND_HDI_COMMAND_LEN, &volumeMax, sizeof(uint32_t));
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy volume failed");
-        AUDIO_INFO_LOG("set hdi volume: %{public}u", *(reinterpret_cast<uint32_t *>(&effectHdiInput[1])));
-        ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput);
+        AUDIO_INFO_LOG("set hdi volume: %{public}u", *(reinterpret_cast<uint32_t *>(&effectHdiInput_[1])));
+        ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi volume failed");
     }
     return SUCCESS;
@@ -721,7 +721,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
         memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
         if (spatializationEnabled_) {
             effectHdiInput_[0] = HDI_INIT;
-            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP_);
+            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
             if (ret != 0) {
                 AUDIO_WARNING_LOG("set hdi init failed, backup spatialization entered");
                 btOffloadEnabled_ = false;
@@ -733,7 +733,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
         } else {
             effectHdiInput_[0] = HDI_DESTROY;
             AUDIO_INFO_LOG("set hdi destroy.");
-            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP_);
+            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
             if (ret != 0) {
                 AUDIO_WARNING_LOG("set hdi destroy failed");
             }
@@ -874,7 +874,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
     effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
     AUDIO_INFO_LOG("set hdi room mode sceneType: %{public}d, effectMode: %{public}d", effectHdiInput_[1],
         effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO]);
-    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP_);
+    ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
         return ret;
@@ -884,10 +884,10 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
 
 void AudioEffectChainManager::UpdateSensorState()
 {
-    effectHdiInput[0] = HDI_HEAD_MODE;
-    effectHdiInput[1] = headTrackingEnabled_ == true ? 1 : 0;
-    AUDIO_INFO_LOG("set hdi head mode: %{public}d", effectHdiInput[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput, DEVICE_TYPE_BLUETOOTH_A2DP);
+    effectHdiInput_[0] = HDI_HEAD_MODE;
+    effectHdiInput_[1] = headTrackingEnabled_ == true ? 1 : 0;
+    AUDIO_INFO_LOG("set hdi head mode: %{public}d", effectHdiInput_[1]);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
     if (ret != 0) {
         AUDIO_WARNING_LOG("set hdi head mode failed");
     }
