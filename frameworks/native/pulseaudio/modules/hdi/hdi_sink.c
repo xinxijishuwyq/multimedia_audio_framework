@@ -50,6 +50,7 @@
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
 #include "playback_capturer_adapter.h"
+#include "time.h"
 
 
 #define DEFAULT_SINK_NAME "hdi_output"
@@ -91,6 +92,14 @@ const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 
+const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
+static bool g_isVolumeChange = true;
+bool g_speakerPaAllStreamVolumeZero = false;
+bool g_paHaveDisabled = false;
+time_t g_speakerPaAllStreamStartVolZeroTime = 0;
+bool g_effectAllStreamVolumeZeroMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
+bool g_effectHaveDisabledMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
+time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0, 0, 0, 0, 0, 0, 0};
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE", "SCENE_SPEECH", "SCENE_RING",
     "SCENE_OTHERS", "EFFECT_NONE"};
 
@@ -1384,6 +1393,120 @@ static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenR
     }
 }
 
+static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime, int32_t i)
+{
+    if (g_isVolumeChange) {
+        void *state = NULL;
+        pa_sink_input *input;
+        g_effectAllStreamVolumeZeroMap[i] = true;
+        while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+            pa_sink_input_assert_ref(input);
+            const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
+            if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i])) {
+                const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
+                pa_cvolume vol;
+                pa_sink_input_get_volume(input, &vol, true);
+                pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
+                if (!(input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
+                    pa_cvolume_is_norm(&vol))) {
+                    g_effectAllStreamVolumeZeroMap[i] = false;
+                    g_effectStartVolZeroTimeMap[i] = 0;
+                    AUDIO_INFO_LOG("SCENE_TYPE_SET[%{public}d]:%{public}s for streamtype:[%{public}s]'s"
+                        " volume is not zero, this effect all streamtype is not zero volume.", i,
+                        SCENE_TYPE_SET[i], streamType);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (g_effectAllStreamVolumeZeroMap[i] && !g_effectHaveDisabledMap[i] && g_effectStartVolZeroTimeMap[i] == 0) {
+        time(&g_effectStartVolZeroTimeMap[i]);
+    }
+
+    char *sinkSceneType = SCENE_TYPE_SET[i];
+    if (g_effectAllStreamVolumeZeroMap[i] && difftime(currentTime, g_effectStartVolZeroTimeMap[i]) >
+        WAIT_CLOSE_PA_OR_EFFECT_TIME) {
+        sinkSceneType = SCENE_TYPE_SET[SCENE_TYPE_NUM - 1]; // EFFECT_NONE
+        if (!g_effectHaveDisabledMap[i]) {
+            AUDIO_INFO_LOG("volume change to zero over %{public}ds, close effect success. effect:%{public}s",
+                WAIT_CLOSE_PA_OR_EFFECT_TIME, SCENE_TYPE_SET[i]);
+            g_effectHaveDisabledMap[i] = true;
+            g_effectStartVolZeroTimeMap[i] = 0;
+        }
+    } else {
+        sinkSceneType = SCENE_TYPE_SET[i];
+        if (g_effectHaveDisabledMap[i]) {
+            g_effectHaveDisabledMap[i] = false;
+            AUDIO_INFO_LOG(" volume change to not zero, open effect success. effect:%{public}s",
+                SCENE_TYPE_SET[i]);
+        }
+    }
+    return sinkSceneType;
+}
+
+static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTime)
+{
+    if (g_isVolumeChange) {
+        void *state = NULL;
+        pa_sink_input *input;
+        g_speakerPaAllStreamVolumeZero = true;
+        while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+            pa_sink_input_assert_ref(input);
+            if (!strcmp(u->sink->name, "Speaker")) {
+                pa_cvolume vol;
+                pa_sink_input_get_volume(input, &vol, true);
+                pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
+                if (!(input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) || pa_cvolume_is_norm(&vol))) {
+                    g_speakerPaAllStreamVolumeZero = false;
+                    g_speakerPaAllStreamStartVolZeroTime = 0;
+                    AUDIO_INFO_LOG("%{public}s sink all streamtype is not zero volume.", u->sink->name);
+                    break;
+                }
+            }
+        }
+    }
+    if (g_speakerPaAllStreamVolumeZero && !g_paHaveDisabled && g_speakerPaAllStreamStartVolZeroTime == 0) {
+        time(&g_speakerPaAllStreamStartVolZeroTime);
+    }
+    if (g_speakerPaAllStreamVolumeZero && difftime(currentTime, g_speakerPaAllStreamStartVolZeroTime) >
+        WAIT_CLOSE_PA_OR_EFFECT_TIME) {
+        if (!g_paHaveDisabled) {
+            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0) == 0 ) {
+                AUDIO_INFO_LOG("Speaker all streamtype volume change to zero over %{public}ds,"
+                    "close %{public}s pa success",WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name);
+            }
+            g_paHaveDisabled = true;
+            g_speakerPaAllStreamStartVolZeroTime = 0;
+        }
+    } else {
+        if (strcmp(u->sink->name, "Speaker")) {
+            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0) == 0) {
+                AUDIO_INFO_LOG("Have new pa routing. open %{public}s pa success", u->sink->name);
+            }
+            g_paHaveDisabled = false;
+        }
+        if (g_paHaveDisabled) {
+            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
+                AUDIO_INFO_LOG("Speaker all streamtype volume not zero, open %{public}s pa success",
+                    u->sink->name);
+            }
+            g_paHaveDisabled = false;
+        }
+    }
+}
+
+static void PrimaryEffectProcess(struct Userdata *u, pa_memchunk *chunkIn, char *sinkSceneType)
+{
+    AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
+    EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
+    for (int32_t k = 0; k < u->bufferAttr->frameLen * u->bufferAttr->numChanOut; k++) {
+        u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
+    }
+    pa_memblock_release(chunkIn->memblock);
+    u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
+}
+
 static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     if (GetInnerCapturerState()) {
@@ -1403,7 +1526,9 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
+    time_t currentTime = time(NULL);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        char *sinkSceneType = CheckAndDealEffectZeroVolume(u, currentTime, i);
         size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
@@ -1418,14 +1543,10 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
         u->bufferAttr->numChanIn = sceneTypeLenRef[i];
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
-        AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", SCENE_TYPE_SET[i]);
-        EffectChainManagerProcess(SCENE_TYPE_SET[i], u->bufferAttr);
-        for (int32_t k = 0; k < u->bufferAttr->frameLen * u->bufferAttr->numChanOut; k++) {
-            u->bufferAttr->tempBufOut[k] += u->bufferAttr->bufOut[k];
-        }
-        pa_memblock_release(chunkIn->memblock);
-        u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
+        PrimaryEffectProcess(u, chunkIn, sinkSceneType);
     }
+    CheckAndDealSpeakerPaZeroVolume(u, currentTime);
+    g_isVolumeChange = false;
     void *dst = pa_memblock_acquire_chunk(chunkIn);
     int32_t frameLen = bitSize > 0 ? (int32_t)(length / bitSize) : 0;
     for (int32_t i = 0; i < frameLen; i++) {
@@ -2319,6 +2440,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 
 void PaInputVolumeChangeCb(pa_sink_input *i)
 {
+    g_isVolumeChange = true;
     struct Userdata *u;
 
     pa_sink_input_assert_ref(i);
@@ -3307,9 +3429,7 @@ static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct U
 {
     pa_sink_input_assert_ref(i);
     i->state_change = PaInputStateChangeCb;
-    if (u->offload_enable) {
-        i->volume_changed = PaInputVolumeChangeCb;
-    }
+    i->volume_changed = PaInputVolumeChangeCb;
     return PA_HOOK_OK;
 }
 
@@ -3400,7 +3520,7 @@ static int32_t PrepareDeviceOffload(struct Userdata *u)
         AUDIO_ERR_LOG("PrepareDeviceOffload audiorenderer Init failed!");
         return -1;
     }
-    
+
     return 0;
 }
 

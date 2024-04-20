@@ -98,6 +98,7 @@ public:
     float GetMaxAmplitude() override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
+    int32_t SetPaPower(int32_t flag) override;
 
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
@@ -1104,5 +1105,11 @@ void MultiChannelRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType dev
     }
 }
 
+int32_t MultiChannelRendererSinkInner::SetPaPower(int32_t flag)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

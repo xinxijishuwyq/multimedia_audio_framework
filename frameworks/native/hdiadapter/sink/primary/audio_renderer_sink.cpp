@@ -70,7 +70,10 @@ const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 300;
 
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
+static int32_t PaStatus = 1;
+
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
+const uint32_t DEVICE_PARAM_MAX_LEN = 40;
 }
 
 int32_t ConvertByteToAudioFormat(int32_t format)
@@ -161,6 +164,7 @@ public:
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     float GetMaxAmplitude() override;
+    int32_t SetPaPower(int32_t flag) override;
 
     std::string GetDPDeviceAttrInfo(const std::string &condition);
 
@@ -230,6 +234,7 @@ private:
     bool AttributesCheck(AudioSampleAttributes &attrInfo);
     int32_t SetAudioAttrInfo(AudioSampleAttributes &attrInfo);
     std::string GetAudioAttrInfo();
+    int32_t GetCurDeviceParam(char *keyValueList);
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -1345,6 +1350,86 @@ void AudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
         AUDIO_INFO_LOG("LatencyMeas primarySink signal detected");
         detectedTime_ = 0;
     }
+}
+
+int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList)
+{
+    int32_t ret = ERROR;
+    switch (currentActiveDevice_) {
+        case DEVICE_TYPE_EARPIECE:
+            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+                "zero_volume=true;routing=1");
+            break;
+        case DEVICE_TYPE_SPEAKER:
+            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+                "zero_volume=true;routing=2");
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+                "zero_volume=true;routing=4");
+            break;
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+                "zero_volume=true;routing=67108864");
+            break;
+        case DEVICE_TYPE_USB_HEADSET:
+            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+                "zero_volume=true;routing=545259520");
+            break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+                "zero_volume=true;routing=10");
+            break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+                "zero_volume=true;routing=128");
+            break;
+        default:
+            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+                "zero_volume=true;routing=-100");
+            break;
+    }
+    return ret;
+}
+
+int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
+{
+    int32_t ret = ERROR;
+    char keyValueList[DEVICE_PARAM_MAX_LEN] = {0};
+    const char keyValueList1[] = "zero_volume=false";
+
+    if (flag == 0 && PaStatus == 1) {
+        ret = snprintf_s(keyValueList, sizeof(keyValueList), sizeof(keyValueList) - 1,
+            "zero_volume=true;routing=0");
+        if (ret > 0 && ret < sizeof(keyValueList)) {
+            CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERROR);
+            ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
+        }
+        if (ret == 0) {
+            PaStatus = 0;
+        }
+        return ret;
+    } else if (flag == 0 && PaStatus == 0) {
+        return SUCCESS;
+    }
+
+    AUDIO_DEBUG_LOG("keyValueList %{public}s befor get.", keyValueList);
+    GetCurDeviceParam(keyValueList);
+    AUDIO_DEBUG_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
+
+    if (flag == 1 && PaStatus == 0) {
+        ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
+        ret = audioRender_->SetExtraParams(audioRender_, keyValueList1) + ret;
+        if (ret == 0) {
+            PaStatus = 1;
+        }
+        return ret;
+    } else if (flag == 1 && PaStatus == 1) {
+        return SUCCESS;
+    }
+
+    AUDIO_DEBUG_LOG("receive invalid flag");
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

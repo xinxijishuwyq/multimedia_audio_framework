@@ -113,6 +113,7 @@ public:
     float GetMaxAmplitude() override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
+    int32_t SetPaPower(int32_t flag) override;
 
     std::string GetNetworkId();
     IAudioSinkCallback* GetParamCallback();
@@ -725,6 +726,13 @@ void RemoteFastAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType 
 OHOS::AudioStandard::IAudioSinkCallback* RemoteFastAudioRendererSinkInner::GetParamCallback()
 {
     return callback_;
+}
+
+int32_t RemoteFastAudioRendererSinkInner::SetPaPower(int32_t flag)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

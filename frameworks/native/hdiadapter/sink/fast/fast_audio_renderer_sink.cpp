@@ -95,6 +95,7 @@ public:
         uint32_t &byteSizePerFrame) override;
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude() override;
+    int32_t SetPaPower(int32_t flag) override;
 
     FastAudioRendererSinkInner();
     ~FastAudioRendererSinkInner();
@@ -562,6 +563,13 @@ float FastAudioRendererSinkInner::GetMaxAmplitude()
 {
     AUDIO_WARNING_LOG("getMaxAmplitude in fast_audio_renderder_sink not support");
     return 0;
+}
+
+int32_t FastAudioRendererSinkInner::SetPaPower(int32_t flag)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t FastAudioRendererSinkInner::CheckPositionTime()
