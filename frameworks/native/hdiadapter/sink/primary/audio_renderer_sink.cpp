@@ -70,7 +70,7 @@ const int32_t SLEEP_TIME_FOR_RENDER_EMPTY = 300;
 
 const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
-static int32_t PaStatus = 1;
+static int32_t g_paStatus = 1;
 
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const uint32_t DEVICE_PARAM_MAX_LEN = 40;
@@ -1398,7 +1398,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
     char keyValueList[DEVICE_PARAM_MAX_LEN] = {0};
     const char keyValueList1[] = "zero_volume=false";
 
-    if (flag == 0 && PaStatus == 1) {
+    if (flag == 0 && g_paStatus == 1) {
         ret = snprintf_s(keyValueList, sizeof(keyValueList), sizeof(keyValueList) - 1,
             "zero_volume=true;routing=0");
         if (ret > 0 && ret < sizeof(keyValueList)) {
@@ -1406,10 +1406,10 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
             ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
         }
         if (ret == 0) {
-            PaStatus = 0;
+            g_paStatus = 0;
         }
         return ret;
-    } else if (flag == 0 && PaStatus == 0) {
+    } else if (flag == 0 && g_paStatus == 0) {
         return SUCCESS;
     }
 
@@ -1417,14 +1417,14 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
     GetCurDeviceParam(keyValueList);
     AUDIO_DEBUG_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
 
-    if (flag == 1 && PaStatus == 0) {
+    if (flag == 1 && g_paStatus == 0) {
         ret = audioRender_->SetExtraParams(audioRender_, keyValueList);
         ret = audioRender_->SetExtraParams(audioRender_, keyValueList1) + ret;
         if (ret == 0) {
-            PaStatus = 1;
+            g_paStatus = 1;
         }
         return ret;
-    } else if (flag == 1 && PaStatus == 1) {
+    } else if (flag == 1 && g_paStatus == 1) {
         return SUCCESS;
     }
 
