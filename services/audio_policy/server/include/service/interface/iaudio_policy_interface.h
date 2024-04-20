@@ -22,6 +22,7 @@
 #include "audio_policy_ipc_interface_code.h"
 #include "audio_session_callback.h"
 #include "audio_volume_config.h"
+#include "volume_data_maintainer.h"
 
 #include <memory>
 #include <string>
@@ -115,6 +116,20 @@ public:
     virtual void ResetRemoteCastDeviceVolume();
 
     virtual int32_t DoRestoreData() = 0;
+
+    virtual SafeStatus GetCurrentDeviceSafeStatus(DeviceType deviceType) = 0;
+
+    virtual int64_t GetCurentDeviceSafeTime(DeviceType deviceType) = 0;
+
+    virtual int32_t SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status) = 0;
+
+    virtual int32_t SetDeviceSafeTime(DeviceType deviceType, int64_t time) = 0;
+
+    virtual int32_t GetSafeVolumeLevel() const = 0;
+
+    virtual int32_t GetSafeVolumeTimeout() const = 0;
+
+    virtual int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

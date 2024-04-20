@@ -129,6 +129,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("getVolumeManager", GetVolumeManager),
         DECLARE_NAPI_FUNCTION("getInterruptManager", GetInterruptManager),
         DECLARE_NAPI_FUNCTION("getSpatializationManager", GetSpatializationManager),
+        DECLARE_NAPI_FUNCTION("disableSafeMediaVolume", DisableSafeMediaVolume),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_MNGR_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -1130,6 +1131,38 @@ napi_value NapiAudioManager::AbandonIndependentInterrupt(napi_env env, napi_call
         NapiParamUtils::SetValueBoolean(env, context->isTrue, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "AbandonIndependentInterrupt", executor, complete);
+}
+
+napi_value NapiAudioManager::DisableSafeMediaVolume(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("failed : no memory");
+        NapiAudioError::ThrowError(env, "DisableSafeMediaVolume failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
+            "audio manager state is error.");
+        context->intValue = napiAudioManager->audioMngr_->DisableSafeMediaVolume();
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "DisableSafeMediaVolume", executor, complete);
 }
 
 napi_value NapiAudioManager::RegisterCallback(napi_env env, napi_value jsThis,

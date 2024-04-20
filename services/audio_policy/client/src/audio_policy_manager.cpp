@@ -1486,6 +1486,13 @@ float AudioPolicyManager::GetMaxAmplitude(const int32_t deviceId)
     return gsp->GetMaxAmplitude(deviceId);
 }
 
+int32_t AudioPolicyManager::DisableSafeMediaVolume()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->DisableSafeMediaVolume();
+}
+
 bool AudioPolicyManager::IsHeadTrackingDataRequested(const std::string &macAddress)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

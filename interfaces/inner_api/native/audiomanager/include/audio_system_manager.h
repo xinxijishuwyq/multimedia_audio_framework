@@ -1152,6 +1152,17 @@ public:
      */
     uint32_t GetEffectLatency(const std::string &sessionId);
 
+    /**
+     * @brief set useraction command
+     *
+     * @param actionCommand action command
+     * @param paramInfo information
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t DisableSafeMediaVolume();
+
     static void AudioServerDied(pid_t pid);
 
     std::string GetSelfBundleName(int32_t uid);

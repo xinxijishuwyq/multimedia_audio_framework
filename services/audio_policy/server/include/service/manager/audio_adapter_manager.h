@@ -150,6 +150,17 @@ public:
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
 
     int32_t DoRestoreData();
+    SafeStatus GetCurrentDeviceSafeStatus(DeviceType deviceType);
+
+    int64_t GetCurentDeviceSafeTime(DeviceType deviceType);
+
+    int32_t SetDeviceSafeStatus(DeviceType deviceType, SafeStatus status);
+
+    int32_t SetDeviceSafeTime(DeviceType deviceType, int64_t time);
+
+    int32_t GetSafeVolumeLevel() const;
+
+    int32_t GetSafeVolumeTimeout() const;
 private:
     friend class PolicyCallbackImpl;
 
@@ -157,6 +168,7 @@ private:
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t DEFAULT_VOLUME_LEVEL = 7;
     static constexpr int32_t CONST_FACTOR = 100;
+    static constexpr int32_t DEFAULT_SAFE_VOLUME_TIMEOUT = 1200;
     static constexpr float MIN_STREAM_VOLUME = 0.0f;
     static constexpr float MAX_STREAM_VOLUME = 1.0f;
 
@@ -210,7 +222,8 @@ private:
     void CloneMuteStatusMap(void);
     void CloneVolumeMap(void);
     void CloneSystemSoundUrl(void);
-
+    void InitSafeStatus(bool isFirstBoot);
+    void InitSafeTime(bool isFirstBoot);
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -238,6 +251,13 @@ private:
     StreamVolumeInfoMap streamVolumeInfos_;
     DeviceType currentActiveDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioRingerMode ringerMode_;
+    int32_t safeVolume_ = 0;
+    SafeStatus safeStatus_ = SAFE_ACTIVE;
+    SafeStatus safeStatusBt_ = SAFE_ACTIVE;
+    int64_t safeActiveTime_ = 0;
+    int64_t safeActiveBtTime_ = 0;
+    int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
+
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     AudioSessionCallback *sessionCallback_;
     VolumeDataMaintainer &volumeDataMaintainer_;
