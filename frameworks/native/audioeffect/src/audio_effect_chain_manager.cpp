@@ -334,6 +334,12 @@ int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *c
     return audioEffectChainManager->ReturnMultiChannelInfo(channels, channelLayout);
 }
 
+bool EffectChainManagerGetSpatializationEnabled()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    return audioEffectChainManager->GetCurSpatializationEnabled();
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -1723,6 +1729,11 @@ void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType
             continue;
         }
     }
+}
+
+bool AudioEffectChainManager::GetCurSpatializationEnabled()
+{
+    return spatializationEnabled_;
 }
 
 #ifdef WINDOW_MANAGER_ENABLE
