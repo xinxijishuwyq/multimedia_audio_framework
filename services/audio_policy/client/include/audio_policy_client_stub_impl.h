@@ -93,8 +93,8 @@ private:
     std::vector<std::shared_ptr<AudioPreferredInputDeviceChangeCallback>> preferredInputDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
-    std::vector<std::weak_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
-    std::vector<std::weak_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
 
     std::unordered_map<uint32_t,
         std::shared_ptr<OutputDeviceChangeWithInfoCallback>> outputDeviceChangeWithInfoCallbackMap_;

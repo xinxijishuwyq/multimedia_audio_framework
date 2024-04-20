@@ -407,7 +407,7 @@ void AudioPolicyClientStubImpl::OnSpatializationEnabledChange(const bool &enable
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
-        callback.OnSpatializationEnabledChange(enabled);
+        callback->OnSpatializationEnabledChange(enabled);
     }
 }
 
@@ -430,7 +430,7 @@ void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
-        callback.OnHeadTrackingEnabledChange(enabled);
+        callback->OnHeadTrackingEnabledChange(enabled);
     }
 }
 } // namespace AudioStandard
