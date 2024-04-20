@@ -1402,20 +1402,19 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
             pa_sink_input_assert_ref(input);
             const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
-            if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i])) {
-                const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
-                pa_cvolume vol;
-                pa_sink_input_get_volume(input, &vol, true);
-                pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-                if (!(input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
-                    pa_cvolume_is_norm(&vol))) {
-                    g_effectAllStreamVolumeZeroMap[i] = false;
-                    g_effectStartVolZeroTimeMap[i] = 0;
-                    AUDIO_INFO_LOG("SCENE_TYPE_SET[%{public}d]:%{public}s for streamtype:[%{public}s]'s"
-                        " volume is not zero, this effect all streamtype is not zero volume.", i,
-                        SCENE_TYPE_SET[i], streamType);
-                    break;
-                }
+            const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
+            pa_cvolume vol;
+            pa_sink_input_get_volume(input, &vol, true);
+            pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
+            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
+                pa_cvolume_is_norm(&vol);
+            if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
+                g_effectAllStreamVolumeZeroMap[i] = false;
+                g_effectStartVolZeroTimeMap[i] = 0;
+                AUDIO_INFO_LOG("SCENE_TYPE_SET[%{public}d]:%{public}s for streamtype:[%{public}s]'s"
+                    " volume is not zero, this effect all streamtype is not zero volume.", i,
+                    SCENE_TYPE_SET[i], streamType);
+                break;
             }
         }
     }
@@ -1453,16 +1452,16 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
         g_speakerPaAllStreamVolumeZero = true;
         while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
             pa_sink_input_assert_ref(input);
-            if (!strcmp(u->sink->name, "Speaker")) {
-                pa_cvolume vol;
-                pa_sink_input_get_volume(input, &vol, true);
-                pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-                if (!(input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) || pa_cvolume_is_norm(&vol))) {
-                    g_speakerPaAllStreamVolumeZero = false;
-                    g_speakerPaAllStreamStartVolZeroTime = 0;
-                    AUDIO_INFO_LOG("%{public}s sink all streamtype is not zero volume.", u->sink->name);
-                    break;
-                }
+            pa_cvolume vol;
+            pa_sink_input_get_volume(input, &vol, true);
+            pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
+            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol)
+                || pa_cvolume_is_norm(&vol);
+            if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
+                g_speakerPaAllStreamVolumeZero = false;
+                g_speakerPaAllStreamStartVolZeroTime = 0;
+                AUDIO_INFO_LOG("%{public}s sink all streamtype is not zero volume.", u->sink->name);
+                break;
             }
         }
     }
@@ -1472,9 +1471,9 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
     if (g_speakerPaAllStreamVolumeZero && difftime(currentTime, g_speakerPaAllStreamStartVolZeroTime) >
         WAIT_CLOSE_PA_OR_EFFECT_TIME) {
         if (!g_paHaveDisabled) {
-            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0) == 0 ) {
+            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0) == 0) {
                 AUDIO_INFO_LOG("Speaker all streamtype volume change to zero over %{public}ds,"
-                    "close %{public}s pa success",WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name);
+                    "close %{public}s pa success", WAIT_CLOSE_PA_OR_EFFECT_TIME, u->sink->name);
             }
             g_paHaveDisabled = true;
             g_speakerPaAllStreamStartVolZeroTime = 0;
