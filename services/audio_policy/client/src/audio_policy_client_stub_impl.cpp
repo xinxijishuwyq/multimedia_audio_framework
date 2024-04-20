@@ -429,9 +429,6 @@ int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingEnabledChangeCallback()
 void AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(const bool &enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
-    if (headTrackingDataRequestedChangeCallbackMap_.size() == 0) {
-        return;
-    }
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
         callback.OnHeadTrackingEnabledChange(enabled);
     }
