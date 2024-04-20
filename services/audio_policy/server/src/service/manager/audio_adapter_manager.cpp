@@ -106,8 +106,9 @@ bool AudioAdapterManager::Init()
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         int32_t ringtoneVolumeLevel = atoi(currentVolumeValue);
-        volumeLevelMap_[STREAM_RING] = ringtoneVolumeLevel;
-        AUDIO_INFO_LOG("Init: Get ringtone volume to map success %{public}d", volumeLevelMap_[STREAM_RING]);
+        volumeDataMaintainer_.SetStreamVolume(STREAM_RING, ringtoneVolumeLevel);
+        AUDIO_INFO_LOG("Init: Get ringtone volume to map success %{public}d",
+            volumeDataMaintainer_.GetStreamVolume(STREAM_RING));
     } else {
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
     }
@@ -139,14 +140,40 @@ void AudioAdapterManager::InitKVStore()
 
 void AudioAdapterManager::InitKVStoreInternal()
 {
-    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ == nullptr, "InitKVStore: kv store is not nullptr.");
+    CHECK_AND_RETURN_LOG(!isLoaded_, "InitKVStore: the database value is loaded");
 
     AUDIO_INFO_LOG("AudioAdapterManager::%{public}s in", __func__);
+#ifdef SUPPORT_USER_ACCOUNT
+    if (accountInfoObs_ == nullptr) {
+        AccountSA::OsAccountSubscribeInfo osAccountSubscribeInfo;
+        osAccountSubscribeInfo.SetOsAccountSubscribeType(AccountSA::OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED);
+        accountInfoObs_ = std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
+        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs_);
+        if (errCode != SUCCESS) {
+            AUDIO_ERR_LOG("SubscribeOsAccount failed,errCode :%{public}d", errCode);
+            accountInfoObs_ = nullptr;
+        }
+    }
+#endif
     bool isFirstBoot = false;
+    volumeDataMaintainer_.RegisterCloned();
     InitAudioPolicyKvStore(isFirstBoot);
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
+    if (isNeedCopySystemUrlData_) {
+        CloneSystemSoundUrl();
+    }
+
+    if (!isNeedCopyVolumeData_ && !isNeedCopyMuteData_ && !isNeedCopyRingerModeData_ && !isNeedCopySystemUrlData_) {
+        isAllCopyDone_ = true;
+    }
+
+    if (isAllCopyDone_ && audioPolicyKvStore_ != nullptr) {
+        // delete KvStore
+        AUDIO_INFO_LOG("Copy audio_policy private database success to settings database, delete private database...");
+        DeleteAudioPolicyKvStore();
+    }
 
     // Make sure that the volume value is applied.
     auto iter = VOLUME_TYPE_LIST.begin();
@@ -228,7 +255,6 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
 int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
     bool /* isFromVolumeKey */)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_, volumeLevel);
     if (volumeLevel == 0 &&
@@ -245,13 +271,12 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         "volumeLevel not in scope.");
 
     // In case if KvStore didnot connect during bootup
-    if (audioPolicyKvStore_ == nullptr) {
+    if (!isLoaded_) {
         InitKVStoreInternal();
     }
 
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-    volumeLevelMap_[streamForVolumeMap] = volumeLevel;
-    WriteVolumeToKvStore(currentActiveDevice_, streamType, volumeLevel);
+    volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
+    volumeDataMaintainer_.SaveVolume(currentActiveDevice_, streamType, volumeLevel);
 
     UpdateRingerModeForVolume(streamType, volumeLevel);
 
@@ -277,22 +302,14 @@ void AudioAdapterManager::UpdateRingerModeForVolume(AudioStreamType streamType, 
 
 void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel)
 {
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-
-    //The mute status is automatically updated based on the stream volume
-    if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
-        muteStatusMap_[streamForVolumeMap] = false;
-        WriteMuteStatusToKvStore(currentActiveDevice_, streamType, false);
-    } else if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
-        muteStatusMap_[streamForVolumeMap] = true;
-        WriteMuteStatusToKvStore(currentActiveDevice_, streamType, true);
-    }
+    volumeDataMaintainer_.UpdateMuteStatusForVolume(currentActiveDevice_, streamType, volumeLevel);
 }
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
     AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-    int32_t volumeLevel = volumeLevelMap_[streamForVolumeMap] * (muteStatusMap_[streamForVolumeMap] ? 0 : 1);
+    int32_t volumeLevel =
+        volumeDataMaintainer_.GetStreamVolume(streamType) * (GetStreamMute(streamType) ? 0 : 1);
 
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(streamForVolumeMap, volumeLevel);
@@ -338,22 +355,18 @@ int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType, bo
     if (!isFromVolumeKey && GetStreamMute(streamType)) {
         return MIN_VOLUME_LEVEL;
     }
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
 
-    return volumeLevelMap_[streamForVolumeMap];
+    return volumeDataMaintainer_.GetStreamVolume(streamType);
 }
 
 float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 {
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-
-    int32_t volumeLevel = volumeLevelMap_[streamForVolumeMap];
+    int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(streamType);
     return CalculateVolumeDb(volumeLevel);
 }
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     return SetStreamMuteInternal(streamType, mute);
 }
 
@@ -369,14 +382,12 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         return SUCCESS;
     }
 
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-    muteStatusMap_[streamForVolumeMap] = mute;
-    WriteMuteStatusToKvStore(currentActiveDevice_, streamType, mute);
+    volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
 
-    if (!mute && volumeLevelMap_[streamForVolumeMap] == 0) {
+    if (!mute && volumeDataMaintainer_.GetStreamVolume(streamType) == 0) {
         AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d is unmuted, but the volume is 0. Set to 1.", streamType);
-        volumeLevelMap_[streamForVolumeMap] = 1;
-        WriteVolumeToKvStore(currentActiveDevice_, streamType, 1);
+        volumeDataMaintainer_.SetStreamVolume(streamType, 1);
+        volumeDataMaintainer_.SaveVolume(currentActiveDevice_, streamType, 1);
     }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
@@ -392,14 +403,17 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
 
 bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     return GetStreamMuteInternal(streamType);
+}
+
+int32_t AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
+{
+    return volumeDataMaintainer_.GetStreamVolume(streamType);
 }
 
 bool AudioAdapterManager::GetStreamMuteInternal(AudioStreamType streamType)
 {
-    AudioStreamType streamForVolumeMap = GetStreamForVolumeMap(streamType);
-    return muteStatusMap_[streamForVolumeMap];
+    return volumeDataMaintainer_.GetStreamMute(streamType);
 }
 
 vector<SinkInfo> AudioAdapterManager::GetAllSinks()
@@ -513,6 +527,19 @@ int32_t AudioAdapterManager::SetDeviceActive(AudioIOHandle ioHandle, InternalDev
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType)
 {
+#ifdef SUPPORT_USER_ACCOUNT
+    // SubscribeOsAccount again if OsAccountManager didnot start when boot
+    if (accountInfoObs_ == nullptr) {
+        AccountSA::OsAccountSubscribeInfo osAccountSubscribeInfo;
+        osAccountSubscribeInfo.SetOsAccountSubscribeType(AccountSA::OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED);
+        accountInfoObs_ = std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
+        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs_);
+        if (errCode != SUCCESS) {
+            AUDIO_ERR_LOG("SubscribeOsAccount failed,errCode :%{public}d", errCode);
+            accountInfoObs_ = nullptr;
+        }
+    }
+#endif
     std::lock_guard<std::mutex> lock(muteStatusMutex_);
     if (GetVolumeGroupForDevice(currentActiveDevice_) == GetVolumeGroupForDevice(deviceType)) {
         AUDIO_INFO_LOG("Old device: %{public}d. New device: %{public}d. No need to update volume",
@@ -525,7 +552,6 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
     // Current device must be updated even if kvStore is nullptr.
     currentActiveDevice_ = deviceType;
 
-    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "SetVolumeForSwitchDevice audioPolicyKvStore_ is null!");
     LoadVolumeMap();
     LoadMuteStatusMap();
 
@@ -534,7 +560,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
         // update volume level and mute status for each stream type
         SetVolumeDb(*iter);
         AUDIO_INFO_LOG("SetVolumeForSwitchDevice: volume: %{public}d, mute: %{public}d for stream type %{public}d",
-            volumeLevelMap_[*iter], muteStatusMap_[*iter], *iter);
+            volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
         iter++;
     }
 }
@@ -552,7 +578,6 @@ int32_t AudioAdapterManager::MoveSourceOutputByIndexOrName(uint32_t sourceOutput
 
 int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 {
-    std::lock_guard<std::mutex> lock(muteStatusMutex_);
     return SetRingerModeInternal(ringerMode);
 }
 
@@ -574,11 +599,11 @@ int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
     }
 
     // In case if KvStore didnot connect during bootup
-    if (audioPolicyKvStore_ == nullptr) {
+    if (!isLoaded_) {
         InitKVStoreInternal();
     }
 
-    WriteRingerModeToKvStore(ringerMode);
+    volumeDataMaintainer_.SaveRingerMode(ringerMode);
     return SUCCESS;
 }
 
@@ -968,44 +993,75 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
         } while (retries <= KVSTORE_CONNECT_RETRY_COUNT);
     }
 
-    if (audioPolicyKvStore_ == nullptr) {
-        if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-            (void)manager.CloseKvStore(appId, storeId);
-            status = manager.DeleteKvStore(appId, storeId, options.baseDir);
-        }
-        AUDIO_INFO_LOG("First Boot: Create AudioPolicyKvStore status: %{public}d", status);
-        options.createIfMissing = true;
-        // [create and] open and initialize kvstore instance.
-        status = manager.GetSingleKvStore(options, appId, storeId, audioPolicyKvStore_);
-        if (status == Status::SUCCESS) {
-            isFirstBoot = true;
-        } else {
-            AUDIO_ERR_LOG("Create AudioPolicyKvStore Failed status: %{public}d", status);
-        }
+    if (audioPolicyKvStore_ != nullptr) {
+        isNeedCopyVolumeData_ = true;
+        isNeedCopyMuteData_ = true;
+        isNeedCopyRingerModeData_ = true;
+        isNeedCopySystemUrlData_ = true;
+        volumeDataMaintainer_.SetFirstBoot(false);
+        return true;
     }
-
-    CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, false,
-        "InitAudioPolicyKvStore: Failed!");
+    // first boot
+    if (!volumeDataMaintainer_.GetFirstBoot(isFirstBoot)) {
+        AUDIO_INFO_LOG("first boot, ready init data to database");
+        isFirstBoot = true;
+        volumeDataMaintainer_.SetFirstBoot(false);
+    }
 
     return true;
 }
 
+void AudioAdapterManager::DeleteAudioPolicyKvStore()
+{
+    DistributedKvDataManager manager;
+    Options options;
+
+    AppId appId;
+    appId.appId = "audio_policy_manager";
+
+    options.securityLevel = S1;
+    options.createIfMissing = false;
+    options.encrypt = false;
+    options.autoSync = false;
+    options.kvStoreType = KvStoreType::SINGLE_VERSION;
+    options.area = EL1;
+    options.baseDir = std::string("/data/service/el1/public/database/") + appId.appId;
+
+    StoreId storeId;
+    storeId.storeId = "audiopolicy";
+    Status status = Status::SUCCESS;
+
+    if (audioPolicyKvStore_ != nullptr) {
+        status = manager.CloseKvStore(appId, storeId);
+        if (status != Status::SUCCESS) {
+            AUDIO_ERR_LOG("close KvStore failed");
+        }
+        status = manager.DeleteKvStore(appId, storeId, options.baseDir);
+        if (status != Status::SUCCESS) {
+            AUDIO_ERR_LOG("DeleteKvStore failed");
+        }
+        audioPolicyKvStore_ = nullptr;
+    }
+}
+
 void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 {
-    if (audioPolicyKvStore_ == nullptr) {
-        AUDIO_ERR_LOG("InitVolumeMap: kvstore is null!");
+    if (!isFirstBoot) {
+        LoadVolumeMap();
         return;
     }
-    if (isFirstBoot) {
-        AUDIO_INFO_LOG("InitVolumeMap: Wrote default stream volumes to KvStore");
-        for (auto &deviceType: DEVICE_TYPE_LIST) {
-            for (auto &streamType: VOLUME_TYPE_LIST) {
-                WriteVolumeToKvStore(deviceType, streamType, volumeLevelMap_[streamType]);
+    AUDIO_INFO_LOG("InitVolumeMap: Wrote default stream volumes to KvStore");
+    std::unordered_map<AudioStreamType, int32_t> volumeLevelMapTemp = volumeDataMaintainer_.GetVolumeMap();
+    for (auto &deviceType: DEVICE_TYPE_LIST) {
+        for (auto &streamType: VOLUME_TYPE_LIST) {
+            // if GetVolume failed, wirte default value
+            if (!volumeDataMaintainer_.GetVolume(deviceType, streamType)) {
+                volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevelMapTemp[streamType]);
             }
         }
-    } else {
-        LoadVolumeMap();
     }
+    // reLoad the current device volume
+    LoadVolumeMap();
 }
 
 void AudioAdapterManager::ResetRemoteCastDeviceVolume()
@@ -1013,56 +1069,70 @@ void AudioAdapterManager::ResetRemoteCastDeviceVolume()
     for (auto &streamType: VOLUME_TYPE_LIST) {
         AudioStreamType streamAlias = GetStreamForVolumeMap(streamType);
         int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
-        WriteVolumeToKvStore(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
+        volumeDataMaintainer_.SaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
     }
 }
 
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
 {
-    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "InitRingerMode: kvstore is null!");
-
     if (isFirstBoot) {
         AUDIO_INFO_LOG("InitRingerMode Wrote default ringer mode to KvStore");
         ringerMode_ = RINGER_MODE_NORMAL;
-        WriteRingerModeToKvStore(RINGER_MODE_NORMAL);
+        isLoaded_ = true;
+        if (!volumeDataMaintainer_.GetRingerMode(ringerMode_)) {
+            isLoaded_ = volumeDataMaintainer_.SaveRingerMode(RINGER_MODE_NORMAL);
+        }
     } else {
-        LoadRingerMode();
+        // read ringerMode from private kvStore
+        if (isNeedCopyRingerModeData_ && audioPolicyKvStore_ != nullptr) {
+            AUDIO_INFO_LOG("copy ringerMode from private database to share database");
+            Key key = "ringermode";
+            Value value;
+            Status status = audioPolicyKvStore_->Get(key, value);
+            if (status == Status::SUCCESS) {
+                ringerMode_ = static_cast<AudioRingerMode>(TransferByteArrayToType<int>(value.Data()));
+                volumeDataMaintainer_.SaveRingerMode(ringerMode_);
+            }
+            isNeedCopyRingerModeData_ = false;
+        }
+        // if read ringer mode success, data is loaded.
+        isLoaded_ = volumeDataMaintainer_.GetRingerMode(ringerMode_);
     }
 }
 
-bool AudioAdapterManager::LoadVolumeFromKvStore(DeviceType deviceType, AudioStreamType streamType)
+void AudioAdapterManager::CloneVolumeMap(void)
 {
-    std::string volumeKey = GetVolumeKeyForKvStore(deviceType, streamType);
-    if (!volumeKey.compare("")) {
-        AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for kvStore",
-            deviceType, streamType);
-        return false;
+    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone volumemap failed, audioPolicyKvStore_nullptr");
+    // read volume from private Kvstore
+    AUDIO_INFO_LOG("Copy Volume from private database to shareDatabase");
+    for (auto &deviceType : DEVICE_TYPE_LIST) {
+        for (auto &streamType : VOLUME_TYPE_LIST) {
+            std::string volumeKey = GetVolumeKeyForKvStore(deviceType, streamType);
+            Key key = volumeKey;
+            Value value;
+            Status status = audioPolicyKvStore_->Get(volumeKey, value);
+            if (status != SUCCESS) {
+                AUDIO_WARNING_LOG("get volumeLevel failed, deviceType:%{public}d, streanType:%{public}d",
+                    deviceType, streamType);
+                continue;
+            }
+            int32_t volumeLevel = TransferByteArrayToType<int>(value.Data());
+            // clone data to VolumeToShareData
+            volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
+        }
     }
 
-    Key key = volumeKey;
-    Value value;
-    Status status = audioPolicyKvStore_->Get(key, value);
-    if (status == Status::SUCCESS) {
-        int32_t volumeLevel = TransferByteArrayToType<int>(value.Data());
-        volumeLevelMap_[streamType] = volumeLevel;
-        AUDIO_DEBUG_LOG("volumeLevel %{public}d for streamType: %{public}d from kvStore",
-            volumeLevel, streamType);
-        return true;
-    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-        AUDIO_ERR_LOG("load volume for streamType: %{public}d from kvStore failed, reInitKVStore", streamType);
-        (void)ReInitKVStore();
-    }
-
-    return false;
+    isNeedCopyVolumeData_ = false;
 }
 
 bool AudioAdapterManager::LoadVolumeMap(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, false,
-        "LoadVolumeMap: audioPolicyKvStore_ is null!");
+    if (isNeedCopyVolumeData_ && (audioPolicyKvStore_ != nullptr)) {
+        CloneVolumeMap();
+    }
 
     for (auto &streamType: VOLUME_TYPE_LIST) {
-        bool result = LoadVolumeFromKvStore(currentActiveDevice_, streamType);
+        bool result = volumeDataMaintainer_.GetVolume(currentActiveDevice_, streamType);
         if (!result) {
             AUDIO_ERR_LOG("LoadVolumeMap: Could not load volume for streamType[%{public}d] from kvStore", streamType);
         }
@@ -1071,135 +1141,74 @@ bool AudioAdapterManager::LoadVolumeMap(void)
     return true;
 }
 
-bool AudioAdapterManager::LoadRingerMode(void)
+void AudioAdapterManager::TransferMuteStatus(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, false,
-        "LoadRingerMap: audioPolicyKvStore_ is null!");
-
-    // get ringer mode value from kvstore.
-    Key key = "ringermode";
-    Value value;
-    Status status = audioPolicyKvStore_->Get(key, value);
-    if (status == Status::SUCCESS) {
-        ringerMode_ = static_cast<AudioRingerMode>(TransferByteArrayToType<int>(value.Data()));
-        AUDIO_DEBUG_LOG("LoadRingerMode Ringer Mode from kvStore %{public}d", ringerMode_);
-    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-        AUDIO_ERR_LOG("load ringerMode from kvStore %{public}d failed, reInitKVStore", ringerMode_);
-        (void)ReInitKVStore();
-        return false;
+    // read mute_streams_affected and transfer
+    int32_t mute_streams_affected = 0;
+    bool isNeedTransferMute = true;
+    bool ret = volumeDataMaintainer_.GetMuteAffected(mute_streams_affected) &&
+        volumeDataMaintainer_.GetMuteTransferStatus(isNeedTransferMute);
+    if (!ret && (mute_streams_affected > 0) && isNeedTransferMute) {
+        AUDIO_INFO_LOG("start transfer mute value");
+        volumeDataMaintainer_.SetMuteAffectedToMuteStatusDataBase(mute_streams_affected);
+        volumeDataMaintainer_.SaveMuteTransferStatus(false);
     }
-
-    return true;
-}
-
-void AudioAdapterManager::WriteVolumeToKvStore(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
-{
-    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr,
-        "failed: audioPolicyKvStore_ is nullptr");
-
-    std::string volumeKey = GetVolumeKeyForKvStore(type, streamType);
-    if (!volumeKey.compare("")) {
-        AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for kvStore",
-            type, streamType);
-        return;
-    }
-
-    Key key = volumeKey;
-    Value value = Value(TransferTypeToByteArray<int>(volumeLevel));
-
-    Status status = audioPolicyKvStore_->Put(key, value);
-    if (status == Status::SUCCESS) {
-        AUDIO_INFO_LOG("volumeLevel %{public}d for %{public}s", volumeLevel, volumeKey.c_str());
-    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-        (void)ReInitKVStore();
-    } else {
-        AUDIO_WARNING_LOG("Failed to write volumeLevel %{public}d for %{public}s to kvStore!",
-            volumeLevel, volumeKey.c_str());
-    }
-
-    return;
-}
-
-void AudioAdapterManager::WriteRingerModeToKvStore(AudioRingerMode ringerMode)
-{
-    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr,
-        "WriteRingerModeToKvStore failed: audioPolicyKvStore_ is nullptr");
-
-    Key key = "ringermode";
-    Value value = Value(TransferTypeToByteArray<int>(ringerMode));
-
-    Status status = audioPolicyKvStore_->Put(key, value);
-    if (status == Status::SUCCESS) {
-        AUDIO_INFO_LOG("WriteRingerModeToKvStore Wrote RingerMode:%{public}d to kvStore", ringerMode);
-    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-        (void)ReInitKVStore();
-    } else {
-        AUDIO_WARNING_LOG("WriteRingerModeToKvStore Writing RingerMode:%{public}d to kvStore failed!", ringerMode);
-    }
-
-    const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
-    PowerMgr::SettingProvider& settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    const std::string settingKey = "ringer_mode";
-    ErrCode ret = settingProvider.PutIntValue(settingKey, static_cast<int32_t>(ringerMode));
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to write ringer_mode: %{public}d to setting db! Err: %{public}d", ringerMode, ret);
-    }
-
-    return;
 }
 
 void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 {
-    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "InitMuteStatusMap: kvstore is null!");
     if (isFirstBoot) {
         AUDIO_INFO_LOG("Wrote default mute status to KvStore");
-        for (auto &deviceType: DEVICE_TYPE_LIST) {
-            for (auto &streamType: VOLUME_TYPE_LIST) {
-                WriteMuteStatusToKvStore(deviceType, streamType, 0);
+        for (auto &deviceType : DEVICE_TYPE_LIST) {
+            for (auto &streamType : VOLUME_TYPE_LIST) {
+                volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false);
             }
         }
+        TransferMuteStatus();
     } else {
         LoadMuteStatusMap();
     }
 }
 
+void AudioAdapterManager::CloneMuteStatusMap(void)
+{
+    // read mute status from private Kvstore
+    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "clone mute status failed, audioPolicyKvStore_ nullptr");
+    AUDIO_INFO_LOG("Copy mute from private database to shareDatabase");
+    for (auto &deviceType : DEVICE_TYPE_LIST) {
+        for (auto &streamType : VOLUME_TYPE_LIST) {
+            std::string muteKey = GetMuteKeyForKvStore(deviceType, streamType);
+            Key key = muteKey;
+            Value value;
+            Status status = audioPolicyKvStore_->Get(key, value);
+            if (status != SUCCESS) {
+                AUDIO_WARNING_LOG("get muteStatus:failed, deviceType:%{public}d, streanType:%{public}d",
+                    deviceType, streamType);
+                continue;
+            }
+            bool muteStatus = TransferByteArrayToType<int>(value.Data());
+            // clone data to VolumeToShareData
+            volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStatus);
+        }
+    }
+    isNeedCopyMuteData_ = false;
+}
 
 bool AudioAdapterManager::LoadMuteStatusMap(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, false,
-        "LoadMuteStatusMap: audioPolicyKvStore_ is null");
+    if (isNeedCopyMuteData_ && (audioPolicyKvStore_ != nullptr)) {
+        CloneMuteStatusMap();
+    }
+
+    TransferMuteStatus();
 
     for (auto &streamType: VOLUME_TYPE_LIST) {
-        bool result = LoadMuteStatusFromKvStore(currentActiveDevice_, streamType);
+        bool result = volumeDataMaintainer_.GetMuteStatus(currentActiveDevice_, streamType);
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from kvStore", streamType);
         }
     }
     return true;
-}
-
-bool AudioAdapterManager::LoadMuteStatusFromKvStore(DeviceType deviceType, AudioStreamType streamType)
-{
-    std::string muteKey = GetMuteKeyForKvStore(deviceType, streamType);
-    if (!muteKey.compare("")) {
-        AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for "\
-            "kvStore", deviceType, streamType);
-        return false;
-    }
-
-    Key key = muteKey;
-    Value value;
-
-    Status status = audioPolicyKvStore_->Get(key, value);
-    if (status == Status::SUCCESS) {
-        bool muteStatus = TransferByteArrayToType<int>(value.Data());
-        muteStatusMap_[streamType] = muteStatus;
-        return true;
-    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-        (void)ReInitKVStore();
-    }
-
-    return false;
 }
 
 std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType)
@@ -1253,35 +1262,6 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
     }
 }
 
-void AudioAdapterManager::WriteMuteStatusToKvStore(DeviceType deviceType, AudioStreamType streamType,
-    bool muteStatus)
-{
-    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr,
-        "WriteMuteStatusToKvStore failed: audioPolicyKvStore_ is nullptr");
-
-    std::string muteKey = GetMuteKeyForKvStore(deviceType, streamType);
-    if (!muteKey.compare("")) {
-        AUDIO_ERR_LOG("WriteMuteStatusToKvStore: [device %{public}d, streamType %{public}d] is not supported for "\
-            "kvStore", deviceType, streamType);
-        return;
-    }
-
-    Key key = muteKey;
-    Value value = Value(TransferTypeToByteArray<int>(muteStatus));
-
-    Status status = audioPolicyKvStore_->Put(key, value);
-    if (status == Status::SUCCESS) {
-        AUDIO_INFO_LOG("WriteMuteStatusToKvStore: muteStatus %{public}d for %{public}s", muteStatus, muteKey.c_str());
-    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-        (void)ReInitKVStore();
-    } else {
-        AUDIO_WARNING_LOG("WriteMuteStatusToKvStore: Failed to write muteStatus %{public}d for %{public}s to kvStore!",
-            muteStatus, muteKey.c_str());
-    }
-
-    return;
-}
-
 float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
 {
     float value = static_cast<float>(volumeLevel) / MAX_VOLUME_LEVEL;
@@ -1290,11 +1270,27 @@ float AudioAdapterManager::CalculateVolumeDb(int32_t volumeLevel)
     return static_cast<float>(roundValue) / CONST_FACTOR;
 }
 
+void AudioAdapterManager::CloneSystemSoundUrl(void)
+{
+    CHECK_AND_RETURN_LOG(isNeedCopySystemUrlData_ && (audioPolicyKvStore_ != nullptr),
+        "audioPolicyKvStore_ is nullptr,clone systemurl failed");
+    for (auto &key: SYSTEM_SOUND_KEY_LIST) {
+        Value value;
+        Status status = audioPolicyKvStore_->Get(key, value);
+        if (status == Status::SUCCESS) {
+            std::string systemSoundUri = value.ToString();
+            systemSoundUriMap_[key] = systemSoundUri;
+            volumeDataMaintainer_.SaveSystemSoundUrl(key, systemSoundUri);
+        }
+    }
+    isNeedCopySystemUrlData_ = false;
+}
+
 void AudioAdapterManager::InitSystemSoundUriMap()
 {
-    CHECK_AND_RETURN_LOG(audioPolicyKvStore_ != nullptr, "audioPolicyKvStore_ is null");
     for (auto &key: SYSTEM_SOUND_KEY_LIST) {
-        std::string systemSoundUri = LoadSystemSoundUriFromKvStore(key);
+        std::string systemSoundUri = "";
+        volumeDataMaintainer_.GetSystemSoundUrl(key, systemSoundUri);
         if (systemSoundUri == "") {
             AUDIO_WARNING_LOG("Could not load system sound uri for %{public}s from kvStore", key.c_str());
         }
@@ -1316,7 +1312,11 @@ int32_t AudioAdapterManager::SetSystemSoundUri(const std::string &key, const std
             "Failed to init system sound uri map.");
     }
     systemSoundUriMap_[key] = uri;
-    return WriteSystemSoundUriToKvStore(key, uri);
+    if (!volumeDataMaintainer_.SaveSystemSoundUrl(key, uri)) {
+        AUDIO_ERR_LOG("SetSystemSoundUri failed");
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 std::string AudioAdapterManager::GetSystemSoundUri(const std::string &key)
@@ -1333,41 +1333,6 @@ std::string AudioAdapterManager::GetSystemSoundUri(const std::string &key)
             "Failed to init system sound uri map.");
     }
     return systemSoundUriMap_[key];
-}
-
-int32_t AudioAdapterManager::WriteSystemSoundUriToKvStore(const std::string &key, const std::string &uri)
-{
-    CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, ERROR,
-        "WriteSystemSoundUriToKvStore failed: audioPolicyKvStore_ is nullptr");
-
-    Status status = audioPolicyKvStore_->Put(key, uri);
-    if (status == Status::SUCCESS) {
-        AUDIO_INFO_LOG("WriteSystemSoundUriToKvStore: Wrote [%{public}s]: [%{public}s] to kvStore",
-            key.c_str(), uri.c_str());
-    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-        (void)ReInitKVStore();
-    } else {
-        AUDIO_WARNING_LOG("WriteSystemSoundUriToKvStore: Writing [%{public}s]: [%{public}s] to kvStore failed",
-            key.c_str(), uri.c_str());
-    }
-
-    return SUCCESS;
-}
-
-std::string AudioAdapterManager::LoadSystemSoundUriFromKvStore(const std::string &key)
-{
-    std::string uri = "";
-    CHECK_AND_RETURN_RET_LOG(audioPolicyKvStore_ != nullptr, uri,
-        "LoadSystemSoundUriFromKvStore failed: audioPolicyKvStore_ is nullptr");
-    Value value;
-    Status status = audioPolicyKvStore_->Get(key, value);
-    if (status == Status::SUCCESS) {
-        uri = value.ToString();
-    } else if (status == Status::DATA_CORRUPTED || status == Status::CRYPT_ERROR) {
-        (void)ReInitKVStore();
-    }
-    AUDIO_INFO_LOG("LoadSystemSoundUriFromKvStore:: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
-    return uri;
 }
 
 float AudioAdapterManager::GetMinStreamVolume() const
@@ -1484,13 +1449,13 @@ void AudioAdapterManager::InitVolumeMapIndex()
     for (auto streamType : VOLUME_TYPE_LIST) {
         minVolumeIndexMap_[streamType] = MIN_VOLUME_LEVEL;
         maxVolumeIndexMap_[streamType] = MAX_VOLUME_LEVEL;
-        volumeLevelMap_[streamType] = DEFAULT_VOLUME_LEVEL;
+        volumeDataMaintainer_.SetStreamVolume(streamType, DEFAULT_VOLUME_LEVEL);
         AUDIO_DEBUG_LOG("streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
             streamType, minVolumeIndexMap_[streamType],
-            maxVolumeIndexMap_[streamType], volumeLevelMap_[streamType]);
+            maxVolumeIndexMap_[streamType], volumeDataMaintainer_.GetStreamVolume(streamType));
     }
 
-    volumeLevelMap_[STREAM_ULTRASONIC] = MAX_VOLUME_LEVEL;
+    volumeDataMaintainer_.SetStreamVolume(STREAM_ULTRASONIC, MAX_VOLUME_LEVEL);
 }
 
 void AudioAdapterManager::UpdateVolumeMapIndex()
@@ -1499,10 +1464,11 @@ void AudioAdapterManager::UpdateVolumeMapIndex()
         auto streamVolInfo = streamVolInfoPair.second;
         minVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->minLevel;
         maxVolumeIndexMap_[streamVolInfo->streamType] = streamVolInfo->maxLevel;
-        volumeLevelMap_[streamVolInfo->streamType] = streamVolInfo->defaultLevel;
+        volumeDataMaintainer_.SetStreamVolume(streamVolInfo->streamType, streamVolInfo->defaultLevel);
         AUDIO_DEBUG_LOG("update streamType %{public}d index = [%{public}d, %{public}d, %{public}d]",
             streamVolInfo->streamType, minVolumeIndexMap_[streamVolInfo->streamType],
-            maxVolumeIndexMap_[streamVolInfo->streamType], volumeLevelMap_[streamVolInfo->streamType]);
+            maxVolumeIndexMap_[streamVolInfo->streamType],
+            volumeDataMaintainer_.GetStreamVolume(streamVolInfo->streamType));
     }
 }
 
@@ -1532,6 +1498,34 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 bool AudioAdapterManager::IsAbsVolumeScene() const
 {
     return isAbsVolumeScene_;
+}
+
+void AudioAdapterManager::NotifyAccountsChanged(const int &id)
+{
+    AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
+    LoadVolumeMap();
+    LoadMuteStatusMap();
+}
+
+int32_t AudioAdapterManager::DoRestoreData()
+{
+    isLoaded_ = false;
+    InitKVStore();
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::Dump(int32_t fd, const std::vector<std::u16string> &args)
+{
+    std::stringstream dumpStringStream;
+    for (auto &streamType : VOLUME_TYPE_LIST) {
+        dumpStringStream << std::endl << "AudioStreamType: " << streamType <<
+            ", volumeLevel: " << volumeDataMaintainer_.GetStreamVolume(streamType) << std::endl;
+        dumpStringStream << std::endl << "AudioStreamType: " << streamType << ", streamMuteStatus: " <<
+            volumeDataMaintainer_.GetStreamMute(streamType) << std::endl;
+    }
+    dumpStringStream << std::endl << "ringerMode: " << ringerMode_ << std::endl;
+    std::string dumpString = dumpStringStream.str();
+    return write(fd, dumpString.c_str(), dumpString.size());
 }
 } // namespace AudioStandard
 } // namespace OHOS
