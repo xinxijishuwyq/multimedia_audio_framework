@@ -2148,26 +2148,6 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
     }
 }
 
-bool AudioPolicyServer::SpatializationClientDeathRecipientExist(SpatializationEventCategory eventCategory, pid_t uid)
-{
-    if (eventCategory == SPATIALIZATION_ENABLED_CHANGE_EVENT) {
-        std::lock_guard<std::mutex> lock(spatializationEnabledListenerStateMutex_);
-        if (std::find(spatializationEnabledListenerState_.begin(), spatializationEnabledListenerState_.end(),
-            uid) != spatializationEnabledListenerState_.end()) {
-            AUDIO_INFO_LOG("spatializationEnabledListener has been registered for %{public}d!", uid);
-            return true;
-        }
-    } else if (eventCategory == HEAD_TRACKING_ENABLED_CHANGE_EVENT) {
-        std::lock_guard<std::mutex> lock(headTrackingEnabledListenerStateMutex_);
-        if (std::find(headTrackingEnabledListenerState_.begin(), headTrackingEnabledListenerState_.end(),
-            uid) != headTrackingEnabledListenerState_.end()) {
-            AUDIO_INFO_LOG("headTrackingEnabledListener has been registered for %{public}d!", uid);
-            return true;
-        }
-    }
-    return false;
-}
-
 bool AudioPolicyServer::IsSpatializationEnabled()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();

@@ -280,15 +280,6 @@ public:
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
 
-    bool SpatializationClientDeathRecipientExist(SpatializationEventCategory eventCategory, pid_t uid);
-
-    void RegisterSpatializationClientDeathRecipient(const sptr<IRemoteObject> &object,
-        SpatializationEventCategory eventCategory);
-
-    void RegisteredSpatializationEnabledClientDied(pid_t uid);
-
-    void RegisteredHeadTrackingEnabledClientDied(pid_t uid);
-
     bool IsSpatializationEnabled() override;
 
     int32_t SetSpatializationEnabled(const bool enable) override;
