@@ -138,6 +138,11 @@ typedef enum {
     AUDIO_DEVICE_TYPE_DISPLAY_PORT = 23,
 
     /**
+     * @brief A device type for rerouting audio to other remote devices by system application.
+     */
+    AUDIO_DEVICE_TYPE_REMOTE_CAST = 24,
+
+    /**
      * @brief Default device type.
      */
     AUDIO_DEVICE_TYPE_DEFAULT = 1000,

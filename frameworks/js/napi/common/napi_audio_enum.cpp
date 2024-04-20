@@ -165,6 +165,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"WAKEUP", DEVICE_TYPE_WAKEUP},
     {"USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
     {"DISPLAY_PORT", DEVICE_TYPE_DP},
+    {"REMOTE_CAST", DEVICE_TYPE_REMOTE_CAST},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
     {"MAX", DEVICE_TYPE_MAX},
 };
@@ -1291,6 +1292,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
             result = true;
             break;
         default:
