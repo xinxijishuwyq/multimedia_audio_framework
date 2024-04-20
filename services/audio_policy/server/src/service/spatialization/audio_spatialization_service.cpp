@@ -180,7 +180,6 @@ void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &e
 void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &enabled)
 {
     AUDIO_INFO_LOG("Head tracking enabled callback is triggered: state is %{public}d", enabled);
-    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendHeadTrackingEnabledChangeEvent(enabled);
     }
