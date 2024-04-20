@@ -143,9 +143,9 @@ enum DeviceType {
      */
     DEVICE_TYPE_DP = 23,
     /**
-     * Indicates a usb-arm device.
+     * Indicates a virtual remote cast device
      */
-    DEVICE_TYPE_USB_ARM_HEADSET = 24,
+    DEVICE_TYPE_REMOTE_CAST = 24,
     /**
      * Indicates a debug sink device
      */
@@ -163,9 +163,9 @@ enum DeviceType {
      */
     DEVICE_TYPE_DEFAULT = 1000,
     /**
-     * Indicates a virtual remote cast device
+     * Indicates a usb-arm device.
      */
-    DEVICE_TYPE_REMOTE_CAST = 1001,
+    DEVICE_TYPE_USB_ARM_HEADSET = 1001,
     /**
      * Indicates device type max count.
      */
