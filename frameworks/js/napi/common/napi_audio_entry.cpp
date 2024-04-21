@@ -25,6 +25,7 @@
 #include "napi_audio_volume_manager.h"
 #include "napi_audio_interrupt_manager.h"
 #include "napi_audio_spatialization_manager.h"
+#include "napi_asr_processing_controller.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +45,7 @@ static napi_value Init(napi_env env, napi_value exports)
     NapiAudioInterruptManager::Init(env, exports);
     NapiAudioSpatializationManager::Init(env, exports);
     NapiAudioManager::Init(env, exports);
+    NapiAsrProcessingController::Init(env, exports);
     return exports;
 }
 
