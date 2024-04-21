@@ -4497,8 +4497,8 @@ int32_t AudioPolicyService::CheckActiveMusicTime()
         if (activeMusic && (safeStatusBt_ == SAFE_INACTIVE) && isUpSafeVolume &&
             IsBlueTooth(currentActiveDevice_.deviceType_)) {
             CheckBlueToothActiveMusicTime(safeVolume);
-        } else if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_WIRED_HEADSET &&
-            activeMusic && (safeStatus_ == SAFE_INACTIVE) && isUpSafeVolume) {
+        } else if (activeMusic && (safeStatus_ == SAFE_INACTIVE) && isUpSafeVolume &&
+            IsWiredHeadSet(currentActiveDevice_.deviceType_)) {
             CheckWiredActiveMusicTime(safeVolume);
         } else {
             startSafeTime_ = 0;
