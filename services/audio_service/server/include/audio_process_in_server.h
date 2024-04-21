@@ -82,12 +82,18 @@ public:
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
 
+    // for inner-cap
+    void SetInnerCapState(bool isInnerCapped) override;
+    bool GetInnerCapState() override;
+public:
+    const AudioProcessConfig processConfig_;
+
 private:
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
 
 private:
-    AudioProcessConfig processConfig_;
+    bool isInnerCapped_ = false;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 
     uint32_t sessionId_ = 0;

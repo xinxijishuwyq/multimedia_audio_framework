@@ -25,7 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
 public:
-    StreamCallbacks(uint32_t streamIndex);
+    explicit StreamCallbacks(uint32_t streamIndex);
     virtual ~StreamCallbacks() = default;
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;

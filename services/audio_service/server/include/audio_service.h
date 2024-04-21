@@ -63,6 +63,8 @@ private:
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     // for inner-capturer
     void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+    void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
+    void FilterAllFastProcess();
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
     int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.

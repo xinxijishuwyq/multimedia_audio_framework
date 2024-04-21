@@ -55,12 +55,15 @@ public:
     void SetInnerCapturerState(bool state);
 
     // add for new playback-capturer
+    std::vector<StreamUsage> GetDefaultUsages();
     bool RegisterCapturerFilterListener(ICapturerFilterListener *listener);
     int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config);
     int32_t RemovePlaybackCapturerFilterInfo(uint32_t sessionId);
 private:
     std::mutex setMutex_;
     std::unordered_set<int32_t> supportStreamUsageSet_;
+    std::vector<StreamUsage> defaultUsages_ = { STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_MOVIE,
+        STREAM_USAGE_GAME, STREAM_USAGE_AUDIOBOOK };
     bool isCaptureSilently_;
     bool isInnerCapturerRunning_ = false;
     ICapturerFilterListener *listener_ = nullptr;

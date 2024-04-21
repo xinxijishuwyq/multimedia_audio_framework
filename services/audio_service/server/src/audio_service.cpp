@@ -21,6 +21,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "remote_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
@@ -158,9 +159,33 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
     return false;
 }
 
+void AudioService::FilterAllFastProcess()
+{
+    std::unique_lock<std::mutex> lock(processListMutex_);
+    if (linkedPairedList_.size() == 0) {
+        return;
+    }
+    for (auto paired : linkedPairedList_) {
+        AudioProcessConfig temp = paired.first->processConfig_;
+        if (temp.audioMode == AUDIO_MODE_PLAYBACK && ShouldBeInnerCap(temp)) {
+            paired.first->SetInnerCapState(true);
+            paired.second->EnableFastInnerCap();
+        } else {
+            paired.first->SetInnerCapState(false);
+        }
+    }
+
+    for (auto pair : endpointList_) {
+        if (pair.second->GetDeviceRole() == OUTPUT_DEVICE && !pair.second->ShouldInnerCapp()) {
+            pair.second->DisableFastInnerCap();
+        }
+    }
+}
+
 int32_t AudioService::OnInitInnerCapList()
 {
     AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
+    FilterAllFastProcess();
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
         std::shared_ptr<RendererInServer> renderer = it->second.lock();
@@ -181,7 +206,7 @@ int32_t AudioService::OnUpdateInnerCapList()
     AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
 
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
-    for (size_t i = 0;i < filteredRendererMap_.size();i++) {
+    for (size_t i = 0; i < filteredRendererMap_.size(); i++) {
         std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[i].lock();
         if (renderer == nullptr) {
             AUDIO_WARNING_LOG("Renderer is already released!");
@@ -227,8 +252,15 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
     }
     workingInnerCapId_ = 0;
     workingConfig_ = {};
-    // in plan:
-    // disable inner-cap in the filteredRendererMap_
+
+    std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
+    for (auto pair : endpointList_) {
+        if (pair.second->GetDeviceRole() == OUTPUT_DEVICE) {
+            pair.second->DisableFastInnerCap();
+        }
+    }
+    lockEndpoint.unlock();
+
     std::lock_guard<std::mutex> lock(rendererMapMutex_);
     for (size_t i = 0; i < filteredRendererMap_.size(); i++) {
         std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[i].lock();
@@ -247,6 +279,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
 
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
+    Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType);
@@ -269,7 +302,24 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "LinkProcessToEndpoint failed");
 
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
+    CheckInnerCapForProcess(process, audioEndpoint);
     return process;
+}
+
+void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint)
+{
+    Trace trace("AudioService::CheckInnerCapForProcess:" + std::to_string(process->processConfig_.appInfo.appPid));
+    // inner-cap not working
+    if (workingInnerCapId_ == 0) {
+        return;
+    }
+
+    if (ShouldBeInnerCap(process->processConfig_)) {
+        process->SetInnerCapState(true);
+        endpoint->EnableFastInnerCap();
+    } else {
+        process->SetInnerCapState(false);
+    }
 }
 
 int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)

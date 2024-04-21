@@ -918,7 +918,11 @@ void AudioServer::ResetRecordConfig(int32_t callerUid, AudioProcessConfig &confi
     } else {
         config.isInnerCapturer = false;
     }
-
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    if (callerUid == ROOT_UID) {
+        config.innerCapMode = MODERN_INNER_CAP;
+    }
+#endif
     if (config.capturerInfo.sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
         config.isWakeupCapturer = true;
     } else {

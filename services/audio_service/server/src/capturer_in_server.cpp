@@ -395,7 +395,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
         ERR_INVALID_OPERATION, "This not a inner-cap source!");
     filterConfig_ = config;
 
-    AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
+    AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
 
     for (auto &usg : config.filterOptions.usages) {
         if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
@@ -406,6 +406,14 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
             AUDIO_ERR_LOG("downlink capturer permission check failed");
             return ERR_PERMISSION_DENIED;
         }
+    }
+
+    if (filterConfig_.filterOptions.usages.size() == 0) {
+        std::vector<StreamUsage> defalutUsages = PlaybackCapturerManager::GetInstance()->GetDefaultUsages();
+        for (size_t i = 0; i < defalutUsages.size(); i++) {
+            filterConfig_.filterOptions.usages.push_back(defalutUsages[i]);
+        }
+        AUDIO_INFO_LOG("Reset config to %{public}s", ProcessConfig::DumpInnerCapConfig(filterConfig_).c_str());
     }
 
     if (processConfig_.innerCapMode != MODERN_INNER_CAP) {

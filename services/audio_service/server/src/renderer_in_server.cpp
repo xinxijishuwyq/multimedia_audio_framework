@@ -32,8 +32,8 @@ namespace {
     static const uint32_t UNDERRUN_LOG_LOOP_COUNT = 100;
 }
 
-RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener) :
-    processConfig_(processConfig)
+RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
+    : processConfig_(processConfig)
 {
     streamListener_ = streamListener;
 }

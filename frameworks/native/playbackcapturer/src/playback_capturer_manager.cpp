@@ -137,6 +137,11 @@ bool PlaybackCapturerManager::GetInnerCapturerState()
     return isInnerCapturerRunning_;
 }
 
+std::vector<StreamUsage> PlaybackCapturerManager::GetDefaultUsages()
+{
+    return defaultUsages_;
+}
+
 bool PlaybackCapturerManager::RegisterCapturerFilterListener(ICapturerFilterListener *listener)
 {
     if (listener == nullptr || listener_ != nullptr) {
