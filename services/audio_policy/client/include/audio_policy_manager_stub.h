@@ -140,6 +140,7 @@ private:
     void GetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxAmplitudeInternal(MessageParcel &data, MessageParcel &reply);
+    void DisableSafeMediaVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingDataRequestedInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
@@ -262,6 +263,7 @@ private:
         &AudioPolicyManagerStub::SetAudioDeviceRefinerCallbackInternal,
         &AudioPolicyManagerStub::UnsetAudioDeviceRefinerCallbackInternal,
         &AudioPolicyManagerStub::TriggerFetchDeviceInternal,
+        &AudioPolicyManagerStub::DisableSafeMediaVolumeInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),

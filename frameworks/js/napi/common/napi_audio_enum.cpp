@@ -558,7 +558,7 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioStreamDeviceChangeReason",
             CreateEnumObject(env, audioDeviceChangeReasonMap, audioStreamDeviceChangeReason_)),
         DECLARE_NAPI_PROPERTY("AudioSpatializationSceneType", CreateEnumObject(env,
-            spatializationSceneTypeMap, spatializationSceneType_)),
+            spatializationSceneTypeMap, spatializationSceneType_))
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
@@ -1302,7 +1302,6 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
     }
     return result;
 }
-
 
 AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
 {

@@ -1402,5 +1402,10 @@ uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
     return gasp->GetEffectLatency(sessionId);
 }
+
+int32_t AudioSystemManager::DisableSafeMediaVolume()
+{
+    return AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2092,6 +2092,21 @@ float AudioPolicyProxy::GetMaxAmplitude(const int32_t deviceId)
     return reply.ReadFloat();
 }
 
+int32_t AudioPolicyProxy::DisableSafeMediaVolume()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::DISABLE_SAFE_MEDIA_VOLUME), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
 bool AudioPolicyProxy::IsHeadTrackingDataRequested(const std::string &macAddress)
 {
     MessageParcel data;
