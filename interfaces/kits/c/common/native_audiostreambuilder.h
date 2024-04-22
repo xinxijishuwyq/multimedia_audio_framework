@@ -229,6 +229,18 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetFrameSizeInCallback(OH_AudioStrea
     int32_t frameSize);
 
 /*
+ * Set stream privacy type for plabck capture.
+ *
+ * @since 12
+ *
+ * @param builder Reference provided by OH_AudioStreamBuilder_Create().
+ * @param privacy The privacy type to be set.{@link #PRIVACY_TYPE_PUBLIC} or {@link #PRIVACY_TYPE_PRIVATE}.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererPrivacy(OH_AudioStreamBuilder* builder,
+    OH_AudioStream_AudioPrivacyType privacy);
+
+/*
  * Set the interrupt mode of the stream client
  *
  * @since 12
