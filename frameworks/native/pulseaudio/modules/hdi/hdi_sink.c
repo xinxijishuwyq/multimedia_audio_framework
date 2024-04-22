@@ -50,7 +50,7 @@
 #include "renderer_sink_adapter.h"
 #include "audio_effect_chain_adapter.h"
 #include "playback_capturer_adapter.h"
-
+#include "time.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -91,6 +91,14 @@ const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 
+const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
+static bool g_isVolumeChange = true;
+bool g_speakerPaAllStreamVolumeZero = false;
+bool g_paHaveDisabled = false;
+time_t g_speakerPaAllStreamStartVolZeroTime = 0;
+bool g_effectAllStreamVolumeZeroMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
+bool g_effectHaveDisabledMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
+time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0, 0, 0, 0, 0, 0, 0};
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE", "SCENE_SPEECH", "SCENE_RING",
     "SCENE_OTHERS", "EFFECT_NONE"};
 
@@ -2447,6 +2455,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 
 void PaInputVolumeChangeCb(pa_sink_input *i)
 {
+    g_isVolumeChange = true;
     struct Userdata *u;
 
     pa_sink_input_assert_ref(i);
@@ -3435,9 +3444,7 @@ static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct U
 {
     pa_sink_input_assert_ref(i);
     i->state_change = PaInputStateChangeCb;
-    if (u->offload_enable) {
-        i->volume_changed = PaInputVolumeChangeCb;
-    }
+    i->volume_changed = PaInputVolumeChangeCb;
     return PA_HOOK_OK;
 }
 
@@ -3528,7 +3535,7 @@ static int32_t PrepareDeviceOffload(struct Userdata *u)
         AUDIO_ERR_LOG("PrepareDeviceOffload audiorenderer Init failed!");
         return -1;
     }
-    
+
     return 0;
 }
 
