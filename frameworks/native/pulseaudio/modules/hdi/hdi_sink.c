@@ -81,6 +81,7 @@
 #define DEFAULT_MULTICHANNEL_CHANNELLAYOUT 1551
 #define DEFAULT_CHANNELLAYOUT 3
 #define OFFLOAD_SET_BUFFER_SIZE_NUM 5
+#define SPATIALIZATION_FADING_FRAMECOUNT 5
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
@@ -169,6 +170,9 @@ struct Userdata {
     pthread_rwlock_t rwlockSleep;
     int64_t timestampSleep;
     pa_usec_t timestampLastLog;
+    int8_t spatializationFadingState;
+    int8_t spatializationFadingCount;
+    bool curSpatializationEnabled;
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -1359,39 +1363,39 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
     return nSinkInput;
 }
 
-static void PrepareSpatializationFading(int8_t *fadingFlag, int8_t *fadingCount, bool *curSpatializationEnabled)
+static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount, bool *curSpatializationEnabled)
 {
     // fading out if spatialization changed
-    if (*fadingFlag >= 0 && *curSpatializationEnabled != EffectChainManagerGetSpatializationEnabled()) {
-        *fadingFlag = -1;
+    if (*fadingState >= 0 && *curSpatializationEnabled != EffectChainManagerGetSpatializationEnabled()) {
+        *fadingState = -1;
         *fadingCount = SPATIALIZATION_FADING_FRAMECOUNT;
     }
     // fading in when fading out is done
-    if (*fadingFlag < 0 && *fadingCount == 0) {
-        *fadingFlag = 1;
+    if (*fadingState < 0 && *fadingCount == 0) {
+        *fadingState = 1;
         *curSpatializationEnabled = EffectChainManagerGetSpatializationEnabled();
     }
     // no need to fade when fading out is done
-    if (*fadingFlag == 1 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
-        *fadingFlag = 0;
+    if (*fadingState == 1 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
+        *fadingState = 0;
     }
 }
 
-static void DoSpatializationFading(float *buf, int8_t fadingFlag, int8_t *fadingCount, int32_t frameLen,
+static void DoSpatializationFading(float *buf, int8_t fadingState, int8_t *fadingCount, int32_t frameLen,
     int32_t channels)
 {
     // no need fading
-    if (fadingFlag == 0) {
+    if (fadingState == 0) {
         return;
     }
-    // fading out when fadingFlag equals -1, fading in when fadingFlag equals 1;
+    // fading out when fadingState equals -1, fading in when fadingState equals 1;
     for (int32_t i = 0; i < frameLen; i++) {
         for (int32_t j = 0; j < channels; j++) {
             buf[i * channels + j] *=
-                ((*fadingCount) * frameLen + i * fadingFlag) / (float)(SPATIALIZATION_FADING_FRAMECOUNT * frameLen);
+                ((*fadingCount) * frameLen + i * fadingState) / (float)(SPATIALIZATION_FADING_FRAMECOUNT * frameLen);
         }
     }
-    (*fadingCount) += fadingFlag;
+    (*fadingCount) += fadingState;
 }
 
 static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
@@ -1406,7 +1410,7 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
     }
-    DoSpatializationFading(u->bufferAttr->tempBufOut, u->spatializationFadingFlag, &u->spatializationFadingCount,
+    DoSpatializationFading(u->bufferAttr->tempBufOut, u->spatializationFadingState, &u->spatializationFadingCount,
         frameLen / DEFAULT_IN_CHANNEL_NUM, DEFAULT_IN_CHANNEL_NUM);
     ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
 
@@ -1547,7 +1551,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);
-    PrepareSpatializationFading(&u->spatializationFadingFlag, &u->spatializationFadingCount,
+    PrepareSpatializationFading(&u->spatializationFadingState, &u->spatializationFadingCount,
         &u->curSpatializationEnabled);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         uint32_t processChannels = DEFAULT_NUM_CHANNEL;
