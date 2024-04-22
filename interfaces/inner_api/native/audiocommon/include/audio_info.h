@@ -30,6 +30,7 @@
 #include <audio_device_info.h>
 #include <audio_interrupt_info.h>
 #include <audio_stream_info.h>
+#include <audio_asr.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -256,6 +257,15 @@ enum AudioRendererRate {
     RENDER_RATE_NORMAL = 0,
     RENDER_RATE_DOUBLE = 1,
     RENDER_RATE_HALF = 2,
+};
+
+/**
+* media safe volume status
+*/
+enum SafeStatus : int32_t {
+    SAFE_UNKNOWN = -1,
+    SAFE_INACTIVE = 0,
+    SAFE_ACTIVE = 1,
 };
 
 struct VolumeEvent {
@@ -806,8 +816,8 @@ enum AudioParamKey {
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
-    A2DP_OFFLOAD_STATE = 9, //for a2dp offload
-    GET_DP_DEVICE_INFO = 10, //for dp sink
+    A2DP_OFFLOAD_STATE = 9, // for a2dp offload
+    GET_DP_DEVICE_INFO = 10, // for dp sink
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,

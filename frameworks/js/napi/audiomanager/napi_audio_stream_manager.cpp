@@ -16,6 +16,7 @@
 #define LOG_TAG "NapiAudioStreamMgr"
 
 #include "napi_audio_stream_manager.h"
+#include "napi_audio_manager.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
@@ -31,7 +32,7 @@ using namespace HiviewDFX;
 static __thread napi_ref g_streamMgrConstructor = nullptr;
 
 NapiAudioStreamMgr::NapiAudioStreamMgr()
-    : env_(nullptr), audioStreamMngr_(nullptr) {}
+    : env_(nullptr), audioStreamMngr_(nullptr), audioMngr_(nullptr) {}
 
 NapiAudioStreamMgr::~NapiAudioStreamMgr() = default;
 
@@ -67,6 +68,7 @@ napi_value NapiAudioStreamMgr::Construct(napi_env env, napi_callback_info info)
 
     napiStreamMgr->env_ = env;
     napiStreamMgr->audioStreamMngr_ = AudioStreamManager::GetInstance();
+    napiStreamMgr->audioMngr_ = AudioSystemManager::GetInstance();
     napiStreamMgr->cachedClientId_ = getpid();
     ObjectRefMap<NapiAudioStreamMgr>::Insert(napiStreamMgr.get());
 
@@ -101,6 +103,7 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArray", GetEffectInfoArray),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArraySync", GetEffectInfoArraySync),
         DECLARE_NAPI_FUNCTION("getHardwareOutputSamplingRate", GetHardwareOutputSamplingRate),
+        DECLARE_NAPI_FUNCTION("disableSafeMediaVolume", DisableSafeMediaVolume),
     };
 
     status = napi_define_class(env, AUDIO_STREAM_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -481,6 +484,39 @@ napi_value NapiAudioStreamMgr::GetHardwareOutputSamplingRate(napi_env env, napi_
     int32_t rate = napiStreamMgr->audioStreamMngr_->GetHardwareOutputSamplingRate(deviceDescriptor);
     NapiParamUtils::SetValueInt32(env, rate, result);
     return result;
+}
+
+napi_value NapiAudioStreamMgr::DisableSafeMediaVolume(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioStreamMgrAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("failed : no memory");
+        NapiAudioError::ThrowError(env, "DisableSafeMediaVolume failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioStreamMgr*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiStreamMgr = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioStreamManagerStatus(napiStreamMgr, context),
+            "context object state is error.");
+
+        context->intValue = napiStreamMgr->audioMngr_->DisableSafeMediaVolume();
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "DisableSafeMediaVolume", executor, complete);
 }
 
 void NapiAudioStreamMgr::RegisterCallback(napi_env env, napi_value jsThis,

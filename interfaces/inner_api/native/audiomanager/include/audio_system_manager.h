@@ -617,6 +617,47 @@ public:
     void SetAudioParameter(const std::string &key, const std::string &value);
 
     /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t SetAsrAecMode(const AsrAecMode asrAecMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t GetAsrAecMode(AsrAecMode& asrAecMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t IsWhispering();
+
+    /**
      * @brief Get audio parameter.
      *
      * @param mainKey Main key of audio parameters to be obtained.
@@ -1151,6 +1192,17 @@ public:
      * @since 12
      */
     uint32_t GetEffectLatency(const std::string &sessionId);
+
+    /**
+     * @brief set useraction command
+     *
+     * @param actionCommand action command
+     * @param paramInfo information
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t DisableSafeMediaVolume();
 
     static void AudioServerDied(pid_t pid);
 

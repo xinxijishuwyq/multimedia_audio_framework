@@ -292,6 +292,36 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
     return AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
 }
 
+int32_t AudioSystemManager::SetAsrAecMode(const AsrAecMode asrAecMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->SetAsrAecMode(asrAecMode);
+}
+
+int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode &asrAecMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->GetAsrAecMode(asrAecMode);
+}
+
+int32_t AudioSystemManager::SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+}
+
+int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+}
+
+int32_t AudioSystemManager::IsWhispering()
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    return gasp->IsWhispering();
+}
+
 const std::string AudioSystemManager::GetAudioParameter(const std::string key)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
@@ -1401,6 +1431,11 @@ uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
     return gasp->GetEffectLatency(sessionId);
+}
+
+int32_t AudioSystemManager::DisableSafeMediaVolume()
+{
+    return AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1151,5 +1151,11 @@ void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, Mes
     int32_t result = TriggerFetchDevice();
     reply.WriteInt32(result);
 }
+
+void AudioPolicyManagerStub::DisableSafeMediaVolumeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t ret = DisableSafeMediaVolume();
+    reply.WriteInt32(ret);
+}
 } // namespace audio_policy
 } // namespace OHOS

@@ -344,6 +344,8 @@ public:
 
     float GetMaxAmplitude(const int32_t deviceId);
 
+    int32_t DisableSafeMediaVolume();
+
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
 
     int32_t RegisterHeadTrackingDataRequestedEventListener(const std::string &macAddress,

@@ -31,10 +31,12 @@ ohos_shared_library("audio") {
     "audiocapturer/callback",
     "audiomanager",
     "audiomanager/callback",
+    "asrcontroller",
   ]
 
   if (audio_framework_feature_new_napi) {
     sources = [
+      "asrcontroller/napi_asr_processing_controller.cpp",
       "audiocapturer/callback/napi_audio_capturer_callbacks.cpp",
       "audiocapturer/callback/napi_audio_capturer_device_change_callback.cpp",
       "audiocapturer/callback/napi_audio_capturer_info_change_callback.cpp",

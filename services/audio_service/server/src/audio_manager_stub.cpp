@@ -20,6 +20,7 @@
 #include "audio_log.h"
 #include "i_audio_process.h"
 #include "audio_effect_server.h"
+#include "audio_asr.h"
 
 using namespace std;
 
@@ -66,6 +67,46 @@ int AudioManagerStub::HandleSetAudioParameter(MessageParcel &data, MessageParcel
     const std::string value = data.ReadString();
     SetAudioParameter(key, value);
     return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAsrAecMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
+    int32_t result = SetAsrAecMode(asrAecMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAsrAecMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
+    int32_t result = GetAsrAecMode(asrAecMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleSetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
+    int32_t result = SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply)
+{
+    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
+    int32_t result = GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    reply.WriteInt32(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleIsWhispering(MessageParcel &data, MessageParcel &reply)
+{
+    const std::string key = data.ReadString();
+    const std::string value = data.ReadString();
+    int32_t result = IsWhispering();
+    return result;
 }
 
 int AudioManagerStub::HandleGetExtraAudioParameters(MessageParcel &data, MessageParcel &reply)
@@ -235,7 +276,7 @@ int AudioManagerStub::HandleLoadAudioEffectLibraries(MessageParcel &data, Messag
         "LOAD_AUDIO_EFFECT_LIBRARIES read data failed");
     LoadEffectLibrariesReadData(libList, effectList, data, countLib, countEff);
     if (countLib > 0) {
-        //load lib and reply success list
+        // load lib and reply success list
         vector<Effect> successEffectList = {};
         bool loadSuccess = LoadAudioEffectLibraries(libList, effectList, successEffectList);
         CHECK_AND_RETURN_RET_LOG(loadSuccess, AUDIO_ERR, "Load audio effect libraries failed, please check log");

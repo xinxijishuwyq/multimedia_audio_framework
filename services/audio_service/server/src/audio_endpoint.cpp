@@ -44,6 +44,7 @@ namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
     static constexpr int64_t DELAY_STOP_HDI_TIME = 10000000000; // 10s
+    static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME = 4000000000; // 4s
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
@@ -216,6 +217,7 @@ private:
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
     int64_t delayStopTime_ = INT64_MAX;
+    int64_t delayStopTimeForZeroVolume_ = INT64_MAX;
 
     std::atomic<ThreadStatus> threadStatus_ = WAITTING;
     std::thread endpointWorkThread_;
@@ -247,6 +249,8 @@ private:
     bool latencyMeasEnabled_ = false;
     size_t detectedTime_ = 0;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    bool zeroVolumeStopDevice_ = false;
+    bool isVolumeAlreadyZero_ = false;
 };
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
@@ -281,6 +285,26 @@ std::string AudioEndpointInner::GetEndpointName()
 
 int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
 {
+    if (std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon()) {
+        if (!zeroVolumeStopDevice_ && !isVolumeAlreadyZero_) {
+            AUDIO_INFO_LOG("Begin zero volume, will stop device.");
+            delayStopTimeForZeroVolume_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME;
+            isVolumeAlreadyZero_ = true;
+        }
+    } else {
+        if (zeroVolumeStopDevice_ && !isStarted_) {
+            if (fastSink_ == nullptr || fastSink_->Start() != SUCCESS) {
+                AUDIO_INFO_LOG("Volume from zero to none-zero, start device failed.");
+                isStarted_ = false;
+            } else {
+                AUDIO_INFO_LOG("Volume from zero to none-zero, start device succes.");
+                isStarted_ = true;
+            }
+            zeroVolumeStopDevice_ = false;
+        }
+        isVolumeAlreadyZero_ = false;
+        delayStopTimeForZeroVolume_ = INT64_MAX;
+    }
     // No need set hdi volume in shared stream mode.
     return SUCCESS;
 }
@@ -984,6 +1008,18 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
         }
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
+    }
+    if (!zeroVolumeStopDevice_ && (ClockTime::GetCurNano() >= delayStopTimeForZeroVolume_)) {
+        if (isStarted_) {
+            if (fastSink_ != nullptr && fastSink_->Stop() == SUCCESS) {
+                AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device success.");
+                isStarted_ = false;
+            } else {
+                AUDIO_INFO_LOG("Volume from none-zero to zero more than 4s, stop device failed.");
+                isStarted_ = true;
+            }
+        }
+        zeroVolumeStopDevice_ = true;
     }
 }
 

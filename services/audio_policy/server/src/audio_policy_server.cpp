@@ -1419,7 +1419,9 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
 
     dumpObj.AudioDataDump(policyData, dumpString, argQue);
 
-    return write(fd, dumpString.c_str(), dumpString.size());
+    write(fd, dumpString.c_str(), dumpString.size());
+
+    return audioPolicyService_.Dump(fd, args);
 }
 
 int32_t AudioPolicyServer::GetAudioLatencyFromXml()
@@ -2497,6 +2499,19 @@ int32_t AudioPolicyServer::SetSpatializationSceneType(const AudioSpatializationS
         return ERR_PERMISSION_DENIED;
     }
     return audioSpatializationService_.SetSpatializationSceneType(spatializationSceneType);
+}
+
+int32_t AudioPolicyServer::DisableSafeMediaVolume()
+{
+    if (!VerifyPermission(MODIFY_AUDIO_SETTINGS_PERMISSION)) {
+        AUDIO_ERR_LOG("MODIFY_AUDIO_SETTINGS_PERMISSION permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_SYSTEM_PERMISSION_DENIED;
+    }
+    return audioPolicyService_.DisableSafeMediaVolume();
 }
 
 AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()

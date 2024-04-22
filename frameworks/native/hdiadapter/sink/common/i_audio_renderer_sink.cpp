@@ -339,6 +339,21 @@ int32_t IAudioRendererSinkOffloadRunningLockUnlock(struct RendererSinkAdapter *a
 
     return audioRendererSink->OffloadRunningLockUnlock();
 }
+
+int32_t IAudioRendererSinkSetPaPower(struct RendererSinkAdapter *adapter, int32_t flag)
+{
+    CHECK_AND_RETURN_RET_LOG(adapter != nullptr, ERR_INVALID_HANDLE, "null RendererSinkAdapter");
+
+    IAudioRendererSink *audioRendererSink = static_cast<IAudioRendererSink *>(adapter->wapper);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_HANDLE, "null audioRendererSink");
+    bool isInited = audioRendererSink->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_NOT_STARTED,
+        "audioRenderer Not Inited! Init the renderer first, Renderer Resume failed\n");
+
+    int32_t ret = audioRendererSink->SetPaPower(flag);
+    return ret;
+}
+
 #ifdef __cplusplus
 }
 #endif
