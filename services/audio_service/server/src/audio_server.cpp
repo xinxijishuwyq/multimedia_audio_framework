@@ -1150,6 +1150,16 @@ bool AudioServer::CheckRecorderPermission(Security::AccessToken::AccessTokenID t
         return res;
     }
 
+    if (sourceType == SOURCE_TYPE_REMOTE_CAST) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false,
+            "Create source remote cast failed: no system permission.");
+
+        bool hasCastAudioOutputPermission = VerifyClientPermission(CAST_AUDIO_OUTPUT_PERMISSION, tokenId);
+        CHECK_AND_RETURN_RET_LOG(hasCastAudioOutputPermission, false, "No cast audio output permission");
+        return true;
+    }
+
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
     CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
