@@ -5364,7 +5364,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
     return SUCCESS;
 }
 
-void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo,
+void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo &moduleInfo, AudioAdapterInfo audioAdapterInfo,
     SourceInfo targetInfo)
 {
     auto [targetSourceType, targetRate, targetChannels] = targetInfo;
