@@ -147,16 +147,49 @@ void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<
     }
 }
 
+InnerCapFilterPolicy AudioService::GetInnerCapFilterPolicy()
+{
+    auto usagesSize = workingConfig_.filterOptions.usages.size();
+    auto pidsSize = workingConfig_.filterOptions.pids.size();
+    if (usagesSize == 0 && pidsSize == 0) {
+        AUDIO_ERR_LOG("GetInnerCapFilterPolicy error, invalid usages and pids");
+        return POLICY_INVALID;
+    }
+    if (usagesSize > 0 && pidsSize == 0) {
+        AUDIO_INFO_LOG("GetInnerCapFilterPolicy, usages only");
+        return POLICY_USAGES_ONLY;
+    }
+    AUDIO_INFO_LOG("GetInnerCapFilterPolicy, both usages and pids");
+    return POLICY_USAGES_AND_PIDS;
+}
+
+template<typename T>
+bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
+{
+    bool isFound = std::count(params.begin(), params.end(), param) != 0;
+    return (mode == FilterMode::INCLUDE && isFound) || (mode == FilterMode::EXCLUDE && !isFound);
+}
+
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
 {
-    StreamUsage usage = rendererConfig.rendererInfo.streamUsage;
-
-    // in plan: enable filter with workingConfig_
-    if (usage == STREAM_USAGE_MUSIC) {
-        return true;
+    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC; // Maybe some other condition?
+    if (!canBeCaptured) {
+        AUDIO_WARNING_LOG("ShouldBeInnerCap false, privacy %{public}d", rendererConfig.privacyType);
+        return false;
     }
-
-    return false;
+    InnerCapFilterPolicy filterPolicy = GetInnerCapFilterPolicy();
+    switch (filterPolicy) {
+        case POLICY_INVALID:
+            return false;
+        case POLICY_USAGES_ONLY:
+            return isFilterMatched(workingConfig_.filterOptions.usages,
+                    rendererConfig.rendererInfo.streamUsage, workingConfig_.filterOptions.usageFilterMode);
+        case POLICY_USAGES_AND_PIDS:
+            return isFilterMatched(workingConfig_.filterOptions.usages, rendererConfig.rendererInfo.streamUsage,
+                    workingConfig_.filterOptions.usageFilterMode) &&
+                isFilterMatched(workingConfig_.filterOptions.pids, rendererConfig.appInfo.appPid,
+                    workingConfig_.filterOptions.pidFilterMode);
+    }
 }
 
 void AudioService::FilterAllFastProcess()

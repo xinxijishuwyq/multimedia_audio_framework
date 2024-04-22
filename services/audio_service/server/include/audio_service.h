@@ -30,6 +30,14 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+enum InnerCapFilterPolicy : uint32_t {
+    POLICY_INVALID = 0,
+    POLICY_USAGES_ONLY,
+    POLICY_USAGES_AND_PIDS
+};
+} // anonymous namespace
+
 class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener {
 public:
     static AudioService *GetInstance();
@@ -65,6 +73,7 @@ private:
     void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     void FilterAllFastProcess();
+    InnerCapFilterPolicy GetInnerCapFilterPolicy();
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
     int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
