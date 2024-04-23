@@ -171,7 +171,7 @@ void AudioEffectChain::ResetEffectBuffer()
     std::lock_guard<std::mutex> lock(reloadMutex_);
     for (AudioEffectHandle handle : standByEffectHandles_) {
         ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_LOG(ret == 0, "Reset effect buffer failed");
+        CHECK_AND_CONTINUE_LOG(ret == 0, "Reset effect buffer failed");
     }
 }
 
