@@ -329,11 +329,13 @@ int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *c
 bool EffectChainManagerGetSpatializationEnabled()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
     return audioEffectChainManager->GetCurSpatializationEnabled();
 }
 
 void EffectChainManagerFlush()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, , "null audioEffectChainManager");
     return audioEffectChainManager->ResetEffectBuffer();
 }
