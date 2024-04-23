@@ -74,7 +74,7 @@ public:
 
     virtual void Release() = 0;
 
-    virtual bool ShouldInnerCapp() = 0;
+    virtual bool ShouldInnerCap() = 0;
     virtual int32_t EnableFastInnerCap() = 0;
     virtual int32_t DisableFastInnerCap() = 0;
 
@@ -122,7 +122,7 @@ public:
     }
 
     // for inner-cap
-    bool ShouldInnerCapp() override;
+    bool ShouldInnerCap() override;
     int32_t EnableFastInnerCap() override;
     int32_t DisableFastInnerCap() override;
 

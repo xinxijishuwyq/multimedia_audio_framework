@@ -132,7 +132,7 @@ public:
     }
 
     // for inner-cap
-    bool ShouldInnerCapp() override;
+    bool ShouldInnerCap() override;
     int32_t EnableFastInnerCap() override;
     int32_t DisableFastInnerCap() override;
 
@@ -360,7 +360,7 @@ int32_t MockCallbacks::OnWriteData(size_t length)
     return SUCCESS;
 }
 
-bool AudioEndpointInner::ShouldInnerCapp()
+bool AudioEndpointInner::ShouldInnerCap()
 {
     bool shouldBecapped = false;
     std::lock_guard<std::mutex> lock(listLock_);

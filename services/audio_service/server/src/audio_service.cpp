@@ -152,14 +152,13 @@ InnerCapFilterPolicy AudioService::GetInnerCapFilterPolicy()
     auto usagesSize = workingConfig_.filterOptions.usages.size();
     auto pidsSize = workingConfig_.filterOptions.pids.size();
     if (usagesSize == 0 && pidsSize == 0) {
-        AUDIO_ERR_LOG("GetInnerCapFilterPolicy error, invalid usages and pids");
+        AUDIO_ERR_LOG("error, invalid usages and pids");
         return POLICY_INVALID;
     }
     if (usagesSize > 0 && pidsSize == 0) {
-        AUDIO_INFO_LOG("GetInnerCapFilterPolicy, usages only");
+        AUDIO_INFO_LOG("usages only");
         return POLICY_USAGES_ONLY;
     }
-    AUDIO_INFO_LOG("GetInnerCapFilterPolicy, both usages and pids");
     return POLICY_USAGES_AND_PIDS;
 }
 
@@ -172,24 +171,33 @@ bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
 
 bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
 {
-    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC; // Maybe some other condition?
+    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     if (!canBeCaptured) {
-        AUDIO_WARNING_LOG("ShouldBeInnerCap false, privacy %{public}d", rendererConfig.privacyType);
+        AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
         return false;
     }
     InnerCapFilterPolicy filterPolicy = GetInnerCapFilterPolicy();
+    bool res = false;
     switch (filterPolicy) {
         case POLICY_INVALID:
             return false;
         case POLICY_USAGES_ONLY:
-            return isFilterMatched(workingConfig_.filterOptions.usages,
-                    rendererConfig.rendererInfo.streamUsage, workingConfig_.filterOptions.usageFilterMode);
+            res = isFilterMatched(workingConfig_.filterOptions.usages,
+                rendererConfig.rendererInfo.streamUsage, workingConfig_.filterOptions.usageFilterMode);
+            break;
         case POLICY_USAGES_AND_PIDS:
-            return isFilterMatched(workingConfig_.filterOptions.usages, rendererConfig.rendererInfo.streamUsage,
-                    workingConfig_.filterOptions.usageFilterMode) &&
+            res = isFilterMatched(workingConfig_.filterOptions.usages, rendererConfig.rendererInfo.streamUsage,
+                workingConfig_.filterOptions.usageFilterMode) &&
                 isFilterMatched(workingConfig_.filterOptions.pids, rendererConfig.appInfo.appPid,
-                    workingConfig_.filterOptions.pidFilterMode);
+                workingConfig_.filterOptions.pidFilterMode);
+            break;
+        default:
+            break;
     }
+
+    AUDIO_INFO_LOG("pid:%{public}d usage:%{public}d result:%{public}s", rendererConfig.appInfo.appPid,
+        rendererConfig.rendererInfo.streamUsage, res ? "true" : "false");
+    return res;
 }
 
 void AudioService::FilterAllFastProcess()
@@ -209,7 +217,7 @@ void AudioService::FilterAllFastProcess()
     }
 
     for (auto pair : endpointList_) {
-        if (pair.second->GetDeviceRole() == OUTPUT_DEVICE && !pair.second->ShouldInnerCapp()) {
+        if (pair.second->GetDeviceRole() == OUTPUT_DEVICE && !pair.second->ShouldInnerCap()) {
             pair.second->DisableFastInnerCap();
         }
     }
@@ -258,6 +266,7 @@ int32_t AudioService::OnUpdateInnerCapList()
 // Only one session is working at the same time.
 int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig)
 {
+    Trace trace("AudioService::OnCapturerFilterChange");
     // in plan:
     // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
     // step 2: if sessionId is already in using, this means the config is changed. Check the filtered renderer before,

@@ -83,6 +83,7 @@ private:
     uint32_t overFlowLogFlag_ = 0;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     size_t cacheSizeInBytes_ = 0;
+    std::unique_ptr<uint8_t []> dischargeBuffer_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

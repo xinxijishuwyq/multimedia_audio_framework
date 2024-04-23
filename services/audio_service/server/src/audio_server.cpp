@@ -73,7 +73,7 @@ static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 static const int32_t MODERN_INNER_API_VERSION = 12;
-constexpr int32_t API_VERSION_REMAINDER = 1000;
+const int32_t API_VERSION_REMAINDER = 1000;
 static constexpr int32_t VM_MANAGER_UID = 5010;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID
@@ -906,13 +906,13 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, 0, "GetHapBuildApiVersion fail, saManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(saManager != nullptr, 0, "failed: saManager is nullptr");
 
     sptr<IRemoteObject> remoteObject = saManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, 0, "GetHapBuildApiVersion fail, remoteObject is nullptr");
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, 0, "failed: remoteObject is nullptr");
 
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0, "GetHapBuildApiVersion fail, bundleMgrProxy is nullptr");
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0, "failed: bundleMgrProxy is nullptr");
 
     bundleMgrProxy->GetNameForUid(callerUid, bundleName);
     bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
@@ -923,7 +923,7 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
         bundleInfo,
         AppExecFwk::Constants::ALL_USERID);
     int32_t hapApiVersion = bundleInfo.applicationInfo.apiTargetVersion % API_VERSION_REMAINDER;
-    AUDIO_INFO_LOG("GetHapBuildApiVersion callerUid %{public}d, version %{public}d", callerUid, hapApiVersion);
+    AUDIO_INFO_LOG("callerUid %{public}d, version %{public}d", callerUid, hapApiVersion);
     return hapApiVersion;
 }
 

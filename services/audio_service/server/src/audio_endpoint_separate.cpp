@@ -81,7 +81,7 @@ std::string AudioEndpointSeparate::GetEndpointName()
     return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceId) + "_" + std::to_string(id_);
 }
 
-bool AudioEndpointSeparate::ShouldInnerCapp()
+bool AudioEndpointSeparate::ShouldInnerCap()
 {
     AUDIO_WARNING_LOG("AudioEndpointSeparate is not supported");
     return false;

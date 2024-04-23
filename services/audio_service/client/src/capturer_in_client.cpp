@@ -388,11 +388,13 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
 
 int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
-    filterConfig_ = config;
-    AUDIO_INFO_LOG("client %{public}s", ProcessConfig::DumpInnerCapConfig(filterConfig_).c_str());
+    AUDIO_INFO_LOG("client set %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is already nullptr");
+    int32_t ret = ipcStream_->UpdatePlaybackCaptureConfig(config);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
 
-    return ipcStream_->UpdatePlaybackCaptureConfig(config);
+    filterConfig_ = config;
+    return SUCCESS;
 }
 
 void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -1515,6 +1517,7 @@ int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer,
     bool isBlockingRead)
 {
+    Trace trace("CapturerInClientInner::HandleCapturerRead " + std::to_string(userSize));
     while (readSize < userSize) {
         AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
         OptResult result = ringCache_->GetReadableSize();

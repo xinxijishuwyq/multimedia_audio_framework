@@ -616,12 +616,6 @@ int32_t RendererInServer::InitDupStream()
     dupStream_->RegisterStatusCallback(dupStreamCallback_);
     dupStream_->RegisterWriteCallback(dupStreamCallback_);
 
-    // eg: /data/local/tmp/100001_48000_2_1_c2s_dup.pcm
-    AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    std::string dupDumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
-        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_c2s_dup.pcm";
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dupDumpName, &dumpC2SDup_);
-
     AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
 
     isInnerCapEnabled_ = true;

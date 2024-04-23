@@ -100,7 +100,6 @@ private:
     uint32_t dupStreamIndex_ = 0;
     std::shared_ptr<StreamCallbacks> dupStreamCallback_ = nullptr;
     std::shared_ptr<IRendererStream> dupStream_ = nullptr;
-    FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
 
     std::weak_ptr<IStreamListener> streamListener_;
     size_t totalSizeInFrame_ = 0;

@@ -20,6 +20,7 @@
 #include "pa_adapter_tools.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "policy_handler.h"
 
 namespace OHOS {
@@ -333,8 +334,8 @@ int32_t PaCapturerStreamImpl::DropBuffer()
 
 void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void *userdata)
 {
-    AUDIO_DEBUG_LOG("PAStreamReadCb, length size: %{public}zu, pa_stream_readable_size: %{public}zu",
-        length, pa_stream_readable_size(stream));
+    Trace trace("PaCapturerStreamImpl::PAStreamReadCb:length " + std::to_string(length) + " readable:" +
+        std::to_string(pa_stream_readable_size(stream)));
 
     if (!userdata) {
         AUDIO_ERR_LOG("PAStreamReadCb: userdata is null");

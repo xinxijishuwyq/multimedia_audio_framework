@@ -93,8 +93,8 @@ private:
     AudioPlaybackCaptureConfig workingConfig_;
 
     std::mutex rendererMapMutex_;
-    std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::vector<std::weak_ptr<RendererInServer>> filteredRendererMap_ = {};
+    std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS
