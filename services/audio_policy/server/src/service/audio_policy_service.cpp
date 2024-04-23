@@ -3256,7 +3256,6 @@ std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareH
     sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, nullptr, "[Policy Service] audio service remote object is NULL.");
 
-    lock_guard<mutex> lock(g_dataShareHelperMutex);
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = DataShare::DataShareHelper::Creator(remoteObject,
         SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, nullptr, "create fail.");
@@ -3295,7 +3294,6 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
 
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
-    lock_guard<mutex> lock(g_dataShareHelperMutex);
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
     CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
 
@@ -5072,7 +5070,7 @@ void AudioPolicyService::RegisterDataObserver()
 {
     std::string devicesName = "";
     int32_t ret = GetDeviceNameFromDataShareHelper(devicesName);
-    AUDIO_INFO_LOG(":UpdateDisplayName local name [%{public}s]", devicesName.c_str());
+    AUDIO_INFO_LOG("UpdateDisplayName local name [%{public}s]", devicesName.c_str());
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
     SetDisplayName(devicesName, true);
     RegisterNameMonitorHelper();
