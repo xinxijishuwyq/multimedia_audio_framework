@@ -30,6 +30,7 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 #include "audio_router_center.h"
+#include "datashare_helper.h"
 #include "ipc_skeleton.h"
 #include "power_mgr_client.h"
 #ifdef FEATURE_DTMF_TONE
@@ -641,7 +642,7 @@ private:
 
     DeviceType FindConnectedHeadset();
 
-    bool CreateDataShareHelperInstance();
+    std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
 
     void RegisterNameMonitorHelper();
 
