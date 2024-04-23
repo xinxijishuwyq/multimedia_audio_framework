@@ -3246,32 +3246,34 @@ void AudioPolicyService::RegisterRemoteDevStatusCallback()
 #endif
 }
 
-bool AudioPolicyService::CreateDataShareHelperInstance()
+std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareHelperInstance()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, false, "[Policy Service] Get samgr failed.");
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "[Policy Service] Get samgr failed.");
 
     sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
-    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "[Policy Service] audio service remote object is NULL.");
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, nullptr, "[Policy Service] audio service remote object is NULL.");
 
     lock_guard<mutex> lock(g_dataShareHelperMutex);
-    g_dataShareHelper = DataShare::DataShareHelper::Creator(remoteObject, SETTINGS_DATA_BASE_URI,
-        SETTINGS_DATA_EXT_URI);
-    CHECK_AND_RETURN_RET_LOG(g_dataShareHelper != nullptr, false, "create fail.");
-    return true;
+    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = DataShare::DataShareHelper::Creator(remoteObject,
+        SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, nullptr, "create fail.");
+    return dataShareHelper;
 }
 
 int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &deviceName)
 {
     lock_guard<mutex> lock(g_dataShareHelperMutex);
-    CHECK_AND_RETURN_RET_LOG(g_dataShareHelper != nullptr, ERROR, "NULL.");
+    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
+    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "dataShareHelper is NULL");
+
     std::shared_ptr<Uri> uri = std::make_shared<Uri>(SETTINGS_DATA_BASE_URI);
     std::vector<std::string> columns;
     columns.emplace_back(SETTINGS_DATA_FIELD_VALUE);
     DataShare::DataSharePredicates predicates;
     predicates.EqualTo(SETTINGS_DATA_FIELD_KEYWORD, PREDICATES_STRING);
 
-    auto resultSet = g_dataShareHelper->Query(*uri, predicates, columns);
+    auto resultSet = dataShareHelper->Query(*uri, predicates, columns);
     CHECK_AND_RETURN_RET_LOG(resultSet != nullptr, ERROR, "query fail.");
 
     int32_t numRows = 0;
@@ -3283,19 +3285,23 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
     resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
     resultSet->GetString(columnIndex, deviceName);
     AUDIO_INFO_LOG("deviceName[%{public}s]", deviceName.c_str());
+
+    resultSet->Close();
+    dataShareHelper->Release();
     return SUCCESS;
 }
 
 void AudioPolicyService::RegisterNameMonitorHelper()
 {
     lock_guard<mutex> lock(g_dataShareHelperMutex);
-    if (g_dataShareHelper == nullptr) {
-        AUDIO_WARNING_LOG("g_dataShareHelper is NULL.");
-        return;
-    }
+    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = CreateDataShareHelperInstance();
+    CHECK_AND_RETURN_LOG(dataShareHelper != nullptr, "dataShareHelper is NULL");
+
     auto uri = std::make_shared<Uri>(SETTINGS_DATA_BASE_URI + "&key=" + PREDICATES_STRING);
     sptr<AAFwk::DataAbilityObserverStub> settingDataObserver = std::make_unique<DataShareObserverCallBack>().release();
-    g_dataShareHelper->RegisterObserver(*uri, settingDataObserver);
+    dataShareHelper->RegisterObserver(*uri, settingDataObserver);
+
+    dataShareHelper->Release();
 }
 
 void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDescriptor)
@@ -5062,7 +5068,6 @@ int32_t AudioPolicyService::QueryEffectManagerSceneMode(SupportedEffectConfig& s
 
 void AudioPolicyService::RegisterDataObserver()
 {
-    CreateDataShareHelperInstance();
     std::string devicesName = "";
     int32_t ret = GetDeviceNameFromDataShareHelper(devicesName);
     AUDIO_INFO_LOG(":UpdateDisplayName local name [%{public}s]", devicesName.c_str());
