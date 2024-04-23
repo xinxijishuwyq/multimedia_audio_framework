@@ -52,7 +52,6 @@
 #include "playback_capturer_adapter.h"
 #include "time.h"
 
-
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
 #define DEFAULT_DEVICE_CLASS "primary"
@@ -82,6 +81,7 @@
 #define DEFAULT_MULTICHANNEL_CHANNELLAYOUT 1551
 #define DEFAULT_CHANNELLAYOUT 3
 #define OFFLOAD_SET_BUFFER_SIZE_NUM 5
+#define SPATIALIZATION_FADING_FRAMECOUNT 5
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
@@ -170,6 +170,9 @@ struct Userdata {
     pthread_rwlock_t rwlockSleep;
     int64_t timestampSleep;
     pa_usec_t timestampLastLog;
+    int8_t spatializationFadingState; // for indicating the fading state, =0:no fading, >0:fading in, <0:fading out
+    int8_t spatializationFadingCount; // for indicating the fading rate
+    bool actualSpatializationEnabled; // the spatialization state that actually applies effect
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -1076,6 +1079,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     unsigned maxInfo, char *sceneType)
 {
     AUTO_CTRACE("hdi_sink::SinkRenderPrimaryCluster:%s len:%zu", sceneType, *length);
+
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
     pa_sink_input *sinkIn;
     unsigned n = 0;
     void *state = NULL;
@@ -1085,17 +1092,12 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
     bool isCaptureSilently = IsCaptureSilently();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
-        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        int32_t sinkChannels = sinkIn->sample_spec.channels;
-        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
-            continue;
-        }
+        bool existFlag =
+            EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
@@ -1360,37 +1362,63 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
     return nSinkInput;
 }
 
-static void AdjustProcessParamsBeforeGetData(pa_sink *si, uint8_t *sceneTypeLenRef)
+static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount, bool *actualSpatializationEnabled)
 {
-    for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-        sceneTypeLenRef[i] = DEFAULT_IN_CHANNEL_NUM;
+    (*fadingCount) = (*fadingCount) < 0 ? 0 : (*fadingCount);
+    (*fadingCount) =
+        (*fadingCount) > SPATIALIZATION_FADING_FRAMECOUNT ? SPATIALIZATION_FADING_FRAMECOUNT : (*fadingCount);
+    // fading out if spatialization changed
+    if (*fadingState >= 0 && *actualSpatializationEnabled != EffectChainManagerGetSpatializationEnabled()) {
+        *fadingState = -1;
     }
-    pa_sink_input *sinkIn;
-    void *state = NULL;
-    unsigned maxInfo = MAX_MIX_CHANNELS;
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
-    while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
-        const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
-        const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        const uint8_t sinkChannels = sinkIn->sample_spec.channels;
-        const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
-        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
-            continue;
-        }
-        uint32_t processChannels = DEFAULT_NUM_CHANNEL;
-        uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
-        EffectChainManagerReturnEffectChannelInfo(sinkSceneType, &processChannels, &processChannelLayout);
-        if (processChannels == DEFAULT_NUM_CHANNEL) {
-            continue;
-        }
-        for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
-            if (pa_safe_streq(sinkSceneType, SCENE_TYPE_SET[i])) {
-                sceneTypeLenRef[i] = processChannels;
-            }
-        }
-        maxInfo--;
+    // fading in when fading out is done
+    if (*fadingState < 0 && *fadingCount == 0) {
+        *fadingState = 1;
+        *actualSpatializationEnabled = EffectChainManagerGetSpatializationEnabled();
+        EffectChainManagerFlush();
     }
+    // no need to fade when fading out is done
+    if (*fadingState > 1 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
+        *fadingState = 0;
+    }
+}
+
+static void DoSpatializationFading(float *buf, int8_t fadingState, int8_t *fadingCount, int32_t frameLen,
+    int32_t channels)
+{
+    // no need fading
+    if (fadingState == 0) {
+        return;
+    }
+    // fading out when fadingState equals -1, fading in when fadingState equals 1;
+    for (int32_t i = 0; i < frameLen; i++) {
+        for (int32_t j = 0; j < channels; j++) {
+            buf[i * channels + j] *=
+                ((*fadingCount) * frameLen + i * fadingState) / (float)(SPATIALIZATION_FADING_FRAMECOUNT * frameLen);
+        }
+    }
+    (*fadingCount) += fadingState;
+}
+
+static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+{
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+    int32_t bitSize = pa_sample_size_of_format(u->format);
+    u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
+    void *dst = pa_memblock_acquire_chunk(chunkIn);
+    int32_t frameLen = bitSize > 0 ? (int32_t)(length / bitSize) : 0;
+    for (int32_t i = 0; i < frameLen; i++) {
+        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
+        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
+    }
+    DoSpatializationFading(u->bufferAttr->tempBufOut, u->spatializationFadingState, &u->spatializationFadingCount,
+        frameLen / DEFAULT_IN_CHANNEL_NUM, DEFAULT_IN_CHANNEL_NUM);
+    ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
+
+    chunkIn->index = 0;
+    chunkIn->length = length;
+    pa_memblock_release(chunkIn->memblock);
 }
 
 static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime, int32_t i)
@@ -1514,11 +1542,9 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         pa_memblock_unref(capResult.memblock);
     }
 
-    uint8_t sceneTypeLenRef[SCENE_TYPE_NUM];
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    AdjustProcessParamsBeforeGetData(si, sceneTypeLenRef);
     size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
     size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
     memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
@@ -1526,9 +1552,14 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);
+    PrepareSpatializationFading(&u->spatializationFadingState, &u->spatializationFadingCount,
+        &u->actualSpatializationEnabled);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
+        uint32_t processChannels = DEFAULT_NUM_CHANNEL;
+        uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;
+        EffectChainManagerReturnEffectChannelInfo(SCENE_TYPE_SET[i], &processChannels, &processChannelLayout);
         char *sinkSceneType = CheckAndDealEffectZeroVolume(u, currentTime, i);
-        size_t tmpLength = length * sceneTypeLenRef[i] / DEFAULT_IN_CHANNEL_NUM;
+        size_t tmpLength = length * processChannels / DEFAULT_IN_CHANNEL_NUM;
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
         int32_t nSinkInput = SinkRenderPrimaryGetData(si, chunkIn, SCENE_TYPE_SET[i]);
@@ -1540,23 +1571,13 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
 
         ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
-        u->bufferAttr->numChanIn = sceneTypeLenRef[i];
+        u->bufferAttr->numChanIn = processChannels;
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);
     }
     CheckAndDealSpeakerPaZeroVolume(u, currentTime);
     g_isVolumeChange = false;
-    void *dst = pa_memblock_acquire_chunk(chunkIn);
-    int32_t frameLen = bitSize > 0 ? (int32_t)(length / bitSize) : 0;
-    for (int32_t i = 0; i < frameLen; i++) {
-        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
-        u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
-    }
-    ConvertFromFloat(u->format, frameLen, u->bufferAttr->tempBufOut, dst);
-
-    chunkIn->index = 0;
-    chunkIn->length = length;
-    pa_memblock_release(chunkIn->memblock);
+    SinkRenderPrimaryAfterProcess(si, length, chunkIn);
 }
 
 static void SinkRenderPrimary(pa_sink *si, size_t length, pa_memchunk *chunkIn)

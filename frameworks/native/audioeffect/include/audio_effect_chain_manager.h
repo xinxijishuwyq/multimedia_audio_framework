@@ -120,6 +120,8 @@ public:
     int32_t EffectVolumeUpdate(const std::string sessionIDString, const uint32_t volume);
     uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
+    bool GetCurSpatializationEnabled();
+    void ResetEffectBuffer();
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);

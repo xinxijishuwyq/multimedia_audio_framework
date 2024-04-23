@@ -1065,6 +1065,19 @@ void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType
     }
 }
 
+bool AudioEffectChainManager::GetCurSpatializationEnabled()
+{
+    return spatializationEnabled_;
+}
+
+void AudioEffectChainManager::ResetEffectBuffer()
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    for (const auto &[sceneType, effectChain] : SceneTypeToEffectChainMap_) {
+        effectChain->ResetEffectBuffer();
+    }
+}
+
 #ifdef WINDOW_MANAGER_ENABLE
 void AudioEffectChainManager::AudioRotationListener::OnCreate(Rosen::DisplayId displayId)
 {
