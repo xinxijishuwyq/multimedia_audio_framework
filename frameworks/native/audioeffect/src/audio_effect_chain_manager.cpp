@@ -1072,6 +1072,7 @@ bool AudioEffectChainManager::GetCurSpatializationEnabled()
 
 void AudioEffectChainManager::ResetEffectBuffer()
 {
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     for (const auto &[sceneType, effectChain] : SceneTypeToEffectChainMap_) {
         effectChain->ResetEffectBuffer();
     }
