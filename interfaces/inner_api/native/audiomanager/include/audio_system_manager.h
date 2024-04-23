@@ -345,6 +345,7 @@ public:
 private:
     std::list<std::weak_ptr<AudioFocusInfoChangeCallback>> callbackList_;
     std::shared_ptr<AudioFocusInfoChangeCallback> cb_;
+    std::mutex cbListMutex_;
 };
 
 class AudioDistributedRoutingRoleCallback {

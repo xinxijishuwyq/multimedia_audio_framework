@@ -60,6 +60,8 @@ ohos_shared_library("audio_effect") {
   include_dirs = [ multimedia_audio_framework_pulse_audio ]
 
   sources = [
+    "src/audio_effect_chain.cpp",
+    "src/audio_effect_chain_adapter.cpp",
     "src/audio_effect_chain_manager.cpp",
     "src/audio_effect_hdi_param.cpp",
     "src/audio_effect_rotation.cpp",
@@ -68,7 +70,10 @@ ohos_shared_library("audio_effect") {
     "src/audio_head_tracker.cpp",
   ]
 
-  deps = [ "$pulseaudio_build_path/src/pulse:pulse" ]
+  deps = [
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "../audioutils:audio_utils",
+  ]
 
   external_deps = [
     "c_utils:utils",

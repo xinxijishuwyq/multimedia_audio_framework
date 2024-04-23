@@ -46,7 +46,7 @@ bool ResolveLibrary(const std::string &path, std::string &resovledPath)
     return false;
 }
 
-static bool LoadLibrary(const std::string &relativePath, std::unique_ptr<AudioEffectLibEntry>& libEntry) noexcept
+static bool LoadLibrary(const std::string &relativePath, std::shared_ptr<AudioEffectLibEntry> &libEntry) noexcept
 {
     std::string absolutePath;
     // find library in adsolutePath
@@ -80,12 +80,12 @@ static bool LoadLibrary(const std::string &relativePath, std::unique_ptr<AudioEf
     return true;
 }
 
-void LoadLibraries(const std::vector<Library> &libs, std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
+static void LoadLibraries(const std::vector<Library> &libs, std::vector<std::shared_ptr<AudioEffectLibEntry>> &libList)
 {
     for (Library library: libs) {
         AUDIO_INFO_LOG("<log info> loading %{public}s : %{public}s", library.name.c_str(), library.path.c_str());
 
-        std::unique_ptr<AudioEffectLibEntry> libEntry = std::make_unique<AudioEffectLibEntry>();
+        std::shared_ptr<AudioEffectLibEntry> libEntry = std::make_shared<AudioEffectLibEntry>();
         libEntry->libraryName = library.name;
 
         bool loadLibrarySuccess = LoadLibrary(library.path, libEntry);
@@ -99,21 +99,21 @@ void LoadLibraries(const std::vector<Library> &libs, std::vector<std::unique_ptr
     }
 }
 
-AudioEffectLibEntry *FindLibrary(const std::string &name,
-    const std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
+std::shared_ptr<AudioEffectLibEntry> FindLibrary(const std::string &name,
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &libList)
 {
-    for (const std::unique_ptr<AudioEffectLibEntry> &lib : libList) {
+    for (const std::shared_ptr<AudioEffectLibEntry> &lib : libList) {
         if (lib->libraryName == name) {
-            return lib.get();
+            return lib;
         }
     }
 
     return nullptr;
 }
 
-static bool LoadEffect(const Effect &effect, const std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList)
+static bool LoadEffect(const Effect &effect, const std::vector<std::shared_ptr<AudioEffectLibEntry>> &libList)
 {
-    AudioEffectLibEntry *currentLibEntry = FindLibrary(effect.libraryName, libList);
+    std::shared_ptr<AudioEffectLibEntry> currentLibEntry = FindLibrary(effect.libraryName, libList);
     if (currentLibEntry == nullptr) {
         AUDIO_ERR_LOG("<log error> could not find library %{public}s to load effect %{public}s",
                       effect.libraryName.c_str(), effect.name.c_str());
@@ -136,7 +136,7 @@ static bool LoadEffect(const Effect &effect, const std::vector<std::unique_ptr<A
     return true;
 }
 
-void CheckEffects(const std::vector<Effect> &effects, const std::vector<std::unique_ptr<AudioEffectLibEntry>> &libList,
+void CheckEffects(const std::vector<Effect> &effects, const std::vector<std::shared_ptr<AudioEffectLibEntry>> &libList,
     std::vector<Effect> &successEffectList)
 {
     for (Effect effect: effects) {
@@ -163,10 +163,10 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> &libraries, 
                                          std::vector<Effect> &successEffectList)
 {
     // load library
-    LoadLibraries(libraries, effectLibEntries);
+    LoadLibraries(libraries, effectLibEntries_);
 
     // check effects
-    CheckEffects(effects, effectLibEntries, successEffectList);
+    CheckEffects(effects, effectLibEntries_, successEffectList);
     if (successEffectList.size() > 0) {
         return true;
     } else {
@@ -174,9 +174,9 @@ bool AudioEffectServer::LoadAudioEffects(const std::vector<Library> &libraries, 
     }
 }
 
-std::vector<std::unique_ptr<AudioEffectLibEntry>> &AudioEffectServer::GetEffectEntries()
+std::vector<std::shared_ptr<AudioEffectLibEntry>> &AudioEffectServer::GetEffectEntries()
 {
-    return effectLibEntries;
+    return effectLibEntries_;
 }
 
 } // namespce AudioStandard

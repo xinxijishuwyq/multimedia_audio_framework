@@ -172,7 +172,7 @@ struct Userdata {
     pa_usec_t timestampLastLog;
     int8_t spatializationFadingState; // for indicating the fading state, =0:no fading, >0:fading in, <0:fading out
     int8_t spatializationFadingCount; // for indicating the fading rate
-    bool curSpatializationEnabled;    // the spatialization state that actually applies effect
+    bool actualSpatializationEnabled; // the spatialization state that actually applies effect
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -1096,7 +1096,8 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->curSpatializationEnabled ? "1" : "0");
+        bool existFlag =
+            EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->actualSpatializationEnabled ? "1" : "0");
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
@@ -1361,19 +1362,19 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
     return nSinkInput;
 }
 
-static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount, bool *curSpatializationEnabled)
+static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount, bool *actualSpatializationEnabled)
 {
     (*fadingCount) = (*fadingCount) < 0 ? 0 : (*fadingCount);
     (*fadingCount) =
         (*fadingCount) > SPATIALIZATION_FADING_FRAMECOUNT ? SPATIALIZATION_FADING_FRAMECOUNT : (*fadingCount);
     // fading out if spatialization changed
-    if (*fadingState >= 0 && *curSpatializationEnabled != EffectChainManagerGetSpatializationEnabled()) {
+    if (*fadingState >= 0 && *actualSpatializationEnabled != EffectChainManagerGetSpatializationEnabled()) {
         *fadingState = -1;
     }
     // fading in when fading out is done
     if (*fadingState < 0 && *fadingCount == 0) {
         *fadingState = 1;
-        *curSpatializationEnabled = EffectChainManagerGetSpatializationEnabled();
+        *actualSpatializationEnabled = EffectChainManagerGetSpatializationEnabled();
         EffectChainManagerFlush();
     }
     // no need to fade when fading out is done
@@ -1552,7 +1553,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);
     PrepareSpatializationFading(&u->spatializationFadingState, &u->spatializationFadingCount,
-        &u->curSpatializationEnabled);
+        &u->actualSpatializationEnabled);
     for (int32_t i = 0; i < SCENE_TYPE_NUM; i++) {
         uint32_t processChannels = DEFAULT_NUM_CHANNEL;
         uint64_t processChannelLayout = DEFAULT_CHANNELLAYOUT;

@@ -29,6 +29,7 @@ using OHOS::AudioStandard::ContentType;
 using OHOS::AudioStandard::SourceType;
 using OHOS::AudioStandard::InterruptMode;
 using OHOS::AudioStandard::AudioChannelLayout;
+using OHOS::AudioStandard::AudioPrivacyType;
 
 static const int32_t RENDERER_TYPE = 1;
 static const int32_t CAPTURER_TYPE = 2;
@@ -152,6 +153,15 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallbac
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
 
     return audioStreamBuilder->SetRendererOutputDeviceChangeCallback(callback, userData);
+}
+
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererPrivacy(OH_AudioStreamBuilder* builder,
+    OH_AudioStream_AudioPrivacyType privacy)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+
+    return audioStreamBuilder->SetRendererPrivacy((AudioPrivacyType)privacy);
 }
 
 OH_AudioStream_Result OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback(OH_AudioStreamBuilder *builder,
@@ -340,7 +350,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
 
     AudioRendererOptions options = {
         streamInfo,
-        rendererInfo
+        rendererInfo,
+        privacyType_
     };
 
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
@@ -421,6 +432,14 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererOutputDeviceChangeCallbac
         "SetRendererCallback Error, invalid type input");
     outputDeviceChangecallback_ = callback;
     outputDeviceChangeuserData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetRendererPrivacy(AudioPrivacyType privacyType)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetRendererPrivacy Error, invalid type input");
+    privacyType_ = privacyType;
     return AUDIOSTREAM_SUCCESS;
 }
 
