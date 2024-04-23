@@ -495,7 +495,9 @@ void AudioPolicyService::SetVolumeForSwitchDevice(DeviceType deviceType)
     if (deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_USB_HEADSET) {
         SetOffloadVolume(OffloadStreamType(), GetSystemVolumeLevel(OffloadStreamType()));
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        SetOffloadVolume(OffloadStreamType(), audioPolicyManager_.GetMaxVolumeLevel(OffloadStreamType()));
+        int32_t vol = audioPolicyManager_.IsAbsVolumeScene() ?
+            audioPolicyManager_.GetMaxVolumeLevel(OffloadStreamType()) : GetSystemVolumeLevel(OffloadStreamType());
+        SetOffloadVolume(OffloadStreamType(), vol);
     }
 }
 
