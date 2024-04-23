@@ -3334,19 +3334,21 @@ void AudioPolicyService::UpdateDisplayName(sptr<AudioDeviceDescriptor> deviceDes
 
 void AudioPolicyService::HandleOfflineDistributedDevice()
 {
-    std::lock_guard<std::mutex> lock(deviceStatusUpdateSharedMutex_);
     std::vector<sptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
-    std::vector<sptr<AudioDeviceDescriptor>> connectedDevices = connectedDevices_;
-    for (auto deviceDesc : connectedDevices) {
-        if (deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
-            const std::string networkId = deviceDesc->networkId_;
-            UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
-            std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
-            ClosePortAndEraseIOHandle(moduleName);
-            RemoveDeviceInRouterMap(moduleName);
-            RemoveDeviceInFastRouterMap(networkId);
-            if (GetDeviceRole(deviceDesc->deviceType_) == DeviceRole::INPUT_DEVICE) {
-                remoteCapturerSwitch_ = true;
+    {
+        std::lock_guard<std::mutex> lock(deviceStatusUpdateSharedMutex_);
+        std::vector<sptr<AudioDeviceDescriptor>> connectedDevices = connectedDevices_;
+        for (auto deviceDesc : connectedDevices) {
+            if (deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
+                const std::string networkId = deviceDesc->networkId_;
+                UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
+                std::string moduleName = GetRemoteModuleName(networkId, GetDeviceRole(deviceDesc->deviceType_));
+                ClosePortAndEraseIOHandle(moduleName);
+                RemoveDeviceInRouterMap(moduleName);
+                RemoveDeviceInFastRouterMap(networkId);
+                if (GetDeviceRole(deviceDesc->deviceType_) == DeviceRole::INPUT_DEVICE) {
+                    remoteCapturerSwitch_ = true;
+                }
             }
         }
     }
