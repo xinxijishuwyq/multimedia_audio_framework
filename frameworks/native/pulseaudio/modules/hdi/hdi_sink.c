@@ -170,9 +170,9 @@ struct Userdata {
     pthread_rwlock_t rwlockSleep;
     int64_t timestampSleep;
     pa_usec_t timestampLastLog;
-    int8_t spatializationFadingState;
-    int8_t spatializationFadingCount;
-    bool curSpatializationEnabled;
+    int8_t spatializationFadingState; // for indicating the fading state, =0:no fading, >0:fading in, <0:fading out
+    int8_t spatializationFadingCount; // for indicating the fading rate
+    bool curSpatializationEnabled;    // the spatialization state that actually applies effect
     struct {
         int32_t sessionID;
         bool firstWrite;
@@ -1079,6 +1079,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     unsigned maxInfo, char *sceneType)
 {
     AUTO_CTRACE("hdi_sink::SinkRenderPrimaryCluster:%s len:%zu", sceneType, *length);
+
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
     pa_sink_input *sinkIn;
     unsigned n = 0;
     void *state = NULL;
@@ -1088,17 +1092,11 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
 
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
     bool isCaptureSilently = IsCaptureSilently();
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
-        const char *sinkSpatializationEnabled = pa_proplist_gets(sinkIn->proplist, "spatialization.enabled");
-        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, sinkSpatializationEnabled);
-        int32_t sinkChannels = sinkIn->sample_spec.channels;
-        if (a2dpFlag && !existFlag && sinkChannels > PRIMARY_CHANNEL_NUM) {
-            continue;
-        }
+        bool existFlag = EffectChainManagerExist(sinkSceneType, sinkSceneMode, u->curSpatializationEnabled ? "1" : "0");
         if ((IsInnerCapturer(sinkIn) && isCaptureSilently) || !InputIsPrimary(sinkIn)) {
             continue;
         } else if ((pa_safe_streq(sinkSceneType, sceneType) && existFlag) ||
@@ -1365,18 +1363,21 @@ static int32_t SinkRenderMultiChannelGetData(pa_sink *si, pa_memchunk *chunkIn)
 
 static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount, bool *curSpatializationEnabled)
 {
+    (*fadingCount) = (*fadingCount) < 0 ? 0 : (*fadingCount);
+    (*fadingCount) =
+        (*fadingCount) > SPATIALIZATION_FADING_FRAMECOUNT ? SPATIALIZATION_FADING_FRAMECOUNT : (*fadingCount);
     // fading out if spatialization changed
     if (*fadingState >= 0 && *curSpatializationEnabled != EffectChainManagerGetSpatializationEnabled()) {
         *fadingState = -1;
-        *fadingCount = SPATIALIZATION_FADING_FRAMECOUNT;
     }
     // fading in when fading out is done
     if (*fadingState < 0 && *fadingCount == 0) {
         *fadingState = 1;
         *curSpatializationEnabled = EffectChainManagerGetSpatializationEnabled();
+        EffectChainManagerFlush();
     }
     // no need to fade when fading out is done
-    if (*fadingState == 1 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
+    if (*fadingState > 1 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
         *fadingState = 0;
     }
 }
@@ -1540,7 +1541,6 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         pa_memblock_unref(capResult.memblock);
     }
 
-    uint8_t sceneTypeLenRef[SCENE_TYPE_NUM];
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
@@ -1570,7 +1570,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
 
         ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
-        u->bufferAttr->numChanIn = sceneTypeLenRef[i];
+        u->bufferAttr->numChanIn = processChannels;
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);
     }
