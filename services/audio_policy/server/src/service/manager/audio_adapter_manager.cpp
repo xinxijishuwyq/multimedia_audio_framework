@@ -1541,7 +1541,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     DeviceVolumeType deviceCategory = GetDeviceCategory(deviceType);
     std::vector<VolumePoint> volumePoints;
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
-    int32_t pointSize = volumePoints.size();
+    uint32_t pointSize = volumePoints.size();
 
     int32_t volSteps = 1 + volumePoints[pointSize - 1].index - volumePoints[0].index;
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);

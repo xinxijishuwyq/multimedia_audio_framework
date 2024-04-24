@@ -513,7 +513,7 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
     bool tmp = audioRendererFilter->Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioRendererFilter Marshalling() failed");
 
-    int size = audioDeviceDescriptors.size();
+    uint32_t size = audioDeviceDescriptors.size();
     int validSize = 20; // Use 20 as limit.
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
@@ -557,7 +557,7 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     bool tmp = audioCapturerFilter->Marshalling(data);
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioCapturerFilter Marshalling() failed");
 
-    int size = audioDeviceDescriptors.size();
+    uint32_t size = audioDeviceDescriptors.size();
     int validSize = 20; // Use 20 as limit.
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);

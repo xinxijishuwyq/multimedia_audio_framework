@@ -107,7 +107,7 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
     std::string effectScene = IAudioStream::GetEffectSceneName(streamUsage);
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = AudioPolicyManager::GetInstance().QueryEffectSceneMode(supportedEffectConfig);
-    int32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();
+    uint32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();
     if (streamNum >= 0) {
         int32_t sceneFlag = 0;
         for (int32_t i = 0; i < streamNum; i++) {

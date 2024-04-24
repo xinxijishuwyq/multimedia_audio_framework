@@ -261,7 +261,7 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     AudioCapturerInfo captureInfo;
     captureInfo.Unmarshalling(data);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredInputDeviceDescriptors(captureInfo);
-    size_t size = static_cast<int32_t>(devices.size());
+    int32_t size = static_cast<int32_t>(devices.size());
     reply.WriteInt32(size);
     for (size_t i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
@@ -463,7 +463,7 @@ void AudioPolicyManagerStub::CheckRecordingCreateInternal(MessageParcel &data, M
 {
     uint32_t appTokenId = data.ReadUint32();
     uint64_t appFullTokenId = data.ReadUint64();
-    uint32_t appUid = data.ReadInt32();
+    int32_t appUid = data.ReadInt32();
     SourceType sourceType = static_cast<SourceType> (data.ReadInt32());
     bool ret = CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
     reply.WriteBool(ret);
@@ -647,7 +647,7 @@ void AudioPolicyManagerStub::GetMaxRendererInstancesInternal(MessageParcel &data
 static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int32_t i, int32_t j)
 {
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].mode);
-    int32_t countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
+    uint32_t countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
         for (int32_t k = 0; k < countDev; k++) {
@@ -659,7 +659,7 @@ static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, Message
 static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int32_t i)
 {
     reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].scene);
-    int32_t countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
+    uint32_t countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
         for (int32_t j = 0; j < countMode; j++) {
@@ -670,7 +670,7 @@ static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mess
 static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, MessageParcel &reply, int32_t i, int32_t j)
 {
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].mode);
-    int32_t countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
+    uint32_t countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
         for (int32_t k = 0; k < countDev; k++) {
@@ -683,7 +683,7 @@ static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mes
 {
     // i th stream
     reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].scene);
-    int countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
+    uint32_t countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
         for (int32_t j = 0; j < countMode; j++) {
@@ -699,9 +699,9 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     int32_t ret = QueryEffectSceneMode(supportedEffectConfig); // audio_policy_server.cpp
     CHECK_AND_RETURN_LOG(ret != -1, "default mode is unavailable !");
 
-    int32_t countPre = supportedEffectConfig.preProcessNew.stream.size();
-    int32_t countPost = supportedEffectConfig.postProcessNew.stream.size();
-    int32_t countPostMap = supportedEffectConfig.postProcessSceneMap.size();
+    uint32_t countPre = supportedEffectConfig.preProcessNew.stream.size();
+    uint32_t countPost = supportedEffectConfig.postProcessNew.stream.size();
+    uint32_t countPostMap = supportedEffectConfig.postProcessSceneMap.size();
     reply.WriteInt32(countPre);
     reply.WriteInt32(countPost);
     reply.WriteInt32(countPostMap);

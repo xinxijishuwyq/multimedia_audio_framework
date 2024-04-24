@@ -236,7 +236,7 @@ bool LibLoader::AddAlgoHandle(Library library)
 bool LibLoader::Init()
 {
     int32_t ret = 0;
-    int32_t replyData = 0;
+    uint32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
