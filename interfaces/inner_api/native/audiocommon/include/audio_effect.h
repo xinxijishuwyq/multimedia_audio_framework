@@ -39,6 +39,7 @@ constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64; // max conf for sc
 constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32; // max num of effectChain
 constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16; // max num of effect per effectChain
 
+constexpr int32_t HDI_EFFECT_NUM = 2;
 constexpr int32_t HDI_SET_PATAM = 6;
 constexpr int32_t HDI_INIT = 0;
 constexpr int32_t HDI_BYPASS = 1;
@@ -299,6 +300,11 @@ enum AudioSpatializationSceneType {
     SPATIALIZATION_SCENE_TYPE_MUSIC = 1,
     SPATIALIZATION_SCENE_TYPE_MOVIE = 2,
     SPATIALIZATION_SCENE_TYPE_AUDIOBOOK = 3,
+};
+
+const std::unordered_map<DeviceType, std::vector<std::string>> HDI_EFFECT_LIB_MAP {
+    {DEVICE_TYPE_SPEAKER, {"libspeaker_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966oo"}},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, {"libspatialization_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966gg"}},
 };
 
 struct AudioRendererInfoForSpatialization {

@@ -216,5 +216,12 @@ float AudioRendererFileSink::GetMaxAmplitude()
     AUDIO_WARNING_LOG("getMaxAmplitude in render file sink not support");
     return 0;
 }
+
+int32_t AudioRendererFileSink::SetPaPower(int32_t flag)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

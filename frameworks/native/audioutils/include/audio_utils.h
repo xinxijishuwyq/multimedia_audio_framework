@@ -322,6 +322,17 @@ private:
     std::string dspMockTime_ = "";
     size_t extraStrLen_ = 0;
 };
+
+template <typename EnumType, typename V>
+int32_t GetKeyFromValue(const std::unordered_map<EnumType, V> &map, const V &value)
+{
+    for (auto it : map) {
+        if (it.second == value) {
+            return it.first;
+        }
+    }
+    return -1;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

@@ -94,7 +94,7 @@ private:
     uint64_t resetTimestamp_ = 0;
     std::mutex writeLock_;
     FILE *dumpC2S_ = nullptr; // client to server dump file
-    bool underRunLogFlag_ = false;
+    uint32_t underRunLogFlag_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

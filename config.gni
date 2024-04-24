@@ -14,6 +14,7 @@
 declare_args() {
   audio_framework_feature_double_pnp_detect = false
   audio_framework_feature_dtmf_tone = true
+  audio_framework_feature_support_os_account = true
   audio_framework_feature_opensl_es = true
   sonic_enable = true
   if (!defined(global_parts_info) ||

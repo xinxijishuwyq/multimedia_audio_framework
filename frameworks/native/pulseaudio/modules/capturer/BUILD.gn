@@ -43,7 +43,6 @@ ohos_shared_library("module-inner-capturer-sink") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../../../../cfi_blocklist.txt"
   }
   sources = [ "module_inner_capturer_sink.c" ]
 
@@ -76,7 +75,6 @@ ohos_shared_library("module-receiver-sink") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../../../../cfi_blocklist.txt"
   }
   sources = [ "module_receiver_sink.c" ]
 

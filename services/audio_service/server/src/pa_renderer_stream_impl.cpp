@@ -184,6 +184,7 @@ int32_t PaRendererStreamImpl::Flush()
         AUDIO_ERR_LOG("Stream Flush Operation Failed");
         return ERR_OPERATION_FAILED;
     }
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(effectSceneName_);
     pa_operation_unref(operation);
     return SUCCESS;
 }

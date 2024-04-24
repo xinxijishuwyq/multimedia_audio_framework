@@ -89,7 +89,6 @@ ohos_shared_library("audio_dump") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [ "server/src/service/dump/audio_service_dump.cpp" ]
@@ -133,13 +132,13 @@ ohos_shared_library("audio_policy_service") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
   sources = [
     "client/src/audio_interrupt_group_info.cpp",
     "client/src/audio_volume_group_info.cpp",
     "server/src/audio_client_tracker_callback_proxy.cpp",
+    "server/src/audio_dialog_ability_connection.cpp",
     "server/src/audio_group_handle.cpp",
     "server/src/audio_policy_client_proxy.cpp",
     "server/src/audio_policy_manager_listener_proxy.cpp",
@@ -170,6 +169,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/manager/pnp_server/audio_input_thread.cpp",
     "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
     "server/src/service/manager/pnp_server/audio_socket_thread.cpp",
+    "server/src/service/manager/volume_data_maintainer.cpp",
     "server/src/service/routers/audio_router_center.cpp",
     "server/src/service/routers/cockpit_phone_router.cpp",
     "server/src/service/routers/default_router.cpp",
@@ -185,6 +185,10 @@ ohos_shared_library("audio_policy_service") {
   defines = []
   if (audio_framework_feature_double_pnp_detect) {
     defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  }
+
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
   }
 
   if (audio_framework_feature_dtmf_tone) {
@@ -224,6 +228,7 @@ ohos_shared_library("audio_policy_service") {
     "ability_runtime:ability_manager",
     "ability_runtime:app_context",
     "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libprivacy_sdk",
     "access_token:libtoken_setproc",
@@ -245,6 +250,7 @@ ohos_shared_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
@@ -389,7 +395,6 @@ ohos_shared_library("audio_policy_client") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 

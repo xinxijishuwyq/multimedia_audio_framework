@@ -49,7 +49,6 @@ if (!audio_framework_feature_dtmf_tone) {
       cfi = true
       cfi_cross_dso = true
       debug = false
-      blocklist = "../../../cfi_blocklist.txt"
     }
     install_enable = true
 

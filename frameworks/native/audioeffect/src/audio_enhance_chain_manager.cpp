@@ -209,10 +209,10 @@ AudioEnhanceChainManager *AudioEnhanceChainManager::GetInstance()
 }
 
 int32_t FindEnhanceLib(std::string &enhance,
-    const std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList,
-    AudioEffectLibEntry **libEntry, std::string &libName)
+    const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList, AudioEffectLibEntry **libEntry,
+    std::string &libName)
 {
-    for (const std::unique_ptr<AudioEffectLibEntry> &lib : enhanceLibraryList) {
+    for (const std::shared_ptr<AudioEffectLibEntry> &lib : enhanceLibraryList) {
         if (lib->libraryName == enhance) {
             libName = lib->libraryName;
             *libEntry = lib.get();
@@ -239,10 +239,9 @@ int32_t CheckValidEnhanceLibEntry(AudioEffectLibEntry *libEntry, std::string &en
     return SUCCESS;
 }
 
-
 void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
     std::unordered_map<std::string, std::string> &enhanceChainNameMap,
-    std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
+    std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
     std::lock_guard<std::mutex> lock(chainMutex_);
     std::set<std::string> enhanceSet;

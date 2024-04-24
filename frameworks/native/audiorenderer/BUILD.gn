@@ -48,7 +48,6 @@ ohos_shared_library("audio_renderer") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "../../../cfi_blocklist.txt"
   }
   install_enable = true
 

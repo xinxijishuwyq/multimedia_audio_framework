@@ -37,7 +37,6 @@ ohos_shared_library("ohaudio") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../../cfi_blocklist.txt"
   }
   include_dirs = [
     "../../../interfaces/kits/c/",

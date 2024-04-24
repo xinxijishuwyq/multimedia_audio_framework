@@ -111,6 +111,7 @@ public:
     int32_t SetOutputRoute(DeviceType outputDevice) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     float GetMaxAmplitude() override;
+    int32_t SetPaPower(int32_t flag) override;
 
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
@@ -948,6 +949,13 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
         AUDIO_INFO_LOG("LatencyMeas offloadSink signal detected");
         detectedTime_ = 0;
     }
+}
+
+int32_t OffloadAudioRendererSinkInner::SetPaPower(int32_t flag)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

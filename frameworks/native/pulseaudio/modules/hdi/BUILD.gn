@@ -61,7 +61,6 @@ ohos_shared_library("module-hdi-sink") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../../../../cfi_blocklist.txt"
   }
   sources = [
     "hdi_sink.c",
@@ -107,7 +106,6 @@ ohos_shared_library("module-hdi-source") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../../../../cfi_blocklist.txt"
   }
   sources = [
     "hdi_source.c",

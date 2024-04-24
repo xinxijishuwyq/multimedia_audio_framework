@@ -30,6 +30,7 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 #include "audio_router_center.h"
+#include "datashare_helper.h"
 #include "ipc_skeleton.h"
 #include "power_mgr_client.h"
 #ifdef FEATURE_DTMF_TONE
@@ -429,6 +430,10 @@ public:
 
     int32_t TriggerFetchDevice();
 
+    int32_t DisableSafeMediaVolume();
+
+    int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -501,8 +506,6 @@ private:
     DeviceRole GetDeviceRole(DeviceType deviceType) const;
 
     DeviceRole GetDeviceRole(const std::string &role);
-
-    int32_t SelectNewDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
@@ -639,7 +642,7 @@ private:
 
     DeviceType FindConnectedHeadset();
 
-    bool CreateDataShareHelperInstance();
+    std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
 
     void RegisterNameMonitorHelper();
 
@@ -703,7 +706,7 @@ private:
 
     void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc);
 
-    void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
+    void RectifyModuleInfo(AudioModuleInfo &moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
 
     void ClearScoDeviceSuspendState(string macAddress = "");
 
@@ -714,6 +717,22 @@ private:
     void UnloadInnerCapturerSink(string moduleName);
 
     void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});
+
+    bool IsWiredHeadSet(const DeviceType &deviceType);
+
+    bool IsBlueTooth(const DeviceType &deviceType);
+
+    int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice);
+
+    void CreateCheckMusicActiveThread();
+
+    void CheckBlueToothActiveMusicTime(int32_t safeVolume);
+
+    void CheckWiredActiveMusicTime(int32_t safeVolume);
+
+    int32_t CheckActiveMusicTime();
+
+    int32_t ShowDialog();
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -846,6 +865,19 @@ private:
     bool updateA2dpOffloadLogFlag = false;
     std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
     std::mutex checkSpatializedMutex_;
+    SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
+    SafeStatus safeStatus_ = SAFE_UNKNOWN;
+    int64_t activeSafeTimeBt_ = 0;
+    int64_t activeSafeTime_ = 0;
+    std::time_t startSafeTimeBt_ = 0;
+    std::time_t startSafeTime_ = 0;
+    bool userSelect_ = false;
+    std::unique_ptr<std::thread> calculateLoopSafeTime_ = nullptr;
+    bool safeVolumeExit_ = false;
+
+    std::mutex dialogMutex_;
+    std::atomic<bool> isDialogSelectDestroy_ = false;
+    std::condition_variable dialogSelectCondition_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

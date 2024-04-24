@@ -270,6 +270,8 @@ public:
 
     virtual float GetMaxAmplitude(const int32_t deviceId) = 0;
 
+    virtual int32_t DisableSafeMediaVolume() = 0;
+
     virtual bool IsHeadTrackingDataRequested(const std::string &macAddress) = 0;
 
     virtual int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) = 0;
