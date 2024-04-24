@@ -1198,9 +1198,15 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
                 pin = AUDIO_PIN_OUT_HEADSET;
             }
             break;
-        case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
         case OHOS::AudioStandard::DEVICE_TYPE_DP:
             pin = AUDIO_PIN_OUT_DP;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_USB_HEADSET;
+            } else {
+                pin = AUDIO_PIN_OUT_USB_HEADSET;
+            }
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
