@@ -338,9 +338,9 @@ int32_t FastAudioCapturerSourceInner::GetMmapHandlePosition(uint64_t &frames, in
 
 int32_t FastAudioCapturerSourceInner::PrepareMmapBuffer()
 {
-    int32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
+    uint32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     uint32_t frameSizeInByte = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
-    int32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
+    uint32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc = {0};
     int32_t ret = audioCapture_->ReqMmapBuffer(audioCapture_, reqBufferFrameSize, &desc);

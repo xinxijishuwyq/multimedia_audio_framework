@@ -710,7 +710,7 @@ private:
 
     void ClearScoDeviceSuspendState(string macAddress = "");
 
-    int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
+    AudioIOHandle OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
 
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
 

@@ -1257,7 +1257,7 @@ void AudioServer::RequestThreadPriority(uint32_t tid, string bundleName)
 {
     AUDIO_INFO_LOG("RequestThreadPriority tid: %{public}u", tid);
 
-    uint32_t pid = IPCSkeleton::GetCallingPid();
+    int32_t pid = IPCSkeleton::GetCallingPid();
     AudioXCollie audioXCollie("AudioServer::ScheduleReportData", SCHEDULE_REPORT_TIME_OUT_SECONDS);
     ScheduleReportData(pid, tid, bundleName.c_str());
 }

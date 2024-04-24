@@ -64,7 +64,7 @@ namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
 const uint64_t AUDIO_US_PER_MS = 1000;
-const int64_t AUDIO_NS_PER_US = 1000;
+const uint64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
@@ -321,7 +321,7 @@ private:
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
-    int32_t bufferSizeInMsec_ = 20; // 20ms
+    uint32_t bufferSizeInMsec_ = 20; // 20ms
     std::string cachePath_;
     std::string dumpOutFile_;
     FILE *dumpOutFd_ = nullptr;
@@ -909,7 +909,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         int64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count());
         int64_t deltaTimeStamp = (static_cast<int64_t>(timeNow) - static_cast<int64_t>(timestampHdi)) * AUDIO_NS_PER_US;
-        int64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
+        uint64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
         uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / curStreamParams_.samplingRate * AUDIO_US_PER_S;
 
         int64_t deltaPaWriteIndexNs = static_cast<int64_t>(readPosNs) - static_cast<int64_t>(paWriteIndexNs);

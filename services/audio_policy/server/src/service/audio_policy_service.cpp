@@ -5875,7 +5875,8 @@ float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
     return 0;
 }
 
-int32_t AudioPolicyService::OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo)
+AudioIOHandle AudioPolicyService::OpenPortAndInsertIOHandle(const std::string &moduleName,
+    const AudioModuleInfo &moduleInfo)
 {
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_INVALID_HANDLE, "OpenAudioPort failed %{public}d",

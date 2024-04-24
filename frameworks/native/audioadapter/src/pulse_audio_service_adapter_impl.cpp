@@ -878,7 +878,7 @@ void PulseAudioServiceAdapterImpl::PaGetAllSourceOutputsCb(pa_context *c, const 
     CHECK_AND_RETURN_LOG(i->proplist != nullptr,
         "Invalid Proplist for source output (%{public}d).", i->index);
 
-    uint32_t sessionID = 0;
+    int32_t sessionID = 0;
     const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
     if (sessionCStr != nullptr) {
         std::stringstream sessionStr;
