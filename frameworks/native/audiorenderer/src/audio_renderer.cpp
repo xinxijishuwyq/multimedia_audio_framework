@@ -965,8 +965,19 @@ float AudioRendererPrivate::GetLowPowerVolume() const
     return audioStream_->GetLowPowerVolume();
 }
 
+int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
+{
+    AUDIO_INFO_LOG("offload allowed: %{pubilc}d", isAllowed);
+    isOffloadAllowed_ = isAllowed;
+    return SUCCESS;
+}
+
 int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) const
 {
+    if (!isOffloadAllowed_) {
+        AUDIO_INFO_LOG("offload is not allowed");
+        return ERR_NOT_SUPPORTED;
+    }
     return audioStream_->SetOffloadMode(state, isAppBack);
 }
 

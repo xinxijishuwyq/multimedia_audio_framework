@@ -6612,6 +6612,63 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_002, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test SetOffloadAllowed API.
+ * @tc.number: Audio_Renderer_SetOffloadAllowed_001
+ * @tc.desc  : Test SetOffloadAllowed interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetOffloadAllowed_001, TestSize.Level1)
+{
+    int32_t ret = -1;
+    FILE *wavFile = fopen(AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
+    ASSERT_NE(nullptr, wavFile);
+
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetOffloadAllowed(false);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    size_t bufferLen;
+    ret = audioRenderer->GetBufferSize(bufferLen);
+    EXPECT_EQ(SUCCESS, ret);
+
+    uint8_t *buffer = (uint8_t *) malloc(bufferLen);
+    ASSERT_NE(nullptr, buffer);
+
+    size_t bytesToWrite = 0;
+    int32_t bytesWritten = 0;
+    size_t minBytes = 4; // 4 min bytes
+    int32_t numBuffersToRender = WRITE_BUFFERS_COUNT;
+
+    while (numBuffersToRender) {
+        bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
+        bytesWritten = 0;
+        while ((static_cast<size_t>(bytesWritten) < bytesToWrite) &&
+            ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
+            bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
+                                                 bytesToWrite - static_cast<size_t>(bytesWritten));
+            EXPECT_GE(bytesWritten, VALUE_ZERO);
+            if (bytesWritten < 0) {
+                break;
+            }
+        }
+        numBuffersToRender--;
+    }
+
+    audioRenderer->Drain();
+    audioRenderer->Stop();
+    audioRenderer->Release();
+
+    free(buffer);
+    fclose(wavFile);
+}
+
+/**
  * @tc.name  : Test voip can not interrupt voiceCall
  * @tc.number: SetVoipInterruptVoiceCall_001
  * @tc.desc  : When voip comes after voiceCall, voip will be deny by voiceCall
