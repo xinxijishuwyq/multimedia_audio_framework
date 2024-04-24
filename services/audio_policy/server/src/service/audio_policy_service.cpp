@@ -976,8 +976,9 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
 {
     Trace trace("AudioPolicyService::SelectOutputDevice");
-    AUDIO_INFO_LOG("Start for uid[%{public}d] type[%{public}d] mac[%{public}s]",
-        audioRendererFilter->uid, selectedDesc[0]->deviceType_, GetEncryptAddr(selectedDesc[0]->macAddress_).c_str());
+    AUDIO_INFO_LOG("Start for uid[%{public}d] type[%{public}d] mac[%{public}s] streamUsage[%{public}d]",
+        audioRendererFilter->uid, selectedDesc[0]->deviceType_, GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
+        audioRendererFilter->rendererInfo.streamUsage);
     // check size == 1 && output device
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
@@ -1709,7 +1710,8 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
-
+    AUDIO_INFO_LOG("move session %{public}d to device %{public}d",
+        rendererChangeInfo->sessionId, outputDevice->deviceType_);
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevice->networkId_ == LOCAL_NETWORK_ID)
                 ? MoveToLocalOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevice))
@@ -2678,8 +2680,10 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
-    audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE) {
+        audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+        audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
 }
 
 void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForInputDevice(
@@ -2705,8 +2709,10 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForInputDevice(
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     AddMicrophoneDescriptor(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
-    audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE) {
+        audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+        audioStateManager_.SetPerferredRecordCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
 }
 
 void AudioPolicyService::UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor &updatedDesc,
