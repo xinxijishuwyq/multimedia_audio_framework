@@ -75,8 +75,8 @@ private:
     ~AudioSpatializationService();
 
     enum WriteToDbOperation {
-        WRITE_SPATIALIZATION_STATE = 0;
-        WRITE_SPATIALIZATION_SCENE = 1;
+        WRITE_SPATIALIZATION_STATE = 0,
+        WRITE_SPATIALIZATION_SCENE = 1,
     };
 
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
