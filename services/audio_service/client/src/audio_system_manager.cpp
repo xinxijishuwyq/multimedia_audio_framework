@@ -301,7 +301,9 @@ int32_t AudioSystemManager::SetAsrAecMode(const AsrAecMode asrAecMode)
 int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode &asrAecMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    return gasp->GetAsrAecMode(asrAecMode);
+    int32_t ret = gasp->GetAsrAecMode(asrAecMode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    return 0;
 }
 
 int32_t AudioSystemManager::SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode)
@@ -313,7 +315,9 @@ int32_t AudioSystemManager::SetAsrNoiseSuppressionMode(const AsrNoiseSuppression
 int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
-    return gasp->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    int32_t ret = gasp->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    return 0;
 }
 
 int32_t AudioSystemManager::IsWhispering()
