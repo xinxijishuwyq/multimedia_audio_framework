@@ -437,8 +437,7 @@ void AudioSpatializationService::InitSpatializationState()
 {
     int32_t pack = 0;
     int32_t sceneType = 0;
-    VolumeDataMaintainer::AudioSettingProvider &settingProvider =
-        VolumeDataMaintainer::AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
 
     ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_STATE_SETTINGKEY, pack);
     if (ret != SUCCESS) {
@@ -461,8 +460,7 @@ void AudioSpatializationService::InitSpatializationState()
 
 void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation operation)
 {
-    VolumeDataMaintainer::AudioSettingProvider &settingProvider =
-        VolumeDataMaintainer::AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     switch (operation) {
         case WRITE_SPATIALIZATION_STATE: {
             ErrCode ret = settingProvider.PutIntValue(
