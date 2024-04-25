@@ -1254,7 +1254,15 @@ void AudioAdapterManager::InitSafeStatus(bool isFirstBoot)
     if (isFirstBoot) {
         AUDIO_INFO_LOG("Wrote default safe status to KvStore");
         for (auto &deviceType : DEVICE_TYPE_LIST) {
-            volumeDataMaintainer_.SaveSafeStatus(deviceType, SAFE_ACTIVE);
+            // Adapt to safe volume upgrade scenarios
+            if (!volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_) &&
+                (deviceType == DEVICE_TYPE_WIRED_HEADSET)) {
+                volumeDataMaintainer_.SaveSafeStatus(DEVICE_TYPE_WIRED_HEADSET, SAFE_ACTIVE);
+            }
+            if (!volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_) &&
+                (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
+                volumeDataMaintainer_.SaveSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, SAFE_ACTIVE);
+            }
         }
     } else {
         volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
@@ -1267,11 +1275,37 @@ void AudioAdapterManager::InitSafeTime(bool isFirstBoot)
     if (isFirstBoot) {
         AUDIO_INFO_LOG("Wrote default safe status to KvStore");
         for (auto &deviceType : DEVICE_TYPE_LIST) {
-            volumeDataMaintainer_.SaveSafeVolumeTime(deviceType, 0);
+            if (!volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, safeActiveTime_) &&
+                (deviceType == DEVICE_TYPE_WIRED_HEADSET)) {
+                volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
+            }
+            if (!volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_) &&
+                (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
+                volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
+            }
+            ConvertSafeTime();
+            isNeedConvertSafeTime_ = false;
         }
     } else {
         volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, safeActiveTime_);
         volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_);
+        if (isNeedConvertSafeTime_) {
+            ConvertSafeTime();
+            isNeedConvertSafeTime_ = false;
+        }
+    }
+}
+
+void AudioAdapterManager::ConvertSafeTime(void)
+{
+    // Adapt to safe volume time when upgrade scenarios
+    if (safeActiveTime_ > 0) {
+        safeActiveTime_ = safeActiveTime_ / CONVERT_FROM_MS_TO_SECONDS;
+        volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, safeActiveTime_);
+    }
+    if (safeActiveBtTime_ > 0) {
+        safeActiveBtTime_ = safeActiveBtTime_ / CONVERT_FROM_MS_TO_SECONDS;
+        volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_);
     }
 }
 
@@ -1640,6 +1674,8 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
 int32_t AudioAdapterManager::DoRestoreData()
 {
     isLoaded_ = false;
+    isNeedConvertSafeTime_ = true; // reset convert safe volume status
+    volumeDataMaintainer_.SaveMuteTransferStatus(true); // reset mute convert status
     InitKVStore();
     return SUCCESS;
 }
