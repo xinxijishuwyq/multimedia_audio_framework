@@ -19,10 +19,6 @@
 
 #include <map>
 
-#include "datashare_helper.h"
-#include "datashare_predicates.h"
-#include "datashare_result_set.h"
-#include "iservice_registry.h"
 #include "system_ability_definition.h"
 
 #include "audio_errors.h"

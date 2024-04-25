@@ -19,12 +19,9 @@
 #include <unordered_map>
 #include <cinttypes>
 
-#include "os_account_manager.h"
 #include "ipc_skeleton.h"
-#include "datashare_helper.h"
 #include "errors.h"
 #include "mutex"
-#include "data_ability_observer_stub.h"
 
 #include "audio_setting_provider.h"
 #include "audio_log.h"

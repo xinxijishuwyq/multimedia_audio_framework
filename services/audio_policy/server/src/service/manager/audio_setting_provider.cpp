@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #undef LOG_TAG
-#define LOG_TAG "VolumeDataMaintainer"
+#define LOG_TAG "AudioSettingProvider"
 
 #include "audio_setting_provider.h"
 
@@ -26,7 +26,6 @@
 #include "system_ability_definition.h"
 
 #include "audio_errors.h"
-#include "audio_policy_manager_factory.h"
 
 namespace OHOS {
 namespace AudioStandard {
