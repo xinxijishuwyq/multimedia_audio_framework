@@ -80,8 +80,9 @@ int AudioManagerStub::HandleSetAsrAecMode(MessageParcel &data, MessageParcel &re
 int AudioManagerStub::HandleGetAsrAecMode(MessageParcel &data, MessageParcel &reply)
 {
     AsrAecMode asrAecMode = (static_cast<AsrAecMode>(data.ReadInt32()));
-    int32_t result = GetAsrAecMode(asrAecMode);
-    reply.WriteInt32(result);
+    int32_t ret = GetAsrAecMode(asrAecMode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    reply.WriteInt32(int32_t(asrAecMode));
     return AUDIO_OK;
 }
 
@@ -96,8 +97,9 @@ int AudioManagerStub::HandleSetAsrNoiseSuppressionMode(MessageParcel &data, Mess
 int AudioManagerStub::HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply)
 {
     AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(data.ReadInt32()));
-    int32_t result = GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
-    reply.WriteInt32(result);
+    int32_t ret = GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrNoiseSuppression Mode audio parameters failed");
+    reply.WriteInt32(int32_t(asrNoiseSuppressionMode));
     return AUDIO_OK;
 }
 
