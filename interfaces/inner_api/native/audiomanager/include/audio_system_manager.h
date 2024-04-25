@@ -1246,6 +1246,7 @@ private:
     std::string GetSelfBundleName();
 
     int32_t RegisterWakeupSourceCallback();
+    void OtherDeviceTypeCases(DeviceType deviceType) const;
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;

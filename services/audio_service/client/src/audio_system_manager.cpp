@@ -1208,6 +1208,16 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
                 pin = AUDIO_PIN_OUT_USB_HEADSET;
             }
             break;
+        default:
+            OtherDeviceTypeCases(deviceType);
+            break;
+    }
+    return pin;
+}
+
+void AudioSystemManager::OtherDeviceTypeCases(DeviceType deviceType) const
+{
+    switch (deviceType) {
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
         case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
         case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:
@@ -1219,7 +1229,6 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             AUDIO_INFO_LOG("invalid input parameter");
             break;
     }
-    return pin;
 }
 
 DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
