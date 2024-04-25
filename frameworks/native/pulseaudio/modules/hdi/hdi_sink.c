@@ -2875,7 +2875,8 @@ static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUse
 
     bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
                 (!u->render_in_idle_state && PA_SINK_IS_RUNNING(u->sink->thread_info.state))) &&
-                !(u->sink->state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED)) ||
+                !(u->sink->state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED) &&
+                !(u->sink->state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_INIT)) ||
                 (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
     unsigned nPrimary;
     unsigned nOffload;
@@ -3498,11 +3499,6 @@ static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
         return -1;
     }
 
-    // call start in io thread for remote device.
-    if (strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
-        ret = u->primary.sinkAdapter->RendererSinkStart(u->primary.sinkAdapter);
-    }
-
     if (ret != 0) {
         AUDIO_ERR_LOG("audiorenderer control start failed!");
         u->primary.sinkAdapter->RendererSinkDeInit(u->primary.sinkAdapter);
@@ -3632,7 +3628,6 @@ static pa_sink *PaHdiSinkInit(struct Userdata *u, pa_modargs *ma, const char *dr
         u->primary.prewrite = u->block_usec * 7; // 7 frame, set cache len in hdi, avoid pop
     }
 
-    u->primary.isHDISinkStarted = true;
     AUDIO_DEBUG_LOG("Initialization of HDI rendering device[%{public}s] completed", u->adapterName);
     pa_sink_new_data_init(&data);
     data.driver = driver;

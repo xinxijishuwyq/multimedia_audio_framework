@@ -346,9 +346,9 @@ void FastAudioRendererSinkInner::ReleaseMmapBuffer()
 
 int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
 {
-    int32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
+    uint32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
-    int32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
+    uint32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc = {0};
     int32_t ret = audioRender_->ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);

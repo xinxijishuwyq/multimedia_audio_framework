@@ -2336,7 +2336,7 @@ void AudioServiceClient::GetOffloadApproximatelyCacheTime(uint64_t paTimeStamp, 
         ppTimeStamp = timeNowSteady;
         int64_t timeDelta = static_cast<int64_t>(timeNowSteady) - static_cast<int64_t>(offloadLastHdiPosTs_);
         timeDelta = timeDelta > 0 ? timeDelta : 0;
-        frames = offloadLastHdiPosFrames_ + timeDelta;
+        frames = offloadLastHdiPosFrames_ + static_cast<uint64_t>(timeDelta);
     }
 
     int64_t timeDelta = static_cast<int64_t>(paTimeStamp) - static_cast<int64_t>(ppTimeStamp);
@@ -2394,7 +2394,7 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
 
 void AudioServiceClient::GetAudioLatencyOffload(uint64_t &latency)
 {
-    int64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
+    uint64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count());
     bool offloadPwrActive = offloadStatePolicy_ != OFFLOAD_INACTIVE_BACKGROUND;
     if (offloadPwrActive ||

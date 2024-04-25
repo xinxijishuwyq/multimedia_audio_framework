@@ -290,7 +290,7 @@ private:
     std::mutex readMutex_; // used for prevent multi thread call read
 
     // Mark reach and period reach callback
-    int64_t totalBytesRead_ = 0;
+    uint64_t totalBytesRead_ = 0;
     std::mutex markReachMutex_;
     bool capturerMarkReached_ = false;
     int64_t capturerMarkPosition_ = 0;
@@ -792,7 +792,7 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
-    int64_t currentReadPos = totalBytesRead_ / sizePerFrameInByte_;
+    uint64_t currentReadPos = totalBytesRead_ / sizePerFrameInByte_;
     timestamp.framePosition = currentReadPos;
 
     uint64_t writePos = 0;
@@ -1191,7 +1191,7 @@ int64_t CapturerInClientInner::GetFramesWritten()
 int64_t CapturerInClientInner::GetFramesRead()
 {
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, INVALID_FRAME_SIZE, "sizePerFrameInByte_ is 0!");
-    int64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
+    uint64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
     return readFrameNumber;
 }
 
@@ -1587,7 +1587,7 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
         AUDIO_ERR_LOG("HandleCapturerPositionChanges: sizePerFrameInByte_ is 0");
         return;
     }
-    int64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
+    uint64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
     AUDIO_DEBUG_LOG("totalBytesRead_ %{public}" PRId64 ", frame size: %{public}zu", totalBytesRead_,
         sizePerFrameInByte_);
     {
