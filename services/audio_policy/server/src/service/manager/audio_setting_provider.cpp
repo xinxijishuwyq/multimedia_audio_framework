@@ -231,6 +231,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
     if (resultSet == nullptr) {
         AUDIO_ERR_LOG("helper->Query return nullptr");
         IPCSkeleton::SetCallingIdentity(callingIdentity);
+        resultSet->Close();
         return ERR_INVALID_OPERATION;
     }
     int32_t count;
@@ -246,6 +247,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("resultSet->GetString return not ok, ret=%{public}d", ret);
         IPCSkeleton::SetCallingIdentity(callingIdentity);
+        resultSet->Close();
         return ERR_INVALID_VALUE;
     }
     resultSet->Close();
@@ -291,7 +293,7 @@ int32_t AudioSettingProvider::GetCurrentUserId()
         AUDIO_WARNING_LOG("current userId is empty");
     } else {
         currentuserId = ids[0];
-        AUDIO_INFO_LOG("current userId is :%{public}d", currentuserId);
+        AUDIO_DEBUG_LOG("current userId is :%{public}d", currentuserId);
     }
     return currentuserId;
 }
