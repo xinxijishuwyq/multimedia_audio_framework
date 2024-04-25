@@ -1325,6 +1325,8 @@ void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
     audioPolicyService_.GetAudioAdapterInfos(policyData.adapterInfoMap);
     audioPolicyService_.GetVolumeGroupData(policyData.volumeGroupData);
     audioPolicyService_.GetInterruptGroupData(policyData.interruptGroupData);
+    audioPolicyService_.GetDeviceClassInfo(policyData.deviceClassInfo);
+    audioPolicyService_.GetGlobalConfigs(policyData.globalConfigs);
 }
 
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
