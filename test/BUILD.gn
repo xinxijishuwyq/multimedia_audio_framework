@@ -70,6 +70,7 @@ group("audio_fuzz_test") {
 
   deps = [
     "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
+    "fuzztest/audiointerruptservice_fuzzer:fuzztest",
     "fuzztest/audiomanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer:fuzztest",
     "fuzztest/audiopolicyanother_fuzzer:fuzztest",
