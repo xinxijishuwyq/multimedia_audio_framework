@@ -73,11 +73,18 @@ private:
     {}
 
     ~AudioSpatializationService();
+
+    enum WriteToDbOperation {
+        WRITE_SPATIALIZATION_STATE = 0;
+        WRITE_SPATIALIZATION_SCENE = 1;
+    };
+
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
     int32_t UpdateSpatializationState();
+    int32_t UpdateSpatializationSceneType();
     void HandleSpatializationStateChange(bool outputDeviceChange);
     void InitSpatializationState();
-    void WriteSpatializationStateToDb();
+    void WriteSpatializationStateToDb(WriteToDbOperation operation);
     bool IsHeadTrackingDataRequestedForCurrentDevice();
     void UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress = "");
     void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);

@@ -162,19 +162,6 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     latency_ += static_cast<uint32_t>(replyData);
 }
 
-void AudioEffectChain::ResetEffectBuffer()
-{
-    int32_t ret;
-    int32_t replyData = 0;
-    AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
-    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    std::lock_guard<std::mutex> lock(reloadMutex_);
-    for (AudioEffectHandle handle : standByEffectHandles_) {
-        ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-        CHECK_AND_CONTINUE_LOG(ret == 0, "Reset effect buffer failed");
-    }
-}
-
 int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
