@@ -744,6 +744,16 @@ public:
     virtual float GetLowPowerVolume() const = 0;
 
     /**
+     * @brief Set Stream of Renderer offload allowed.
+     *
+     * @param isAllowed offload allowed.
+     * @return Returns {@link SUCCESS} if setting is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    virtual int32_t SetOffloadAllowed(bool isAllowed) = 0;
+
+    /**
      * @brief Set Stream of Renderer into specified offload state.
      *
      * @param state power state.

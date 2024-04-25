@@ -34,15 +34,9 @@ const std::string SETTINGS_CLONED = "settingsCloned";
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
-    VolumeDataMaintainer::VT_STREAM_DEFAULT,
-    VolumeDataMaintainer::VT_STREAM_VOICE_CALL,
-    VolumeDataMaintainer::VT_STREAM_SYSTEM,
     VolumeDataMaintainer::VT_STREAM_RING,
     VolumeDataMaintainer::VT_STREAM_MUSIC,
     VolumeDataMaintainer::VT_STREAM_ALARM,
-    VolumeDataMaintainer::VT_STREAM_NOTIFICATION,
-    VolumeDataMaintainer::VT_STREAM_BLUETOOTH_SCO,
-    VolumeDataMaintainer::VT_STREAM_SYSTEM_ENFORCED,
     VolumeDataMaintainer::VT_STREAM_DTMF,
     VolumeDataMaintainer::VT_STREAM_TTS,
     VolumeDataMaintainer::VT_STREAM_ACCESSIBILITY,
@@ -57,17 +51,11 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
 };
 
 static std::map<VolumeDataMaintainer::VolumeDataMaintainerStreamType, AudioStreamType> AUDIO_STREAMTYPE_MAP = {
-    {VolumeDataMaintainer::VT_STREAM_DEFAULT, STREAM_DEFAULT},
-    {VolumeDataMaintainer::VT_STREAM_VOICE_CALL, STREAM_VOICE_CALL},
-    {VolumeDataMaintainer::VT_STREAM_SYSTEM, STREAM_SYSTEM},
     {VolumeDataMaintainer::VT_STREAM_RING, STREAM_RING},
     {VolumeDataMaintainer::VT_STREAM_MUSIC, STREAM_MUSIC},
     {VolumeDataMaintainer::VT_STREAM_ALARM, STREAM_ALARM},
-    {VolumeDataMaintainer::VT_STREAM_NOTIFICATION, STREAM_NOTIFICATION},
-    {VolumeDataMaintainer::VT_STREAM_BLUETOOTH_SCO, STREAM_BLUETOOTH_SCO},
-    {VolumeDataMaintainer::VT_STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM_ENFORCED},
     {VolumeDataMaintainer::VT_STREAM_DTMF, STREAM_DTMF},
-    {VolumeDataMaintainer::VT_STREAM_TTS, STREAM_TTS},
+    {VolumeDataMaintainer::VT_STREAM_TTS, STREAM_VOICE_ASSISTANT},
     {VolumeDataMaintainer::VT_STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
 };
 
@@ -434,6 +422,7 @@ bool VolumeDataMaintainer::GetSafeStatus(DeviceType deviceType, SafeStatus &safe
     }
     if (value > static_cast<int32_t>(SAFE_ACTIVE)) {
         value = value - MAX_SAFE_STATUS;
+        SaveSafeStatus(deviceType, static_cast<SafeStatus>(value));
     }
     safeStatus = static_cast<SafeStatus>(value);
     return true;

@@ -55,9 +55,9 @@ const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-const int64_t SECOND_TO_NANOSECOND = 1000000000;
-const int64_t SECOND_TO_MICROSECOND = 1000000;
-const int64_t SECOND_TO_MILLISECOND = 1000;
+const uint64_t SECOND_TO_NANOSECOND = 1000000000;
+const uint64_t SECOND_TO_MICROSECOND = 1000000;
+const uint64_t SECOND_TO_MILLISECOND = 1000;
 const uint32_t BIT_IN_BYTE = 8;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 }
@@ -841,7 +841,7 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
     int32_t ret;
 
     // bytewidth is 4
-    uint32_t size = (int64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
+    uint32_t size = (uint64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");
 
@@ -924,7 +924,7 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
         return;
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    int32_t byteSize = GetFormatByteSize(attr_.format);
+    uint32_t byteSize = GetFormatByteSize(attr_.format);
     size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;

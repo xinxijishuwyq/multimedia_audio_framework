@@ -863,7 +863,7 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timesta
     timestamp = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
     lock.Unlock();
 
-    int64_t cacheTimeInPulse = writeIndex > readIndex ? writeIndex - readIndex : 0;
+    uint64_t cacheTimeInPulse = writeIndex > readIndex ? writeIndex - readIndex : 0;
     cacheTimePa = static_cast<uint64_t>(cacheTimeInPulse);
     paWriteIndex = writeIndex;
 

@@ -413,7 +413,7 @@ float UpdateMaxAmplitude(ConvertHdiFormat adapterFormat, char *frame, uint64_t r
 float CalculateMaxAmplitudeForPCM8Bit(int8_t *frame, uint64_t nSamples)
 {
     int curMaxAmplitude = 0;
-    for (int i = nSamples; i > 0; --i) {
+    for (uint32_t i = nSamples; i > 0; --i) {
         int8_t value = *frame++;
         if (value < 0) {
             value = -value;
@@ -428,7 +428,7 @@ float CalculateMaxAmplitudeForPCM8Bit(int8_t *frame, uint64_t nSamples)
 float CalculateMaxAmplitudeForPCM16Bit(int16_t *frame, uint64_t nSamples)
 {
     int curMaxAmplitude = 0;
-    for (int i = nSamples; i > 0; --i) {
+    for (uint32_t i = nSamples; i > 0; --i) {
         int16_t value = *frame++;
         if (value < 0) {
             value = -value;
@@ -443,7 +443,7 @@ float CalculateMaxAmplitudeForPCM16Bit(int16_t *frame, uint64_t nSamples)
 float CalculateMaxAmplitudeForPCM24Bit(char *frame, uint64_t nSamples)
 {
     int curMaxAmplitude = 0;
-    for (int i = 0; i < nSamples; ++i) {
+    for (uint32_t i = 0; i < nSamples; ++i) {
         char *curPos = frame + (i * 3); // 3 bytes
         int curValue = 0;
         for (int j = 0; j < 3; ++j) { // 3 bytes
@@ -462,7 +462,7 @@ float CalculateMaxAmplitudeForPCM24Bit(char *frame, uint64_t nSamples)
 float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
 {
     int curMaxAmplitude = 0;
-    for (int i = nSamples; i > 0; --i) {
+    for (uint32_t i = nSamples; i > 0; --i) {
         int32_t value = *frame++;
         if (value < 0) {
             value = -value;
@@ -687,7 +687,7 @@ bool SignalDetectAgent::CheckAudioData(uint8_t *buffer, size_t bufferLen)
 bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
 {
     std::string curTime = GetTime();
-    int32_t rightZeroSignal = 0;
+    uint32_t rightZeroSignal = 0;
     int32_t currentPeakIndex = -1;
     int32_t currentPeakSignal = SHRT_MIN;
     int32_t tempMax;
