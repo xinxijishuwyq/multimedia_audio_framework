@@ -35,6 +35,7 @@ const int32_t CLASS_TYPE_FILE = 2;
 const int32_t CLASS_TYPE_REMOTE = 3;
 const int32_t CLASS_TYPE_USB = 4;
 const int32_t CLASS_TYPE_OFFLOAD = 5;
+const int32_t CLASS_TYPE_MULTICHANNEL = 6;
 const int32_t CLASS_TYPE_DP = 7;
 
 const char *DEVICE_CLASS_PRIMARY = "primary";
@@ -43,6 +44,7 @@ const char *DEVICE_CLASS_A2DP = "a2dp";
 const char *DEVICE_CLASS_FILE = "file_io";
 const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
+const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 const char *DEVICE_CLASS_DP = "dp";
 
 int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter **sinkAdapter)
