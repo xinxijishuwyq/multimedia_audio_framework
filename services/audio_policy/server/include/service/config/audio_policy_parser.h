@@ -25,16 +25,16 @@
 
 #include "audio_adapter_info.h"
 #include "audio_device_info.h"
+#include "audio_stream_info.h"
 #include "iport_observer.h"
 #include "parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
 class AudioPolicyParser : public Parser {
 public:
-    static constexpr char CHIP_PROD_CONFIG_FILE[] = "/chip_prod/etc/audio/audio_policy_config.xml";
-    static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config_new.xml";
+    static constexpr char CHIP_PROD_CONFIG_FILE[] = "/chip_prod/etc/audio/audio_policy_config_new.xml";
+    static constexpr char CONFIG_FILE[] = "vendor/etc/audio/audio_policy_config.xml";
 
     bool LoadConfiguration() final;
     bool Parse() final;
@@ -52,37 +52,48 @@ public:
     }
 
 private:
-    XmlNodeType GetNodeTypeAsInt(xmlNode &node);
-    AdaptersType GetAdaptersType(const std::string &adapterClass);
     AdapterType GetAdapterTypeAsInt(xmlNode &node);
-    ModulesType GetModulesTypeAsInt(xmlNode &node);
-    ModuleType GetModuleTypeAsInt(xmlNode &node);
-    ExtendType GetExtendTypeAsInt(xmlNode &node);
+    PipeType GetPipeInfoTypeAsInt(xmlNode &node);
+    GlobalConfigType GetGlobalConfigTypeAsInt(xmlNode &node);
+    XmlNodeType GetXmlNodeTypeAsInt(xmlNode &node);
+    DefaultMaxInstanceType GetDefaultMaxInstanceTypeAsInt(xmlNode &node);
+    StreamType GetStreamTypeAsInt(xmlNode &node);
 
     bool ParseInternal(xmlNode &node);
     void ParseAdapters(xmlNode &node);
     void ParseAdapter(xmlNode &node);
-    void ParseModule(xmlNode &node, ModuleInfo &moduleInfo);
-    void ParseModuleProperty(xmlNode &node, ModuleInfo &moduleInfo, std::string adapterName);
-    void ParseModules(xmlNode &node, AudioAdapterInfo &adapterInfo);
-    void ParseAudioAdapterDevices(xmlNode &node, AudioAdapterInfo &adapterInfo);
-    void ParseConfigs(xmlNode &node, ModuleInfo &moduleInfo);
-    void ParseProfiles(xmlNode &node, ModuleInfo &moduleInfo);
-    void ParseModuleDevices(xmlNode &node, ModuleInfo &moduleInfo);
+    void ParsePipes(xmlNode &node, AudioAdapterInfo &adapterInfo);
+    void ParsePipeInfos(xmlNode &node, PipeInfo &pipeInfo);
+    void ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo);
+    void ParseConfigs(xmlNode &node, PipeInfo &pipeInfo);
+    void ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInfo);
     void ParseGroups(xmlNode& node, XmlNodeType type);
     void ParseGroup(xmlNode& node, XmlNodeType type);
-    void ParseGroupSink(xmlNode& node, XmlNodeType type, std::string groupName);
-    void ParseExtends(xmlNode& node);
-    void ParseUpdateRouteSupport(xmlNode &node);
+    void ParseGroupSink(xmlNode &node, XmlNodeType type, std::string &groupName);
+    void ParseGlobalConfigs(xmlNode& node);
+    void ParsePAConfigs(xmlNode& node);
+    void ParseDefaultMaxInstances(xmlNode& node);
+    void ParseOutputMaxInstances(xmlNode& node);
+    void ParseInputMaxInstances(xmlNode& node);
+    void ParseCommonConfigs(xmlNode& node);
+
+    void HandleUpdateRouteSupportParsed(std::string &value);
+    PAConfigType GetPaConfigType(std::string &name);
+
+    void SplitStringToSet(std::string &str, std::set<uint32_t> &result);
+    void SplitStringToList(std::string &str, std::list<std::string> &result);
+    void SplitChannelStringToSet(std::string &str, std::set<uint32_t> &result);
+
+    std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
+    AdaptersType GetAdaptersType(const std::string &adapterClass);
+
+    std::string GetAudioModuleInfoName(std::string &pipeInfoName, std::list<AudioPipeDeviceInfo> &deviceInfos);
     void ConvertAdapterInfoToAudioModuleInfo();
-    void ConvertAdapterInfoToAudioModuleInfo(std::unordered_map<std::string, std::string> &volumeGroupMap,
-        std::unordered_map<std::string, std::string> &interruptGroupMap);
     void ConvertAdapterInfoToGroupInfo(std::unordered_map<std::string, std::string> &volumeGroupMap,
-        std::unordered_map<std::string, std::string> &interruptGroupMap, ModuleInfo &moduleInfo);
-    void GetCommontAudioModuleInfo(ModuleInfo &moduleInfo, AudioModuleInfo &audioModuleInfo);
+        std::unordered_map<std::string, std::string> &interruptGroupMap);
+    void GetCommontAudioModuleInfo(PipeInfo &pipeInfo, AudioModuleInfo &audioModuleInfo);
     ClassType GetClassTypeByAdapterType(AdaptersType adapterType);
     void GetOffloadAndOpenMicState(AudioAdapterInfo &adapterInfo, bool &shouldEnableOffload);
-    std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
 
     IPortObserver &portObserver_;
     xmlDoc *doc_;
@@ -90,6 +101,7 @@ private:
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_ {};
     std::unordered_map<std::string, std::string> volumeGroupMap_;
     std::unordered_map<std::string, std::string> interruptGroupMap_;
+    GlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_;
 };
 } // namespace AudioStandard

@@ -569,36 +569,25 @@ void AudioServiceDump::AudioFocusInfoDump(string &dumpString)
     return;
 }
 
-void AudioServiceDump::AudioPolicyParserDump(string &dumpString)
+void AudioServiceDump::AudioPolicyParserDump(std::string &dumpString)
 {
     dumpString += "\nAudioPolicyParser:\n";
 
     for (auto &[adapterType, adapterInfo] : audioData_.policyData.adapterInfoMap) {
         AppendFormat(dumpString, " - adapter : %s -- adapterType:%u\n", adapterInfo.adapterName_.c_str(), adapterType);
         for (auto &deviceInfo : adapterInfo.deviceInfos_) {
-            AppendFormat(dumpString, "     - device --  name:%s, type:%s, role:%s\n", deviceInfo.name_.c_str(),
-                deviceInfo.type_.c_str(), deviceInfo.role_.c_str());
+            AppendFormat(dumpString, "     - device --  name:%s, pin:%s, type:%s, role:%s\n", deviceInfo.name_.c_str(),
+                deviceInfo.pin_.c_str(), deviceInfo.type_.c_str(), deviceInfo.role_.c_str());
         }
-        for (auto &moduleInfo : adapterInfo.moduleInfos_) {
-            AppendFormat(dumpString, "     - module : -- name:%s, moduleType_:%s, lib:%s, role:%s, fixedLatency:%s, "
-                "renderInIdleState:%s, profile:%s, file:%s\n", moduleInfo.name_.c_str(),
-                moduleInfo.moduleType_.c_str(), moduleInfo.lib_.c_str(), moduleInfo.role_.c_str(),
-                moduleInfo.fixedLatency_.c_str(), moduleInfo.renderInIdleState_.c_str(),
-                moduleInfo.profile_.c_str(), moduleInfo.file_.c_str());
+        for (auto &pipeInfo : adapterInfo.pipeInfos_) {
+            AppendFormat(dumpString, "     - module : -- name:%s, pipeRole:%s, pipeFlags:%s, lib:%s, paPropRole:%s, "
+                "fixedLatency:%s, renderInIdleState:%s\n", pipeInfo.name_.c_str(),
+                pipeInfo.pipeRole_.c_str(), pipeInfo.pipeFlags_.c_str(), pipeInfo.lib_.c_str(),
+                pipeInfo.paPropRole_.c_str(), pipeInfo.fixedLatency_.c_str(), pipeInfo.renderInIdleState_.c_str());
 
-            for (auto &configInfo : moduleInfo.configInfos_) {
-                AppendFormat(dumpString, "         - config : -- name:%s, valu:%s\n", configInfo.name_.c_str(),
-                    configInfo.valu_.c_str());
-            }
-
-            for (auto profileInfo : moduleInfo.profileInfos_) {
-                AppendFormat(dumpString, "         - profile -- rate:%s, channels:%s, format:%s, bufferSize:%s\n",
-                    profileInfo.rate_.c_str(), profileInfo.channels_.c_str(), profileInfo.format_.c_str(),
-                    profileInfo.bufferSize_.c_str());
-            }
-
-            for (auto device : moduleInfo.devices_) {
-                AppendFormat(dumpString, "         - device : %s\n", device.c_str());
+            for (auto &configInfo : pipeInfo.configInfos_) {
+                AppendFormat(dumpString, "         - config : -- name:%s, value:%s\n", configInfo.name_.c_str(),
+                    configInfo.value_.c_str());
             }
         }
     }
@@ -612,8 +601,58 @@ void AudioServiceDump::AudioPolicyParserDump(string &dumpString)
         AppendFormat(dumpString, " - interruptGroupMap_ first:%s, second:%s\n", interrupt.first.c_str(),
             interrupt.second.c_str());
     }
+
+    AppendFormat(dumpString, " - globalConfig  adapter:%s, pipe:%s, device:%s, updateRouteSupport:%d, "
+        "audioLatency:%s, sinkLatency:%s\n", audioData_.policyData.globalConfigs.adapter_.c_str(),
+        audioData_.policyData.globalConfigs.pipe_.c_str(), audioData_.policyData.globalConfigs.device_.c_str(),
+        audioData_.policyData.globalConfigs.updateRouteSupport_,
+        audioData_.policyData.globalConfigs.globalPaConfigs_.audioLatency_.c_str(),
+        audioData_.policyData.globalConfigs.globalPaConfigs_.sinkLatency_.c_str());
+    for (auto &outputConfig : audioData_.policyData.globalConfigs.outputConfigInfos_) {
+        AppendFormat(dumpString, " - output config name:%s, type:%s, value:%s\n", outputConfig.name_.c_str(),
+            outputConfig.type_.c_str(), outputConfig.value_.c_str());
+    }
+    for (auto &inputConfig : audioData_.policyData.globalConfigs.inputConfigInfos_) {
+        AppendFormat(dumpString, " - input config name:%s, type_%s, value:%s\n", inputConfig.name_.c_str(),
+            inputConfig.type_.c_str(), inputConfig.value_.c_str());
+    }
     dumpString += "\n";
 }
+
+void AudioServiceDump::DumpXmlParsedDataMap(string &dumpString)
+{
+    dumpString += "\nXmlParsedDataParser:\n";
+
+    for (auto &[adapterType, deviceClassInfos] : audioData_.policyData.deviceClassInfo) {
+        AppendFormat(dumpString, " - DeviceClassInfo type %d\n", adapterType);
+        for (auto &deviceClassInfo : deviceClassInfos) {
+            AppendFormat(dumpString, " - Data : className:%s, name:%s, adapter:%s, id:%s, lib:%s, role:%s, rate:%s\n",
+                deviceClassInfo.className.c_str(), deviceClassInfo.name.c_str(),
+                deviceClassInfo.adapterName.c_str(), deviceClassInfo.id.c_str(),
+                deviceClassInfo.lib.c_str(), deviceClassInfo.role.c_str(), deviceClassInfo.rate.c_str());
+
+            for (auto rate : deviceClassInfo.supportedRate_) {
+                AppendFormat(dumpString, "     - rate:%u\n", rate);
+            }
+
+            for (auto supportedChannel : deviceClassInfo.supportedChannels_) {
+                AppendFormat(dumpString, "     - supportedChannel:%u\n", supportedChannel);
+            }
+
+            AppendFormat(dumpString, " -DeviceClassInfo : format:%s, channels:%s, bufferSize:%s, fixedLatency:%s, "
+                " sinkLatency:%s, renderInIdleState:%s, OpenMicSpeaker:%s, fileName:%s, networkId:%s, "
+                "deviceType:%s, sceneName:%s, sourceType:%s, offloadEnable:%s\n",
+                deviceClassInfo.format.c_str(), deviceClassInfo.channels.c_str(), deviceClassInfo.bufferSize.c_str(),
+                deviceClassInfo.fixedLatency.c_str(), deviceClassInfo.sinkLatency.c_str(),
+                deviceClassInfo.renderInIdleState.c_str(), deviceClassInfo.OpenMicSpeaker.c_str(),
+                deviceClassInfo.fileName.c_str(), deviceClassInfo.networkId.c_str(), deviceClassInfo.deviceType.c_str(),
+                deviceClassInfo.sceneName.c_str(), deviceClassInfo.sourceType.c_str(),
+                deviceClassInfo.offloadEnable.c_str());
+        }
+        AppendFormat(dumpString, "-----EndOfXmlParsedDataMap-----\n");
+    }
+}
+
 
 void AudioServiceDump::AudioInterruptZoneDump(string &dumpString)
 {
@@ -815,6 +854,7 @@ void AudioServiceDump::DataDump(string &dumpString)
     AudioFocusInfoDump(dumpString);
     AudioInterruptZoneDump(dumpString);
     AudioPolicyParserDump(dumpString);
+    DumpXmlParsedDataMap(dumpString);
     GroupInfoDump(dumpString);
     EffectManagerInfoDump(dumpString);
     StreamVolumeInfosDump(dumpString);

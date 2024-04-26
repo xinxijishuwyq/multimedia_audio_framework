@@ -69,47 +69,62 @@ static const std::string MODULE_FILE_SOURCE_FILE = "/data/data/.pulse_dir/file_s
 static const std::string CONFIG_TYPE_PRELOAD = "preload";
 static const std::string CONFIG_TYPE_MAXINSTANCES = "maxinstances";
 
+static const uint32_t DEFAULT_PERIOD_IN_MS = 20; // 20ms
+
 enum class XmlNodeType {
     ADAPTERS,
     VOLUME_GROUPS,
     INTERRUPT_GROUPS,
-    EXTENDS,
+    GLOBAL_CONFIGS,
     XML_UNKNOWN
 };
 
 enum class AdaptersType {
     TYPE_PRIMARY,
     TYPE_A2DP,
-    TYPE_REMOTE,
-    TYPE_FILE,
     TYPE_USB,
+    TYPE_FILE_IO,
+    TYPE_REMOTE_AUDIO,
     TYPE_DP,
     TYPE_INVALID
 };
 
 enum class AdapterType {
+    PIPES,
     DEVICES,
-    MODULES,
     UNKNOWN
 };
 
-enum class ModulesType {
-    SINK,
-    SOURCE,
-    UNKNOWN
-};
-
-enum class ModuleType {
+enum class PipeType {
+    PA_PROP,
+    STREAM_PROP,
     CONFIGS,
-    PROFILES,
-    DEVICES,
     UNKNOWN
 };
 
-enum class ExtendType {
-    UPDATE_ROUTE_SUPPORT,
+enum class GlobalConfigType {
+    DEFAULT_OUTPUT,
+    COMMON_CONFIGS,
+    PA_CONFIGS,
+    DEFAULT_MAX_CON_CURRENT_INSTANCE,
+    UNKNOWN
+};
+
+enum class PAConfigType {
     AUDIO_LATENCY,
     SINK_LATENCY,
+    UNKNOWN
+};
+
+enum class DefaultMaxInstanceType {
+    OUTPUT,
+    INPUT,
+    UNKNOWN
+};
+
+enum class StreamType {
+    NORMAL,
+    FAST,
     UNKNOWN
 };
 
@@ -119,7 +134,8 @@ public:
     virtual ~ConfigInfo() = default;
 
     std::string name_ = STR_INIT;
-    std::string valu_ = STR_INIT;
+    std::string value_ = STR_INIT;
+    std::string type_ = STR_INIT;
 };
 
 class ProfileInfo {
@@ -141,6 +157,51 @@ public:
     std::string name_ = STR_INIT;
     std::string type_ = STR_INIT;
     std::string role_ = STR_INIT;
+};
+
+class StreamPropInfo {
+public:
+    StreamPropInfo() = default;
+    virtual ~StreamPropInfo() = default;
+
+    std::string format_ = STR_INIT;
+    uint32_t sampleRate_ = 0;
+    uint32_t periodInMs_ = DEFAULT_PERIOD_IN_MS;
+    uint32_t channelLayout_ = 0;
+    uint32_t bufferSize_ = 0;
+};
+
+class PipeInfo {
+public:
+    PipeInfo() = default;
+    virtual ~PipeInfo() = default;
+
+    std::string name_ = STR_INIT;
+    std::string pipeRole_ = STR_INIT;
+    std::string pipeFlags_ = STR_INIT;
+    std::string moduleName_ = STR_INIT;
+
+    std::string lib_ = STR_INIT;
+    std::string paPropRole_ = STR_INIT;
+    std::string fixedLatency_ = STR_INIT;
+    std::string renderInIdleState_ = STR_INIT;
+
+    std::list<StreamPropInfo> streamPropInfos_ {};
+    std::list<uint32_t> sampleRates_ {};
+    std::list<uint32_t> channelLayouts_ {};
+    std::list<ConfigInfo> configInfos_ {};
+};
+
+class AudioPipeDeviceInfo {
+public:
+    AudioPipeDeviceInfo() = default;
+    virtual ~AudioPipeDeviceInfo() = default;
+
+    std::string name_ = STR_INIT;
+    std::string type_ = STR_INIT;
+    std::string pin_ = STR_INIT;
+    std::string role_ = STR_INIT;
+    std::list<std::string> supportPipes_ {};
 };
 
 class ModuleInfo {
@@ -169,8 +230,33 @@ public:
     virtual ~AudioAdapterInfo() = default;
 
     std::string adapterName_ = STR_INIT;
-    std::list<AudioAdapterDeviceInfo> deviceInfos_ {};
-    std::list<ModuleInfo> moduleInfos_ {};
+    std::string adaptersupportScene_ = STR_INIT;
+    std::list<AudioPipeDeviceInfo> deviceInfos_ {};
+    std::list<PipeInfo> pipeInfos_ {};
+};
+
+class GlobalPaConfigs {
+public:
+    GlobalPaConfigs() = default;
+    virtual ~GlobalPaConfigs() = default;
+
+    std::string audioLatency_ = STR_INIT;
+    std::string sinkLatency_ = STR_INIT;
+};
+
+class GlobalConfigs {
+public:
+    GlobalConfigs() = default;
+    virtual ~GlobalConfigs() = default;
+
+    std::string adapter_ = STR_INIT;
+    std::string pipe_ = STR_INIT;
+    std::string device_ = STR_INIT;
+    std::list<ConfigInfo> commonConfigs_ {};
+    bool updateRouteSupport_ = false;
+    GlobalPaConfigs globalPaConfigs_;
+    std::list<ConfigInfo> outputConfigInfos_ {};
+    std::list<ConfigInfo> inputConfigInfos_ {};
 };
 } // namespace AudioStandard
 } // namespace OHOS
