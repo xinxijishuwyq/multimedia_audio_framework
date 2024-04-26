@@ -989,5 +989,22 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterHeadTrackingEnabledEven
     ret = AudioPolicyManager::GetInstance().UnregisterHeadTrackingEnabledEventListener();
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test DisableSafeMediaVolume
+ * @tc.number: DisableSafeMediaVolume_001
+ * @tc.desc  : Test DisableSafeMediaVolume interface. Returns success.
+ */
+HWTEST(AudioPolicyUnitTest, DisableSafeMediaVolume_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
+    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
+    ASSERT_NE(nullptr, audioPolicyProxy);
+
+    int32_t ret = audioPolicyProxy->DisableSafeMediaVolume();
+    EXPECT_NE(SUCCESS, ret);
+    ret = AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -71,7 +71,6 @@ private:
     static napi_value GetEffectInfoArray(napi_env env, napi_callback_info info);
     static napi_value GetEffectInfoArraySync(napi_env env, napi_callback_info info);
     static napi_value GetHardwareOutputSamplingRate(napi_env env, napi_callback_info info);
-    static napi_value DisableSafeMediaVolume(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis,
@@ -84,7 +83,6 @@ private:
 
     napi_env env_;
     AudioStreamManager *audioStreamMngr_;
-    AudioSystemManager *audioMngr_;
     int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioRendererStateChangeCallback> rendererStateChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioCapturerStateChangeCallback> capturerStateChangeCallbackNapi_ = nullptr;
