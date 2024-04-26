@@ -453,11 +453,12 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
         return;
     }
     PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
-    std::lock_guard<std::mutex> lock(streamImpl->streamImplLock_);
+    std::unique_lock<std::mutex> lock(streamImpl->streamImplLock_);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
     }
+    lock.unlock();
 }
 
 int32_t PaCapturerStreamImpl::GetMinimumBufferSize(size_t &minBufferSize) const
