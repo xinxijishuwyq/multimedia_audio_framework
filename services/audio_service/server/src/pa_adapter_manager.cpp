@@ -110,19 +110,21 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
 int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter ReleaseRender");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    std::unique_lock<std::mutex> lock(streamMapMutex_);
     auto it = rendererStreamMap_.find(streamIndex);
     if (it == rendererStreamMap_.end()) {
         AUDIO_WARNING_LOG("No matching stream");
         return SUCCESS;
     }
+    std::shared_ptr<IRendererStream> currentRender = rendererStreamMap_[streamIndex];
+    rendererStreamMap_[streamIndex] = nullptr;
+    rendererStreamMap_.erase(streamIndex);
+    lock.unlock();
 
-    if (rendererStreamMap_[streamIndex]->Release() < 0) {
+    if (currentRender->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
         return ERR_OPERATION_FAILED;
     }
-    rendererStreamMap_[streamIndex] = nullptr;
-    rendererStreamMap_.erase(streamIndex);
 
     if (isHighResolutionExist_ == true && highResolutionIndex_ == streamIndex) {
         isHighResolutionExist_ = false;
