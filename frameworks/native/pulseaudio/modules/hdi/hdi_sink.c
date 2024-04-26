@@ -3567,17 +3567,6 @@ static int32_t PrepareDeviceMultiChannel(struct Userdata *u, struct RendererSink
     }
     u->multiChannel.isHDISinkInited = true;
     AUDIO_DEBUG_LOG("PrepareDeviceMultiChannel init success");
-    // call start in io thread for remote device.
-    if (strcmp(GetDeviceClass(sinkAdapter->deviceClass), DEVICE_CLASS_REMOTE)) {
-        ret = sinkAdapter->RendererSinkStart(sinkAdapter);
-    }
-
-    if (ret != 0) {
-        AUDIO_ERR_LOG("PrepareDeviceMultiChannel control start failed!");
-        sinkAdapter->RendererSinkDeInit(sinkAdapter);
-        return -1;
-    }
-    AUDIO_DEBUG_LOG("PrepareDeviceMultiChannel start success");
     return 0;
 }
 

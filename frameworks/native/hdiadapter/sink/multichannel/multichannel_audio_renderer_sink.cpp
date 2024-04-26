@@ -574,7 +574,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
     Trace trace("Sink::Start");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
+        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioMultiChannelBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
 
