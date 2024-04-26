@@ -230,7 +230,6 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
     if (resultSet == nullptr) {
         AUDIO_ERR_LOG("helper->Query return nullptr");
         IPCSkeleton::SetCallingIdentity(callingIdentity);
-        resultSet->Close();
         return ERR_INVALID_OPERATION;
     }
     int32_t count;
@@ -238,6 +237,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
     if (count == 0) {
         AUDIO_WARNING_LOG("not found value, key=%{public}s, count=%{public}d", key.c_str(), count);
         IPCSkeleton::SetCallingIdentity(callingIdentity);
+        resultSet->Close();
         return ERR_NAME_NOT_FOUND;
     }
     const int32_t INDEX = 0;
