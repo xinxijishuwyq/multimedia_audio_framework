@@ -464,17 +464,18 @@ bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType
         return false;
     }
 
-    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_ || (spatializationEnabled == "0"))) {
+    if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) &&
+        (btOffloadEnabled_ || (!spatializationEnabled_ || (spatializationEnabled == "0")))) {
         return false;
     }
 
-    if (!strcmp(sceneType, "SCENE_RING") || !strcmp(sceneType, "SCENE_OTHERS")) {
-        effectMode = "EFFECT_NONE";
+    if (sceneType == "SCENE_RING" || sceneType == "SCENE_OTHERS") {
+        std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     } else {
-        effectMode = "EFFECT_DEFAULT";
+        std::string effectModeTrue = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
+        std::string effectChainKey = sceneType + "_&_" + effectModeTrue + "_&_" + GetDeviceTypeName();
     }
 
-    std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
     if (!SceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
         return false;
     }
