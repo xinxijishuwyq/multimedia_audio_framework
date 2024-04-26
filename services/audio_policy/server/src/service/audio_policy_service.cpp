@@ -2700,8 +2700,12 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE) {
+
+    DeviceUsage usage = GetDeviceUsage(updatedDesc);
+    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && (usage == MEDIA || usage == ALL_USAGE)) {
         audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
+    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && (usage == VOICE || usage == ALL_USAGE)) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
@@ -5759,10 +5763,11 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     FetchDevice(true, reason);
 }
 
-void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand)
+void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
-    AUDIO_INFO_LOG("updateCommand: %{public}d", updateCommand);
-    if (updateCommand == ENABLE_UPDATE && desc.isEnable_ == true) {
+    AUDIO_INFO_LOG("[%{public}s] [%{public}d] command: %{public}d isEnable: %{public}d category: %{public}d",
+        GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.isEnable_, desc.deviceCategory_);
+    if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         unique_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
             AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
         unique_ptr<AudioDeviceDescriptor> userSelectCallDevice =
@@ -5774,13 +5779,13 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
             AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
             return;
         }
-    } else if (updateCommand == ENABLE_UPDATE && desc.isEnable_ == false) {
+    } else if (command == ENABLE_UPDATE && desc.isEnable_ == false) {
         UnloadA2dpModule();
     }
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
-    audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, updateCommand);
+    audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
 
-    OnPreferredStateUpdated(desc, updateCommand);
+    OnPreferredStateUpdated(desc, command);
     FetchDevice(false);
     UpdateA2dpOffloadFlagForAllStream();
 }
@@ -5982,6 +5987,11 @@ int32_t AudioPolicyService::DisableSafeMediaVolume()
 int32_t AudioPolicyService::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
    return audioPolicyManager_.Dump(fd, args);
+}
+
+DeviceUsage AudioPolicyService::GetDeviceUsage(const AudioDeviceDescriptor &desc)
+{
+    return audioDeviceManager_.GetDeviceUsage(desc);
 }
 } // namespace AudioStandard
 } // namespace OHOS

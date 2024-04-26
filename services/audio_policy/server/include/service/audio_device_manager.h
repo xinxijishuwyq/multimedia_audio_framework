@@ -71,6 +71,7 @@ public:
     void UpdateEarpieceStatus(const bool hasEarPiece);
     vector<shared_ptr<AudioDeviceDescriptor>> GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
         const string &macAddress, const string &networkId, ConnectState connectState);
+    DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
 private:
     AudioDeviceManager();

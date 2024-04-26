@@ -410,7 +410,7 @@ public:
 
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
 
-    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
+    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
     void UpdateA2dpOffloadFlagBySpatialService(
         const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
@@ -740,6 +740,8 @@ private:
     int32_t CheckActiveMusicTime();
 
     int32_t ShowDialog();
+
+    DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

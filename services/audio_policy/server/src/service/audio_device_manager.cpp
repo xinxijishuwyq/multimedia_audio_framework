@@ -910,5 +910,32 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter
     AUDIO_DEBUG_LOG("Filter device size %{public}zu", audioDeviceDescriptors.size());
     return audioDeviceDescriptors;
 }
+
+DeviceUsage AudioDeviceManager::GetDeviceUsage(const AudioDeviceDescriptor &desc)
+{
+    AUDIO_DEBUG_LOG("device type [%{public}d] category [%{public}d]", desc.deviceType_, desc.deviceCategory_);
+    DeviceUsage usage = MEDIA;
+    for (auto &devInfo : privacyDeviceList_) {
+        if ((devInfo.deviceType == desc.deviceType_) && (devInfo.deviceCategory & desc.deviceCategory_)) {
+            return devInfo.deviceUsage;
+        }
+    }
+
+    for (auto &devInfo : publicDeviceList_) {
+        if ((devInfo.deviceType == desc.deviceType_) && (devInfo.deviceCategory & desc.deviceCategory_)) {
+            return devInfo.deviceUsage;
+        }
+    }
+
+    if (DEVICE_TYPE_BLUETOOTH_A2DP == desc.deviceType_) {
+        usage = MEDIA;
+    }
+
+    if (DEVICE_TYPE_BLUETOOTH_SCO == desc.deviceType_) {
+        usage = VOICE;
+    }
+
+    return usage;
+}
 }
 }
