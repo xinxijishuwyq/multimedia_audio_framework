@@ -91,6 +91,7 @@ const char *DEVICE_CLASS_REMOTE = "remote";
 const char *DEVICE_CLASS_OFFLOAD = "offload";
 const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
+const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
 static bool g_isVolumeChange = true;
@@ -3448,6 +3449,11 @@ static pa_hook_result_t SinkInputStateChangedCb(pa_core *core, pa_sink_input *i,
 static pa_hook_result_t SinkInputPutCb(pa_core *core, pa_sink_input *i, struct Userdata *u)
 {
     pa_sink_input_assert_ref(i);
+    const char *streamMode = pa_proplist_gets(i->proplist, "stream.mode");
+    if (streamMode != NULL && !strcmp(streamMode, DUP_STEAM_NAME)) {
+        AUDIO_INFO_LOG("Dup stream is dismissed:%{public}u", i->index);
+        return PA_HOOK_OK;
+    }
     i->state_change = PaInputStateChangeCb;
     i->volume_changed = PaInputVolumeChangeCb;
     return PA_HOOK_OK;

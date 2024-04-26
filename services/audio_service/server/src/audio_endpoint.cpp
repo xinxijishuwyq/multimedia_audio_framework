@@ -33,6 +33,7 @@
 #include "fast_audio_renderer_sink.h"
 #include "fast_audio_capturer_source.h"
 #include "i_audio_capturer_source.h"
+#include "i_stream_manager.h"
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
 #include "remote_fast_audio_renderer_sink.h"
@@ -73,6 +74,16 @@ static enum HdiAdapterFormat ConvertToHdiAdapterFormat(AudioSampleFormat format)
 
     return adapterFormat;
 }
+
+class MockCallbacks : public IStatusCallback, public IWriteCallback {
+public:
+    explicit MockCallbacks(uint32_t streamIndex);
+    virtual ~MockCallbacks() = default;
+    void OnStatusUpdate(IOperation operation) override;
+    int32_t OnWriteData(size_t length) override;
+private:
+    uint32_t streamIndex_ = 0;
+};
 
 class AudioEndpointInner : public AudioEndpoint {
 public:
@@ -120,6 +131,13 @@ public:
         return dstAudioBuffer_;
     }
 
+    // for inner-cap
+    bool ShouldInnerCap() override;
+    int32_t EnableFastInnerCap() override;
+    int32_t DisableFastInnerCap() override;
+
+    int32_t InitDupStream();
+
     EndpointStatus GetStatus() override;
 
     void Release() override;
@@ -132,6 +150,8 @@ public:
     float GetMaxAmplitude() override;
 
 private:
+    AudioProcessConfig GetInnerCapConfig();
+    void MixToDupStream(const std::vector<AudioStreamData> &srcDataList);
     bool ConfigInputPoint(const DeviceInfo &deviceInfo);
     int32_t PrepareDeviceBuffer(const DeviceInfo &deviceInfo);
     int32_t GetAdapterBufferInfo(const DeviceInfo &deviceInfo);
@@ -199,6 +219,16 @@ private:
     std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
 
     std::atomic<bool> isInited_ = false;
+
+    // for inner-cap
+    std::mutex dupMutex_;
+    std::atomic<bool> isInnerCapEnabled_ = false;
+    uint32_t dupStreamIndex_ = 0;
+    std::shared_ptr<MockCallbacks> dupStreamCallback_ = nullptr;
+    std::shared_ptr<IRendererStream> dupStream_ = nullptr;
+    size_t dupBufferSize_ = 0;
+    std::unique_ptr<uint8_t []> dupBuffer_ = nullptr;
+    FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
 
     IMmapAudioRendererSink *fastSink_ = nullptr;
     IMmapAudioCapturerSource *fastSource_ = nullptr;
@@ -314,6 +344,128 @@ int32_t AudioEndpointInner::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer
     return SUCCESS;
 }
 
+MockCallbacks::MockCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
+{
+    AUDIO_INFO_LOG("DupStream %{public}u create MockCallbacks", streamIndex_);
+}
+
+void MockCallbacks::OnStatusUpdate(IOperation operation)
+{
+    AUDIO_INFO_LOG("DupStream %{public}u recv operation: %{public}d", streamIndex_, operation);
+}
+
+int32_t MockCallbacks::OnWriteData(size_t length)
+{
+    Trace trace("DupStream::OnWriteData length " + std::to_string(length));
+    return SUCCESS;
+}
+
+bool AudioEndpointInner::ShouldInnerCap()
+{
+    bool shouldBecapped = false;
+    std::lock_guard<std::mutex> lock(listLock_);
+    for (uint32_t i = 0; i < processList_.size(); i++) {
+        if (processList_[i]->GetInnerCapState()) {
+            shouldBecapped = true;
+            break;
+        }
+    }
+    AUDIO_INFO_LOG("find endpoint inner-cap state: %{public}s", shouldBecapped ? "true" : "false");
+    return shouldBecapped;
+}
+
+AudioProcessConfig AudioEndpointInner::GetInnerCapConfig()
+{
+    AudioProcessConfig processConfig;
+
+    processConfig.appInfo.appPid = getpid();
+    processConfig.appInfo.appUid = getuid();
+
+    processConfig.streamInfo = dstStreamInfo_;
+
+    processConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    // processConfig.rendererInfo ?
+
+    processConfig.streamType = STREAM_MUSIC;
+
+    return processConfig;
+}
+
+int32_t AudioEndpointInner::InitDupStream()
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    CHECK_AND_RETURN_RET_LOG(isInnerCapEnabled_ == false, SUCCESS, "already enabled");
+
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(processConfig, dupStream_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dupStream_ != nullptr, ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
+    dupStreamIndex_ = dupStream_->GetStreamIndex();
+
+    dupStreamCallback_ = std::make_shared<MockCallbacks>(dupStreamIndex_);
+    dupStream_->RegisterStatusCallback(dupStreamCallback_);
+    dupStream_->RegisterWriteCallback(dupStreamCallback_);
+
+    // eg: /data/local/tmp/LocalDevice6_0_48000_2_1_c2s_dup.pcm
+    AudioStreamInfo tempInfo = processConfig.streamInfo;
+    std::string dupDumpName = GetEndpointName() + "_" + std::to_string(tempInfo.samplingRate) + "_" +
+        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_c2s_dup.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dupDumpName, &dumpC2SDup_);
+
+    AUDIO_INFO_LOG("Dup Renderer %{public}d with Endpoint status: %{public}s", dupStreamIndex_,
+        GetStatusStr(endpointStatus_).c_str());
+
+    // buffer init
+    dupBufferSize_ = dstSpanSizeInframe_ * dstByteSizePerFrame_; // each
+    CHECK_AND_RETURN_RET_LOG(dupBufferSize_ < dstAudioBuffer_->GetDataSize(), ERR_OPERATION_FAILED, "Init buffer fail");
+    dupBuffer_ = std::make_unique<uint8_t []>(dupBufferSize_);
+    ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
+    if (ret != EOK) {
+        AUDIO_WARNING_LOG("memset buffer fail, ret %{public}d", ret);
+    }
+
+    if (endpointStatus_ == RUNNING || (endpointStatus_ == IDEL && isDeviceRunningInIdel_)) {
+        AUDIO_INFO_LOG("Endpoint %{public}d is already running, let's start the dup stream", deviceInfo_.deviceId);
+        dupStream_->Start();
+    }
+    // mark enabled last
+    isInnerCapEnabled_ = true;
+    return SUCCESS;
+}
+
+int32_t AudioEndpointInner::EnableFastInnerCap()
+{
+    if (isInnerCapEnabled_) {
+        AUDIO_INFO_LOG("InnerCap is already enabled");
+        return SUCCESS;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(deviceInfo_.deviceRole == OUTPUT_DEVICE, ERR_INVALID_OPERATION, "Not output device!");
+    int32_t ret = InitDupStream();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    return SUCCESS;
+}
+
+int32_t AudioEndpointInner::DisableFastInnerCap()
+{
+    if (deviceInfo_.deviceRole != OUTPUT_DEVICE) {
+        return SUCCESS;
+    }
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    if (!isInnerCapEnabled_) {
+        AUDIO_INFO_LOG("InnerCap is already disabled.");
+        return SUCCESS;
+    }
+    isInnerCapEnabled_ = false;
+    AUDIO_INFO_LOG("Disable dup renderer %{public}d with Endpoint status: %{public}s", dupStreamIndex_,
+        GetStatusStr(endpointStatus_).c_str());
+
+    IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    dupStream_ = nullptr;
+
+    return SUCCESS;
+}
+
 AudioEndpoint::EndpointStatus AudioEndpointInner::GetStatus()
 {
     AUDIO_INFO_LOG("AudioEndpoint get status:%{public}s", GetStatusStr(endpointStatus_).c_str());
@@ -361,6 +513,11 @@ void AudioEndpointInner::Release()
         AUDIO_INFO_LOG("Set device buffer null");
         dstAudioBuffer_ = nullptr;
     }
+
+    if (deviceInfo_.deviceRole == OUTPUT_DEVICE && isInnerCapEnabled_) {
+        DisableFastInnerCap();
+    }
+
     DumpFileUtil::CloseDumpFile(&dumpDcp_);
     DumpFileUtil::CloseDumpFile(&dumpHdi_);
 }
@@ -691,6 +848,14 @@ bool AudioEndpointInner::StartDevice()
         }
     }
 
+    if (isInnerCapEnabled_) {
+        Trace trace("AudioEndpointInner::StartDupStream");
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Start();
+        }
+    }
+
     if (isStarted_ == false) {
         endpointStatus_ = IDEL;
         workThreadCV_.notify_all();
@@ -719,6 +884,14 @@ bool AudioEndpointInner::DelayStopDevice()
         }
     }
 
+    if (isInnerCapEnabled_) {
+        Trace trace("AudioEndpointInner::StopDupStreamInDelay");
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Stop();
+        }
+    }
+
     if (deviceInfo_.deviceRole == INPUT_DEVICE) {
         CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Stop() == SUCCESS,
             false, "Source stop failed.");
@@ -743,6 +916,15 @@ bool AudioEndpointInner::StopDevice()
             dstAudioBuffer_->GetDataSize());
         AUDIO_INFO_LOG("StopDevice clear buffer ret:%{public}d", ret);
     }
+
+    if (isInnerCapEnabled_) {
+        Trace trace("AudioEndpointInner::StopDupStream");
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Stop();
+        }
+    }
+
     if (deviceInfo_.deviceRole == INPUT_DEVICE) {
         CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Stop() == SUCCESS,
             false, "Source stop failed.");
@@ -979,6 +1161,42 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
     return isAllReady;
 }
 
+void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcDataList)
+{
+    Trace trace("AudioEndpointInner::MixToDupStream");
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    CHECK_AND_RETURN_LOG(dupBuffer_ != nullptr, "Buffer is not ready");
+
+    for (size_t i = 0; i < srcDataList.size(); i++) {
+        if (!srcDataList[i].isInnerCaped) {
+            continue;
+        }
+        size_t dataLength = dupBufferSize_;
+        dataLength /= 2; // SAMPLE_S16LE--> 2 byte
+        int16_t *dstPtr = reinterpret_cast<int16_t *>(dupBuffer_.get());
+
+        for (size_t offset = 0; dataLength > 0; dataLength--) {
+            int32_t sum = *dstPtr;
+            sum += *(reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset);
+            *dstPtr = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
+            dstPtr++;
+            offset++;
+        }
+    }
+    BufferDesc temp;
+    temp.buffer = dupBuffer_.get();
+    temp.bufLength = dupBufferSize_;
+    temp.dataLength = dupBufferSize_;
+
+    int32_t ret = dupStream_->EnqueueBuffer(temp);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "EnqueueBuffer failed:%{public}d", ret);
+
+    ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
+    if (ret != EOK) {
+        AUDIO_WARNING_LOG("memset buffer fail, ret %{public}d", ret);
+    }
+}
+
 void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
 {
     size_t srcListSize = srcDataList.size();
@@ -1044,6 +1262,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         }
         streamData.volumeEnd = curReadSpan->volumeEnd;
         streamData.streamInfo = processList_[i]->GetStreamInfo();
+        streamData.isInnerCaped = processList_[i]->GetInnerCapState();
         SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;
         if (curReadSpan->spanStatus.compare_exchange_strong(targetStatus, SpanStatus::SPAN_READING)) {
             processBufferList_[i]->GetReadbuffer(curRead, streamData.bufferDesc); // check return?
@@ -1082,6 +1301,10 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos)
             dstStreamData.bufferDesc.bufLength);
     } else {
         ProcessData(audioDataList, dstStreamData);
+    }
+
+    if (isInnerCapEnabled_) {
+        MixToDupStream(audioDataList);
     }
 
     DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),

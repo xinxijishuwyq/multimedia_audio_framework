@@ -54,6 +54,8 @@ public:
 
     virtual int32_t Drain() = 0;
 
+    virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
+
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) = 0;
 
     virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp) = 0;
@@ -99,6 +101,7 @@ public:
         ON_RELEASE,
         ON_FLUSH,
         ON_DRAIN,
+        ON_UPDATA_PLAYBACK_CAPTURER_CONFIG,
         OH_GET_AUDIO_TIME,
         OH_GET_AUDIO_POSITION,
         ON_GET_LATENCY,

@@ -144,29 +144,6 @@ static pa_hook_result_t SinkInputUnlinkCb(pa_core *c, pa_sink_input *si, void *u
     return PA_HOOK_OK;
 }
 
-static pa_hook_result_t SourceOutputStateChangedCb(pa_core *c, pa_source_output *so, void *u)
-{
-    pa_assert(c);
-    pa_assert(so);
-
-    int innerCapturerFlag = 0;
-    const char *flag = pa_proplist_gets(so->proplist, "stream.isInnerCapturer");
-    if (flag != NULL) {
-        pa_atoi(flag, &innerCapturerFlag);
-    }
-
-    if (innerCapturerFlag == 1) {
-        if (so->state == PA_SOURCE_OUTPUT_RUNNING) {
-            SetInnerCapturerState(true);
-            so->destination_source = so->source;
-        } else {
-            SetInnerCapturerState(false);
-        }
-    }
-
-    return PA_HOOK_OK;
-}
-
 static pa_hook_result_t SinkInputStateChangedCb(pa_core *c, pa_sink_input *si, void *u)
 {
     pa_assert(c);
@@ -239,8 +216,7 @@ int pa__init(pa_module *m)
         (pa_hook_cb_t)SinkInputNewCb, NULL);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_UNLINK], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputUnlinkCb, NULL);
-    pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SOURCE_OUTPUT_STATE_CHANGED], PA_HOOK_LATE,
-        (pa_hook_cb_t)SourceOutputStateChangedCb, NULL);
+    // SourceOutputStateChangedCb will be replaced by UpdatePlaybackCaptureConfig in CapturerInServer
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_LATE,
         (pa_hook_cb_t)SinkInputStateChangedCb, NULL);
     pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_VOLUME_CHANGED], PA_HOOK_LATE,

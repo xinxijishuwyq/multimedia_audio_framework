@@ -23,6 +23,12 @@ IStreamManager &IStreamManager::GetPlaybackManager()
     return adapterManager;
 }
 
+IStreamManager &IStreamManager::GetDupPlaybackManager()
+{
+    static PaAdapterManager adapterManager(DUP_PLAYBACK);
+    return adapterManager;
+}
+
 IStreamManager &IStreamManager::GetRecorderManager()
 {
     static PaAdapterManager adapterManager(RECORDER);

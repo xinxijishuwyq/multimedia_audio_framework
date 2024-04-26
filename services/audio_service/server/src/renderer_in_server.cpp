@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "audio_service.h"
 #include "i_stream_manager.h"
 
 namespace OHOS {
@@ -32,8 +33,8 @@ namespace {
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
+    : processConfig_(processConfig)
 {
-    processConfig_ = processConfig;
     streamListener_ = streamListener;
 }
 
@@ -247,6 +248,13 @@ int32_t RendererInServer::WriteData()
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+        if (isInnerCapEnabled_) {
+            Trace traceDup("RendererInServer::WriteData DupSteam write");
+            std::lock_guard<std::mutex> lock(dupMutex_);
+            if (dupStream_ != nullptr) {
+                dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+            }
+        }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
@@ -350,6 +358,13 @@ int32_t RendererInServer::Start()
     audioServerBuffer_->SetHandleInfo(currentReadFrame, tempTime);
     AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
     resetTime_ = true;
+
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Start();
+        }
+    }
     return SUCCESS;
 }
 
@@ -363,6 +378,12 @@ int32_t RendererInServer::Pause()
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Pause();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     return SUCCESS;
 }
@@ -401,6 +422,12 @@ int32_t RendererInServer::Flush()
 
     int ret = stream_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Flush();
+        }
+    }
     return SUCCESS;
 }
 
@@ -429,6 +456,12 @@ int32_t RendererInServer::Drain()
     DrainAudioBuffer();
     int ret = stream_->Drain();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Drain();
+        }
+    }
     return SUCCESS;
 }
 
@@ -444,12 +477,19 @@ int32_t RendererInServer::Stop()
         status_ = I_STATUS_STOPPING;
     }
     int ret = stream_->Stop();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Stop();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     return SUCCESS;
 }
 
 int32_t RendererInServer::Release()
 {
+    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
@@ -464,6 +504,11 @@ int32_t RendererInServer::Release()
         return ret;
     }
     status_ = I_STATUS_RELEASED;
+
+    if (isInnerCapEnabled_) {
+        DisableInnerCap();
+    }
+
     return SUCCESS;
 }
 
@@ -530,6 +575,72 @@ int32_t RendererInServer::SetPrivacyType(int32_t privacyType)
 int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 {
     return stream_->GetPrivacyType(privacyType);
+}
+
+int32_t RendererInServer::EnableInnerCap()
+{
+    // in plan
+    if (isInnerCapEnabled_) {
+        AUDIO_INFO_LOG("InnerCap is already enabled");
+        return SUCCESS;
+    }
+    int32_t ret = InitDupStream();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    return SUCCESS;
+}
+
+int32_t RendererInServer::DisableInnerCap()
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    if (!isInnerCapEnabled_) {
+        AUDIO_WARNING_LOG("InnerCap is already disabled.");
+        return ERR_INVALID_OPERATION;
+    }
+    isInnerCapEnabled_ = false;
+    AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_);
+    // in plan: call stop?
+    IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    dupStream_ = nullptr;
+
+    return ERROR;
+}
+
+int32_t RendererInServer::InitDupStream()
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(processConfig_, dupStream_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dupStream_ != nullptr, ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
+    dupStreamIndex_ = dupStream_->GetStreamIndex();
+
+    dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex_);
+    dupStream_->RegisterStatusCallback(dupStreamCallback_);
+    dupStream_->RegisterWriteCallback(dupStreamCallback_);
+
+    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
+
+    isInnerCapEnabled_ = true;
+
+    if (status_ == I_STATUS_STARTED) {
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
+        dupStream_->Start();
+    }
+    return SUCCESS;
+}
+
+StreamCallbacks::StreamCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
+{
+    AUDIO_INFO_LOG("DupStream %{public}u create StreamCallbacks", streamIndex_);
+}
+
+void StreamCallbacks::OnStatusUpdate(IOperation operation)
+{
+    AUDIO_INFO_LOG("DupStream %{public}u recv operation: %{public}d", streamIndex_, operation);
+}
+
+int32_t StreamCallbacks::OnWriteData(size_t length)
+{
+    Trace trace("DupStream::OnWriteData length " + std::to_string(length));
+    return SUCCESS;
 }
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)

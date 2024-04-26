@@ -666,6 +666,85 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
     return audioServiceAdapter_->CloseAudioPort(ioHandle);
 }
 
+void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
+{
+    if (!audioModuleInfo.name.empty()) {
+        args.append(" sink_name=");
+        args.append(audioModuleInfo.name);
+    }
+
+    if (!audioModuleInfo.adapterName.empty()) {
+        args.append(" adapter_name=");
+        args.append(audioModuleInfo.adapterName);
+    }
+
+    if (!audioModuleInfo.className.empty()) {
+        args.append(" device_class=");
+        args.append(audioModuleInfo.className);
+    }
+
+    if (!audioModuleInfo.fileName.empty()) {
+        args.append(" file_path=");
+        args.append(audioModuleInfo.fileName);
+    }
+    if (!audioModuleInfo.sinkLatency.empty()) {
+        args.append(" sink_latency=");
+        args.append(audioModuleInfo.sinkLatency);
+    }
+
+    if (!audioModuleInfo.networkId.empty()) {
+        args.append(" network_id=");
+        args.append(audioModuleInfo.networkId);
+    } else {
+        args.append(" network_id=LocalDevice");
+    }
+
+    if (!audioModuleInfo.deviceType.empty()) {
+        args.append(" device_type=");
+        args.append(audioModuleInfo.deviceType);
+    }
+}
+
+void UpdateSourceArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
+{
+    if (!audioModuleInfo.name.empty()) {
+        args.append(" source_name=");
+        args.append(audioModuleInfo.name);
+    }
+
+    if (!audioModuleInfo.adapterName.empty()) {
+        args.append(" adapter_name=");
+        args.append(audioModuleInfo.adapterName);
+    }
+
+    if (!audioModuleInfo.className.empty()) {
+        args.append(" device_class=");
+        args.append(audioModuleInfo.className);
+    }
+
+    if (!audioModuleInfo.fileName.empty()) {
+        args.append(" file_path=");
+        args.append(audioModuleInfo.fileName);
+    }
+
+    if (!audioModuleInfo.networkId.empty()) {
+        args.append(" network_id=");
+        args.append(audioModuleInfo.networkId);
+    } else {
+        args.append(" network_id=LocalDevice");
+    }
+
+    if (!audioModuleInfo.deviceType.empty()) {
+        args.append(" device_type=");
+        args.append(audioModuleInfo.deviceType);
+    }
+
+    if (!audioModuleInfo.sourceType.empty()) {
+        args.append(" source_type=");
+        args.append(audioModuleInfo.sourceType);
+    }
+}
+
 void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.rate.empty()) {
@@ -732,82 +811,14 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
     if (audioModuleInfo.lib == HDI_SINK) {
         UpdateCommonArgs(audioModuleInfo, args);
-        if (!audioModuleInfo.name.empty()) {
-            args.append(" sink_name=");
-            args.append(audioModuleInfo.name);
-        }
-
-        if (!audioModuleInfo.adapterName.empty()) {
-            args.append(" adapter_name=");
-            args.append(audioModuleInfo.adapterName);
-        }
-
-        if (!audioModuleInfo.className.empty()) {
-            args.append(" device_class=");
-            args.append(audioModuleInfo.className);
-        }
-
-        if (!audioModuleInfo.fileName.empty()) {
-            args.append(" file_path=");
-            args.append(audioModuleInfo.fileName);
-        }
-        if (!audioModuleInfo.sinkLatency.empty()) {
-            args.append(" sink_latency=");
-            args.append(audioModuleInfo.sinkLatency);
-        }
+        UpdateSinkArgs(audioModuleInfo, args);
         if (testModeOn_) {
             args.append(" test_mode_on=");
             args.append("1");
         }
-        if (!audioModuleInfo.networkId.empty()) {
-            args.append(" network_id=");
-            args.append(audioModuleInfo.networkId);
-        } else {
-            args.append(" network_id=LocalDevice");
-        }
-
-        if (!audioModuleInfo.deviceType.empty()) {
-            args.append(" device_type=");
-            args.append(audioModuleInfo.deviceType);
-        }
     } else if (audioModuleInfo.lib == HDI_SOURCE) {
         UpdateCommonArgs(audioModuleInfo, args);
-        if (!audioModuleInfo.name.empty()) {
-            args.append(" source_name=");
-            args.append(audioModuleInfo.name);
-        }
-
-        if (!audioModuleInfo.adapterName.empty()) {
-            args.append(" adapter_name=");
-            args.append(audioModuleInfo.adapterName);
-        }
-
-        if (!audioModuleInfo.className.empty()) {
-            args.append(" device_class=");
-            args.append(audioModuleInfo.className);
-        }
-
-        if (!audioModuleInfo.fileName.empty()) {
-            args.append(" file_path=");
-            args.append(audioModuleInfo.fileName);
-        }
-
-        if (!audioModuleInfo.networkId.empty()) {
-            args.append(" network_id=");
-            args.append(audioModuleInfo.networkId);
-        } else {
-            args.append(" network_id=LocalDevice");
-        }
-
-        if (!audioModuleInfo.deviceType.empty()) {
-            args.append(" device_type=");
-            args.append(audioModuleInfo.deviceType);
-        }
-
-        if (!audioModuleInfo.sourceType.empty()) {
-            args.append(" source_type=");
-            args.append(audioModuleInfo.sourceType);
-        }
+        UpdateSourceArgs(audioModuleInfo, args);
     } else if (audioModuleInfo.lib == PIPE_SINK) {
         if (!audioModuleInfo.fileName.empty()) {
             args = "file=";
@@ -835,6 +846,7 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
             args.append(audioModuleInfo.sceneName);
         }
     } else if (audioModuleInfo.lib == INNER_CAPTURER_SINK || audioModuleInfo.lib == RECEIVER_SINK) {
+        UpdateCommonArgs(audioModuleInfo, args);
         if (!audioModuleInfo.name.empty()) {
             args.append(" sink_name=");
             args.append(audioModuleInfo.name);

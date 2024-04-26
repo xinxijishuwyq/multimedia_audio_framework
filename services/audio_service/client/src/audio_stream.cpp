@@ -171,6 +171,12 @@ void AudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
     capturerInfo_ = capturerInfo;
 }
 
+int32_t AudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 State AudioStream::GetState()
 {
     return state_;

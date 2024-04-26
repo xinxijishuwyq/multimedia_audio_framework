@@ -725,6 +725,9 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     CHECK_AND_RETURN_LOG(i->proplist != nullptr, "Invalid Proplist for sink input (%{public}d).", i->index);
 
+    std::string streamMode = pa_proplist_gets(i->proplist, "stream.mode");
+    if (streamMode == DUP_STREAM) { return; }
+
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
     const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
@@ -736,11 +739,8 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     CHECK_AND_RETURN_LOG((streamtype != nullptr) && (streamVolume != nullptr) && (streamPowerVolume != nullptr) &&
         (sessionCStr != nullptr), "Invalid Stream parameter info.");
 
-    std::stringstream sessionStr;
-    uint32_t sessionID;
-    sessionStr << sessionCStr;
-    sessionStr >> sessionID;
-    AUDIO_DEBUG_LOG("sessionID %{public}u", sessionID);
+    uint32_t sessionID = 0;
+    CastValue<uint32_t>(sessionID, sessionCStr);
 
     sinkIndexSessionIDMap[i->index] = sessionID;
 
@@ -760,8 +760,6 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     if (streamTypeID == userData->streamType || userData->isSubscribingCb) {
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
     }
-    AUDIO_DEBUG_LOG("volume %{public}f for stream uid %{public}d"\
-        ", volumeFactor %{public}f, volumeDbCb %{public}f", vol, uid, volumeFactor, volumeDbCb);
     HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamTypeID, "VOLUME", vol,
@@ -831,6 +829,12 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
 
     CHECK_AND_RETURN_LOG(i->proplist != nullptr,
         "Invalid Proplist for sink input (%{public}d).", i->index);
+
+    std::string streamMode = pa_proplist_gets(i->proplist, "stream.mode");
+    if (streamMode == DUP_STREAM) {
+        AUDIO_INFO_LOG("Dup stream dismissed:%{public}u", i->index);
+        return;
+    }
 
     AudioStreamType audioStreamType = STREAM_DEFAULT;
     const char *streamType = pa_proplist_gets(i->proplist, "stream.type");

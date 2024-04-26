@@ -56,6 +56,12 @@ void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t
     appTokenId_ = appTokenId;
 }
 
+int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;

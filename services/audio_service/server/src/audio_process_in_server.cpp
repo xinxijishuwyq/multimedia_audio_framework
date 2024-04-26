@@ -181,6 +181,17 @@ int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
     return SUCCESS;
 }
 
+void AudioProcessInServer::SetInnerCapState(bool isInnerCapped)
+{
+    AUDIO_INFO_LOG("process[%{public}u] innercapped: %{public}s", sessionId_, isInnerCapped ? "true" : "false");
+    isInnerCapped_ = isInnerCapped;
+}
+
+bool AudioProcessInServer::GetInnerCapState()
+{
+    return isInnerCapped_;
+}
+
 int AudioProcessInServer::Dump(int fd, const std::vector<std::u16string> &args)
 {
     return SUCCESS;
