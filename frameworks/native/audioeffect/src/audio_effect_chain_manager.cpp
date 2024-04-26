@@ -470,6 +470,8 @@ bool AudioEffectChainManager::ExistAudioEffectChain(const std::string &sceneType
 
     if (!strcmp(sceneType, "SCENE_RING") || !strcmp(sceneType, "SCENE_OTHERS")) {
         effectMode = "EFFECT_NONE";
+    } else {
+        effectMode = "EFFECT_DEFAULT";
     }
 
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
