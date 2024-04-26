@@ -114,7 +114,7 @@ bool AudioAdapterManager::Init()
     }
 
     char currentSafeVolumeValue[3] = {0};
-    ret = GetParameter("persist.multimedia.audio.safevolume", "8",
+    ret = GetParameter("const.audio.safe_media_volume", "15",
         currentSafeVolumeValue, sizeof(currentSafeVolumeValue));
     if (ret > 0) {
         safeVolume_ = atoi(currentSafeVolumeValue);
