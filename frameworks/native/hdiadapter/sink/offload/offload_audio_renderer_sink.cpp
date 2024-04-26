@@ -866,6 +866,7 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
+    AUDIO_INFO_LOG("keepRunningLock Lock");
     if (OffloadKeepRunningLock == nullptr) {
         OffloadKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
@@ -883,6 +884,7 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
+    AUDIO_INFO_LOG("keepRunningLock UnLock");
     CHECK_AND_RETURN_RET_LOG(OffloadKeepRunningLock != nullptr, ERR_OPERATION_FAILED,
         "OffloadKeepRunningLock is null, playback can not work well!");
     CHECK_AND_RETURN_RET(runninglocked, SUCCESS);
