@@ -164,14 +164,16 @@ void AudioAdapterManager::InitKVStoreInternal()
 
     AUDIO_INFO_LOG("AudioAdapterManager::%{public}s in", __func__);
 #ifdef SUPPORT_USER_ACCOUNT
-    if (accountInfoObs_ == nullptr) {
+    if (!isAccountChangeSet_) {
         AccountSA::OsAccountSubscribeInfo osAccountSubscribeInfo;
         osAccountSubscribeInfo.SetOsAccountSubscribeType(AccountSA::OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED);
-        accountInfoObs_ = std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
-        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs_);
-        if (errCode != SUCCESS) {
-            AUDIO_ERR_LOG("SubscribeOsAccount failed,errCode :%{public}d", errCode);
-            accountInfoObs_ = nullptr;
+        std::shared_ptr<AudioOsAccountInfo> accountInfoObs =
+            std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
+        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs);
+        if (errCode == SUCCESS) {
+            isAccountChangeSet_ = true;
+        } else {
+            AUDIO_ERR_LOG("SubscribeOsAccount failed");
         }
     }
 #endif
@@ -554,14 +556,16 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
 {
 #ifdef SUPPORT_USER_ACCOUNT
     // SubscribeOsAccount again if OsAccountManager didnot start when boot
-    if (accountInfoObs_ == nullptr) {
+    if (!isAccountChangeSet_) {
         AccountSA::OsAccountSubscribeInfo osAccountSubscribeInfo;
         osAccountSubscribeInfo.SetOsAccountSubscribeType(AccountSA::OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED);
-        accountInfoObs_ = std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
-        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs_);
-        if (errCode != SUCCESS) {
-            AUDIO_ERR_LOG("SubscribeOsAccount failed,errCode :%{public}d", errCode);
-            accountInfoObs_ = nullptr;
+        std::shared_ptr<AudioOsAccountInfo> accountInfoObs =
+            std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
+        ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs);
+        if (errCode == SUCCESS) {
+            isAccountChangeSet_ = true;
+        } else {
+            AUDIO_ERR_LOG("SubscribeOsAccount failed");
         }
     }
 #endif
