@@ -200,6 +200,8 @@ napi_value NapiAsrProcessingController::CreateAsrProcessingController(napi_env e
     napi_value argv[ARGS_ONE] = {};
     napi_value thisVar = nullptr;
     napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "argCount invaild");
     bool isCapturerValid = CheckCapturerValid(env, argv[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(isCapturerValid,
         ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED), "Operation not allowed. ");

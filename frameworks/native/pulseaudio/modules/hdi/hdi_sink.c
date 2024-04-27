@@ -3357,6 +3357,7 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
         return;
     }
 
+    AUDIO_INFO_LOG("stopping: %{public}d, nOpened: %{public}d", stopping, nOpened);
     if (stopping && nOpened == 0) {
         if (u->offload.isHDISinkStarted) {
             u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
@@ -3391,9 +3392,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         return RemoteSinkStateChange(s, newState);
     }
 
-    if (u->offload_enable) {
-        OffloadSinkStateChangeCb(s, newState);
-    }
+    OffloadSinkStateChangeCb(s, newState);
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
         newState == PA_SINK_RUNNING) {
