@@ -1650,6 +1650,11 @@ void AudioAdapterManager::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolu
     streamVolumeInfos = streamVolumeInfos_;
 }
 
+void AudioAdapterManager::SetActiveDevice(DeviceType deviceType)
+{
+    currentActiveDevice_ = deviceType;
+}
+
 DeviceType AudioAdapterManager::GetActiveDevice()
 {
     return currentActiveDevice_;
