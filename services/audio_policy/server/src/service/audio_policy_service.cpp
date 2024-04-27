@@ -5349,13 +5349,10 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
 void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
 {
     if (sessionWithSpecialSourceType_.count(sessionID) > 0) {
+        if (sessionWithSpecialSourceType_[sessionID].sourceType == SOURCE_TYPE_REMOTE_CAST) {
+            HandleRemoteCastDevice(false);
+        }
         sessionWithSpecialSourceType_.erase(sessionID);
-        return;
-    }
-
-    if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_REMOTE_CAST) {
-        HandleRemoteCastDevice(false);
-        sessionWithNormalSourceType_.erase(sessionID);
         return;
     }
 
@@ -5403,7 +5400,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
     } else if (sessionInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
         HandleRemoteCastDevice(true, streamInfo);
-        sessionWithNormalSourceType_[sessionID] = sessionInfo;
+        sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     } else {
         sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     }
