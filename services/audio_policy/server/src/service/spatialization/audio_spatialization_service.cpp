@@ -434,10 +434,11 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
 void AudioSpatializationService::InitSpatializationState()
 {
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    CHECK_AND_RETURN_LOG(!isLoadedfromDb_, "the spatialization values have already been loaded");
     int32_t pack = 0;
     int32_t sceneType = 0;
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
 
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_STATE_SETTINGKEY, pack);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
@@ -455,6 +456,7 @@ void AudioSpatializationService::InitSpatializationState()
         spatializationSceneType_ = static_cast<AudioSpatializationSceneType>(sceneType);
         UpdateSpatializationSceneType();
     }
+    isLoadedfromDb_ = true;
 }
 
 void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation operation)

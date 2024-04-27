@@ -95,6 +95,7 @@ private:
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
     bool isHeadTrackingDataRequested_ = false;
+    bool isLoadedfromDb_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
