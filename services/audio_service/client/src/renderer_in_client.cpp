@@ -620,9 +620,9 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
 
-    // eg: 48000_2_1_out.pcm
-    dumpOutFile_ = std::to_string(curStreamParams_.samplingRate) + "_" + std::to_string(curStreamParams_.channels) +
-        "_" + std::to_string(curStreamParams_.format) + "_out.pcm";
+    // eg: 100005_44100_2_1_out.pcm
+    dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.samplingRate) + "_" +
+        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
 
