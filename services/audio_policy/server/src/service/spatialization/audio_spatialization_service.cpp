@@ -82,7 +82,6 @@ AudioSpatializationService::~AudioSpatializationService()
 
 void AudioSpatializationService::Init(const std::vector<EffectChain> &effectChains)
 {
-    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     for (auto effectChain: effectChains) {
         if (effectChain.name != BLUETOOTH_EFFECT_CHAIN_NAME) {
             continue;
@@ -96,7 +95,6 @@ void AudioSpatializationService::Init(const std::vector<EffectChain> &effectChai
             isHeadTrackingSupported_ = true;
         }
     }
-    InitSpatializationState();
 }
 
 void AudioSpatializationService::Deinit(void)
@@ -435,6 +433,7 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
 
 void AudioSpatializationService::InitSpatializationState()
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     int32_t pack = 0;
     int32_t sceneType = 0;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);

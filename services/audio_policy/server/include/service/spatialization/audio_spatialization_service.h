@@ -67,6 +67,7 @@ public:
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
     void UpdateRendererInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
+    void InitSpatializationState();
 private:
     AudioSpatializationService()
         :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
@@ -83,7 +84,6 @@ private:
     int32_t UpdateSpatializationState();
     int32_t UpdateSpatializationSceneType();
     void HandleSpatializationStateChange(bool outputDeviceChange);
-    void InitSpatializationState();
     void WriteSpatializationStateToDb(WriteToDbOperation operation);
     bool IsHeadTrackingDataRequestedForCurrentDevice();
     void UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress = "");
