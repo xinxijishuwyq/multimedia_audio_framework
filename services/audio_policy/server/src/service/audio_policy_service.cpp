@@ -5754,6 +5754,7 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             } else {
                 audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
                 audioStateManager_.SetPerferredCallCaptureDevice(new(std::nothrow) AudioDeviceDescriptor());
+                ClearScoDeviceSuspendState(desc.macAddress_);
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
@@ -5768,6 +5769,9 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     AUDIO_INFO_LOG("[%{public}s] [%{public}d] command: %{public}d isEnable: %{public}d category: %{public}d",
         GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.isEnable_, desc.deviceCategory_);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
+        if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            ClearScoDeviceSuspendState(desc.macAddress_);
+        }
         unique_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
             AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
         unique_ptr<AudioDeviceDescriptor> userSelectCallDevice =
