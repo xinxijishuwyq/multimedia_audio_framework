@@ -893,8 +893,12 @@ AudioRenderMode AudioRendererPrivate::GetRenderMode() const
 
 int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    std::lock_guard<std::mutex> lock(switchStreamMutex_);
-    return audioStream_->GetBufferDesc(bufDesc);
+    if (switchStreamMutex_.try_lock()) {
+        return audioStream_->GetBufferDesc(bufDesc);
+    } else {
+        AUDIO_ERR_LOG("In switch stream process, return");
+        return ERR_ILLEGAL_STATE;
+    }
 }
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
