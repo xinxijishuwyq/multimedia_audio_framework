@@ -79,6 +79,121 @@ void SetAudioManagerInterruptCallbackFuzzTest(const uint8_t *rawData, size_t siz
 
     interruptService->SetAudioManagerInterruptCallback(object);
 }
+
+void ActivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
+    audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+
+    interruptService->ActivateAudioInterrupt(zoneId, audioInterrupt);
+}
+
+void DeactivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
+    audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+
+    interruptService->DeactivateAudioInterrupt(zoneId, audioInterrupt);
+}
+
+void CreateAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+    std::set<int32_t> pids;
+    pids.insert(data.ReadInt32());
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+
+    interruptService->CreateAudioInterruptZone(zoneId, pids);
+}
+
+void ReleaseAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+
+    interruptService->ReleaseAudioInterruptZone(zoneId);
+}
+
+void RemoveAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+    std::set<int32_t> pids;
+    pids.insert(data.ReadInt32());
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+
+    interruptService->RemoveAudioInterruptZonePids(zoneId, pids);
+}
+
+void GetStreamInFocusFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+
+    interruptService->GetStreamInFocus(zoneId);
+}
+
+void GetSessionInfoInFocusFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.contentType = *reinterpret_cast<const ContentType *>(rawData);
+    audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    audioInterrupt.audioFocusType.streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+
+    interruptService->GetSessionInfoInFocus(audioInterrupt, zoneId);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -90,5 +205,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AddDumpInfoFuzzTest(data, size);
     OHOS::AudioStandard::SetCallbackHandlerFuzzTest(data, size);
     OHOS::AudioStandard::SetAudioManagerInterruptCallbackFuzzTest(data, size);
+    OHOS::AudioStandard::ActivateAudioInterruptFuzzTest(data, size);
+    OHOS::AudioStandard::DeactivateAudioInterruptFuzzTest(data, size);
+    OHOS::AudioStandard::CreateAudioInterruptZoneFuzzTest(data, size);
+    OHOS::AudioStandard::ReleaseAudioInterruptZoneFuzzTest(data, size);
+    OHOS::AudioStandard::RemoveAudioInterruptZonePidsFuzzTest(data, size);
+    OHOS::AudioStandard::GetStreamInFocusFuzzTest(data, size);
+    OHOS::AudioStandard::GetSessionInfoInFocusFuzzTest(data, size);
     return 0;
 }
