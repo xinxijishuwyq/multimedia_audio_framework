@@ -1203,8 +1203,8 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
     SourceType sourceType = config.capturerInfo.sourceType;
-    int32_t appUid = config.appInfo.appUid;
 #ifdef AUDIO_BUILD_VARIANT_ROOT
+    int32_t appUid = config.appInfo.appUid;
     if (appUid == ROOT_UID) {
         return true;
     }
