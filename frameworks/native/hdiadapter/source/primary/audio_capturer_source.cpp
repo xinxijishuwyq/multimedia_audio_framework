@@ -95,6 +95,7 @@ private:
     AudioFormat ConvertToHdiFormat(HdiAdapterFormat format);
 
     int32_t UpdateUsbAttrs(const std::string &usbInfoStr);
+    int32_t InitManagerAndAdapter();
     int32_t InitAdapterAndCapture();
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
@@ -123,10 +124,11 @@ private:
     bool startUpdate_ = false;
     int capFrameNum_ = 0;
 
-    struct IAudioManager *audioManager_;
-    struct IAudioAdapter *audioAdapter_;
-    struct IAudioCapture *audioCapture_;
-    std::string halName_;
+    struct IAudioManager *audioManager_ = nullptr;
+    std::atomic<bool> adapterLoaded_ = false;
+    struct IAudioAdapter *audioAdapter_ = nullptr;
+    struct IAudioCapture *audioCapture_ = nullptr;
+    const std::string halName_;
     struct AudioAdapterDescriptor adapterDesc_;
     struct AudioPort audioPort_;
 #ifdef FEATURE_POWER_MANAGER
@@ -144,6 +146,7 @@ private:
     bool latencyMeasEnabled_ = false;
     bool signalDetected_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    std::mutex managerAndAdapterMutex_;
 };
 
 class AudioCapturerSourceWakeup : public AudioCapturerSource {
@@ -418,11 +421,16 @@ void AudioCapturerSourceInner::DeInit()
 
     audioCapture_ = nullptr;
 
-    if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
+    std::lock_guard lock(managerAndAdapterMutex_);
+    // Only the usb hal needs to be unloadadapter at the moment.
+    if (halName_ == "usb") {
+        adapterLoaded_ = false;
+        if (audioManager_ != nullptr) {
+            audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
+        }
+        audioAdapter_ = nullptr;
+        audioManager_ = nullptr;
     }
-    audioAdapter_ = nullptr;
-    audioManager_ = nullptr;
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -478,7 +486,10 @@ int32_t AudioCapturerSourceInner::InitAudioManager()
 {
     AUDIO_INFO_LOG("Initialize audio proxy manager");
 
-    audioManager_ = IAudioManagerGet(false);
+    if (audioManager_ == nullptr) {
+        audioManager_ = IAudioManagerGet(false);
+    }
+
     if (audioManager_ == nullptr) {
         return ERR_INVALID_HANDLE;
     }
@@ -692,25 +703,29 @@ int32_t AudioCapturerSourceInner::SetMute(bool isMute)
 {
     muteState_ = isMute;
 
-    if (!IsInited()) {
-        AUDIO_INFO_LOG("SetMute before init, only record mute state");
-        return SUCCESS;
+    if (IsInited() && audioCapture_) {
+        int32_t ret = audioCapture_->SetMute(audioCapture_, isMute);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("SetMute for hdi capturer failed");
+        } else {
+            AUDIO_INFO_LOG("SetMute for hdi capture success");
+        }
     }
 
-    CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE,
-        "SetMute failed audioCapture_ handle is null!");
-
-    int32_t ret = audioCapture_->SetMute(audioCapture_, isMute);
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("SetMute failed from hdi");
+    if ((halName_ == "primary") && !adapterLoaded_) {
+        InitManagerAndAdapter();
     }
 
     if (audioAdapter_ != nullptr) {
-        ret = audioAdapter_->SetMicMute(audioAdapter_, isMute);
+        int32_t ret = audioAdapter_->SetMicMute(audioAdapter_, isMute);
         if (ret != 0) {
-            AUDIO_WARNING_LOG("SetMicMute failed from hdi");
+            AUDIO_WARNING_LOG("SetMicMute for hdi adapter failed");
+        } else {
+            AUDIO_INFO_LOG("SetMicMute for hdi adapter success");
         }
     }
+
+    AUDIO_INFO_LOG("end isMute=%{public}d", isMute);
 
     return SUCCESS;
 }
@@ -1058,15 +1073,9 @@ int32_t AudioCapturerSourceInner::UpdateUsbAttrs(const std::string &usbInfoStr)
     return SUCCESS;
 }
 
-int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
+int32_t AudioCapturerSourceInner::InitManagerAndAdapter()
 {
-    AUDIO_INFO_LOG("Init adapter start");
-
-    if (captureInited_) {
-        AUDIO_INFO_LOG("Adapter already inited");
-        return SUCCESS;
-    }
-
+    std::lock_guard lock(managerAndAdapterMutex_);
     int32_t err = InitAudioManager();
     CHECK_AND_RETURN_RET_LOG(err == 0, ERR_NOT_STARTED, "Init audio manager Fail");
 
@@ -1081,17 +1090,37 @@ int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
         size, adapterNameCase_, PORT_IN, audioPort_);
     CHECK_AND_RETURN_RET_LOG(index >= 0, ERR_NOT_STARTED, "Switch Adapter Capture Fail");
     adapterDesc_ = descs[index];
-    int32_t loadAdapter = audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &audioAdapter_);
-    CHECK_AND_RETURN_RET_LOG(loadAdapter == 0, ERR_NOT_STARTED, "Load Adapter Fail");
-    CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_NOT_STARTED, "Load audio device failed");
 
-    // Inittialization port information, can fill through mode and other parameters
-    int32_t initAllPorts = audioAdapter_->InitAllPorts(audioAdapter_);
-    CHECK_AND_RETURN_RET_LOG(initAllPorts == 0, ERR_DEVICE_INIT, "InitAllPorts failed");
+    if (audioAdapter_ == nullptr) {
+        struct IAudioAdapter *iAudioAdapter = nullptr;
+        int32_t loadAdapter = audioManager_->LoadAdapter(audioManager_, &adapterDesc_, &iAudioAdapter);
+        CHECK_AND_RETURN_RET_LOG(loadAdapter == 0, ERR_NOT_STARTED, "Load Adapter Fail");
+        CHECK_AND_RETURN_RET_LOG(iAudioAdapter != nullptr, ERR_NOT_STARTED, "Load audio device failed");
+
+        // Inittialization port information, can fill through mode and other parameters
+        int32_t initAllPorts = iAudioAdapter->InitAllPorts(iAudioAdapter);
+        CHECK_AND_RETURN_RET_LOG(initAllPorts == 0, ERR_DEVICE_INIT, "InitAllPorts failed");
+        audioAdapter_ = iAudioAdapter;
+        adapterLoaded_ = true;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
+{
+    AUDIO_INFO_LOG("Init adapter start");
+
+    if (captureInited_) {
+        AUDIO_INFO_LOG("Adapter already inited");
+        return SUCCESS;
+    }
+
+    InitManagerAndAdapter();
 
     int32_t createCapture = CreateCapture(audioPort_);
     CHECK_AND_RETURN_RET_LOG(createCapture == 0, ERR_NOT_STARTED, "Create capture failed");
     if (openMic_) {
+        int32_t ret;
         if (halName_ == "usb") {
             ret = SetInputRoute(DEVICE_TYPE_USB_ARM_HEADSET);
         } else {
