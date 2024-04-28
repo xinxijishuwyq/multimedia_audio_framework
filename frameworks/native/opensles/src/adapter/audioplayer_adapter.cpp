@@ -77,6 +77,7 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     AudioRenderer *renderer = rendererHolder.release();
     AUDIO_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
     renderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    renderer->SetOffloadAllowed(false);
     renderMap_.insert(make_pair(id, renderer));
     return SL_RESULT_SUCCESS;
 }
