@@ -25,7 +25,9 @@
 #include "i_audio_capturer_source_intf.h"
 #include "audio_capturer_source.h"
 #include "audio_capturer_file_source.h"
+#ifdef DAUDIO_ENABLE
 #include "remote_audio_capturer_source.h"
+#endif
 
 using namespace std;
 
@@ -40,7 +42,9 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
     const char *deviceClassUsb = "usb";
     const char *deviceClassA2DP = "a2dp";
     const char *deviceClassFile = "file_io";
+#ifdef DAUDIO_ENABLE
     const char *deviceClassRemote = "remote";
+#endif
 
     if (!strcmp(deviceClass, deviceClassPrimary)) {
         return AudioCapturerSource::GetInstance("primary", sourceType, sourceName);
@@ -56,11 +60,13 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
         static AudioCapturerFileSource audioCapturer;
         return &audioCapturer;
     }
+#ifdef DAUDIO_ENABLE
     if (!strcmp(deviceClass, deviceClassRemote)) {
         std::string networkId = deviceNetworkId;
         RemoteAudioCapturerSource *rSource = RemoteAudioCapturerSource::GetInstance(networkId);
         return rSource;
     }
+#endif
     return nullptr;
 }
 

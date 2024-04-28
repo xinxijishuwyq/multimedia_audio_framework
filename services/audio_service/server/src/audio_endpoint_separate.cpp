@@ -35,8 +35,6 @@
 #include "i_audio_capturer_source.h"
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
-#include "remote_fast_audio_renderer_sink.h"
-#include "remote_fast_audio_capturer_source.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace {
