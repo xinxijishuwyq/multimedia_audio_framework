@@ -208,8 +208,8 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
         std::string ret = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
-
-        return ret == "1" ? true : false;
+        isMute = (ret == "1" ? true : false);
+        return SUCCESS;
     }
 
     switch (volumeType) {
