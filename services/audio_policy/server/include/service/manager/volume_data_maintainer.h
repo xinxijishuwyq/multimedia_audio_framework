@@ -19,21 +19,18 @@
 #include <unordered_map>
 #include <cinttypes>
 
-#include "os_account_manager.h"
 #include "ipc_skeleton.h"
-#include "datashare_helper.h"
 #include "errors.h"
 #include "mutex"
-#include "data_ability_observer_stub.h"
 
+#include "audio_setting_provider.h"
 #include "audio_log.h"
 #include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t MAX_SAFE_STATUS = 2;
-constexpr int32_t MAX_STRING_LENGTH = 10;
-constexpr int32_t MIN_USER_ACCOUNT = 100;
+
 class VolumeDataMaintainer {
 public:
     enum VolumeDataMaintainerStreamType {  // define with Dual framework
@@ -90,56 +87,6 @@ public:
     void RegisterCloned();
 
 private:
-    class AudioSettingObserver : public AAFwk::DataAbilityObserverStub {
-    public:
-        AudioSettingObserver() = default;
-        ~AudioSettingObserver() = default;
-        void OnChange() override;
-        void SetKey(const std::string& key);
-        const std::string& GetKey();
-
-        using UpdateFunc = std::function<void(const std::string&)>;
-        void SetUpdateFunc(UpdateFunc& func);
-
-    private:
-        std::string key_ {};
-        UpdateFunc update_ = nullptr;
-    };
-
-    class AudioSettingProvider : public NoCopyable {
-    public:
-        static AudioSettingProvider& GetInstance(int32_t systemAbilityId);
-        ErrCode GetStringValue(const std::string &key, std::string &value, std::string tableType = "");
-        ErrCode GetIntValue(const std::string &key, int32_t &value, std::string tableType = "");
-        ErrCode GetLongValue(const std::string &key, int64_t &value, std::string tableType = "");
-        ErrCode GetBoolValue(const std::string &key, bool &value, std::string tableType = "");
-        ErrCode PutStringValue(const std::string &key, const std::string &value,
-            std::string tableType = "", bool needNotify = true);
-        ErrCode PutIntValue(const std::string &key, int32_t value, std::string tableType = "", bool needNotify = true);
-        ErrCode PutLongValue(const std::string &key, int64_t value, std::string tableType = "", bool needNotify = true);
-        ErrCode PutBoolValue(const std::string &key, bool value, std::string tableType = "", bool needNotify = true);
-        bool IsValidKey(const std::string &key);
-        sptr<AudioSettingObserver> CreateObserver(const std::string &key, AudioSettingObserver::UpdateFunc &func);
-        static void ExecRegisterCb(const sptr<AudioSettingObserver> &observer);
-        ErrCode RegisterObserver(const sptr<AudioSettingObserver> &observer);
-        ErrCode UnregisterObserver(const sptr<AudioSettingObserver> &observer);
-
-    protected:
-        ~AudioSettingProvider() override;
-
-    private:
-        static void Initialize(int32_t systemAbilityId);
-        static std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelper(std::string tableType = "");
-        static bool ReleaseDataShareHelper(std::shared_ptr<DataShare::DataShareHelper> &helper);
-        static Uri AssembleUri(const std::string &key, std::string tableType = "");
-        static int32_t GetCurrentUserId();
-
-        static AudioSettingProvider *instance_;
-        static std::mutex mutex_;
-        static sptr<IRemoteObject> remoteObj_;
-        static std::string SettingSystemUrlProxy_;
-    };
-
     VolumeDataMaintainer();
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);

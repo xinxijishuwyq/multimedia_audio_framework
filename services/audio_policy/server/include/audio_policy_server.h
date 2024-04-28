@@ -69,11 +69,6 @@ public:
         LISTENER_CLIENT
     };
 
-    enum SpatializationEventCategory {
-        SPATIALIZATION_ENABLED_CHANGE_EVENT,
-        HEAD_TRACKING_ENABLED_CHANGE_EVENT,
-    };
-
     const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
         STREAM_MUSIC,
         STREAM_VOICE_CALL,
@@ -285,15 +280,6 @@ public:
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
 
-    bool SpatializationClientDeathRecipientExist(SpatializationEventCategory eventCategory, pid_t uid);
-
-    void RegisterSpatializationClientDeathRecipient(const sptr<IRemoteObject> &object,
-        SpatializationEventCategory eventCategory);
-
-    void RegisteredSpatializationEnabledClientDied(pid_t uid);
-
-    void RegisteredHeadTrackingEnabledClientDied(pid_t uid);
-
     bool IsSpatializationEnabled() override;
 
     int32_t SetSpatializationEnabled(const bool enable) override;
@@ -301,14 +287,6 @@ public:
     bool IsHeadTrackingEnabled() override;
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
-
-    int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t UnregisterSpatializationEnabledEventListener() override;
-
-    int32_t UnregisterHeadTrackingEnabledEventListener() override;
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
@@ -504,16 +482,12 @@ private:
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
     std::vector<pid_t> clientDiedListenerState_;
-    std::vector<pid_t> spatializationEnabledListenerState_;
-    std::vector<pid_t> headTrackingEnabledListenerState_;
     sptr<PowerStateListener> powerStateListener_;
     bool powerStateCallbackRegister_;
 
     std::mutex keyEventMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
-    std::mutex spatializationEnabledListenerStateMutex_;
-    std::mutex headTrackingEnabledListenerStateMutex_;
 
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1, std::placeholders::_2),

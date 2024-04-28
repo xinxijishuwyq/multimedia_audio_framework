@@ -333,6 +333,7 @@ void AudioPolicyService::InitKVStore()
 {
     audioPolicyManager_.InitKVStore();
     UpdateVolumeForLowLatency();
+    AudioSpatializationService::GetAudioSpatializationService().InitSpatializationState();
 }
 
 void AudioPolicyService::UpdateVolumeForLowLatency()

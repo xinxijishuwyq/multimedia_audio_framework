@@ -2152,99 +2152,6 @@ void AudioPolicyServer::UnRegisterPowerStateListener()
     }
 }
 
-bool AudioPolicyServer::SpatializationClientDeathRecipientExist(SpatializationEventCategory eventCategory, pid_t uid)
-{
-    if (eventCategory == SPATIALIZATION_ENABLED_CHANGE_EVENT) {
-        std::lock_guard<std::mutex> lock(spatializationEnabledListenerStateMutex_);
-        if (std::find(spatializationEnabledListenerState_.begin(), spatializationEnabledListenerState_.end(),
-            uid) != spatializationEnabledListenerState_.end()) {
-            AUDIO_INFO_LOG("spatializationEnabledListener has been registered for %{public}d!", uid);
-            return true;
-        }
-    } else if (eventCategory == HEAD_TRACKING_ENABLED_CHANGE_EVENT) {
-        std::lock_guard<std::mutex> lock(headTrackingEnabledListenerStateMutex_);
-        if (std::find(headTrackingEnabledListenerState_.begin(), headTrackingEnabledListenerState_.end(),
-            uid) != headTrackingEnabledListenerState_.end()) {
-            AUDIO_INFO_LOG("headTrackingEnabledListener has been registered for %{public}d!", uid);
-            return true;
-        }
-    }
-    return false;
-}
-
-void AudioPolicyServer::RegisterSpatializationClientDeathRecipient(const sptr<IRemoteObject> &object,
-    SpatializationEventCategory eventCategory)
-{
-    AUDIO_INFO_LOG("Register spatialization clients death recipient, eventCategory: %{public}d", eventCategory);
-    CHECK_AND_RETURN_LOG(object != nullptr, "Client proxy obj NULL");
-
-    pid_t uid = IPCSkeleton::GetCallingPid();
-    if (SpatializationClientDeathRecipientExist(eventCategory, uid)) {
-        return;
-    }
-
-    sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(uid);
-    if (deathRecipient == nullptr) {
-        AUDIO_ERR_LOG("deathRecipient is nullptr, add deathRecipient fail for %{public}d", eventCategory);
-        return;
-    }
-    if (eventCategory == SPATIALIZATION_ENABLED_CHANGE_EVENT) {
-        deathRecipient->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredSpatializationEnabledClientDied,
-            this, std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient);
-        if (!result) {
-            AUDIO_ERR_LOG("failed to add DeathRecipient for %{public}d!", eventCategory);
-            return;
-        }
-        std::lock_guard<std::mutex> lock(spatializationEnabledListenerStateMutex_);
-        spatializationEnabledListenerState_.push_back(uid);
-    } else if (eventCategory == HEAD_TRACKING_ENABLED_CHANGE_EVENT) {
-        deathRecipient->SetNotifyCb(std::bind(&AudioPolicyServer::RegisteredHeadTrackingEnabledClientDied,
-            this, std::placeholders::_1));
-        bool result = object->AddDeathRecipient(deathRecipient);
-        if (!result) {
-            AUDIO_ERR_LOG("failed to add DeathRecipient for %{public}d!", eventCategory);
-            return;
-        }
-        std::lock_guard<std::mutex> lock(headTrackingEnabledListenerStateMutex_);
-        headTrackingEnabledListenerState_.push_back(uid);
-    }
-}
-
-void AudioPolicyServer::RegisteredSpatializationEnabledClientDied(pid_t uid)
-{
-    AUDIO_INFO_LOG("RegisteredSpatializationEnabledClient died: remove entry, uid %{public}d", uid);
-
-    int32_t ret = audioSpatializationService_.UnregisterSpatializationEnabledEventListener(static_cast<int32_t>(uid));
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("UnregisterSpatializationEnabledEventListener fail, uid %{public}d", uid);
-    }
-
-    auto filter = [&uid](int val) {
-        return uid == val;
-    };
-    std::lock_guard<std::mutex> lock(spatializationEnabledListenerStateMutex_);
-    spatializationEnabledListenerState_.erase(std::remove_if(spatializationEnabledListenerState_.begin(),
-        spatializationEnabledListenerState_.end(), filter), spatializationEnabledListenerState_.end());
-}
-
-void AudioPolicyServer::RegisteredHeadTrackingEnabledClientDied(pid_t uid)
-{
-    AUDIO_INFO_LOG("RegisteredHeadTrackingEnabledClient died: remove entry, uid %{public}d", uid);
-
-    int32_t ret = audioSpatializationService_.UnregisterHeadTrackingEnabledEventListener(static_cast<int32_t>(uid));
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("UnregisterHeadTrackingEnabledEventListener fail, uid %{public}d", uid);
-    }
-
-    auto filter = [&uid](int val) {
-        return uid == val;
-    };
-    std::lock_guard<std::mutex> lock(headTrackingEnabledListenerStateMutex_);
-    headTrackingEnabledListenerState_.erase(std::remove_if(headTrackingEnabledListenerState_.begin(),
-        headTrackingEnabledListenerState_.end(), filter), headTrackingEnabledListenerState_.end());
-}
-
 bool AudioPolicyServer::IsSpatializationEnabled()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
@@ -2287,35 +2194,6 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const bool enable)
         return ERR_PERMISSION_DENIED;
     }
     return audioSpatializationService_.SetHeadTrackingEnabled(enable);
-}
-
-int32_t AudioPolicyServer::RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object)
-{
-    int32_t clientPid = IPCSkeleton::GetCallingPid();
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    RegisterSpatializationClientDeathRecipient(object, SPATIALIZATION_ENABLED_CHANGE_EVENT);
-    return audioSpatializationService_.RegisterSpatializationEnabledEventListener(
-        clientPid, object, hasSystemPermission);
-}
-
-int32_t AudioPolicyServer::RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object)
-{
-    int32_t clientPid = IPCSkeleton::GetCallingPid();
-    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    RegisterSpatializationClientDeathRecipient(object, HEAD_TRACKING_ENABLED_CHANGE_EVENT);
-    return audioSpatializationService_.RegisterHeadTrackingEnabledEventListener(clientPid, object, hasSystemPermission);
-}
-
-int32_t AudioPolicyServer::UnregisterSpatializationEnabledEventListener()
-{
-    int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return audioSpatializationService_.UnregisterSpatializationEnabledEventListener(clientPid);
-}
-
-int32_t AudioPolicyServer::UnregisterHeadTrackingEnabledEventListener()
-{
-    int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return audioSpatializationService_.UnregisterHeadTrackingEnabledEventListener(clientPid);
 }
 
 AudioSpatializationState AudioPolicyServer::GetSpatializationState(const StreamUsage streamUsage)

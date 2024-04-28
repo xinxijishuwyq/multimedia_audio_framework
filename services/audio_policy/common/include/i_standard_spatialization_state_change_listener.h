@@ -23,32 +23,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class IStandardSpatializationEnabledChangeListener : public IRemoteBroker {
-public:
-    virtual ~IStandardSpatializationEnabledChangeListener() = default;
-    virtual void OnSpatializationEnabledChange(const bool &enabled) = 0;
-
-    enum AudioSpatializationEnabledChangeListenerMsg {
-        ON_ERROR = 0,
-        ON_SPATIALIZATION_ENABLED_CHANGE,
-    };
-
-    DECLARE_INTERFACE_DESCRIPTOR(u"IStandardSpatializationEnabledChangeListener");
-};
-
-class IStandardHeadTrackingEnabledChangeListener : public IRemoteBroker {
-public:
-    virtual ~IStandardHeadTrackingEnabledChangeListener() = default;
-    virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;
-
-    enum AudioHeadTrackingEnabledChangeListenerMsg {
-        ON_ERROR = 0,
-        ON_HEAD_TRACKING_ENABLED_CHANGE,
-    };
-
-    DECLARE_INTERFACE_DESCRIPTOR(u"IStandardHeadTrackingEnabledChangeListener");
-};
-
 class IStandardSpatializationStateChangeListener : public IRemoteBroker {
 public:
     virtual ~IStandardSpatializationStateChangeListener() = default;

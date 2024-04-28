@@ -56,6 +56,10 @@ public:
     int32_t AddHeadTrackingDataRequestedChangeCallback(const std::string &macAddress,
         const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb);
     int32_t RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress);
+    int32_t AddSpatializationEnabledChangeCallback(const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
+    int32_t RemoveSpatializationEnabledChangeCallback();
+    int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
+    int32_t RemoveHeadTrackingEnabledChangeCallback();
 
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
@@ -73,6 +77,8 @@ public:
     void OnRendererDeviceChange(const uint32_t sessionId,
         const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
     void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
+    void OnSpatializationEnabledChange(const bool &enabled) override;
+    void OnHeadTrackingEnabledChange(const bool &enabled) override;
 
 private:
     std::vector<sptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
@@ -87,6 +93,8 @@ private:
     std::vector<std::shared_ptr<AudioPreferredInputDeviceChangeCallback>> preferredInputDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
 
     std::unordered_map<uint32_t,
         std::shared_ptr<OutputDeviceChangeWithInfoCallback>> outputDeviceChangeWithInfoCallbackMap_;
@@ -105,6 +113,8 @@ private:
     std::mutex capturerStateChangeMutex_;
     std::mutex outputDeviceChangeWithInfoCallbackMutex_;
     std::mutex headTrackingDataRequestedChangeMutex_;
+    std::mutex spatializationEnabledChangeMutex_;
+    std::mutex headTrackingEnabledChangeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -21,30 +21,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioSpatializationEnabledChangeListenerProxy :
-    public IRemoteProxy<IStandardSpatializationEnabledChangeListener> {
-public:
-    explicit AudioSpatializationEnabledChangeListenerProxy(const sptr<IRemoteObject> &impl);
-    virtual ~AudioSpatializationEnabledChangeListenerProxy();
-    DISALLOW_COPY_AND_MOVE(AudioSpatializationEnabledChangeListenerProxy);
-    void OnSpatializationEnabledChange(const bool &enabled) override;
-
-private:
-    static inline BrokerDelegator<AudioSpatializationEnabledChangeListenerProxy> delegator_;
-};
-
-class AudioHeadTrackingEnabledChangeListenerProxy :
-    public IRemoteProxy<IStandardHeadTrackingEnabledChangeListener> {
-public:
-    explicit AudioHeadTrackingEnabledChangeListenerProxy(const sptr<IRemoteObject> &impl);
-    virtual ~AudioHeadTrackingEnabledChangeListenerProxy();
-    DISALLOW_COPY_AND_MOVE(AudioHeadTrackingEnabledChangeListenerProxy);
-    void OnHeadTrackingEnabledChange(const bool &enabled) override;
-
-private:
-    static inline BrokerDelegator<AudioHeadTrackingEnabledChangeListenerProxy> delegator_;
-};
-
 class AudioSpatializationStateChangeListenerProxy :
     public IRemoteProxy<IStandardSpatializationStateChangeListener> {
 public:
@@ -55,30 +31,6 @@ public:
 
 private:
     static inline BrokerDelegator<AudioSpatializationStateChangeListenerProxy> delegator_;
-};
-
-class AudioSpatializationEnabledChangeListenerCallback : public AudioSpatializationEnabledChangeCallback {
-public:
-    AudioSpatializationEnabledChangeListenerCallback(const sptr<IStandardSpatializationEnabledChangeListener> &listener,
-        bool hasSystemPermission);
-    virtual ~AudioSpatializationEnabledChangeListenerCallback();
-    DISALLOW_COPY_AND_MOVE(AudioSpatializationEnabledChangeListenerCallback);
-    void OnSpatializationEnabledChange(const bool &enabled) override;
-private:
-    sptr<IStandardSpatializationEnabledChangeListener> listener_ = nullptr;
-    bool hasSystemPermission_ = true;
-};
-
-class AudioHeadTrackingEnabledChangeListenerCallback : public AudioHeadTrackingEnabledChangeCallback {
-public:
-    AudioHeadTrackingEnabledChangeListenerCallback(const sptr<IStandardHeadTrackingEnabledChangeListener> &listener,
-        bool hasSystemPermission);
-    virtual ~AudioHeadTrackingEnabledChangeListenerCallback();
-    DISALLOW_COPY_AND_MOVE(AudioHeadTrackingEnabledChangeListenerCallback);
-    void OnHeadTrackingEnabledChange(const bool &enabled) override;
-private:
-    sptr<IStandardHeadTrackingEnabledChangeListener> listener_ = nullptr;
-    bool hasSystemPermission_ = true;
 };
 
 class AudioSpatializationStateChangeListenerCallback : public AudioSpatializationStateChangeCallback {
