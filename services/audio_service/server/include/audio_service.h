@@ -26,13 +26,26 @@
 #include "audio_process_in_server.h"
 #include "audio_endpoint.h"
 #include "ipc_stream_in_server.h"
+#include "playback_capturer_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioService : public ProcessReleaseCallback {
+namespace {
+enum InnerCapFilterPolicy : uint32_t {
+    POLICY_INVALID = 0,
+    POLICY_USAGES_ONLY,
+    POLICY_USAGES_AND_PIDS
+};
+} // anonymous namespace
+
+class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener {
 public:
     static AudioService *GetInstance();
     ~AudioService();
+
+    // override for ICapturerFilterListener
+    int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) override;
+    int32_t OnCapturerFilterRemove(uint32_t sessionId) override;
 
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
 
@@ -49,9 +62,21 @@ public:
     void Dump(std::stringstream &dumpString);
     float GetMaxAmplitude(bool isOutputDevice);
 
+    void RemoveRenderer(uint32_t sessionId);
+
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
+
+    void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+    // for inner-capturer
+    void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+    void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
+    void FilterAllFastProcess();
+    InnerCapFilterPolicy GetInnerCapFilterPolicy();
+    bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
+    int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
+    int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
 
 private:
     std::mutex processListMutex_;
@@ -61,6 +86,15 @@ private:
     std::condition_variable releaseEndpointCV_;
     std::set<std::string> releasingEndpointSet_;
     std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
+
+    // for inner-capturer
+    PlaybackCapturerManager *innerCapturerMgr_ = nullptr;
+    uint32_t workingInnerCapId_ = 0; // invalid sessionId
+    AudioPlaybackCaptureConfig workingConfig_;
+
+    std::mutex rendererMapMutex_;
+    std::vector<std::weak_ptr<RendererInServer>> filteredRendererMap_ = {};
+    std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

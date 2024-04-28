@@ -22,7 +22,8 @@
 namespace OHOS {
 namespace AudioStandard {
 enum ManagerType : int32_t {
-    PLAYBACK =  0,
+    PLAYBACK = 0,
+    DUP_PLAYBACK,
     RECORDER,
 };
 
@@ -32,6 +33,7 @@ public:
     
     static IStreamManager &GetPlaybackManager();
     static IStreamManager &GetRecorderManager();
+    static IStreamManager &GetDupPlaybackManager();
 
     virtual int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) = 0;
     virtual int32_t ReleaseRender(uint32_t streamIndex_) = 0;

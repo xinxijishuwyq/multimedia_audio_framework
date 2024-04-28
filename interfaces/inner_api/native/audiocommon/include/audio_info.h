@@ -76,8 +76,12 @@ constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
 const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const std::string INNER_CAPTURER_SINK = "InnerCapturerSink";
+const std::string NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
 const std::string REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
+const std::string DUP_STREAM = "DupStream";
+const std::string NORMAL_STREAM = "NormalStream";
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -450,13 +454,27 @@ enum AudioDeviceUsage : int32_t {
     D_ALL_DEVICES = 15,
 };
 
+enum FilterMode : uint32_t {
+    INCLUDE = 0,
+    EXCLUDE,
+    MAX_FILTER_MODE
+};
+
+// 1.If the size of usages or pids is 0, FilterMode will not work.
+// 2.Filters will only works with FileterMode INCLUDE or EXCLUDE while the vector size is not zero.
+// 3.If usages and pids are both not empty, the result is the intersection of the two Filter.
+// 4.If usages.size() == 0, defalut usages will be filtered with FilterMode::INCLUDE.
+// 5.Default usages are MEDIA MUSIC MOVIE GAME and BOOK.
 struct CaptureFilterOptions {
     std::vector<StreamUsage> usages;
+    FilterMode usageFilterMode {FilterMode::INCLUDE};
+    std::vector<int32_t> pids;
+    FilterMode pidFilterMode {FilterMode::INCLUDE};
 };
 
 struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
-    bool silentCapture {false};
+    bool silentCapture {false}; // To be deprecated since 12
 };
 
 struct AudioCapturerOptions {
@@ -611,6 +629,16 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
+// LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
+// LEGACY_MUTE_CAP: Called from hap build with api >= 12, will cap mute data.
+// MODERN_INNER_CAP: Called from SA with inner-cap right, work with filter.
+enum InnerCapMode : uint32_t {
+    LEGACY_INNER_CAP = 0,
+    LEGACY_MUTE_CAP,
+    MODERN_INNER_CAP,
+    INVALID_CAP_MODE
+};
+
 struct AudioProcessConfig {
     AppInfo appInfo;
 
@@ -632,7 +660,7 @@ struct AudioProcessConfig {
 
     AudioPrivacyType privacyType;
 
-    // Waiting for review:  add isWakeupCapturer  isInnerCapturer
+    InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
 };
 
 struct Volume {

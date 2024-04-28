@@ -172,6 +172,10 @@ public:
 
     void GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData);
 
+    void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
+
+    void GetGlobalConfigs(GlobalConfigs &globalConfigs);
+
     // Audio Policy Parser callbacks
     void OnAudioPolicyXmlParsingCompleted(const std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap);
 
@@ -181,6 +185,8 @@ public:
     void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData);
 
     void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData);
+
+    void OnGlobalConfigsParsed(GlobalConfigs &globalConfigs);
 
     void OnUpdateRouteSupport(bool isSupported);
 
@@ -226,6 +232,8 @@ public:
     void OnMonoAudioConfigChanged(bool audioMono);
 
     void OnAudioBalanceChanged(float audioBalance);
+
+    void LoadModernInnerCapSink();
 
     void LoadEffectLibrary();
 
@@ -326,8 +334,6 @@ public:
 
     float GetMaxStreamVolume(void);
 
-    void MaxRenderInstanceInit();
-
     int32_t GetMaxRendererInstances();
 
     void RegisterDataObserver();
@@ -404,7 +410,7 @@ public:
 
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
 
-    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
+    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
     void UpdateA2dpOffloadFlagBySpatialService(
         const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
@@ -706,7 +712,8 @@ private:
 
     void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc);
 
-    void RectifyModuleInfo(AudioModuleInfo &moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
+    void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
+        SourceInfo &targetInfo);
 
     void ClearScoDeviceSuspendState(string macAddress = "");
 
@@ -733,6 +740,8 @@ private:
     int32_t CheckActiveMusicTime();
 
     int32_t ShowDialog();
+
+    DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -816,6 +825,7 @@ private:
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
+    GlobalConfigs globalConfigs_;
     AudioEffectManager& audioEffectManager_;
 
     bool isMicrophoneMute_ = false;
@@ -857,6 +867,9 @@ private:
         SOURCE_TYPE_VIRTUAL_CAPTURE,
         SOURCE_TYPE_REMOTE_CAST
     };
+
+    static std::map<std::string, uint32_t> formatStrToEnum;
+    static std::map<std::string, ClassType> classStrToEnum;
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
 

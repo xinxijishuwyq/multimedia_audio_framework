@@ -34,6 +34,10 @@ public:
 
     virtual AudioStreamType GetAudioStreamType() = 0;
 
+    virtual void SetInnerCapState(bool isInnerCapped) = 0;
+
+    virtual bool GetInnerCapState() = 0;
+
     virtual ~IAudioProcessStream() = default;
 };
 } // namespace AudioStandard

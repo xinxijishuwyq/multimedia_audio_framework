@@ -197,6 +197,15 @@ bool PermissionUtil::VerifySystemPermission()
     return false;
 }
 
+bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_t tokenId)
+{
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
+    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
+        false, "Permission denied [%{public}s]", permissionName.c_str());
+
+    return true;
+}
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
 {
     // the number 2: stereo audio has 2 channels

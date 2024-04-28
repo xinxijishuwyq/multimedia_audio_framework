@@ -103,6 +103,8 @@ typedef struct {
     std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
     std::unordered_map<std::string, std::string> volumeGroupData;
     std::unordered_map<std::string, std::string> interruptGroupData;
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo;
+    GlobalConfigs globalConfigs;
 } PolicyData;
 
 typedef struct {
@@ -145,6 +147,7 @@ private:
     void AudioFocusInfoDump(std::string &dumpString);
     void AudioInterruptZoneDump(std::string &dumpString);
     void AudioPolicyParserDump(std::string &dumpString);
+    void DumpXmlParsedDataMap(std::string &dumpString);
     void GroupInfoDump(std::string& dumpString);
     void EffectManagerInfoDump(std::string& dumpString);
     void DataDump(std::string &dumpString);

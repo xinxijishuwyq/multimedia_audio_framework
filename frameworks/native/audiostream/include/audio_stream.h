@@ -49,6 +49,7 @@ public:
         const std::shared_ptr<AudioClientTracker> &proxyObj) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     State GetState() override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;

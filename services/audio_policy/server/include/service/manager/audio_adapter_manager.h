@@ -130,6 +130,8 @@ public:
 
     DeviceVolumeType GetDeviceCategory(DeviceType deviceType);
 
+    void SetActiveDevice(DeviceType deviceType);
+
     DeviceType GetActiveDevice();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);

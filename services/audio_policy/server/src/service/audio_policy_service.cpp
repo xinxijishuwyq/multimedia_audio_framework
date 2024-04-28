@@ -46,9 +46,10 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-static const std::string INNER_CAPTURER_SINK_NAME = "InnerCapturer";
+static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 static const std::string RECEIVER_SINK_NAME = "Receiver";
 static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
+static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -61,6 +62,24 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALL
 };
 
+std::map<std::string, uint32_t> AudioPolicyService::formatStrToEnum = {
+    {"SAMPLE_U8", SAMPLE_U8},
+    {"SAMPLE_S16E", SAMPLE_S16LE},
+    {"SAMPLE_S24LE", SAMPLE_S24LE},
+    {"SAMPLE_S32LE", SAMPLE_S32LE},
+    {"SAMPLE_F32LE", SAMPLE_F32LE},
+    {"INVALID_WIDTH", INVALID_WIDTH},
+};
+
+std::map<std::string, ClassType> AudioPolicyService::classStrToEnum = {
+    {PRIMARY_CLASS, TYPE_PRIMARY},
+    {A2DP_CLASS, TYPE_A2DP},
+    {USB_CLASS, TYPE_USB},
+    {FILE_CLASS, TYPE_FILE_IO},
+    {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
+    {INVALID_CLASS, TYPE_INVALID},
+};
+
 static const std::string SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
@@ -71,6 +90,7 @@ const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
+const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
@@ -2088,9 +2108,12 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
     AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
     std::string lastActiveA2dpDevice = activeBTDevice_;
     activeBTDevice_ = deviceDescriptor->macAddress_;
+    DeviceType lastDevice = audioPolicyManager_.GetActiveDevice();
+    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
     if (result != SUCCESS) {
         activeBTDevice_ = lastActiveA2dpDevice;
+        audioPolicyManager_.SetActiveDevice(lastDevice);
         AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
             GetEncryptAddr(activeBTDevice_).c_str(), GetEncryptAddr(lastActiveA2dpDevice).c_str());
         return result;
@@ -2681,8 +2704,12 @@ void AudioPolicyService::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     UpdateDisplayName(audioDescriptor);
     connectedDevices_.insert(connectedDevices_.begin(), audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE) {
+
+    DeviceUsage usage = GetDeviceUsage(updatedDesc);
+    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && (usage == MEDIA || usage == ALL_USAGE)) {
         audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
+    }
+    if (audioDescriptor->deviceCategory_ != BT_UNWEAR_HEADPHONE && (usage == VOICE || usage == ALL_USAGE)) {
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
     }
 }
@@ -3507,6 +3534,8 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
         }
         audioEffectManager_.SetMasterSinkAvailable();
     }
+    // load inner-cap-sink
+    LoadModernInnerCapSink();
     RegisterBluetoothListener();
 }
 
@@ -3602,7 +3631,7 @@ void AudioPolicyService::LoadSinksForCapturer()
 {
     AUDIO_INFO_LOG("Start");
     AudioStreamInfo streamInfo;
-    LoadInnerCapturerSink(INNER_CAPTURER_SINK_NAME, streamInfo);
+    LoadInnerCapturerSink(INNER_CAPTURER_SINK_LEGACY, streamInfo);
     LoadReceiverSink();
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
@@ -3650,12 +3679,12 @@ void AudioPolicyService::LoadLoopback()
     std::string moduleName;
     AUDIO_INFO_LOG("Start");
     std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    CHECK_AND_RETURN_LOG(IOHandles_.count(INNER_CAPTURER_SINK_NAME) == 1u,
+    CHECK_AND_RETURN_LOG(IOHandles_.count(INNER_CAPTURER_SINK_LEGACY) == 1u,
         "failed for InnerCapturer not loaded");
 
     LoopbackModuleInfo moduleInfo = {};
     moduleInfo.lib = "libmodule-loopback.z.so";
-    moduleInfo.sink = INNER_CAPTURER_SINK_NAME;
+    moduleInfo.sink = INNER_CAPTURER_SINK_LEGACY;
 
     for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++sceneType) {
@@ -3684,12 +3713,27 @@ void AudioPolicyService::UnloadLoopback()
 
     for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
         ++sceneType) {
-        module = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_NAME;
+        module = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_LEGACY;
         ClosePortAndEraseIOHandle(module);
     }
 
-    module = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_NAME;
+    module = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_LEGACY;
     ClosePortAndEraseIOHandle(module);
+}
+
+void AudioPolicyService::LoadModernInnerCapSink()
+{
+    AUDIO_INFO_LOG("Start");
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
+    moduleInfo.name = INNER_CAPTURER_SINK;
+
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2"; // 2 channel
+    moduleInfo.rate = "48000";
+    moduleInfo.bufferSize = "3840"; // 20ms
+
+    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 }
 
 void AudioPolicyService::LoadEffectLibrary()
@@ -3775,11 +3819,10 @@ void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
     AUDIO_INFO_LOG("adapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
     adapterInfoMap_ = adapterInfoMap;
-    MaxRenderInstanceInit();
 
     for (auto &adapterInfo : adapterInfoMap_) {
         for (auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
-            if (deviceInfos.name_ == ADAPTER_DEVICE_PRIMARY_EARPIECE) {
+            if (deviceInfos.type_ == EARPIECE_TYPE_NAME) {
                 hasEarpiece_ = true;
                 break;
             }
@@ -3817,6 +3860,11 @@ void AudioPolicyService::OnInterruptGroupParsed(std::unordered_map<std::string, 
     interruptGroupData_ = interruptGroupData;
 }
 
+void AudioPolicyService::OnGlobalConfigsParsed(GlobalConfigs &globalConfigs)
+{
+    globalConfigs_ = globalConfigs;
+}
+
 void AudioPolicyService::GetAudioAdapterInfos(std::map<AdaptersType, AudioAdapterInfo> &adapterInfoMap)
 {
     adapterInfoMap = adapterInfoMap_;
@@ -3830,6 +3878,16 @@ void AudioPolicyService::GetVolumeGroupData(std::unordered_map<std::string, std:
 void AudioPolicyService::GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData)
 {
     interruptGroupData = interruptGroupData_;
+}
+
+void AudioPolicyService::GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo)
+{
+    deviceClassInfo = deviceClassInfo_;
+}
+
+void AudioPolicyService::GetGlobalConfigs(GlobalConfigs &globalConfigs)
+{
+    globalConfigs = globalConfigs_;
 }
 
 void AudioPolicyService::AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb)
@@ -4934,36 +4992,15 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-int32_t AudioPolicyService::ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo)
-{
-    if (moduleInfo.name_ == "primary out") {
-        for (auto &configInfo : moduleInfo.configInfos_) {
-            if (configInfo.name_ == "maxinstances") {
-                maxRendererInstances_ = atoi(configInfo.valu_.c_str());
-                AUDIO_DEBUG_LOG("Get max renderer instances success %{public}d", maxRendererInstances_);
-                return SUCCESS;
-            }
-        }
-    }
-    return ERROR;
-}
-
-void AudioPolicyService::MaxRenderInstanceInit()
-{
-    for (auto &adapterInfo : adapterInfoMap_) {
-        if ((adapterInfo.second).adapterName_ == "primary") {
-            for (auto &moduleInfo : (adapterInfo.second).moduleInfos_) {
-                CHECK_AND_RETURN_LOG(ParsePolicyConfigXmlNodeModuleInfos(moduleInfo) != ERROR,
-                    "Get max renderer instances failed");
-                return;
-            }
-        }
-    }
-}
-
 int32_t AudioPolicyService::GetMaxRendererInstances()
 {
-    return maxRendererInstances_;
+    for (auto &configInfo : globalConfigs_.outputConfigInfos_) {
+        if (configInfo.name_ == "normal" && configInfo.value_ != "") {
+            AUDIO_INFO_LOG("Max output normal instance is %{public}s", configInfo.value_.c_str());
+            return (int32_t)std::stoi(configInfo.value_);
+        }
+    }
+    return DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES;
 }
 
 #ifdef BLUETOOTH_ENABLE
@@ -5316,13 +5353,10 @@ int32_t AudioPolicyService::FetchTargetInfoForSessionAdd(const SessionInfo sessi
 void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
 {
     if (sessionWithSpecialSourceType_.count(sessionID) > 0) {
+        if (sessionWithSpecialSourceType_[sessionID].sourceType == SOURCE_TYPE_REMOTE_CAST) {
+            HandleRemoteCastDevice(false);
+        }
         sessionWithSpecialSourceType_.erase(sessionID);
-        return;
-    }
-
-    if (sessionWithNormalSourceType_[sessionID].sourceType == SOURCE_TYPE_REMOTE_CAST) {
-        HandleRemoteCastDevice(false);
-        sessionWithNormalSourceType_.erase(sessionID);
         return;
     }
 
@@ -5355,10 +5389,10 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
         bool isSourceLoaded = !sessionWithNormalSourceType_.empty();
         if (!isSourceLoaded) {
             auto moduleInfo = primaryMicModuleInfo_;
-            for (const auto&[adapterType, audioAdapterInfo] : adapterInfoMap_) {
-                CHECK_AND_CONTINUE_LOG(moduleInfo.className == audioAdapterInfo.adapterName_,
-                    "module class name unmatch.");
-                RectifyModuleInfo(moduleInfo, audioAdapterInfo, targetInfo);
+            ClassType curClassType = classStrToEnum[moduleInfo.className];
+            for (auto&[classType, moduleInfoList] : deviceClassInfo_) {
+                CHECK_AND_CONTINUE_LOG(curClassType == classType, "module class name unmatch.");
+                RectifyModuleInfo(moduleInfo, moduleInfoList, targetInfo);
                 break;
             }
             AUDIO_INFO_LOG("rate:%{public}s, channels:%{public}s, bufferSize:%{public}s",
@@ -5370,7 +5404,7 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
     } else if (sessionInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
         HandleRemoteCastDevice(true, streamInfo);
-        sessionWithNormalSourceType_[sessionID] = sessionInfo;
+        sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     } else {
         sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     }
@@ -5378,22 +5412,20 @@ int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionIn
     return SUCCESS;
 }
 
-void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo &moduleInfo, AudioAdapterInfo audioAdapterInfo,
-    SourceInfo targetInfo)
+void AudioPolicyService::RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
+    SourceInfo &targetInfo)
 {
     auto [targetSourceType, targetRate, targetChannels] = targetInfo;
-    for (auto &adapterModuleInfo : audioAdapterInfo.moduleInfos_) {
-        if (moduleInfo.role == adapterModuleInfo.moduleType_ &&
-            adapterModuleInfo.name_.find(MODULE_SINK_OFFLOAD) == std::string::npos) {
-            for (const auto&[rate, channels, format, bufferSize] : adapterModuleInfo.profileInfos_) {
-                CHECK_AND_CONTINUE_LOG(rate == std::to_string(targetRate), "audio rate unmatch.");
-                CHECK_AND_CONTINUE_LOG(channels == std::to_string(targetChannels), "audio channels unmatch.");
-                moduleInfo.rate = std::to_string(targetRate);
-                moduleInfo.channels = std::to_string(targetChannels);
-                moduleInfo.bufferSize = bufferSize;
-                AUDIO_INFO_LOG("match success. rate:%{public}s, channels:%{public}s, bufferSize:%{public}s",
-                    moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str());
-            }
+    for (auto &adapterModuleInfo : moduleInfoList) {
+        if (moduleInfo.role == adapterModuleInfo.role &&
+            adapterModuleInfo.name.find(MODULE_SINK_OFFLOAD) == std::string::npos) {
+            CHECK_AND_CONTINUE_LOG(adapterModuleInfo.rate == std::to_string(targetRate), "rate unmatch.");
+            CHECK_AND_CONTINUE_LOG(adapterModuleInfo.channels == std::to_string(targetChannels), "channels unmatch.");
+            moduleInfo.rate = std::to_string(targetRate);
+            moduleInfo.channels = std::to_string(targetChannels);
+            moduleInfo.bufferSize = adapterModuleInfo.bufferSize;
+            AUDIO_INFO_LOG("match success. rate:%{public}s, channels:%{public}s, bufferSize:%{public}s",
+                moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str());
         }
     }
     moduleInfo.sourceType = std::to_string(targetSourceType);
@@ -5732,10 +5764,11 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     FetchDevice(true, reason);
 }
 
-void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand)
+void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
-    AUDIO_INFO_LOG("updateCommand: %{public}d", updateCommand);
-    if (updateCommand == ENABLE_UPDATE && desc.isEnable_ == true) {
+    AUDIO_INFO_LOG("[%{public}s] [%{public}d] command: %{public}d isEnable: %{public}d category: %{public}d",
+        GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.isEnable_, desc.deviceCategory_);
+    if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         unique_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
             AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
         unique_ptr<AudioDeviceDescriptor> userSelectCallDevice =
@@ -5747,13 +5780,13 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
             AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
             return;
         }
-    } else if (updateCommand == ENABLE_UPDATE && desc.isEnable_ == false) {
+    } else if (command == ENABLE_UPDATE && desc.isEnable_ == false) {
         UnloadA2dpModule();
     }
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
-    audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, updateCommand);
+    audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
 
-    OnPreferredStateUpdated(desc, updateCommand);
+    OnPreferredStateUpdated(desc, command);
     FetchDevice(false);
     UpdateA2dpOffloadFlagForAllStream();
 }
@@ -5955,6 +5988,11 @@ int32_t AudioPolicyService::DisableSafeMediaVolume()
 int32_t AudioPolicyService::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
    return audioPolicyManager_.Dump(fd, args);
+}
+
+DeviceUsage AudioPolicyService::GetDeviceUsage(const AudioDeviceDescriptor &desc)
+{
+    return audioDeviceManager_.GetDeviceUsage(desc);
 }
 } // namespace AudioStandard
 } // namespace OHOS

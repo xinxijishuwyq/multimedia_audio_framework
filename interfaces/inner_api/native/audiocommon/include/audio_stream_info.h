@@ -581,6 +581,7 @@ struct AudioStreamData {
     BufferDesc bufferDesc;
     int32_t volumeStart;
     int32_t volumeEnd;
+    bool isInnerCaped = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

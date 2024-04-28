@@ -216,6 +216,17 @@ public:
     virtual int32_t SetParams(const AudioCapturerParams params) = 0;
 
     /**
+     * @brief Update AudioPlaybackCaptureConfig, only for Inner-Cap records.
+     *
+     * @param config Indicates information about audio capture parameters to set. For details, see
+     * {@link CaptureFilterOptions}.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
+
+    /**
      * @brief Registers the capturer callback listener.
      * (1)If old SetParams(const AudioCapturerParams params) API,
      *    this API must be called immediately after SetParams.

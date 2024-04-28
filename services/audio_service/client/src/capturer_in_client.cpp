@@ -44,6 +44,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
+#include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
@@ -74,6 +75,7 @@ public:
 
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
 
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
@@ -248,6 +250,7 @@ private:
     size_t cbBufferSize_ = 0;
     SafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
+    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     bool isInnerCapturer_ = false;
     bool isWakeupCapturer_ = false;
 
@@ -381,6 +384,17 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
     return;
+}
+
+int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    AUDIO_INFO_LOG("client set %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is already nullptr");
+    int32_t ret = ipcStream_->UpdatePlaybackCaptureConfig(config);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
+
+    filterConfig_ = config;
+    return SUCCESS;
 }
 
 void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -1503,6 +1517,7 @@ int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer,
     bool isBlockingRead)
 {
+    Trace trace("CapturerInClientInner::HandleCapturerRead " + std::to_string(userSize));
     while (readSize < userSize) {
         AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
         OptResult result = ringCache_->GetReadableSize();

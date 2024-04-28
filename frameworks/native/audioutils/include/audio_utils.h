@@ -89,6 +89,7 @@ public:
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
+    static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);

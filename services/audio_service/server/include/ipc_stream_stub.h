@@ -39,6 +39,7 @@ private:
     int32_t HandleRelease(MessageParcel &data, MessageParcel &reply);
     int32_t HandleFlush(MessageParcel &data, MessageParcel &reply);
     int32_t HandleDrain(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleUpdatePlaybackCaptureConfig(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetAudioTime(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetAudioPosition(MessageParcel &data, MessageParcel &reply);
     int32_t HandleGetLatency(MessageParcel &data, MessageParcel &reply);
@@ -71,6 +72,7 @@ private:
         &IpcStreamStub::HandleRelease,
         &IpcStreamStub::HandleFlush,
         &IpcStreamStub::HandleDrain,
+        &IpcStreamStub::HandleUpdatePlaybackCaptureConfig,
         &IpcStreamStub::HandleGetAudioTime,
         &IpcStreamStub::HandleGetAudioPosition,
         &IpcStreamStub::HandleGetLatency,

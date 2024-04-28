@@ -21,7 +21,9 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_log.h"
+#include "audio_process_config.h"
 #include "i_stream_manager.h"
+#include "playback_capturer_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -185,11 +187,8 @@ void CapturerInServer::ReadData(size_t length)
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
 
-    uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    AUDIO_DEBUG_LOG("Current write frame: %{public}" PRIu64 ", read frame: %{public}" PRIu64 ","
-        "avaliable frame:%{public}d, spanSizeInFrame:%{public}zu", currentWriteFrame, currentReadFrame,
-        audioServerBuffer_->GetAvailableDataFrames(), spanSizeInFrame_);
+
     if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
         if (overFlowLogFlag_ == 0) {
             AUDIO_INFO_LOG("OverFlow!!!");
@@ -199,7 +198,7 @@ void CapturerInServer::ReadData(size_t length)
         overFlowLogFlag_++;
         BufferDesc dstBuffer = stream_->DequeueBuffer(length);
         stream_->EnqueueBuffer(dstBuffer);
-        stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
+        stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
         return;
     }
 
@@ -213,26 +212,31 @@ void CapturerInServer::ReadData(size_t length)
         stream_->EnqueueBuffer(srcBuffer);
         return;
     }
-    {
-        BufferDesc dstBuffer = {nullptr, 0, 0};
-        uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
-        if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
-            return;
-        }
-        ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
 
-        uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
-        AUDIO_DEBUG_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
-            currentWriteFrame, nextWriteFrame);
-        audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
-        audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
+    BufferDesc dstBuffer = {nullptr, 0, 0};
+    uint64_t curWritePos = audioServerBuffer_->GetCurWriteFrame();
+    if (audioServerBuffer_->GetWriteBuffer(curWritePos, dstBuffer) < 0) {
+        return;
     }
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
+        LEGACY_MUTE_CAP) {
+        dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
+    }
+    ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+
+    uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
+    AUDIO_DEBUG_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
+        currentWriteFrame, nextWriteFrame);
+        audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
+    audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
+
     stream_->EnqueueBuffer(srcBuffer);
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
+    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
 }
 
 int32_t CapturerInServer::OnReadData(size_t length)
 {
+    Trace trace("CapturerInServer::OnReadData:" + std::to_string(length));
     ReadData(length);
     return SUCCESS;
 }
@@ -360,6 +364,68 @@ int32_t CapturerInServer::Release()
         return ret;
     }
     status_ = I_STATUS_RELEASED;
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        AUDIO_INFO_LOG("Disable inner capturer for %{public}u", streamIndex_);
+        if (processConfig_.innerCapMode == MODERN_INNER_CAP) {
+            PlaybackCapturerManager::GetInstance()->RemovePlaybackCapturerFilterInfo(streamIndex_);
+        } else {
+            PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(false);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t CapturerInServer::UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybackCaptureConfig &config)
+{
+    Trace trace("UpdatePlaybackCaptureConfigInLegacy");
+    // Legacy mode, only usage filter works.
+    AUDIO_INFO_LOG("Update config in legacy mode with %{public}zu usage", config.filterOptions.usages.size());
+
+    std::vector<int32_t> usage;
+    for (size_t i = 0; i < config.filterOptions.usages.size(); i++) {
+        usage.push_back(config.filterOptions.usages[i]);
+    }
+
+    PlaybackCapturerManager::GetInstance()->SetSupportStreamUsage(usage);
+    PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(true);
+    return SUCCESS;
+}
+
+int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    Trace trace("UpdatePlaybackCaptureConfig:" + ProcessConfig::DumpInnerCapConfig(config));
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE,
+        ERR_INVALID_OPERATION, "This not a inner-cap source!");
+
+    AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
+
+    for (auto &usg : config.filterOptions.usages) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
+            continue;
+        }
+
+        if (!PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, processConfig_.appInfo.appTokenId)) {
+            AUDIO_ERR_LOG("downlink capturer permission check failed");
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+
+    filterConfig_ = config;
+
+    if (filterConfig_.filterOptions.usages.size() == 0) {
+        std::vector<StreamUsage> defalutUsages = PlaybackCapturerManager::GetInstance()->GetDefaultUsages();
+        for (size_t i = 0; i < defalutUsages.size(); i++) {
+            filterConfig_.filterOptions.usages.push_back(defalutUsages[i]);
+        }
+        AUDIO_INFO_LOG("Reset config to %{public}s", ProcessConfig::DumpInnerCapConfig(filterConfig_).c_str());
+    }
+
+    if (processConfig_.innerCapMode != MODERN_INNER_CAP) {
+        return UpdatePlaybackCaptureConfigInLegacy(filterConfig_);
+    }
+
+    // in plan: add more check and print config
+    PlaybackCapturerManager::GetInstance()->SetPlaybackCapturerFilterInfo(streamIndex_, filterConfig_);
     return SUCCESS;
 }
 
@@ -383,11 +449,6 @@ int32_t CapturerInServer::GetLatency(uint64_t &latency)
     return stream_->GetLatency(latency);
 }
 
-void CapturerInServer::RegisterTestCallback(const std::weak_ptr<CapturerListener> &callback)
-{
-    testCallback_ = callback;
-}
-
 int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)
 {
     CHECK_AND_RETURN_RET_LOG(spanSizeInBytes_ != 0, ERR_OPERATION_FAILED, "spanSizeInByte_ invalid");
@@ -403,6 +464,11 @@ int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)
             AUDIO_ERR_LOG("ReConfig AudioRingCache to size %{public}u failed:ret%{public}zu", result.ret, targetSize);
             return ERR_OPERATION_FAILED;
         }
+    }
+
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && processConfig_.innerCapMode ==
+        LEGACY_MUTE_CAP) {
+        dischargeBuffer_ = std::make_unique<uint8_t []>(cacheSizeInBytes_);
     }
 
     return SUCCESS;
