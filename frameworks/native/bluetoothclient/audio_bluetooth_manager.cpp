@@ -41,7 +41,7 @@ std::mutex g_hfpInstanceLock;
 
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
-    AUDIO_DEBUG_LOG("codec info rate[%{public}d]  foramt[%{public}d]  channel[%{public}d]",
+    AUDIO_DEBUG_LOG("codec info rate[%{public}d]  format[%{public}d]  channel[%{public}d]",
         codecInfo.sampleRate, codecInfo.bitsPerSample, codecInfo.channelMode);
     switch (codecInfo.sampleRate) {
         case A2DP_SBC_SAMPLE_RATE_48000_USER:
