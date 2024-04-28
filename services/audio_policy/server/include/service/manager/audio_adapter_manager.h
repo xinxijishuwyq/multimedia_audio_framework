@@ -265,7 +265,6 @@ private:
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     AudioSessionCallback *sessionCallback_;
     VolumeDataMaintainer &volumeDataMaintainer_;
-    std::shared_ptr<AudioOsAccountInfo> accountInfoObs_ = nullptr;
     bool isVolumeUnadjustable_;
     bool testModeOn_ {false};
     float getSystemVolumeInDb_;
@@ -278,6 +277,9 @@ private:
     bool isLoaded_ = false;
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
+#ifdef SUPPORT_USER_ACCOUNT
+    bool isAccountChangeSet_ = false;
+#endif
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -357,8 +359,13 @@ public:
     void OnAccountsChanged(const int &id) override
     {
         AUDIO_INFO_LOG("OnAccountsChanged received, id: %{public}d", id);
+    }
+
+    void OnAccountsSwitch(const int &newId, const int &oldId) override
+    {
+        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldId: %{public}d", newId, oldId);
         if (audioAdapterManager_ != nullptr) {
-            audioAdapterManager_->NotifyAccountsChanged(id);
+            audioAdapterManager_->NotifyAccountsChanged(newId);
         }
     }
 private:
