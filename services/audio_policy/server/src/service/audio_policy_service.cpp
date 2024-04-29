@@ -1724,6 +1724,10 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
     if (outputDevice->isSameDevice(rendererChangeInfo->outputDeviceInfo)) {
         needTriggerCallback = false;
     }
+    AUDIO_INFO_LOG("move session %{public}d [%{public}d][%{public}s]-->[%{public}d][%{public}s], reason %{public}d",
+        rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo.deviceType,
+        GetEncryptAddr(rendererChangeInfo->outputDeviceInfo.macAddress).c_str(),
+        outputDevice->deviceType_, GetEncryptAddr(outputDevice->macAddress_).c_str(), reason);
 
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo, new AudioDeviceDescriptor(*outputDevice), true, true);
 
@@ -1731,8 +1735,7 @@ void AudioPolicyService::SelectNewOutputDevice(unique_ptr<AudioRendererChangeInf
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, rendererChangeInfo->outputDeviceInfo, reason);
     }
-    AUDIO_INFO_LOG("move session %{public}d to device %{public}d",
-        rendererChangeInfo->sessionId, outputDevice->deviceType_);
+
     // MoveSinkInputByIndexOrName
     auto ret = (outputDevice->networkId_ == LOCAL_NETWORK_ID)
                 ? MoveToLocalOutputDevice(targetSinkInputs, new AudioDeviceDescriptor(*outputDevice))
@@ -5767,8 +5770,9 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
 
 void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
-    AUDIO_INFO_LOG("[%{public}s] [%{public}d] command: %{public}d isEnable: %{public}d category: %{public}d",
-        GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.isEnable_, desc.deviceCategory_);
+    AUDIO_INFO_LOG("[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] connectState[%{public}d] " \
+        "isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_,
+        command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             ClearScoDeviceSuspendState(desc.macAddress_);
