@@ -138,23 +138,8 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
     operation_ = operation;
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
     switch (operation) {
-        case OPERATION_UNDERRUN:
-            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
-                audioServerBuffer_->GetAvailableDataFrames());
-            // In plan, maxlength is 4
-            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
-                AUDIO_INFO_LOG("Buffer is empty");
-                needForceWrite_ = 0;
-            } else {
-                AUDIO_INFO_LOG("Buffer is not empty");
-                WriteData();
-            }
-            stateListener->OnOperationHandled(BUFFER_UNDERRUN, 0);
-            break;
-        case OPERATION_UNDERFLOW:
-            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
-            break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
             stateListener->OnOperationHandled(START_STREAM, 0);
@@ -189,6 +174,22 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     switch (operation) {
+        case OPERATION_UNDERRUN:
+            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
+                audioServerBuffer_->GetAvailableDataFrames());
+            // In plan, maxlength is 4
+            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
+                AUDIO_INFO_LOG("Buffer is empty");
+                needForceWrite_ = 0;
+            } else {
+                AUDIO_INFO_LOG("Buffer is not empty");
+                WriteData();
+            }
+            stateListener->OnOperationHandled(BUFFER_UNDERRUN, 0);
+            break;
+        case OPERATION_UNDERFLOW:
+            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
+            break;
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
