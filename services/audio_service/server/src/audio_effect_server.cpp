@@ -63,6 +63,7 @@ static bool LoadLibrary(const std::string &relativePath, std::shared_ptr<AudioEf
     } else {
         AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
     }
+    dlerror(); // clean existing errors;
 
     AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(handle,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
