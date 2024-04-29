@@ -382,6 +382,7 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
 
 void OffloadAudioRendererSinkInner::DeInit()
 {
+    Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
     AUDIO_DEBUG_LOG("DeInit.");
     started_ = false;
@@ -583,7 +584,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AdjustAudioBalance(&data, len);
     }
 
-    Trace trace("RenderFrameOffload");
+    Trace trace("OffloadSink::RenderFrame");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
@@ -623,7 +624,7 @@ float OffloadAudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
-    Trace trace("Sink::Start");
+    Trace trace("OffloadSink::Start");
     InitLatencyMeasurement();
     if (started_) {
         if (isFlushing_) {
@@ -736,6 +737,7 @@ int32_t OffloadAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 {
+    Trace trace("OffloadSink::Drain");
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");
@@ -753,6 +755,8 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 
 int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
+    Trace trace("OffloadSink::Stop");
+
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");
 
@@ -789,6 +793,7 @@ int32_t OffloadAudioRendererSinkInner::Resume(void)
 
 int32_t OffloadAudioRendererSinkInner::Reset(void)
 {
+    Trace trace("OffloadSink::Reset");
     if (started_ && audioRender_ != nullptr) {
         startDuringFlush_ = true;
         if (!Flush()) {
@@ -805,6 +810,7 @@ int32_t OffloadAudioRendererSinkInner::Reset(void)
 
 int32_t OffloadAudioRendererSinkInner::Flush(void)
 {
+    Trace trace("OffloadSink::Flush");
     CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED,
         "failed call flush during flushing");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
