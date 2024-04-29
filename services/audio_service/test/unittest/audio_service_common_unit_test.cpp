@@ -17,6 +17,7 @@
 #include "audio_log.h"
 #include "audio_info.h"
 #include "audio_ring_cache.h"
+#include "audio_process_config.h"
 #include "linear_pos_time_model.h"
 #include "oh_audio_buffer.h"
 #include <gtest/gtest.h>
@@ -56,6 +57,19 @@ void AudioServiceCommonUnitTest::SetUp(void)
 void AudioServiceCommonUnitTest::TearDown(void)
 {
     // input testcase teardown step，teardown invoked after each testcases
+}
+
+/**
+ * @tc.name  : Test ProcessConfig API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessConfigTest_001
+ * @tc.desc  : Test ProcessConfig test.
+ */
+HWTEST(AudioServiceCommonUnitTest, ProcessConfigTest_001, TestSize.Level1)
+{
+    AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {0}, FilterMode::INCLUDE}, false};
+    std::string dumpStr = ProcessConfig::DumpInnerCapConfig(config);
+    EXPECT_NE(dumpStr, "");
 }
 
 /**

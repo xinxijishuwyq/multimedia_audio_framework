@@ -345,6 +345,7 @@ public:
 private:
     std::list<std::weak_ptr<AudioFocusInfoChangeCallback>> callbackList_;
     std::shared_ptr<AudioFocusInfoChangeCallback> cb_;
+    std::mutex cbListMutex_;
 };
 
 class AudioDistributedRoutingRoleCallback {
@@ -380,6 +381,16 @@ public:
 private:
     std::list<std::shared_ptr<AudioDistributedRoutingRoleCallback>> callbackList_;
     std::shared_ptr<AudioDistributedRoutingRoleCallback> cb_;
+};
+
+class AudioDeviceRefiner {
+public:
+    virtual ~AudioDeviceRefiner() = default;
+
+    virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, RenderMode renderMode) = 0;
+    virtual int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, SourceType sourceType, int32_t clientUid, RenderMode renderMode) = 0;
 };
 
 /**
@@ -605,6 +616,47 @@ public:
      * @since 9
      */
     void SetAudioParameter(const std::string &key, const std::string &value);
+
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t SetAsrAecMode(const AsrAecMode asrAecMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t GetAsrAecMode(AsrAecMode& asrAecMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode);
+    /**
+     * @brief set audio parameter.
+     *
+     * @parame key The key of the set audio parameter.
+     * @param value The value of the set audio parameter.
+     * @since 12
+     */
+    int32_t IsWhispering();
 
     /**
      * @brief Get audio parameter.
@@ -947,13 +999,13 @@ public:
      *
      * @param clientUid client Uid
      * @param streamSetState streamSetState
-     * @param audioStreamType audioStreamType
+     * @param streamUsage streamUsage
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    AudioStreamType audioStreamType);
+                                    StreamUsage streamUsage);
 
     /**
      * @brief Get Pin Value From Type
@@ -1142,6 +1194,17 @@ public:
      */
     uint32_t GetEffectLatency(const std::string &sessionId);
 
+    /**
+     * @brief set useraction command
+     *
+     * @param actionCommand action command
+     * @param paramInfo information
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 12
+     */
+    int32_t DisableSafeMediaVolume();
+
     static void AudioServerDied(pid_t pid);
 
     std::string GetSelfBundleName(int32_t uid);
@@ -1183,6 +1246,7 @@ private:
     std::string GetSelfBundleName();
 
     int32_t RegisterWakeupSourceCallback();
+    void OtherDeviceTypeCases(DeviceType deviceType) const;
 
     int32_t cbClientId_ = -1;
     int32_t volumeChangeClientPid_ = -1;

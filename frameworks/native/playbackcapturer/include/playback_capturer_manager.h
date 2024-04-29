@@ -21,13 +21,25 @@
 #include <cstddef>
 #include <unordered_set>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
+#include "audio_info.h"
 #include "playback_capturer_adapter.h"
 
 namespace OHOS {
 namespace AudioStandard {
+class ICapturerFilterListener {
+public:
+    virtual ~ICapturerFilterListener() = default;
+
+    // This will be called when a filter is first enabled or changed.
+    virtual int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig) = 0;
+
+    // This will be called when a filter released.
+    virtual int32_t OnCapturerFilterRemove(uint32_t sessionId) = 0;
+};
 
 class PlaybackCapturerManager {
 public:
@@ -41,10 +53,20 @@ public:
     bool IsCaptureSilently();
     bool GetInnerCapturerState();
     void SetInnerCapturerState(bool state);
+
+    // add for new playback-capturer
+    std::vector<StreamUsage> GetDefaultUsages();
+    bool RegisterCapturerFilterListener(ICapturerFilterListener *listener);
+    int32_t SetPlaybackCapturerFilterInfo(uint32_t sessionId, const AudioPlaybackCaptureConfig &config);
+    int32_t RemovePlaybackCapturerFilterInfo(uint32_t sessionId);
 private:
+    std::mutex setMutex_;
     std::unordered_set<int32_t> supportStreamUsageSet_;
+    std::vector<StreamUsage> defaultUsages_ = { STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_MOVIE,
+        STREAM_USAGE_GAME, STREAM_USAGE_AUDIOBOOK };
     bool isCaptureSilently_;
     bool isInnerCapturerRunning_ = false;
+    ICapturerFilterListener *listener_ = nullptr;
 };
 
 }  // namespace AudioStandard

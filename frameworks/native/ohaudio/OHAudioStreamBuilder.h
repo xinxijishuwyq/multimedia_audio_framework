@@ -44,6 +44,7 @@ public:
     OH_AudioStream_Result SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void *userData);
     OH_AudioStream_Result SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
     void *userData);
+    OH_AudioStream_Result SetRendererPrivacy(AudioPrivacyType privacyType);
     OH_AudioStream_Result SetWriteDataWithMetadataCallback(OH_AudioRenderer_WriteDataWithMetadataCallback callback,
         void *userData);
 
@@ -66,6 +67,7 @@ private:
     // renderer params
     StreamUsage usage_  = STREAM_USAGE_MEDIA;
     ContentType contentType_ = CONTENT_TYPE_MUSIC;
+    AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
 
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;

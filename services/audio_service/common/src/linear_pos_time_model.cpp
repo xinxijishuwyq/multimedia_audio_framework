@@ -110,7 +110,7 @@ void LinearPosTimeModel::SetSpanCount(uint64_t spanCountInFrame)
 
 int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
 {
-    int64_t deltaFrame = 0;
+    uint64_t deltaFrame = 0;
     int64_t invalidTime = -1;
     CHECK_AND_RETURN_RET_LOG(isConfiged, invalidTime, "SampleRate is not configed!");
     if (posInFrame >= stampFrame_) {

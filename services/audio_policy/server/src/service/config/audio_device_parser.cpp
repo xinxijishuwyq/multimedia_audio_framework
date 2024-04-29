@@ -193,7 +193,7 @@ DeviceNodeName AudioDeviceParser::GetDeviceNodeNameAsInt(xmlNode *node)
 std::vector<std::string> split(const std::string &line, const std::string &sep)
 {
     std::vector<std::string> buf;
-    int temp = 0;
+    size_t temp = 0;
     std::string::size_type pos = 0;
     while (true) {
         pos = line.find(sep, temp);

@@ -26,7 +26,7 @@
 
 #define AUDIO_MS_PER_SECOND 1000
 #define AUDIO_US_PER_SECOND 1000000
-#define AUDIO_NS_PER_SECOND ((int64_t)1000000000)
+#define AUDIO_NS_PER_SECOND ((uint64_t)1000000000)
 
 #define FLOAT_EPS 1e-9f
 #define OFFSET_BIT_24 3
@@ -89,6 +89,7 @@ public:
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
+    static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
@@ -141,6 +142,7 @@ const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
 const std::string DUMP_APP_DIR = "/data/storage/el2/base/cache/";
 const std::string DUMP_AUDIO_RENDERER_FILENAME = "dump_client_audio.pcm";
+const std::string DUMP_AUDIO_CAPTURER_FILENAME = "dump_client_capturer_audio.pcm";
 const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
 const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
 const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
@@ -321,6 +323,17 @@ private:
     std::string dspMockTime_ = "";
     size_t extraStrLen_ = 0;
 };
+
+template <typename EnumType, typename V>
+int32_t GetKeyFromValue(const std::unordered_map<EnumType, V> &map, const V &value)
+{
+    for (auto it : map) {
+        if (it.second == value) {
+            return it.first;
+        }
+    }
+    return -1;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

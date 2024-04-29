@@ -21,30 +21,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioSpatializationEnabledChangeListenerStub : public IRemoteStub<IStandardSpatializationEnabledChangeListener> {
-public:
-    AudioSpatializationEnabledChangeListenerStub();
-    virtual ~AudioSpatializationEnabledChangeListenerStub();
-
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
-    void OnSpatializationEnabledChange(const bool &enabled) override;
-    void SetCallback(const std::weak_ptr<AudioSpatializationEnabledChangeCallback> &callback);
-private:
-    std::weak_ptr<AudioSpatializationEnabledChangeCallback> callback_;
-};
-
-class AudioHeadTrackingEnabledChangeListenerStub : public IRemoteStub<IStandardHeadTrackingEnabledChangeListener> {
-public:
-    AudioHeadTrackingEnabledChangeListenerStub();
-    virtual ~AudioHeadTrackingEnabledChangeListenerStub();
-
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
-    void OnHeadTrackingEnabledChange(const bool &enabled) override;
-    void SetCallback(const std::weak_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
-private:
-    std::weak_ptr<AudioHeadTrackingEnabledChangeCallback> callback_;
-};
-
 class AudioSpatializationStateChangeListenerStub : public IRemoteStub<IStandardSpatializationStateChangeListener> {
 public:
     AudioSpatializationStateChangeListenerStub();

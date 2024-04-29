@@ -31,6 +31,7 @@ enum Operation : int32_t {
     BUFFER_UNDERRUN,
     BUFFER_OVERFLOW,
     SET_OFFLOAD_ENABLE,
+    UNDERFLOW_COUNT_ADD, // notify client underflow count increment
     MAX_OPERATION_CODE // in plan add underrun overflow
 };
 class IStreamListener {

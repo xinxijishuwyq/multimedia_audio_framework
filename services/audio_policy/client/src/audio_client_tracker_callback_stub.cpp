@@ -38,14 +38,14 @@ int AudioClientTrackerCallbackStub::OnRemoteRequest(
         case PAUSEDSTREAM: {
             StreamSetStateEventInternal sreamSetStateEventInternal = {};
             sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
-            sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
+            sreamSetStateEventInternal.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
             PausedStreamImpl(sreamSetStateEventInternal);
             return AUDIO_OK;
         }
         case RESUMESTREAM: {
             StreamSetStateEventInternal sreamSetStateEventInternal = {};
             sreamSetStateEventInternal.streamSetState= static_cast<StreamSetState>(data.ReadInt32());
-            sreamSetStateEventInternal.audioStreamType = static_cast<AudioStreamType>(data.ReadInt32());
+            sreamSetStateEventInternal.streamUsage = static_cast<StreamUsage>(data.ReadInt32());
             ResumeStreamImpl(sreamSetStateEventInternal);
             return AUDIO_OK;
         }

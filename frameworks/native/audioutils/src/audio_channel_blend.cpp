@@ -69,7 +69,7 @@ void AudioBlend::ProcessWithBlendMode(T *buffer, size_t bufferSize)
         return;
     }
 
-    int frameCount = 0;
+    uint32_t frameCount = 0;
     frameCount = bufferSize / (channels_ * (format_ + 1));
     switch (blendMode_) {
         case MODE_BLEND_LR:
@@ -107,7 +107,7 @@ void AudioBlend::BlendLR(int24_t& left, int24_t& right)
 template <typename T>
 void AudioBlend::ProcessBlendLRModeWithFormat(T *buffer, size_t count, AudioChannel channel)
 {
-    for (int i = count; i > 0; i--) {
+    for (uint32_t i = count; i > 0; i--) {
         switch (channel) {
             case CHANNEL_8:
                 BlendLR(buffer[CHANNEL_SEVEN], buffer[CHANNEL_EIGHT]);

@@ -30,6 +30,7 @@
 #include <audio_device_info.h>
 #include <audio_interrupt_info.h>
 #include <audio_stream_info.h>
+#include <audio_asr.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -60,6 +61,7 @@ const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const std::string CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const std::string RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 const std::string MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
+const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 const std::string REMOTE_NETWORK_ID = "RemoteDevice";
@@ -74,6 +76,12 @@ constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
 const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
+const std::string INNER_CAPTURER_SINK = "InnerCapturerSink";
+const std::string NEW_INNER_CAPTURER_SOURCE = "InnerCapturerSink.monitor";
+const std::string REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
+const std::string MONITOR_SOURCE_SUFFIX = ".monitor";
+const std::string DUP_STREAM = "DupStream";
+const std::string NORMAL_STREAM = "NormalStream";
 
 #ifdef FEATURE_DTMF_TONE
 // Maximun number of sine waves in a tone segment
@@ -254,6 +262,15 @@ enum AudioRendererRate {
     RENDER_RATE_NORMAL = 0,
     RENDER_RATE_DOUBLE = 1,
     RENDER_RATE_HALF = 2,
+};
+
+/**
+* media safe volume status
+*/
+enum SafeStatus : int32_t {
+    SAFE_UNKNOWN = -1,
+    SAFE_INACTIVE = 0,
+    SAFE_ACTIVE = 1,
 };
 
 struct VolumeEvent {
@@ -437,13 +454,27 @@ enum AudioDeviceUsage : int32_t {
     D_ALL_DEVICES = 15,
 };
 
+enum FilterMode : uint32_t {
+    INCLUDE = 0,
+    EXCLUDE,
+    MAX_FILTER_MODE
+};
+
+// 1.If the size of usages or pids is 0, FilterMode will not work.
+// 2.Filters will only works with FileterMode INCLUDE or EXCLUDE while the vector size is not zero.
+// 3.If usages and pids are both not empty, the result is the intersection of the two Filter.
+// 4.If usages.size() == 0, defalut usages will be filtered with FilterMode::INCLUDE.
+// 5.Default usages are MEDIA MUSIC MOVIE GAME and BOOK.
 struct CaptureFilterOptions {
     std::vector<StreamUsage> usages;
+    FilterMode usageFilterMode {FilterMode::INCLUDE};
+    std::vector<int32_t> pids;
+    FilterMode pidFilterMode {FilterMode::INCLUDE};
 };
 
 struct AudioPlaybackCaptureConfig {
     CaptureFilterOptions filterOptions;
-    bool silentCapture {false};
+    bool silentCapture {false}; // To be deprecated since 12
 };
 
 struct AudioCapturerOptions {
@@ -598,6 +629,16 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
+// LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
+// LEGACY_MUTE_CAP: Called from hap build with api >= 12, will cap mute data.
+// MODERN_INNER_CAP: Called from SA with inner-cap right, work with filter.
+enum InnerCapMode : uint32_t {
+    LEGACY_INNER_CAP = 0,
+    LEGACY_MUTE_CAP,
+    MODERN_INNER_CAP,
+    INVALID_CAP_MODE
+};
+
 struct AudioProcessConfig {
     AppInfo appInfo;
 
@@ -619,7 +660,7 @@ struct AudioProcessConfig {
 
     AudioPrivacyType privacyType;
 
-    // Waiting for review:  add isWakeupCapturer  isInnerCapturer
+    InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
 };
 
 struct Volume {
@@ -635,7 +676,7 @@ enum StreamSetState {
 
 struct StreamSetStateEventInternal {
     StreamSetState streamSetState;
-    AudioStreamType audioStreamType;
+    StreamUsage streamUsage;
 };
 
 class AudioRendererChangeInfo {
@@ -804,8 +845,8 @@ enum AudioParamKey {
     A2DP_SUSPEND_STATE = 6,  // for bluetooth sink
     BT_HEADSET_NREC = 7,
     BT_WBS = 8,
-    A2DP_OFFLOAD_STATE = 9, //for a2dp offload
-    GET_DP_DEVICE_INFO = 10, //for dp sink
+    A2DP_OFFLOAD_STATE = 9, // for a2dp offload
+    GET_DP_DEVICE_INFO = 10, // for dp sink
     USB_DEVICE = 101, // Check USB device type ARM or HIFI
     PERF_INFO = 201,
     MMI = 301,
@@ -909,6 +950,77 @@ struct SourceInfo {
     SourceType sourceType_;
     uint32_t rate_;
     uint32_t channels_;
+};
+
+enum RouterType {
+    /**
+     * None router.
+     * @since 12
+     */
+    ROUTER_TYPE_NONE = 0,
+    /**
+     * Default router.
+     * @since 12
+     */
+    ROUTER_TYPE_DEFAULT,
+    /**
+     * Stream filter router.
+     * @since 12
+     */
+    ROUTER_TYPE_STREAM_FILTER,
+    /**
+     * Package filter router.
+     * @since 12
+     */
+    ROUTER_TYPE_PACKAGE_FILTER,
+    /**
+     * Cockpit phone router.
+     * @since 12
+     */
+    ROUTER_TYPE_COCKPIT_PHONE,
+    /**
+     * Privacy priority router.
+     * @since 12
+     */
+    ROUTER_TYPE_PRIVACY_PRIORITY,
+    /**
+     * Public priority router.
+     * @since 12
+     */
+    ROUTER_TYPE_PUBLIC_PRIORITY,
+    /**
+     * Pair device router.
+     * @since 12
+     */
+    ROUTER_TYPE_PAIR_DEVICE,
+    /**
+     * User select router.
+     * @since 12
+     */
+    ROUTER_TYPE_USER_SELECT,
+};
+
+enum RenderMode {
+    /**
+     * Primary render mode.
+     * @since 12
+     */
+    PRIMARY,
+    /**
+     * VOIP render mode.
+     * @since 12
+     */
+    VOIP,
+    /**
+     * Offload render mode.
+     * @since 12
+     */
+    OFFLOAD,
+    /**
+     * Low latency render mode.
+     * @since 12
+     */
+    LOW_LATENCY,
 };
 } // namespace AudioStandard
 } // namespace OHOS

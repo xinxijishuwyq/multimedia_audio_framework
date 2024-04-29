@@ -212,5 +212,17 @@ void AudioPolicyClientStub::HandleHeadTrackingDeviceChange(MessageParcel &data, 
     }
     OnHeadTrackingDeviceChange(changeInfo);
 }
+
+void AudioPolicyClientStub::HandleSpatializationEnabledChange(MessageParcel &data, MessageParcel &reply)
+{
+    bool enabled = data.ReadBool();
+    OnSpatializationEnabledChange(enabled);
+}
+
+void AudioPolicyClientStub::HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply)
+{
+    bool enabled = data.ReadBool();
+    OnHeadTrackingEnabledChange(enabled);
+}
 } // namespace AudioStandard
 } // namespace OHOS

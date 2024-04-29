@@ -98,6 +98,7 @@ public:
     float GetMaxAmplitude() override;
 
     void ResetOutputRouteForDisconnect(DeviceType device) override;
+    int32_t SetPaPower(int32_t flag) override;
 
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
@@ -469,7 +470,6 @@ int32_t MultiChannelRendererSinkInner::CreateRender(const struct AudioPort &rend
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
-        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
         return ERR_NOT_STARTED;
     }
 
@@ -574,7 +574,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
     Trace trace("Sink::Start");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
+        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioMultiChannelBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
 
@@ -1105,5 +1105,11 @@ void MultiChannelRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType dev
     }
 }
 
+int32_t MultiChannelRendererSinkInner::SetPaPower(int32_t flag)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

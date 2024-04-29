@@ -90,9 +90,10 @@ PlaybackCapturerManager* PlaybackCapturerManager::GetInstance()
 
 void PlaybackCapturerManager::SetSupportStreamUsage(std::vector<int32_t> usage)
 {
+    std::lock_guard<std::mutex> lock(setMutex_);
     supportStreamUsageSet_.clear();
     if (usage.empty()) {
-        AUDIO_DEBUG_LOG("Clear support streamUsage");
+        AUDIO_INFO_LOG("Clear support streamUsage");
         return;
     }
     for (size_t i = 0; i < usage.size(); i++) {
@@ -102,6 +103,7 @@ void PlaybackCapturerManager::SetSupportStreamUsage(std::vector<int32_t> usage)
 
 bool PlaybackCapturerManager::IsStreamSupportInnerCapturer(int32_t streamUsage)
 {
+    std::lock_guard<std::mutex> lock(setMutex_);
     if (supportStreamUsageSet_.empty()) {
         return streamUsage == STREAM_USAGE_MEDIA || streamUsage == STREAM_USAGE_MUSIC ||
             streamUsage == STREAM_USAGE_MOVIE || streamUsage == STREAM_USAGE_GAME ||
@@ -133,6 +135,37 @@ void PlaybackCapturerManager::SetInnerCapturerState(bool state)
 bool PlaybackCapturerManager::GetInnerCapturerState()
 {
     return isInnerCapturerRunning_;
+}
+
+std::vector<StreamUsage> PlaybackCapturerManager::GetDefaultUsages()
+{
+    return defaultUsages_;
+}
+
+bool PlaybackCapturerManager::RegisterCapturerFilterListener(ICapturerFilterListener *listener)
+{
+    if (listener == nullptr || listener_ != nullptr) {
+        AUDIO_ERR_LOG("Register fail: listener is %{public}s", (listener == nullptr ? "null." : "already set."));
+        return false;
+    }
+    AUDIO_INFO_LOG("Register success");
+    listener_ = listener;
+    return true;
+}
+
+int32_t PlaybackCapturerManager::SetPlaybackCapturerFilterInfo(uint32_t sessionId,
+    const AudioPlaybackCaptureConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
+
+    return listener_->OnCapturerFilterChange(sessionId, config);
+}
+
+int32_t PlaybackCapturerManager::RemovePlaybackCapturerFilterInfo(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, ERR_ILLEGAL_STATE, "listener is null!");
+
+    return listener_->OnCapturerFilterRemove(sessionId);
 }
 } // namespace OHOS
 } // namespace AudioStandard

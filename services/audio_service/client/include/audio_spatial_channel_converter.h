@@ -53,7 +53,7 @@ public:
     AudioSpatialChannelConverter() = default;
     bool Init(const AudioStreamParams info, const ConverterConfig cfg);
     bool GetInputBufferSize(size_t &bufferSize);
-    int32_t GetMetaSize();
+    size_t GetMetaSize();
     bool CheckInputValid(const BufferDesc bufDesc);
     bool AllocateMem();
     bool Flush();
@@ -63,7 +63,7 @@ public:
     void GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen);
 
 private:
-    int32_t GetPcmLength(int32_t channels, int8_t bps);
+    size_t GetPcmLength(int32_t channels, int8_t bps);
 
     std::unique_ptr<uint8_t[]> outPcmBuf_;
 

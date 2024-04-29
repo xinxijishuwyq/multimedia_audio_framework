@@ -75,6 +75,7 @@ private:
     static void PAStreamDrainSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamDrainInStopCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
+    static void PAStreamUnderFlowCountAddCb(pa_stream *stream, void *userdata);
 
     const std::string GetEffectModeName(int32_t effectMode);
     // offload

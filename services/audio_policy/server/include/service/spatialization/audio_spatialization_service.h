@@ -51,12 +51,6 @@ public:
     int32_t SetSpatializationEnabled(const bool enable);
     bool IsHeadTrackingEnabled();
     int32_t SetHeadTrackingEnabled(const bool enable);
-    int32_t RegisterSpatializationEnabledEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
-        bool hasSystemPermission);
-    int32_t RegisterHeadTrackingEnabledEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,
-        bool hasSystemPermission);
-    int32_t UnregisterSpatializationEnabledEventListener(int32_t clientPid);
-    int32_t UnregisterHeadTrackingEnabledEventListener(int32_t clientPid);
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleHeadTrackingEnabledChange(const bool &enabled);
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
@@ -73,17 +67,24 @@ public:
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
     void UpdateRendererInfo(const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfo);
+    void InitSpatializationState();
 private:
     AudioSpatializationService()
         :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
     {}
 
     ~AudioSpatializationService();
+
+    enum WriteToDbOperation {
+        WRITE_SPATIALIZATION_STATE = 0,
+        WRITE_SPATIALIZATION_SCENE = 1,
+    };
+
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
     int32_t UpdateSpatializationState();
+    int32_t UpdateSpatializationSceneType();
     void HandleSpatializationStateChange(bool outputDeviceChange);
-    void InitSpatializationState();
-    void WriteSpatializationStateToDb();
+    void WriteSpatializationStateToDb(WriteToDbOperation operation);
     bool IsHeadTrackingDataRequestedForCurrentDevice();
     void UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress = "");
     void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
@@ -94,17 +95,14 @@ private:
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
     bool isHeadTrackingDataRequested_ = false;
+    bool isLoadedfromDb_ = false;
     AudioSpatializationState spatializationStateFlag_ = {false};
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
     std::mutex spatializationServiceMutex_;
     std::mutex spatializationSupportedMutex_;
-    std::mutex spatializationEnabledChangeListnerMutex_;
-    std::mutex headTrackingEnabledChangeListnerMutex_;
     std::mutex spatializationStateChangeListnerMutex_;
     std::mutex rendererInfoChangingMutex_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledCBMap_;
-    std::unordered_map<int32_t, std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledCBMap_;
     std::unordered_map<uint32_t, std::pair<std::shared_ptr<AudioSpatializationStateChangeCallback>, StreamUsage>>
         spatializationStateCBMap_;
     std::map<std::string, AudioSpatialDeviceState> addressToSpatialDeviceStateMap_;

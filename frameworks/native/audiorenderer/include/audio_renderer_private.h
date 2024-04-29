@@ -83,6 +83,7 @@ public:
     int32_t SetParallelPlayFlag(bool parallelPlayFlag) override;
     int32_t SetLowPowerVolume(float volume) const override;
     float GetLowPowerVolume() const override;
+    int32_t SetOffloadAllowed(bool isAllowed) override;
     int32_t SetOffloadMode(int32_t state, bool isAppBack) const override;
     int32_t UnsetOffloadMode() const override;
     float GetSingleStreamVolume() const override;
@@ -177,6 +178,7 @@ private:
     mutable std::mutex switchStreamMutex_;
 
     float speed_ = 1.0;
+    bool isOffloadAllowed_ = true;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

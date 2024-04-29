@@ -76,7 +76,8 @@ public:
         TYPE_VOICE_CALL = 4,
         TYPE_PLAYBACK_CAPTURE = 2,
         TYPE_COMMUNICATION = 7,
-        TYPE_MESSAGE = 10
+        TYPE_MESSAGE = 10,
+        TYPE_REMOTE_CAST = 11
     };
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
@@ -173,6 +174,8 @@ private:
     static napi_ref audioChannelLayout_;
     static napi_ref audioStreamDeviceChangeReason_;
     static napi_ref spatializationSceneType_;
+    static napi_ref asrNoiseSuppressionMode_;
+    static napi_ref asrAecMode_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -212,6 +215,8 @@ private:
     static const std::map<std::string, uint64_t> audioChannelLayoutMap;
     static const std::map<std::string, int32_t> audioDeviceChangeReasonMap;
     static const std::map<std::string, int32_t> spatializationSceneTypeMap;
+    static const std::map<std::string, int32_t> asrNoiseSuppressionModeMap;
+    static const std::map<std::string, int32_t> asrAecModeMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;

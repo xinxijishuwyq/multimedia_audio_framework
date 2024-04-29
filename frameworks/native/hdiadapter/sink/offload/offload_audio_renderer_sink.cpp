@@ -55,9 +55,9 @@ const uint32_t STEREO_CHANNEL_COUNT = 2;
 #ifdef FEATURE_POWER_MANAGER
 constexpr int32_t RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-const int64_t SECOND_TO_NANOSECOND = 1000000000;
-const int64_t SECOND_TO_MICROSECOND = 1000000;
-const int64_t SECOND_TO_MILLISECOND = 1000;
+const uint64_t SECOND_TO_NANOSECOND = 1000000000;
+const uint64_t SECOND_TO_MICROSECOND = 1000000;
+const uint64_t SECOND_TO_MILLISECOND = 1000;
 const uint32_t BIT_IN_BYTE = 8;
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 }
@@ -111,6 +111,7 @@ public:
     int32_t SetOutputRoute(DeviceType outputDevice) override;
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     float GetMaxAmplitude() override;
+    int32_t SetPaPower(int32_t flag) override;
 
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
@@ -381,6 +382,7 @@ int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames,
 
 void OffloadAudioRendererSinkInner::DeInit()
 {
+    Trace trace("OffloadSink::DeInit");
     std::lock_guard<std::mutex> lock(renderMutex_);
     AUDIO_DEBUG_LOG("DeInit.");
     started_ = false;
@@ -582,7 +584,7 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         AdjustAudioBalance(&data, len);
     }
 
-    Trace trace("RenderFrameOffload");
+    Trace trace("OffloadSink::RenderFrame");
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
@@ -622,7 +624,7 @@ float OffloadAudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t OffloadAudioRendererSinkInner::Start(void)
 {
-    Trace trace("Sink::Start");
+    Trace trace("OffloadSink::Start");
     InitLatencyMeasurement();
     if (started_) {
         if (isFlushing_) {
@@ -735,6 +737,7 @@ int32_t OffloadAudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 {
+    Trace trace("OffloadSink::Drain");
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");
@@ -752,6 +755,8 @@ int32_t OffloadAudioRendererSinkInner::Drain(AudioDrainType type)
 
 int32_t OffloadAudioRendererSinkInner::Stop(void)
 {
+    Trace trace("OffloadSink::Stop");
+
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");
 
@@ -788,6 +793,7 @@ int32_t OffloadAudioRendererSinkInner::Resume(void)
 
 int32_t OffloadAudioRendererSinkInner::Reset(void)
 {
+    Trace trace("OffloadSink::Reset");
     if (started_ && audioRender_ != nullptr) {
         startDuringFlush_ = true;
         if (!Flush()) {
@@ -804,6 +810,7 @@ int32_t OffloadAudioRendererSinkInner::Reset(void)
 
 int32_t OffloadAudioRendererSinkInner::Flush(void)
 {
+    Trace trace("OffloadSink::Flush");
     CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED,
         "failed call flush during flushing");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -840,7 +847,7 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
     int32_t ret;
 
     // bytewidth is 4
-    uint32_t size = (int64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
+    uint32_t size = (uint64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "failed audio render null");
 
@@ -865,6 +872,7 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
+    AUDIO_INFO_LOG("keepRunningLock Lock");
     if (OffloadKeepRunningLock == nullptr) {
         OffloadKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
@@ -882,6 +890,7 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
+    AUDIO_INFO_LOG("keepRunningLock UnLock");
     CHECK_AND_RETURN_RET_LOG(OffloadKeepRunningLock != nullptr, ERR_OPERATION_FAILED,
         "OffloadKeepRunningLock is null, playback can not work well!");
     CHECK_AND_RETURN_RET(runninglocked, SUCCESS);
@@ -923,7 +932,7 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
         return;
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    int32_t byteSize = GetFormatByteSize(attr_.format);
+    uint32_t byteSize = GetFormatByteSize(attr_.format);
     size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
         (byteSize * sizeof(uint8_t) * attr_.channel);
     detectedTime_ += newlyCheckedTime;
@@ -948,6 +957,13 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
         AUDIO_INFO_LOG("LatencyMeas offloadSink signal detected");
         detectedTime_ = 0;
     }
+}
+
+int32_t OffloadAudioRendererSinkInner::SetPaPower(int32_t flag)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -64,7 +64,7 @@ namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
 const uint64_t AUDIO_US_PER_MS = 1000;
-const int64_t AUDIO_NS_PER_US = 1000;
+const uint64_t AUDIO_NS_PER_US = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t AUDIO_MS_PER_S = 1000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
@@ -75,7 +75,7 @@ const float AUDIO_VOLOMUE_EPSILON = 0.0001;
 const float AUDIO_MAX_VOLUME = 1.0f;
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
-static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
+static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 3000; // 3000ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
@@ -130,6 +130,7 @@ public:
     // IAudioStream
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
 
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
@@ -321,7 +322,7 @@ private:
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
-    int32_t bufferSizeInMsec_ = 20; // 20ms
+    uint32_t bufferSizeInMsec_ = 20; // 20ms
     std::string cachePath_;
     std::string dumpOutFile_;
     FILE *dumpOutFd_ = nullptr;
@@ -494,7 +495,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         writeDataCV_.notify_all();
         return SUCCESS;
     }
-    if (operation == BUFFER_UNDERRUN) {
+    if (operation == UNDERFLOW_COUNT_ADD) {
         if (!offloadEnable_) {
             underrunCount_++;
         }
@@ -517,6 +518,12 @@ void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
+}
+
+int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
 }
 
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -909,7 +916,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         int64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count());
         int64_t deltaTimeStamp = (static_cast<int64_t>(timeNow) - static_cast<int64_t>(timestampHdi)) * AUDIO_NS_PER_US;
-        int64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
+        uint64_t paWriteIndexNs = paWriteIndex * AUDIO_NS_PER_US;
         uint64_t readPosNs = readPos * AUDIO_MS_PER_SECOND / curStreamParams_.samplingRate * AUDIO_US_PER_S;
 
         int64_t deltaPaWriteIndexNs = static_cast<int64_t>(readPosNs) - static_cast<int64_t>(paWriteIndexNs);

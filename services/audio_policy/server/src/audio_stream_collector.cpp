@@ -596,8 +596,10 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
     }
 }
 
-bool AudioStreamCollector::GetAndCompareStreamType(AudioStreamType requiredType, AudioRendererInfo rendererInfo)
+bool AudioStreamCollector::GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo)
 {
+    AudioStreamType requiredType = GetStreamType(CONTENT_TYPE_UNKNOWN, targetUsage);
+    AUDIO_INFO_LOG("GetAndCompareStreamType:requiredType:%{public}d ", requiredType);
     AudioStreamType defaultStreamType = STREAM_MUSIC;
     auto pos = streamTypeMap_.find(make_pair(rendererInfo.contentType, rendererInfo.streamUsage));
     if (pos != streamTypeMap_.end()) {
@@ -626,8 +628,10 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo->clientUID == clientUid &&
-            GetAndCompareStreamType(streamSetStateEventInternal.audioStreamType, changeInfo->rendererInfo)) {
-            AUDIO_INFO_LOG("UpdateStreamState Found matching uid and type");
+            streamSetStateEventInternal.streamUsage == changeInfo->rendererInfo.streamUsage &&
+            GetAndCompareStreamType(streamSetStateEventInternal.streamUsage, changeInfo->rendererInfo)) {
+            AUDIO_INFO_LOG("UpdateStreamState Found matching uid=%{public}d and usage=%{public}d",
+                clientUid, streamSetStateEventInternal.streamUsage);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
                 AUDIO_ERR_LOG("UpdateStreamState callback failed sId:%{public}d",

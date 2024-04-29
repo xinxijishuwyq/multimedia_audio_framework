@@ -723,7 +723,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Client_Tracker_Callback_Stub_001, TestSize.Lev
         std::make_shared<AudioClientTrackerCallbackStub>();
 
     StreamSetStateEventInternal streamSetStateEventInternal = {};
-    streamSetStateEventInternal.audioStreamType = AudioStreamType::STREAM_MUSIC;
+    streamSetStateEventInternal.streamUsage = STREAM_USAGE_MUSIC;
     std::weak_ptr<AudioClientTrackerTest> callback = std::make_shared<AudioClientTrackerTest>();
 
     float volume = 0.5;
@@ -856,7 +856,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAbsVolumeScene_001, TestSize.
     bool isEnable = true;
     AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable);
     int32_t ret = AudioAdapterManager::GetInstance().IsAbsVolumeScene();
-    EXPECT_EQ(false, ret);
+    EXPECT_EQ(true, ret);
 
     isEnable = false;
     AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable);
@@ -931,62 +931,19 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsHeadTrackingEnabled_001, Test
 }
 
 /**
- * @tc.name  : Test Audio_Policy_Manager_RegisterSpatializationEnabledEventListener_001
- * @tc.number: Audio_Policy_Manager_RegisterSpatializationEnabledEventListener_001
- * @tc.desc  : Test RegisterSpatializationEnabledEventListener interface.
+ * @tc.name  : Test DisableSafeMediaVolume
+ * @tc.number: DisableSafeMediaVolume_001
+ * @tc.desc  : Test DisableSafeMediaVolume interface. Returns success.
  */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterSpatializationEnabledEventListener_001, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, DisableSafeMediaVolume_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioSpatializationEnabledChangeCallback> callback =
-        std::make_shared<AudioSpatializationEnabledChangeCallbackTest>();
-
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-    
-    sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->RegisterSpatializationEnabledEventListener(object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
-
-    AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->RegisterSpatializationEnabledEventListener(object);
-    EXPECT_EQ(ERROR, ret);
-    ret = AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(callback);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioPolicyProxy->UnregisterSpatializationEnabledEventListener();
-    EXPECT_EQ(ERROR, ret);
-    ret = AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledEventListener();
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_Manager_RegisterHeadTrackingEnabledEventListener_001
- * @tc.number: Audio_Policy_Manager_RegisterHeadTrackingEnabledEventListener_001
- * @tc.desc  : Test RegisterHeadTrackingEnabledEventListener interface.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_RegisterHeadTrackingEnabledEventListener_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> callback =
-        std::make_shared<AudioHeadTrackingEnabledChangeCallbackTest>();
-
     std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
     AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
     ASSERT_NE(nullptr, audioPolicyProxy);
 
-    sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->RegisterHeadTrackingEnabledEventListener(object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
-
-    AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->RegisterHeadTrackingEnabledEventListener(object);
-    EXPECT_EQ(ERROR, ret);
-    ret = AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(callback);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioPolicyProxy->UnregisterHeadTrackingEnabledEventListener();
-    EXPECT_EQ(ERROR, ret);
-    ret = AudioPolicyManager::GetInstance().UnregisterHeadTrackingEnabledEventListener();
+    int32_t ret = audioPolicyProxy->DisableSafeMediaVolume();
+    EXPECT_NE(SUCCESS, ret);
+    ret = AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
     EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard

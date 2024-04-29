@@ -143,9 +143,9 @@ enum DeviceType {
      */
     DEVICE_TYPE_DP = 23,
     /**
-     * Indicates a usb-arm device.
+     * Indicates a virtual remote cast device
      */
-    DEVICE_TYPE_USB_ARM_HEADSET = 24,
+    DEVICE_TYPE_REMOTE_CAST = 24,
     /**
      * Indicates a debug sink device
      */
@@ -162,6 +162,10 @@ enum DeviceType {
      * Indicates default device
      */
     DEVICE_TYPE_DEFAULT = 1000,
+    /**
+     * Indicates a usb-arm device.
+     */
+    DEVICE_TYPE_USB_ARM_HEADSET = 1001,
     /**
      * Indicates device type max count.
      */
@@ -194,6 +198,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_DP,
     DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
     DeviceType::DEVICE_TYPE_FILE_SINK,
+    DeviceType::DEVICE_TYPE_REMOTE_CAST,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType)

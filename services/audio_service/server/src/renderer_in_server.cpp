@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "audio_service.h"
 #include "i_stream_manager.h"
 
 namespace OHOS {
@@ -28,11 +29,12 @@ namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const int64_t MOCK_LATENCY = 45000000; // 45000000 -> 45ms
+    static const uint32_t UNDERRUN_LOG_LOOP_COUNT = 100;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
+    : processConfig_(processConfig)
 {
-    processConfig_ = processConfig;
     streamListener_ = streamListener;
 }
 
@@ -150,6 +152,9 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             }
             stateListener->OnOperationHandled(BUFFER_UNDERRUN, 0);
             break;
+        case OPERATION_UNDERFLOW:
+            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
+            break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
             stateListener->OnOperationHandled(START_STREAM, 0);
@@ -223,20 +228,17 @@ int32_t RendererInServer::WriteData()
     Trace::Count("RendererInServer::WriteData", (currentWriteFrame - currentReadFrame) / spanSizeInFrame_);
     Trace trace1("RendererInServer::WriteData");
     if (currentReadFrame + spanSizeInFrame_ > currentWriteFrame) {
-        if (!underRunLogFlag_) {
+        if (underRunLogFlag_ == 0) {
             AUDIO_INFO_LOG("near underrun");
-            underRunLogFlag_ = true;
-        } else {
-            AUDIO_DEBUG_LOG("near underrun");
+        } else if (underRunLogFlag_ == UNDERRUN_LOG_LOOP_COUNT) {
+            underRunLogFlag_ = 0;
         }
-
+        underRunLogFlag_++;
         Trace trace2("RendererInServer::Underrun");
         std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
         CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
         stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
         return ERR_OPERATION_FAILED;
-    } else {
-        underRunLogFlag_ = false;
     }
 
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
@@ -246,6 +248,13 @@ int32_t RendererInServer::WriteData()
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+        if (isInnerCapEnabled_) {
+            Trace traceDup("RendererInServer::WriteData DupSteam write");
+            std::lock_guard<std::mutex> lock(dupMutex_);
+            if (dupStream_ != nullptr) {
+                dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+            }
+        }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
@@ -283,7 +292,7 @@ int32_t RendererInServer::OnWriteData(size_t length)
     size_t maxEmptyCount = 1;
     size_t writableSize = stream_->GetWritableSize();
     if (mayNeedForceWrite && writableSize >= spanSizeInByte_ * maxEmptyCount) {
-        AUDIO_WARNING_LOG("Server need force write to recycle callback");
+        AUDIO_DEBUG_LOG("Server need force write to recycle callback");
         needForceWrite_ =
             writableSize / spanSizeInByte_ > 3 ? 0 : 3 - writableSize / spanSizeInByte_; // 3 is maxlength - 1
     }
@@ -309,7 +318,7 @@ int32_t RendererInServer::UpdateWriteIndex()
 
     if (afterDrain == true) {
         afterDrain = false;
-        AUDIO_WARNING_LOG("After drain, start write data");
+        AUDIO_DEBUG_LOG("After drain, start write data");
         WriteData();
     }
     return SUCCESS;
@@ -349,6 +358,13 @@ int32_t RendererInServer::Start()
     audioServerBuffer_->SetHandleInfo(currentReadFrame, tempTime);
     AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
     resetTime_ = true;
+
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Start();
+        }
+    }
     return SUCCESS;
 }
 
@@ -362,6 +378,12 @@ int32_t RendererInServer::Pause()
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Pause();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     return SUCCESS;
 }
@@ -400,6 +422,12 @@ int32_t RendererInServer::Flush()
 
     int ret = stream_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Flush();
+        }
+    }
     return SUCCESS;
 }
 
@@ -428,6 +456,12 @@ int32_t RendererInServer::Drain()
     DrainAudioBuffer();
     int ret = stream_->Drain();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Drain();
+        }
+    }
     return SUCCESS;
 }
 
@@ -443,12 +477,19 @@ int32_t RendererInServer::Stop()
         status_ = I_STATUS_STOPPING;
     }
     int ret = stream_->Stop();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->Stop();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     return SUCCESS;
 }
 
 int32_t RendererInServer::Release()
 {
+    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ == I_STATUS_RELEASED) {
@@ -463,6 +504,11 @@ int32_t RendererInServer::Release()
         return ret;
     }
     status_ = I_STATUS_RELEASED;
+
+    if (isInnerCapEnabled_) {
+        DisableInnerCap();
+    }
+
     return SUCCESS;
 }
 
@@ -529,6 +575,72 @@ int32_t RendererInServer::SetPrivacyType(int32_t privacyType)
 int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 {
     return stream_->GetPrivacyType(privacyType);
+}
+
+int32_t RendererInServer::EnableInnerCap()
+{
+    // in plan
+    if (isInnerCapEnabled_) {
+        AUDIO_INFO_LOG("InnerCap is already enabled");
+        return SUCCESS;
+    }
+    int32_t ret = InitDupStream();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    return SUCCESS;
+}
+
+int32_t RendererInServer::DisableInnerCap()
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    if (!isInnerCapEnabled_) {
+        AUDIO_WARNING_LOG("InnerCap is already disabled.");
+        return ERR_INVALID_OPERATION;
+    }
+    isInnerCapEnabled_ = false;
+    AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_);
+    // in plan: call stop?
+    IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    dupStream_ = nullptr;
+
+    return ERROR;
+}
+
+int32_t RendererInServer::InitDupStream()
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(processConfig_, dupStream_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dupStream_ != nullptr, ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
+    dupStreamIndex_ = dupStream_->GetStreamIndex();
+
+    dupStreamCallback_ = std::make_shared<StreamCallbacks>(dupStreamIndex_);
+    dupStream_->RegisterStatusCallback(dupStreamCallback_);
+    dupStream_->RegisterWriteCallback(dupStreamCallback_);
+
+    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
+
+    isInnerCapEnabled_ = true;
+
+    if (status_ == I_STATUS_STARTED) {
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
+        dupStream_->Start();
+    }
+    return SUCCESS;
+}
+
+StreamCallbacks::StreamCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
+{
+    AUDIO_INFO_LOG("DupStream %{public}u create StreamCallbacks", streamIndex_);
+}
+
+void StreamCallbacks::OnStatusUpdate(IOperation operation)
+{
+    AUDIO_INFO_LOG("DupStream %{public}u recv operation: %{public}d", streamIndex_, operation);
+}
+
+int32_t StreamCallbacks::OnWriteData(size_t length)
+{
+    Trace trace("DupStream::OnWriteData length " + std::to_string(length));
+    return SUCCESS;
 }
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)

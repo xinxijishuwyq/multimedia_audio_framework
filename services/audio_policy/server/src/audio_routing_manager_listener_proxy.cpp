@@ -19,6 +19,7 @@
 #include "audio_routing_manager.h"
 #include "audio_system_manager.h"
 #include "audio_log.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,6 +50,76 @@ void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(const sptr
 
     int error = Remote()->SendRequest(ON_DISTRIBUTED_ROUTING_ROLE_CHANGE, data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnDistributedRoutingRoleChangefailed, error: %{public}d", error);
+}
+
+int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
+    int32_t clientUid, RenderMode renderMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
+        "OnAudioOutputDeviceRefined: WriteInterfaceToken failed");
+    
+    data.WriteInt32(descs.size());
+    for (auto &desc : descs) {
+        desc->Marshalling(data);
+    }
+    data.WriteInt32(routerType);
+    data.WriteInt32(streamUsage);
+    data.WriteInt32(clientUid);
+    data.WriteInt32(renderMode);
+
+    int error = Remote()->SendRequest(ON_AUDIO_OUTPUT_DEVICE_REFINERD, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "OnAudioOutputDeviceRefined, error: %{public}d", error);
+
+    int32_t result = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "OnAudioOutputDeviceRefined callback failed, error %{public}d", result);
+    
+    descs.clear();
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply)));
+    }
+    return SUCCESS;
+}
+
+int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
+    int32_t clientUid, RenderMode renderMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR,
+        "OnAudioInputDeviceRefined: WriteInterfaceToken failed");
+    
+    data.WriteInt32(descs.size());
+    for (auto &desc : descs) {
+        desc->Marshalling(data);
+    }
+    data.WriteInt32(routerType);
+    data.WriteInt32(sourceType);
+    data.WriteInt32(clientUid);
+    data.WriteInt32(renderMode);
+
+    int error = Remote()->SendRequest(ON_AUDIO_INPUT_DEVICE_REFINERD, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "OnAudioInputDeviceRefined, error: %{public}d", error);
+
+    int32_t result = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "OnAudioInputDeviceRefined callback failed, error %{public}d", result);
+    
+    descs.clear();
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        descs.push_back(std::make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(reply)));
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

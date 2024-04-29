@@ -775,7 +775,7 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_009, TestSize.Level1)
     DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
     DeviceRole deviceRole = DeviceRole::OUTPUT_DEVICE;
     AudioPin ret = AudioSystemManager::GetInstance()->GetPinValueFromType(deviceType, deviceRole);
-    EXPECT_EQ(ret, AudioPin::AUDIO_PIN_NONE);
+    EXPECT_EQ(ret, AudioPin::AUDIO_PIN_OUT_USB_HEADSET);
 }
 
 /**
@@ -860,6 +860,20 @@ HWTEST(AudioManagerUnitTest, GetPinValueFromType_015, TestSize.Level1)
     DeviceRole deviceRole = DeviceRole::OUTPUT_DEVICE;
     AudioPin ret = AudioSystemManager::GetInstance()->GetPinValueFromType(deviceType, deviceRole);
     EXPECT_EQ(ret, AudioPin::AUDIO_PIN_OUT_DAUDIO_DEFAULT);
+}
+
+/**
+* @tc.name   : Test GetPinValueFromType API
+* @tc.number : GetPinValueFromType_016
+* @tc.desc   : Test GetPinValueFromType interface. deviceType set to DEVICE_TYPE_USB_HEADSET,
+* deviceRole set to INPUT_DEVICE
+*/
+HWTEST(AudioManagerUnitTest, GetPinValueFromType_016, TestSize.Level1)
+{
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
+    DeviceRole deviceRole = DeviceRole::INPUT_DEVICE;
+    AudioPin ret = AudioSystemManager::GetInstance()->GetPinValueFromType(deviceType, deviceRole);
+    EXPECT_EQ(ret, AudioPin::AUDIO_PIN_IN_USB_HEADSET);
 }
 
 /**
@@ -2066,7 +2080,7 @@ HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
-        StreamSetState::STREAM_PAUSE, AudioStreamType::STREAM_MEDIA);
+        StreamSetState::STREAM_PAUSE, STREAM_USAGE_MEDIA);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -2078,7 +2092,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
-        StreamSetState::STREAM_RESUME, AudioStreamType::STREAM_MEDIA);
+        StreamSetState::STREAM_RESUME, STREAM_USAGE_MEDIA);
     EXPECT_EQ(SUCCESS, ret);
 }
 

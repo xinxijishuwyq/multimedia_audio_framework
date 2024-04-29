@@ -31,6 +31,7 @@
 #include "i_audio_renderer_sink.h"
 #include "i_audio_capturer_source.h"
 #include "audio_effect_server.h"
+#include "audio_asr.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,6 +75,12 @@ public:
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
+
+    int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
+    int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
+    int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t IsWhispering() override;
 
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
 
@@ -133,10 +140,13 @@ private:
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
-    bool CheckPlaybackPermission(Security::AccessToken::AccessTokenID tokenId, const StreamUsage streamUsage);
-    bool CheckRecorderPermission(Security::AccessToken::AccessTokenID tokenId, const SourceType sourceType,
-        int32_t appUid);
+    bool CheckPlaybackPermission(const AudioProcessConfig &config);
+    bool CheckRecorderPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
+
+    void ResetRecordConfig(int32_t callerUid, AudioProcessConfig &config);
+    AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
+    int32_t GetHapBuildApiVersion(int32_t callerUid);
 
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
@@ -164,7 +174,6 @@ private:
     std::mutex setWakeupCloseCallbackMutex_;
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
-    bool isGetProcessEnabled_ = false;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
 };
 } // namespace AudioStandard

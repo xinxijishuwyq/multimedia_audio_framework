@@ -58,6 +58,7 @@ struct RendererSinkAdapter {
     int32_t (*RendererSinkOffloadRunningLockInit)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkOffloadRunningLockLock)(struct RendererSinkAdapter *adapter);
     int32_t (*RendererSinkOffloadRunningLockUnlock)(struct RendererSinkAdapter *adapter);
+    int32_t (*RendererSinkSetPaPower)(struct RendererSinkAdapter *adapter, int32_t flag);
 };
 
 int32_t FillinSinkWapper(const char *device, const char *deviceNetworkId, struct RendererSinkAdapter *adapter);
@@ -81,6 +82,7 @@ int32_t IAudioRendererSinkSetBufferSize(struct RendererSinkAdapter *adapter, uin
 int32_t IAudioRendererSinkOffloadRunningLockInit(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkOffloadRunningLockLock(struct RendererSinkAdapter *adapter);
 int32_t IAudioRendererSinkOffloadRunningLockUnlock(struct RendererSinkAdapter *adapter);
+int32_t IAudioRendererSinkSetPaPower(struct RendererSinkAdapter *adapter, int32_t flag);
 
 #ifdef __cplusplus
 }

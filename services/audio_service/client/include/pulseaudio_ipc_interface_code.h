@@ -61,7 +61,12 @@ namespace AudioStandard {
         RESET_ROUTE_FOR_DISCONNECT,
         GET_EFFECT_LATENCY,
         UPDATE_LATENCY_TIMESTAMP,
-        AUDIO_SERVER_CODE_MAX = UPDATE_LATENCY_TIMESTAMP,
+        SET_ASR_AEC_MODE,
+        GET_ASR_AEC_MODE,
+        SET_ASR_NOISE_SUPPRESSION_MODE,
+        GET_ASR_NOISE_SUPPRESSION_MODE,
+        IS_WHISPERING,
+        AUDIO_SERVER_CODE_MAX = IS_WHISPERING,
     };
 } // namespace AudioStandard
 } // namespace OHOS

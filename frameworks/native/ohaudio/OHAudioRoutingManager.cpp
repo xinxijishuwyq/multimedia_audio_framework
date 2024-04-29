@@ -97,7 +97,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
     if (audioDeviceDescriptorArray == nullptr) {
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
-    for (int32_t index = 0; index < audioDeviceDescriptorArray->size; index++) {
+    for (uint32_t index = 0; index < audioDeviceDescriptorArray->size; index++) {
         OHAudioDeviceDescriptor* ohAudioDeviceDescriptor =
             (OHAudioDeviceDescriptor*)audioDeviceDescriptorArray->descriptors[index];
         delete ohAudioDeviceDescriptor;
@@ -116,7 +116,7 @@ namespace AudioStandard {
 void DestroyAudioDeviceDescriptor(OH_AudioDeviceDescriptorArray *array)
 {
     if (array) {
-        for (int32_t index = 0; index < array->size; index++) {
+        for (uint32_t index = 0; index < array->size; index++) {
             OHAudioDeviceDescriptor* ohAudioDeviceDescriptor = (OHAudioDeviceDescriptor*)array->descriptors[index];
             delete ohAudioDeviceDescriptor;
             array->descriptors[index] = nullptr;

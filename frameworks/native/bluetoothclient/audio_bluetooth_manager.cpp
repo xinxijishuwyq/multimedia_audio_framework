@@ -41,6 +41,8 @@ std::mutex g_hfpInstanceLock;
 
 static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioStreamInfo)
 {
+    AUDIO_DEBUG_LOG("codec info rate[%{public}d]  format[%{public}d]  channel[%{public}d]",
+        codecInfo.sampleRate, codecInfo.bitsPerSample, codecInfo.channelMode);
     switch (codecInfo.sampleRate) {
         case A2DP_SBC_SAMPLE_RATE_48000_USER:
             audioStreamInfo.samplingRate = SAMPLE_RATE_48000;
@@ -108,7 +110,8 @@ void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 void AudioA2dpManager::DisconnectBluetoothA2dpSink()
 {
     int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
-    a2dpListener_->OnConnectionStateChanged(activeA2dpDevice_, connectionState);
+    a2dpListener_->OnConnectionStateChanged(activeA2dpDevice_, connectionState,
+        static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
     MediaBluetoothDeviceManager::ClearAllA2dpBluetoothDevice();
 }
 
@@ -201,7 +204,20 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
     return a2dpInstance_->OffloadStopPlaying(activeA2dpDevice_, sessionsID);
 }
 
-void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
+void AudioA2dpManager::CheckA2dpDeviceReconnect()
+{
+    a2dpInstance_ = A2dpSource::GetProfile();
+    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
+    std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
+    std::vector<BluetoothRemoteDevice> devices;
+    a2dpInstance_->GetDevicesByStates(states, devices);
+    for (auto &device : devices) {
+        a2dpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
+            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+    }
+}
+
+void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
     AUDIO_INFO_LOG("AudioA2dpListener OnConnectionStateChanged: state: %{public}d", state);
     // Record connection state and device for hdi start time to check
@@ -353,7 +369,8 @@ int8_t AudioHfpManager::GetScoCategoryFromScene(AudioScene scene)
 void AudioHfpManager::DisconnectBluetoothHfpSink()
 {
     int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
-    hfpListener_->OnConnectionStateChanged(activeHfpDevice_, connectionState);
+    hfpListener_->OnConnectionStateChanged(activeHfpDevice_, connectionState,
+        static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
     HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice();
 }
 
@@ -390,7 +407,7 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     }
 }
 
-void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state)
+void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
     AUDIO_INFO_LOG("AudioHfpListener::OnConnectionStateChanged: state: %{public}d", state);
     if (state == static_cast<int>(BTConnectState::CONNECTED)) {

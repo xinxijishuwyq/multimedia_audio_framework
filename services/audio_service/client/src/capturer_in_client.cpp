@@ -44,6 +44,7 @@
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_system_manager.h"
+#include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
@@ -53,7 +54,7 @@ namespace AudioStandard {
 namespace {
 static const size_t MAX_CLIENT_READ_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 5; // 5S
-static const int32_t OPERATION_TIMEOUT_IN_MS = 500; // 500ms
+static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t LOGLITMITTIMES = 20;
 const uint64_t AUDIO_US_PER_MS = 1000;
 const uint64_t AUDIO_US_PER_S = 1000000;
@@ -74,6 +75,7 @@ public:
 
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
 
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
@@ -248,6 +250,7 @@ private:
     size_t cbBufferSize_ = 0;
     SafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
+    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     bool isInnerCapturer_ = false;
     bool isWakeupCapturer_ = false;
 
@@ -290,7 +293,7 @@ private:
     std::mutex readMutex_; // used for prevent multi thread call read
 
     // Mark reach and period reach callback
-    int64_t totalBytesRead_ = 0;
+    uint64_t totalBytesRead_ = 0;
     std::mutex markReachMutex_;
     bool capturerMarkReached_ = false;
     int64_t capturerMarkPosition_ = 0;
@@ -381,6 +384,17 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
     return;
+}
+
+int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    AUDIO_INFO_LOG("client set %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is already nullptr");
+    int32_t ret = ipcStream_->UpdatePlaybackCaptureConfig(config);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
+
+    filterConfig_ = config;
+    return SUCCESS;
 }
 
 void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
@@ -792,7 +806,7 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
-    int64_t currentReadPos = totalBytesRead_ / sizePerFrameInByte_;
+    uint64_t currentReadPos = totalBytesRead_ / sizePerFrameInByte_;
     timestamp.framePosition = currentReadPos;
 
     uint64_t writePos = 0;
@@ -1191,7 +1205,7 @@ int64_t CapturerInClientInner::GetFramesWritten()
 int64_t CapturerInClientInner::GetFramesRead()
 {
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, INVALID_FRAME_SIZE, "sizePerFrameInByte_ is 0!");
-    int64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
+    uint64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
     return readFrameNumber;
 }
 
@@ -1503,6 +1517,7 @@ int32_t CapturerInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer,
     bool isBlockingRead)
 {
+    Trace trace("CapturerInClientInner::HandleCapturerRead " + std::to_string(userSize));
     while (readSize < userSize) {
         AUDIO_DEBUG_LOG("readSize %{public}zu < userSize %{public}zu", readSize, userSize);
         OptResult result = ringCache_->GetReadableSize();
@@ -1587,7 +1602,7 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
         AUDIO_ERR_LOG("HandleCapturerPositionChanges: sizePerFrameInByte_ is 0");
         return;
     }
-    int64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
+    uint64_t readFrameNumber = totalBytesRead_ / sizePerFrameInByte_;
     AUDIO_DEBUG_LOG("totalBytesRead_ %{public}" PRId64 ", frame size: %{public}zu", totalBytesRead_,
         sizePerFrameInByte_);
     {

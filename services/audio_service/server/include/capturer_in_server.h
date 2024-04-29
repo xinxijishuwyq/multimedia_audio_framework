@@ -20,14 +20,10 @@
 #include "i_capturer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
+#include "audio_ring_cache.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CapturerListener {
-public:
-    virtual void OnReadEvent() = 0;
-    virtual void ReceivedBuffer() = 0;
-};
 class CapturerInServer : public IStatusCallback, public IReadCallback,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
@@ -48,7 +44,6 @@ public:
     int32_t GetLatency(uint64_t &latency);
 
     int32_t Init();
-    void RegisterTestCallback(const std::weak_ptr<CapturerListener> &callback);
 
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
@@ -57,7 +52,13 @@ public:
     void ReadData(size_t length);
     int32_t DrainAudioBuffer();
 
+    // for inner-cap.
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config);
+    int32_t UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybackCaptureConfig &config);
+
 private:
+    int32_t InitCacheBuffer(size_t targetSize);
+
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<ICapturerStream> stream_ = nullptr;
@@ -65,8 +66,8 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
+    AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;
-    std::weak_ptr<CapturerListener> testCallback_;
     AudioProcessConfig processConfig_;
     size_t totalSizeInFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
@@ -79,7 +80,10 @@ private:
     int32_t underflowCount = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
-    bool overFlowLogFlag = false;
+    uint32_t overFlowLogFlag_ = 0;
+    std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
+    size_t cacheSizeInBytes_ = 0;
+    std::unique_ptr<uint8_t []> dischargeBuffer_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

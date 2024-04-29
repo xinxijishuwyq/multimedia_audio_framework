@@ -31,22 +31,9 @@ public:
     AudioEffectRotation();
     ~AudioEffectRotation();
     static std::shared_ptr<AudioEffectRotation> GetInstance();
-    void Init();
     void SetRotation(uint32_t rotationState);
     uint32_t GetRotation();
 private:
-    class AudioRotationListener : public OHOS::Rosen::DisplayManager::IDisplayListener {
-    public:
-        void OnCreate(Rosen::DisplayId displayId) override;
-        void OnDestroy(Rosen::DisplayId displayId) override;
-        void OnChange(Rosen::DisplayId displayId) override;
-    };
-
-    void OnCreate(Rosen::DisplayId displayId);
-    void OnDestroy(Rosen::DisplayId displayId);
-    void OnChange(Rosen::DisplayId displayId);
-
-    sptr<AudioRotationListener> audioRotationListener_;
     uint32_t rotationState_;
 };
 #endif

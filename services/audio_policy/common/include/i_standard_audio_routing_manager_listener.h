@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class IStandardAudioRoutingManagerListener : public IRemoteBroker {
+class IStandardAudioRoutingManagerListener : public IRemoteBroker, public AudioDeviceRefiner {
 public:
     virtual ~IStandardAudioRoutingManagerListener() = default;
     virtual void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type) = 0;
@@ -34,6 +34,8 @@ public:
     enum AudioRingerModeUpdateListenerMsg {
         ON_ERROR = 0,
         ON_DISTRIBUTED_ROUTING_ROLE_CHANGE,
+        ON_AUDIO_OUTPUT_DEVICE_REFINERD,
+        ON_AUDIO_INPUT_DEVICE_REFINERD,
     };
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardAudioRoutingManagerListener");

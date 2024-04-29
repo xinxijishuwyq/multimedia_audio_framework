@@ -31,6 +31,7 @@ public:
     virtual void OnSinkLatencyParsed(uint32_t latency) = 0;
     virtual void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData) = 0;
     virtual void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData) = 0;
+    virtual void OnGlobalConfigsParsed(GlobalConfigs &globalConfig) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

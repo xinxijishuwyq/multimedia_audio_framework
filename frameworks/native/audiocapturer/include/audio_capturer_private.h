@@ -32,6 +32,7 @@ class AudioCapturerPrivate : public AudioCapturer {
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t SetParams(const AudioCapturerParams params) override;
+    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     int32_t SetCapturerCallback(const std::shared_ptr<AudioCapturerCallback> &callback) override;
     int32_t GetParams(AudioCapturerParams &params) const override;
     int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const override;
@@ -88,6 +89,7 @@ public:
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
+    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
     AudioStreamType audioStreamType_;
     std::string cachePath_;
     bool abortRestore_ = false;
@@ -131,6 +133,7 @@ private:
     DeviceInfo currentDeviceInfo_ = {};
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    FILE *dumpFile_ = nullptr;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

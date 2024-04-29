@@ -30,9 +30,16 @@ public:
                                 MessageParcel &reply, MessageOption &option) override;
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type) override;
     void SetDistributedRoutingRoleCallback(const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback);
-
+    void SetAudioDeviceRefinerCallback(const std::weak_ptr<AudioDeviceRefiner> &callback);
+    int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, RenderMode renderMode) override;
+    int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        RouterType routerType, SourceType sourceType, int32_t clientUid, RenderMode renderMode) override;
 private:
+    void OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply);
+    void OnAudioInputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply);
     std::weak_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_;
+    std::weak_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

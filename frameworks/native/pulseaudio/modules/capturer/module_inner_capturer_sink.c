@@ -41,7 +41,9 @@
 #include <pulsecore/thread-mq.h>
 #include <pulsecore/rtpoll.h>
 
+#include "securec.h"
 #include "audio_log.h"
+#include "audio_utils_c.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Inner Capturer Sink"));
@@ -84,7 +86,7 @@ static const char * const VALID_MODARGS[] = {
     "rate",
     "channels",
     "channel_map",
-    "buffer_size"
+    "buffer_size",
     "formats",
     NULL
 };
@@ -218,6 +220,8 @@ static void ProcessRender(struct userdata *u, pa_usec_t now)
         pa_memchunk chunk;
 
         pa_sink_render(u->sink, u->sink->thread_info.max_request, &chunk);
+        AUTO_CTRACE("inner_capturer_sink: ProcessRender len %zu, max_request %zu", chunk.length,
+            u->sink->thread_info.max_request);
         pa_memblock_unref(chunk.memblock);
 
         u->timestamp += pa_bytes_to_usec(chunk.length, &u->sink->sample_spec);
@@ -366,8 +370,7 @@ int pa__init(pa_module *m)
     pa_assert(m);
 
     ma = pa_modargs_new(m->argument, VALID_MODARGS);
-    CHECK_AND_RETURN_RET_LOG(ma != NULL, InitFailed(m, ma),
-        "Failed to parse module arguments.");
+    CHECK_AND_RETURN_RET_LOG(ma != NULL, InitFailed(m, ma), "Failed to parse module arguments:%{public}s", m->argument);
 
     m->userdata = u = pa_xnew0(struct userdata, 1);
     u->core = m->core;

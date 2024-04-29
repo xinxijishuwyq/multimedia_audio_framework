@@ -110,10 +110,6 @@ private:
     void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void SetHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
@@ -140,7 +136,11 @@ private:
     void GetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetSpatializationSceneTypeInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxAmplitudeInternal(MessageParcel &data, MessageParcel &reply);
+    void DisableSafeMediaVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingDataRequestedInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = void(AudioPolicyManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc handlers[] = {
@@ -225,10 +225,6 @@ private:
         &AudioPolicyManagerStub::SetSpatializationEnabledInternal,
         &AudioPolicyManagerStub::IsHeadTrackingEnabledInternal,
         &AudioPolicyManagerStub::SetHeadTrackingEnabledInternal,
-        &AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal,
-        &AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal,
-        &AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal,
-        &AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal,
         &AudioPolicyManagerStub::GetSpatializationStateInternal,
         &AudioPolicyManagerStub::IsSpatializationSupportedInternal,
         &AudioPolicyManagerStub::IsSpatializationSupportedForDeviceInternal,
@@ -256,6 +252,10 @@ private:
         &AudioPolicyManagerStub::SetSpatializationSceneTypeInternal,
         &AudioPolicyManagerStub::GetMaxAmplitudeInternal,
         &AudioPolicyManagerStub::IsHeadTrackingDataRequestedInternal,
+        &AudioPolicyManagerStub::SetAudioDeviceRefinerCallbackInternal,
+        &AudioPolicyManagerStub::UnsetAudioDeviceRefinerCallbackInternal,
+        &AudioPolicyManagerStub::TriggerFetchDeviceInternal,
+        &AudioPolicyManagerStub::DisableSafeMediaVolumeInternal,
     };
     static constexpr size_t handlersNums = sizeof(handlers) / sizeof(HandlerFunc);
     static_assert(handlersNums == (static_cast<size_t> (AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX) + 1),

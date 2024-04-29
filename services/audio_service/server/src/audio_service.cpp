@@ -21,6 +21,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "remote_audio_renderer_sink.h"
 #include "policy_handler.h"
 #include "ipc_stream_in_server.h"
@@ -89,14 +90,238 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
+    if (innerCapturerMgr_ == nullptr) {
+        innerCapturerMgr_ = PlaybackCapturerManager::GetInstance(); // As mgr is a singleton, lock is needless here.
+        innerCapturerMgr_->RegisterCapturerFilterListener(this);
+    }
+
     // in plan: GetDeviceInfoForProcess(config) and stream limit check
+    // in plan: call GetProcessDeviceInfo to load inner-cap-sink
     sptr<IpcStreamInServer> ipcStreamInServer = IpcStreamInServer::Create(config, ret);
+
+    // in plan: Put playback into list, check if EnableInnerCap is need.
+    if (ipcStreamInServer != nullptr && config.audioMode == AUDIO_MODE_PLAYBACK) {
+        uint32_t sessionId = 0;
+        std::shared_ptr<RendererInServer> renderer = ipcStreamInServer->GetRenderer();
+        if (renderer != nullptr && renderer->GetSessionId(sessionId) == SUCCESS) {
+            InsertRenderer(sessionId, renderer); // for all renderers
+            CheckInnerCapForRenderer(sessionId, renderer);
+        }
+    }
 
     return ipcStreamInServer;
 }
 
+void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
+{
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    AUDIO_INFO_LOG("Insert renderer:%{public}u into map", sessionId);
+    allRendererMap_[sessionId] = renderer;
+}
+
+void AudioService::RemoveRenderer(uint32_t sessionId)
+{
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    AUDIO_INFO_LOG("Renderer:%{public}u will be removed.", sessionId);
+    if (!allRendererMap_.count(sessionId)) {
+        AUDIO_WARNING_LOG("Renderer in not in map!");
+        return;
+    }
+    allRendererMap_.erase(sessionId);
+}
+
+void AudioService::CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer)
+{
+    CHECK_AND_RETURN_LOG(renderer != nullptr, "renderer is null.");
+
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+
+    // inner-cap not working
+    if (workingInnerCapId_ == 0) {
+        return;
+    }
+    // in plan: check if meet with the workingConfig_
+    if (ShouldBeInnerCap(renderer->processConfig_)) {
+        filteredRendererMap_.push_back(renderer);
+        renderer->EnableInnerCap(); // for debug
+    }
+}
+
+InnerCapFilterPolicy AudioService::GetInnerCapFilterPolicy()
+{
+    auto usagesSize = workingConfig_.filterOptions.usages.size();
+    auto pidsSize = workingConfig_.filterOptions.pids.size();
+    if (usagesSize == 0 && pidsSize == 0) {
+        AUDIO_ERR_LOG("error, invalid usages and pids");
+        return POLICY_INVALID;
+    }
+    if (usagesSize > 0 && pidsSize == 0) {
+        AUDIO_INFO_LOG("usages only");
+        return POLICY_USAGES_ONLY;
+    }
+    return POLICY_USAGES_AND_PIDS;
+}
+
+template<typename T>
+bool isFilterMatched(const std::vector<T> &params, T param, FilterMode mode)
+{
+    bool isFound = std::count(params.begin(), params.end(), param) != 0;
+    return (mode == FilterMode::INCLUDE && isFound) || (mode == FilterMode::EXCLUDE && !isFound);
+}
+
+bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig)
+{
+    bool canBeCaptured = rendererConfig.privacyType == AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    if (!canBeCaptured) {
+        AUDIO_WARNING_LOG("%{public}d privacy is not public!", rendererConfig.appInfo.appPid);
+        return false;
+    }
+    InnerCapFilterPolicy filterPolicy = GetInnerCapFilterPolicy();
+    bool res = false;
+    switch (filterPolicy) {
+        case POLICY_INVALID:
+            return false;
+        case POLICY_USAGES_ONLY:
+            res = isFilterMatched(workingConfig_.filterOptions.usages,
+                rendererConfig.rendererInfo.streamUsage, workingConfig_.filterOptions.usageFilterMode);
+            break;
+        case POLICY_USAGES_AND_PIDS:
+            res = isFilterMatched(workingConfig_.filterOptions.usages, rendererConfig.rendererInfo.streamUsage,
+                workingConfig_.filterOptions.usageFilterMode) &&
+                isFilterMatched(workingConfig_.filterOptions.pids, rendererConfig.appInfo.appPid,
+                workingConfig_.filterOptions.pidFilterMode);
+            break;
+        default:
+            break;
+    }
+
+    AUDIO_INFO_LOG("pid:%{public}d usage:%{public}d result:%{public}s", rendererConfig.appInfo.appPid,
+        rendererConfig.rendererInfo.streamUsage, res ? "true" : "false");
+    return res;
+}
+
+void AudioService::FilterAllFastProcess()
+{
+    std::unique_lock<std::mutex> lock(processListMutex_);
+    if (linkedPairedList_.size() == 0) {
+        return;
+    }
+    for (auto paired : linkedPairedList_) {
+        AudioProcessConfig temp = paired.first->processConfig_;
+        if (temp.audioMode == AUDIO_MODE_PLAYBACK && ShouldBeInnerCap(temp)) {
+            paired.first->SetInnerCapState(true);
+            paired.second->EnableFastInnerCap();
+        } else {
+            paired.first->SetInnerCapState(false);
+        }
+    }
+
+    for (auto pair : endpointList_) {
+        if (pair.second->GetDeviceRole() == OUTPUT_DEVICE && !pair.second->ShouldInnerCap()) {
+            pair.second->DisableFastInnerCap();
+        }
+    }
+}
+
+int32_t AudioService::OnInitInnerCapList()
+{
+    AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
+    FilterAllFastProcess();
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
+        std::shared_ptr<RendererInServer> renderer = it->second.lock();
+        if (renderer == nullptr) {
+            AUDIO_WARNING_LOG("Renderer is already released!");
+            continue;
+        }
+        if (ShouldBeInnerCap(renderer->processConfig_)) {
+            renderer->EnableInnerCap();
+            filteredRendererMap_.push_back(renderer);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioService::OnUpdateInnerCapList()
+{
+    AUDIO_INFO_LOG("workingInnerCapId_ is %{public}d", workingInnerCapId_);
+
+    std::unique_lock<std::mutex> lock(rendererMapMutex_);
+    for (size_t i = 0; i < filteredRendererMap_.size(); i++) {
+        std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[i].lock();
+        if (renderer == nullptr) {
+            AUDIO_WARNING_LOG("Renderer is already released!");
+            continue;
+        }
+        if (!ShouldBeInnerCap(renderer->processConfig_)) {
+            renderer->DisableInnerCap();
+        }
+    }
+    filteredRendererMap_.clear();
+    lock.unlock();
+    // EnableInnerCap will be called twice as it's already in filteredRendererMap_.
+    return OnInitInnerCapList();
+}
+
+// Only one session is working at the same time.
+int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig)
+{
+    Trace trace("AudioService::OnCapturerFilterChange");
+    // in plan:
+    // step 1: if sessionId is not added before, add the sessionId and enbale the filter in allRendererMap_
+    // step 2: if sessionId is already in using, this means the config is changed. Check the filtered renderer before,
+    // call disable inner-cap for those not meet with the new config, than filter all allRendererMap_.
+    if (workingInnerCapId_ == 0) {
+        workingInnerCapId_ = sessionId;
+        workingConfig_ = newConfig;
+        return OnInitInnerCapList();
+    }
+
+    if (workingInnerCapId_ == sessionId) {
+        workingConfig_ = newConfig;
+        return OnUpdateInnerCapList();
+    }
+
+    AUDIO_WARNING_LOG("%{public}u is working, comming %{public}u will not work!", workingInnerCapId_, sessionId);
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
+{
+    if (workingInnerCapId_ != sessionId) {
+        AUDIO_WARNING_LOG("%{public}u is working, remove %{public}u will not work!", workingInnerCapId_, sessionId);
+        return SUCCESS;
+    }
+    workingInnerCapId_ = 0;
+    workingConfig_ = {};
+
+    std::unique_lock<std::mutex> lockEndpoint(processListMutex_);
+    for (auto pair : endpointList_) {
+        if (pair.second->GetDeviceRole() == OUTPUT_DEVICE) {
+            pair.second->DisableFastInnerCap();
+        }
+    }
+    lockEndpoint.unlock();
+
+    std::lock_guard<std::mutex> lock(rendererMapMutex_);
+    for (size_t i = 0; i < filteredRendererMap_.size(); i++) {
+        std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[i].lock();
+        if (renderer == nullptr) {
+            AUDIO_WARNING_LOG("Find renderer is already released!");
+            continue;
+        }
+        renderer->DisableInnerCap();
+    }
+    AUDIO_INFO_LOG("Filter removed, clear %{public}zu filtered renderer.", filteredRendererMap_.size());
+
+    filteredRendererMap_.clear();
+
+    return SUCCESS;
+}
+
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
+    Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType);
@@ -119,7 +344,24 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "LinkProcessToEndpoint failed");
 
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
+    CheckInnerCapForProcess(process, audioEndpoint);
     return process;
+}
+
+void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint)
+{
+    Trace trace("AudioService::CheckInnerCapForProcess:" + std::to_string(process->processConfig_.appInfo.appPid));
+    // inner-cap not working
+    if (workingInnerCapId_ == 0) {
+        return;
+    }
+
+    if (ShouldBeInnerCap(process->processConfig_)) {
+        process->SetInnerCapState(true);
+        endpoint->EnableFastInnerCap();
+    } else {
+        process->SetInnerCapState(false);
+    }
 }
 
 int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
@@ -262,6 +504,9 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
 void AudioService::Dump(std::stringstream &dumpStringStream)
 {
     AUDIO_INFO_LOG("AudioService dump begin");
+    if (workingInnerCapId_ != 0) {
+        dumpStringStream << "InnerCap filter:" << ProcessConfig::DumpInnerCapConfig(workingConfig_) << std::endl;
+    }
     // dump process
     for (auto paired : linkedPairedList_) {
         paired.first->Dump(dumpStringStream);

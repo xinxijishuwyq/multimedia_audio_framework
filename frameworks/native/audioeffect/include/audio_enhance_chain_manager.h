@@ -78,7 +78,7 @@ public:
     static AudioEnhanceChainManager* GetInstance();
     void InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
         std::unordered_map<std::string, std::string> &enhanceChainNameMap,
-        std::vector<std::unique_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
+        std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
     int32_t CreateAudioEnhanceChainDynamic(std::string &sceneType,
         std::string &enhanceMode, std::string &upAndDownDevice);
     int32_t ReleaseAudioEnhanceChainDynamic(std::string &sceneType, std::string &upAndDownDevice);

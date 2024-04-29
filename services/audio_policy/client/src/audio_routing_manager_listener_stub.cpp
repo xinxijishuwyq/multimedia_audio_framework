@@ -21,6 +21,8 @@
 #include "audio_routing_manager.h"
 #include "audio_log.h"
 
+using namespace std;
+
 namespace OHOS {
 namespace AudioStandard {
 AudioRoutingManagerListenerStub::AudioRoutingManagerListenerStub()
@@ -41,6 +43,14 @@ int AudioRoutingManagerListenerStub::OnRemoteRequest(
             sptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::Unmarshalling(data);
             CastType type = static_cast<CastType>(data.ReadInt32());
             OnDistributedRoutingRoleChange(descriptor, type);
+            return AUDIO_OK;
+        }
+        case ON_AUDIO_OUTPUT_DEVICE_REFINERD: {
+            OnAudioOutputDeviceRefinedInternal(data, reply);
+            return AUDIO_OK;
+        }
+        case ON_AUDIO_INPUT_DEVICE_REFINERD: {
+            OnAudioInputDeviceRefinedInternal(data, reply);
             return AUDIO_OK;
         }
         default: {
@@ -67,5 +77,84 @@ void AudioRoutingManagerListenerStub::SetDistributedRoutingRoleCallback(
 {
     audioDistributedRoutingRoleCallback_ = callback;
 }
+
+void AudioRoutingManagerListenerStub::SetAudioDeviceRefinerCallback(const std::weak_ptr<AudioDeviceRefiner> &callback)
+{
+    audioDeviceRefinerCallback_ = callback;
+    std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
+    CHECK_AND_RETURN_LOG(audioDeviceRefinerCallback != nullptr, "audioDeviceRefinerCallback_ is nullptr");
+}
+
+void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
+    int32_t size = data.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(data)));
+    }
+    RouterType routerType = static_cast<RouterType>(data.ReadInt32());
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    int32_t clientUid = data.ReadInt32();
+    RenderMode renderMode = static_cast<RenderMode>(data.ReadInt32());
+
+    int32_t result = OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUid, renderMode);
+    if (result == SUCCESS) {
+        reply.WriteInt32(result);
+        reply.WriteInt32(descs.size());
+        for (auto &desc : descs) {
+            desc->Marshalling(reply);
+        }
+    } else {
+        reply.WriteInt32(result);
+    }
+}
+
+void AudioRoutingManagerListenerStub::OnAudioInputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
+    int32_t size = data.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(data)));
+    }
+    RouterType routerType = static_cast<RouterType>(data.ReadInt32());
+    SourceType sourceType = static_cast<SourceType>(data.ReadInt32());
+    int32_t clientUid = data.ReadInt32();
+    RenderMode renderMode = static_cast<RenderMode>(data.ReadInt32());
+
+    int32_t result = OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUid, renderMode);
+    if (result == SUCCESS) {
+        reply.WriteInt32(result);
+        reply.WriteInt32(descs.size());
+        for (auto &desc : descs) {
+            desc->Marshalling(reply);
+        }
+    } else {
+        reply.WriteInt32(result);
+    }
+}
+
+int32_t AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefined(
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
+    int32_t clientUid, RenderMode renderMode)
+{
+    std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr,
+        ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
+
+    return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs, routerType, streamUsage, clientUid,
+        renderMode);
+}
+
+int32_t AudioRoutingManagerListenerStub::OnAudioInputDeviceRefined(
+    std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
+    int32_t clientUid, RenderMode renderMode)
+{
+    std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr, ERR_CALLBACK_NOT_REGISTERED,
+        "audioDeviceRefinerCallback_ is nullptr");
+
+    return audioDeviceRefinerCallback->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUid, renderMode);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

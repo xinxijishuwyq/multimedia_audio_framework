@@ -22,6 +22,7 @@
 #include "audio_interrupt_info.h"
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
+#include "audio_asr.h"
 
 using namespace std;
 using OHOS::HiviewDFX::HiLog;
@@ -71,6 +72,8 @@ napi_ref NapiAudioEnum::audioSpatialDeivceType_ = nullptr;
 napi_ref NapiAudioEnum::audioChannelLayout_ = nullptr;
 napi_ref NapiAudioEnum::audioStreamDeviceChangeReason_ = nullptr;
 napi_ref NapiAudioEnum::spatializationSceneType_ = nullptr;
+napi_ref NapiAudioEnum::asrNoiseSuppressionMode_ = nullptr;
+napi_ref NapiAudioEnum::asrAecMode_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -165,6 +168,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"WAKEUP", DEVICE_TYPE_WAKEUP},
     {"USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
     {"DISPLAY_PORT", DEVICE_TYPE_DP},
+    {"REMOTE_CAST", DEVICE_TYPE_REMOTE_CAST},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
     {"MAX", DEVICE_TYPE_MAX},
 };
@@ -178,6 +182,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::sourceTypeMap = {
     {"SOURCE_TYPE_VOICE_COMMUNICATION", SOURCE_TYPE_VOICE_COMMUNICATION},
     {"SOURCE_TYPE_VOICE_CALL", SOURCE_TYPE_VOICE_CALL},
     {"SOURCE_TYPE_VOICE_MESSAGE", SOURCE_TYPE_VOICE_MESSAGE},
+    {"SOURCE_TYPE_REMOTE_CAST", SOURCE_TYPE_REMOTE_CAST},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::volumeAdjustTypeMap = {
@@ -446,6 +451,18 @@ const std::map<std::string, int32_t> NapiAudioEnum::spatializationSceneTypeMap =
     {"AUDIOBOOK", SPATIALIZATION_SCENE_TYPE_AUDIOBOOK},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap = {
+    {"BYPASS", static_cast<int32_t>(AsrNoiseSuppressionMode::BYPASS)},
+    {"STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::STANDARD)},
+    {"NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::NEAR_FIELD)},
+    {"FAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD)},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
+    {"BYPASS", static_cast<int32_t>(AsrAecMode::BYPASS)},
+    {"STANDARD", static_cast<int32_t>(AsrAecMode::STANDARD)},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -557,6 +574,9 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, audioDeviceChangeReasonMap, audioStreamDeviceChangeReason_)),
         DECLARE_NAPI_PROPERTY("AudioSpatializationSceneType", CreateEnumObject(env,
             spatializationSceneTypeMap, spatializationSceneType_)),
+        DECLARE_NAPI_PROPERTY("AsrNoiseSuppressionMode", CreateEnumObject(env, asrNoiseSuppressionModeMap,
+            asrNoiseSuppressionMode_)),
+        DECLARE_NAPI_PROPERTY("AsrAecMode", CreateEnumObject(env, asrAecModeMap, asrAecMode_)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
@@ -1030,6 +1050,7 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_COMMUNICATION:
         case TYPE_VOICE_CALL:
         case TYPE_MESSAGE:
+        case TYPE_REMOTE_CAST:
             result = true;
             break;
         default:
@@ -1219,6 +1240,7 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_WAKEUP:
         case SourceType::SOURCE_TYPE_VOICE_CALL:
         case SourceType::SOURCE_TYPE_VOICE_MESSAGE:
+        case SourceType::SOURCE_TYPE_REMOTE_CAST:
             return true;
         default:
             return false;
@@ -1286,8 +1308,10 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
+        case DeviceType::DEVICE_TYPE_REMOTE_CAST:
             result = true;
             break;
         default:
@@ -1296,7 +1320,6 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
     }
     return result;
 }
-
 
 AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
 {

@@ -19,6 +19,7 @@
 #include "iremote_proxy.h"
 #include "audio_system_manager.h"
 #include "audio_manager_base.h"
+#include "audio_asr.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,6 +77,11 @@ public:
     uint32_t GetEffectLatency(const std::string &sessionId) override;
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+    int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
+    int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;
+    int32_t SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode) override;
+    int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) override;
+    int32_t IsWhispering() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 };

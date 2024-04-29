@@ -143,7 +143,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-        AudioStreamType audioStreamType) override;
+        StreamUsage streamUsage) override;
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos) override;
 
@@ -211,14 +211,6 @@ public:
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
 
-    int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t UnregisterSpatializationEnabledEventListener() override;
-
-    int32_t UnregisterHeadTrackingEnabledEventListener() override;
-
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
     bool IsSpatializationSupported() override;
@@ -266,7 +258,14 @@ public:
 
     float GetMaxAmplitude(const int32_t deviceId) override;
 
+    int32_t DisableSafeMediaVolume() override;
+
     bool IsHeadTrackingDataRequested(const std::string &macAddress) override;
+    int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioDeviceRefinerCallback() override;
+
+    int32_t TriggerFetchDevice() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

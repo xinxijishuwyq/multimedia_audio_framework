@@ -430,7 +430,7 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
 {
     size_t originalSpanSizeInFrame = static_cast<size_t>(spanSizeInFrame_);
     size_t tmp = static_cast<size_t>(frameSize);
-    size_t count = frameSize / spanSizeInFrame_;
+    size_t count = static_cast<size_t>(frameSize / spanSizeInFrame_);
     size_t rest = frameSize % spanSizeInFrame_;
     if (tmp <= originalSpanSizeInFrame) {
         clientSpanSizeInFrame_ = originalSpanSizeInFrame;
@@ -1536,7 +1536,7 @@ bool AudioProcessInClientInner::PrepareNextIndependent(uint64_t curWritePos, int
     uint64_t nextHandlePos = curWritePos + spanSizeInFrame_;
     Trace prepareTrace("AudioEndpoint::PrepareNextLoop " + std::to_string(nextHandlePos));
     int64_t nextHdiReadTime = GetPredictNextHandleTime(nextHandlePos, true);
-    int64_t aheadTime = spanSizeInFrame_ * AUDIO_NS_PER_SECOND / processConfig_.streamInfo.samplingRate;
+    uint64_t aheadTime = spanSizeInFrame_ * AUDIO_NS_PER_SECOND / processConfig_.streamInfo.samplingRate;
     int64_t nextServerHandleTime = nextHdiReadTime - aheadTime;
     if (nextServerHandleTime < ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration

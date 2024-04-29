@@ -32,7 +32,6 @@ ohos_shared_library("audio_common") {
   sanitize = {
     cfi = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
 
   install_enable = true
@@ -124,12 +123,6 @@ config("audio_sasdk_public_config") {
 }
 
 ohos_shared_library("audio_client") {
-  sanitize = {
-    cfi = true
-    integer_overflow = true
-    debug = false
-    blocklist = "../../cfi_blocklist.txt"
-  }
   install_enable = true
   sources = [
     "client/src/audio_device_descriptor.cpp",
@@ -270,7 +263,6 @@ ohos_shared_library("audio_process_service") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -307,6 +299,7 @@ ohos_shared_library("audio_process_service") {
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
+    "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
   public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
@@ -336,7 +329,6 @@ ohos_shared_library("audio_service") {
     cfi = true
     cfi_cross_dso = true
     debug = false
-    blocklist = "../../cfi_blocklist.txt"
   }
   install_enable = true
 
@@ -379,6 +371,8 @@ ohos_shared_library("audio_service") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "drivers_interface_audio:effect_idl_headers",
     "drivers_interface_audio:libeffect_proxy_1.0",

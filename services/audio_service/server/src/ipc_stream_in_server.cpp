@@ -89,6 +89,16 @@ int32_t IpcStreamInServer::Config()
     return ERR_OPERATION_FAILED;
 }
 
+std::shared_ptr<RendererInServer> IpcStreamInServer::GetRenderer()
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("GetRenderer failed, mode is %{public}s", (mode_ != AUDIO_MODE_PLAYBACK ? " not playback" :
+            "playback, but renderer is null!"));
+        return nullptr;
+    }
+    return rendererInServer_;
+}
+
 int32_t IpcStreamInServer::ConfigRenderer()
 {
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
@@ -225,6 +235,15 @@ int32_t IpcStreamInServer::Drain()
         return rendererInServer_->Drain();
     }
     AUDIO_ERR_LOG("Drain failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_ != nullptr) {
+        return capturerInServer_->UpdatePlaybackCaptureConfig(config);
+    }
+    AUDIO_ERR_LOG("Failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;
 }
 

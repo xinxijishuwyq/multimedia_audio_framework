@@ -188,7 +188,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
     int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    AudioStreamType audioStreamType);
+                                    StreamUsage streamUsage);
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos);
 
@@ -344,6 +344,8 @@ public:
 
     float GetMaxAmplitude(const int32_t deviceId);
 
+    int32_t DisableSafeMediaVolume();
+
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
 
     int32_t RegisterHeadTrackingDataRequestedEventListener(const std::string &macAddress,
@@ -351,6 +353,12 @@ public:
 
     int32_t UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress);
 
+    int32_t SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback);
+
+    int32_t UnsetAudioDeviceRefinerCallback();
+
+    int32_t TriggerFetchDevice();
+    
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

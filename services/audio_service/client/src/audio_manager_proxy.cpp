@@ -356,6 +356,92 @@ int32_t AudioManagerProxy::SetExtraParameters(const std::string &key,
     return reply.ReadInt32();
 }
 
+int32_t AudioManagerProxy::SetAsrAecMode(AsrAecMode asrAecMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrAecMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_AEC_MODE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::GetAsrAecMode(AsrAecMode &asrAecMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrAecMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    asrAecMode = static_cast<AsrAecMode> (result);
+    return 0;
+}
+
+int32_t AudioManagerProxy::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrNoiseSuppressionMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t AudioManagerProxy::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(asrNoiseSuppressionMode));
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode> (result);
+    return 0;
+}
+
+int32_t AudioManagerProxy::IsWhispering()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::IS_WHISPERING), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
 uint64_t AudioManagerProxy::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
 {
     MessageParcel data;
@@ -545,8 +631,8 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
 
-    int32_t countLib = libraries.size();
-    int32_t countEff = effects.size();
+    uint32_t countLib = libraries.size();
+    uint32_t countEff = effects.size();
 
     dataParcel.WriteInt32(countLib);
     dataParcel.WriteInt32(countEff);
@@ -606,7 +692,7 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
 
-    int32_t countEffectChains = effectChains.size();
+    uint32_t countEffectChains = effectChains.size();
     std::vector<int32_t> listCountEffects;
 
     for (EffectChain &effectChain: effectChains) {

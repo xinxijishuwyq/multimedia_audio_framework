@@ -43,8 +43,8 @@ static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_BT_MUSIC";
 static const std::string SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL = "SPATIALIZATION_AND_HEADTRACKING";
 static const std::string SPATIALIZATION_SUPPORTED_LABEL = "SPATIALIZATION";
 static const std::string HEAD_TRACKING_SUPPORTED_LABEL = "HEADTRACKING";
-static const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
-static const std::string SPATIALIZATION_SETTINGKEY = "spatialization_state";
+static const std::string SPATIALIZATION_STATE_SETTINGKEY = "spatialization_state";
+static const std::string SPATIALIZATION_SCENE_SETTINGKEY = "spatialization_scene";
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 mutex g_adSpatializationProxyMutex;
 
@@ -95,7 +95,6 @@ void AudioSpatializationService::Init(const std::vector<EffectChain> &effectChai
             isHeadTrackingSupported_ = true;
         }
     }
-    InitSpatializationState();
 }
 
 void AudioSpatializationService::Deinit(void)
@@ -143,7 +142,7 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(const bool enable)
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
-    WriteSpatializationStateToDb();
+    WriteSpatializationStateToDb(WRITE_SPATIALIZATION_STATE);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -165,89 +164,23 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(const bool enable)
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
-    WriteSpatializationStateToDb();
+    WriteSpatializationStateToDb(WRITE_SPATIALIZATION_STATE);
     return SPATIALIZATION_SERVICE_OK;
-}
-
-int32_t AudioSpatializationService::RegisterSpatializationEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object, bool hasSystemPermission)
-{
-    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "set spatialization enabled event listener object is nullptr");
-    sptr<IStandardSpatializationEnabledChangeListener> listener =
-        iface_cast<IStandardSpatializationEnabledChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "spatialization enabled obj cast failed");
-
-    std::shared_ptr<AudioSpatializationEnabledChangeCallback> callback =
-        std::make_shared<AudioSpatializationEnabledChangeListenerCallback>(listener, hasSystemPermission);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "failed to create spatialization enabled cb obj");
-
-    spatializationEnabledCBMap_[clientPid] = callback;
-    return SUCCESS;
-}
-
-int32_t AudioSpatializationService::RegisterHeadTrackingEnabledEventListener(int32_t clientPid,
-    const sptr<IRemoteObject> &object, bool hasSystemPermission)
-{
-    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "set head tracking enabled event listener object is nullptr");
-    sptr<IStandardHeadTrackingEnabledChangeListener> listener =
-        iface_cast<IStandardHeadTrackingEnabledChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "head tracking enabled obj cast failed");
-
-    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> callback =
-        std::make_shared<AudioHeadTrackingEnabledChangeListenerCallback>(listener, hasSystemPermission);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "failed to create head tracking enabled cb obj");
-
-    headTrackingEnabledCBMap_[clientPid] = callback;
-    return SUCCESS;
-}
-
-int32_t AudioSpatializationService::UnregisterSpatializationEnabledEventListener(int32_t clientPid)
-{
-    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
-    spatializationEnabledCBMap_.erase(clientPid);
-    return SUCCESS;
-}
-
-int32_t AudioSpatializationService::UnregisterHeadTrackingEnabledEventListener(int32_t clientPid)
-{
-    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
-    headTrackingEnabledCBMap_.erase(clientPid);
-    return SUCCESS;
 }
 
 void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &enabled)
 {
     AUDIO_INFO_LOG("Spatialization enabled callback is triggered: state is %{public}d", enabled);
-    std::lock_guard<std::mutex> lock(spatializationEnabledChangeListnerMutex_);
-    for (auto it = spatializationEnabledCBMap_.begin(); it != spatializationEnabledCBMap_.end(); ++it) {
-        std::shared_ptr<AudioSpatializationEnabledChangeCallback> spatializationEnabledChangeCb = it->second;
-        if (spatializationEnabledChangeCb == nullptr) {
-            AUDIO_ERR_LOG("spatializationEnabledChangeCb : nullptr for client : %{public}d", it->first);
-            it = spatializationEnabledCBMap_.erase(it);
-            continue;
-        }
-        spatializationEnabledChangeCb->OnSpatializationEnabledChange(enabled);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendSpatializatonEnabledChangeEvent(enabled);
     }
 }
 
 void AudioSpatializationService::HandleHeadTrackingEnabledChange(const bool &enabled)
 {
     AUDIO_INFO_LOG("Head tracking enabled callback is triggered: state is %{public}d", enabled);
-    std::lock_guard<std::mutex> lock(headTrackingEnabledChangeListnerMutex_);
-    for (auto it = headTrackingEnabledCBMap_.begin(); it != headTrackingEnabledCBMap_.end(); ++it) {
-        std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> headTrackingEnabledChangeCb = it->second;
-        if (headTrackingEnabledChangeCb == nullptr) {
-            AUDIO_ERR_LOG("headTrackingEnabledChangeCb : nullptr for client : %{public}d", it->first);
-            it = headTrackingEnabledCBMap_.erase(it);
-            continue;
-        }
-        headTrackingEnabledChangeCb->OnHeadTrackingEnabledChange(enabled);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendHeadTrackingEnabledChangeEvent(enabled);
     }
 }
 
@@ -368,13 +301,9 @@ int32_t AudioSpatializationService::SetSpatializationSceneType(
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
     AUDIO_INFO_LOG("spatialization scene type is set to be %{public}d", spatializationSceneType);
     spatializationSceneType_ = spatializationSceneType;
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
-        return -1;
-    }
-    int32_t ret = gsp->SetSpatializationSceneType(spatializationSceneType);
+    int32_t ret = UpdateSpatializationSceneType();
     CHECK_AND_RETURN_RET_LOG(ret == SPATIALIZATION_SERVICE_OK, ret, "set spatialization scene type failed");
+    WriteSpatializationStateToDb(WRITE_SPATIALIZATION_SCENE);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -447,6 +376,20 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
     return SPATIALIZATION_SERVICE_OK;
 }
 
+int32_t AudioSpatializationService::UpdateSpatializationSceneType()
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
+        return -1;
+    }
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->SetSpatializationSceneType(spatializationSceneType_);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_RET_LOG(ret == SPATIALIZATION_SERVICE_OK, ret, "set spatialization scene type failed");
+    return SPATIALIZATION_SERVICE_OK;
+}
+
 void AudioSpatializationService::HandleSpatializationStateChange(bool outputDeviceChange)
 {
     AUDIO_INFO_LOG("Spatialization State callback is triggered");
@@ -490,24 +433,50 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
 
 void AudioSpatializationService::InitSpatializationState()
 {
+    std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    CHECK_AND_RETURN_LOG(!isLoadedfromDb_, "the spatialization values have already been loaded");
     int32_t pack = 0;
-    PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_SETTINGKEY, pack);
+    int32_t sceneType = 0;
+
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_STATE_SETTINGKEY, pack);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("Failed to read spatialization_state from setting db! Err: %{public}d", ret);
-        WriteSpatializationStateToDb();
+        WriteSpatializationStateToDb(WRITE_SPATIALIZATION_STATE);
     } else {
         UnpackSpatializationState(pack, spatializationStateFlag_);
+        UpdateSpatializationStateReal(false);
     }
+
+    ret = settingProvider.GetIntValue(SPATIALIZATION_SCENE_SETTINGKEY, sceneType);
+    if (ret != SUCCESS || sceneType < SPATIALIZATION_SCENE_TYPE_DEFAULT || sceneType > SPATIALIZATION_SCENE_TYPE_MAX) {
+        AUDIO_WARNING_LOG("Failed to read spatialization_scene from setting db! Err: %{public}d", ret);
+        WriteSpatializationStateToDb(WRITE_SPATIALIZATION_SCENE);
+    } else {
+        spatializationSceneType_ = static_cast<AudioSpatializationSceneType>(sceneType);
+        UpdateSpatializationSceneType();
+    }
+    isLoadedfromDb_ = true;
 }
 
-void AudioSpatializationService::WriteSpatializationStateToDb()
+void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation operation)
 {
-    PowerMgr::SettingProvider &settingProvider = PowerMgr::SettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret =
-        settingProvider.PutIntValue(SPATIALIZATION_SETTINGKEY, PackSpatializationState(spatializationStateFlag_));
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to write spatialization_state to setting db! Err: %{public}d", ret);
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    switch (operation) {
+        case WRITE_SPATIALIZATION_STATE: {
+            ErrCode ret = settingProvider.PutIntValue(
+                SPATIALIZATION_STATE_SETTINGKEY, PackSpatializationState(spatializationStateFlag_));
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write spatialization_state to setting db: %{public}d", ret);
+            break;
+        }
+        case WRITE_SPATIALIZATION_SCENE: {
+            ErrCode ret = settingProvider.PutIntValue(
+                SPATIALIZATION_SCENE_SETTINGKEY, static_cast<uint32_t>(spatializationSceneType_));
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write spatialization_scene to setting db: %{public}d", ret);
+            break;
+        }
+        default:
+            break;
     }
 }
 

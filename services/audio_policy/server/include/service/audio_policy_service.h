@@ -30,6 +30,7 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 #include "audio_router_center.h"
+#include "datashare_helper.h"
 #include "ipc_skeleton.h"
 #include "power_mgr_client.h"
 #ifdef FEATURE_DTMF_TONE
@@ -171,6 +172,10 @@ public:
 
     void GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData);
 
+    void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
+
+    void GetGlobalConfigs(GlobalConfigs &globalConfigs);
+
     // Audio Policy Parser callbacks
     void OnAudioPolicyXmlParsingCompleted(const std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap);
 
@@ -180,6 +185,8 @@ public:
     void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData);
 
     void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData);
+
+    void OnGlobalConfigsParsed(GlobalConfigs &globalConfigs);
 
     void OnUpdateRouteSupport(bool isSupported);
 
@@ -225,6 +232,8 @@ public:
     void OnMonoAudioConfigChanged(bool audioMono);
 
     void OnAudioBalanceChanged(float audioBalance);
+
+    void LoadModernInnerCapSink();
 
     void LoadEffectLibrary();
 
@@ -325,8 +334,6 @@ public:
 
     float GetMaxStreamVolume(void);
 
-    void MaxRenderInstanceInit();
-
     int32_t GetMaxRendererInstances();
 
     void RegisterDataObserver();
@@ -361,7 +368,7 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
 
-    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo);
+    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
 
     void OnCapturerSessionRemoved(uint64_t sessionID);
 
@@ -403,7 +410,7 @@ public:
 
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
 
-    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand);
+    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
     void UpdateA2dpOffloadFlagBySpatialService(
         const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
@@ -426,6 +433,12 @@ public:
     float GetMaxAmplitude(const int32_t deviceId);
     
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
+
+    int32_t TriggerFetchDevice();
+
+    int32_t DisableSafeMediaVolume();
+
+    int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
 
 private:
     AudioPolicyService()
@@ -499,8 +512,6 @@ private:
     DeviceRole GetDeviceRole(DeviceType deviceType) const;
 
     DeviceRole GetDeviceRole(const std::string &role);
-
-    int32_t SelectNewDevice(DeviceRole deviceRole, const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     int32_t SwitchActiveA2dpDevice(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
 
@@ -629,7 +640,7 @@ private:
 
     void LoadSinksForCapturer();
 
-    void LoadInnerCapturerSink();
+    void LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo);
 
     void LoadReceiverSink();
 
@@ -637,7 +648,7 @@ private:
 
     DeviceType FindConnectedHeadset();
 
-    bool CreateDataShareHelperInstance();
+    std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
 
     void RegisterNameMonitorHelper();
 
@@ -701,13 +712,36 @@ private:
 
     void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc);
 
-    void RectifyModuleInfo(AudioModuleInfo moduleInfo, AudioAdapterInfo audioAdapterInfo, SourceInfo targetInfo);
+    void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
+        SourceInfo &targetInfo);
 
     void ClearScoDeviceSuspendState(string macAddress = "");
 
-    int32_t OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
+    AudioIOHandle OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
 
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
+
+    void UnloadInnerCapturerSink(string moduleName);
+
+    void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});
+
+    bool IsWiredHeadSet(const DeviceType &deviceType);
+
+    bool IsBlueTooth(const DeviceType &deviceType);
+
+    int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice);
+
+    void CreateCheckMusicActiveThread();
+
+    void CheckBlueToothActiveMusicTime(int32_t safeVolume);
+
+    void CheckWiredActiveMusicTime(int32_t safeVolume);
+
+    int32_t CheckActiveMusicTime();
+
+    int32_t ShowDialog();
+
+    DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -791,6 +825,7 @@ private:
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
+    GlobalConfigs globalConfigs_;
     AudioEffectManager& audioEffectManager_;
 
     bool isMicrophoneMute_ = false;
@@ -829,8 +864,12 @@ private:
     static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
         SOURCE_TYPE_PLAYBACK_CAPTURE,
         SOURCE_TYPE_WAKEUP,
-        SOURCE_TYPE_VIRTUAL_CAPTURE
+        SOURCE_TYPE_VIRTUAL_CAPTURE,
+        SOURCE_TYPE_REMOTE_CAST
     };
+
+    static std::map<std::string, uint32_t> formatStrToEnum;
+    static std::map<std::string, ClassType> classStrToEnum;
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
 
@@ -839,6 +878,19 @@ private:
     bool updateA2dpOffloadLogFlag = false;
     std::unordered_map<uint32_t, bool> sessionHasBeenSpatialized_;
     std::mutex checkSpatializedMutex_;
+    SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
+    SafeStatus safeStatus_ = SAFE_UNKNOWN;
+    int64_t activeSafeTimeBt_ = 0;
+    int64_t activeSafeTime_ = 0;
+    std::time_t startSafeTimeBt_ = 0;
+    std::time_t startSafeTime_ = 0;
+    bool userSelect_ = false;
+    std::unique_ptr<std::thread> calculateLoopSafeTime_ = nullptr;
+    bool safeVolumeExit_ = false;
+
+    std::mutex dialogMutex_;
+    std::atomic<bool> isDialogSelectDestroy_ = false;
+    std::condition_variable dialogSelectCondition_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

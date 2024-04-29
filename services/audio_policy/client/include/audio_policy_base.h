@@ -137,7 +137,7 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
 
     virtual int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                            AudioStreamType audioStreamType) = 0;
+                                            StreamUsage streamUsage) = 0;
 
     virtual int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors) = 0;
@@ -219,14 +219,6 @@ public:
 
     virtual int32_t SetHeadTrackingEnabled(const bool enable) = 0;
 
-    virtual int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) = 0;
-
-    virtual int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) = 0;
-
-    virtual int32_t UnregisterSpatializationEnabledEventListener() = 0;
-
-    virtual int32_t UnregisterHeadTrackingEnabledEventListener() = 0;
-
     virtual AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) = 0;
 
     virtual bool IsSpatializationSupported() = 0;
@@ -278,8 +270,16 @@ public:
 
     virtual float GetMaxAmplitude(const int32_t deviceId) = 0;
 
+    virtual int32_t DisableSafeMediaVolume() = 0;
+
     virtual bool IsHeadTrackingDataRequested(const std::string &macAddress) = 0;
 
+    virtual int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t UnsetAudioDeviceRefinerCallback() = 0;
+
+    virtual int32_t TriggerFetchDevice() = 0;
+    
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

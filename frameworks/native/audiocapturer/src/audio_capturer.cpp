@@ -17,6 +17,8 @@
 
 #include "audio_capturer.h"
 
+#include <cinttypes>
+
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -47,6 +49,7 @@ AudioCapturerPrivate::~AudioCapturerPrivate()
     if (audioStateChangeCallback_ != nullptr) {
         audioStateChangeCallback_->HandleCapturerDestructor();
     }
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
@@ -113,12 +116,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
         capturer->cachePath_ = cachePath;
     }
 
-    if (capturer->InitPlaybackCapturer(sourceType, capturerOptions.playbackCaptureConfig) != SUCCESS) {
-        return nullptr;
-    }
+    // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
 
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
+    capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
     if (capturer->SetParams(params) != SUCCESS) {
         capturer = nullptr;
     }
@@ -128,6 +130,24 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     }
 
     return capturer;
+}
+
+// This will be called in Create and after Create.
+int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    // UpdatePlaybackCaptureConfig will only work for InnerCap streams.
+    if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        AUDIO_WARNING_LOG("This is not a PLAYBACK_CAPTURE stream.");
+        return ERR_INVALID_OPERATION;
+    }
+
+    if (config.filterOptions.usages.size() == 0 && config.filterOptions.pids.size() == 0) {
+        AUDIO_WARNING_LOG("Both usages and pids are empty!");
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_OPERATION_FAILED, "Failed with null audioStream_");
+
+    return audioStream_->UpdatePlaybackCaptureConfig(config);
 }
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
@@ -208,6 +228,8 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     RegisterCapturerPolicyServiceDiedCallback();
 
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_CAPTURER_FILENAME, &dumpFile_);
+
     return InitAudioInterruptCallback();
 }
 
@@ -229,8 +251,11 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
     audioStream_->SetCapturerSource(capturerInfo_.sourceType);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_);
-    if (ret != SUCCESS) {
-        return ret;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioStreamInfo failed");
+    // for inner-capturer
+    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        ret = UpdatePlaybackCaptureConfig(filterConfig_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UpdatePlaybackCaptureConfig Failed");
     }
     InitLatencyMeasurement(audioStreamParams);
     return ret;
@@ -422,7 +447,11 @@ bool AudioCapturerPrivate::Start() const
 int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const
 {
     CheckSignalData(&buffer, userSize);
-    return audioStream_->Read(buffer, userSize, isBlockingRead);
+    int size = audioStream_->Read(buffer, userSize, isBlockingRead);
+    if (size > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&buffer), size);
+    }
+    return size;
 }
 
 CapturerState AudioCapturerPrivate::GetStatus() const
