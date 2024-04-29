@@ -241,6 +241,14 @@ public:
     virtual void SetAudioPrivacyType(AudioPrivacyType privacyType) = 0;
 
     /**
+     * @brief Get audio privacy type.
+     *
+     * @return Return the render privacy type.
+     * @since 12
+     */
+    virtual AudioPrivacyType GetAudioPrivacyType() = 0;
+
+    /**
      * @brief Sets audio renderer parameters.
      *
      * @param params Indicates information about audio renderer parameters to set. For details, see

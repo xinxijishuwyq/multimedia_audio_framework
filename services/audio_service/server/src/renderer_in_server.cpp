@@ -663,7 +663,7 @@ int32_t RendererInServer::UnsetOffloadMode()
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
-            dupStream_->UpdateMaxLength(20); // 20 for cover offload
+            dupStream_->UpdateMaxLength(20); // 20 for unset offload
         }
     }
     return ret;

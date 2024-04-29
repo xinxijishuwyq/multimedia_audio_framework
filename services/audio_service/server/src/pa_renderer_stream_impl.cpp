@@ -1026,6 +1026,8 @@ int32_t PaRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
     uint32_t maxlength = maxLength;
     AUDIO_INFO_LOG("dup playback stream tlength: %{public}u, maxlength: %{public}u prebuf: %{public}u", tlength,
         maxlength, prebuf);
+
+    PaLockGuard lock(mainloop_);
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     pa_buffer_attr bufferAttr;
     bufferAttr.fragsize = static_cast<uint32_t>(-1);
@@ -1034,7 +1036,6 @@ int32_t PaRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
     bufferAttr.tlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * tlength, sampleSpec); // 20 buf len in ms
     bufferAttr.minreq = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, sampleSpec); // 20 buf len in ms
 
-    PaLockGuard lock(mainloop_);
     pa_operation *operation = pa_stream_set_buffer_attr(paStream_, &bufferAttr, nullptr, nullptr);
     if (operation != nullptr) {
         pa_operation_unref(operation);

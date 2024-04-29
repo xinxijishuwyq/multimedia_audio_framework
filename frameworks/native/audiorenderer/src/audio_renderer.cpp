@@ -325,6 +325,11 @@ void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
     audioStream_->SetPrivacyType(privacyType);
 }
 
+AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
+{
+    return privacyType_;
+}
+
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     Trace trace("AudioRenderer::SetParams");
@@ -971,7 +976,7 @@ float AudioRendererPrivate::GetLowPowerVolume() const
 
 int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 {
-    AUDIO_INFO_LOG("offload allowed: %{pubilc}d", isAllowed);
+    AUDIO_INFO_LOG("offload allowed: %{public}d", isAllowed);
     isOffloadAllowed_ = isAllowed;
     return SUCCESS;
 }

@@ -158,6 +158,7 @@ class OHAudioRenderer {
         int32_t GetSamplingRate();
         AudioSampleFormat GetSampleFormat();
         AudioEncodingType GetEncodingType();
+        AudioPrivacyType GetRendererPrivacy();
         int64_t GetFramesWritten();
         void GetRendererInfo(AudioRendererInfo& rendererInfo);
         bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base);

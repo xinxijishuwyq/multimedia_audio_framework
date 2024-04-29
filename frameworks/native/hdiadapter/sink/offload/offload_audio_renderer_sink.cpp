@@ -845,7 +845,7 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
 int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 {
     int32_t ret;
-
+    std::lock_guard<std::mutex> lock(renderMutex_);
     // bytewidth is 4
     uint32_t size = (uint64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
