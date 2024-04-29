@@ -246,8 +246,6 @@ int32_t RendererInServer::WriteData()
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-        uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
-        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
         if (isInnerCapEnabled_) {
             Trace traceDup("RendererInServer::WriteData DupSteam write");
             std::lock_guard<std::mutex> lock(dupMutex_);
@@ -256,6 +254,9 @@ int32_t RendererInServer::WriteData()
             }
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
+        // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
+        uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
+        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }

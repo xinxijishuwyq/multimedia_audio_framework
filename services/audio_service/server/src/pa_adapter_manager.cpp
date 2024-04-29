@@ -543,7 +543,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     uint32_t prebuf = 1; // 1 is prebuf of playback
 
     if (managerType_ == DUP_PLAYBACK) {
-        maxlength = 8; // 8 is double of normal
+        maxlength = 20; // 20 for cover offload
         prebuf = 2; // 2 is double of normal, use more prebuf for dup stream
     }
     AUDIO_INFO_LOG("Create ipc playback stream tlength: %{public}u, maxlength: %{public}u prebuf: %{public}u", tlength,
