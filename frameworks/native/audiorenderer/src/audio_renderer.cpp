@@ -976,7 +976,7 @@ float AudioRendererPrivate::GetLowPowerVolume() const
 
 int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 {
-    AUDIO_INFO_LOG("offload allowed: %{pubilc}d", isAllowed);
+    AUDIO_INFO_LOG("offload allowed: %{public}d", isAllowed);
     isOffloadAllowed_ = isAllowed;
     return SUCCESS;
 }
