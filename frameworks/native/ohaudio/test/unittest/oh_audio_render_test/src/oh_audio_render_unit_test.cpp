@@ -553,6 +553,45 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetRendererInfo_001, TestSize.Leve
 }
 
 /**
+* @tc.name  : Test OH_AudioRenderer_GetRendererPrivacy API.
+* @tc.number: OH_AudioRenderer_GetRendererPrivacy_001
+* @tc.desc  : Test OH_AudioRenderer_GetRendererPrivacy interface with default privacy AUDIO_STREAM_PRIVACY_TYPE_PUBLIC.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetRendererPrivacy_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioStream_PrivacyType privacyType;
+    result = OH_AudioRenderer_GetRendererPrivacy(audioRenderer, &privacyType);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(privacyType, AUDIO_STREAM_PRIVACY_TYPE_PUBLIC);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetRendererPrivacy API.
+* @tc.number: OH_AudioRenderer_GetRendererPrivacy_002
+* @tc.desc  : Test OH_AudioRenderer_GetRendererPrivacy interface with privacy AUDIO_STREAM_PRIVACY_TYPE_PRIVATE.
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetRendererPrivacy_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioStream_Result privacyResult = OH_AudioStreamBuilder_SetRendererPrivacy(builder,
+        AUDIO_STREAM_PRIVACY_TYPE_PRIVATE);
+    EXPECT_EQ(privacyResult, AUDIOSTREAM_SUCCESS);
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+
+    OH_AudioStream_PrivacyType privacyType;
+    result = OH_AudioRenderer_GetRendererPrivacy(audioRenderer, &privacyType);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(privacyType, AUDIO_STREAM_PRIVACY_TYPE_PRIVATE);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
 * @tc.name  : Test OH_AudioRenderer_GetChannelLayout API via legal state.
 * @tc.number: OH_AudioRenderer_GetChannelLayout_001
 * @tc.desc  : Test OH_AudioRenderer_GetChannelLayout interface. Returns true if channelLayout is

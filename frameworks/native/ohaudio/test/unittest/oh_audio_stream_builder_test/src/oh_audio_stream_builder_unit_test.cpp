@@ -482,7 +482,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_00
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, PRIVACY_TYPE_PUBLIC);
+    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, AUDIO_STREAM_PRIVACY_TYPE_PUBLIC);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
@@ -501,7 +501,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_00
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, PRIVACY_TYPE_PUBLIC);
+    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, AUDIO_STREAM_PRIVACY_TYPE_PUBLIC);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
@@ -520,7 +520,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_00
     OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
-    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, PRIVACY_TYPE_PRIVATE);
+    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, AUDIO_STREAM_PRIVACY_TYPE_PRIVATE);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioStreamBuilder_Destroy(builder);

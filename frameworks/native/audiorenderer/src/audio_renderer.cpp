@@ -325,6 +325,11 @@ void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
     audioStream_->SetPrivacyType(privacyType);
 }
 
+AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
+{
+    return privacyType_;
+}
+
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     Trace trace("AudioRenderer::SetParams");

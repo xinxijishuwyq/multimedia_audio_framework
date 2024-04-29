@@ -168,6 +168,16 @@ OH_AudioStream_Result OH_AudioRenderer_GetRendererInfo(OH_AudioRenderer *rendere
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_GetRendererPrivacy(OH_AudioRenderer* renderer,
+    OH_AudioStream_PrivacyType* privacy)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+
+    *privacy = (OH_AudioStream_PrivacyType)audioRenderer->GetRendererPrivacy();
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OH_AudioRenderer_GetEncodingType(OH_AudioRenderer *renderer,
     OH_AudioStream_EncodingType *encodingType)
 {
@@ -519,6 +529,12 @@ AudioChannelLayout OHAudioRenderer::GetChannelLayout()
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
     return params.channelLayout;
+}
+
+AudioPrivacyType OHAudioRenderer::GetRendererPrivacy()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, PRIVACY_TYPE_PUBLIC, "renderer client is nullptr for privacy");
+    return audioRenderer_->GetAudioPrivacyType();
 }
 
 AudioEffectMode OHAudioRenderer::GetEffectMode()

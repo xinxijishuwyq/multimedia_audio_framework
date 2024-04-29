@@ -441,24 +441,20 @@ typedef enum {
 } OH_AudioStream_SourceType;
 
 /**
- * Defines the audio stream privacy type for plabck capture.
+ * Defines Enumeration of audio stream privacy type for playback capture.
  *
  * @since 12
  */
 typedef enum {
-    /**
-     * Privacy type that stream can be captured.
-     *
+    /** Privacy type that stream can be captured by third party applications.
      * @since 12
      */
-    PRIVACY_TYPE_PUBLIC = 0,
-    /**
-     * Privacy type that stream can not be captured.
-     *
+    AUDIO_STREAM_PRIVACY_TYPE_PUBLIC = 0,
+    /** Privacy type that stream can not be captured.
      * @since 12
      */
-    PRIVACY_TYPE_PRIVATE = 1
-} OH_AudioStream_AudioPrivacyType;
+    AUDIO_STREAM_PRIVACY_TYPE_PRIVATE = 1,
+} OH_AudioStream_PrivacyType;
 
 /**
  * Defines the audio interrupt mode.
