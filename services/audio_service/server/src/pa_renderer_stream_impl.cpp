@@ -1018,6 +1018,30 @@ int32_t PaRendererStreamImpl::UnsetOffloadMode()
     SyncOffloadMode();
     return OffloadUpdatePolicy(OFFLOAD_DEFAULT, true);
 }
+
+int32_t PaRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
+{
+    uint32_t tlength = 4; // 4 is tlength of dup playback
+    uint32_t prebuf = 2; // 2 is prebuf of dup playback
+    uint32_t maxlength = maxLength;
+    AUDIO_INFO_LOG("dup playback stream tlength: %{public}u, maxlength: %{public}u prebuf: %{public}u", tlength,
+        maxlength, prebuf);
+
+    PaLockGuard lock(mainloop_);
+    const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
+    pa_buffer_attr bufferAttr;
+    bufferAttr.fragsize = static_cast<uint32_t>(-1);
+    bufferAttr.prebuf = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * prebuf, sampleSpec); // 20 buf len in ms
+    bufferAttr.maxlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * maxlength, sampleSpec); // 20 buf len in ms
+    bufferAttr.tlength = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC * tlength, sampleSpec); // 20 buf len in ms
+    bufferAttr.minreq = pa_usec_to_bytes(20 * PA_USEC_PER_MSEC, sampleSpec); // 20 buf len in ms
+
+    pa_operation *operation = pa_stream_set_buffer_attr(paStream_, &bufferAttr, nullptr, nullptr);
+    if (operation != nullptr) {
+        pa_operation_unref(operation);
+    }
+    return SUCCESS;
+}
 // offload end
 } // namespace AudioStandard
 } // namespace OHOS

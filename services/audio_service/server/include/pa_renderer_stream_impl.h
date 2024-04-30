@@ -60,6 +60,7 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
     int32_t OffloadSetVolume(float volume) override;
     size_t GetWritableSize() override;
+    int32_t UpdateMaxLength(uint32_t maxLength) override;
     // offload end
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;

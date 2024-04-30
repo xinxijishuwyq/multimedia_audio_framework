@@ -647,12 +647,26 @@ int32_t StreamCallbacks::OnWriteData(size_t length)
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    return stream_->SetOffloadMode(state, isAppBack);
+    int32_t ret = stream_->SetOffloadMode(state, isAppBack);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->UpdateMaxLength(350); // 350 for cover offload
+        }
+    }
+    return ret;
 }
 
 int32_t RendererInServer::UnsetOffloadMode()
 {
-    return stream_->UnsetOffloadMode();
+    int32_t ret = stream_->UnsetOffloadMode();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->UpdateMaxLength(20); // 20 for unset offload
+        }
+    }
+    return ret;
 }
 
 int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
