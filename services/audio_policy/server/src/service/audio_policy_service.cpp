@@ -6002,5 +6002,10 @@ DeviceUsage AudioPolicyService::GetDeviceUsage(const AudioDeviceDescriptor &desc
 {
     return audioDeviceManager_.GetDeviceUsage(desc);
 }
+
+void AudioPolicyService::NotifyAccountsChanged(const int &id)
+{
+    audioPolicyManager_.NotifyAccountsChanged(id);
+}
 } // namespace AudioStandard
 } // namespace OHOS
