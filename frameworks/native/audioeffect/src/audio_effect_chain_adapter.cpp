@@ -111,9 +111,11 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
     }
     if (audioEffectChainManager->GetOffloadEnabled()) {
         audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Register");
+        AUDIO_DEBUG_LOG("registerEffectChainCountBackupMap");
         return SUCCESS;
     }
     if (audioEffectChainManager->CreateAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
+        AUDIO_DEBUG_LOG("createAudioEffectChainDynamic");
         return ERROR;
     }
     return SUCCESS;
@@ -136,9 +138,11 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
     }
     if (audioEffectChainManager->GetOffloadEnabled()) {
         audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Deregister");
+        AUDIO_DEBUG_LOG("deRegisterEffectChainCountBackupMap");
         return SUCCESS;
     }
     if (audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
+        AUDIO_DEBUG_LOG("releaseAudioEffectChainDynamic");
         return ERROR;
     }
     return SUCCESS;
