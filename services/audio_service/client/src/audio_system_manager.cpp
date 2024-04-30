@@ -34,6 +34,7 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+const unsigned int REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS = 10;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
@@ -1154,6 +1155,8 @@ int32_t AudioSystemManager::OffloadSetVolume(float volume)
 
 void AudioSystemManager::RequestThreadPriority(uint32_t tid)
 {
+    AudioXCollie audioXCollie("RequestThreadPriority", REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS);
+
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_LOG(gasp != nullptr, "Audio service unavailable.");
     std::string bundleName = GetSelfBundleName();
