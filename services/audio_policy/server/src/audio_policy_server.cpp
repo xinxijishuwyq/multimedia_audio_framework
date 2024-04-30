@@ -142,7 +142,9 @@ void AudioPolicyServer::OnStart()
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(ACCESSIBILITY_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
-
+#ifdef SUPPORT_USER_ACCOUNT
+    AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
+#endif
     bool res = Publish(this);
     if (!res) {
         AUDIO_INFO_LOG("publish sa err");
@@ -187,16 +189,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case AUDIO_DISTRIBUTED_SERVICE_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility audio service start");
-            if (!isFirstAudioServiceStart_) {
-                ConnectServiceAdapter();
-                sessionProcessor_.Start();
-                RegisterParamCallback();
-                LoadEffectLibrary();
-                InitMicrophoneMute();
-                isFirstAudioServiceStart_ = true;
-            } else {
-                AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
-            }
+            AddAudioServiceOnStart();
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("OnAddSystemAbility bluetooth service start");
@@ -212,6 +205,10 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_INFO_LOG("OnAddSystemAbility power manager service start");
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
+            break;
+        case SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN:
+            AUDIO_INFO_LOG("OnAddSystemAbility os_account service start");
+            SubscribeOsAccountChangeEvents();
             break;
         default:
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
@@ -418,6 +415,32 @@ bool AudioPolicyServer::IsVolumeLevelValid(AudioStreamType streamType, int32_t v
         result = false;
     }
     return result;
+}
+
+void AudioPolicyServer::SubscribeOsAccountChangeEvents()
+{
+    AccountSA::OsAccountSubscribeInfo osAccountSubscribeInfo;
+    osAccountSubscribeInfo.SetOsAccountSubscribeType(AccountSA::OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED);
+    std::shared_ptr<AudioOsAccountInfo> accountInfoObs =
+    std::make_shared<AudioOsAccountInfo>(osAccountSubscribeInfo, this);
+    ErrCode errCode = AccountSA::OsAccountManager::SubscribeOsAccount(accountInfoObs);
+    if (errCode != SUCCESS) {
+        AUDIO_ERR_LOG("SubscribeOsAccount failed");
+    }
+}
+
+void AudioPolicyServer::AddAudioServiceOnStart()
+{
+    if (!isFirstAudioServiceStart_) {
+        ConnectServiceAdapter();
+        sessionProcessor_.Start();
+        RegisterParamCallback();
+        LoadEffectLibrary();
+        InitMicrophoneMute();
+        isFirstAudioServiceStart_ = true;
+    } else {
+        AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
+    }
 }
 
 void AudioPolicyServer::SubscribePowerStateChangeEvents()
@@ -2497,6 +2520,13 @@ int32_t AudioPolicyServer::TriggerFetchDevice()
         return ERROR;
     }
     return audioPolicyService_.TriggerFetchDevice();
+}
+
+void AudioPolicyServer::NotifyAccountsChanged(const int &id)
+{
+    audioPolicyService_.NotifyAccountsChanged(id);
+    CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
+    interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
 }
 } // namespace AudioStandard
 } // namespace OHOS

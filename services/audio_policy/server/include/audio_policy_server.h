@@ -385,6 +385,8 @@ public:
 
     int32_t SetHighResolutionExist(bool highResExist) override;
 
+    void NotifyAccountsChanged(const int &id);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -464,6 +466,8 @@ private:
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
+    void AddAudioServiceOnStart();
+    void SubscribeOsAccountChangeEvents();
     void SubscribePowerStateChangeEvents();
     void InitMicrophoneMute();
     void InitKVStore();
@@ -507,6 +511,33 @@ private:
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
     AudioRouterCenter &audioRouterCenter_;
+};
+
+class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
+public:
+    explicit AudioOsAccountInfo(const AccountSA::OsAccountSubscribeInfo &subscribeInfo,
+        AudioPolicyServer *audioPolicyServer) : AccountSA::OsAccountSubscriber(subscribeInfo),
+        audioPolicyServer_(audioPolicyServer) {}
+
+    ~AudioOsAccountInfo()
+    {
+        AUDIO_WARNING_LOG("Destructor AudioOsAccountInfo");
+    }
+
+    void OnAccountsChanged(const int &id) override
+    {
+        AUDIO_INFO_LOG("OnAccountsChanged received, id: %{public}d", id);
+    }
+
+    void OnAccountsSwitch(const int &newId, const int &oldId) override
+    {
+        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldId: %{public}d", newId, oldId);
+        if (audioPolicyServer_ != nullptr) {
+            audioPolicyServer_->NotifyAccountsChanged(newId);
+        }
+    }
+private:
+    AudioPolicyServer *audioPolicyServer_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

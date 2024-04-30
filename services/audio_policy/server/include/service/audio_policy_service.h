@@ -444,6 +444,8 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
 
+    void NotifyAccountsChanged(const int &id);
+
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

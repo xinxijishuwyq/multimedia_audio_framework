@@ -78,7 +78,7 @@ public:
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
-
+    void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr float DUCK_FACTOR = 0.2f;

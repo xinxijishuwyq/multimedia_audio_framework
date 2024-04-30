@@ -277,9 +277,6 @@ private:
     bool isLoaded_ = false;
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
-#ifdef SUPPORT_USER_ACCOUNT
-    bool isAccountChangeSet_ = false;
-#endif
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -341,33 +338,6 @@ public:
         }
     }
 
-private:
-    AudioAdapterManager *audioAdapterManager_;
-};
-
-class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
-public:
-    explicit AudioOsAccountInfo(const AccountSA::OsAccountSubscribeInfo &subscribeInfo,
-        AudioAdapterManager *audioAdapterManager) : AccountSA::OsAccountSubscriber(subscribeInfo),
-        audioAdapterManager_(audioAdapterManager) {}
-
-    ~AudioOsAccountInfo()
-    {
-        AUDIO_WARNING_LOG("Destructor AudioOsAccountInfo");
-    }
-
-    void OnAccountsChanged(const int &id) override
-    {
-        AUDIO_INFO_LOG("OnAccountsChanged received, id: %{public}d", id);
-    }
-
-    void OnAccountsSwitch(const int &newId, const int &oldId) override
-    {
-        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldId: %{public}d", newId, oldId);
-        if (audioAdapterManager_ != nullptr) {
-            audioAdapterManager_->NotifyAccountsChanged(newId);
-        }
-    }
 private:
     AudioAdapterManager *audioAdapterManager_;
 };
