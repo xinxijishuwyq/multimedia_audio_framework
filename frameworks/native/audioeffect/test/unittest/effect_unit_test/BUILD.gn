@@ -22,12 +22,12 @@ pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 ohos_unittest("audio_effect_chain_manager_unit_test") {
     module_out_path = module_output_path
     include_dirs = [
-       "./include",
-       "../../../include",
-       "../../../../../../interfaces/inner_api/native/audiocommon/include",
-       "$pulseaudio_dir/src",
-       "$pulseaudio_dir/confgure/src",
-       multimedia_audio_framework_pulse_audio,
+      "./include",
+      "../../../include",
+      "../../../../../../interfaces/inner_api/native/audiocommon/include",
+      "$pulseaudio_dir/src",
+      "$pulseaudio_dir/confgure/src",
+      multimedia_audio_framework_pulse_audio,
     ]
 
     cflags = [
