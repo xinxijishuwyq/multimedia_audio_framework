@@ -206,7 +206,9 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
 
 void AudioA2dpManager::CheckA2dpDeviceReconnect()
 {
-    a2dpInstance_ = A2dpSource::GetProfile();
+    if (a2dpInstance_ == nullptr) {
+        a2dpInstance_ = A2dpSource::GetProfile();
+    }
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
@@ -270,6 +272,20 @@ void AudioHfpManager::UnregisterBluetoothScoListener()
 
     hfpInstance_->DeregisterObserver(hfpListener_);
     hfpInstance_ = nullptr;
+}
+
+void AudioHfpManager::CheckHfpDeviceReconnect()
+{
+    if (hfpInstance_ == nullptr) {
+        hfpInstance_ = HandsFreeAudioGateway::GetProfile();
+    }
+    CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "HFP profile instance unavailable");
+    std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
+    std::vector<BluetoothRemoteDevice> devices = hfpInstance_->GetDevicesByStates(states);
+    for (auto &device : devices) {
+        hfpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
+            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+    }
 }
 
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)

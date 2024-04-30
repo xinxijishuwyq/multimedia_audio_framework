@@ -109,6 +109,7 @@ public:
     static void UpdateCurrentActiveHfpDevice(const BluetoothRemoteDevice &device);
     static std::string GetCurrentActiveHfpDevice();
     static void UpdateAudioScene(AudioStandard::AudioScene scene);
+    static void CheckHfpDeviceReconnect();
 
 private:
     static HandsFreeAudioGateway *hfpInstance_;
