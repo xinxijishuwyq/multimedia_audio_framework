@@ -708,7 +708,6 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     UserData *userData = reinterpret_cast<UserData*>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
-    AUDIO_DEBUG_LOG("GetSinkInputInfoVolumeCb enter.");
     if (eol < 0) {
         pa_threaded_mainloop_signal(thiz->mMainLoop, 1);
         delete userData;
@@ -726,12 +725,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     CHECK_AND_RETURN_LOG(i->proplist != nullptr, "Invalid Proplist for sink input (%{public}d).", i->index);
 
     const char *streamMode = pa_proplist_gets(i->proplist, "stream.mode");
-    if (streamMode != nullptr) {
-        std::string str(streamMode);
-        if (str == DUP_STREAM) {
-            return;
-        }
-    }
+    if (streamMode != nullptr && streamMode == DUP_STREAM) { return; }
 
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
