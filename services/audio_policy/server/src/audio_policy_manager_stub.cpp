@@ -491,6 +491,22 @@ void AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal(MessageParcel &data, 
     reply.WriteUint32(ret);
 }
 
+void AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioRendererInfo rendererInfo;
+    rendererInfo.Unmarshalling(data);
+    int32_t result = GetPreferredOutputStreamType(rendererInfo);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.Unmarshalling(data);
+    int32_t result = GetPreferredInputStreamType(capturerInfo);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t count = data.ReadUint32();

@@ -45,6 +45,16 @@ static std::map<std::string, uint32_t> formatStrToEnum = {
     {"s32le", S32LE_TO_BYTE},
 };
 
+static std::map<std::string, uint32_t> audioFlagStrToEnum = {
+    {"AUDIO_FLAG_NORMAL", AUDIO_FLAG_NORMAL},
+    {"AUDIO_FLAG_MMAP", AUDIO_FLAG_MMAP},
+};
+
+static std::map<std::string, uint32_t> audioUsageStrToEnum = {
+    {"AUDIO_USAGE_NORMAL", AUDIO_USAGE_NORMAL},
+    {"AUDIO_USAGE_VOIP", AUDIO_USAGE_VOIP},
+};
+
 bool AudioPolicyParser::LoadConfiguration()
 {
     doc_ = xmlReadFile(CHIP_PROD_CONFIG_FILE, nullptr, 0);
@@ -450,10 +460,26 @@ void AudioPolicyParser::ParseConfigs(xmlNode &node, PipeInfo &pipeInfo)
             configInfo.name_ = ExtractPropertyValue("name", *configNode);
             configInfo.value_ = ExtractPropertyValue("value", *configNode);
             configInfos.push_back(configInfo);
+            HandleConfigFlagAndUsage(configInfo, pipeInfo);
         }
         configNode = configNode->next;
     }
     pipeInfo.configInfos_ = configInfos;
+}
+
+void AudioPolicyParser::HandleConfigFlagAndUsage(ConfigInfo &configInfo, PipeInfo &pipeInfo)
+{
+    if (configInfo.name_ == "flag") {
+        auto it = audioFlagStrToEnum.find(configInfo.value_);
+        if (it != audioFlagStrToEnum.end()) {
+            pipeInfo.audioFlag_ = it->second;
+        }
+    } else if (configInfo.name_ == "usage") {
+        auto it = audioUsageStrToEnum.find(configInfo.value_);
+        if (it != audioUsageStrToEnum.end()) {
+            pipeInfo.audioUsage_ = it->second;
+        }
+    }
 }
 
 void AudioPolicyParser::ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInfo)

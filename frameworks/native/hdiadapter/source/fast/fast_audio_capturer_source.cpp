@@ -131,7 +131,14 @@ FastAudioCapturerSourceInner::~FastAudioCapturerSourceInner()
 {
     AUDIO_DEBUG_LOG("~FastAudioCapturerSourceInner");
 }
+
 FastAudioCapturerSource *FastAudioCapturerSource::GetInstance()
+{
+    static FastAudioCapturerSourceInner audioCapturer;
+    return &audioCapturer;
+}
+
+FastAudioCapturerSource *FastAudioCapturerSource::GetVoipInstance()
 {
     static FastAudioCapturerSourceInner audioCapturer;
     return &audioCapturer;
@@ -164,10 +171,8 @@ void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes
     /* Initialization of audio parameters for playback */
     attrs.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
     attrs.channelCount = AUDIO_CHANNELCOUNT;
-    attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
     attrs.streamId = FAST_INPUT_STREAM_ID;
-    attrs.type = AUDIO_MMAP_NOIRQ; // enable mmap!
     attrs.period = 0;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
     attrs.isBigEndian = false;
@@ -247,6 +252,7 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
     struct AudioSampleAttributes param;
     // User needs to set
     InitAttrsCapture(param);
+    param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ; // enable mmap!
     param.sampleRate = attr_.sampleRate;
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
@@ -259,7 +265,8 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = 0;
-
+    AUDIO_INFO_LOG("Type: %{public}d, sampleRate: %{public}u, channel: %{public}d, format: %{public}d, "
+        "device:%{public}d", param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
     char desc[] = "";

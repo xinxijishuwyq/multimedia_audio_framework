@@ -324,7 +324,9 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
-    std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType);
+    std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
+        config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
 
     uint32_t totalSizeInframe = 0;
@@ -473,18 +475,23 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 }
 
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
-    AudioStreamType streamType)
+    AudioStreamType streamType, bool isVoipStream)
 {
     if (deviceInfo.deviceRole == INPUT_DEVICE || deviceInfo.networkId != LOCAL_NETWORK_ID ||
         deviceInfo.deviceRole == OUTPUT_DEVICE) {
         // Create shared stream.
-        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId) + "_0";
+        int32_t endpointFlag = AUDIO_FLAG_MMAP;
+        if (isVoipStream) {
+            endpointFlag = AUDIO_FLAG_VOIP_FAST;
+        }
+        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId) + "_" +
+            std::to_string(endpointFlag);
         if (endpointList_.find(deviceKey) != endpointList_.end()) {
             AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
             return endpointList_[deviceKey];
         } else {
-            std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP,
-                0, streamType, deviceInfo);
+            std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ?
+                AudioEndpoint::TYPE_VOIP_MMAP : AudioEndpoint::TYPE_MMAP, endpointFlag, streamType, deviceInfo);
             CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
             endpointList_[deviceKey] = endpoint;
             return endpoint;

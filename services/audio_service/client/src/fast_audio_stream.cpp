@@ -37,7 +37,7 @@ FastAudioStream::FastAudioStream(AudioStreamType eStreamType, AudioMode eMode, i
       captureMode_(CAPTURE_MODE_CALLBACK)
 {
     AUDIO_INFO_LOG("FastAudioStream ctor, appUID = %{public}d", appUid);
-    audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
+    audioStreamTracker_ = std::make_unique<AudioStreamTracker>(eMode, appUid);
     AUDIO_DEBUG_LOG("AudioStreamTracker created");
 }
 

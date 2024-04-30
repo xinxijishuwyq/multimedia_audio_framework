@@ -44,6 +44,8 @@ public:
     // keep same with AudioPolicyServer
     AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
 
+    DeviceType GetDeviceTypeForVolumeVector(DeviceType deviceType);
+
     bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);
 
     void SetActiveOutputDevice(DeviceType deviceType);

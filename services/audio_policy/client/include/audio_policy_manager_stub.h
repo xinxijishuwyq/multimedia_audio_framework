@@ -63,6 +63,8 @@ private:
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
@@ -185,6 +187,8 @@ private:
         &AudioPolicyManagerStub::ReconfigureAudioChannelInternal,
         &AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal,
         &AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal,
+        &AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal,
+        &AudioPolicyManagerStub::GetPerferredInputStreamTypeInternal,
         &AudioPolicyManagerStub::RegisterTrackerInternal,
         &AudioPolicyManagerStub::UpdateTrackerInternal,
         &AudioPolicyManagerStub::GetRendererChangeInfosInternal,

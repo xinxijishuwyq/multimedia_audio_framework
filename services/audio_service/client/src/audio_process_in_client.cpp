@@ -149,6 +149,7 @@ private:
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
 
 private:
+    static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
     static constexpr int64_t MAX_WRITE_COST_DURATION_NANO = 5000000; // 5ms
@@ -176,6 +177,7 @@ private:
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;
     uint32_t byteSizePerFrame_ = 0;
+    uint32_t spanSizeInMs_ = 0;
     size_t spanSizeInByte_ = 0;
     std::weak_ptr<AudioDataCallback> audioDataCallback_;
     std::weak_ptr<ClientUnderrunCallBack> underrunCallback_;
@@ -479,16 +481,20 @@ bool AudioProcessInClientInner::InitAudioBuffer()
 
     audioBuffer_->GetSizeParameter(totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_);
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
+    spanSizeInMs_ = spanSizeInFrame_ * MILLISECOND_PER_SECOND / processConfig_.streamInfo.samplingRate;
 
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK && clientByteSizePerFrame_ != 0) {
         clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
+        if (clientSpanSizeInFrame_ != spanSizeInFrame_) {
+            clientSpanSizeInFrame_ = spanSizeInFrame_;
+        }
     } else {
         clientSpanSizeInByte_ = spanSizeInByte_;
     }
 
     AUDIO_INFO_LOG("Using totalSizeInFrame_ %{public}d spanSizeInFrame_ %{public}d byteSizePerFrame_ %{public}d "
-        "spanSizeInByte_ %{public}zu", totalSizeInFrame_, spanSizeInFrame_,
-        byteSizePerFrame_, spanSizeInByte_);
+        "spanSizeInByte_ %{public}zu, spanSizeInMs_ %{public}u", totalSizeInFrame_, spanSizeInFrame_,
+        byteSizePerFrame_, spanSizeInByte_, spanSizeInMs_);
 
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(callbackBuffer_ != nullptr, false, "Init callbackBuffer_ failed.");
@@ -1242,12 +1248,12 @@ void AudioProcessInClientInner::RecordProcessCallbackFuc()
 
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
-        if (wakeUpTime > curTime && wakeUpTime - curTime < MAX_READ_COST_DURATION_NANO + clientReadCost) {
+        if (wakeUpTime > curTime && wakeUpTime - curTime < spanSizeInMs_ * ONE_MILLISECOND_DURATION + clientReadCost) {
             ClockTime::AbsoluteSleep(wakeUpTime);
         } else {
             Trace trace("RecordBigWakeUpTime");
             AUDIO_WARNING_LOG("%{public}s wakeUpTime is too late...", __func__);
-            ClockTime::RelativeSleep(MAX_READ_COST_DURATION_NANO);
+            ClockTime::RelativeSleep(spanSizeInMs_ * ONE_MILLISECOND_DURATION);
         }
     }
 }
@@ -1452,7 +1458,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         // start safe sleep
         threadStatus_ = SLEEPING;
         curTime = ClockTime::GetCurNano();
-        if (wakeUpTime - curTime > MAX_WRITE_COST_DURATION_NANO + clientWriteCost) {
+        if (wakeUpTime - curTime > spanSizeInMs_ * ONE_MILLISECOND_DURATION + clientWriteCost) {
             Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
                 "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
             AUDIO_WARNING_LOG("wakeUpTime is too late...");

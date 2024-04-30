@@ -205,7 +205,10 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
-    if (capturerInfo_.capturerFlags == STREAM_FLAG_FAST) {
+    if (capturerInfo_.capturerFlags == STREAM_FLAG_FAST &&
+        IAudioStream::IsStreamSupported(capturerInfo_.capturerFlags, audioStreamParams) &&
+        AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo_) == AUDIO_FLAG_MMAP) {
+        AUDIO_INFO_LOG("Create stream with flag AUDIO_FLAG_MMAP");
         streamClass = IAudioStream::FAST_STREAM;
     }
 

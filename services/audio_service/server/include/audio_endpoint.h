@@ -47,7 +47,8 @@ public:
     enum EndpointType : uint32_t {
         TYPE_MMAP = 0,
         TYPE_INVALID,
-        TYPE_INDEPENDENT
+        TYPE_INDEPENDENT,
+        TYPE_VOIP_MMAP
     };
 
     enum EndpointStatus : uint32_t {

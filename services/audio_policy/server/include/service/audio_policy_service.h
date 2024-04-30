@@ -160,13 +160,17 @@ public:
 
     uint32_t GetSinkLatencyFromXml() const;
 
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
+
+    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
+
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
     std::string GetSystemSoundUri(const std::string &key);
 
     bool IsSessionIdValid(int32_t callerUid, int32_t sessionId);
 
-    void GetAudioAdapterInfos(std::map<AdaptersType, AudioAdapterInfo> &adapterInfoMap);
+    void GetAudioAdapterInfos(std::unordered_map<AdaptersType, AudioAdapterInfo> &adapterInfoMap);
 
     void GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData);
 
@@ -177,7 +181,7 @@ public:
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 
     // Audio Policy Parser callbacks
-    void OnAudioPolicyXmlParsingCompleted(const std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap);
+    void OnAudioPolicyXmlParsingCompleted(const std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap);
 
     // Parser callbacks
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
@@ -717,6 +721,12 @@ private:
 
     void ClearScoDeviceSuspendState(string macAddress = "");
 
+    PipeInfo& GetPipeInfoByPipeName(std::string &supportPipe, AudioAdapterInfo &adapterInfo);
+
+    int32_t CheckDeviceCapability(AudioAdapterInfo &adapterInfo, int32_t flag, DeviceType deviceType);
+
+    bool IsConfigInfoHasAttribute(std::list<ConfigInfo> &configInfos, std::string value);
+
     AudioIOHandle OpenPortAndInsertIOHandle(const std::string &moduleName, const AudioModuleInfo &moduleInfo);
 
     int32_t ClosePortAndEraseIOHandle(const std::string &moduleName);
@@ -796,7 +806,7 @@ private:
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
-    std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap_ {};
+    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap_ {};
 
     std::mutex ioHandlesMutex_;
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};

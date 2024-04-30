@@ -888,6 +888,20 @@ uint32_t AudioPolicyManager::GetSinkLatencyFromXml()
     return gsp->GetSinkLatencyFromXml();
 }
 
+int32_t AudioPolicyManager::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
+    return gsp->GetPreferredOutputStreamType(rendererInfo);
+}
+
+int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
+    return gsp->GetPreferredInputStreamType(capturerInfo);
+}
+
 int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
     vector<unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {

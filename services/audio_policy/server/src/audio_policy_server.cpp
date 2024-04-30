@@ -1436,6 +1436,16 @@ uint32_t AudioPolicyServer::GetSinkLatencyFromXml()
     return audioPolicyService_.GetSinkLatencyFromXml();
 }
 
+int32_t AudioPolicyServer::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
+{
+    return audioPolicyService_.GetPreferredOutputStreamType(rendererInfo);
+}
+
+int32_t AudioPolicyServer::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
+{
+    return audioPolicyService_.GetPreferredInputStreamType(capturerInfo);
+}
+
 int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {

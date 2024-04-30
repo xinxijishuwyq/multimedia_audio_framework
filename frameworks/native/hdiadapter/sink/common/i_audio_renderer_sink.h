@@ -33,6 +33,7 @@ typedef struct {
     const char *deviceNetworkId;
     int32_t deviceType;
     uint64_t channelLayout;
+    int32_t audioStreamFlag;
 } IAudioSinkAttr;
 
 class IAudioSinkCallback {

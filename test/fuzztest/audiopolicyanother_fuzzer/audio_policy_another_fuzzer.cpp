@@ -51,6 +51,30 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
     AudioPolicyServerPtr->SetStreamMute(streamType, mute);
     AudioPolicyServerPtr->GetStreamMute(streamType);
     AudioPolicyServerPtr->IsStreamActive(streamType);
+
+    ContentType contentType = *reinterpret_cast<const ContentType *>(rawData);
+    StreamUsage streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    int32_t rendererFlags = *reinterpret_cast<const int32_t *>(rawData);
+    std::string sceneType(reinterpret_cast<const char*>(rawData), size - 1);
+    bool spatializationEnabled = *reinterpret_cast<const bool *>(rawData);
+    bool headTrackingEnabled = *reinterpret_cast<const bool *>(rawData);
+    AudioRendererInfo rendererInfo = {
+        contentType,
+        streamUsage,
+        rendererFlags,
+        sceneType,
+        spatializationEnabled,
+        headTrackingEnabled
+    };
+    AudioPolicyServerPtr->GetPreferredOutputStreamType(rendererInfo);
+
+    SourceType sourceType = *reinterpret_cast<const SourceType *>(rawData);
+    int32_t capturerFlags = *reinterpret_cast<const int32_t *>(rawData);
+    AudioCapturerInfo capturerInfo = {
+        sourceType,
+        capturerFlags
+    };
+    AudioPolicyServerPtr->GetPreferredInputStreamType(capturerInfo);
 }
 
 void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
