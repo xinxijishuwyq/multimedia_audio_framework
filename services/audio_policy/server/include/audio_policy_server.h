@@ -207,6 +207,10 @@ public:
 
     uint32_t GetSinkLatencyFromXml() override;
 
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
+
+    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
+
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object) override;
 

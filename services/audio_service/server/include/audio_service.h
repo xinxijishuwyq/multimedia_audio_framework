@@ -54,7 +54,8 @@ public:
     int32_t OnProcessRelease(IAudioProcessStream *process) override;
 
     DeviceInfo GetDeviceInfoForProcess(const AudioProcessConfig &config);
-    std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(DeviceInfo &deviceInfo, AudioStreamType streamType);
+    std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(DeviceInfo &deviceInfo, AudioStreamType streamType,
+        bool isVoipStream);
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);

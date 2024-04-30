@@ -178,6 +178,7 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
         auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
         if (rateItem == AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end()) {
+            AUDIO_WARNING_LOG("Sampling rate %{public}d does not meet the requirements", samplingRate);
             return false;
         }
 
@@ -186,6 +187,7 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
         auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
         if (channelItem == AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end()) {
+            AUDIO_WARNING_LOG("Audio channel %{public}d does not meet the requirements", channels);
             return false;
         }
 
@@ -194,6 +196,7 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
         auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
         if (formatItem == AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end()) {
+            AUDIO_WARNING_LOG("Audio sample format %{public}d does not meet the requirements", format);
             return false;
         }
     }

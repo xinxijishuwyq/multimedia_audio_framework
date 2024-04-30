@@ -49,7 +49,22 @@ using namespace std;
 static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 static const std::string RECEIVER_SINK_NAME = "Receiver";
 static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
-static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
+static const std::string PIPE_PRIMARY_OUTPUT = "primary_output";
+static const std::string PIPE_FAST_OUTPUT = "fast_output";
+static const std::string PIPE_OFFLOAD_OUTPUT = "offload_output";
+static const std::string PIPE_VOIP_OUTPUT = "voip_output";
+static const std::string PIPE_PRIMARY_INPUT = "primary_input";
+static const std::string PIPE_FAST_INPUT = "fast_input";
+static const std::string PIPE_OFFLOAD_INPUT = "offload_input";
+static const std::string PIPE_VOIP_INPUT = "voip_input";
+static const std::string PIPE_A2DP_OUTPUT = "a2dp_output";
+static const std::string PIPE_FAST_A2DP_OUTPUT = "fast_a2dp_output";
+static const std::string PIPE_USB_ARM_OUTPUT = "usb_arm_output";
+static const std::string PIPE_USB_ARM_INPUT = "usb_arm_input";
+static const std::string PIPE_DISTRIBUTED_OUTPUT = "distributed_output";
+static const std::string PIPE_FAST_DISTRIBUTED_OUTPUT = "fast_distributed_output";
+static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
+static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -86,6 +101,9 @@ static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settings
 static const std::string SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const std::string SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const std::string PREDICATES_STRING = "settings.general.device_name";
+static const std::string EARPIECE_TYPE_NAME = "Earpiece_Out";
+static const std::string FLAG_MMAP_STRING = "AUDIO_FLAG_MMAP";
+static const std::string USAGE_VOIP_STRING = "AUDIO_USAGE_VOIP";
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
@@ -3817,7 +3835,7 @@ void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDev
 }
 
 void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
-    const std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap)
+    const std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap)
 {
     AUDIO_INFO_LOG("adapterInfo num [%{public}zu]", adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
@@ -3868,7 +3886,7 @@ void AudioPolicyService::OnGlobalConfigsParsed(GlobalConfigs &globalConfigs)
     globalConfigs_ = globalConfigs;
 }
 
-void AudioPolicyService::GetAudioAdapterInfos(std::map<AdaptersType, AudioAdapterInfo> &adapterInfoMap)
+void AudioPolicyService::GetAudioAdapterInfos(std::unordered_map<AdaptersType, AudioAdapterInfo> &adapterInfoMap)
 {
     adapterInfoMap = adapterInfoMap_;
 }
@@ -4776,6 +4794,81 @@ uint32_t AudioPolicyService::GetSinkLatencyFromXml() const
     return sinkLatencyInMsec_;
 }
 
+int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
+{
+    // Use GetPreferredOutputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
+    std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredOutputDeviceDescriptors(rendererInfo);
+    if (preferredDeviceList.size() == 0) {
+        return AUDIO_FLAG_INVALID;
+    }
+    std::string sinkPortName = GetSinkPortName(preferredDeviceList[0]->deviceType_);
+    if (adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
+        return AUDIO_FLAG_INVALID;
+    }
+    AudioAdapterInfo adapterInfo;
+    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[sinkPortName]));
+    if (it != adapterInfoMap_.end()) {
+        adapterInfo = it->second;
+    } else {
+        AUDIO_ERR_LOG("Invalid adapter");
+        return AUDIO_FLAG_INVALID;
+    }
+
+    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(preferredDeviceList[0]->deviceType_);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_INVALID, "Device type is not supported");
+    for (auto &supportPipe : deviceInfo->supportPipes_) {
+        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
+        if (pipeInfo == nullptr) {
+            continue;
+        }
+        if (rendererInfo.rendererFlags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            return AUDIO_FLAG_MMAP;
+        }
+        if (rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
+            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            return AUDIO_FLAG_VOIP_FAST;
+        }
+    }
+    return AUDIO_FLAG_NORMAL;
+}
+
+int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
+{
+    // Use GetPreferredInputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
+    std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredInputDeviceDescriptors(capturerInfo);
+    if (preferredDeviceList.size() == 0) {
+        return AUDIO_FLAG_INVALID;
+    }
+    std::string sourcePortName = GetSourcePortName(preferredDeviceList[0]->deviceType_);
+    if (adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
+        return AUDIO_FLAG_INVALID;
+    }
+    AudioAdapterInfo adapterInfo;
+    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[sourcePortName]));
+    if (it != adapterInfoMap_.end()) {
+        adapterInfo = it->second;
+    } else {
+        AUDIO_ERR_LOG("Invalid adapter");
+        return AUDIO_FLAG_INVALID;
+    }
+    AudioPipeDeviceInfo* deviceInfo = adapterInfo.GetDeviceInfoByDeviceType(preferredDeviceList[0]->deviceType_);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, AUDIO_FLAG_INVALID, "Device type is not supported");
+    for (auto &supportPipe : deviceInfo->supportPipes_) {
+        PipeInfo* pipeInfo = adapterInfo.GetPipeByName(supportPipe);
+        if (pipeInfo == nullptr) {
+            continue;
+        }
+        if (capturerInfo.capturerFlags == AUDIO_FLAG_MMAP && pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            return AUDIO_FLAG_MMAP;
+        }
+        if (capturerInfo.capturerFlags == AUDIO_FLAG_VOIP_FAST && pipeInfo->audioUsage_ == AUDIO_USAGE_VOIP &&
+            pipeInfo->audioFlag_ == AUDIO_FLAG_MMAP) {
+            return AUDIO_FLAG_VOIP_FAST;
+        }
+    }
+    return AUDIO_FLAG_NORMAL;
+}
+
 void AudioPolicyService::UpdateInputDeviceInfo(DeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("Current input device is %{public}d", currentActiveInputDevice_.deviceType_);
@@ -4917,6 +5010,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.networkId = fastRouterMap_[config.appInfo.appUid].first;
         AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", deviceInfo.networkId.c_str());
     }
+    deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
     return SUCCESS;
 }
 

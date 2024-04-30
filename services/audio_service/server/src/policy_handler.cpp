@@ -145,12 +145,26 @@ AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType strea
     }
 }
 
+DeviceType PolicyHandler::GetDeviceTypeForVolumeVector(DeviceType deviceType)
+{
+    DeviceType deviceTypeInVector = DEVICE_TYPE_NONE;
+    switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE :
+        case DEVICE_TYPE_SPEAKER :
+            deviceTypeInVector = DEVICE_TYPE_SPEAKER;
+            break;
+        default:
+            AUDIO_ERR_LOG("Device type %{public}d is invalid, for volume vector", deviceType);
+    }
+    return deviceTypeInVector;
+}
+
 bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol)
 {
     CHECK_AND_RETURN_RET_LOG((iPolicyProvider_ != nullptr && volumeVector_ != nullptr), false,
         "GetSharedVolume failed not configed");
     size_t index = 0;
-    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+    if (!IPolicyProvider::GetVolumeIndex(streamType, GetDeviceTypeForVolumeVector(deviceType), index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }

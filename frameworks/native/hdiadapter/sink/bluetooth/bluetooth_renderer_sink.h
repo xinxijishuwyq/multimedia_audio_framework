@@ -21,9 +21,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class BluetoothRendererSink : public IAudioRendererSink {
+class BluetoothRendererSink : public IMmapAudioRendererSink {
 public:
     static BluetoothRendererSink *GetInstance(void);
+    static IMmapAudioRendererSink *GetMmapInstance(void);
 
     BluetoothRendererSink() = default;
     ~BluetoothRendererSink() = default;

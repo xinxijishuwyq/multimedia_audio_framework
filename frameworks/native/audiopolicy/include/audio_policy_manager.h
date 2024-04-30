@@ -161,6 +161,10 @@ public:
 
     uint32_t GetSinkLatencyFromXml();
 
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
+
+    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
+
     int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 

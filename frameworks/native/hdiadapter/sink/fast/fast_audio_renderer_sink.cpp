@@ -47,7 +47,6 @@ const int32_t HALF_FACTOR = 2;
 const uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
 const float DEFAULT_VOLUME_LEVEL = 1.0f;
 const uint32_t AUDIO_CHANNELCOUNT = 2;
-const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
 const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 3840;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
@@ -173,6 +172,13 @@ IMmapAudioRendererSink *FastAudioRendererSink::GetInstance()
     return &audioRenderer;
 }
 
+IMmapAudioRendererSink *FastAudioRendererSink::GetVoipInstance()
+{
+    static FastAudioRendererSinkInner audioVoipRenderer;
+
+    return &audioVoipRenderer;
+}
+
 std::shared_ptr<IMmapAudioRendererSink> FastAudioRendererSink::CreateFastRendererSink()
 {
     std::shared_ptr<IMmapAudioRendererSink> audioRenderer = std::make_shared<FastAudioRendererSinkInner>();
@@ -216,10 +222,8 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
     attrs.channelCount = AUDIO_CHANNELCOUNT;
-    attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
     attrs.streamId = FAST_OUTPUT_STREAM_ID;
-    attrs.type = AUDIO_MMAP_NOIRQ; // enable mmap!
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;
@@ -407,6 +411,7 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     int32_t ret;
     struct AudioSampleAttributes param;
     InitAttrs(param);
+    param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ;
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
     if (param.channelCount == MONO) {
@@ -417,8 +422,8 @@ int32_t FastAudioRendererSinkInner::CreateRender(const struct AudioPort &renderP
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(attr_.format) * param.channelCount / PCM_8_BIT;
     param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize); // not passed in hdi
-    AUDIO_INFO_LOG("FastAudioRendererSink Create render format: %{public}d and device:%{public}d", param.format,
-        attr_.deviceType);
+    AUDIO_INFO_LOG("Type: %{public}d, sampleRate: %{public}u, channel: %{public}d, format: %{public}d, "
+        "device:%{public}d", param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = renderPort.portId;
     switch (static_cast<DeviceType>(attr_.deviceType)) {

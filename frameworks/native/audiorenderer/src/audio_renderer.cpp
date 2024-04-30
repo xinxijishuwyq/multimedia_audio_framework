@@ -337,14 +337,11 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
-    if (rendererInfo_.rendererFlags == STREAM_FLAG_FORCED_NORMAL) {
-        streamClass = IAudioStream::FORCED_PA_STREAM;
-    } else if (rendererInfo_.rendererFlags == STREAM_FLAG_FAST &&
-        IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams)) {
+    if (rendererInfo_.rendererFlags == STREAM_FLAG_FAST &&
+        IAudioStream::IsStreamSupported(rendererInfo_.rendererFlags, audioStreamParams) &&
+        AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_) == AUDIO_FLAG_MMAP) {
         isFastRenderer_ = true;
-        if (AudioPolicyManager::GetInstance().GetActiveOutputDevice() != DEVICE_TYPE_BLUETOOTH_A2DP) {
-            streamClass = IAudioStream::FAST_STREAM;
-        }
+        streamClass = IAudioStream::FAST_STREAM;
     } else {
         streamClass = IAudioStream::PA_STREAM;
     }
