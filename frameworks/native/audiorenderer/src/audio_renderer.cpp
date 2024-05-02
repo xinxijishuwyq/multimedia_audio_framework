@@ -908,7 +908,6 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc) const
 {
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
-    std::lock_guard<std::mutex> lock(switchStreamMutex_);
     if (!switchStreamMutex_.try_lock()) {
         AUDIO_ERR_LOG("In switch stream process, return");
         return ERR_ILLEGAL_STATE;
