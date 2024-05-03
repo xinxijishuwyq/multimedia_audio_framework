@@ -4699,6 +4699,7 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     if (volumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
         sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
     }
+    configInfoPos->second.volumeLevel = sVolumeLevel;
     if (sVolumeLevel > 0) {
         configInfoPos->second.mute = false;
     }
