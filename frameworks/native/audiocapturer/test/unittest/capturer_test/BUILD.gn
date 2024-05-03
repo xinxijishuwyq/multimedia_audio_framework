@@ -24,9 +24,6 @@ ohos_unittest("audio_capturer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../audiostream/include",
   ]
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
-
-  include_dirs += [ multimedia_audio_framework_pulse_audio_src ]
 
   cflags = [
     "-Wall",
@@ -36,6 +33,7 @@ ohos_unittest("audio_capturer_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "pulseaudio:pulse",
   ]
 
   sources = [
@@ -57,9 +55,6 @@ ohos_unittest("audio_fast_capturer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../audiostream/include",
   ]
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
-
-  include_dirs += [ multimedia_audio_framework_pulse_audio_src ]
 
   cflags = [
     "-Wall",
@@ -69,6 +64,7 @@ ohos_unittest("audio_fast_capturer_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "pulseaudio:pulse",
   ]
 
   sources = [ "src/audio_fast_capturer_unit_test.cpp" ]

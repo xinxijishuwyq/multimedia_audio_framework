@@ -51,6 +51,7 @@
             "drivers_interface_audio",
             "drivers_interface_distributed_audio",
             "drivers_peripheral_audio",
+            "drivers_peripheral_bluetooth",
             "eventhandler",
             "hdf_core",
             "hicollie",
@@ -69,14 +70,17 @@
             "samgr",
             "sensor",
             "window_manager",
-            "os_account"
+            "os_account",
+            "bounds_checking_function",
+            "pulseaudio",
+            "libuv",
+            "googletest",
+            "cJSON"
             ],
           "third_party": [
-            "bounds_checking_function",
             "glib",
             "libsnd",
-            "libxml2",
-            "pulseaudio"
+            "libxml2"
           ]
         },
         "build": {

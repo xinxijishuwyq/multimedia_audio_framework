@@ -186,10 +186,10 @@ ohos_shared_library("audio_capturer_file_source") {
     "../common/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
-
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -223,8 +223,6 @@ ohos_shared_library("capturer_source_adapter") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   deps = [
     ":audio_capturer_file_source",
     ":audio_capturer_source",
@@ -232,7 +230,10 @@ ohos_shared_library("capturer_source_adapter") {
     ":remote_fast_audio_capturer_source",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

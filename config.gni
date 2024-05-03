@@ -60,9 +60,6 @@ declare_args() {
   }
 
   audio_framework_feature_new_napi = true
-  multimedia_audio_framework_pulse_audio = "//third_party/pulseaudio/include"
-
-  multimedia_audio_framework_pulse_audio_src = "//third_party/pulseaudio/src"
 
   multimedia_audio_framework_drivers =
       "//drivers/peripheral/audio/interfaces/include/"

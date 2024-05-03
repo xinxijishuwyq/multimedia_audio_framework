@@ -14,7 +14,6 @@
 import("//build/ohos.gni")
 import("../../../config.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
 opensles_dir = "//third_party/openSLES"
 
 group("libsl") {
@@ -31,8 +30,6 @@ config("audio_config") {
     "../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../interfaces/inner_api/native/audiostream/include",
     "../../../services/audio_service/client/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -123,8 +120,6 @@ config("audio_operation_config") {
     "../../../interfaces/inner_api/native/audiostream/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/test/example",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -160,7 +155,10 @@ if (!audio_framework_feature_opensl_es) {
       ":opensles",
     ]
 
-    external_deps = [ "hilog:libhilog" ]
+    external_deps = [
+      "hilog:libhilog",
+      "pulseaudio:pulse",
+    ]
 
     part_name = "audio_framework"
     subsystem_name = "multimedia"
@@ -187,7 +185,10 @@ if (!audio_framework_feature_opensl_es) {
       ":opensles",
     ]
 
-    external_deps = [ "hilog:libhilog" ]
+    external_deps = [
+      "hilog:libhilog",
+      "pulseaudio:pulse",
+    ]
 
     part_name = "audio_framework"
     subsystem_name = "multimedia"
