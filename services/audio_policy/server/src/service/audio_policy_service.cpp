@@ -5921,6 +5921,8 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
         "Requested device not available %{public}d ", deviceType);
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            (*itr)->isEnable_ = true;
+            audioDeviceManager_.UpdateDevicesListInfo(new(std::nothrow) AudioDeviceDescriptor(**itr), ENABLE_UPDATE);
             ClearScoDeviceSuspendState(address);
         }
         audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor(**itr));
