@@ -350,6 +350,39 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     return process;
 }
 
+void AudioService::ResetAudioEndpoint()
+{
+    std::lock_guard<std::mutex> lock(processListMutex_);
+    AudioProcessConfig config;
+    sptr<AudioProcessInServer> processInServer;
+    auto paired = linkedPairedList_.begin();
+    while (paired != linkedPairedList_.end()) {
+        if ((*paired).second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
+            linkedPairedList_.erase(paired);
+            config = (*paired).first->processConfig_;
+            int32_t ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unlink process to old endpoint failed");
+            std::string endpointName = (*paired).second->GetEndpointName();
+            if (endpointList_.find(endpointName) != endpointList_.end()) {
+                (*paired).second->Release();
+                endpointList_.erase(endpointName);
+            }
+
+            DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
+            std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
+                config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+            CHECK_AND_RETURN_LOG(audioEndpoint != nullptr, "Get new endpoint failed");
+
+            ret = LinkProcessToEndpoint((*paired).first, audioEndpoint);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "LinkProcessToEndpoint failed");
+            linkedPairedList_.push_back(std::make_pair((*paired).first, audioEndpoint));
+            CheckInnerCapForProcess((*paired).first, audioEndpoint);
+        }
+        paired++;
+    }
+}
+
 void AudioService::CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint)
 {
     Trace trace("AudioService::CheckInnerCapForProcess:" + std::to_string(process->processConfig_.appInfo.appPid));

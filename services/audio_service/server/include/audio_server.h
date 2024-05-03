@@ -132,6 +132,8 @@ public:
 
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
 
+    void ResetAudioEndpoint() override;
+
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

@@ -1474,6 +1474,13 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
     return 0;
 }
 
+void AudioServer::ResetAudioEndpoint()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID, "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->ResetAudioEndpoint();
+}
+
 void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
 {
     if (isRenderer) {
