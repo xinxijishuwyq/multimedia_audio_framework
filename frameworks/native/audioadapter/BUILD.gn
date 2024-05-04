@@ -13,8 +13,6 @@
 
 import("//build/ohos.gni")
 
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 ohos_shared_library("pulse_audio_service_adapter") {
   sanitize = {
     cfi = true
@@ -28,21 +26,16 @@ ohos_shared_library("pulse_audio_service_adapter") {
   cflags_cc = cflags
 
   include_dirs = [
-    "$pulseaudio_build_path/include",
     "include",
     "../../../interfaces/inner_api/native/audiocommon/include",
-    "//third_party/pulseaudio/src",
-    "//third_party/pulseaudio/confgure/src",
-    "//third_party/pulseaudio/include",
   ]
 
   public_configs = [ ":audio_external_library_config" ]
 
-  deps = [ "$pulseaudio_build_path/src/pulse:pulse" ]
-
   external_deps = [
     "hilog:libhilog",
     "hisysevent:libhisysevent",
+    "pulseaudio:pulse",
   ]
   part_name = "audio_framework"
   subsystem_name = "multimedia"

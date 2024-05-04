@@ -14,16 +14,12 @@
 import("//build/ohos.gni")
 import("../../../config.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-
 config("playback_capturer_config") {
   include_dirs = [
     "../audiostream/include",
     "../playbackcapturer/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -48,6 +44,7 @@ ohos_shared_library("playback_capturer") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
 
   version_script = "../../../audio_framework.versionscript"
