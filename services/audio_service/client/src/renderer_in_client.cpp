@@ -56,6 +56,9 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
 
@@ -1933,10 +1936,12 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
             AUDIO_WARNING_LOG("write silent data for some time");
             isUpEvent_ = true;
-            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "BACKGROUND_SILENT_PLAYBACK",
-                HiviewDFX::HiSysEvent::EventType::STATISTIC,
-                "APP_NAME", name,
-                "APP_VERSION_CODE", versionCode);
+            std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                Media::MediaMonitor::AUDIO, Media::MediaMonitor::BACKGROUND_SILENT_PLAYBACK,
+                Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+            bean->Add("APP_NAME", name);
+            bean->Add("APP_VERSION_CODE", versionCode);
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         }
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;

@@ -201,6 +201,15 @@ enum ContentType {
     CONTENT_TYPE_ULTRASONIC = 9
 };
 
+enum AudioPipeType {
+    PIPE_TYPE_UNKNOWN = 0,
+    PIPE_TYPE_NORMAL = 1,
+    PIPE_TYPE_LOWLATENCY = 2,
+    PIPE_TYPE_OFFLOAD = 3,
+    PIPE_TYPE_HIGHRESOLUTION = 4,
+    PIPE_TYPE_SPATIALIZATION = 5,
+};
+
 struct AudioStreamParams {
     uint32_t samplingRate;
     uint8_t encoding;
