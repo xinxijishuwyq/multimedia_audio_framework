@@ -213,6 +213,19 @@ private:
         SLEEPING,
         INRUNNING
     };
+    enum FastSinkType {
+        NONE_FAST_SINK = 0,
+        FAST_SINK_TYPE_NORMAL,
+        FAST_SINK_TYPE_REMOTE,
+        FAST_SINK_TYPE_VOIP,
+        FAST_SINK_TYPE_BLUETOOTH
+    };
+    enum FastSourceType {
+        NONE_FAST_SOURCE = 0,
+        FAST_SOURCE_TYPE_NORMAL,
+        FAST_SOURCE_TYPE_REMOTE,
+        FAST_SOURCE_TYPE_VOIP
+    };
     // SamplingRate EncodingType SampleFormat Channel
     DeviceInfo deviceInfo_;
     AudioStreamInfo dstStreamInfo_;
@@ -236,6 +249,8 @@ private:
 
     IMmapAudioRendererSink *fastSink_ = nullptr;
     IMmapAudioCapturerSource *fastSource_ = nullptr;
+    FastSinkType fastSinkType_ = NONE_FAST_SINK;
+    FastSourceType fastSourceType_ = NONE_FAST_SOURCE;
 
     LinearPosTimeModel readTimeModel_;
     LinearPosTimeModel writeTimeModel_;
@@ -543,6 +558,8 @@ void AudioEndpointInner::Dump(std::stringstream &dumpStringStream)
     dumpStringStream << " samplingRate:" << dstStreamInfo_.samplingRate << std::endl;
     dumpStringStream << " channels:" << dstStreamInfo_.channels << std::endl;
     dumpStringStream << " format:" << dstStreamInfo_.format << std::endl;
+    dumpStringStream << " sink type:" << fastSinkType_ << std::endl;
+    dumpStringStream << " source type:" << fastSourceType_ << std::endl;
 
     // dump status info
     dumpStringStream << " Current endpoint status:" << GetStatusStr(endpointStatus_) << std::endl;
@@ -614,17 +631,20 @@ IMmapAudioCapturerSource *AudioEndpointInner::GetFastSource(const std::string &n
     IAudioSourceAttr &attr)
 {
     AUDIO_INFO_LOG("Network id %{public}s, endpoint type %{public}d", networkId.c_str(), type);
-    if (networkId == LOCAL_NETWORK_ID) {
-        attr.adapterName = "primary";
-        if (type == AudioEndpoint::TYPE_MMAP) {
-            return FastAudioCapturerSource::GetInstance();
-        } else if (type == AudioEndpoint::TYPE_VOIP_MMAP) {
-            return FastAudioCapturerSource::GetVoipInstance();
-        }
-    } else {
+    if (networkId != LOCAL_NETWORK_ID) {
         attr.adapterName = "remote";
+        fastSourceType_ = FAST_SOURCE_TYPE_REMOTE;
         // Distributed only requires a singleton because there won't be both voip and regular fast simultaneously
         return RemoteFastAudioCapturerSource::GetInstance(networkId);
+    }
+
+    attr.adapterName = "primary";
+    if (type == AudioEndpoint::TYPE_MMAP) {
+        fastSourceType_ = FAST_SOURCE_TYPE_NORMAL;
+        return FastAudioCapturerSource::GetInstance();
+    } else if (type == AudioEndpoint::TYPE_VOIP_MMAP) {
+        fastSourceType_ = FAST_SOURCE_TYPE_VOIP;
+        return FastAudioCapturerSource::GetVoipInstance();
     }
     return nullptr;
 }
@@ -694,17 +714,21 @@ IMmapAudioRendererSink *AudioEndpointInner::GetFastSink(const DeviceInfo &device
 {
     AUDIO_INFO_LOG("Network id %{public}s, endpoint type %{public}d", deviceInfo.networkId.c_str(), type);
     if (deviceInfo.networkId != LOCAL_NETWORK_ID) {
+        fastSinkType_ = FAST_SINK_TYPE_REMOTE;
         // Distributed only requires a singleton because there won't be both voip and regular fast simultaneously
         return RemoteFastAudioRendererSink::GetInstance(deviceInfo.networkId);
     }
 
     if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo.a2dpOffloadFlag == A2DP_NOT_OFFLOAD) {
+        fastSinkType_ = FAST_SINK_TYPE_BLUETOOTH;
         return BluetoothRendererSink::GetMmapInstance();
     }
 
     if (type == AudioEndpoint::TYPE_MMAP) {
+        fastSinkType_ = FAST_SINK_TYPE_NORMAL;
         return FastAudioRendererSink::GetInstance();
     } else if (type == AudioEndpoint::TYPE_VOIP_MMAP) {
+        fastSinkType_ = FAST_SINK_TYPE_VOIP;
         return FastAudioRendererSink::GetVoipInstance();
     }
     return nullptr;

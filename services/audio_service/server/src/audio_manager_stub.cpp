@@ -534,6 +534,12 @@ int AudioManagerStub::HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleResetAudioEndpoint(MessageParcel &data, MessageParcel &reply)
+{
+    ResetAudioEndpoint();
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply)
 {
     std::string timestamp = data.ReadString();

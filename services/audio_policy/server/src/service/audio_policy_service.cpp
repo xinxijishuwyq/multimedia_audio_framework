@@ -1958,6 +1958,12 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
             int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
                 GetEncryptAddr(desc->macAddress_).c_str());
+            if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP &&
+                preA2dpOffloadFlag_ != A2DP_OFFLOAD && a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+                const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+                CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+                gsp->ResetAudioEndpoint();
+            }
             SelectNewOutputDevice(rendererChangeInfo, desc);
         }
     }
@@ -4011,6 +4017,10 @@ void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<Aud
     deviceInfo.channelIndexMasks = desc->channelIndexMasks_;
     deviceInfo.displayName = desc->displayName_;
     deviceInfo.connectState = desc->connectState_;
+
+    if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
+    }
 
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
