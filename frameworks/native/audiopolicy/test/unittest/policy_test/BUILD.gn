@@ -50,7 +50,10 @@ ohos_unittest("audio_policy_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  sources = [ "src/audio_policy_unit_test.cpp" ]
+  sources = [
+    "src/audio_policy_ext_unit_test.cpp",
+    "src/audio_policy_unit_test.cpp",
+  ]
 
   defines = []
   if (audio_framework_feature_dtmf_tone) {
