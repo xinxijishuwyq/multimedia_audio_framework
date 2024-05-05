@@ -287,6 +287,8 @@ private:
 
     void FirstFrameProcess();
 
+    void ResetFramePosition();
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -415,6 +417,8 @@ private:
     std::shared_ptr<SpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
+
+    uint64_t lastFlushPosition_ = 0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -954,6 +958,8 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = framePosition - (mcrLatency * rendererRate_ / AUDIO_MS_PER_S);
     }
 
+    framePosition = framePosition > lastFlushPosition_ ? framePosition - lastFlushPosition_ : 0;
+
     if (lastFramePosition_ < framePosition) {
         lastFramePosition_ = framePosition;
         lastFrameTimestamp_ = timestampVal;
@@ -962,8 +968,9 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosition_;
         timestampVal = lastFrameTimestamp_;
     }
-    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", timestamp %{public}" PRIu64
-        ", mcrLatency %{public}u", framePosition, timestampVal, mcrLatency);
+    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", lastFlushPosition %{public}" PRIu64
+        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u", framePosition, lastFlushPosition_,
+        timestampVal, mcrLatency);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -1696,6 +1703,7 @@ bool RendererInClientInner::FlushAudioStream()
     }
     notifiedOperation_ = MAX_OPERATION_CODE;
     waitLock.unlock();
+    ResetFramePosition();
     AUDIO_INFO_LOG("Flush stream SUCCESS, sessionId: %{public}d", sessionId_);
     return true;
 }
@@ -1919,6 +1927,20 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     }
 
     return bufferSize - targetSize;
+}
+
+
+void RendererInClientInner::ResetFramePosition()
+{
+    Trace trace("RendererInClientInner::ResetFramePosition");
+    uint64_t timestampVal = 0;
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->GetAudioPosition(lastFlushPosition_, timestampVal);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Get position failed: %{public}u", ret);
+        return;
+    }
+    lastFramePosition_ = 0;
 }
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
