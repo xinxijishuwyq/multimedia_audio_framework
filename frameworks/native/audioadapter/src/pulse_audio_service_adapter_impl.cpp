@@ -730,6 +730,14 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     const char *streamMode = pa_proplist_gets(i->proplist, "stream.mode");
     if (streamMode != nullptr && streamMode == DUP_STREAM) { return; }
 
+    HandleSinkInputInfoVolume(c, i, userdata);
+}
+
+void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, const pa_sink_input_info *i,
+    void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData*>(userdata);
+    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
     const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
@@ -743,7 +751,6 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     uint32_t sessionID = 0;
     CastValue<uint32_t>(sessionID, sessionCStr);
-
     sinkIndexSessionIDMap[i->index] = sessionID;
 
     string streamType(streamtype);
@@ -762,7 +769,6 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     if (streamTypeID == userData->streamType || userData->isSubscribingCb) {
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
     }
-
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::VOLUME_CHANGE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
