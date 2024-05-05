@@ -272,6 +272,8 @@ private:
     FILE *dumpDcp_ = nullptr;
     FILE *dumpHdi_ = nullptr;
 
+    bool isSupportAbsVolume_ = false;
+
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
@@ -999,6 +1001,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
             StartDevice();
         }
     }
+    isSupportAbsVolume_ = PolicyHandler::GetInstance().IsAbsVolumeSupported();
     endpointStatus_ = RUNNING;
     delayStopTime_ = INT64_MAX;
     return SUCCESS;
@@ -1302,7 +1305,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         AudioStreamType streamType = processList_[i]->GetAudioStreamType();
         AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(streamType);
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-        if (deviceInfo_.networkId == LOCAL_NETWORK_ID &&
+        if (deviceInfo_.networkId == LOCAL_NETWORK_ID && !isSupportAbsVolume_ &&
             PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol)) {
             streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat);
         } else {

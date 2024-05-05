@@ -153,6 +153,9 @@ DeviceType PolicyHandler::GetDeviceTypeForVolumeVector(DeviceType deviceType)
         case DEVICE_TYPE_SPEAKER :
             deviceTypeInVector = DEVICE_TYPE_SPEAKER;
             break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            deviceTypeInVector = DEVICE_TYPE_BLUETOOTH_A2DP;
+            break;
         default:
             AUDIO_ERR_LOG("Device type %{public}d is invalid, for volume vector", deviceType);
     }
@@ -216,6 +219,12 @@ int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
+}
+
+bool PolicyHandler::IsAbsVolumeSupported()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->IsAbsVolumeSupported();
 }
 
 bool PolicyHandler::GetHighResolutionExist()

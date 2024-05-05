@@ -36,6 +36,8 @@ public:
 
     int32_t NotifyWakeUpCapturerRemoved() override;
 
+    bool IsAbsVolumeSupported() override;
+
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;
 };
