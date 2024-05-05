@@ -2069,6 +2069,8 @@ void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDevic
 {
     Trace trace("AudioPolicyService::FetchDevice reason:" + std::to_string(static_cast<int>(reason)));
     AUDIO_DEBUG_LOG("FetchDevice start");
+
+    std::lock_guard<std::mutex> lock(fetchDeviceSharedMutex_);
     if (isOutputDevice) {
         vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
         streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
@@ -4109,6 +4111,8 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
     streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfo[0]);
+
+    std::lock_guard<std::mutex> lock(fetchDeviceSharedMutex_);
     FetchOutputDevice(rendererChangeInfo);
 }
 
@@ -4118,6 +4122,8 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
     capturerChangeInfo.push_back(
         make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
     streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfo[0]);
+
+    std::lock_guard<std::mutex> lock(fetchDeviceSharedMutex_);
     FetchInputDevice(capturerChangeInfo);
 }
 

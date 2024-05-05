@@ -855,6 +855,8 @@ private:
 
     std::mutex deviceClassInfoMutex_;
 
+    std::mutex fetchDeviceSharedMutex_;
+
     std::mutex deviceStatusUpdateSharedMutex_;
     std::mutex microphonesMutex_;
 
