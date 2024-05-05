@@ -428,7 +428,7 @@ int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
     return audioPolicyManager_.GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey)
+int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     int32_t result;
     if (GetStreamForVolumeMap(streamType) == STREAM_MUSIC &&
@@ -463,7 +463,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
         }
     }
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
-    result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
+    result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
         SetVoiceCallVolume(volumeLevel);
     }
@@ -565,7 +565,7 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
     return volumeGroupType;
 }
 
-int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) const
+int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType) const
 {
     {
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
@@ -581,7 +581,7 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, boo
             }
         }
     }
-    return audioPolicyManager_.GetSystemVolumeLevel(streamType, isFromVolumeKey);
+    return audioPolicyManager_.GetSystemVolumeLevel(streamType);
 }
 
 float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
@@ -4491,8 +4491,8 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
 
     std::unique_ptr<AudioDeviceDescriptor> deviceDes = GetActiveBluetoothDevice();
     if (deviceDes != nullptr && deviceDes->macAddress_ == macAddress) {
-        int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_MUSIC, false);
-        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel, false);
+        int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_MUSIC);
+        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
     }
     return SUCCESS;
 }
@@ -4539,7 +4539,7 @@ void AudioPolicyService::CheckBlueToothActiveMusicTime(int32_t safeVolume)
         safeStatusBt_ = SAFE_ACTIVE;
         userSelect_ = false;
         isDialogSelectDestroy_.store(false);
-        SetSystemVolumeLevel(STREAM_MUSIC, safeVolume, false);
+        SetSystemVolumeLevel(STREAM_MUSIC, safeVolume);
         activeSafeTimeBt_ = 0;
     } else if (currentTime - startSafeTimeBt_ >= ONE_MINUTE) {
         AUDIO_INFO_LOG("safe volume 1 min timeout");
@@ -4565,7 +4565,7 @@ void AudioPolicyService::CheckWiredActiveMusicTime(int32_t safeVolume)
         safeStatus_ = SAFE_ACTIVE;
         userSelect_ = false;
         isDialogSelectDestroy_.store(false);
-        SetSystemVolumeLevel(STREAM_MUSIC, safeVolume, false);
+        SetSystemVolumeLevel(STREAM_MUSIC, safeVolume);
         activeSafeTime_ = 0;
     } else if (currentTime - startSafeTime_ >= ONE_MINUTE) {
         AUDIO_INFO_LOG("safe volume 1 min timeout");
@@ -5024,7 +5024,7 @@ int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> 
     // init volume map
     // todo device
     for (size_t i = 0; i < IPolicyProvider::GetVolumeVectorSize(); i++) {
-        int32_t currentVolumeLevel = audioPolicyManager_.GetSystemVolumeLevel(g_volumeIndexVector[i].first, false);
+        int32_t currentVolumeLevel = audioPolicyManager_.GetSystemVolumeLevel(g_volumeIndexVector[i].first);
         float volFloat =
             GetSystemVolumeInDb(g_volumeIndexVector[i].first, currentVolumeLevel, currentActiveDevice_.deviceType_);
         volumeVector_[i].isMute = false;

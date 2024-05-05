@@ -65,9 +65,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false);
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     float GetSystemVolumeDb(AudioStreamType streamType);
 
@@ -212,8 +212,6 @@ private:
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
-    void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
-    void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
