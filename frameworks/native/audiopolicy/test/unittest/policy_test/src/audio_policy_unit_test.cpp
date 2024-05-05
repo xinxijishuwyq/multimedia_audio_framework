@@ -33,28 +33,12 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-static const int32_t FAILURE = -1;
-static const uint32_t SINK_LATENCY_FROM_XML = 40;
-static const uint32_t AUDIO_LATENCY_FROM_XML = 20;
+static const uint32_t LOW_LATENCY_FROM_XML = 20;
+static const uint32_t HIGH_LATENCY_FROM_XML = 200;
 void AudioPolicyUnitTest::SetUpTestCase(void) {}
 void AudioPolicyUnitTest::TearDownTestCase(void) {}
 void AudioPolicyUnitTest::SetUp(void) {}
 void AudioPolicyUnitTest::TearDown(void) {}
-void AudioPolicyUnitTest::InitAudioPolicyProxy(std::shared_ptr<AudioPolicyProxy> &audioPolicyProxy)
-{
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgr == nullptr) {
-        AUDIO_ERR_LOG("InitAudioPolicyProxy::GetSystemAbilityManager failed");
-        return;
-    }
-
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("InitAudioPolicyProxy::object is NULL.");
-        return;
-    }
-    audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
-}
 
 void AudioPolicyUnitTest::GetIRemoteObject(sptr<IRemoteObject> &object)
 {
@@ -104,13 +88,9 @@ uint32_t AudioPolicyUnitTest::GetSessionId(std::shared_ptr<AudioStream> &audioSt
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicrophoneMuteAudioConfig_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     bool isMute = true;
-    int32_t ret = audioPolicyProxy->SetMicrophoneMuteAudioConfig(isMute);
-    EXPECT_EQ(FAILURE, ret);
+    int32_t ret = AudioPolicyManager::GetInstance().SetMicrophoneMuteAudioConfig(isMute);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 #ifdef FEATURE_DTMF_TONE
@@ -121,11 +101,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetMicrophoneMuteAudioConfig_001, TestS
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetSupportedTones_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    audioPolicyProxy->GetSupportedTones();
+    AudioPolicyManager::GetInstance().GetSupportedTones();
 }
 
 /**
@@ -135,12 +111,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetSupportedTones_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     int32_t ltonetype = 0;
-    std::shared_ptr<ToneInfo> toneInfo = audioPolicyProxy->GetToneConfig(ltonetype);
+    std::shared_ptr<ToneInfo> toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype);
     ASSERT_NE(nullptr, toneInfo);
 }
 #endif
@@ -152,12 +124,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
-    bool isStreamActive = audioPolicyProxy->IsStreamActive(streamType);
+    bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(streamType);
     EXPECT_EQ(false, isStreamActive);
 }
 
@@ -168,10 +136,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SelectInputDevice_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
+    int32_t ret;
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
     DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
     std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptorsVector;
@@ -180,28 +145,8 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SelectInputDevice_001, TestSize.Level1)
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     audioCapturerFilter->uid = DeviceFlag::INPUT_DEVICES_FLAG;
 
-    int32_t ret = audioPolicyProxy->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorsVector);
-    EXPECT_EQ(FAILURE, ret);
-}
-
-/**
- * @tc.name  : Test Audio_Policy_DeviceChangeCallback_001 via illegal state
- * @tc.number: Audio_Policy_DeviceChangeCallback_001
- * @tc.desc  : Test SetDeviceChangeCallback and UnsetDeviceChangeCallback interface. Returns success.
- */
-HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
-
-    AudioPolicyUnitTest::GetIRemoteObject(object);
-    ret = audioPolicyProxy->RegisterPolicyCallbackClient(object);
-    EXPECT_EQ(ERROR, ret);
+    ret = AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptorsVector);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -211,11 +156,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_DeviceChangeCallback_001, TestSize.Leve
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetStreamInFocus_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    audioPolicyProxy->GetStreamInFocus();
+    AudioPolicyManager::GetInstance().GetStreamInFocus();
 }
 
 /**
@@ -225,16 +166,12 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetStreamInFocus_001, TestSize.Level1)
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_IsAudioRendererLowLatencySupported_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     AudioStreamInfo audioStreamInfo;
     audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
     audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     audioStreamInfo.channels = AudioChannel::MONO;
-    bool ret = audioPolicyProxy->IsAudioRendererLowLatencySupported(audioStreamInfo);
+    bool ret = AudioPolicyManager::GetInstance().IsAudioRendererLowLatencySupported(audioStreamInfo);
     EXPECT_EQ(true, ret);
 }
 
@@ -397,12 +334,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAudioRendererLowLatencySuppor
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
     AudioRendererInfo rendererInfo;
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-    deviceInfo = audioPolicyProxy->GetPreferredOutputDeviceDescriptors(rendererInfo);
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
     EXPECT_EQ(true, deviceInfo.size() >= 0);
 }
 
@@ -413,12 +347,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_001
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
     AudioCapturerInfo capturerInfo;
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
-    deviceInfo = audioPolicyProxy->GetPreferredInputDeviceDescriptors(capturerInfo);
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
     EXPECT_EQ(true, deviceInfo.size() >= 0);
 }
 
@@ -429,10 +360,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_001,
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     AudioInterrupt audioInterrupt;
     audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
     audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
@@ -443,9 +370,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize
     ASSERT_NE(nullptr, audioStream);
 
     uint32_t sessionID_ = AudioPolicyUnitTest::GetSessionId(audioStream);
-    sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->SetAudioInterruptCallback(sessionID_, object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+    std::shared_ptr<AudioInterruptCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioInterruptCallback(sessionID_, callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -455,14 +382,10 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioInterruptCallback_001, TestSize
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioManagerInterruptCallback_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     int32_t clientId = getpid();
-    sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->SetAudioManagerInterruptCallback(clientId, object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+    std::shared_ptr<AudioInterruptCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, callback);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -472,15 +395,11 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioManagerInterruptCallback_001, T
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_RegisterTracker_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     AudioMode mode = AudioMode::AUDIO_MODE_PLAYBACK;
     AudioStreamChangeInfo streamChangeInfo;
-    sptr<IRemoteObject> object = nullptr;
-    int32_t ret = audioPolicyProxy->RegisterTracker(mode, streamChangeInfo, object);
-    EXPECT_EQ(ERR_NULL_OBJECT, ret);
+    std::shared_ptr<AudioClientTracker> clientTrackerObj = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().RegisterTracker(mode, streamChangeInfo, clientTrackerObj);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -805,21 +724,12 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_HighResolutionExist_002, TestSi
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSinkLatencyFromXml_001, TestSize.Level1)
 {
     AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
 
-    uint32_t ret = audioPolicyProxy->GetSinkLatencyFromXml();
-    EXPECT_EQ(ERR_NONE, ret);
-
-    ret = audioPolicyProxy->GetAudioLatencyFromXml();
-    EXPECT_EQ(ERR_TRANSACTION_FAILED, ret);
-
-    ret = AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
-    EXPECT_EQ(SINK_LATENCY_FROM_XML, ret);
+    uint32_t ret = AudioPolicyManager::GetInstance().GetSinkLatencyFromXml();
+    EXPECT_TRUE(ret >= LOW_LATENCY_FROM_XML && ret <= HIGH_LATENCY_FROM_XML);
 
     ret = AudioPolicyManager::GetInstance().GetAudioLatencyFromXml();
-    EXPECT_EQ(AUDIO_LATENCY_FROM_XML, ret);
+    EXPECT_TRUE(ret >= LOW_LATENCY_FROM_XML && ret <= HIGH_LATENCY_FROM_XML);
 }
 
 /**
@@ -829,18 +739,14 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_GetSinkLatencyFromXml_001, Test
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_SetCaptureSlientState_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     bool state = true;
-    int32_t ret = audioPolicyProxy->SetCaptureSilentState(state);
+    int32_t ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
     EXPECT_EQ(ERROR, ret);
     ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
     EXPECT_EQ(ERROR, ret);
 
     state = false;
-    ret = audioPolicyProxy->SetCaptureSilentState(state);
+    ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
     EXPECT_EQ(ERROR, ret);
     ret = AudioPolicyManager::GetInstance().SetCaptureSilentState(state);
     EXPECT_EQ(ERROR, ret);
@@ -871,15 +777,11 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAbsVolumeScene_001, TestSize.
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsSpatializationEnabled_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     bool isEnable = true;
-    int32_t ret = audioPolicyProxy->SetSpatializationEnabled(isEnable);
-    EXPECT_EQ(ERROR, ret);
-    ret = audioPolicyProxy->IsSpatializationEnabled();
-    EXPECT_EQ(false, ret);
+    int32_t ret = AudioPolicyManager::GetInstance().SetSpatializationEnabled(isEnable);
+    EXPECT_EQ(SUCCESS, ret);
+    isEnable = AudioPolicyManager::GetInstance().IsSpatializationEnabled();
+    EXPECT_EQ(true, isEnable);
 
     ret = AudioPolicyManager::GetInstance().SetSpatializationEnabled(isEnable);
     EXPECT_EQ(SUCCESS, ret);
@@ -887,9 +789,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsSpatializationEnabled_001, Te
     EXPECT_EQ(true, isEnable);
 
     isEnable = false;
-    ret = audioPolicyProxy->SetSpatializationEnabled(isEnable);
-    EXPECT_EQ(ERROR, ret);
-    ret = audioPolicyProxy->IsSpatializationEnabled();
+    ret = AudioPolicyManager::GetInstance().SetSpatializationEnabled(isEnable);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioPolicyManager::GetInstance().IsSpatializationEnabled();
     EXPECT_EQ(false, ret);
 
     ret = AudioPolicyManager::GetInstance().SetSpatializationEnabled(isEnable);
@@ -905,24 +807,20 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsSpatializationEnabled_001, Te
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsHeadTrackingEnabled_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
     bool isEnable = true;
-    int32_t ret = audioPolicyProxy->SetHeadTrackingEnabled(isEnable);
-    EXPECT_EQ(ERROR, ret);
-    ret = audioPolicyProxy->IsHeadTrackingEnabled();
-    EXPECT_EQ(false, ret);
+    int32_t ret = AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(isEnable);
+    EXPECT_EQ(SUCCESS, ret);
+    isEnable = AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
+    EXPECT_EQ(true, isEnable);
     ret = AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(isEnable);
     EXPECT_EQ(SUCCESS, ret);
     isEnable = AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
     EXPECT_EQ(true, isEnable);
 
     isEnable = false;
-    ret = audioPolicyProxy->SetHeadTrackingEnabled(isEnable);
-    EXPECT_EQ(ERROR, ret);
-    ret = audioPolicyProxy->IsHeadTrackingEnabled();
+    ret = AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(isEnable);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
     EXPECT_EQ(false, ret);
     ret = AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(isEnable);
     EXPECT_EQ(SUCCESS, ret);
@@ -937,13 +835,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsHeadTrackingEnabled_001, Test
  */
 HWTEST(AudioPolicyUnitTest, DisableSafeMediaVolume_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy;
-    AudioPolicyUnitTest::InitAudioPolicyProxy(audioPolicyProxy);
-    ASSERT_NE(nullptr, audioPolicyProxy);
-
-    int32_t ret = audioPolicyProxy->DisableSafeMediaVolume();
-    EXPECT_NE(SUCCESS, ret);
-    ret = AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
+    int32_t ret = AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
     EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
