@@ -228,6 +228,7 @@ private:
     void InitSafeStatus(bool isFirstBoot);
     void InitSafeTime(bool isFirstBoot);
     void ConvertSafeTime(void);
+    void UpdateSafeVolume();
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -261,6 +262,9 @@ private:
     int64_t safeActiveTime_ = 0;
     int64_t safeActiveBtTime_ = 0;
     int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
+    bool isWiredBoot_ = true;
+    bool isBtBoot_ = true;
+    bool isBtFirstSetVolume_ = true;
 
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     AudioSessionCallback *sessionCallback_;

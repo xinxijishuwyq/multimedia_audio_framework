@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <unistd.h>
+#include <string>
 
 #include "parameter.h"
 #include "parameters.h"
@@ -113,8 +114,10 @@ bool AudioAdapterManager::Init()
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
     }
 
+    std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC));
+    AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
     char currentSafeVolumeValue[3] = {0};
-    ret = GetParameter("const.audio.safe_media_volume", "15",
+    ret = GetParameter("const.audio.safe_media_volume", defaultSafeVolume.c_str(),
         currentSafeVolumeValue, sizeof(currentSafeVolumeValue));
     if (ret > 0) {
         safeVolume_ = atoi(currentSafeVolumeValue);
@@ -178,12 +181,12 @@ void AudioAdapterManager::InitKVStoreInternal()
 
     if (!isNeedCopyVolumeData_ && !isNeedCopyMuteData_ && !isNeedCopyRingerModeData_ && !isNeedCopySystemUrlData_) {
         isAllCopyDone_ = true;
-        InitSafeStatus(true);
-        InitSafeTime(true);
     }
 
     if (isAllCopyDone_ && audioPolicyKvStore_ != nullptr) {
         // delete KvStore
+        InitSafeStatus(true);
+        InitSafeTime(true);
         AUDIO_INFO_LOG("Copy audio_policy private database success to settings database, delete private database...");
         DeleteAudioPolicyKvStore();
     }
@@ -286,6 +289,13 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     // In case if KvStore didnot connect during bootup
     if (!isLoaded_) {
         InitKVStoreInternal();
+    }
+
+    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO || currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (isBtFirstSetVolume_ && volumeLevel > safeVolume_) {
+            volumeLevel = safeVolume_;
+            isBtFirstSetVolume_ = false;
+        }
     }
 
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
@@ -559,6 +569,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(InternalDeviceType deviceType
 
     LoadVolumeMap();
     LoadMuteStatusMap();
+    UpdateSafeVolume();
 
     auto iter = VOLUME_TYPE_LIST.begin();
     while (iter != VOLUME_TYPE_LIST.end()) {
@@ -1061,19 +1072,42 @@ void AudioAdapterManager::DeleteAudioPolicyKvStore()
     }
 }
 
+void AudioAdapterManager::UpdateSafeVolume()
+{
+    if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) <= safeVolume_) {
+        return;
+    }
+    AUDIO_INFO_LOG("update current volume to safevolume, device:%{public}d", currentActiveDevice_);
+    switch (currentActiveDevice_) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            if (isWiredBoot_) {
+                volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
+                volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
+                isWiredBoot_ = false;
+            }
+            break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            if (isBtBoot_) {
+                volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
+                volumeDataMaintainer_.SaveVolume(currentActiveDevice_, STREAM_MUSIC, safeVolume_);
+                isBtBoot_ = false;
+            }
+            break;
+        default:
+            AUDIO_ERR_LOG("current device: %{public}d is not support", currentActiveDevice_);
+            break;
+    }
+}
+
 void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 {
     if (!isFirstBoot) {
         LoadVolumeMap();
-        if (volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC) > safeVolume_ &&
-            (currentActiveDevice_ == DEVICE_TYPE_WIRED_HEADSET ||
-            currentActiveDevice_ == DEVICE_TYPE_WIRED_HEADPHONES ||
-            currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO ||
-            currentActiveDevice_ == DEVICE_TYPE_USB_HEADSET)) {
-            AUDIO_INFO_LOG("update current volume to safevolume");
-            volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, safeVolume_);
-        }
+        UpdateSafeVolume();
         return;
     }
     AUDIO_INFO_LOG("InitVolumeMap: Wrote default stream volumes to KvStore");
@@ -1088,6 +1122,7 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
     }
     // reLoad the current device volume
     LoadVolumeMap();
+    UpdateSafeVolume();
 }
 
 void AudioAdapterManager::ResetRemoteCastDeviceVolume()
