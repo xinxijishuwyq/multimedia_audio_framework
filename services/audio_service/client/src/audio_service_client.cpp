@@ -37,6 +37,9 @@
 #include "power_mgr_client.h"
 #endif
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -2930,17 +2933,20 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 
     AUDIO_INFO_LOG("Applied volume %{public}f, systemVolume %{public}f, volumeFactor %{public}f", vol, systemVolumeDb,
         client.volumeFactor_);
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
-        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1,
-        "STREAMID", client.sessionID_,
-        "APP_UID", client.clientUid_,
-        "APP_PID", client.clientPid_,
-        "STREAMTYPE", client.streamType_,
-        "VOLUME", vol,
-        "SYSVOLUME", systemVolumeLevel,
-        "VOLUMEFACTOR", client.volumeFactor_,
-        "POWERVOLUMEFACTOR", client.powerVolumeFactor_);
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::VOLUME_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", static_cast<int32_t>(client.sessionID_));
+    bean->Add("APP_UID", client.clientUid_);
+    bean->Add("APP_PID", client.clientPid_);
+    bean->Add("STREAMTYPE", client.streamType_);
+    bean->Add("VOLUME", vol);
+    bean->Add("SYSVOLUME", systemVolumeLevel);
+    bean->Add("VOLUMEFACTOR", client.volumeFactor_);
+    bean->Add("POWERVOLUMEFACTOR", client.powerVolumeFactor_);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType streamType)

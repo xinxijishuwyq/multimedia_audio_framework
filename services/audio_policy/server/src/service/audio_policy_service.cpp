@@ -42,6 +42,9 @@
 #include "audio_converter_parser.h"
 #include "audio_dialog_ability_connection.h"
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -4299,11 +4302,13 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
             if ((deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADSET)
                 || (deviceDescriptor->deviceType_ == DEVICE_TYPE_USB_HEADSET)
                 || (deviceDescriptor->deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES)) {
-                HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "HEADSET_CHANGE",
-                    HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-                    "ISCONNECT", isConnected ? 1 : 0,
-                    "HASMIC", 1,
-                    "DEVICETYPE", deviceDescriptor->deviceType_);
+                std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                    Media::MediaMonitor::AUDIO, Media::MediaMonitor::HEADSET_CHANGE,
+                    Media::MediaMonitor::BEHAVIOR_EVENT);
+                bean->Add("HASMIC", 1);
+                bean->Add("ISCONNECT", isConnected ? 1 : 0);
+                bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
+                Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
             }
 
             if (!isConnected) {
@@ -4313,28 +4318,50 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
             if (deviceDescriptor->deviceRole_ == OUTPUT_DEVICE) {
                 vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
                 for (SinkInput sinkInput : sinkInputs) {
-                    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "DEVICE_CHANGE",
-                        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-                        "ISOUTPUT", 1,
-                        "STREAMID", sinkInput.streamId,
-                        "STREAMTYPE", sinkInput.streamType,
-                        "DEVICETYPE", deviceDescriptor->deviceType_,
-                        "NETWORKID", deviceDescriptor->networkId_);
+                    WriteInDeviceChangedSysEvents(deviceDescriptor, sinkInput);
                 }
             } else if (deviceDescriptor->deviceRole_ == INPUT_DEVICE) {
                 vector<SourceOutput> sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
                 for (SourceOutput sourceOutput : sourceOutputs) {
-                    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "DEVICE_CHANGE",
-                        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-                        "ISOUTPUT", 0,
-                        "STREAMID", sourceOutput.streamId,
-                        "STREAMTYPE", sourceOutput.streamType,
-                        "DEVICETYPE", deviceDescriptor->deviceType_,
-                        "NETWORKID", deviceDescriptor->networkId_);
+                    WriteOutDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
                 }
             }
         }
     }
+}
+
+void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    const SinkInput &sinkInput)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::DEVICE_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", sinkInput.streamId);
+    bean->Add("STREAMTYPE", sinkInput.streamType);
+    bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
+    bean->Add("NETWORKID", deviceDescriptor->networkId_);
+    bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
+    bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
+    bean->Add("CATEGORY", deviceDescriptor->deviceCategory_);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    const SourceOutput &sourceOutput)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::DEVICE_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", sourceOutput.streamId);
+    bean->Add("STREAMTYPE", sourceOutput.streamType);
+    bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
+    bean->Add("NETWORKID", deviceDescriptor->networkId_);
+    bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
+    bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
+    bean->Add("CATEGORY", deviceDescriptor->deviceCategory_);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioPolicyService::UpdateTrackerDeviceChange(const vector<sptr<AudioDeviceDescriptor>> &desc)
