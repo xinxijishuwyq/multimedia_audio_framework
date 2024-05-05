@@ -436,11 +436,14 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
     int32_t result;
     if (GetStreamForVolumeMap(streamType) == STREAM_MUSIC &&
         currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
+        result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel, true);
 #ifdef BLUETOOTH_ENABLE
         if (result == SUCCESS) {
             // set to avrcp device
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
+        } else if (result == ERR_UNKNOWN) {
+            return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_,
+                audioPolicyManager_.GetSafeVolumeLevel());
         } else {
             AUDIO_ERR_LOG("AudioPolicyService::SetSystemVolumeLevel set abs volume failed");
         }
@@ -4661,11 +4664,6 @@ void AudioPolicyService::CreateCheckMusicActiveThread()
 
 int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice)
 {
-    if (!IsStreamActive(STREAM_MUSIC)) {
-        AUDIO_DEBUG_LOG("It is not a music stream, no need to deal with safe volume");
-        return volumeLevel;
-    }
-
     if (isA2dpDevice) {
         AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveDevice_.deviceCategory_);
         if (currentActiveDevice_.deviceCategory_ != BT_HEADPHONE) {
@@ -4736,7 +4734,8 @@ int32_t AudioPolicyService::ShowDialog()
     return result;
 }
 
-int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel)
+int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel,
+    bool internalCall)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
@@ -4745,7 +4744,17 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     configInfoPos->second.volumeLevel = volumeLevel;
     int32_t sVolumeLevel = volumeLevel;
     if (volumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
-        sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+        if (internalCall) {
+            sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+        } else {
+            if (isAbsBtFirstBoot_) {
+                sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
+                isAbsBtFirstBoot_ = false;
+                Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
+            } else {
+                sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+            }
+        }
     }
     configInfoPos->second.volumeLevel = sVolumeLevel;
     if (sVolumeLevel > 0) {
@@ -4753,7 +4762,7 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     AUDIO_DEBUG_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
-    CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
+    CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
 }
 

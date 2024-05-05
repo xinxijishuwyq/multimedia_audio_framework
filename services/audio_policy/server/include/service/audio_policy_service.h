@@ -372,7 +372,7 @@ public:
 
     bool IsAbsVolumeScene() const;
 
-    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
 
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
 
@@ -909,6 +909,7 @@ private:
     bool userSelect_ = false;
     std::unique_ptr<std::thread> calculateLoopSafeTime_ = nullptr;
     bool safeVolumeExit_ = false;
+    bool isAbsBtFirstBoot_ = true;
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;
