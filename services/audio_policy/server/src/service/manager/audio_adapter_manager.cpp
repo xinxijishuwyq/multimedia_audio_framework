@@ -268,8 +268,7 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, 
     }
 }
 
-int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
-    bool /* isFromVolumeKey */)
+int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_, volumeLevel);
@@ -301,31 +300,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
     volumeDataMaintainer_.SaveVolume(currentActiveDevice_, streamType, volumeLevel);
 
-    UpdateRingerModeForVolume(streamType, volumeLevel);
-
-    UpdateMuteStatusForVolume(streamType, volumeLevel);
-
     return SetVolumeDb(streamType);
-}
-
-void AudioAdapterManager::UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel)
-{
-    //The ringer mode is automatically updated based on the ringtone volume
-    if (streamType != STREAM_RING) {
-        return;
-    }
-    if (volumeLevel > 0 && (ringerMode_ == RINGER_MODE_SILENT || ringerMode_ == RINGER_MODE_VIBRATE)) {
-        // ringtone volume > 0, change the ringer mode to RINGER_MODE_NORMAL
-        SetRingerModeInternal(RINGER_MODE_NORMAL);
-    } else if (volumeLevel == 0 && ringerMode_ == RINGER_MODE_NORMAL) {
-        // ringtone volume == 0, change the ringer mode to RINGER_MODE_VIBRATE
-        SetRingerModeInternal(RINGER_MODE_VIBRATE);
-    }
-}
-
-void AudioAdapterManager::UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel)
-{
-    volumeDataMaintainer_.UpdateMuteStatusForVolume(currentActiveDevice_, streamType, volumeLevel);
 }
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
@@ -373,9 +348,9 @@ int32_t AudioAdapterManager::SetVolumeDbForVolumeTypeGroup(const std::vector<Aud
     return result;
 }
 
-int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey)
+int32_t AudioAdapterManager::GetSystemVolumeLevel(AudioStreamType streamType)
 {
-    if (!isFromVolumeKey && GetStreamMute(streamType)) {
+    if (GetStreamMuteInternal(streamType)) {
         return MIN_VOLUME_LEVEL;
     }
 
@@ -406,12 +381,6 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
     }
 
     volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_, streamType, mute);
-
-    if (!mute && volumeDataMaintainer_.GetStreamVolume(streamType) == 0) {
-        AUDIO_INFO_LOG("SetStreamMute: stream type %{public}d is unmuted, but the volume is 0. Set to 1.", streamType);
-        volumeDataMaintainer_.SetStreamVolume(streamType, 1);
-        volumeDataMaintainer_.SaveVolume(currentActiveDevice_, streamType, 1);
-    }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
     return SetVolumeDb(streamType);
@@ -601,18 +570,6 @@ int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
 {
     AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
     ringerMode_ = ringerMode;
-
-    switch (ringerMode) {
-        case RINGER_MODE_SILENT:
-        case RINGER_MODE_VIBRATE:
-            SetStreamMuteInternal(STREAM_RING, true);
-            break;
-        case RINGER_MODE_NORMAL:
-            SetStreamMuteInternal(STREAM_RING, false);
-            break;
-        default:
-            break;
-    }
 
     // In case if KvStore didnot connect during bootup
     if (!isLoaded_) {
