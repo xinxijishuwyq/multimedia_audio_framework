@@ -391,11 +391,6 @@ void OffloadAudioRendererSinkInner::DeInit()
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
-
-    if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
-    }
-    audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     callbackServ = {};
 
