@@ -733,6 +733,7 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
     const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
+    const char *streamDuckVolume = pa_proplist_gets(i->proplist, "stream.duckVolumeFactor");
     const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
     int32_t uid = -1;
     int32_t pid = -1;
@@ -749,11 +750,12 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     string streamType(streamtype);
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
+    float duckVolumeFactor = atof(streamDuckVolume);
     AudioStreamType streamTypeID = thiz->GetIdByStreamType(streamType);
     auto volumePair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamTypeID);
     float volumeDbCb = volumePair.first;
     int32_t volumeLevel = volumePair.second;
-    float vol = volumeDbCb * volumeFactor * powerVolumeFactor;
+    float vol = volumeDbCb * volumeFactor * powerVolumeFactor * duckVolumeFactor;
 
     pa_cvolume cv = i->volume;
     uint32_t volume = pa_sw_volume_from_linear(vol);
