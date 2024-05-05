@@ -451,7 +451,8 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
     DeviceInfo deviceInfo;
     bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
     if (ret) {
-        AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType is%{public}d", deviceInfo.deviceType);
+        AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
+            "supportLowLatency: %{public}d", deviceInfo.deviceType, deviceInfo.isLowLatencyDevice);
         return deviceInfo;
     } else {
         AUDIO_WARNING_LOG("GetProcessDeviceInfo from audio policy server failed!");

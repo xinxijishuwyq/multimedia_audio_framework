@@ -60,6 +60,8 @@ public:
 
     int32_t NotifyWakeUpCapturerRemoved();
 
+    bool IsAbsVolumeSupported();
+
     bool GetHighResolutionExist();
 
     void SetHighResolutionExist(bool isHighResExist);

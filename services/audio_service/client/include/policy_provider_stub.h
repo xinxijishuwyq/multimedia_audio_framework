@@ -32,6 +32,7 @@ private:
     int32_t HandleSetWakeupCapturer(MessageParcel &data, MessageParcel &reply);
     int32_t HandleSetCapturer(MessageParcel &data, MessageParcel &reply);
     int32_t HandleWakeupCapturerRemoved(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleIsAbsVolumeSupported(MessageParcel &data, MessageParcel &reply);
 
     using HandlerFunc = int32_t(PolicyProviderStub::*)(MessageParcel &data, MessageParcel &reply);
     static inline HandlerFunc funcList_[IPolicyProviderMsg::POLICY_PROVIDER_MAX_MSG] = {
@@ -40,6 +41,7 @@ private:
         &PolicyProviderStub::HandleSetWakeupCapturer,
         &PolicyProviderStub::HandleSetCapturer,
         &PolicyProviderStub::HandleWakeupCapturerRemoved,
+        &PolicyProviderStub::HandleIsAbsVolumeSupported,
     };
 };
 
@@ -54,6 +56,7 @@ public:
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint32_t sessionId) override;
     int32_t NotifyWakeUpCapturerRemoved() override;
+    bool IsAbsVolumeSupported() override;
 private:
     IPolicyProvider *policyWorker_;
 };

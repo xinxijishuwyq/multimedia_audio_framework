@@ -1589,6 +1589,11 @@ int32_t AudioPolicyService::NotifyWakeUpCapturerRemoved()
     return SUCCESS;
 }
 
+bool AudioPolicyService::IsAbsVolumeSupported()
+{
+    return IsAbsVolumeScene();
+}
+
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 {
     AUDIO_INFO_LOG("Start");

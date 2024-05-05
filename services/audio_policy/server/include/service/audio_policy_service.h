@@ -134,6 +134,8 @@ public:
 
     int32_t NotifyWakeUpCapturerRemoved();
 
+    bool IsAbsVolumeSupported();
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType) const;

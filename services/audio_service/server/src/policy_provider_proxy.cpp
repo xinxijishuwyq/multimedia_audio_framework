@@ -106,5 +106,19 @@ int32_t PolicyProviderProxy::NotifyWakeUpCapturerRemoved()
 
     return reply.ReadInt32();
 }
+
+bool PolicyProviderProxy::IsAbsVolumeSupported()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::IS_ABS_VOLUME_SUPPORTED, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+
+    return reply.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS
