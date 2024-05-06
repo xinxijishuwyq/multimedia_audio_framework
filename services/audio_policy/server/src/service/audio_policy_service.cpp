@@ -5112,7 +5112,7 @@ bool AudioPolicyService::GetSharedVolume(AudioVolumeType streamType, DeviceType 
 {
     CHECK_AND_RETURN_RET_LOG(volumeVector_ != nullptr, false, "Get shared memory failed!");
     size_t index = 0;
-    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+    if (!IPolicyProvider::GetVolumeIndex(streamType, GetVolumeGroupForDevice(deviceType), index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }
@@ -5126,7 +5126,7 @@ bool AudioPolicyService::SetSharedVolume(AudioVolumeType streamType, DeviceType 
 {
     CHECK_AND_RETURN_RET_LOG(volumeVector_ != nullptr, false, "Set shared memory failed!");
     size_t index = 0;
-    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+    if (!IPolicyProvider::GetVolumeIndex(streamType, GetVolumeGroupForDevice(deviceType), index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }

@@ -800,65 +800,39 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
 std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType)
 {
-    std::string type = GetVolumeGroupForDevice(deviceType);
-    CHECK_AND_RETURN_RET_LOG(type != "", type, "Device %{public}d is not supported for kvStore", deviceType);
+    DeviceGroup type = GetVolumeGroupForDevice(deviceType);
+    std::string typeStr = std::to_string(type);
+    CHECK_AND_RETURN_RET_LOG(type != DEVICE_GROUP_INVALID, typeStr,
+        "Device %{public}d is not supported for kvStore", deviceType);
 
     switch (streamType) {
         case STREAM_MUSIC:
-            return type + "_music_volume";
+            return typeStr + "_music_volume";
         case STREAM_RING:
-            return type + "_ring_volume";
+            return typeStr + "_ring_volume";
         case STREAM_SYSTEM:
-            return type + "_system_volume";
+            return typeStr + "_system_volume";
         case STREAM_NOTIFICATION:
-            return type + "_notification_volume";
+            return typeStr + "_notification_volume";
         case STREAM_ALARM:
-            return type + "_alarm_volume";
+            return typeStr + "_alarm_volume";
         case STREAM_DTMF:
-            return type + "_dtmf_volume";
+            return typeStr + "_dtmf_volume";
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
-            return type + "_voice_call_volume";
+            return typeStr + "_voice_call_volume";
         case STREAM_VOICE_ASSISTANT:
-            return type + "_voice_assistant_volume";
+            return typeStr + "_voice_assistant_volume";
         case STREAM_ACCESSIBILITY:
-            return type + "_accessibility_volume";
+            return typeStr + "_accessibility_volume";
         case STREAM_ULTRASONIC:
-            return type + "_ultrasonic_volume";
+            return typeStr + "_ultrasonic_volume";
         case STREAM_WAKEUP:
-            return type + "wakeup";
+            return typeStr + "wakeup";
         default:
             AUDIO_ERR_LOG("GetVolumeKeyForKvStore: streamType %{public}d is not supported for kvStore", streamType);
             return "";
     }
-}
-
-std::string AudioAdapterManager::GetVolumeGroupForDevice(DeviceType deviceType)
-{
-    std::string volumeGroup = "";
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-        case DEVICE_TYPE_SPEAKER:
-            volumeGroup = "build-in";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            volumeGroup = "wireless";
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-        case DEVICE_TYPE_DP:
-            volumeGroup = "wired";
-            break;
-        case DEVICE_TYPE_REMOTE_CAST:
-            volumeGroup = "remote-cast";
-            break;
-        default:
-            AUDIO_ERR_LOG("Device %{public}d is not invalid value for volume group", deviceType);
-            return "";
-    }
-    return volumeGroup;
 }
 
 AudioStreamType AudioAdapterManager::GetStreamIDByType(std::string streamType)

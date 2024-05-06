@@ -971,6 +971,43 @@ struct SourceInfo {
     uint32_t channels_;
 };
 
+/**
+ * @brief Device group used by set/get volume.
+ */
+enum DeviceGroup {
+    /** Invalid device group */
+    DEVICE_GROUP_INVALID = -1,
+    /** Built in device */
+    DEVICE_GROUP_BUILT_IN,
+    /** Wired device */
+    DEVICE_GROUP_WIRED,
+    /** Wireless device */
+    DEVICE_GROUP_WIRELESS,
+    /** Remote cast device */
+    DEVICE_GROUP_REMOTE_CAST,
+};
+
+static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
+    {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_DP, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
+    {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS},
+    {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+};
+
+static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
+{
+    auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
+    if (it == DEVICE_GROUP_FOR_VOLUME.end()) {
+        return DEVICE_GROUP_INVALID;
+    }
+    return it->second;
+}
+
 enum RouterType {
     /**
      * None router.
