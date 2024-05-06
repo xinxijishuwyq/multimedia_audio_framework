@@ -370,11 +370,6 @@ void MultiChannelRendererSinkInner::DeInit()
     }
     audioRender_ = nullptr;
     renderInited_ = false;
-
-    if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
-    }
-    audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     adapterInited_ = false;
 
