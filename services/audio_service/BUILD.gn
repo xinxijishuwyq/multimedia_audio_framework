@@ -157,12 +157,7 @@ ohos_shared_library("audio_client") {
     "../audio_policy:audio_policy_client",
   ]
 
-  include_dirs = [
-    "server/include",
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-  ]
+  include_dirs = [ "server/include" ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
@@ -509,12 +504,6 @@ ohos_executable("audio_service_playback_test") {
 
   deps = [ ":audio_client" ]
 
-  include_dirs = [
-    "../../../../commonlibrary/c_utils/base/include",
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-  ]
-
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
@@ -540,12 +529,6 @@ ohos_executable("audio_faststream_playback_test") {
     "../../frameworks/native/audioutils:audio_utils",
   ]
 
-  include_dirs = [
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-  ]
-
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
@@ -566,12 +549,6 @@ ohos_executable("audio_service_record_test") {
 
   configs = [ ":audio_client_public_config" ]
 
-  include_dirs = [
-    "../../../../commonlibrary/c_utils/base/include",
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-  ]
-
   deps = [ ":audio_client" ]
 
   external_deps = [
@@ -590,12 +567,6 @@ ohos_executable("audio_multichannel_test") {
   sources = [ "test/example/audio_multichannel_test.cpp" ]
 
   configs = [ ":audio_client_public_config" ]
-
-  include_dirs = [
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-  ]
 
   deps = [ ":audio_client" ]
 
