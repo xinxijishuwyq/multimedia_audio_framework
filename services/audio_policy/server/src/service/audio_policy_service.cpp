@@ -4739,6 +4739,22 @@ int32_t AudioPolicyService::ShowDialog()
     return result;
 }
 
+int32_t AudioPolicyService::HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel)
+{
+    int32_t sVolumeLevel = volumeLevel;
+    if (isAbsBtFirstBoot_) {
+        sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
+        isAbsBtFirstBoot_ = false;
+        Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
+    } else {
+        sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+        if (sVolumeLevel != volumeLevel) {
+            Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
+        }
+    }
+    return sVolumeLevel;
+}
+
 int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel,
     bool internalCall)
 {
@@ -4752,13 +4768,7 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
         if (internalCall) {
             sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
         } else {
-            if (isAbsBtFirstBoot_) {
-                sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
-                isAbsBtFirstBoot_ = false;
-                Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
-            } else {
-                sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
-            }
+            sVolumeLevel = HandleAbsBluetoothVolume(macAddress, volumeLevel);
         }
     }
     configInfoPos->second.volumeLevel = sVolumeLevel;

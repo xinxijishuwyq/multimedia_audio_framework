@@ -761,6 +761,8 @@ private:
 
     int32_t ShowDialog();
 
+    int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel);
+
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
     bool isUpdateRouteSupported_ = true;
