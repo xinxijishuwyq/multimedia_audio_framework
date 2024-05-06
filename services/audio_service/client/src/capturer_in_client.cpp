@@ -95,6 +95,7 @@ public:
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     float GetVolume() override;
     int32_t SetVolume(float volume) override;
+    int32_t SetDuckVolume(float volume) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -881,6 +882,12 @@ float CapturerInClientInner::GetVolume()
 {
     AUDIO_WARNING_LOG("GetVolume is only for renderer");
     return 0.0;
+}
+
+int32_t CapturerInClientInner::SetDuckVolume(float volume)
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR;
 }
 
 int32_t CapturerInClientInner::SetSpeed(float speed)

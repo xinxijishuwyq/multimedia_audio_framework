@@ -153,6 +153,7 @@ public:
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
+    int32_t SetDuckVolume(float volume) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -363,6 +364,7 @@ private:
     std::condition_variable writeDataCV_;
 
     float lowPowerVolume_ = 1.0;
+    float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;
     float clientOldVolume_ = 1.0;
 
@@ -1046,6 +1048,17 @@ float RendererInClientInner::GetVolume()
 {
     Trace trace("RendererInClientInner::GetVolume:" + std::to_string(clientVolume_));
     return clientVolume_;
+}
+
+int32_t RendererInClientInner::SetDuckVolume(float volume)
+{
+    Trace trace("RendererInClientInner::SetDuckVolume:" + std::to_string(volume));
+    if (volume < 0.0 || volume > 1.0) {
+        AUDIO_ERR_LOG("SetDuckVolume with invalid volume %{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
+    duckVolume_ = volume;
+    return SUCCESS;
 }
 
 int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
@@ -2004,6 +2017,9 @@ int32_t RendererInClientInner::WriteCacheData()
     float applyVolume = clientVolume_;
     if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
         applyVolume *= lowPowerVolume_;
+    }
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= duckVolume_;
     }
     if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
         Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));

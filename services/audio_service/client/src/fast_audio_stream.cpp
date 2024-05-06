@@ -224,6 +224,14 @@ float FastAudioStream::GetVolume()
     return processClient_->GetVolume();
 }
 
+int32_t FastAudioStream::SetDuckVolume(float volume)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetDuckVolume failed: null process");
+    int32_t ret = processClient_->SetDuckVolume(volume);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDuckVolume error.");
+    return ret;
+}
+
 int32_t FastAudioStream::SetRenderRate(AudioRendererRate renderRate)
 {
     CHECK_AND_RETURN_RET(RENDER_RATE_NORMAL != renderRate, SUCCESS);
@@ -346,13 +354,13 @@ int32_t FastAudioStream::Clear()
 int32_t FastAudioStream::SetLowPowerVolume(float volume)
 {
     AUDIO_INFO_LOG("SetLowPowerVolume enter.");
-    return 1.0f;
+    return SUCCESS;
 }
 
 float FastAudioStream::GetLowPowerVolume()
 {
     AUDIO_INFO_LOG("GetLowPowerVolume enter.");
-    return 1.0f;
+    return SUCCESS;
 }
 
 int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)

@@ -752,18 +752,12 @@ void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
 
 bool AudioRendererInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
-    if (!isForceDucked_) {
-        // This stream need to be ducked. Update instanceVolBeforeDucking_
-        instanceVolBeforeDucking_ = audioStream_->GetVolume();
-    }
-
     float duckVolumeFactor = interruptEvent.duckVolume;
-    int32_t ret = audioStream_->SetVolume(instanceVolBeforeDucking_ * duckVolumeFactor);
+    int32_t ret = audioStream_->SetDuckVolume(duckVolumeFactor);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Failed to set duckVolumeFactor(instance) %{public}f",
         duckVolumeFactor);
 
-    AUDIO_INFO_LOG("Set duckVolumeFactor %{public}f successfully. instanceVolBeforeDucking: %{public}f",
-        duckVolumeFactor, instanceVolBeforeDucking_);
+    AUDIO_INFO_LOG("Set duckVolumeFactor %{public}f successfully.", duckVolumeFactor);
     return true;
 }
 
@@ -815,11 +809,9 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
                 AUDIO_WARNING_LOG("It is not forced ducked, don't unduck or notify app");
                 return;
             }
-            (void)audioStream_->SetVolume(instanceVolBeforeDucking_);
-            AUDIO_INFO_LOG("Unduck Volume(instance) successfully: instanceVolBeforeDucking_ %{public}f",
-                instanceVolBeforeDucking_);
+            (void)audioStream_->SetDuckVolume(1.0f);
+            AUDIO_INFO_LOG("Unduck Volume successfully");
             isForceDucked_ = false;
-            instanceVolBeforeDucking_ = 1.0f;
             break;
         default: // If the hintType is NONE, don't need to send callbacks
             return;

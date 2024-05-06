@@ -1079,6 +1079,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(volumeFactor_).c_str());
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(powerVolumeFactor_).c_str());
+    pa_proplist_sets(propList, "stream.duckVolumeFactor", std::to_string(duckVolumeFactor_).c_str());
     sessionID_ = pa_context_get_index(context);
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
@@ -2719,6 +2720,68 @@ float AudioServiceClient::GetStreamVolume()
     return volumeFactor_;
 }
 
+int32_t AudioServiceClient::SetStreamDuckVolume(float volume)
+{
+    Trace trace("AudioServiceClient::SetStreamDuckVolume " +std::to_string(volume));
+    lock_guard<mutex> lock(ctrlMutex_);
+    AUDIO_INFO_LOG("SetDuckVolume volume: %{public}f", volume);
+
+    int32_t res = CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
+    CHECK_AND_RETURN_RET_LOG(res >= 0, AUDIO_CLIENT_PA_ERR, "set stream duck volume: invalid stream state");
+
+    /* Validate and return INVALID_PARAMS error */
+    CHECK_AND_RETURN_RET_LOG((volume >= MIN_STREAM_VOLUME_LEVEL) && (volume <= MAX_STREAM_VOLUME_LEVEL),
+        AUDIO_CLIENT_INVALID_PARAMS_ERR, "Invalid Volume Input!");
+
+    pa_threaded_mainloop_lock(mainLoop);
+    int32_t ret = SetStreamDuckVolumeInML(volume);
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return ret;
+}
+
+int32_t AudioServiceClient::SetStreamDuckVolumeInML(float volume)
+{
+    duckVolumeFactor_ = volume;
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "stream.duckVolumeFactor", std::to_string(duckVolumeFactor_).c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    if (updatePropOperation == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_proplist_update returned null");
+        pa_proplist_free(propList);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    if (!streamInfoUpdated_) {
+        uint32_t idx = pa_stream_get_index(paStream);
+        pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
+            reinterpret_cast<void *>(this));
+        if (operation == nullptr) {
+            AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+            return AUDIO_CLIENT_ERR;
+        }
+
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainLoop);
+        }
+
+        pa_operation_unref(operation);
+    } else {
+        SetPaVolume(*this);
+    }
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::InitializePAProbListOffload()
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
@@ -3129,7 +3192,7 @@ float AudioServiceClient::GetSingleStreamVol()
     DeviceType deviceType = audioSystemManager_->GetActiveOutputDevice();
     float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(streamType_,
         systemVolumeLevel, deviceType);
-    return systemVolumeDb * volumeFactor_ * powerVolumeFactor_;
+    return systemVolumeDb * volumeFactor_ * powerVolumeFactor_ * duckVolumeFactor_;
 }
 
 // OnRenderMarkReach by eventHandler

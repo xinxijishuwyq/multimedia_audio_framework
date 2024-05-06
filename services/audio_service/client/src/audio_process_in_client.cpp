@@ -90,6 +90,8 @@ public:
 
     float GetVolume() override;
 
+    int32_t SetDuckVolume(float vol) override;
+
     uint32_t GetUnderflowCount() override;
 
     uint32_t GetOverflowCount() override;
@@ -191,6 +193,7 @@ private:
     int64_t lastPausedTime_ = INT64_MAX;
 
     float volumeInFloat_ = 1.0f;
+    float duckVolumeInFloat_ = 1.0f;
     int32_t processVolume_ = PROCESS_VOLUME_MAX; // 0 ~ 65536
     LinearPosTimeModel handleTimeModel_;
 
@@ -386,6 +389,16 @@ int32_t AudioProcessInClientInner::SetVolume(float vol)
 float AudioProcessInClientInner::GetVolume()
 {
     return volumeInFloat_;
+}
+
+int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
+{
+    float minVol = 0.0f;
+    float maxVol = 1.0f;
+    CHECK_AND_RETURN_RET_LOG(vol >= minVol && vol <= maxVol, ERR_INVALID_PARAM,
+        "SetDuckVolume failed to with invalid volume:%{public}f", vol);
+    duckVolumeInFloat_ = vol;
+    return SUCCESS;
 }
 
 uint32_t AudioProcessInClientInner::GetUnderflowCount()
@@ -757,7 +770,7 @@ void AudioProcessInClientInner::CopyWithVolume(const BufferDesc &srcDesc, const 
     for (size_t pos = 0; len > 0; len--) {
         int32_t sum = 0;
         int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer) + pos;
-        sum += (*srcPtr * static_cast<int64_t>(processVolume_)) >> VOLUME_SHIFT_NUMBER; // 1/65536
+        sum += (*srcPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_)) >> VOLUME_SHIFT_NUMBER; // 1/65536
         pos++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
@@ -771,7 +784,7 @@ void AudioProcessInClientInner::ProcessVolume(const AudioStreamData &targetData)
     int16_t *dstPtr = reinterpret_cast<int16_t *>(targetData.bufferDesc.buffer);
     for (; len > 0; len--) {
         int32_t sum = 0;
-        sum += (*dstPtr * static_cast<int64_t>(processVolume_)) >> VOLUME_SHIFT_NUMBER;
+        sum += (*dstPtr * static_cast<int64_t>(processVolume_ * duckVolumeInFloat_)) >> VOLUME_SHIFT_NUMBER;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
     }
 }
@@ -1397,8 +1410,8 @@ bool AudioProcessInClientInner::FinishHandleCurrent(uint64_t &curWritePos, int64
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false,
         "SetCurWriteFrame %{public}" PRIu64" failed, ret:%{public}d", curWritePos, ret);
     tempSpan->writeDoneTime = ClockTime::GetCurNano();
-    tempSpan->volumeStart = processVolume_;
-    tempSpan->volumeEnd = processVolume_;
+    tempSpan->volumeStart = static_cast<int32_t>(processVolume_ * duckVolumeInFloat_);
+    tempSpan->volumeEnd = static_cast<int32_t>(processVolume_ * duckVolumeInFloat_);
     clientWriteCost = tempSpan->writeDoneTime - tempSpan->writeStartTime;
 
     return true;
