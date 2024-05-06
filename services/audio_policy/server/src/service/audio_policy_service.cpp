@@ -4090,6 +4090,11 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 {
     if (mode == AUDIO_MODE_RECORD) {
         AddAudioCapturerMicrophoneDescriptor(streamChangeInfo.audioCapturerChangeInfo.sessionId, DEVICE_TYPE_NONE);
+        UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo,
+            new AudioDeviceDescriptor(currentActiveInputDevice_), false, false);
+    } else {
+        UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo,
+            new AudioDeviceDescriptor(currentActiveDevice_), false, false);
     }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
