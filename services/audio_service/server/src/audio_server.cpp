@@ -103,6 +103,31 @@ std::map<AsrNoiseSuppressionMode, std::string> nsModeMapVerse = {
     {AsrNoiseSuppressionMode::FAR_FIELD, "FAR_FIELD"}
 };
 
+class CapturerStateOb final : public ICapturerStateCallback {
+public:
+    explicit CapturerStateOb(std::function<void(bool, int32_t)> callback) : callback_(callback)
+    {
+        num_ = count_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    ~CapturerStateOb() override final
+    {
+        count_.fetch_sub(1, std::memory_order_relaxed);
+    }
+
+    void OnCapturerState(bool isActive) override final
+    {
+        callback_(isActive, num_);
+    }
+
+private:
+    static inline std::atomic<int32_t> count_ = 0;
+    int32_t num_;
+
+    // callback to audioserver
+    std::function<void(bool, int32_t)> callback_;
+};
+
 std::vector<std::string> splitString(const std::string& str, const std::string& pattern)
 {
     std::vector<std::string> res;
@@ -1080,16 +1105,38 @@ void AudioServer::OnWakeupClose()
     callback->OnWakeupClose();
 }
 
-void AudioServer::OnCapturerState(bool isActive)
+void AudioServer::OnCapturerState(bool isActive, int32_t num)
 {
     AUDIO_DEBUG_LOG("OnCapturerState Callback start");
     std::shared_ptr<WakeUpSourceCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
-        isAudioCapturerSourcePrimaryStarted_ = isActive;
-        CHECK_AND_RETURN_LOG(wakeupCallback_ != nullptr, "OnCapturerState callback is nullptr.");
         callback = wakeupCallback_;
     }
+
+    // Ensure that the send callback is not executed concurrently
+    std::lock_guard<std::mutex> lockCb(onCapturerStateCbMutex_);
+
+    uint64_t previousStateFlag;
+    uint64_t currentStateFlag;
+    if (isActive) {
+        uint64_t tempFlag = static_cast<uint64_t>(1) << num;
+        previousStateFlag = capturerStateFlag_.fetch_or(tempFlag);
+        currentStateFlag = previousStateFlag | tempFlag;
+    } else {
+        uint64_t tempFlag = ~(static_cast<uint64_t>(1) << num);
+        previousStateFlag = capturerStateFlag_.fetch_and(tempFlag);
+        currentStateFlag = previousStateFlag & tempFlag;
+    }
+    bool previousState = previousStateFlag;
+    bool currentState = currentStateFlag;
+
+    if (previousState == currentState) {
+        // state not change, need not trigger callback
+        return;
+    }
+
+    CHECK_AND_RETURN_LOG(callback != nullptr, "OnCapturerState callback is nullptr.");
     callback->OnCapturerState(isActive);
 }
 
@@ -1128,16 +1175,20 @@ int32_t AudioServer::SetWakeupSourceCallback(const sptr<IRemoteObject>& object)
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM,
         "SetWakeupCloseCallback listener obj cast failed");
 
-    std::shared_ptr<WakeUpSourceCallback> wakeupCallback = std::make_shared<AudioManagerListenerCallback>(listener);
+    std::shared_ptr<AudioManagerListenerCallback> wakeupCallback
+        = std::make_shared<AudioManagerListenerCallback>(listener);
     CHECK_AND_RETURN_RET_LOG(wakeupCallback != nullptr, ERR_INVALID_PARAM,
         "SetWakeupCloseCallback failed to create cb obj");
 
     {
         std::lock_guard<std::mutex> lockSet(setWakeupCloseCallbackMutex_);
         wakeupCallback_ = wakeupCallback;
-
-        wakeupCallback->OnCapturerState(isAudioCapturerSourcePrimaryStarted_);
     }
+
+    std::thread([this, wakeupCallback] {
+        std::lock_guard<std::mutex> lockCb(onCapturerStateCbMutex_);
+        wakeupCallback->TrigerFirstOnCapturerStateCallback(capturerStateFlag_);
+    }).detach();
 
     AUDIO_INFO_LOG("SetWakeupCloseCallback done");
 
@@ -1364,10 +1415,21 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         audioCapturerSourceWakeupInstance->RegisterWakeupCloseCallback(this);
     }
 
-    IAudioCapturerSource* audioCapturerSourceInstance =
+    IAudioCapturerSource* primaryAudioCapturerSourceInstance =
         IAudioCapturerSource::GetInstance("primary", nullptr, SOURCE_TYPE_MIC);
-    if (audioCapturerSourceInstance != nullptr) {
-        audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(this);
+
+    IAudioCapturerSource *usbAudioCapturerSinkInstance = IAudioCapturerSource::GetInstance("usb", "");
+
+    for (auto audioCapturerSourceInstance : {
+        primaryAudioCapturerSourceInstance,
+        usbAudioCapturerSinkInstance
+    }) {
+        if (audioCapturerSourceInstance != nullptr) {
+            audioCapturerSourceInstance->RegisterAudioCapturerSourceCallback(make_unique<CapturerStateOb>(
+                [this] (bool isActive, int32_t num) {
+                    this->OnCapturerState(isActive, num);
+                }));
+        }
     }
 }
 

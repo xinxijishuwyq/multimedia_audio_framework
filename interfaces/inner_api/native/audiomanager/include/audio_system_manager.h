@@ -296,6 +296,8 @@ public:
 class WakeUpSourceCallback : public AudioCapturerSourceCallback, public WakeUpSourceCloseCallback {
 public:
     virtual ~WakeUpSourceCallback() = default;
+    // Stop all listening capturers from sending false callbacks;
+    // when all capturers have stopped, allow one capturer to start sending true callbacks
     virtual void OnCapturerState(bool isActive) = 0;
     virtual void OnWakeupClose() = 0;
 };

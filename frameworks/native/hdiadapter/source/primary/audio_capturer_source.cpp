@@ -72,7 +72,7 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
     int32_t Preload(const std::string &usbInfoStr) override;
@@ -137,8 +137,7 @@ private:
     IAudioSourceCallback* wakeupCloseCallback_ = nullptr;
     std::mutex wakeupClosecallbackMutex_;
 
-    IAudioSourceCallback* audioCapturerSourceCallback_ = nullptr;
-    std::mutex audioCapturerSourceCallbackMutex_;
+    std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
     DeviceType currentActiveDevice_;
@@ -175,7 +174,7 @@ public:
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
     float GetMaxAmplitude() override;
 
@@ -649,13 +648,8 @@ int32_t AudioCapturerSourceInner::Start(void)
 
     int32_t ret;
     if (!started_) {
-        IAudioSourceCallback* callback = nullptr;
-        {
-            std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-            callback = audioCapturerSourceCallback_;
-        }
-        if (callback != nullptr) {
-            callback->OnCapturerState(true);
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(false);
         }
 
         ret = audioCapture_->Start(audioCapture_);
@@ -946,13 +940,8 @@ int32_t AudioCapturerSourceInner::Stop(void)
     }
     started_ = false;
 
-    IAudioSourceCallback* callback = nullptr;
-    {
-        std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-        callback = audioCapturerSourceCallback_;
-    }
-    if (callback != nullptr) {
-        callback->OnCapturerState(false);
+    if (audioCapturerSourceCallback_ != nullptr) {
+        audioCapturerSourceCallback_->OnCapturerState(false);
     }
 
     return SUCCESS;
@@ -1005,14 +994,12 @@ void AudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback 
     AUDIO_INFO_LOG("Register WakeupClose Callback");
     std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
     wakeupCloseCallback_ = callback;
-    callback->OnCapturerState(started_);
 }
 
-void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
+void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
 {
     AUDIO_INFO_LOG("Register AudioCapturerSource Callback");
-    std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-    audioCapturerSourceCallback_ = callback;
+    audioCapturerSourceCallback_ = std::move(callback);
 }
 
 void AudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
@@ -1339,9 +1326,9 @@ void AudioCapturerSourceWakeup::RegisterWakeupCloseCallback(IAudioSourceCallback
     audioCapturerSource_.RegisterWakeupCloseCallback(callback);
 }
 
-void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
+void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
 {
-    audioCapturerSource_.RegisterAudioCapturerSourceCallback(callback);
+    audioCapturerSource_.RegisterAudioCapturerSourceCallback(std::move(callback));
 }
 
 void AudioCapturerSourceWakeup::RegisterParameterCallback(IAudioSourceCallback *callback)

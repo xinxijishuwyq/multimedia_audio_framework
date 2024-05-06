@@ -68,7 +68,7 @@ void AudioCapturerFileSource::RegisterWakeupCloseCallback(IAudioSourceCallback *
     AUDIO_WARNING_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
-void AudioCapturerFileSource::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
+void AudioCapturerFileSource::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
 {
     AUDIO_WARNING_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
