@@ -886,6 +886,7 @@ float CapturerInClientInner::GetVolume()
 
 int32_t CapturerInClientInner::SetDuckVolume(float volume)
 {
+    AUDIO_WARNING_LOG("only for renderer");
     return ERROR;
 }
 
