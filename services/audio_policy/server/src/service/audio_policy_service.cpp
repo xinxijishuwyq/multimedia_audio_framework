@@ -4342,19 +4342,19 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
             if (deviceDescriptor->deviceRole_ == OUTPUT_DEVICE) {
                 vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
                 for (SinkInput sinkInput : sinkInputs) {
-                    WriteInDeviceChangedSysEvents(deviceDescriptor, sinkInput);
+                    WriteOutDeviceChangedSysEvents(deviceDescriptor, sinkInput);
                 }
             } else if (deviceDescriptor->deviceRole_ == INPUT_DEVICE) {
                 vector<SourceOutput> sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
                 for (SourceOutput sourceOutput : sourceOutputs) {
-                    WriteOutDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
+                    WriteInDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
                 }
             }
         }
     }
 }
 
-void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
     const SinkInput &sinkInput)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -4371,13 +4371,13 @@ void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDes
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
     const SourceOutput &sourceOutput)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::DEVICE_CHANGE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
-    bean->Add("ISOUTPUT", 1);
+    bean->Add("ISOUTPUT", 0);
     bean->Add("STREAMID", sourceOutput.streamId);
     bean->Add("STREAMTYPE", sourceOutput.streamType);
     bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
