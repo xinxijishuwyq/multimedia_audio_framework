@@ -586,9 +586,6 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         }
 
         SendActiveInterruptEvent(activeSessionId, interruptEvent, incomingInterrupt);
-
-        policyServer_->OffloadStreamCheck(incomingInterrupt.sessionId, incomingInterrupt.audioFocusType.streamType,
-            activeSessionId);
     }
 
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
