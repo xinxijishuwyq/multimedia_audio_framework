@@ -2761,11 +2761,6 @@ int32_t AudioServiceClient::SetStreamDuckVolumeInML(float volume)
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
 
-    if (audioSystemManager_ == nullptr) {
-        AUDIO_ERR_LOG("System manager instance is null");
-        return AUDIO_CLIENT_ERR;
-    }
-
     if (!streamInfoUpdated_) {
         uint32_t idx = pa_stream_get_index(paStream);
         pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
