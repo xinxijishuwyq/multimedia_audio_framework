@@ -180,5 +180,9 @@ int32_t AudioRouterCenter::UnsetAudioDeviceRefinerCallback()
     return SUCCESS;
 }
 
+bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
+{
+    return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
