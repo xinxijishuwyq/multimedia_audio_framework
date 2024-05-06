@@ -77,7 +77,6 @@ public:
     int32_t WriteData();
     void WriteEmptyData();
     int32_t DrainAudioBuffer();
-    int32_t GetInfo();
 
     // for inner-cap
     int32_t EnableInnerCap();
