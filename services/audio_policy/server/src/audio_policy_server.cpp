@@ -1583,6 +1583,11 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
     }
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
+        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
+        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
+        OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, streamChangeInfo.audioRendererChangeInfo.sessionId);
+    }
     return audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
 }
 
