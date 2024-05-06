@@ -200,7 +200,6 @@ private:
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
-    std::string GetVolumeGroupForDevice(DeviceType deviceType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
