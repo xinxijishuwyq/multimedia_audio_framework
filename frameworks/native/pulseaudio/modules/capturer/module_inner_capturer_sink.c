@@ -43,7 +43,7 @@
 
 #include "securec.h"
 #include "audio_log.h"
-#include "../../../audioutils/include/audio_utils_c.h"
+#include "audio_utils_c.h"
 
 PA_MODULE_AUTHOR("OpenHarmony");
 PA_MODULE_DESCRIPTION(_("Inner Capturer Sink"));
