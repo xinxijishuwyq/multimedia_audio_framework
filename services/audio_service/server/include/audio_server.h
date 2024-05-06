@@ -94,7 +94,6 @@ public:
 
     // IAudioSourceCallback
     void OnWakeupClose() override;
-    void OnCapturerState(bool isActive) override;
     void OnAudioSourceParamChange(const std::string &netWorkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
 
@@ -135,6 +134,8 @@ public:
     void ResetAudioEndpoint() override;
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+
+    void OnCapturerState(bool isActive, int32_t num);
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -169,8 +170,13 @@ private:
     int32_t audioUid_ = 1041;
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
-    bool isAudioCapturerSourcePrimaryStarted_ = false;
+
+    // Capturer status flags: each capturer is represented by a single bit.
+    // 0 indicates the capturer has stopped; 1 indicates the capturer has started.
+    std::atomic<uint64_t> capturerStateFlag_ = 0;
+
     std::shared_ptr<AudioParameterCallback> audioParamCb_;
+    std::mutex onCapturerStateCbMutex_;
     std::shared_ptr<WakeUpSourceCallback> wakeupCallback_;
     std::mutex audioParamCbMtx_;
     std::mutex setWakeupCloseCallbackMutex_;

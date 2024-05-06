@@ -109,6 +109,7 @@ void AudioManagerListenerCallback::OnAudioParameterChange(const std::string netw
 void AudioManagerListenerCallback::OnCapturerState(bool isActive)
 {
     if (listener_ != nullptr) {
+        isFirstOnCapturerStateCallbackSent_ = true;
         listener_->OnCapturerState(isActive);
     }
 }
@@ -117,6 +118,13 @@ void AudioManagerListenerCallback::OnWakeupClose()
 {
     if (listener_ != nullptr) {
         listener_->OnWakeupClose();
+    }
+}
+
+void AudioManagerListenerCallback::TrigerFirstOnCapturerStateCallback(bool isActive)
+{
+    if (!isFirstOnCapturerStateCallbackSent_.exchange(true)) {
+        OnCapturerState(isActive);
     }
 }
 } // namespace AudioStandard

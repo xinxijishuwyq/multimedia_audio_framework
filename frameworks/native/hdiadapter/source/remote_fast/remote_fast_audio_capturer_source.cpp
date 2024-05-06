@@ -77,7 +77,7 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
@@ -755,7 +755,8 @@ void RemoteFastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourc
     AUDIO_WARNING_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
-void RemoteFastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
+void RemoteFastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(
+    std::unique_ptr<ICapturerStateCallback> callback)
 {
     AUDIO_WARNING_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }
