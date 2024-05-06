@@ -19,7 +19,7 @@
 #include "audio_effect.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "../../audioutils/include/audio_utils.h"
+#include "audio_utils.h"
 #include "securec.h"
 
 #define DEVICE_FLAG
