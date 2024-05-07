@@ -14,12 +14,6 @@
 import("//build/ohos.gni")
 import("../../../config.gni")
 
-opensles_dir = "//third_party/openSLES"
-
-group("libsl") {
-  public_deps = [ "//third_party/openSLES:libSLES" ]
-}
-
 config("audio_config") {
   include_dirs = [
     "../audiocapturer/include",
@@ -43,7 +37,6 @@ if (!audio_framework_feature_opensl_es) {
     deps = []
   }
 } else {
-  opensles_version = "1.0.1"
   ohos_shared_library("opensles") {
     sanitize = {
       cfi = true
@@ -51,7 +44,6 @@ if (!audio_framework_feature_opensl_es) {
       debug = false
     }
     include_dirs = [
-      "$opensles_dir/api/$opensles_version",
       "include",
       "../../../interfaces/inner_api/native/andiocapturer/include/",
       "../../../interfaces/inner_api/native/andiomanager/include/",
@@ -61,8 +53,6 @@ if (!audio_framework_feature_opensl_es) {
     configs = [ ":audio_config" ]
 
     sources = [
-      "$opensles_dir/api/$opensles_version/OpenSLES_IID.c",
-      "$opensles_dir/api/$opensles_version/OpenSLES_OpenHarmony_IID.c",
       "src/adapter/audiocapturer_adapter.cpp",
       "src/adapter/audioplayer_adapter.cpp",
       "src/adapter/readorwritecallback_adapter.cpp",
@@ -83,7 +73,6 @@ if (!audio_framework_feature_opensl_es) {
     cflags = [ "-Werror" ]
 
     deps = [
-      ":libsl",
       "../../../services/audio_service:audio_client",
       "../audiocapturer:audio_capturer",
       "../audiorenderer:audio_renderer",
@@ -92,6 +81,7 @@ if (!audio_framework_feature_opensl_es) {
     external_deps = [
       "hilog:libhilog",
       "ipc:ipc_single",
+      "opensles:libSLES",
     ]
 
     output_name = "OpenSLES"
@@ -129,10 +119,7 @@ config("audio_operation_config") {
 }
 
 config("audio_opensles_config") {
-  include_dirs = [
-    "include",
-    "$opensles_dir/api/1.0.1",
-  ]
+  include_dirs = [ "include" ]
 }
 
 if (!audio_framework_feature_opensl_es) {
@@ -150,13 +137,11 @@ if (!audio_framework_feature_opensl_es) {
       ":audio_operation_config",
     ]
 
-    deps = [
-      ":libsl",
-      ":opensles",
-    ]
+    deps = [ ":opensles" ]
 
     external_deps = [
       "hilog:libhilog",
+      "opensles:libSLES",
       "pulseaudio:pulse",
     ]
 
@@ -180,13 +165,11 @@ if (!audio_framework_feature_opensl_es) {
       ":audio_operation_config",
     ]
 
-    deps = [
-      ":libsl",
-      ":opensles",
-    ]
+    deps = [ ":opensles" ]
 
     external_deps = [
       "hilog:libhilog",
+      "opensles:libSLES",
       "pulseaudio:pulse",
     ]
 
