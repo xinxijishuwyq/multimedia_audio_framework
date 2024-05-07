@@ -748,7 +748,7 @@ void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, cons
     CastValue<int32_t>(uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
     CastValue<int32_t>(pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
     CHECK_AND_RETURN_LOG((streamtype != nullptr) && (streamVolume != nullptr) && (streamPowerVolume != nullptr) &&
-        (sessionCStr != nullptr), "Invalid Stream parameter info.");
+        (streamDuckVolume != nullptr) && (sessionCStr != nullptr), "Invalid Stream parameter info.");
 
     uint32_t sessionID = 0;
     CastValue<uint32_t>(sessionID, sessionCStr);
