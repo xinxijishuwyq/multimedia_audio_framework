@@ -427,8 +427,10 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
     float mVolumeFactor = 1.0f;
     float mPowerVolumeFactor = 1.0f;
+    float mDuckVolumeFactor = 1.0f;
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
+    pa_proplist_sets(propList, "stream.duckVolumeFactor", std::to_string(mDuckVolumeFactor).c_str());
     auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     const std::string streamStartTime = ctime(&timenow);
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
