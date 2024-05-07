@@ -208,7 +208,7 @@ AudioEnhanceChainManager *AudioEnhanceChainManager::GetInstance()
     return &audioEnhanceChainManager;
 }
 
-int32_t FindEnhanceLib(std::string &enhance,
+int32_t FindEnhanceLib(const std::string &enhance,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList, AudioEffectLibEntry **libEntry,
     std::string &libName)
 {
@@ -256,7 +256,7 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
     for (std::string enhance : enhanceSet) {
         int32_t ret = FindEnhanceLib(enhance, enhanceLibraryList, &libEntry, libName);
         CHECK_AND_CONTINUE_LOG(ret != ERROR, "Couldn't find libEntry of effect %{public}s", enhance.c_str());
-        ret = CheckValidEnhanceLibEntry(libEntry, enhance, libName);
+        CheckValidEnhanceLibEntry(libEntry, enhance, libName);
         enhanceToLibraryEntryMap_[enhance] = libEntry;
         enhanceToLibraryNameMap_[enhance] = libName;
     }

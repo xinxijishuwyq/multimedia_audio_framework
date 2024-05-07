@@ -99,7 +99,7 @@ private:
     int32_t InitAdapterAndCapture();
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
-    void CheckLatencySignal(uint8_t *frames, size_t replyBytes);
+    void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
 
