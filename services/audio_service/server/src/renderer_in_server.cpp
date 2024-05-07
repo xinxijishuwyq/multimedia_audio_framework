@@ -438,12 +438,6 @@ int32_t RendererInServer::DrainAudioBuffer()
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetInfo()
-{
-    IStreamManager::GetPlaybackManager().GetInfo();
-    return SUCCESS;
-}
-
 int32_t RendererInServer::Drain()
 {
     {

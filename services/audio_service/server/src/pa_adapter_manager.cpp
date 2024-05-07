@@ -767,13 +767,6 @@ uint32_t PaAdapterManager::ConvertChLayoutToPaChMap(const uint64_t &channelLayou
     return channelNum;
 }
 
-int32_t PaAdapterManager::GetInfo()
-{
-    AUDIO_INFO_LOG("pa_context_get_state(),: %{public}d, pa_context_errno(): %{public}d",
-        pa_context_get_state(context_), pa_context_errno(context_));
-    return SUCCESS;
-}
-
 const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)
 {
     std::string name;
