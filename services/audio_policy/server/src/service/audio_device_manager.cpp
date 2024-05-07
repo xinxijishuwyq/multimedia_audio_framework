@@ -360,6 +360,7 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (auto iter : connectedDevices_) {
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
+        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
         devices.append(" ");
     }
     devices.append("\n");
@@ -396,6 +397,7 @@ void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devD
     std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (auto iter : connectedDevices_) {
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
+        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
         devices.append(" ");
     }
     devices.append("\n");
