@@ -423,7 +423,7 @@ enum AudioScene : int32_t {
      * Voice ringing audio scene
      * Only available for system api.
      */
-    AUDIO_SCENE_RINGING,
+    AUDIO_SCENE_VOICE_RINGING,
     /**
      * Max
      */
