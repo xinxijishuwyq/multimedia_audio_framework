@@ -75,6 +75,7 @@
             "libuv",
             "googletest",
             "cJSON",
+            "opensles",
             "media_foundation"
             ],
           "third_party": [
