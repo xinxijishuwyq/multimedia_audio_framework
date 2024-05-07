@@ -51,6 +51,7 @@ namespace AudioStandard {
 
 constexpr uint64_t DSTATUS_SESSION_ID = 4294967296;
 constexpr uint32_t DSTATUS_DEFAULT_RATE = 48000;
+constexpr uint32_t LOCAL_USER_ID = 100;
 
 class AudioPolicyService;
 class AudioInterruptService;
@@ -532,7 +533,8 @@ public:
 
     void OnAccountsSwitch(const int &newId, const int &oldId) override
     {
-        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldId: %{public}d", newId, oldId);
+        CHECK_AND_RETURN_LOG(oldId >= LOCAL_USER_ID, "invalid id");
+        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldid: %{public}d", newId, oldId);
         if (audioPolicyServer_ != nullptr) {
             audioPolicyServer_->NotifyAccountsChanged(newId);
         }
