@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class PaRendererStreamImpl : public IRendererStream {
+class PaRendererStreamImpl : public std::enable_shared_from_this<PaRendererStreamImpl>, public IRendererStream {
 public:
     PaRendererStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop);
     ~PaRendererStreamImpl();
@@ -95,7 +95,6 @@ private:
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
-    std::mutex rendererStreamLock_;
     int32_t streamCmdStatus_;
     int32_t streamDrainStatus_;
     int32_t streamFlushStatus_;
