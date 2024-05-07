@@ -122,6 +122,7 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::CreateS
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_DTMF)] = STREAM_DTMF;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
 
     return streamMap;
 }
@@ -278,6 +279,7 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:{
             bool ret = PermissionUtil::VerifySelfPermission();
@@ -377,6 +379,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_ASSISTANT:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
@@ -404,6 +407,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
@@ -480,6 +484,7 @@ int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
@@ -509,6 +514,7 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{

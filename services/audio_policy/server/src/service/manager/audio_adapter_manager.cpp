@@ -61,6 +61,7 @@ static const std::vector<AudioStreamType> VOICE_CALL_VOLUME_TYPE_LIST = {
 static const std::vector<AudioStreamType> RINGTONE_VOLUME_TYPE_LIST = {
     // all stream types for ringtone volume type
     STREAM_RING,
+    STREAM_VOICE_RING,
     STREAM_SYSTEM,
     STREAM_NOTIFICATION,
     STREAM_SYSTEM_ENFORCED,
@@ -327,7 +328,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
     } else if (streamType == STREAM_MUSIC) {
         return SetVolumeDbForVolumeTypeGroup(MEDIA_VOLUME_TYPE_LIST, volumeDb);
-    } else if (streamType == STREAM_RING) {
+    } else if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING) {
         return SetVolumeDbForVolumeTypeGroup(RINGTONE_VOLUME_TYPE_LIST, volumeDb);
     }
 
@@ -809,6 +810,7 @@ std::string AudioAdapterManager::GetVolumeKeyForKvStore(DeviceType deviceType, A
         case STREAM_MUSIC:
             return typeStr + "_music_volume";
         case STREAM_RING:
+        case STREAM_VOICE_RING:
             return typeStr + "_ring_volume";
         case STREAM_SYSTEM:
             return typeStr + "_system_volume";
@@ -873,6 +875,7 @@ AudioStreamType AudioAdapterManager::GetStreamForVolumeMap(AudioStreamType strea
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:
@@ -1356,6 +1359,7 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
         case STREAM_MUSIC:
             return type + "_music_mute_status";
         case STREAM_RING:
+        case STREAM_VOICE_RING:
             return type + "_ring_mute_status";
         case STREAM_SYSTEM:
             return type + "_system_mute_status";

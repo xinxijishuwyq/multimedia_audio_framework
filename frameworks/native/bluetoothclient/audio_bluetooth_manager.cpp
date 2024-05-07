@@ -332,7 +332,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     bool isInbardingEnabled = false;
     hfpInstance_->IsInbandRingingEnabled(isInbardingEnabled);
-    if (scene == AUDIO_SCENE_RINGING && !isInbardingEnabled) {
+    if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbardingEnabled) {
         AUDIO_INFO_LOG("The inbarding switch is off, ignore the ring scene.");
         return SUCCESS;
     }
@@ -372,9 +372,10 @@ int32_t AudioHfpManager::DisconnectSco()
 int8_t AudioHfpManager::GetScoCategoryFromScene(AudioScene scene)
 {
     switch (scene) {
-        case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_VOICE_RINGING:
         case AUDIO_SCENE_PHONE_CALL:
             return ScoCategory::SCO_CALLULAR;
+        case AUDIO_SCENE_RINGING:
         case AUDIO_SCENE_PHONE_CHAT:
             return ScoCategory::SCO_VIRTUAL;
         default:
