@@ -948,7 +948,7 @@ void RendererInClientInner::WriteCallbackFunc()
             return cbBufferQueue_.IsEmpty() == false; // will be false when got notified.
         });
         if (cbBufferQueue_.IsEmpty()) {
-            AUDIO_WARNING_LOG("cbBufferQueue_ is empty");
+            AUDIO_DEBUG_LOG("cbBufferQueue_ is empty");
         }
     }
     AUDIO_INFO_LOG("CBThread end sessionID :%{public}d", sessionId_);
