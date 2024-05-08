@@ -466,6 +466,8 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
+        AUDIO_INFO_LOG("size: %{public}d, adapterNameCase %{public}s, adapterName %{public}s",
+            size, adapterNameCase.c_str(), desc->adapterName);
         if (!adapterNameCase.compare(desc->adapterName)) {
             for (uint32_t port = 0; port < desc->portsLen; port++) {
                 // Only find out the port of out in the sound card
@@ -1103,7 +1105,8 @@ int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
         return SUCCESS;
     }
 
-    InitManagerAndAdapter();
+    int32_t err = InitManagerAndAdapter();
+    CHECK_AND_RETURN_RET_LOG(err == 0, err, "Init audio manager and adapater failed");
 
     int32_t createCapture = CreateCapture(audioPort_);
     CHECK_AND_RETURN_RET_LOG(createCapture == 0, ERR_NOT_STARTED, "Create capture failed");
