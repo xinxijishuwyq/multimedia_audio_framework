@@ -567,7 +567,8 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_004, TestSiz
 /**
 * @tc.name   : Test UpdateSpatializationState API
 * @tc.number : UpdateSpatializationState_001
-* @tc.desc   : Test UpdateSpatializationState interface.Test UpdateSensorState, DeleteAllChains and RecoverAllChains interface simultaneously.
+* @tc.desc   : Test UpdateSpatializationState interface.Test UpdateSensorState,
+*              DeleteAllChains and RecoverAllChains interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_001, TestSize.Level1)
 {
@@ -782,7 +783,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_001, TestSize.Le
     uint64_t channelLayout = 0x3;
     AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, 
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels,
         &channelLayout);
     EXPECT_EQ(ERROR, result);
 }
