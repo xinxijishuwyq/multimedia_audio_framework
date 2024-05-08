@@ -974,7 +974,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
 {
     AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
-    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_MAX,
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "SetAudioScene failed audio render handle is null!");

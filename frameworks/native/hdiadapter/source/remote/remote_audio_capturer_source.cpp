@@ -599,7 +599,7 @@ int32_t RemoteAudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, Dev
     struct AudioSceneDescriptor scene;
     scene.scene.id = GetAudioCategory(audioScene);
     scene.desc.pins = AudioPortPin::PIN_IN_MIC;
-    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_MAX,
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
 
     AUDIO_INFO_LOG("AudioCapturerSource::SelectScene start");
