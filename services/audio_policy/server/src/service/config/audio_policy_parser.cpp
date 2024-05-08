@@ -342,7 +342,7 @@ void AudioPolicyParser::SplitStringToSet(std::string &str, std::set<uint32_t> &r
     std::string token;
 
     while (std::getline(ss, token, ',')) {
-        uint32_t num = std::stoi(token);
+        uint32_t num = static_cast<uint32_t>(std::stoi(token));
         result.insert(num);
     }
 }

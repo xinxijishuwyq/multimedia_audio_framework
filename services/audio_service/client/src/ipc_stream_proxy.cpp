@@ -211,7 +211,7 @@ int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioTime failed, error: %{public}d", ret);
     framePos = reply.ReadUint64();
-    timestamp = reply.ReadInt64();
+    timestamp = reply.ReadUint64();
     return ret;
 }
 
@@ -228,7 +228,7 @@ int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "error: %{public}d", ret);
     framePos = reply.ReadUint64();
-    timestamp = reply.ReadInt64();
+    timestamp = reply.ReadUint64();
     return ret;
 }
 
