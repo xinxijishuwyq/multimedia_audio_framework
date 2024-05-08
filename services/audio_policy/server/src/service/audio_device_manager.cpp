@@ -918,13 +918,15 @@ DeviceUsage AudioDeviceManager::GetDeviceUsage(const AudioDeviceDescriptor &desc
     AUDIO_DEBUG_LOG("device type [%{public}d] category [%{public}d]", desc.deviceType_, desc.deviceCategory_);
     DeviceUsage usage = MEDIA;
     for (auto &devInfo : privacyDeviceList_) {
-        if ((devInfo.deviceType == desc.deviceType_) && (devInfo.deviceCategory & desc.deviceCategory_)) {
+        if ((devInfo.deviceType == desc.deviceType_) &&
+            ((devInfo.deviceCategory & desc.deviceCategory_) || devInfo.deviceCategory == 0)) {
             return devInfo.deviceUsage;
         }
     }
 
     for (auto &devInfo : publicDeviceList_) {
-        if ((devInfo.deviceType == desc.deviceType_) && (devInfo.deviceCategory & desc.deviceCategory_)) {
+        if ((devInfo.deviceType == desc.deviceType_) &&
+            ((devInfo.deviceCategory & desc.deviceCategory_) || devInfo.deviceCategory == 0)) {
             return devInfo.deviceUsage;
         }
     }
