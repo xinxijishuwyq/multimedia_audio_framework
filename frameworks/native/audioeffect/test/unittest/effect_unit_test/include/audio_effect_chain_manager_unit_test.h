@@ -22,7 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 class AudioEffectChainManagerUnitTest : public testing::Test {
-public: 
+public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
     // TearDownTestCase: Called after all test case

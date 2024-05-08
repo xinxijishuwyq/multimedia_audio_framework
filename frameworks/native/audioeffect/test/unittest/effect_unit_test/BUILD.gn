@@ -20,34 +20,32 @@ pulseaudio_dir = "//third_party/pulseaudio"
 pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
 
 ohos_unittest("audio_effect_chain_manager_unit_test") {
-    module_out_path = module_output_path
-    include_dirs = [
-      "./include",
-      "../../../include",
-      "../../../../../../interfaces/inner_api/native/audiocommon/include",
-      "$pulseaudio_dir/src",
-      "$pulseaudio_dir/confgure/src",
-      multimedia_audio_framework_pulse_audio,
-    ]
-
-    cflags = [
-        "-Wall",
-        "-Werror",
-    ]
-
-  sources = [
-    "src/audio_effect_chain_manager_unit_test.cpp",
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "$pulseaudio_dir/src",
+    "$pulseaudio_dir/confgure/src",
+    multimedia_audio_framework_pulse_audio,
   ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  sources = [ "src/audio_effect_chain_manager_unit_test.cpp" ]
 
   deps = [
-      "../../../../audioutils:audio_utils",
-      "../../../../audioeffect:audio_effect",
-      "//third_party/googletest:gmock",
-      "//third_party/googletest:gtest",
-      "$pulseaudio_build_path/src/pulse:pulse",
+    "$pulseaudio_build_path/src/pulse:pulse",
+    "../../../../audioeffect:audio_effect",
+    "../../../../audioutils:audio_utils",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
   ]
-  
-  external_deps = [ 
+
+  external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:effect_idl_headers",
     "drivers_interface_audio:libeffect_proxy_1.0",
