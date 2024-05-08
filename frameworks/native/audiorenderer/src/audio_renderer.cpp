@@ -644,6 +644,8 @@ bool AudioRendererPrivate::Release() const
 {
     AUDIO_INFO_LOG("AudioRenderer::Release id: %{public}u", sessionID_);
 
+    bool result = audioStream_->ReleaseAudioStream();
+
     // If Stop call was skipped, Release to take care of Deactivation
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
@@ -652,7 +654,7 @@ bool AudioRendererPrivate::Release() const
 
     AudioPolicyManager::GetInstance().UnregisterOutputDeviceChangeWithInfoCallback(sessionID_);
 
-    return audioStream_->ReleaseAudioStream();
+    return result;
 }
 
 int32_t AudioRendererPrivate::GetBufferSize(size_t &bufferSize) const

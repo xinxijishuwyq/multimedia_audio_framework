@@ -2933,6 +2933,11 @@ int32_t AudioServiceClient::UnsetStreamOffloadMode()
 {
     lastOffloadUpdateFinishTime_ = 0;
     offloadEnable_ = false;
+
+    int32_t retCheck = CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
+    AUDIO_INFO_LOG("calling unset stream offloadMode paStatus: %{public}d", retCheck);
+    CHECK_AND_RETURN_RET(retCheck >= 0, AUDIO_CLIENT_PA_ERR);
+
     pa_threaded_mainloop_lock(mainLoop);
     int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
     pa_threaded_mainloop_unlock(mainLoop);
