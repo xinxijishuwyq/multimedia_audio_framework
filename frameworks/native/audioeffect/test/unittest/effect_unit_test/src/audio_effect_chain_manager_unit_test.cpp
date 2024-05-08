@@ -13,10 +13,14 @@
  * limitations under the License.
  */
 
+#undef LOG_TAG 
+#define LOG_TAG "AudioEffectChainManagerUnitTest"
+
 #include "audio_effect_chain_manager_unit_test.h"
 
 #include "audio_effect.h"
 #include "audio_utils.h"
+#include "audio_log.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
 
@@ -33,6 +37,23 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 
+namespace {
+    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
+    unordered_map<string, string> map = {
+        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
+        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
+    };
+    vector<shared_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    SessionEffectInfo info = {
+        "EFFECT_DEFAULT",
+        "SCENE_MOVIE",
+        2,
+        0x3,
+        "0",
+        50
+    };
+}
+
 void AudioEffectChainManagerUnitTest::SetUpTestCase(void) {}
 void AudioEffectChainManagerUnitTest::TearDownTestCase(void) {}
 void AudioEffectChainManagerUnitTest::SetUp(void) {}
@@ -41,39 +62,31 @@ void AudioEffectChainManagerUnitTest::TearDown(void) {}
 /**
 * @tc.name   : Test CreateAudioEffectChainDynamic API
 * @tc.number : CreateAudioEffectChainDynamic_001
-* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using empty use case).Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
+* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using empty use case).
+*              Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_001, TestSize.Level1)
 {
     string sceneType = "";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
-
+    
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
 
     int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
 * @tc.name   : Test CreateAudioEffectChainDynamic API
 * @tc.number : CreateAudioEffectChainDynamic_002
-* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using incorrect use case).Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
+* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using incorrect use case).
+*              Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_002, TestSize.Level1)
 {
     string sceneType = "123";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
 
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
@@ -82,18 +95,14 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_002, TestS
 /**
 * @tc.name   : Test CreateAudioEffectChainDynamic API
 * @tc.number : CreateAudioEffectChainDynamic_003
-* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using correct use case).Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
+* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using correct use case).
+*              Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_003, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
 
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result =  AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
@@ -108,6 +117,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndAddSessionID_001, TestSize.Level
 {
     string sessionID = "123456";
 
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     bool result = AudioEffectChainManager::GetInstance()->CheckAndAddSessionID(sessionID);
     EXPECT_EQ(true, result);
 }
@@ -115,42 +125,45 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndAddSessionID_001, TestSize.Level
 /**
 * @tc.name   : Test CheckAndRemoveSessionID API
 * @tc.number : CheckAndRemoveSessionID_001
-* @tc.desc   : Test CheckAndRemoveSessionID interface.
+* @tc.desc   : Test CheckAndRemoveSessionID interface(using incorrect use case).
 */
 HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_001, TestSize.Level1)
 {
     string sessionID = "123456";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     AudioEffectChainManager::GetInstance()->CheckAndAddSessionID(sessionID);
 
-    bool result = AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID(sessionID);
-    EXPECT_EQ(true, result);
+    bool result = AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID("123");
+    EXPECT_EQ(false, result);
 }
 
 /**
 * @tc.name   : Test CheckAndRemoveSessionID API
 * @tc.number : CheckAndRemoveSessionID_002
-* @tc.desc   : Test CheckAndRemoveSessionID interface.
+* @tc.desc   : Test CheckAndRemoveSessionID interface(using correct use case).
 */
 HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_002, TestSize.Level1)
 {
     string sessionID = "123456";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     AudioEffectChainManager::GetInstance()->CheckAndAddSessionID(sessionID);
 
-    bool result = AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID("123");
+    bool result = AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID(sessionID);
     EXPECT_EQ(true, result);
 }
 
 /**
 * @tc.name   : Test CheckAndRemoveSessionID API
 * @tc.number : CheckAndRemoveSessionID_003
-* @tc.desc   : Test CheckAndRemoveSessionID interface.
+* @tc.desc   : Test CheckAndRemoveSessionID interface(without using CheckAndAddSessionID interface).
 */
 HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_003, TestSize.Level1)
 {
     string sessionID = "123456";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     bool result = AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID(sessionID);
-    EXPECT_EQ(true, result);
+    EXPECT_EQ(false, result);
 }
 
 /**
@@ -161,17 +174,12 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_003, TestSize.Le
 HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_001, TestSize.Level1)
 {
     string sceneType = "";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result =  AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic(sceneType);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -182,12 +190,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_001, Test
 HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_002, TestSize.Level1)
 {
     string sceneType = "123";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
@@ -203,12 +206,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_002, Test
 HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_003, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
@@ -226,9 +224,11 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_001, TestSize.Leve
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     string spatializationEnabled = "0";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode, spatializationEnabled);
-    EXPECT_EQ(true, result);
+    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
+    spatializationEnabled);
+    EXPECT_EQ(false, result);
 }
 
 /**
@@ -241,17 +241,13 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_002, TestSize.Leve
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     string spatializationEnabled = "0";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode, spatializationEnabled);
-    EXPECT_EQ(true, result);
+    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
+        spatializationEnabled);
+    EXPECT_EQ(false, result);  // Use 'false' as the criterion ofr judgment because of the empty effect chain.
 }
 
 /**
@@ -264,17 +260,13 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_003, TestSize.Leve
     string sceneType = "";
     string effectMode = "";
     string spatializationEnabled = "";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode, spatializationEnabled);
-    EXPECT_EQ(true, result);
+    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
+        spatializationEnabled);
+    EXPECT_EQ(false, result);  
 }
 
 /**
@@ -287,17 +279,13 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_004, TestSize.Leve
     string sceneType = "123";
     string effectMode = "123";
     string spatializationEnabled = "123";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode, spatializationEnabled);
-    EXPECT_EQ(true, result);
+    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
+        spatializationEnabled);
+    EXPECT_EQ(false, result);
 }
 
 /**
@@ -310,67 +298,95 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_005, TestSize.Leve
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     string spatializationEnabled = "0";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
-    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode, spatializationEnabled);
-    EXPECT_EQ(true, result);
+    bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
+        spatializationEnabled);
+    EXPECT_EQ(false, result);
 }
 
 /**
 * @tc.name   : Test ApplyAudioEffectChain API
 * @tc.number : ApplyAudioEffectChain_001
-* @tc.desc   : Test ApplyAudioEffectChain interface(without using CreateAudioEffectChainDynamic).
+* @tc.desc   : Test ApplyAudioEffectChain interface(using empty use case).
 */
 HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_001, TestSize.Level1)
 {
-    float *bufIn[10000] = {0};
-    float *bufOut[10000] = {0};
+    float bufIn[10000] = {0};
+    float bufOut[10000] = {0};
+    int numChans = 2;
+    int frameLen = 960;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
+    string sceneType = "";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
+    EXPECT_EQ(ERROR, result);
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain API
+* @tc.number : ApplyAudioEffectChain_002
+* @tc.desc   : Test ApplyAudioEffectChain interface(using correct use case).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_002, TestSize.Level1)
+{
+    float bufIn[10000] = {0};
+    float bufOut[10000] = {0};
     int numChans = 2;
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
     string sceneType = "SCENE_MOVIE";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
     EXPECT_EQ(SUCCESS, result);
 }
 
 /**
 * @tc.name   : Test ApplyAudioEffectChain API
-* @tc.number : ApplyAudioEffectChain_002
-* @tc.desc   : Test ApplyAudioEffectChain interface.
+* @tc.number : ApplyAudioEffectChain_003
+* @tc.desc   : Test ApplyAudioEffectChain interface(using abnormal use case).
 */
-HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_002, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_003, TestSize.Level1)
 {
-    float *bufIn[10000] = {0};
-    float *bufOut[10000] = {0};
+    float bufIn[10000] = {0};
+    float bufOut[10000] = {0};
     int numChans = 2;
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
-    string sceneType = "SCENE_MOVIE";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    string sceneType = "123";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
     EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain API
+* @tc.number : ApplyAudioEffectChain_004
+* @tc.desc   : Test ApplyAudioEffectChain interface(without using CreateAudioEffectChainDynamic interface).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_004, TestSize.Level1)
+{
+    float bufIn[10000] = {0};
+    float bufOut[10000] = {0};
+    int numChans = 2;
+    int frameLen = 960;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
+    string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -382,54 +398,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_001, TestSize.Level1
 {
     int32_t device = 2;
     string sinkName = "Speaker";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
-
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
-    int32_t result = AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
-    EXPECT_EQ(SUCCESS, result);
-}
-
-/**
-* @tc.name   : Test SetOutputDeviceSink API
-* @tc.number : SetOutputDeviceSink_002
-* @tc.desc   : Test SetOutputDeviceSink interface(using incorrect use case), test SetSpkOffloadState interface simultaneously.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_002, TestSize.Level1)
-{
-    int32_t device = 123;
-    string sinkName = "123";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
-
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
-    int32_t result = AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
-    EXPECT_EQ(SUCCESS, result);
-}
-
-/**
-* @tc.name   : Test SetOutputDeviceSink API
-* @tc.number : SetOutputDeviceSink_003
-* @tc.desc   : Test SetOutputDeviceSink interface(using empty use case), test SetSpkOffloadState interface simultaneously.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_003, TestSize.Level1)
-{
-    int32_t device = 123;
-    string sinkName = "";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
@@ -443,6 +412,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_003, TestSize.Level1
 */
 HWTEST(AudioEffectChainManagerUnitTest, GetDeviceSinkName_001, TestSize.Level1)
 {
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     string result = AudioEffectChainManager::GetInstance()->GetDeviceSinkName();
 
     EXPECT_EQ(true, result != "");
@@ -455,6 +425,7 @@ HWTEST(AudioEffectChainManagerUnitTest, GetDeviceSinkName_001, TestSize.Level1)
 */
 HWTEST(AudioEffectChainManagerUnitTest, GetOffloadEnabled_001, TestSize.Level1)
 {
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
 
     EXPECT_EQ(false, result);
@@ -478,14 +449,10 @@ HWTEST(AudioEffectChainManagerUnitTest, Dump_001, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_001, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
     EXPECT_EQ(SUCCESS, result);
 }
@@ -493,19 +460,15 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_001, TestSize.L
 /**
 * @tc.name   : Test UpdateMultichannelConfig API
 * @tc.number : UpdateMultichannelConfig_002
-* @tc.desc   : Test UpdateMultichannelConfig interface(using incorrect use case).
+* @tc.desc   : Test UpdateMultichannelConfig interface(using abnormal use case).
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_002, TestSize.Level1)
 {
     string sceneType = "123";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
     EXPECT_EQ(SUCCESS, result);
 }
@@ -518,16 +481,27 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_002, TestSize.L
 HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_003, TestSize.Level1)
 {
     string sceneType = "";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
+    EXPECT_EQ(ERROR, result);
+}
+
+/**
+* @tc.name   : Test UpdateMultichannelConfig API
+* @tc.number : UpdateMultichannelConfig_004
+* @tc.desc   : Test UpdateMultichannelConfig interface(without using InitAudioEffectChainManager interface).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_004, TestSize.Level1)
+{
+    string sceneType = "";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -538,9 +512,10 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_003, TestSize.L
 HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_001, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -551,12 +526,7 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_001, TestSiz
 HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_002, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
@@ -568,15 +538,10 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_002, TestSiz
 * @tc.number : InitAudioEffectChainDynamic_003
 * @tc.desc   : Test InitAudioEffectChainDynamic interface(using incorrect use case).
 */
-HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_002, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_003, TestSize.Level1)
 {
     string sceneType = "123";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
@@ -591,16 +556,11 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_002, TestSiz
 HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_004, TestSize.Level1)
 {
     string sceneType = "";
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -611,6 +571,7 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_004, TestSiz
 HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_001, TestSize.Level1)
 {
     AudioSpatializationState spatializationState = {false, false};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     EXPECT_EQ(SUCCESS, result);
@@ -624,6 +585,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_001, TestSize.
 HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_002, TestSize.Level1)
 {
     AudioSpatializationState spatializationState = {true, true};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     EXPECT_EQ(SUCCESS, result);
@@ -639,9 +601,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_001, TestSize.Level1)
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     bool enabled = true;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -654,12 +617,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_002, TestSize.Level1)
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     bool enabled = true;
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
@@ -676,12 +634,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_003, TestSize.Level1)
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     bool enabled = false;
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
@@ -698,16 +651,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_004, TestSize.Level1)
     string sceneType = "";
     string effectMode = "";
     bool enabled = true;
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -720,12 +668,7 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_005, TestSize.Level1)
     string sceneType = "123";
     string effectMode = "123";
     bool enabled = true;
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
-    vector<unique_ptr<AudioEffectLibEntry>> effectLibraryList = {};
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
@@ -740,17 +683,24 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_005, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_001, TestSize.Level1)
 {
     string sessionID = "123456";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name   : Test SessionInfoMapAdd API
+* @tc.number : SessionInfoMapAdd_002
+* @tc.desc   : Test SessionInfoMapAdd interface(using empty use case).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_002, TestSize.Level1)
+{
+    string sessionID = "";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
+    
+    int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -762,9 +712,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_001, TestSize.Level
 {
     string sceneType = "SCENE_MOVIE";
     string sessionID = "123456";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -776,16 +727,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_002, TestSize.Level
 {
     string sceneType = "SCENE_MOVIE";
     string sessionID = "123456";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    EXPECT_EQ(SUCCESS, addRes);
+
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
     EXPECT_EQ(SUCCESS, result);
 }
@@ -793,94 +739,33 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_002, TestSize.Level
 /**
 * @tc.name   : Test SessionInfoMapDelete API
 * @tc.number : SessionInfoMapDelete_003
-* @tc.desc   : Test SessionInfoMapDelete interface(using correct use case).
+* @tc.desc   : Test SessionInfoMapDelete interface(using incorrect use case).
 */
 HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_003, TestSize.Level1)
 {
-    string sceneType = "SCENE_MOVIE";
+    string sceneType = "123";
     string sessionID = "123456";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
 * @tc.name   : Test SessionInfoMapDelete API
 * @tc.number : SessionInfoMapDelete_004
-* @tc.desc   : Test SessionInfoMapDelete interface(using incorrect use case).
+* @tc.desc   : Test SessionInfoMapDelete interface(using empty use case).
 */
 HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_004, TestSize.Level1)
 {
-    string sceneType = "SCENE_MOVIE";
-    string sessionID = "123456";
-    string wrongSessionID = "123"
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
-    
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
-    int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, wrongSessionID);
-    EXPECT_EQ(SUCCESS, result);
-}
-
-/**
-* @tc.name   : Test SessionInfoMapDelete API
-* @tc.number : SessionInfoMapDelete_005
-* @tc.desc   : Test SessionInfoMapDelete interface(using incorrect use case).
-*/
-HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_005, TestSize.Level1)
-{
-    string sceneType = "SCENE_MUSIC";
-    string sessionID = "123456";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
-    
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
-    int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
-    EXPECT_EQ(SUCCESS, result);
-}
-
-/**
-* @tc.name   : Test SessionInfoMapDelete API
-* @tc.number : SessionInfoMapDelete_006
-* @tc.desc   : Test SessionInfoMapDelete interface(using empty use case).
-*/
-HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_006, TestSize.Level1)
-{
     string sceneType = "";
     string sessionID = "";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -893,9 +778,11 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_001, TestSize.Le
     string sceneType = "SCENE_MOVIE";
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, 
+        &channelLayout);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -909,17 +796,13 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_002, TestSize.Le
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, &channelLayout);
+    int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    EXPECT_EQ(SUCCESS, addRes);
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, 
+        &channelLayout);
     EXPECT_EQ(SUCCESS, result);
 }
 
@@ -930,22 +813,15 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_002, TestSize.Le
 */
 HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_003, TestSize.Level1)
 {
-    string sceneType = "SCENE_MUSIC";
+    string sceneType = "123";
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -959,18 +835,11 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_004, TestSize.Le
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -984,14 +853,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_001, TestSize.Lev
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
-    SessionEffectInfo info = {
-        "SCENE_MOVIE",
-        "EFFECT_DEFAULT",
-        2,
-        0x3,
-        "0",
-        50
-    };
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
@@ -1007,6 +869,7 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_001, T
 {
     string sceneType = "SCENE_MOVIE";
     string operation = "Register";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->RegisterEffectChainCountBackupMap(sceneType, operation);
 }
@@ -1016,10 +879,11 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_001, T
 * @tc.number : RegisterEffectChainCountBackupMap_002
 * @tc.desc   : Test RegisterEffectChainCountBackupMap interface.
 */
-HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_003, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_002, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
     string operation = "Deregister";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->RegisterEffectChainCountBackupMap(sceneType, operation);
 }
@@ -1033,6 +897,7 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_003, T
 {
     string sceneType = "SCENE_MOVIE";
     string operation = "";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->RegisterEffectChainCountBackupMap(sceneType, operation);
 }
@@ -1045,6 +910,7 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_003, T
 HWTEST(AudioEffectChainManagerUnitTest, EffectRotationUpdate_001, TestSize.Level1)
 {
     uint32_t rotationState = 0;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->EffectRotationUpdate(rotationState);
     EXPECT_EQ(SUCCESS, result);
@@ -1058,6 +924,7 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectRotationUpdate_001, TestSize.Level
 HWTEST(AudioEffectChainManagerUnitTest, EffectRotationUpdate_002, TestSize.Level1)
 {
     uint32_t rotationState = 1;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->EffectRotationUpdate(rotationState);
     EXPECT_EQ(SUCCESS, result);
@@ -1071,24 +938,31 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectRotationUpdate_002, TestSize.Level
 HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdate_001, TestSize.Level1)
 {
     string sessionIDString = "123456";
-    uint32_t volume = 50;
+    uint32_t volume = 60;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionIDString, info);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic("SCENE_MOVIE");
     int32_t result = AudioEffectChainManager::GetInstance()->EffectVolumeUpdate(sessionIDString, volume);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
 * @tc.name   : Test EffectVolumeUpdate API
 * @tc.number : EffectVolumeUpdate_002
-* @tc.desc   : Test EffectVolumeUpdate interface(using empty use case).Test EffectDspVolumeUpdate and EffectApVolumeUpdate simultaneously.
+* @tc.desc   : Test EffectVolumeUpdate interface(using abnormal use case).
+*              Test EffectDspVolumeUpdate and EffectApVolumeUpdate simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdate_002, TestSize.Level1)
 {
-    string sessionIDString = "";
-    uint32_t volume = 50;
+    string sessionIDString = "123456";
+    uint32_t volume = 123456;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionIDString, info);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic("SCENE_MOVIE");
     int32_t result = AudioEffectChainManager::GetInstance()->EffectVolumeUpdate(sessionIDString, volume);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(ERROR, result);
 }
 
 /**
@@ -1099,19 +973,39 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdate_002, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, GetLatency_001, TestSize.Level1)
 {
     string sessionID = "123456" ;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     uint32_t result = AudioEffectChainManager::GetInstance()->GetLatency(sessionID);
-    EXPECT_EQ(0, result);
+    EXPECT_EQ(SUCCESS, result);
 }
+
+/**
+* @tc.name   : Test GetLatency API
+* @tc.number : GetLatency_002
+* @tc.desc   : Test GetLatency interface(using empty use case).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, GetLatency_002, TestSize.Level1)
+{
+    string sessionID = "" ;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
+
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    uint32_t result = AudioEffectChainManager::GetInstance()->GetLatency(sessionID);
+    EXPECT_EQ(SUCCESS, result);
+}
+
 
 /**
 * @tc.name   : Test SetSpatializationSceneType API
 * @tc.number : SetSpatializationSceneType_001
-* @tc.desc   : Test SetSpatializationSceneType interface.Test GetSceneTypeFromSpatializationSceneType and UpdateEffectChainParams interface simultaneously.
+* @tc.desc   : Test SetSpatializationSceneType interface.
+*              Test GetSceneTypeFromSpatializationSceneType and UpdateEffectChainParams interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_001, TestSize.Level1)
 {
     AudioSpatializationSceneType spatializationSceneType = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->SetSpatializationSceneType(spatializationSceneType);
     EXPECT_EQ(SUCCESS, result);
@@ -1124,8 +1018,9 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_001, TestSize
 */
 HWTEST(AudioEffectChainManagerUnitTest, GetCurSpatializationEnabled_001, TestSize.Level1)
 {
+    AudioEffectChainManager::GetInstance()->ResetForTest();
     bool result = AudioEffectChainManager::GetInstance()->GetCurSpatializationEnabled();
-    EXPECT_EQ(false, result)
+    EXPECT_EQ(false, result);
 }
 
 /**

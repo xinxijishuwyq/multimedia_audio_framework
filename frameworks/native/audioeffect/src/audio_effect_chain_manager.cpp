@@ -817,6 +817,7 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
 int32_t AudioEffectChainManager::SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_RET_LOG(sessionID != "", ERROR, "null sessionID");
     if (!SessionIDToEffectInfoMap_.count(sessionID)) {
         SceneTypeToSessionIDMap_[info.sceneType].insert(sessionID);
         SessionIDToEffectInfoMap_[sessionID] = info;
@@ -1084,6 +1085,31 @@ void AudioEffectChainManager::ResetEffectBuffer()
     for (const auto &[sceneType, effectChain] : SceneTypeToEffectChainMap_) {
         effectChain->InitEffectChain();
     }
+}
+
+void AudioEffectChainManager::ResetForTest() 
+{
+    EffectToLibraryEntryMap_.clear();
+    EffectToLibraryNameMap_.clear();
+    EffectChainToEffectsMap_.clear();
+    SceneTypeAndModeToEffectChainNameMap_.clear();
+    SceneTypeToEffectChainMap_.clear();
+    SceneTypeToEffectChainCountMap_.clear();
+    SessionIDSet_.clear();
+    SceneTypeToSessionIDMap_.clear();
+    SessionIDToEffectInfoMap_.clear();
+    SceneTypeToEffectChainCountBackupMap_.clear();
+    deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceSink_ = DEFAULT_DEVICE_SINK;
+    isInitialized_ = false;
+    spatializationEnabled_ = false;
+    headTrackingEnabled_ = false;
+    btOffloadEnabled_ = false;
+    spkOffloadEnabled_ = false;
+    initializedLogFlag_ = true;
+    spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
+    hdiSceneType_ = 0;
+    hdiEffectMode_ = 0;
 }
 
 #ifdef WINDOW_MANAGER_ENABLE
