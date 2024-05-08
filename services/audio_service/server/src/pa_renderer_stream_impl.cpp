@@ -879,7 +879,7 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timesta
     lock.Unlock();
 
     uint64_t cacheTimeInPulse = writeIndex > readIndex ? writeIndex - readIndex : 0;
-    cacheTimePa = static_cast<uint64_t>(cacheTimeInPulse);
+    cacheTimePa = cacheTimeInPulse;
     paWriteIndex = writeIndex;
 
     bool first = offloadTsLast_ == 0;
