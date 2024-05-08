@@ -85,7 +85,7 @@ AudioEffectChainManager::AudioEffectChainManager()
 #endif
 
 #ifdef WINDOW_MANAGER_ENABLE
-    std::unique_ptr<AudioRotationListener> audioRotationListener_;
+    audioRotationListener_ = new AudioRotationListener();
 #endif
 
     audioEffectHdiParam_ = std::make_shared<AudioEffectHdiParam>();
