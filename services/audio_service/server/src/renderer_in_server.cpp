@@ -134,7 +134,7 @@ int32_t RendererInServer::Init()
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
-    AUDIO_INFO_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
+    AUDIO_DEBUG_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
     operation_ = operation;
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
@@ -311,7 +311,7 @@ int32_t RendererInServer::UpdateWriteIndex()
     Trace trace("RendererInServer::UpdateWriteIndex");
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {
-            AUDIO_INFO_LOG("Start force write data");
+            AUDIO_DEBUG_LOG("Start force write data");
             WriteData();
             needForceWrite_++;
             writeLock_.unlock();
