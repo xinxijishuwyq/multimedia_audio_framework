@@ -1460,7 +1460,7 @@ void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
 
 void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
 {
-    int32_t tryCounter = 5;
+    int32_t tryCounter = 10;
     uint32_t sleepTime = 300000;
     bool result = false;
     int32_t ret = -1;
