@@ -1030,7 +1030,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
     if (endpointStatus_ == IDEL) {
         // call sink start
         if (!isStarted_) {
-            StartDevice();
+            CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
         }
     }
     isSupportAbsVolume_ = PolicyHandler::GetInstance().IsAbsVolumeSupported();
@@ -1143,7 +1143,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     if (endpointStatus_ == UNLINKED) {
         endpointStatus_ = IDEL; // handle push_back in IDEL
         if (isDeviceRunningInIdel_) {
-            StartDevice();
+            CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
             delayStopTime_ = ClockTime::GetCurNano() + DELAY_STOP_HDI_TIME;
         }
     }
@@ -1164,7 +1164,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         } else {
             // needEndpointRunning = true & isDeviceRunningInIdel_ = false
             // KeepWorkloopRunning will wait on IDEL
-            StartDevice();
+            CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
         }
         AUDIO_INFO_LOG("LinkProcessStream success with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
         return SUCCESS;

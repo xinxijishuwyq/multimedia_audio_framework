@@ -808,7 +808,7 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
         AudioStreamData srcData = {processConfig_.streamInfo, srcDesc, 0, 0};
         AudioStreamData dstData = {g_targetStreamInfo, dstDesc, 0, 0};
         bool succ = ChannelFormatConvert(srcData, dstData);
-        CHECK_AND_RETURN_RET_LOG(succ == true, ERR_OPERATION_FAILED, "Convert data failed!");
+        CHECK_AND_RETURN_RET_LOG(succ, ERR_OPERATION_FAILED, "Convert data failed!");
         AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
         if (bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
             ProcessVolume(dstData);

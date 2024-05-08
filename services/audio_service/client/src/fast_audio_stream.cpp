@@ -167,8 +167,8 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "GetAudioTime failed: null process");
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
-    int32_t ret = processClient_->GetAudioTime(timestamp.framePosition, timeSec, timeNsec);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetBufferSize error.");
+    bool ret = processClient_->GetAudioTime(timestamp.framePosition, timeSec, timeNsec);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "GetBufferSize error.");
     timestamp.time.tv_sec = timeSec;
     timestamp.time.tv_nsec = timeNsec;
     return true;
