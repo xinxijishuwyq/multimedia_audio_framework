@@ -808,12 +808,12 @@ public:
     bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
     {
         return parcel.WriteInt32(createrUID)
-            && parcel.WriteInt32(clientUID)
+            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(callerPid)
             && parcel.WriteInt32(clientPid)
             && capturerInfo.Marshalling(parcel)
-            && parcel.WriteInt32(static_cast<int32_t>(capturerState))
+            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(capturerState) : CAPTURER_INVALID)
             && inputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
             && parcel.WriteBool(muted)
             && parcel.WriteUint32(appTokenId);
