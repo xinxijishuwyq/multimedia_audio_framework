@@ -20,6 +20,7 @@ ohos_shared_library("audio") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   include_dirs = [
