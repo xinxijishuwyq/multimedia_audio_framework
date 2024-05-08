@@ -748,13 +748,19 @@ AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sou
         case SOURCE_TYPE_MIC:
             return STREAM_MUSIC;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
+        case SOURCE_TYPE_VOICE_CALL:
             return STREAM_VOICE_CALL;
         case SOURCE_TYPE_ULTRASONIC:
             return STREAM_ULTRASONIC;
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+        case SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SOURCE_TYPE_REMOTE_CAST:
+        case SOURCE_TYPE_VIRTUAL_CAPTURE:
+        case SOURCE_TYPE_VOICE_MESSAGE:
         default:
-            return STREAM_MUSIC;
+            return (AudioStreamType)sourceType;
     }
 }
 
