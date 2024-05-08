@@ -72,7 +72,9 @@ IAudioCapturerSource *IAudioCapturerSource::GetInstance(const char *deviceClass,
 
 void IAudioCapturerSource::GetAllInstance(std::vector<IAudioCapturerSource *> &allInstance)
 {
+#ifdef DAUDIO_ENABLE
     RemoteAudioCapturerSource::GetAllInstance(allInstance);
+#endif
     allInstance.push_back(AudioCapturerSource::GetInstance());
 }
 
