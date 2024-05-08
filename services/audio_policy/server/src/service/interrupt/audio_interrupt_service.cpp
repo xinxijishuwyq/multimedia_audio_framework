@@ -41,6 +41,8 @@ inline AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInt
                audioInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) {
         return audioInterrupt.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ?
             AUDIO_SCENE_PHONE_CALL : AUDIO_SCENE_PHONE_CHAT;
+    } else if (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_RING) {
+        return AUDIO_SCENE_VOICE_RINGING;
     }
     return AUDIO_SCENE_DEFAULT;
 }
@@ -49,6 +51,7 @@ static const std::unordered_map<const AudioScene, const int> SCENE_PRIORITY = {
     // from high to low
     {AUDIO_SCENE_PHONE_CALL, 4},
     {AUDIO_SCENE_PHONE_CHAT, 3},
+    {AUDIO_SCENE_VOICE_RINGING, 2},
     {AUDIO_SCENE_RINGING, 2},
     {AUDIO_SCENE_DEFAULT, 1}
 };

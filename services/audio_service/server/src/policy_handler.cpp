@@ -122,6 +122,7 @@ AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType strea
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:

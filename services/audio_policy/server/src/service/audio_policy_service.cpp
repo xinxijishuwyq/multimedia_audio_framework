@@ -235,6 +235,7 @@ static AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType)
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:
@@ -2601,11 +2602,6 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
 
-    if (audioScene_ == AUDIO_SCENE_RINGING && audioScene == AUDIO_SCENE_PHONE_CHAT) {
-#ifdef BLUETOOTH_ENABLE
-        Bluetooth::AudioHfpManager::DisconnectSco();
-#endif
-    }
     audioScene_ = audioScene;
 
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {

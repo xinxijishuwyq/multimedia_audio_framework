@@ -358,6 +358,7 @@ AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType s
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:
@@ -395,6 +396,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_ACCESSIBILITY:
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
+        case STREAM_VOICE_RING:
             result = true;
             break;
         default:
@@ -685,7 +687,7 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
 int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi)
 {
     bool updateRingerMode = false;
-    if (streamType == AudioStreamType::STREAM_RING) {
+    if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
         // Check whether the currentRingerMode is suitable for the ringtone mute state.
         AudioRingerMode currentRingerMode = GetRingerMode();
         if ((currentRingerMode == RINGER_MODE_NORMAL && mute) || (currentRingerMode != RINGER_MODE_NORMAL && !mute)) {
@@ -755,7 +757,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
 int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
     bool updateRingerMode = false;
-    if (streamType == AudioStreamType::STREAM_RING) {
+    if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
         // Check whether the currentRingerMode is suitable for the ringtone volume level.
         AudioRingerMode currentRingerMode = GetRingerMode();
         if ((currentRingerMode == RINGER_MODE_NORMAL && volumeLevel == 0) ||
@@ -801,7 +803,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
 bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
 {
-    if (streamType == AudioStreamType::STREAM_RING) {
+    if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
         bool ret = VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(ret, false,
             "GetStreamMute permission denied for stream type : %{public}d", streamType);

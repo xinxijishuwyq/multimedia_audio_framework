@@ -169,7 +169,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN &&
-        streamUsage <= STREAM_USAGE_VOICE_MODEM_COMMUNICATION, nullptr, "Invalid stream usage");
+        streamUsage <= STREAM_USAGE_MAX, nullptr, "Invalid stream usage");
     if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
         if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
