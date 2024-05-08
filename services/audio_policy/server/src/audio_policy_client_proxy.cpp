@@ -252,32 +252,6 @@ void AudioPolicyClientProxy::OnRendererStateChange(
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::UpdateCapturerDeviceInfo(
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
-{
-    if (!hasBTPermission_) {
-        size_t capturerChangeInfoLength = capturerChangeInfos.size();
-        for (size_t i = 0; i < capturerChangeInfoLength; i++) {
-            if ((capturerChangeInfos[i]->inputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)
-                || (capturerChangeInfos[i]->inputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
-                capturerChangeInfos[i]->inputDeviceInfo.deviceName = "";
-                capturerChangeInfos[i]->inputDeviceInfo.macAddress = "";
-            }
-        }
-    }
-
-    if (!hasSystemPermission_) {
-        size_t capturerChangeInfoLength = capturerChangeInfos.size();
-        for (size_t i = 0; i < capturerChangeInfoLength; i++) {
-            capturerChangeInfos[i]->clientUID = 0;
-            capturerChangeInfos[i]->capturerState = CAPTURER_INVALID;
-            capturerChangeInfos[i]->inputDeviceInfo.networkId = "";
-            capturerChangeInfos[i]->inputDeviceInfo.interruptGroupId = GROUP_ID_NONE;
-            capturerChangeInfos[i]->inputDeviceInfo.volumeGroupId = GROUP_ID_NONE;
-        }
-    }
-}
-
 void AudioPolicyClientProxy::OnCapturerStateChange(
     std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
@@ -289,7 +263,6 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
         return;
     }
 
-    UpdateCapturerDeviceInfo(audioCapturerChangeInfos);
     size_t size = audioCapturerChangeInfos.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE));
     data.WriteInt32(size);
