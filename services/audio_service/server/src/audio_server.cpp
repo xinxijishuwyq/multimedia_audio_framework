@@ -32,7 +32,6 @@
 #include "hisysevent.h"
 
 #include "audio_capturer_source.h"
-#include "remote_audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_asr.h"

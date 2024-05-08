@@ -37,8 +37,10 @@
 #include "i_stream_manager.h"
 #include "linear_pos_time_model.h"
 #include "policy_handler.h"
+#ifdef DAUDIO_ENABLE
 #include "remote_fast_audio_renderer_sink.h"
 #include "remote_fast_audio_capturer_source.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -595,8 +597,10 @@ bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
         attr.adapterName = "primary";
         fastSource_ = FastAudioCapturerSource::GetInstance();
     } else {
+#ifdef DAUDIO_ENABLE
         attr.adapterName = "remote";
         fastSource_ = RemoteFastAudioCapturerSource::GetInstance(deviceInfo.networkId);
+#endif
     }
     CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr, false, "ConfigInputPoint GetInstance failed.");
 
@@ -672,7 +676,7 @@ bool AudioEndpointInner::Config(const DeviceInfo &deviceInfo)
     CHECK_AND_RETURN_RET_LOG(fastSink_ != nullptr, false, "Get fastSink instance failed");
 
     IAudioSinkAttr attr = {};
-    attr.adapterName = "primary";
+    attr.adapterName = deviceInfo.networkId == LOCAL_NETWORK_ID ? "primary" : "remote";
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
     attr.channel = dstStreamInfo_.channels; // STEREO = 2
     attr.format = ConvertToHdiAdapterFormat(dstStreamInfo_.format); // SAMPLE_S16LE = 1
@@ -714,9 +718,11 @@ IMmapAudioRendererSink *AudioEndpointInner::GetFastSink(const DeviceInfo &device
 {
     AUDIO_INFO_LOG("Network id %{public}s, endpoint type %{public}d", deviceInfo.networkId.c_str(), type);
     if (deviceInfo.networkId != LOCAL_NETWORK_ID) {
+#ifdef DAUDIO_ENABLE
         fastSinkType_ = FAST_SINK_TYPE_REMOTE;
         // Distributed only requires a singleton because there won't be both voip and regular fast simultaneously
         return RemoteFastAudioRendererSink::GetInstance(deviceInfo.networkId);
+#endif
     }
 
     if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo.a2dpOffloadFlag == A2DP_NOT_OFFLOAD) {

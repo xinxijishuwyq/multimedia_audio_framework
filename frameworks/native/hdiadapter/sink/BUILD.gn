@@ -342,8 +342,6 @@ ohos_shared_library("renderer_sink_adapter") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
 
-  cflags_cc = cflags
-
   include_dirs = [
     "common",
     "primary",
@@ -364,9 +362,17 @@ ohos_shared_library("renderer_sink_adapter") {
     ":fast_audio_renderer_sink",
     ":multichannel_audio_renderer_sink",
     ":offload_audio_renderer_sink",
-    ":remote_audio_renderer_sink",
-    ":remote_fast_audio_renderer_sink",
   ]
+
+  if (audio_framework_feature_daudio_enable == true) {
+    deps += [
+      ":remote_audio_renderer_sink",
+      ":remote_fast_audio_renderer_sink",
+    ]
+    cflags += [ "-DDAUDIO_ENABLE" ]
+  }
+
+  cflags_cc = cflags
 
   external_deps = [ "hilog:libhilog" ]
 
