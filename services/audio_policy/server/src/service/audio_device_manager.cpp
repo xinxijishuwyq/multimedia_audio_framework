@@ -804,8 +804,12 @@ void AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescripto
 {
     std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
-        if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            if (desc->macAddress_ == devDesc->macAddress_ &&
+                desc->isEnable_ != devDesc->isEnable_) {
+                desc->isEnable_ = devDesc->isEnable_;
+            }
+        } else if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             if (desc->macAddress_ == devDesc->macAddress_ &&
                 desc->isEnable_ != devDesc->isEnable_) {
                 desc->isEnable_ = devDesc->isEnable_;
@@ -822,8 +826,12 @@ void AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
 {
     std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
-        if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-            deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            if (desc->macAddress_ == deviceDescriptor->macAddress_ &&
+                desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
+                desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
+            }
+        } else if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             if (desc->macAddress_ == deviceDescriptor->macAddress_ &&
                 desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
                 desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
