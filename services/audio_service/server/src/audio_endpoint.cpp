@@ -637,9 +637,11 @@ IMmapAudioCapturerSource *AudioEndpointInner::GetFastSource(const std::string &n
     AUDIO_INFO_LOG("Network id %{public}s, endpoint type %{public}d", networkId.c_str(), type);
     if (networkId != LOCAL_NETWORK_ID) {
         attr.adapterName = "remote";
+#ifdef DAUDIO_ENABLE
         fastSourceType_ = FAST_SOURCE_TYPE_REMOTE;
         // Distributed only requires a singleton because there won't be both voip and regular fast simultaneously
         return RemoteFastAudioCapturerSource::GetInstance(networkId);
+#endif
     }
 
     attr.adapterName = "primary";
