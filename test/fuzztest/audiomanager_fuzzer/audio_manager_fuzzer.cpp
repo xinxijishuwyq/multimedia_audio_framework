@@ -134,7 +134,11 @@ void AudioStreamManagerFuzzTest(const uint8_t* data, size_t size)
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(data);
     AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(deviceDescriptor);
 
-    AudioStreamInfo audioStreamInfo = *reinterpret_cast<const AudioStreamInfo *>(data);
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate = *reinterpret_cast<const AudioSamplingRate *>(data);
+    audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(data);
+    audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(data);
+    audioStreamInfo.encoding = *reinterpret_cast<const AudioEncodingType *>(data);
     AudioStreamManager::GetInstance()->IsAudioRendererLowLatencySupported(audioStreamInfo);
 
     AudioVolumeType volumeType = *reinterpret_cast<const AudioVolumeType *>(data);
