@@ -78,6 +78,13 @@ void ContextBase::SignError(int32_t code)
     errMessage = NapiAudioError::GetMessageByCode(errCode);
 }
 
+void ContextBase::SignError(int32_t code, const std::string &errorMessage)
+{
+    status = napi_generic_failure;
+    errCode = code;
+    errMessage = errorMessage;
+}
+
 napi_value NapiAsyncWork::Enqueue(napi_env env, std::shared_ptr<ContextBase> ctxt, const std::string &name,
     NapiAsyncExecute execute, NapiAsyncComplete complete)
 {
