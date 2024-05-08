@@ -79,7 +79,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_001, TestS
 /**
 * @tc.name   : Test CreateAudioEffectChainDynamic API
 * @tc.number : CreateAudioEffectChainDynamic_002
-* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using incorrect use case).
+* @tc.desc   : Test CreateAudioEffectChainDynamic interface(using abnormal use case).
 *              Test GetDeviceTypeName interface and SetAudioEffectChainDynamic interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_002, TestSize.Level1)
@@ -247,7 +247,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_002, TestSize.Leve
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
         spatializationEnabled);
-    EXPECT_EQ(false, result);  // Use 'false' as the criterion ofr judgment because of the empty effect chain.
+    EXPECT_EQ(false, result);  // Use 'false' as the criterion for judgment because of the empty effect chain.
 }
 
 /**
@@ -492,7 +492,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_003, TestSize.L
 /**
 * @tc.name   : Test UpdateMultichannelConfig API
 * @tc.number : UpdateMultichannelConfig_004
-* @tc.desc   : Test UpdateMultichannelConfig interface(without using InitAudioEffectChainManager interface).
+* @tc.desc   : Test UpdateMultichannelConfig interface(without using CreateAudioEffectChainDynamic interface).
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_004, TestSize.Level1)
 {
@@ -919,12 +919,11 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectRotationUpdate_001, TestSize.Level
 /**
 * @tc.name   : Test EffectRotationUpdate API
 * @tc.number : EffectRotationUpdate_002
-* @tc.desc   : Test EffectRotationUpdate interface.Test EffectDspRotationUpdate and EffectApRotationUpdate simultaneously.s
+* @tc.desc   : Test EffectRotationUpdate interface.Test EffectDspRotationUpdate and EffectApRotationUpdate simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, EffectRotationUpdate_002, TestSize.Level1)
 {
     uint32_t rotationState = 1;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->EffectRotationUpdate(rotationState);
     EXPECT_EQ(SUCCESS, result);
