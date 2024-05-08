@@ -392,7 +392,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_004, TestSize.Leve
 /**
 * @tc.name   : Test SetOutputDeviceSink API
 * @tc.number : SetOutputDeviceSink_001
-* @tc.desc   : Test SetOutputDeviceSink interface(using correct use case), 
+* @tc.desc   : Test SetOutputDeviceSink interface(using correct use case),
 *              test SetSpkOffloadState interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_001, TestSize.Level1)
@@ -581,7 +581,8 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_001, TestSize.
 /**
 * @tc.name   : Test UpdateSpatializationState API
 * @tc.number : UpdateSpatializationState_002
-* @tc.desc   : Test UpdateSpatializationState interface.Test UpdateSensorState, DeleteAllChains and RecoverAllChains interface simultaneously.
+* @tc.desc   : Test UpdateSpatializationState interface.Test UpdateSensorState,
+*              DeleteAllChains and RecoverAllChains interface simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_002, TestSize.Level1)
 {
@@ -802,7 +803,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_002, TestSize.Le
     int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
     EXPECT_EQ(SUCCESS, addRes);
 
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, 
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels,
         &channelLayout);
     EXPECT_EQ(SUCCESS, result);
 }
@@ -821,7 +822,8 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_003, TestSize.Le
     AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels, &channelLayout);
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels,
+        &channelLayout);
     EXPECT_EQ(ERROR, result);
 }
 
@@ -907,7 +909,8 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_003, T
 /**
 * @tc.name   : Test EffectRotationUpdate API
 * @tc.number : EffectRotationUpdate_001
-* @tc.desc   : Test EffectRotationUpdate interface.Test EffectDspRotationUpdate and EffectApRotationUpdate simultaneously.
+* @tc.desc   : Test EffectRotationUpdate interface.
+*              Test EffectDspRotationUpdate and EffectApRotationUpdate simultaneously.
 */
 HWTEST(AudioEffectChainManagerUnitTest, EffectRotationUpdate_001, TestSize.Level1)
 {
