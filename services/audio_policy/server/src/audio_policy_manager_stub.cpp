@@ -666,7 +666,7 @@ static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, Message
     uint32_t countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
-        for (int32_t k = 0; k < countDev; k++) {
+        for (uint32_t k = 0; k < countDev; k++) {
             reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
             reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
@@ -678,7 +678,7 @@ static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mess
     uint32_t countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
-        for (int32_t j = 0; j < countMode; j++) {
+        for (uint32_t j = 0; j < countMode; j++) {
             PreprocessMode(supportedEffectConfig, reply, i, j);
         }
     }
@@ -689,7 +689,7 @@ static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, Messag
     uint32_t countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
-        for (int32_t k = 0; k < countDev; k++) {
+        for (uint32_t k = 0; k < countDev; k++) {
             reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
             reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
@@ -702,7 +702,7 @@ static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mes
     uint32_t countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
-        for (int32_t j = 0; j < countMode; j++) {
+        for (uint32_t j = 0; j < countMode; j++) {
             PostprocessMode(supportedEffectConfig, reply, i, j);
         }
     }
