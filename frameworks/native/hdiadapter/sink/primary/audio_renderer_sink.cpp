@@ -55,6 +55,8 @@ const uint32_t PCM_16_BIT = 16;
 const uint32_t PCM_24_BIT = 24;
 const uint32_t PCM_32_BIT = 32;
 const uint32_t PRIMARY_OUTPUT_STREAM_ID = 13; // 13 + 0 * 8
+const uint32_t DIRECT_OUTPUT_STREAM_ID = 69;  // 13 + 7 * 8
+const uint32_t VOIP_OUTPUT_STREAM_ID = 77;    // 13 + 8 * 8
 const uint32_t STEREO_CHANNEL_COUNT = 2;
 const unsigned int TIME_OUT_SECONDS = 10;
 const unsigned int BUFFER_CALC_20MS = 20;
@@ -74,6 +76,9 @@ static int32_t g_paStatus = 1;
 
 const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
 const uint32_t DEVICE_PARAM_MAX_LEN = 40;
+
+const std::string VOIP_HAL_NAME = "voip";
+const std::string DIRECT_HAL_NAME = "direct";
 }
 
 int32_t ConvertByteToAudioFormat(int32_t format)
@@ -236,6 +241,8 @@ private:
     std::string GetAudioAttrInfo();
     int32_t GetCurDeviceParam(char *keyValueList);
 
+    AudioPortPin GetAudioPortPin() const noexcept;
+
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_;
@@ -263,6 +270,12 @@ AudioRendererSink *AudioRendererSink::GetInstance(std::string halName)
     } else if (halName == "dp") {
         static AudioRendererSinkInner audioRendererDp(halName);
         return &audioRendererDp;
+    } else if (halName == VOIP_HAL_NAME) {
+        static AudioRendererSinkInner audioRendererVoip(halName);
+        return &audioRendererVoip;
+    } else if (halName == DIRECT_HAL_NAME) {
+        static AudioRendererSinkInner audioRendererDirect(halName);
+        return &audioRendererDirect;
     }
 
     static AudioRendererSinkInner audioRenderer;
@@ -615,6 +628,12 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     }
     if (halName_ == "dp") {
         param.type = AUDIO_DP;
+    } else if (halName_ == DIRECT_HAL_NAME) {
+        param.type = AUDIO_DIRECT;
+        param.streamId = DIRECT_OUTPUT_STREAM_ID;
+    } else if (halName_ == VOIP_HAL_NAME) {
+        param.type = AUDIO_IN_COMMUNICATION;
+        param.streamId = VOIP_OUTPUT_STREAM_ID;
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBits(param.format) * param.channelCount / PCM_8_BIT;
@@ -628,6 +647,8 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
     } else if (halName_ == "dp") {
         deviceDesc.pins = PIN_OUT_DP;
+    } else {
+        deviceDesc.pins = GetAudioPortPin();
     }
     ret = audioAdapter_->CreateRender(audioAdapter_, &deviceDesc, &param, &audioRender_, &renderId_);
     if (ret != 0 || audioRender_ == nullptr) {
@@ -759,7 +780,11 @@ int32_t AudioRendererSinkInner::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
+    std::string fileName = DUMP_RENDER_SINK_FILENAME;
+    if (halName_ == DIRECT_HAL_NAME) {
+        fileName = DUMP_DIRECT_RENDER_SINK_FILENAME;
+    }
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, fileName, &dumpFile_);
 
     int32_t ret;
     InitLatencyMeasurement();
@@ -861,6 +886,24 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
     return audioCategory;
 }
 
+AudioPortPin AudioRendererSinkInner::GetAudioPortPin() const noexcept
+{
+    switch (attr_.deviceType) {
+    case DEVICE_TYPE_SPEAKER:
+        return PIN_OUT_SPEAKER;
+    case DEVICE_TYPE_WIRED_HEADSET:
+        return PIN_OUT_HEADSET;
+    case DEVICE_TYPE_WIRED_HEADPHONES:
+        return PIN_OUT_HEADPHONE;
+    case DEVICE_TYPE_BLUETOOTH_SCO:
+        return PIN_OUT_BLUETOOTH_SCO;
+    case DEVICE_TYPE_USB_HEADSET:
+        return PIN_OUT_USB_EXT;
+    default:
+        return PIN_OUT_SPEAKER;
+    }
+}
+
 static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 {
     int32_t ret = SUCCESS;
@@ -908,7 +951,7 @@ int32_t AudioRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
         AUDIO_INFO_LOG("SetOutputRoute output device not change");
         return SUCCESS;
     }
-    AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
+    AudioPortPin outputPortPin = GetAudioPortPin();
     return SetOutputRoute(outputDevice, outputPortPin);
 }
 
@@ -978,7 +1021,7 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "SetAudioScene failed audio render handle is null!");
     if (openSpeaker_) {
-        AudioPortPin audioSceneOutPort = PIN_OUT_SPEAKER;
+        AudioPortPin audioSceneOutPort = GetAudioPortPin();
         if (halName_ == "usb") {
             audioSceneOutPort = PIN_OUT_USB_HEADSET;
         } else if (halName_ == "dp") {
@@ -990,6 +1033,11 @@ int32_t AudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType 
         if (audioScene != currentAudioScene_) {
             struct AudioSceneDescriptor scene;
             scene.scene.id = GetAudioCategory(audioScene);
+            if (halName_ == DIRECT_HAL_NAME) {
+                scene.scene.id = AUDIO_DIRECT;
+            } else if (halName_ == VOIP_HAL_NAME) {
+                scene.scene.id = AUDIO_IN_COMMUNICATION;
+            }
             scene.desc.pins = audioSceneOutPort;
             scene.desc.desc = const_cast<char *>("");
 
@@ -1280,7 +1328,11 @@ int32_t AudioRendererSinkInner::InitRender()
         } else if (halName_ == "dp") {
             ret = SetOutputRoute(DEVICE_TYPE_DP);
         } else {
-            ret = SetOutputRoute(DEVICE_TYPE_SPEAKER);
+            DeviceType type = static_cast<DeviceType>(attr_.deviceType);
+            if(type == DEVICE_TYPE_INVALID){
+                type = DEVICE_TYPE_SPEAKER;
+            }
+            ret = SetOutputRoute(type);
         }
         if (ret < 0) {
             AUDIO_WARNING_LOG("Update route FAILED: %{public}d", ret);

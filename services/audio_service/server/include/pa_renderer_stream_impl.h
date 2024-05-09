@@ -18,6 +18,7 @@
 
 #include <pulse/pulseaudio.h>
 #include "i_renderer_stream.h"
+#include "i_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,6 +65,9 @@ public:
     // offload end
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;
+    int32_t Peek(std::vector<char> *audioBuffer) override;
+    AudioProcessConfig GetAudioProcessConfig() const noexcept override;
+    int32_t TriggerStartIfNecessary(bool isBlock) override;
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -116,6 +120,7 @@ private:
     int32_t privacyType_ = 0;
 
     float powerVolumeFactor_ = 1.0f;
+    ManagerType managerType_;
 
     static constexpr float MAX_STREAM_VOLUME_LEVEL = 1.0f;
     static constexpr float MIN_STREAM_VOLUME_LEVEL = 0.0f;

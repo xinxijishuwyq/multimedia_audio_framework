@@ -1042,6 +1042,20 @@ int32_t PaRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
     }
     return SUCCESS;
 }
+
+AudioProcessConfig PaRendererStreamImpl::GetAudioProcessConfig() const noexcept
+{
+    return processConfig_;
+}
+int32_t PaRendererStreamImpl::Peek(std::vector<char> *audioBuffer)
+{
+    return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::TriggerStartIfNecessary(bool isBlock)
+{
+    return SUCCESS;
+}
 // offload end
 } // namespace AudioStandard
 } // namespace OHOS
