@@ -70,7 +70,7 @@ constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_CAAS_SA = 5527;
 constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr uid_t UID_MEDIA_SA = 1013;
-constexpr uid_t UID_VM_MANAGER = 5010;
+constexpr uid_t UID_VM_MANAGER = 7700;
 constexpr uid_t UID_AUDIO = 1041;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
@@ -280,7 +280,7 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
             SetStreamMuteInternal(streamInFocus, false, true);
             return;
         }
-        int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus, false);
+        int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
         if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
             return;
         }
@@ -358,6 +358,7 @@ AudioVolumeType AudioPolicyServer::GetVolumeTypeFromStreamType(AudioStreamType s
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:
@@ -395,6 +396,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_ACCESSIBILITY:
         case STREAM_ULTRASONIC:
         case STREAM_ALL:
+        case STREAM_VOICE_RING:
             result = true;
             break;
         default:
@@ -555,16 +557,16 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(AudioStreamType streamType, int3
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(AudioStreamType streamType)
 {
-    return GetSystemVolumeLevelInternal(streamType, false);
+    return GetSystemVolumeLevelInternal(streamType);
 }
 
-int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamType, bool isFromVolumeKey)
+int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamType)
 {
     if (streamType == STREAM_ALL) {
         streamType = STREAM_MUSIC;
         AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for streamType = %{public}d ", streamType);
     }
-    return audioPolicyService_.GetSystemVolumeLevel(streamType, isFromVolumeKey);
+    return audioPolicyService_.GetSystemVolumeLevel(streamType);
 }
 
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
@@ -684,17 +686,38 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
 
 int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi)
 {
-    if (streamType == AudioStreamType::STREAM_RING && !isUpdateUi) {
-        if (!VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-            AUDIO_ERR_LOG("SetStreamMute permission denied for stream type : %{public}d", streamType);
-            return ERR_PERMISSION_DENIED;
+    bool updateRingerMode = false;
+    if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
+        // Check whether the currentRingerMode is suitable for the ringtone mute state.
+        AudioRingerMode currentRingerMode = GetRingerMode();
+        if ((currentRingerMode == RINGER_MODE_NORMAL && mute) || (currentRingerMode != RINGER_MODE_NORMAL && !mute)) {
+            // When isUpdateUi is false, the func is called by others. Need to verify permission.
+            if (!isUpdateUi && !VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
+                AUDIO_ERR_LOG("ACCESS_NOTIFICATION_POLICY_PERMISSION permission denied for ringtone mute state!");
+                return ERR_PERMISSION_DENIED;
+            }
+            updateRingerMode = true;
         }
     }
 
-    int result = audioPolicyService_.SetStreamMute(streamType, mute);
+    int32_t result = audioPolicyService_.SetStreamMute(streamType, mute);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Fail to set stream mute!");
+
+    if (!mute && GetSystemVolumeLevelInternal(streamType) == 0) {
+        // If mute state is set to false but volume is 0, set volume to 1
+        audioPolicyService_.SetSystemVolumeLevel(streamType, 1);
+    }
+
+    if (updateRingerMode) {
+        AudioRingerMode ringerMode = mute ? RINGER_MODE_VIBRATE : RINGER_MODE_NORMAL;
+        AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring mute state", ringerMode);
+        // Update ringer mode but no need to update mute state again.
+        SetRingerModeInternal(ringerMode, true);
+    }
+
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
-    volumeEvent.volume = GetSystemVolumeLevel(streamType);
+    volumeEvent.volume = GetSystemVolumeLevelInternal(streamType);
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -733,20 +756,42 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
 
 int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi)
 {
-    if ((streamType == AudioStreamType::STREAM_RING) && !isUpdateUi) {
-        int32_t curRingVolumeLevel = GetSystemVolumeLevel(STREAM_RING);
-        if ((curRingVolumeLevel > 0 && volumeLevel == 0) || (curRingVolumeLevel == 0 && volumeLevel > 0)) {
-            if (!VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-                AUDIO_ERR_LOG("Access policy permission denied for volume type : %{public}d", streamType);
+    bool updateRingerMode = false;
+    if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
+        // Check whether the currentRingerMode is suitable for the ringtone volume level.
+        AudioRingerMode currentRingerMode = GetRingerMode();
+        if ((currentRingerMode == RINGER_MODE_NORMAL && volumeLevel == 0) ||
+            (currentRingerMode != RINGER_MODE_NORMAL && volumeLevel > 0)) {
+            // When isUpdateUi is false, the func is called by others. Need to verify permission.
+            if (!isUpdateUi && !VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
+                AUDIO_ERR_LOG("ACCESS_NOTIFICATION_POLICY_PERMISSION permission denied for ringtone volume!");
                 return ERR_PERMISSION_DENIED;
             }
+            updateRingerMode = true;
         }
     }
 
-    int ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel, isUpdateUi);
+    int32_t ret = audioPolicyService_.SetSystemVolumeLevel(streamType, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set system volume level!");
+
+    // Update mute state according to volume level
+    if (volumeLevel == 0 && !GetStreamMuteInternal(streamType)) {
+        audioPolicyService_.SetStreamMute(streamType, true);
+    } else if (volumeLevel > 0 && GetStreamMuteInternal(streamType)) {
+        audioPolicyService_.SetStreamMute(streamType, false);
+    }
+
+    if (updateRingerMode) {
+        int32_t curRingVolumeLevel = GetSystemVolumeLevelInternal(STREAM_RING);
+        AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL : RINGER_MODE_VIBRATE;
+        AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
+        // Update ringer mode but no need to update volume again.
+        SetRingerModeInternal(ringerMode, true);
+    }
+
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
-    volumeEvent.volume = GetSystemVolumeLevel(streamType);
+    volumeEvent.volume = GetSystemVolumeLevelInternal(streamType);
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -758,7 +803,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
 bool AudioPolicyServer::GetStreamMute(AudioStreamType streamType)
 {
-    if (streamType == AudioStreamType::STREAM_RING) {
+    if (streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) {
         bool ret = VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(ret, false,
             "GetStreamMute permission denied for stream type : %{public}d", streamType);
@@ -928,11 +973,29 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode, API_VERSION a
             "Access policy permission denied for ringerMode : %{public}d", ringMode);
     }
 
-    int32_t ret = audioPolicyService_.SetRingerMode(ringMode);
-    if ((ret == SUCCESS) && (audioPolicyServerHandler_ != nullptr)) {
-        audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringMode);
+    return SetRingerModeInternal(ringMode);
+}
+
+int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode ringerMode, bool hasUpdatedVolume)
+{
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d. hasUpdatedVolume %{public}d", ringerMode, hasUpdatedVolume);
+    int32_t ret = audioPolicyService_.SetRingerMode(ringerMode);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set ringer mode!");
+
+    if (!hasUpdatedVolume) {
+        // need to set volume according to ringermode
+        bool muteState = (ringerMode == RINGER_MODE_NORMAL) ? false : true;
+        audioPolicyService_.SetStreamMute(STREAM_RING, muteState);
+    
+        if (!muteState && GetSystemVolumeLevelInternal(STREAM_RING) == 0) {
+            // if mute state is false but volume is 0, set volume to 1. Send volumeChange callback.
+            SetSystemVolumeLevelInternal(STREAM_RING, 1, false);
+        }
     }
 
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringerMode);
+    }
     return ret;
 }
 
@@ -1521,6 +1584,11 @@ int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo 
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
+    }
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
+        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
+        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
+        OffloadStreamCheck(OFFLOAD_NO_SESSION_ID, STREAM_DEFAULT, streamChangeInfo.audioRendererChangeInfo.sessionId);
     }
     return audioPolicyService_.UpdateTracker(mode, streamChangeInfo);
 }

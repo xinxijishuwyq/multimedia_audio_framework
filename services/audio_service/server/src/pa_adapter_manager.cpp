@@ -56,7 +56,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_WAKEUP, "wakeup"},
     {STREAM_VOICE_MESSAGE, "voice_message"},
     {STREAM_NAVIGATION, "navigation"},
-    {STREAM_VOICE_COMMUNICATION, "voice_call"}
+    {STREAM_VOICE_COMMUNICATION, "voice_call"},
+    {STREAM_VOICE_RING, "ring"},
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -485,8 +486,10 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
     float mVolumeFactor = 1.0f;
     float mPowerVolumeFactor = 1.0f;
+    float mDuckVolumeFactor = 1.0f;
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(mVolumeFactor).c_str());
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(mPowerVolumeFactor).c_str());
+    pa_proplist_sets(propList, "stream.duckVolumeFactor", std::to_string(mDuckVolumeFactor).c_str());
     auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     const std::string streamStartTime = ctime(&timenow);
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
@@ -823,13 +826,6 @@ uint32_t PaAdapterManager::ConvertChLayoutToPaChMap(const uint64_t &channelLayou
             break;
     }
     return channelNum;
-}
-
-int32_t PaAdapterManager::GetInfo()
-{
-    AUDIO_INFO_LOG("pa_context_get_state(),: %{public}d, pa_context_errno(): %{public}d",
-        pa_context_get_state(context_), pa_context_errno(context_));
-    return SUCCESS;
 }
 
 const std::string PaAdapterManager::GetEnhanceSceneName(SourceType sourceType)

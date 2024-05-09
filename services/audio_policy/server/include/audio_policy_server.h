@@ -51,6 +51,7 @@ namespace AudioStandard {
 
 constexpr uint64_t DSTATUS_SESSION_ID = 4294967296;
 constexpr uint32_t DSTATUS_DEFAULT_RATE = 48000;
+constexpr uint32_t LOCAL_USER_ID = 100;
 
 class AudioPolicyService;
 class AudioInterruptService;
@@ -428,9 +429,10 @@ private:
     void CheckSubscribePowerStateChange();
 
     // for audio volume and mute status
+    int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
-    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, bool isFromVolumeKey);
+    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
@@ -531,7 +533,8 @@ public:
 
     void OnAccountsSwitch(const int &newId, const int &oldId) override
     {
-        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldId: %{public}d", newId, oldId);
+        CHECK_AND_RETURN_LOG(oldId >= LOCAL_USER_ID, "invalid id");
+        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldid: %{public}d", newId, oldId);
         if (audioPolicyServer_ != nullptr) {
             audioPolicyServer_->NotifyAccountsChanged(newId);
         }

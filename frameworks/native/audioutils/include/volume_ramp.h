@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include <mutex>
 #include <cmath>
 #include "audio_info.h"
 
@@ -45,6 +46,7 @@ private:
 
     int32_t duration_;
     RampDirection rampDirection_;
+    std::mutex curveMapMutex_;
     std::map<float, float> curvePoints_;
     int64_t initTime_;
     float scale_;

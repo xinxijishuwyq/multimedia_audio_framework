@@ -72,7 +72,7 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
     int32_t Preload(const std::string &usbInfoStr) override;
@@ -137,8 +137,7 @@ private:
     IAudioSourceCallback* wakeupCloseCallback_ = nullptr;
     std::mutex wakeupClosecallbackMutex_;
 
-    IAudioSourceCallback* audioCapturerSourceCallback_ = nullptr;
-    std::mutex audioCapturerSourceCallbackMutex_;
+    std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
     DeviceType currentActiveDevice_;
@@ -175,7 +174,7 @@ public:
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
     float GetMaxAmplitude() override;
 
@@ -467,6 +466,8 @@ int32_t SwitchAdapterCapture(struct AudioAdapterDescriptor *descs, uint32_t size
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
+        AUDIO_INFO_LOG("size: %{public}d, adapterNameCase %{public}s, adapterName %{public}s",
+            size, adapterNameCase.c_str(), desc->adapterName);
         if (!adapterNameCase.compare(desc->adapterName)) {
             for (uint32_t port = 0; port < desc->portsLen; port++) {
                 // Only find out the port of out in the sound card
@@ -649,13 +650,8 @@ int32_t AudioCapturerSourceInner::Start(void)
 
     int32_t ret;
     if (!started_) {
-        IAudioSourceCallback* callback = nullptr;
-        {
-            std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-            callback = audioCapturerSourceCallback_;
-        }
-        if (callback != nullptr) {
-            callback->OnCapturerState(true);
+        if (audioCapturerSourceCallback_ != nullptr) {
+            audioCapturerSourceCallback_->OnCapturerState(false);
         }
 
         ret = audioCapture_->Start(audioCapture_);
@@ -757,6 +753,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AUDIO_IN_COMMUNICATION;
             break;
         case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_VOICE_RINGING:
             audioCategory = AUDIO_IN_RINGTONE;
             break;
         case AUDIO_SCENE_DEFAULT:
@@ -860,7 +857,7 @@ int32_t AudioCapturerSourceInner::SetAudioScene(AudioScene audioScene, DeviceTyp
 {
     AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
-    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE,
         "SetAudioScene failed audioCapture_ handle is null!");
@@ -946,13 +943,8 @@ int32_t AudioCapturerSourceInner::Stop(void)
     }
     started_ = false;
 
-    IAudioSourceCallback* callback = nullptr;
-    {
-        std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-        callback = audioCapturerSourceCallback_;
-    }
-    if (callback != nullptr) {
-        callback->OnCapturerState(false);
+    if (audioCapturerSourceCallback_ != nullptr) {
+        audioCapturerSourceCallback_->OnCapturerState(false);
     }
 
     return SUCCESS;
@@ -1005,14 +997,12 @@ void AudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallback 
     AUDIO_INFO_LOG("Register WakeupClose Callback");
     std::lock_guard<std::mutex> lck(wakeupClosecallbackMutex_);
     wakeupCloseCallback_ = callback;
-    callback->OnCapturerState(started_);
 }
 
-void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
+void AudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
 {
     AUDIO_INFO_LOG("Register AudioCapturerSource Callback");
-    std::lock_guard<std::mutex> lck(audioCapturerSourceCallbackMutex_);
-    audioCapturerSourceCallback_ = callback;
+    audioCapturerSourceCallback_ = std::move(callback);
 }
 
 void AudioCapturerSourceInner::RegisterParameterCallback(IAudioSourceCallback *callback)
@@ -1115,7 +1105,8 @@ int32_t AudioCapturerSourceInner::InitAdapterAndCapture()
         return SUCCESS;
     }
 
-    InitManagerAndAdapter();
+    int32_t err = InitManagerAndAdapter();
+    CHECK_AND_RETURN_RET_LOG(err == 0, err, "Init audio manager and adapater failed");
 
     int32_t createCapture = CreateCapture(audioPort_);
     CHECK_AND_RETURN_RET_LOG(createCapture == 0, ERR_NOT_STARTED, "Create capture failed");
@@ -1339,9 +1330,9 @@ void AudioCapturerSourceWakeup::RegisterWakeupCloseCallback(IAudioSourceCallback
     audioCapturerSource_.RegisterWakeupCloseCallback(callback);
 }
 
-void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
+void AudioCapturerSourceWakeup::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
 {
-    audioCapturerSource_.RegisterAudioCapturerSourceCallback(callback);
+    audioCapturerSource_.RegisterAudioCapturerSourceCallback(std::move(callback));
 }
 
 void AudioCapturerSourceWakeup::RegisterParameterCallback(IAudioSourceCallback *callback)

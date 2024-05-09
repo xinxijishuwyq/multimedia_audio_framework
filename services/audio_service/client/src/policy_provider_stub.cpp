@@ -97,6 +97,13 @@ int32_t PolicyProviderStub::HandleWakeupCapturerRemoved(MessageParcel &data, Mes
     return AUDIO_OK;
 }
 
+int32_t PolicyProviderStub::HandleIsAbsVolumeSupported(MessageParcel &data, MessageParcel &reply)
+{
+    bool ret = IsAbsVolumeSupported();
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -135,6 +142,12 @@ int32_t PolicyProviderWrapper::NotifyWakeUpCapturerRemoved()
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->NotifyWakeUpCapturerRemoved();
+}
+
+bool PolicyProviderWrapper::IsAbsVolumeSupported()
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->IsAbsVolumeSupported();
 }
 } // namespace AudioStandard
 } // namespace OHOS

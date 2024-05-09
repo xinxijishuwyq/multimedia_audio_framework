@@ -43,9 +43,14 @@ typedef struct {
 class IAudioSourceCallback {
 public:
     virtual void OnWakeupClose() = 0;
-    virtual void OnCapturerState(bool isActive) = 0;
     virtual void OnAudioSourceParamChange(const std::string &netWorkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) = 0;
+};
+
+class ICapturerStateCallback {
+public:
+    virtual void OnCapturerState(bool isActive) = 0;
+    virtual ~ICapturerStateCallback() = default;
 };
 
 class IAudioCapturerSource {
@@ -79,7 +84,7 @@ public:
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
 
     virtual void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) = 0;
-    virtual void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) = 0;
+    virtual void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) = 0;
     virtual void RegisterParameterCallback(IAudioSourceCallback *callback) = 0;
     virtual float GetMaxAmplitude() = 0;
     

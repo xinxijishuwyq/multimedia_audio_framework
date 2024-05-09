@@ -391,11 +391,6 @@ void OffloadAudioRendererSinkInner::DeInit()
         audioAdapter_->DestroyRender(audioAdapter_, renderId_);
     }
     audioRender_ = nullptr;
-
-    if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
-    }
-    audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     callbackServ = {};
 
@@ -571,6 +566,8 @@ int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
 int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    int64_t stamp = ClockTime::GetCurNano();
+
     CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "failed! during flushing");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "failed! state not in started");
     int32_t ret;
@@ -594,6 +591,12 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
     }
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrameOffload failed! ret: %{public}x", ret);
     renderPos_ += writeLen;
+
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    int64_t stampThreshold = 20;  // 20ms
+    if (stamp >= stampThreshold) {
+        AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
+    }
     return SUCCESS;
 }
 

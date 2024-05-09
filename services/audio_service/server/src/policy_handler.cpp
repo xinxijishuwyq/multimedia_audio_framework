@@ -122,6 +122,7 @@ AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType strea
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:
@@ -145,26 +146,12 @@ AudioVolumeType PolicyHandler::GetVolumeTypeFromStreamType(AudioStreamType strea
     }
 }
 
-DeviceType PolicyHandler::GetDeviceTypeForVolumeVector(DeviceType deviceType)
-{
-    DeviceType deviceTypeInVector = DEVICE_TYPE_NONE;
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE :
-        case DEVICE_TYPE_SPEAKER :
-            deviceTypeInVector = DEVICE_TYPE_SPEAKER;
-            break;
-        default:
-            AUDIO_ERR_LOG("Device type %{public}d is invalid, for volume vector", deviceType);
-    }
-    return deviceTypeInVector;
-}
-
 bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol)
 {
     CHECK_AND_RETURN_RET_LOG((iPolicyProvider_ != nullptr && volumeVector_ != nullptr), false,
         "GetSharedVolume failed not configed");
     size_t index = 0;
-    if (!IPolicyProvider::GetVolumeIndex(streamType, GetDeviceTypeForVolumeVector(deviceType), index) ||
+    if (!IPolicyProvider::GetVolumeIndex(streamType, GetVolumeGroupForDevice(deviceType), index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }
@@ -216,6 +203,12 @@ int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
+}
+
+bool PolicyHandler::IsAbsVolumeSupported()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->IsAbsVolumeSupported();
 }
 
 bool PolicyHandler::GetHighResolutionExist()

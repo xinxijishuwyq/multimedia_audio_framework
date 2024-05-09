@@ -167,8 +167,8 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "GetAudioTime failed: null process");
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
-    int32_t ret = processClient_->GetAudioTime(timestamp.framePosition, timeSec, timeNsec);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetBufferSize error.");
+    bool ret = processClient_->GetAudioTime(timestamp.framePosition, timeSec, timeNsec);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "GetBufferSize error.");
     timestamp.time.tv_sec = timeSec;
     timestamp.time.tv_nsec = timeNsec;
     return true;
@@ -222,6 +222,14 @@ float FastAudioStream::GetVolume()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 1.0f, "SetVolume failed: null process"); // 1.0f for default
     return processClient_->GetVolume();
+}
+
+int32_t FastAudioStream::SetDuckVolume(float volume)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetDuckVolume failed: null process");
+    int32_t ret = processClient_->SetDuckVolume(volume);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDuckVolume error.");
+    return ret;
 }
 
 int32_t FastAudioStream::SetRenderRate(AudioRendererRate renderRate)
@@ -346,13 +354,13 @@ int32_t FastAudioStream::Clear()
 int32_t FastAudioStream::SetLowPowerVolume(float volume)
 {
     AUDIO_INFO_LOG("SetLowPowerVolume enter.");
-    return 1.0f;
+    return SUCCESS;
 }
 
 float FastAudioStream::GetLowPowerVolume()
 {
     AUDIO_INFO_LOG("GetLowPowerVolume enter.");
-    return 1.0f;
+    return SUCCESS;
 }
 
 int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)

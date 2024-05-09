@@ -306,6 +306,22 @@ void AudioServerGetMaxAmplitudeTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
+void AudioServerResetAudioEndpointTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+
+    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    MessageParcel reply;
+    MessageOption option;
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT),
+        data, reply, option);
+}
+
 void AudioServerCreatePlaybackCapturerManagerTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -554,6 +570,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerGetEffectLatencyTest(data, size);
     OHOS::AudioStandard::AudioServerGetMaxAmplitudeTest(data, size);
+    OHOS::AudioStandard::AudioServerResetAudioEndpointTest(data, size);
     OHOS::AudioStandard::AudioServerCreatePlaybackCapturerManagerTest(data, size);
     OHOS::AudioStandard::AudioServerSetOutputDeviceSinkTest(data, size);
     OHOS::AudioStandard::AudioServerRequestThreadPriorityTest(data, size);

@@ -65,9 +65,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false);
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     float GetSystemVolumeDb(AudioStreamType streamType);
 
@@ -200,7 +200,6 @@ private:
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
-    std::string GetVolumeGroupForDevice(DeviceType deviceType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
@@ -212,8 +211,6 @@ private:
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
-    void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
-    void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
@@ -228,6 +225,7 @@ private:
     void InitSafeStatus(bool isFirstBoot);
     void InitSafeTime(bool isFirstBoot);
     void ConvertSafeTime(void);
+    void UpdateSafeVolume();
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -261,6 +259,9 @@ private:
     int64_t safeActiveTime_ = 0;
     int64_t safeActiveBtTime_ = 0;
     int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
+    bool isWiredBoot_ = true;
+    bool isBtBoot_ = true;
+    bool isBtFirstSetVolume_ = true;
 
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     AudioSessionCallback *sessionCallback_;

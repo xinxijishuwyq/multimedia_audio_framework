@@ -84,9 +84,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false) const;
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType) const;
 
     float GetSystemVolumeDb(AudioStreamType streamType) const;
 
@@ -133,6 +133,8 @@ public:
     int32_t CloseWakeUpAudioCapturer();
 
     int32_t NotifyWakeUpCapturerRemoved();
+
+    bool IsAbsVolumeSupported();
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
@@ -370,7 +372,7 @@ public:
 
     bool IsAbsVolumeScene() const;
 
-    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume);
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
 
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
 
@@ -584,10 +586,10 @@ private:
 
     void WriteDeviceChangedSysEvents(const std::vector<sptr<AudioDeviceDescriptor>> &desc, bool isConnected);
 
-    void WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const SinkInput &sinkInput);
 
-    void WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+    void WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
         const SourceOutput &sourceOutput);
 
     bool GetActiveDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
@@ -759,6 +761,8 @@ private:
 
     int32_t ShowDialog();
 
+    int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel);
+
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
     bool isUpdateRouteSupported_ = true;
@@ -853,6 +857,8 @@ private:
 
     std::mutex deviceClassInfoMutex_;
 
+    std::mutex fetchDeviceSharedMutex_;
+
     std::mutex deviceStatusUpdateSharedMutex_;
     std::mutex microphonesMutex_;
 
@@ -905,6 +911,7 @@ private:
     bool userSelect_ = false;
     std::unique_ptr<std::thread> calculateLoopSafeTime_ = nullptr;
     bool safeVolumeExit_ = false;
+    bool isAbsBtFirstBoot_ = true;
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;

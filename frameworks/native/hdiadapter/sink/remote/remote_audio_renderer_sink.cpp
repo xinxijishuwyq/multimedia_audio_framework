@@ -528,6 +528,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AudioCategory::AUDIO_IN_MEDIA;
             break;
         case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_VOICE_RINGING:
             audioCategory = AudioCategory::AUDIO_IN_RINGTONE;
             break;
         case AUDIO_SCENE_PHONE_CALL:
@@ -603,7 +604,7 @@ int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devic
 {
     AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
-    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
 
     int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);

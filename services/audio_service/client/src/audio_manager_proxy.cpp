@@ -925,6 +925,20 @@ float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType
     return reply.ReadFloat();
 }
 
+void AudioManagerProxy::ResetAudioEndpoint()
+{
+    int32_t error;
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+    error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "Send request failed, error:%{public}d", error);
+}
+
 void AudioManagerProxy::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
 {
     int32_t error;

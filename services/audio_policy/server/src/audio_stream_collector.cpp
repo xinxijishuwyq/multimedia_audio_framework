@@ -86,6 +86,7 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_DTMF)] = STREAM_DTMF;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
 
     return streamMap;
 }
@@ -230,7 +231,7 @@ void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamC
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     rendererChangeInfo->callerPid = streamChangeInfo.audioRendererChangeInfo.callerPid;
     rendererChangeInfo->clientPid = streamChangeInfo.audioRendererChangeInfo.clientPid;
-    rendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
+    rendererChangeInfo->tokenId = static_cast<int32_t>(IPCSkeleton::GetCallingTokenID());
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
@@ -747,13 +748,19 @@ AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sou
         case SOURCE_TYPE_MIC:
             return STREAM_MUSIC;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
+        case SOURCE_TYPE_VOICE_CALL:
             return STREAM_VOICE_CALL;
         case SOURCE_TYPE_ULTRASONIC:
             return STREAM_ULTRASONIC;
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+        case SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SOURCE_TYPE_REMOTE_CAST:
+        case SOURCE_TYPE_VIRTUAL_CAPTURE:
+        case SOURCE_TYPE_VOICE_MESSAGE:
         default:
-            return STREAM_MUSIC;
+            return (AudioStreamType)sourceType;
     }
 }
 

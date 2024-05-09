@@ -86,6 +86,7 @@ std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::Cre
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_DTMF)] = STREAM_DTMF;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
 
     return streamMap;
 }
@@ -213,12 +214,6 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     }
 
     if (streamClass == PA_STREAM) {
-        int32_t ipcFlag = -1;
-        GetSysPara("persist.multimedia.audioflag.forceipc.renderer", ipcFlag);
-        if (getuid() == MEDIA_UID && ipcFlag != FORCED_IPC) {
-            AUDIO_INFO_LOG("Create normal playback stream");
-            return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
-        }
         AUDIO_INFO_LOG("Create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
     }

@@ -46,7 +46,6 @@
             "config_policy",
             "data_share",
             "device_manager",
-            "distributed_audio",
             "drivers_interface_audio",
             "drivers_interface_distributed_audio",
             "drivers_peripheral_audio",
@@ -75,6 +74,7 @@
             "libuv",
             "googletest",
             "cJSON",
+            "opensles",
             "media_foundation"
             ],
           "third_party": [

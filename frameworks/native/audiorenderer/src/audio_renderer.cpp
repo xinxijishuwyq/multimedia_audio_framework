@@ -169,7 +169,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
     StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN &&
-        streamUsage <= STREAM_USAGE_VOICE_MODEM_COMMUNICATION, nullptr, "Invalid stream usage");
+        streamUsage <= STREAM_USAGE_MAX, nullptr, "Invalid stream usage");
     if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
         if (!PermissionUtil::VerifySelfPermission()) {
             AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
@@ -369,6 +369,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr,
             ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed when create normal stream.");
         ret = InitAudioStream(audioStreamParams);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
         audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
     }
 
@@ -644,6 +645,8 @@ bool AudioRendererPrivate::Release() const
 {
     AUDIO_INFO_LOG("AudioRenderer::Release id: %{public}u", sessionID_);
 
+    bool result = audioStream_->ReleaseAudioStream();
+
     // If Stop call was skipped, Release to take care of Deactivation
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
@@ -652,7 +655,7 @@ bool AudioRendererPrivate::Release() const
 
     AudioPolicyManager::GetInstance().UnregisterOutputDeviceChangeWithInfoCallback(sessionID_);
 
-    return audioStream_->ReleaseAudioStream();
+    return result;
 }
 
 int32_t AudioRendererPrivate::GetBufferSize(size_t &bufferSize) const
@@ -752,18 +755,12 @@ void AudioRendererInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
 
 bool AudioRendererInterruptCallbackImpl::HandleForceDucking(const InterruptEventInternal &interruptEvent)
 {
-    if (!isForceDucked_) {
-        // This stream need to be ducked. Update instanceVolBeforeDucking_
-        instanceVolBeforeDucking_ = audioStream_->GetVolume();
-    }
-
     float duckVolumeFactor = interruptEvent.duckVolume;
-    int32_t ret = audioStream_->SetVolume(instanceVolBeforeDucking_ * duckVolumeFactor);
+    int32_t ret = audioStream_->SetDuckVolume(duckVolumeFactor);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Failed to set duckVolumeFactor(instance) %{public}f",
         duckVolumeFactor);
 
-    AUDIO_INFO_LOG("Set duckVolumeFactor %{public}f successfully. instanceVolBeforeDucking: %{public}f",
-        duckVolumeFactor, instanceVolBeforeDucking_);
+    AUDIO_INFO_LOG("Set duckVolumeFactor %{public}f successfully.", duckVolumeFactor);
     return true;
 }
 
@@ -815,11 +812,9 @@ void AudioRendererInterruptCallbackImpl::HandleAndNotifyForcedEvent(const Interr
                 AUDIO_WARNING_LOG("It is not forced ducked, don't unduck or notify app");
                 return;
             }
-            (void)audioStream_->SetVolume(instanceVolBeforeDucking_);
-            AUDIO_INFO_LOG("Unduck Volume(instance) successfully: instanceVolBeforeDucking_ %{public}f",
-                instanceVolBeforeDucking_);
+            (void)audioStream_->SetDuckVolume(1.0f);
+            AUDIO_INFO_LOG("Unduck Volume successfully");
             isForceDucked_ = false;
-            instanceVolBeforeDucking_ = 1.0f;
             break;
         default: // If the hintType is NONE, don't need to send callbacks
             return;
@@ -1468,7 +1463,7 @@ void RendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
 
 void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
 {
-    int32_t tryCounter = 5;
+    int32_t tryCounter = 10;
     uint32_t sleepTime = 300000;
     bool result = false;
     int32_t ret = -1;

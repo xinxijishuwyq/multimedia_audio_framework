@@ -211,8 +211,6 @@ ohos_shared_library("capturer_source_adapter") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
 
-  cflags_cc = cflags
-
   include_dirs = [
     "common",
     "file",
@@ -226,10 +224,17 @@ ohos_shared_library("capturer_source_adapter") {
   deps = [
     ":audio_capturer_file_source",
     ":audio_capturer_source",
-    ":remote_audio_capturer_source",
-    ":remote_fast_audio_capturer_source",
   ]
 
+  if (audio_framework_feature_daudio_enable == true) {
+    deps += [
+      ":remote_audio_capturer_source",
+      ":remote_fast_audio_capturer_source",
+    ]
+    cflags += [ "-DDAUDIO_ENABLE" ]
+  }
+
+  cflags_cc = cflags
   external_deps = [
     "hilog:libhilog",
     "pulseaudio:pulse",

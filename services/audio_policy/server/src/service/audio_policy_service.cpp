@@ -104,7 +104,7 @@ static const std::string SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settings
 static const std::string SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const std::string SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const std::string PREDICATES_STRING = "settings.general.device_name";
-static const std::string EARPIECE_TYPE_NAME = "Earpiece_Out";
+static const std::string EARPIECE_TYPE_NAME = "DEVICE_TYPE_EARPIECE";
 static const std::string FLAG_MMAP_STRING = "AUDIO_FLAG_MMAP";
 static const std::string USAGE_VOIP_STRING = "AUDIO_USAGE_VOIP";
 const uint32_t PCM_8_BIT = 8;
@@ -235,6 +235,7 @@ static AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType)
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:
@@ -431,16 +432,19 @@ int32_t AudioPolicyService::GetMinVolumeLevel(AudioVolumeType volumeType) const
     return audioPolicyManager_.GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey)
+int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
 {
     int32_t result;
     if (GetStreamForVolumeMap(streamType) == STREAM_MUSIC &&
         currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel);
+        result = SetA2dpDeviceVolume(activeBTDevice_, volumeLevel, true);
 #ifdef BLUETOOTH_ENABLE
         if (result == SUCCESS) {
             // set to avrcp device
             return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_, volumeLevel);
+        } else if (result == ERR_UNKNOWN) {
+            return Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(activeBTDevice_,
+                audioPolicyManager_.GetSafeVolumeLevel());
         } else {
             AUDIO_ERR_LOG("AudioPolicyService::SetSystemVolumeLevel set abs volume failed");
         }
@@ -466,7 +470,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
         }
     }
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
-    result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel, isFromVolumeKey);
+    result = audioPolicyManager_.SetSystemVolumeLevel(streamType, volumeLevel);
     if (result == SUCCESS && (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION)) {
         SetVoiceCallVolume(volumeLevel);
     }
@@ -568,7 +572,7 @@ std::string AudioPolicyService::GetVolumeGroupType(DeviceType deviceType)
     return volumeGroupType;
 }
 
-int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey) const
+int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType) const
 {
     {
         std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
@@ -584,7 +588,7 @@ int32_t AudioPolicyService::GetSystemVolumeLevel(AudioStreamType streamType, boo
             }
         }
     }
-    return audioPolicyManager_.GetSystemVolumeLevel(streamType, isFromVolumeKey);
+    return audioPolicyManager_.GetSystemVolumeLevel(streamType);
 }
 
 float AudioPolicyService::GetSystemVolumeDb(AudioStreamType streamType) const
@@ -1589,6 +1593,11 @@ int32_t AudioPolicyService::NotifyWakeUpCapturerRemoved()
     return SUCCESS;
 }
 
+bool AudioPolicyService::IsAbsVolumeSupported()
+{
+    return IsAbsVolumeScene();
+}
+
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 {
     AUDIO_INFO_LOG("Start");
@@ -1898,7 +1907,8 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
-        if (!IsRendererStreamRunning(rendererChangeInfo)) {
+        if (!IsRendererStreamRunning(rendererChangeInfo) || (audioScene_ == AUDIO_SCENE_DEFAULT &&
+            audioRouterCenter_.isCallRenderRouter(rendererChangeInfo->rendererInfo.streamUsage))) {
             AUDIO_INFO_LOG("stream %{public}d not running, no need fetch device", rendererChangeInfo->sessionId);
             continue;
         }
@@ -1910,15 +1920,14 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
             continue;
         }
+        std::string encryptMacAddr = GetEncryptAddr(desc->macAddress_);
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos, reason);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
-                GetEncryptAddr(desc->macAddress_).c_str());
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
             OffloadStartPlayingIfOffloadMode(rendererChangeInfo->sessionId);
         } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             int32_t ret = HandleScoOutputDeviceFetched(desc, rendererChangeInfos);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet",
-                GetEncryptAddr(desc->macAddress_).c_str());
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
         }
         if (needUpdateActiveDevice) {
             if (!IsSameDevice(desc, currentActiveDevice_)) {
@@ -1953,6 +1962,12 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
             int32_t ret = ActivateA2dpDevice(desc, rendererChangeInfos);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "activate a2dp [%{public}s] failed",
                 GetEncryptAddr(desc->macAddress_).c_str());
+            if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP &&
+                preA2dpOffloadFlag_ != A2DP_OFFLOAD && a2dpOffloadFlag_ == A2DP_OFFLOAD) {
+                const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+                CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+                gsp->ResetAudioEndpoint();
+            }
             SelectNewOutputDevice(rendererChangeInfo, desc);
         }
     }
@@ -2058,6 +2073,8 @@ void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDevic
 {
     Trace trace("AudioPolicyService::FetchDevice reason:" + std::to_string(static_cast<int>(reason)));
     AUDIO_DEBUG_LOG("FetchDevice start");
+
+    std::lock_guard<std::mutex> lock(fetchDeviceSharedMutex_);
     if (isOutputDevice) {
         vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
         streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
@@ -2585,11 +2602,6 @@ int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
 
-    if (audioScene_ == AUDIO_SCENE_RINGING && audioScene == AUDIO_SCENE_PHONE_CHAT) {
-#ifdef BLUETOOTH_ENABLE
-        Bluetooth::AudioHfpManager::DisconnectSco();
-#endif
-    }
     audioScene_ = audioScene;
 
     if (audioScene_ == AUDIO_SCENE_DEFAULT) {
@@ -4007,6 +4019,10 @@ void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<Aud
     deviceInfo.displayName = desc->displayName_;
     deviceInfo.connectState = desc->connectState_;
 
+    if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
+    }
+
     if (hasBTPermission) {
         deviceInfo.deviceName = desc->deviceName_;
         deviceInfo.macAddress = desc->macAddress_;
@@ -4070,6 +4086,11 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 {
     if (mode == AUDIO_MODE_RECORD) {
         AddAudioCapturerMicrophoneDescriptor(streamChangeInfo.audioCapturerChangeInfo.sessionId, DEVICE_TYPE_NONE);
+        UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo,
+            new AudioDeviceDescriptor(currentActiveInputDevice_), false, false);
+    } else {
+        UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo,
+            new AudioDeviceDescriptor(currentActiveDevice_), false, false);
     }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
@@ -4094,6 +4115,8 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
     rendererChangeInfo.push_back(
         make_unique<AudioRendererChangeInfo>(streamChangeInfo.audioRendererChangeInfo));
     streamCollector_.GetRendererStreamInfo(streamChangeInfo, *rendererChangeInfo[0]);
+
+    std::lock_guard<std::mutex> lock(fetchDeviceSharedMutex_);
     FetchOutputDevice(rendererChangeInfo);
 }
 
@@ -4103,6 +4126,8 @@ void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
     capturerChangeInfo.push_back(
         make_unique<AudioCapturerChangeInfo>(streamChangeInfo.audioCapturerChangeInfo));
     streamCollector_.GetCapturerStreamInfo(streamChangeInfo, *capturerChangeInfo[0]);
+
+    std::lock_guard<std::mutex> lock(fetchDeviceSharedMutex_);
     FetchInputDevice(capturerChangeInfo);
 }
 
@@ -4318,19 +4343,19 @@ void AudioPolicyService::WriteDeviceChangedSysEvents(const vector<sptr<AudioDevi
             if (deviceDescriptor->deviceRole_ == OUTPUT_DEVICE) {
                 vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
                 for (SinkInput sinkInput : sinkInputs) {
-                    WriteInDeviceChangedSysEvents(deviceDescriptor, sinkInput);
+                    WriteOutDeviceChangedSysEvents(deviceDescriptor, sinkInput);
                 }
             } else if (deviceDescriptor->deviceRole_ == INPUT_DEVICE) {
                 vector<SourceOutput> sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
                 for (SourceOutput sourceOutput : sourceOutputs) {
-                    WriteOutDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
+                    WriteInDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
                 }
             }
         }
     }
 }
 
-void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
     const SinkInput &sinkInput)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -4347,13 +4372,13 @@ void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDes
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
     const SourceOutput &sourceOutput)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::DEVICE_CHANGE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
-    bean->Add("ISOUTPUT", 1);
+    bean->Add("ISOUTPUT", 0);
     bean->Add("STREAMID", sourceOutput.streamId);
     bean->Add("STREAMTYPE", sourceOutput.streamType);
     bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
@@ -4518,8 +4543,8 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
 
     std::unique_ptr<AudioDeviceDescriptor> deviceDes = GetActiveBluetoothDevice();
     if (deviceDes != nullptr && deviceDes->macAddress_ == macAddress) {
-        int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_MUSIC, false);
-        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel, false);
+        int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_MUSIC);
+        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
     }
     return SUCCESS;
 }
@@ -4566,7 +4591,7 @@ void AudioPolicyService::CheckBlueToothActiveMusicTime(int32_t safeVolume)
         safeStatusBt_ = SAFE_ACTIVE;
         userSelect_ = false;
         isDialogSelectDestroy_.store(false);
-        SetSystemVolumeLevel(STREAM_MUSIC, safeVolume, false);
+        SetSystemVolumeLevel(STREAM_MUSIC, safeVolume);
         activeSafeTimeBt_ = 0;
     } else if (currentTime - startSafeTimeBt_ >= ONE_MINUTE) {
         AUDIO_INFO_LOG("safe volume 1 min timeout");
@@ -4592,7 +4617,7 @@ void AudioPolicyService::CheckWiredActiveMusicTime(int32_t safeVolume)
         safeStatus_ = SAFE_ACTIVE;
         userSelect_ = false;
         isDialogSelectDestroy_.store(false);
-        SetSystemVolumeLevel(STREAM_MUSIC, safeVolume, false);
+        SetSystemVolumeLevel(STREAM_MUSIC, safeVolume);
         activeSafeTime_ = 0;
     } else if (currentTime - startSafeTime_ >= ONE_MINUTE) {
         AUDIO_INFO_LOG("safe volume 1 min timeout");
@@ -4640,11 +4665,6 @@ void AudioPolicyService::CreateCheckMusicActiveThread()
 
 int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice)
 {
-    if (!IsStreamActive(STREAM_MUSIC)) {
-        AUDIO_DEBUG_LOG("It is not a music stream, no need to deal with safe volume");
-        return volumeLevel;
-    }
-
     if (isA2dpDevice) {
         AUDIO_INFO_LOG("bluetooth Category:%{public}d", currentActiveDevice_.deviceCategory_);
         if (currentActiveDevice_.deviceCategory_ != BT_HEADPHONE) {
@@ -4715,7 +4735,24 @@ int32_t AudioPolicyService::ShowDialog()
     return result;
 }
 
-int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel)
+int32_t AudioPolicyService::HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel)
+{
+    int32_t sVolumeLevel = volumeLevel;
+    if (isAbsBtFirstBoot_) {
+        sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
+        isAbsBtFirstBoot_ = false;
+        Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
+    } else {
+        sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+        if (sVolumeLevel != volumeLevel) {
+            Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
+        }
+    }
+    return sVolumeLevel;
+}
+
+int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel,
+    bool internalCall)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(macAddress);
@@ -4724,7 +4761,11 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     configInfoPos->second.volumeLevel = volumeLevel;
     int32_t sVolumeLevel = volumeLevel;
     if (volumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
-        sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+        if (internalCall) {
+            sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
+        } else {
+            sVolumeLevel = HandleAbsBluetoothVolume(macAddress, volumeLevel);
+        }
     }
     configInfoPos->second.volumeLevel = sVolumeLevel;
     if (sVolumeLevel > 0) {
@@ -4732,7 +4773,7 @@ int32_t AudioPolicyService::SetA2dpDeviceVolume(const std::string &macAddress, c
     }
     AUDIO_DEBUG_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
-    CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERROR, "safevolume did not deal");
+    CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
 }
 
@@ -5051,7 +5092,7 @@ int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> 
     // init volume map
     // todo device
     for (size_t i = 0; i < IPolicyProvider::GetVolumeVectorSize(); i++) {
-        int32_t currentVolumeLevel = audioPolicyManager_.GetSystemVolumeLevel(g_volumeIndexVector[i].first, false);
+        int32_t currentVolumeLevel = audioPolicyManager_.GetSystemVolumeLevel(g_volumeIndexVector[i].first);
         float volFloat =
             GetSystemVolumeInDb(g_volumeIndexVector[i].first, currentVolumeLevel, currentActiveDevice_.deviceType_);
         volumeVector_[i].isMute = false;
@@ -5067,7 +5108,7 @@ bool AudioPolicyService::GetSharedVolume(AudioVolumeType streamType, DeviceType 
 {
     CHECK_AND_RETURN_RET_LOG(volumeVector_ != nullptr, false, "Get shared memory failed!");
     size_t index = 0;
-    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+    if (!IPolicyProvider::GetVolumeIndex(streamType, GetVolumeGroupForDevice(deviceType), index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }
@@ -5081,7 +5122,7 @@ bool AudioPolicyService::SetSharedVolume(AudioVolumeType streamType, DeviceType 
 {
     CHECK_AND_RETURN_RET_LOG(volumeVector_ != nullptr, false, "Set shared memory failed!");
     size_t index = 0;
-    if (!IPolicyProvider::GetVolumeIndex(streamType, deviceType, index) ||
+    if (!IPolicyProvider::GetVolumeIndex(streamType, GetVolumeGroupForDevice(deviceType), index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }
