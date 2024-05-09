@@ -44,6 +44,7 @@ if (!audio_framework_feature_dtmf_tone) {
     sanitize = {
       cfi = true
       cfi_cross_dso = true
+      cfi_vcall_icall_only = true
       debug = false
     }
     install_enable = true

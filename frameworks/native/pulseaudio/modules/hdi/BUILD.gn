@@ -54,6 +54,7 @@ ohos_shared_library("module-hdi-sink") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [
@@ -98,6 +99,7 @@ ohos_shared_library("module-hdi-source") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [

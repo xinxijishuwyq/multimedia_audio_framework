@@ -35,10 +35,6 @@ config("audio_renderer_config") {
 }
 
 ohos_shared_library("audio_renderer") {
-  sanitize = {
-    cfi = true
-    debug = false
-  }
   install_enable = true
 
   configs = [ ":audio_renderer_config" ]

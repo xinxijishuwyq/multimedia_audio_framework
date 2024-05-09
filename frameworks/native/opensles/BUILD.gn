@@ -41,6 +41,7 @@ if (!audio_framework_feature_opensl_es) {
     sanitize = {
       cfi = true
       cfi_cross_dso = true
+      cfi_vcall_icall_only = true
       debug = false
     }
     include_dirs = [

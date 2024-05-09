@@ -32,6 +32,7 @@ ohos_shared_library("playback_capturer") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
