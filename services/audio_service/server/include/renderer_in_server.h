@@ -108,7 +108,7 @@ private:
     bool isBufferConfiged_  = false;
     std::atomic<bool> isInited_ = false;
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
-    int32_t needForceWrite_ = 0;
+    size_t needForceWrite_ = 0;
     bool afterDrain = false;
     std::mutex updateIndexLock_;
     bool resetTime_ = false;

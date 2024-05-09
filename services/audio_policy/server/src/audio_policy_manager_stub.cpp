@@ -710,7 +710,7 @@ static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mes
 
 void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t i;
+    uint32_t i;
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = QueryEffectSceneMode(supportedEffectConfig); // audio_policy_server.cpp
     CHECK_AND_RETURN_LOG(ret != -1, "default mode is unavailable !");
@@ -718,9 +718,9 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     uint32_t countPre = supportedEffectConfig.preProcessNew.stream.size();
     uint32_t countPost = supportedEffectConfig.postProcessNew.stream.size();
     uint32_t countPostMap = supportedEffectConfig.postProcessSceneMap.size();
-    reply.WriteInt32(countPre);
-    reply.WriteInt32(countPost);
-    reply.WriteInt32(countPostMap);
+    reply.WriteUint32(countPre);
+    reply.WriteUint32(countPost);
+    reply.WriteUint32(countPostMap);
     if (countPre > 0) {
         for (i = 0; i < countPre; i++) {
             PreprocessProcess(supportedEffectConfig, reply, i);
