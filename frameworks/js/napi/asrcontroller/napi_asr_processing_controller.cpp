@@ -31,12 +31,6 @@ using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_asrConstructor = nullptr;
 
-static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode)
-{
-    NapiAudioError::ThrowError(env, NapiAudioError::GetMessageByCode(errCode).c_str(), errCode);
-    return nullptr;
-}
-
 static bool CheckCapturerValid(napi_env env, napi_value capturer)
 {
     NapiAudioCapturer *napiCapturer = nullptr;
@@ -195,33 +189,34 @@ fail:
 napi_value NapiAsrProcessingController::CreateAsrProcessingController(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     napi_value thisVar = nullptr;
     napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "argCount invaild");
     bool isCapturerValid = CheckCapturerValid(env, argv[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(isCapturerValid,
-        ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED), "Operation not allowed. ");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED), "Operation not allowed. ");
     return NapiAsrProcessingController::CreateAsrProcessingControllerWrapper(env);
 }
 
 napi_value NapiAsrProcessingController::SetAsrAecMode(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "argCount invaild");
     int32_t asrAecMode = 0;
     NapiParamUtils::GetValueInt32(env, asrAecMode, argv[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(asrAecMode == 0 || asrAecMode == 1,
-        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "Input parameter value error. ");
+    CHECK_AND_RETURN_RET_LOG(asrAecMode == 0 || asrAecMode == 1, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "parameter verification failed: The param of mode must be enum AsrAecMode"),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->SetAsrAecMode(static_cast<AsrAecMode>(asrAecMode));
@@ -238,7 +233,7 @@ napi_value NapiAsrProcessingController::SetAsrAecMode(napi_env env, napi_callbac
 napi_value NapiAsrProcessingController::GetAsrAecMode(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAsrController = GetParamWithSync(env, info, argc, nullptr);
@@ -246,7 +241,7 @@ napi_value NapiAsrProcessingController::GetAsrAecMode(napi_env env, napi_callbac
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->GetAsrAecMode(asrAecMode);
-    CHECK_AND_RETURN_RET_LOG(res == 0, ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
+    CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
         "Operation not allowed");
     NapiParamUtils::SetValueInt32(env, int32_t(asrAecMode), result);
     return result;
@@ -254,20 +249,22 @@ napi_value NapiAsrProcessingController::GetAsrAecMode(napi_env env, napi_callbac
 napi_value NapiAsrProcessingController::SetAsrNoiseSuppressionMode(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     auto *napiAsrController = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "argCount invaild");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "argCount invaild");
 
     int32_t asrNoiseSuppressionMode = 0;
     NapiParamUtils::GetValueInt32(env, asrNoiseSuppressionMode, argv[PARAM0]);
 
     const int32_t asrNsModeMax = 3;
     CHECK_AND_RETURN_RET_LOG(asrNoiseSuppressionMode >= 0 && asrNoiseSuppressionMode <= asrNsModeMax,
-        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "Input parameter value error. ");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of mode must be enum AsrNoiseSuppressionMode"),
+        "Input parameter value error. ");
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->SetAsrNoiseSuppressionMode(
@@ -285,7 +282,7 @@ napi_value NapiAsrProcessingController::SetAsrNoiseSuppressionMode(napi_env env,
 napi_value NapiAsrProcessingController::GetAsrNoiseSuppressionMode(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAsrController = GetParamWithSync(env, info, argc, nullptr);
@@ -293,7 +290,7 @@ napi_value NapiAsrProcessingController::GetAsrNoiseSuppressionMode(napi_env env,
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
-    CHECK_AND_RETURN_RET_LOG(res == 0, ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
+    CHECK_AND_RETURN_RET_LOG(res == 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
         "Operation not allowed");
     NapiParamUtils::SetValueInt32(env, int32_t(asrNoiseSuppressionMode), result);
     return result;
@@ -302,14 +299,14 @@ napi_value NapiAsrProcessingController::GetAsrNoiseSuppressionMode(napi_env env,
 napi_value NapiAsrProcessingController::IsWhispering(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAsrController = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiAsrController != nullptr, result, "napiAsrController is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAsrController->audioMngr_ != nullptr, result, "audioMngr_ is nullptr");
     int32_t res = napiAsrController->audioMngr_->IsWhispering();
-    CHECK_AND_RETURN_RET_LOG(res == 0 || res == 1, ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
+    CHECK_AND_RETURN_RET_LOG(res == 0 || res == 1, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED),
         "Operation not allowed");
     bool setSuc = true;
     if (res == 0) {
