@@ -363,7 +363,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     }
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
-        int32_t ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
+        ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
         }

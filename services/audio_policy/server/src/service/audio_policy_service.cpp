@@ -3856,8 +3856,8 @@ void AudioPolicyService::OnAudioPolicyXmlParsingCompleted(
     CHECK_AND_RETURN_LOG(!adapterInfoMap.empty(), "failed to parse audiopolicy xml file. Received data is empty");
     adapterInfoMap_ = adapterInfoMap;
 
-    for (auto &adapterInfo : adapterInfoMap_) {
-        for (auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
+    for (const auto &adapterInfo : adapterInfoMap_) {
+        for (const auto &deviceInfos : (adapterInfo.second).deviceInfos_) {
             if (deviceInfos.type_ == EARPIECE_TYPE_NAME) {
                 hasEarpiece_ = true;
                 break;

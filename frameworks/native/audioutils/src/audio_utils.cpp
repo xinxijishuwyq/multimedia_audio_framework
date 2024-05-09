@@ -699,13 +699,11 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
     uint32_t rightZeroSignal = 0;
     int32_t currentPeakIndex = -1;
     int32_t currentPeakSignal = SHRT_MIN;
-    int32_t tempMax;
-    int32_t tempMin;
-    bool hasNoneZero;
+    bool hasNoneZero = false;
     size_t frameCount = bufferLen / channels_;
     for (size_t index = 0; index < frameCount; index++) {
-        tempMax = SHRT_MIN;
-        tempMin = SHRT_MAX;
+        int32_t tempMax = SHRT_MIN;
+        int32_t tempMin = SHRT_MAX;
         for (int channel = 0; channel < channels_; channel++) {
             int16_t temp = buffer[index * channels_ + channel];
             tempMax = temp > tempMax ? temp : tempMax;
