@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -351,7 +351,9 @@ public:
     int32_t UnsetAudioDeviceRefinerCallback() override;
 
     int32_t TriggerFetchDevice() override;
-    
+
+    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -438,6 +440,9 @@ private:
     void OffloadStreamCheck(int64_t activateSessionId, AudioStreamType activateStreamType,
         int64_t deactivateSessionId);
     void CheckSubscribePowerStateChange();
+
+    void CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
+        int64_t deactivateSessionId);
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);

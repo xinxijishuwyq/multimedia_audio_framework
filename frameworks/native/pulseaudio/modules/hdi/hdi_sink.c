@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -83,6 +83,7 @@
 #define DEFAULT_CHANNELLAYOUT 3
 #define OFFLOAD_SET_BUFFER_SIZE_NUM 5
 #define SPATIALIZATION_FADING_FRAMECOUNT 5
+#define POSSIBLY_UNUSED __attribute__((unused))
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 
@@ -94,6 +95,8 @@ const char *DEVICE_CLASS_MULTICHANNEL = "multichannel";
 const char *SINK_NAME_INNER_CAPTURER = "InnerCapturer";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
+const char *MCH_SINK_NAME = "MCH_Speaker";
+const char *OFFLOAD_SINK_NAME = "Offload_Speaker";
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
 bool g_speakerPaAllStreamVolumeZero = false;
@@ -1934,7 +1937,7 @@ static int32_t GetInputsType(pa_sink *s, unsigned *nPrimary, unsigned *nOffload,
         n++;
         if (InputIsOffload(i)) {
             (*nOffload)++;
-        } else if (!strcmp(u->sink->name, "Speaker") && InputIsMultiChannel(i)) {
+        } else if (!strcmp(u->sink->name, MCH_SINK_NAME) && InputIsMultiChannel(i)) {
             (*nMultiChannel)++;
         } else {
             (*nPrimary)++;
@@ -2486,6 +2489,9 @@ static void StartPrimaryHdiIfRunning(struct Userdata *u)
 
 static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels, uint64_t sinkChannelLayout)
 {
+    if (u->multiChannel.sinkAdapter == NULL) {
+        return;
+    }
     if (u->multiChannel.isHDISinkInited) {
         if (u->multiChannel.sample_attrs.channel != (uint32_t)sinkChannels) {
             u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
@@ -2535,7 +2541,7 @@ static void StartMultiChannelHdiIfRunning(struct Userdata *u)
     ResetMultiChannelHdiState(u, sinkChannel, sinkChannelLayout);
 }
 
-static void StopPrimaryHdiIfNoRunning(struct Userdata *u)
+static void POSSIBLY_UNUSED StopPrimaryHdiIfNoRunning(struct Userdata *u)
 {
     if (!u->primary.isHDISinkStarted) {
         return;
@@ -2758,90 +2764,6 @@ static void ThreadFuncRendererTimerOffloadFlag(struct Userdata *u, pa_usec_t now
     *flagOut = flag;
 }
 
-static int32_t WaitMsg(const char *prefix, const char *suffix, struct Userdata *u, pa_asyncmsgq *msgq)
-{
-    int32_t ret;
-    int32_t code = 0;
-
-    if ((ret = pthread_rwlock_unlock(&u->rwlockSleep)) != 0) {
-        AUDIO_WARNING_LOG("WaitMsg pthread_rwlock_unlock ret %d", ret);
-    }
-    pa_assert_se(pa_asyncmsgq_get(msgq, NULL, &code, NULL, NULL, NULL, 1) == 0);
-    if ((ret = pthread_rwlock_rdlock(&u->rwlockSleep)) != 0) {
-        AUDIO_WARNING_LOG("WaitMsg pthread_rwlock_rdlock ret %d", ret);
-    }
-
-    pa_asyncmsgq_done(msgq, 0);
-
-    if (code == QUIT) {
-        AUDIO_INFO_LOG("Thread %s(use timing %s) shutting down, pid %d, tid %d", prefix, suffix, getpid(), gettid());
-        pthread_rwlock_unlock(&u->rwlockSleep);
-        return -1;
-    }
-    return 0;
-}
-
-static void ThreadFuncRendererTimerOffload(void *userdata)
-{
-    ScheduleReportData(getpid(), gettid(), "audio_server"); // set audio thread priority
-
-    struct Userdata *u = userdata;
-
-    pa_assert(u);
-
-    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-    AUDIO_INFO_LOG("Thread %s(use timing offload) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
-    pa_thread_mq_install(&u->thread_mq);
-
-    OffloadReset(u);
-
-    u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
-    pthread_rwlock_rdlock(&u->rwlockSleep);
-
-    while (true) {
-        int32_t ret;
-        if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
-            AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload pthread_mutex_unlock ret %d", ret);
-        }
-        if (WaitMsg(deviceClass, "offload", u, u->offload.msgq) == -1) {
-            break;
-        }
-        if ((ret = pthread_mutex_lock(&u->mutexPa)) != 0) {
-            AUDIO_WARNING_LOG("ThreadFuncRendererTimerOffload pthread_mutex_lock ret %d", ret);
-        }
-
-        // start process
-        pa_usec_t now = pa_rtclock_now();
-        int64_t sleepForUsec = -1;
-        bool flag;
-        ThreadFuncRendererTimerOffloadFlag(u, now, &flag, &sleepForUsec);
-
-        if (flag) {
-            ThreadFuncRendererTimerOffloadProcess(u, now, &sleepForUsec);
-        }
-        if (u->offload.fullTs != 0) {
-            if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
-                const int64_t s = ((int64_t)u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now;
-                sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s, sleepForUsec);
-            } else if (pa_atomic_load(&u->offload.hdistate) == 1) {
-                u->offload.fullTs = 0;
-                OffloadUnlock(u);
-                StopPrimaryHdiIfNoRunning(u);
-            } else {
-                u->offload.fullTs = 0;
-            }
-        }
-
-        if (sleepForUsec != -1) {
-            if (u->timestampSleep == -1) {
-                u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
-            } else {
-                u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
-            }
-        }
-    }
-}
-
 static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     struct Userdata *u;
@@ -2926,7 +2848,7 @@ static void ProcessRenderUseTimingMultiChannel(struct Userdata *u, pa_usec_t now
     u->multiChannel.timestamp += pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
 }
 
-static bool ThreadFuncRendererTimerMultiChannelFlagJudge(struct Userdata *u)
+static bool POSSIBLY_UNUSED ThreadFuncRendererTimerMultiChannelFlagJudge(struct Userdata *u)
 {
     pa_assert(u);
     bool flag = (u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
@@ -2944,66 +2866,6 @@ static bool ThreadFuncRendererTimerMultiChannelFlagJudge(struct Userdata *u)
     }
     flag = flag && (nMultiChannel > 0);
     return flag;
-}
-
-static void ThreadFuncRendererTimerMultiChannel(void *userdata)
-{
-    ScheduleReportData(getpid(), gettid(), "audio_server"); // set audio thread priority
-
-    struct Userdata *u = userdata;
-
-    pa_assert(u);
-
-    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-    AUDIO_INFO_LOG("Thread %s(use timing offload) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
-    pa_thread_mq_install(&u->thread_mq);
-
-    u->multiChannel.timestamp = pa_rtclock_now();
-    const uint64_t pw = u->multiChannel.prewrite;
-    pthread_rwlock_rdlock(&u->rwlockSleep);
-    while (true) {
-        int32_t ret;
-        if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
-            AUDIO_WARNING_LOG("ThreadFuncRendererTimerMultiChannel pthread_mutex_unlock ret %d", ret);
-        }
-        if (WaitMsg(deviceClass, "multichannel", u, u->multiChannel.msgq) == -1) {
-            break;
-        }
-        if ((ret = pthread_mutex_lock(&u->mutexPa)) != 0) {
-            AUDIO_WARNING_LOG("ThreadFuncRendererTimerMultiChannel pthread_mutex_lock ret %d", ret);
-        }
-
-        pa_usec_t now = 0;
-
-        int64_t sleepForUsec = -1;
-
-        bool flag = ThreadFuncRendererTimerMultiChannelFlagJudge(u);
-        if (flag) {
-            now = pa_rtclock_now();
-        }
-
-        if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
-            pa_sink_process_rewind(u->sink, 0);
-        }
-
-        if (flag) {
-            if (u->multiChannel.timestamp <= now + pw && pa_atomic_load(&u->multiChannel.dflag) == 0) {
-                pa_atomic_add(&u->multiChannel.dflag, 1);
-                ProcessRenderUseTimingMultiChannel(u, now);
-            }
-            pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-            sleepForUsec = PA_MIN((int64_t)(blockTime - (pa_rtclock_now() - now)), u->multiChannel.writeTime);
-            sleepForUsec = PA_MAX(sleepForUsec, 0);
-        }
-
-        if (sleepForUsec != -1) {
-            if (u->timestampSleep == -1) {
-                u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
-            } else {
-                u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
-            }
-        }
-    }
 }
 
 static int32_t GetSinkTypeNum(const char *sinkSceneType)
@@ -3061,8 +2923,10 @@ static void SetHdiParam(struct Userdata *userdata)
     }
 }
 
-static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUsec)
+static void ProcessNormalData(struct Userdata *u)
 {
+    AUTO_CTRACE("ProcessNormalData");
+    int64_t sleepForUsec = -1;
     pa_usec_t now = 0;
 
     bool flag = (((u->render_in_idle_state && PA_SINK_IS_OPENED(u->sink->thread_info.state)) ||
@@ -3070,13 +2934,6 @@ static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUse
                 !(u->sink->state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_SUSPENDED) &&
                 !(u->sink->state == PA_SINK_IDLE && u->primary.previousState == PA_SINK_INIT)) ||
                 (u->sink->state == PA_SINK_IDLE && monitorLinked(u->sink, true));
-    unsigned nPrimary;
-    unsigned nOffload;
-    unsigned nHd;
-    int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nHd, true);
-    if (n != 0 && !monitorLinked(u->sink, true)) {
-        flag = flag && (nPrimary > 0);
-    }
     if (flag) {
         now = pa_rtclock_now();
     }
@@ -3091,56 +2948,87 @@ static void ThreadFuncRendererTimerLoop(struct Userdata *u, int64_t *sleepForUse
             ProcessRenderUseTiming(u, now);
         }
         pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
-        *sleepForUsec = blockTime - (pa_rtclock_now() - now);
+        sleepForUsec = blockTime - (pa_rtclock_now() - now);
         if (u->primary.timestamp <= now + u->primary.prewrite) {
-            *sleepForUsec = PA_MIN(*sleepForUsec, u->primary.writeTime);
+            sleepForUsec = PA_MIN(sleepForUsec, u->primary.writeTime);
         }
-        *sleepForUsec = PA_MAX(*sleepForUsec, 0);
+        sleepForUsec = PA_MAX(sleepForUsec, 0);
+    }
+
+    if (sleepForUsec != -1) {
+        if (u->timestampSleep == -1) {
+            u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
+        } else {
+            u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
+        }
     }
 }
 
-static void ThreadFuncRendererTimer(void *userdata)
+static void ProcessMCHData(struct Userdata *u)
 {
-    ScheduleReportData(getpid(), gettid(), "audio_server"); // set audio thread priority
+    AUTO_CTRACE("ProcessMCHData");
+    const uint64_t pw = u->multiChannel.prewrite;
 
-    struct Userdata *u = userdata;
+    pa_usec_t now = 0;
 
-    pa_assert(u);
+    int64_t sleepForUsec = -1;
 
-    const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-    AUDIO_INFO_LOG("Thread %s(use timing primary) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
-    pa_thread_mq_install(&u->thread_mq);
+    now = pa_rtclock_now();
 
-    u->primary.timestamp = pa_rtclock_now();
-    pthread_rwlock_rdlock(&u->rwlockSleep);
+    if (PA_UNLIKELY(u->sink->thread_info.rewind_requested)) {
+        pa_sink_process_rewind(u->sink, 0);
+    }
 
-    while (true) {
-        int32_t ret;
-        if ((ret = pthread_mutex_unlock(&u->mutexPa)) != 0) {
-            AUDIO_WARNING_LOG("ThreadFuncRendererTimer pthread_mutex_unlock ret %d", ret);
-        }
-        if (WaitMsg(deviceClass, "primary", u, u->primary.msgq) == -1) {
-            break;
-        }
-        if ((ret = pthread_mutex_lock(&u->mutexPa)) != 0) {
-            AUDIO_WARNING_LOG("ThreadFuncRendererTimer pthread_mutex_lock ret %d", ret);
-        }
-
-        int64_t sleepForUsec = -1;
-
-        ThreadFuncRendererTimerLoop(u, &sleepForUsec);
-
-        if (sleepForUsec != -1) {
-            if (u->timestampSleep == -1) {
-                u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
-            } else {
-                u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
-            }
+    if (u->multiChannel.timestamp <= now + pw && pa_atomic_load(&u->multiChannel.dflag) == 0) {
+        pa_atomic_add(&u->multiChannel.dflag, 1);
+        ProcessRenderUseTimingMultiChannel(u, now);
+    }
+    pa_usec_t blockTime = pa_bytes_to_usec(u->sink->thread_info.max_request, &u->sink->sample_spec);
+    sleepForUsec = PA_MIN(blockTime - (pa_rtclock_now() - now), u->multiChannel.writeTime);
+    sleepForUsec = PA_MAX(sleepForUsec, 0);
+    if (sleepForUsec != -1) {
+        if (u->timestampSleep == -1) {
+            u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
+        } else {
+            u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
         }
     }
 }
 
-static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
+static void ProcessOffloadData(struct Userdata *u)
+{
+    AUTO_CTRACE("ProcessOffloadData");
+    pa_usec_t now = pa_rtclock_now();
+    int64_t sleepForUsec = -1;
+    bool flag;
+    ThreadFuncRendererTimerOffloadFlag(u, now, &flag, &sleepForUsec);
+
+    if (flag) {
+        ThreadFuncRendererTimerOffloadProcess(u, now, &sleepForUsec);
+    }
+
+    if (u->offload.fullTs != 0) {
+        if (u->offload.fullTs + 10 * PA_USEC_PER_MSEC > now) { // 10 is min checking size
+            const int64_t s = (u->offload.fullTs + 10 * PA_USEC_PER_MSEC) - now;
+            sleepForUsec = sleepForUsec == -1 ? s : PA_MIN(s, sleepForUsec);
+        } else if (pa_atomic_load(&u->offload.hdistate) == 1) {
+            u->offload.fullTs = 0;
+            OffloadUnlock(u);
+        } else {
+            u->offload.fullTs = 0;
+        }
+    }
+
+    if (sleepForUsec != -1) {
+        if (u->timestampSleep == -1) {
+            u->timestampSleep = (int64_t)pa_rtclock_now() + sleepForUsec;
+        } else {
+            u->timestampSleep = PA_MIN(u->timestampSleep, (int64_t)pa_rtclock_now() + sleepForUsec);
+        }
+    }
+}
+
+static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 {
     unsigned nPrimary = 0;
     unsigned nOffload = 0;
@@ -3161,16 +3049,15 @@ static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
     if (logCnt > LOG_LOOP_THRESHOLD) {
         logCnt = 0;
     }
-
     bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
     if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
-        pa_asyncmsgq_send(u->primary.msgq, NULL, 0, NULL, 0, NULL);
+        ProcessNormalData(u);
     }
     if (u->offload_enable && nOffload > 0 && u->offload.msgq) {
-        pa_asyncmsgq_send(u->offload.msgq, NULL, 0, NULL, 0, NULL);
+        ProcessOffloadData(u);
     }
     if (nMultiChannel > 0 && u->multiChannel.msgq) {
-        pa_asyncmsgq_send(u->multiChannel.msgq, NULL, 0, NULL, 0, NULL);
+        ProcessMCHData(u);
     }
 }
 
@@ -3187,7 +3074,12 @@ static void ThreadFuncRendererTimerBus(void *userdata)
     AUDIO_INFO_LOG("Thread %s(use timing bus) starting up, pid %d, tid %d", deviceClass, getpid(), gettid());
     pa_thread_mq_install(&u->thread_mq);
 
+    if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
+        OffloadReset(u);
+        u->offload.sinkAdapter->RendererSinkOffloadRunningLockInit(u->offload.sinkAdapter);
+    }
     while (true) {
+        AUTO_CTRACE("ProcessDataLoop");
         int ret;
         pthread_rwlock_wrlock(&u->rwlockSleep);
 
@@ -3222,7 +3114,7 @@ static void ThreadFuncRendererTimerBus(void *userdata)
 
         SetHdiParam(u);
 
-        ThreadFuncRendererTimerBusSendMsgq(u);
+        ThreadFuncRendererTimerProcessData(u);
     }
 }
 
@@ -3580,7 +3472,9 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         return RemoteSinkStateChange(s, newState);
     }
 
-    OffloadSinkStateChangeCb(s, newState);
+    if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
+        OffloadSinkStateChangeCb(s, newState);
+    }
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
         newState == PA_SINK_RUNNING) {
@@ -3695,6 +3589,11 @@ static int32_t PrepareDevice(struct Userdata *u, const char *filePath)
     sample_attrs.filePath = filePath;
     sample_attrs.deviceNetworkId = u->deviceNetworkId;
     sample_attrs.deviceType =  u->deviceType;
+
+    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), DEVICE_CLASS_MULTICHANNEL)) {
+        sample_attrs.channel = DEFAULT_MULTICHANNEL_NUM;
+        sample_attrs.channelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
+    }
 
     ret = u->primary.sinkAdapter->RendererSinkInit(u->primary.sinkAdapter, &sample_attrs);
     if (ret != 0) {
@@ -3855,7 +3754,6 @@ fail:
 static int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, struct Userdata *u)
 {
     int ret;
-    char *paThreadName = NULL;
     pa_atomic_store(&u->multiChannel.dflag, 0);
     u->multiChannel.msgq = pa_asyncmsgq_new(0);
     u->multiChannel.dq = pa_asyncmsgq_new(0);
@@ -3872,13 +3770,6 @@ static int32_t PaHdiSinkNewInitThreadMultiChannel(pa_module *m, pa_modargs *ma, 
 
     u->multiChannel.chunk.memblock = pa_memblock_new(u->sink->core->mempool, -1); // -1 == pa_mempool_block_size_max
 
-    paThreadName = "OS_WriteMch";
-    if (!(u->multiChannel.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerMultiChannel, u))) {
-        AUDIO_ERR_LOG("Failed to write-pa-multiChannel thread.");
-        return -1;
-    }
-    AUDIO_DEBUG_LOG("multichannel pa_thread_new success");
-
     return 0;
 }
 
@@ -3886,37 +3777,14 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
 {
     char *paThreadName = NULL;
 
-    paThreadName = "OS_WriteBus";
-    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerBus, u))) {
-        AUDIO_ERR_LOG("Failed to create bus thread.");
-        return -1;
-    }
-
-    paThreadName = "OS_WritePrimary";
-    if (!(u->primary.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimer, u))) {
-        AUDIO_ERR_LOG("Failed to create primary thread.");
-        return -1;
-    }
-
-    if (!strcmp(u->sink->name, "Speaker")) {
-        PaHdiSinkNewInitThreadMultiChannel(m, ma, u);
-        u->multichannel_enable = true;
-        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
-            (pa_hook_cb_t)SinkInputPutCb, u);
-    } else {
-        u->multichannel_enable = false;
-    }
-
-    // offload
     const char *deviceClass = GetDeviceClass(u->primary.sinkAdapter->deviceClass);
-    if (u->offload_enable) {
+    if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME) && u->offload_enable) {
         AUDIO_DEBUG_LOG("PaHdiSinkNew device[%s] sink[%s] init offload thread", deviceClass, u->sink->name);
         int32_t ret = LoadSinkAdapter(DEVICE_CLASS_OFFLOAD, "LocalDevice", &u->offload.sinkAdapter);
         if (ret) {
             AUDIO_ERR_LOG("Load adapter failed");
             return -1;
         }
-
         u->offload.msgq = pa_asyncmsgq_new(0);
         pa_atomic_store(&u->offload.hdistate, 0);
         u->offload.chunk.memblock = pa_memblock_new(u->sink->core->mempool,
@@ -3925,14 +3793,25 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
             (pa_hook_cb_t)SinkInputMoveStartCb, u);
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_STATE_CHANGED], PA_HOOK_NORMAL,
             (pa_hook_cb_t)SinkInputStateChangedCb, u);
-        paThreadName = "OS_WriteOffload";
-        if (!(u->offload.thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerOffload, u))) {
-            AUDIO_ERR_LOG("Failed to create offload thread.");
-            return -1;
-        }
     } else {
-        AUDIO_DEBUG_LOG("PaHdiSinkNew device[%s] sink[%s] skip offload thread", deviceClass, u->sink->name);
+        AUDIO_INFO_LOG("PaHdiSinkNew device[%s] sink[%s] skip offload thread", deviceClass, u->sink->name);
     }
+
+    if (!strcmp(u->sink->name, MCH_SINK_NAME)) {
+        PaHdiSinkNewInitThreadMultiChannel(m, ma, u);
+        u->multichannel_enable = true;
+        pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
+            (pa_hook_cb_t)SinkInputPutCb, u);
+    } else {
+        u->multichannel_enable = false;
+    }
+
+    paThreadName = "OS_ProcessData";
+    if (!(u->thread = pa_thread_new(paThreadName, ThreadFuncRendererTimerBus, u))) {
+        AUDIO_ERR_LOG("Failed to create bus thread.");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -4078,10 +3957,11 @@ pa_sink *PaHdiSinkNew(pa_module *m, pa_modargs *ma, const char *driver)
     } else {
         hdiThreadName = "OS_WriteHdi";
         if (!(u->primary.thread_hdi = pa_thread_new(hdiThreadName, ThreadFuncWriteHDI, u))) {
-            AUDIO_ERR_LOG("Failed to write-hdi-primary thread.");
+            AUDIO_ERR_LOG("Failed to write-hdi-primary2 thread.");
             goto fail;
         }
-        if (!strcmp(u->sink->name, "Speaker")) {
+
+        if (!strcmp(u->sink->name, MCH_SINK_NAME)) {
             hdiThreadNameMch = "OS_WriteHdiMch";
             if (!(u->multiChannel.thread_hdi = pa_thread_new(hdiThreadNameMch, ThreadFuncWriteHDIMultiChannel, u))) {
                 AUDIO_ERR_LOG("Failed to write-hdi-multichannel thread.");

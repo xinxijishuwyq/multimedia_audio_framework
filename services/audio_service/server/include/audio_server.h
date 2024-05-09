@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -135,6 +135,8 @@ public:
     void ResetAudioEndpoint() override;
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
+
+    bool GetEffectOffloadEnabled() override;
 
     void OnCapturerState(bool isActive, int32_t num);
 protected:

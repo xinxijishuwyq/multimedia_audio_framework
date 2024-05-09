@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -756,41 +756,14 @@ void AudioPolicyService::ResetOffloadMode()
 
 void AudioPolicyService::OffloadStreamSetCheck(uint32_t sessionId)
 {
-    if (!GetOffloadAvailableFromXml()) {
-        AUDIO_INFO_LOG("Offload not available, skipped for set");
-        return;
-    }
-
-    if (!CheckActiveOutputDeviceSupportOffload()) {
-        AUDIO_INFO_LOG("Offload not available on current output device, skipped");
-        return;
-    }
-
     AudioStreamType streamType = GetStreamType(sessionId);
-    if ((streamType != STREAM_MUSIC) && (streamType != STREAM_SPEECH)) {
-        AUDIO_DEBUG_LOG("StreamType not allowed get offload mode, Skipped");
-        return;
-    }
-
-    int32_t channelCount = GetChannelCount(sessionId);
-    if ((channelCount != AudioChannel::MONO) && (channelCount != AudioChannel::STEREO)) {
-        AUDIO_DEBUG_LOG("ChannelNum not allowed get offload mode, Skipped");
-        return;
-    }
-
-    int32_t offloadUID = GetUid(sessionId);
-    if (offloadUID == -1) {
-        AUDIO_DEBUG_LOG("offloadUID not valid, Skipped");
-        return;
-    }
-    if (offloadUID == UID_AUDIO) {
-        AUDIO_DEBUG_LOG("Skip anco_audio out of offload mode");
+    if (!CheckStreamOffloadMode(sessionId, streamType)) {
         return;
     }
 
     auto CallingUid = IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("sessionId[%{public}d] UID[%{public}d] CallingUid[%{public}d] StreamType[%{public}d] "
-                   "Getting offload stream", sessionId, offloadUID, CallingUid, streamType);
+    AUDIO_INFO_LOG("sessionId[%{public}d]  CallingUid[%{public}d] StreamType[%{public}d] "
+                   "Getting offload stream", sessionId, CallingUid, streamType);
     lock_guard<mutex> lock(offloadMutex_);
 
     if (!offloadSessionID_.has_value()) {
@@ -823,6 +796,7 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
         AUDIO_DEBUG_LOG("Doing unset offload mode!");
         streamCollector_.UnsetOffloadMode(*offloadSessionID_);
         offloadSessionID_.reset();
+        UnloadOffloadModule();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
         if (offloadSessionID_.has_value()) {
@@ -1304,8 +1278,10 @@ int32_t AudioPolicyService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkI
 
     // start move.
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
-    std::string sinkName = GetSinkPortName(localDeviceDescriptor->deviceType_);
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
+        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+        streamCollector_.GetPipeType(sinkInputIds[i].streamId, pipeType);
+        std::string sinkName = GetSinkPortName(localDeviceDescriptor->deviceType_, pipeType);
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
@@ -1565,7 +1541,7 @@ DistributedRoutingInfo AudioPolicyService::GetDistributedRoutingRoleInfo()
     return distributedRoutingInfo_;
 }
 
-std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType)
+std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType, AudioPipeType pipeType)
 {
     std::string portName = PORT_NONE;
     if (deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
@@ -1585,7 +1561,13 @@ std::string AudioPolicyService::GetSinkPortName(InternalDeviceType deviceType)
         case InternalDeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case InternalDeviceType::DEVICE_TYPE_USB_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
-            portName = PRIMARY_SPEAKER;
+            if (pipeType == PIPE_TYPE_OFFLOAD) {
+                portName = OFFLOAD_PRIMARY_SPEAKER;
+            } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
+                portName = MCH_PRIMARY_SPEAKER;
+            } else {
+                portName = PRIMARY_SPEAKER;
+            }
             break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_SPEAKER;
@@ -1669,6 +1651,23 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     return audioModuleInfo;
 }
 
+int32_t AudioPolicyService::MoveToOutputDevice(uint32_t sessionId, std::string portName)
+{
+    AUDIO_INFO_LOG("move for session [%{public}d], portName %{public}s", sessionId, portName.c_str());
+    std::vector<SinkInput> sinkInputIds = FilterSinkInputs(sessionId);
+    // start move.
+    uint32_t sinkId = -1; // invalid sink id, use sink name instead.
+    for (size_t i = 0; i < sinkInputIds.size(); i++) {
+        int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, portName);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+            "move [%{public}d] to local failed", sinkInputIds[i].streamId);
+        std::lock_guard<std::mutex> lock(routerMapMutex_);
+        routerMap_[sinkInputIds[i].uid] = std::pair(LOCAL_NETWORK_ID, sinkInputIds[i].pid);
+    }
+    return SUCCESS;
+}
+
+// private method
 bool AudioPolicyService::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
     AudioModuleInfo &audioModuleInfo)
 {
@@ -5638,6 +5637,231 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+bool AudioPolicyService::CheckStreamOffloadMode(int64_t activateSessionId, AudioStreamType streamType)
+{
+    if (!GetOffloadAvailableFromXml()) {
+        AUDIO_INFO_LOG("Offload not available, skipped for set");
+        return false;
+    }
+
+    if (!CheckActiveOutputDeviceSupportOffload()) {
+        AUDIO_INFO_LOG("Offload not available on current output device, skipped");
+        return false;
+    }
+
+    if ((streamType != STREAM_MUSIC) && (streamType != STREAM_SPEECH)) {
+        AUDIO_DEBUG_LOG("StreamType not allowed get offload mode, Skipped");
+        return false;
+    }
+
+    int32_t channelCount = GetChannelCount(activateSessionId);
+    if ((channelCount != AudioChannel::MONO) && (channelCount != AudioChannel::STEREO)) {
+        AUDIO_DEBUG_LOG("ChannelNum not allowed get offload mode, Skipped");
+        return false;
+    }
+
+    int32_t offloadUID = GetUid(activateSessionId);
+    if (offloadUID == -1) {
+        AUDIO_DEBUG_LOG("offloadUID not valid, Skipped");
+        return false;
+    }
+    if (offloadUID == UID_AUDIO) {
+        AUDIO_DEBUG_LOG("Skip anco_audio out of offload mode");
+        return false;
+    }
+
+    return true;
+}
+
+AudioModuleInfo AudioPolicyService::ConstructOffloadAudioModuleInfo(DeviceType deviceType)
+{
+    AudioModuleInfo audioModuleInfo = {};
+    audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
+    audioModuleInfo.format = "s32le"; // 32bit little endian
+    audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
+
+    // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    audioModuleInfo.name = OFFLOAD_PRIMARY_SPEAKER;
+
+    std::stringstream typeValue;
+    typeValue << static_cast<int32_t>(deviceType);
+    audioModuleInfo.deviceType = typeValue.str();
+
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.className = "offload"; // used in renderer_sink_adapter.c
+    audioModuleInfo.fileName = "offload_dump_file";
+    audioModuleInfo.offloadEnable = "1";
+
+    audioModuleInfo.channels = "2";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.bufferSize = "7680";
+
+    return audioModuleInfo;
+}
+
+int32_t AudioPolicyService::LoadOffloadModule()
+{
+    AUDIO_INFO_LOG("load offload mode");
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioModuleInfo moduleInfo = ConstructOffloadAudioModuleInfo(deviceType);
+    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::UnloadOffloadModule()
+{
+    return ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
+}
+
+bool AudioPolicyService::CheckStreamMultichannelMode(int64_t activateSessionId, AudioStreamType streamType)
+{
+    // Multi-channel mode only when the number of channels is greater than 2.
+    int32_t channelCount = GetChannelCount(activateSessionId);
+    if (channelCount < AudioChannel::CHANNEL_3) {
+        AUDIO_DEBUG_LOG("ChannelNum not allowed get multichannel mode, Skipped");
+        return false;
+    }
+
+    // The multi-channel algorithm needs to be supported in the DSP
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false,
+        "error for g_adProxy null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    bool ret = gsp->GetEffectOffloadEnabled();
+    IPCSkeleton::SetCallingIdentity(identity);
+
+    return ret;
+}
+
+AudioModuleInfo AudioPolicyService::ConstructMchAudioModuleInfo(DeviceType deviceType)
+{
+    AudioModuleInfo audioModuleInfo = {};
+    audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
+    audioModuleInfo.format = "s32le"; // 32bit little endian
+    audioModuleInfo.fixedLatency = "1"; // here we need to set latency fixed for a fixed buffer size.
+
+    // used as "sink_name" in hdi_sink.c, hope we could use name to find target sink.
+    audioModuleInfo.name = MCH_PRIMARY_SPEAKER;
+
+    std::stringstream typeValue;
+    typeValue << static_cast<int32_t>(deviceType);
+    audioModuleInfo.deviceType = typeValue.str();
+
+    audioModuleInfo.adapterName = "primary";
+    audioModuleInfo.className = "multichannel"; // used in renderer_sink_adapter.c
+    audioModuleInfo.fileName = "mch_dump_file";
+
+    audioModuleInfo.channels = "6";
+    audioModuleInfo.rate = "48000";
+    audioModuleInfo.bufferSize = "7680";
+
+    return audioModuleInfo;
+}
+
+int32_t AudioPolicyService::LoadMchModule()
+{
+    AUDIO_INFO_LOG("load multichannel mode");
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioModuleInfo moduleInfo = ConstructMchAudioModuleInfo(deviceType);
+    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::UnloadMchModule()
+{
+    if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+        // load moudle and move into new sink
+        AUDIO_ERR_LOG("has no mch moudle");
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("unload multichannel module");
+    return ClosePortAndEraseIOHandle(MCH_PRIMARY_SPEAKER);
+}
+
+void AudioPolicyService::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType)
+{
+    if (CheckStreamMultichannelMode(activateSessionId, activateStreamType)) {
+        MoveToNewPipeInner(activateSessionId, PIPE_TYPE_MULTICHANNEL);
+    }
+}
+
+int32_t AudioPolicyService::MoveToNewPipe(uint32_t sessionId, AudioPipeType pipeType)
+{
+    // Check if the stream exists
+    int32_t defaultUid = -1;
+    if (defaultUid == streamCollector_.GetUid(sessionId)) {
+        AUDIO_ERR_LOG("The audio stream information [%{public}d] is illegal", sessionId);
+        return ERROR;
+    }
+    // move the stream to new pipe
+    return MoveToNewPipeInner(sessionId, pipeType);
+}
+
+int32_t AudioPolicyService::DynamicUnloadModule(const AudioPipeType pipeType)
+{
+    switch (pipeType) {
+        case PIPE_TYPE_OFFLOAD:
+            return UnloadOffloadModule();
+            break;
+        case PIPE_TYPE_MULTICHANNEL:
+            return UnloadMchModule();
+            break;
+        default:
+            AUDIO_WARNING_LOG("not supported for pipe type %{public}d", pipeType);
+            break;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType pipeType)
+{
+    Trace trace("AudioPolicyService::MoveToNewPipeInner");
+    AUDIO_INFO_LOG("start move stream into new pipe %{public}d", pipeType);
+    int32_t ret = ERROR;
+    std::string portName = PORT_NONE;
+    AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
+    DeviceType deviceType = GetActiveOutputDevice();
+    switch (pipeType) {
+        case PIPE_TYPE_OFFLOAD: {
+            if (!CheckStreamOffloadMode(sessionId, streamType)) {
+                return ERROR;
+            }
+            if (IOHandles_.find(OFFLOAD_PRIMARY_SPEAKER) == IOHandles_.end()) {
+                // load moudle and move into new sink
+                LoadOffloadModule();
+            }
+            portName = GetSinkPortName(deviceType, pipeType);
+            ret = MoveToOutputDevice(sessionId, portName);
+            break;
+        }
+        case PIPE_TYPE_MULTICHANNEL: {
+            if (!CheckStreamMultichannelMode(sessionId, streamType)) {
+                return ERROR;
+            }
+            if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
+                // load moudle and move into new sink
+                LoadMchModule();
+            }
+            portName = GetSinkPortName(deviceType, pipeType);
+            ret = MoveToOutputDevice(sessionId, portName);
+            break;
+        }
+        case PIPE_TYPE_NORMAL_OUT: {
+            portName = GetSinkPortName(deviceType, pipeType);
+            ret = MoveToOutputDevice(sessionId, portName);
+            break;
+        }
+        default:
+            AUDIO_WARNING_LOG("not supported for pipe type %{public}d", pipeType);
+            break;
+    }
+    if (ret == SUCCESS) {
+        streamCollector_.UpdateRendererPipeInfo(sessionId, pipeType);
+    }
+    return ret;
+}
+
 int32_t AudioPolicyService::GetMaxRendererInstances()
 {
     for (auto &configInfo : globalConfigs_.outputConfigInfos_) {
@@ -6280,6 +6504,9 @@ void AudioPolicyService::UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStre
                 activeSession.isSpatialAudio =
                     activeSession.isSpatialAudio | newSessionHasBeenSpatialized[changeInfo->sessionId];
                 newSessionHasBeenSpatialized[changeInfo->sessionId] = activeSession.isSpatialAudio;
+                AudioStreamType streamType = streamCollector_.GetStreamType(changeInfo->rendererInfo.contentType,
+                    changeInfo->rendererInfo.streamUsage);
+                CheckStreamMode(activeSession.sessionId, streamType);
                 break;
             }
         }

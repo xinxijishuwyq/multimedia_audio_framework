@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1621,6 +1621,17 @@ void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer
         LatencyMonitor::GetInstance().UpdateClientTime(false, timestamp);
         LatencyMonitor::GetInstance().ShowTimestamp(false);
     }
+}
+
+bool AudioServer::GetEffectOffloadEnabled()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "get effect state refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->GetOffloadEnabled();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -133,6 +133,7 @@ enum class AudioPolicyInterfaceCode {
     SET_AUDIO_DEVICE_REFINER_CALLBACK,
     UNSET_AUDIO_DEVICE_REFINER_CALLBACK,
     TRIGGER_FETCH_DEVICE,
+    MOVE_TO_NEW_PIPE,
     DISABLE_SAFE_MEDIA_VOLUME,
     AUDIO_POLICY_MANAGER_CODE_MAX = DISABLE_SAFE_MEDIA_VOLUME,
 };
