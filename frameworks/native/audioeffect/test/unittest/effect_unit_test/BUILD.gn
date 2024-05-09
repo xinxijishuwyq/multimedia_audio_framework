@@ -27,7 +27,6 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "$pulseaudio_dir/src",
     "$pulseaudio_dir/confgure/src",
-    multimedia_audio_framework_pulse_audio,
   ]
 
   cflags = [
