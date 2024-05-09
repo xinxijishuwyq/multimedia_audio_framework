@@ -37,12 +37,6 @@ static __thread napi_ref g_groupmanagerConstructor = nullptr;
 int32_t NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
 std::mutex NapiAudioVolumeGroupManager::volumeGroupManagerMutex_;
 
-static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode)
-{
-    NapiAudioError::ThrowError(env, errCode);
-    return nullptr;
-}
-
 bool NapiAudioVolumeGroupManager::CheckContextStatus(std::shared_ptr<AudioVolumeGroupManagerAsyncContext> context)
 {
     CHECK_AND_RETURN_RET_LOG(context != nullptr, false, "context object is nullptr.");
@@ -256,17 +250,19 @@ napi_value NapiAudioVolumeGroupManager::GetVolumeSync(napi_env env, napi_callbac
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of volumeType must be number"), "invalid valueType");
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM), "get volType failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
@@ -410,17 +406,19 @@ napi_value NapiAudioVolumeGroupManager::GetMaxVolumeSync(napi_env env, napi_call
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of volumeType must be number"), "invalid valueType");
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM), "get volType failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
@@ -474,17 +472,19 @@ napi_value NapiAudioVolumeGroupManager::GetMinVolumeSync(napi_env env, napi_call
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of volumeType must be number"), "invalid valueType");
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM), "get volType failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
@@ -581,17 +581,19 @@ napi_value NapiAudioVolumeGroupManager::IsStreamMuteSync(napi_env env, napi_call
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of volumeType must be number"), "invalid valueType");
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM), "get volType failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
@@ -754,7 +756,8 @@ napi_value NapiAudioVolumeGroupManager::IsMicrophoneMuteSync(napi_env env, napi_
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc < ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc < ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "invalid arguments");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
@@ -767,7 +770,7 @@ napi_value NapiAudioVolumeGroupManager::IsMicrophoneMuteSync(napi_env env, napi_
 napi_value NapiAudioVolumeGroupManager::SetMicMute(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
     if (context == nullptr) {
@@ -777,13 +780,15 @@ napi_value NapiAudioVolumeGroupManager::SetMicMute(napi_env env, napi_callback_i
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of mute must be boolean", NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
     if (context->status != napi_ok) {
-        NapiAudioError::ThrowError(env, context->errCode);
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -816,7 +821,8 @@ napi_value NapiAudioVolumeGroupManager::IsVolumeUnadjustable(napi_env env, napi_
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc < ARGS_ONE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc < ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "invalid arguments");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
@@ -837,17 +843,19 @@ napi_value NapiAudioVolumeGroupManager::AdjustVolumeByStep(napi_env env, napi_ca
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
-        context->status = NapiParamUtils::GetValueInt32(env, context->adjustType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get adjustType failed",
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
             NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->adjustType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of adjustType must be number", NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolumeAdjustType(context->adjustType),
-            "adjustType invaild", NAPI_ERR_INVALID_PARAM);
+            "parameter verification failed: The param of adjustType must be enum VolumeAdjustType",
+            NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowError(env, context->errCode);
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
     auto executor = [context]() {
@@ -884,21 +892,24 @@ napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStep(napi_env env, n
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INPUT_INVALID);
-        context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed", NAPI_ERR_INPUT_INVALID);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolType(context->volType) &&
-            context->volType != NapiAudioEnum::ALL, "volType invaild", NAPI_ERR_INVALID_PARAM);
-        context->status = NapiParamUtils::GetValueInt32(env, context->adjustType, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get adjustType failed",
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "mandatory parameters are left unspecified",
             NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of volumeType must be number", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolType(context->volType) &&
+            context->volType != NapiAudioEnum::ALL,
+            "The param of volumeType must be enum AudioVolumeType", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->adjustType, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of adjustType must be number", NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolumeAdjustType(context->adjustType),
-            "adjustType invaild", NAPI_ERR_INVALID_PARAM);
+            "The param of adjustType must be enum VolumeAdjustType", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowError(env, context->errCode);
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
     auto executor = [context]() {
@@ -936,21 +947,26 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDb(napi_env env, napi_c
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_THREE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_THREE, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "volType getfailed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of volumeType must be number", NAPI_ERR_INPUT_INVALID);
         NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentVolType(context->volType),
-            "volType invaild", NAPI_ERR_INVALID_PARAM);
+            "parameter verification failed: The param of volumeType must be enum AudioVolumeType",
+            NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->volLevel, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "volLevel getfailed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of volumeLevel must be number", NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueInt32(env, context->deviceType, argv[PARAM2]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, NapiAudioEnum::IsLegalInputArgumentDeviceType(context->deviceType) &&
-            (context->status == napi_ok), "deviceType invaild", NAPI_ERR_INVALID_PARAM);
+            (context->status == napi_ok), "parameter verification failed: The param of device must be enum DeviceType",
+            NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowError(env, context->errCode);
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -965,7 +981,7 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDb(napi_env env, napi_c
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel,
             static_cast<DeviceType>(context->deviceType));
         if (FLOAT_COMPARE_EQ(context->volumeInDb, static_cast<float>(ERR_INVALID_PARAM))) {
-            context->SignError(NAPI_ERR_INVALID_PARAM);
+            context->SignError(NAPI_ERR_INVALID_PARAM, "volumeInDb invalid");
         } else if (context->volumeInDb < 0) {
             context->SignError(NAPI_ERR_SYSTEM);
         }
@@ -983,7 +999,8 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDbSync(napi_env env, na
     size_t argc = ARGS_THREE;
     napi_value args[ARGS_THREE] = {};
     auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_THREE, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_THREE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "invalid arguments");
 
     int32_t volType;
     int32_t volLevel;
@@ -991,16 +1008,19 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDbSync(napi_env env, na
     for (size_t i = PARAM0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[i], &valueType);
-        CHECK_AND_RETURN_RET_LOG(valueType == napi_number, ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+            NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of parameter must be number"),
             "invalid valueType");
     }
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType), ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM), "get volType failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
     NapiParamUtils::GetValueInt32(env, volLevel, args[PARAM1]);
     NapiParamUtils::GetValueInt32(env, deviceType, args[PARAM2]);
-    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType), ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM), "get deviceType failed");
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentDeviceType(deviceType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of device must be enum DeviceType"), "get deviceType failed");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
@@ -1008,7 +1028,8 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDbSync(napi_env env, na
     double volumeInDb = napiAudioVolumeGroupManager->audioGroupMngr_->GetSystemVolumeInDb(
         NapiAudioEnum::GetNativeAudioVolumeType(volType), volLevel, static_cast<DeviceType>(deviceType));
     CHECK_AND_RETURN_RET_LOG(!FLOAT_COMPARE_EQ(static_cast<float>(volumeInDb), static_cast<float>(ERR_INVALID_PARAM)),
-        ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "getsystemvolumeindb failed");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "volumeInDb invalid"),
+        "getsystemvolumeindb failed");
     NapiParamUtils::SetValueDouble(env, volumeInDb, result);
 
     return result;
@@ -1022,11 +1043,12 @@ napi_value NapiAudioVolumeGroupManager::RegisterCallback(napi_env env, napi_valu
 
     NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioVolumeGroupManager));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
-        "napiAudioVolumeGroupManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, ThrowErrorAndReturn(
-        env, NAPI_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "status error");
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_NO_MEMORY), "napiAudioVolumeGroupManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     if (!cbName.compare(RINGERMODE_CALLBACK_NAME)) {
         if (napiAudioVolumeGroupManager->ringerModecallbackNapi_ == nullptr) {
             napiAudioVolumeGroupManager->ringerModecallbackNapi_ = std::make_shared<NapiAudioRingerModeCallback>(env);
@@ -1058,7 +1080,8 @@ napi_value NapiAudioVolumeGroupManager::RegisterCallback(napi_env env, napi_valu
         AUDIO_DEBUG_LOG("On SetMicStateChangeCallback is successful");
     } else {
         AUDIO_ERR_LOG("No such callback supported");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of type is not supported");
     }
     return undefinedResult;
 }
@@ -1076,12 +1099,13 @@ napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     if (status != napi_ok || argc < minArgc) {
         AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
     }
 
     napi_valuetype eventType = napi_undefined;
     if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of eventType must be string");
         return undefinedResult;
     }
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
@@ -1090,7 +1114,8 @@ napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
         AUDIO_ERR_LOG("On type mismatch for parameter 2");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of callback must be function");
         return undefinedResult;
     }
 
@@ -1149,7 +1174,8 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env e
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
         NapiParamUtils::GetAudioDeviceDescriptor(env, context->inputDeviceDescriptor,
             context->inputBArgTransFlag, argv[PARAM0]);
     };
@@ -1165,7 +1191,7 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env e
         context->inputMaxAmplitude = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxAmplitude(
             context->inputDeviceDescriptor->deviceId_);
         if (FLOAT_COMPARE_EQ(context->inputMaxAmplitude, static_cast<float>(ERR_INVALID_PARAM))) {
-            context->SignError(NAPI_ERR_INVALID_PARAM);
+            context->SignError(NAPI_ERR_INVALID_PARAM, "maxAmplitude invalid");
         } else if (context->inputMaxAmplitude < 0) {
             context->SignError(NAPI_ERR_SYSTEM);
         } else if (!context->inputBArgTransFlag) {
