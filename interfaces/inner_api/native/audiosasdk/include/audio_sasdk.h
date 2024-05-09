@@ -28,6 +28,10 @@ enum SaSdkAudioVolumeType {
      * Indicates audio streams for music.
      */
     SASDK_STREAM_MUSIC = 1,
+    /**
+     * Indicates audio streams for ringtones.
+     */
+    SASDK_STREAM_RING = 2,
 };
 
 /**
