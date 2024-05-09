@@ -4012,6 +4012,11 @@ static void UserdataFree(struct Userdata *u)
     UserdataFreeMultiChannel(u);
 
     // free heap allocated in userdata init
+    if (u->bufferAttr == NULL) {
+        pa_xfree(u);
+        AUDIO_DEBUG_LOG("buffer attr is null, free done");
+        return;
+    }
     free(u->bufferAttr->bufIn);
     free(u->bufferAttr->bufOut);
     free(u->bufferAttr->tempBufIn);
