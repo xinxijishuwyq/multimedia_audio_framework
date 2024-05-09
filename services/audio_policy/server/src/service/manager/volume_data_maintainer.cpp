@@ -47,7 +47,8 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
     // The three devices represent the three volume groups(build-in, wireless, wired).
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_WIRED_HEADSET
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_REMOTE_CAST
 };
 
 static std::map<VolumeDataMaintainer::VolumeDataMaintainerStreamType, AudioStreamType> AUDIO_STREAMTYPE_MAP = {
@@ -536,6 +537,9 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             type = "_wired";
+            return type;
+        case DEVICE_TYPE_REMOTE_CAST:
+            type = "_remote_cast";
             return type;
         default:
             AUDIO_ERR_LOG("device %{public}d is not supported for dataShare", deviceType);

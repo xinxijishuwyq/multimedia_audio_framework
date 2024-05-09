@@ -1918,6 +1918,10 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
             !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED && !sameDeviceSwitchFlag_)) {
             AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
+            if (!IsSameDevice(desc, currentActiveDevice_)) {
+                currentActiveDevice_ = AudioDeviceDescriptor(*desc);
+                SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
+            }
             continue;
         }
         std::string encryptMacAddr = GetEncryptAddr(desc->macAddress_);
@@ -4104,7 +4108,14 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
             audioCaptureMicrophoneDescriptor_.erase(streamChangeInfo.audioCapturerChangeInfo.sessionId);
         }
     }
+
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
+
+    const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+    if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED)) {
+        FetchDevice(true);
+    }
+
     UpdateA2dpOffloadFlagForAllStream(currentActiveDevice_.deviceType_);
     return ret;
 }
