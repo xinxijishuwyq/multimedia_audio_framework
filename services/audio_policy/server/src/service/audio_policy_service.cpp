@@ -1899,6 +1899,21 @@ void AudioPolicyService::MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc)
     switchThread.detach(); // add another sleep before switch local can avoid pop in some case
 }
 
+int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
+    unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
+    if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
+        !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED && !sameDeviceSwitchFlag_)) {
+        AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
+        if (!IsSameDevice(desc, currentActiveDevice_)) {
+            currentActiveDevice_ = AudioDeviceDescriptor(*desc);
+            SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
+        }
+        return ERR_NEED_NOT_SWITCH_DEVICE;
+    }
+    return SUCCESS;
+}
+
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReason reason)
 {
@@ -1915,13 +1930,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         runningStreamCount++;
         unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(
             rendererChangeInfo->rendererInfo.streamUsage, rendererChangeInfo->clientUID);
-        if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
-            !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED && !sameDeviceSwitchFlag_)) {
-            AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
-            if (!IsSameDevice(desc, currentActiveDevice_)) {
-                currentActiveDevice_ = AudioDeviceDescriptor(*desc);
-                SetVolumeForSwitchDevice(currentActiveDevice_.deviceType_);
-            }
+        if (HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo) == ERR_NEED_NOT_SWITCH_DEVICE) {
             continue;
         }
         std::string encryptMacAddr = GetEncryptAddr(desc->macAddress_);
