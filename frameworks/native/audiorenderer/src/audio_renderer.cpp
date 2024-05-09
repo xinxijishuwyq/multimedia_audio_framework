@@ -369,6 +369,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr,
             ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed when create normal stream.");
         ret = InitAudioStream(audioStreamParams);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
         audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
     }
 
