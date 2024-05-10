@@ -1102,7 +1102,8 @@ void CapturerPolicyServiceDiedCallback::RestoreTheadLoop()
     uint32_t sleepTime = 500000;
     bool result = false;
     int32_t ret = -1;
-    while (!result && tryCounter-- > 0) {
+    while (!result && tryCounter > 0) {
+        tryCounter--;
         usleep(sleepTime);
         if (capturer_== nullptr || capturer_->audioStream_== nullptr ||
             capturer_->abortRestore_) {
