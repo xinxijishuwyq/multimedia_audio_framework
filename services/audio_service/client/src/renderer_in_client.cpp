@@ -87,11 +87,14 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
+constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
 static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
 {
+    AudioXCollie audioXCollie("RendererInClient::GetBundleInfoFromUid", GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS);
+
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();

@@ -35,6 +35,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 const unsigned int REQUEST_THREAD_PRIORITY_TIME_OUT_SECONDS = 10;
+constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
@@ -190,6 +191,7 @@ int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
 
 std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
 {
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName_FromUid", GET_BUNDLE_INFO_TIME_OUT_SECONDS);
     std::string bundleName = "";
 
     sptr<ISystemAbilityManager> systemAbilityManager =
@@ -1094,6 +1096,8 @@ int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
 
 std::string AudioSystemManager::GetSelfBundleName()
 {
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName", GET_BUNDLE_INFO_TIME_OUT_SECONDS);
+
     std::string bundleName = "";
 
     sptr<ISystemAbilityManager> systemAbilityManager =

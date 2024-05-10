@@ -48,6 +48,7 @@ const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_MS = 80;
+constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
 #ifdef SONIC_ENABLE
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 #endif
@@ -55,6 +56,8 @@ static AppExecFwk::BundleInfo gBundleInfo_;
 
 static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
 {
+    AudioXCollie audioXCollie("AudioStream::GetBundleInfoFromUid", GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS);
+
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
