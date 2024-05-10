@@ -54,7 +54,7 @@ public:
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         std::unordered_map<std::string, std::string> &effectMap,
         std::unordered_map<std::string, std::string> &enhanceMap) override;
-    bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
+    void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;

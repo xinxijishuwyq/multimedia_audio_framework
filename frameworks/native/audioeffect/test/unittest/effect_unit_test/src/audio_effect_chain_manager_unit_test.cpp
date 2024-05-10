@@ -402,8 +402,39 @@ HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_001, TestSize.Level1
     AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
-    int32_t result = AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
-    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
+}
+
+/**
+* @tc.name   : Test SetOutputDeviceSink API
+* @tc.number : SetOutputDeviceSink_002
+* @tc.desc   : Test SetOutputDeviceSink interface(using empty use case),
+*              test SetSpkOffloadState interface simultaneously.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_002, TestSize.Level1)
+{
+    int32_t device = 2;
+    string sinkName = "";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
+}
+
+/**
+* @tc.name   : Test SetOutputDeviceSink API
+* @tc.number : SetOutputDeviceSink_003
+* @tc.desc   : Test SetOutputDeviceSink interface(using abnormal use case),
+*              test SetSpkOffloadState interface simultaneously.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_003, TestSize.Level1)
+{
+    int32_t device = 2;
+    string sinkName = "123";
+    AudioEffectChainManager::GetInstance()->ResetForTest();
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
 }
 
 /**

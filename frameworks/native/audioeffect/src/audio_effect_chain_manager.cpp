@@ -155,11 +155,11 @@ void AudioEffectChainManager::SetSpkOffloadState()
     }
 }
 
-int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
+void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (UpdateDeviceInfo(deviceType_, deviceSink_, isInitialized_, device, sinkName) != SUCCESS) {
-        return SUCCESS;
+        return;
     }
 
     SetSpkOffloadState();
@@ -204,7 +204,7 @@ int32_t AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::
                 ioBufferConfig.inputCfg.channelLayout);
         }
     }
-    return SUCCESS;
+    return;
 }
 
 std::string AudioEffectChainManager::GetDeviceTypeName()

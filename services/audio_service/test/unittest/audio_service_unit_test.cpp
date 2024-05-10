@@ -143,8 +143,7 @@ HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
 
     int32_t deviceType = 1;
     std::string sinkName = "test";
-    bool result1 = audioManagerProxy->SetOutputDeviceSink(deviceType, sinkName);
-    EXPECT_EQ(result1, SUCCESS);
+    audioManagerProxy->SetOutputDeviceSink(deviceType, sinkName);
 }
 
 /**

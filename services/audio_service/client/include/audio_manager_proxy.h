@@ -65,7 +65,7 @@ public:
     bool CreateEffectChainManager(std::vector<EffectChain> &effectChains,
         std::unordered_map<std::string, std::string> &effectMap,
         std::unordered_map<std::string, std::string> &enhanceMap) override;
-    bool SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
+    void SetOutputDeviceSink(int32_t deviceType, std::string &sinkName) override;
     bool CreatePlaybackCapturerManager() override;
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
     int32_t RegiestPolicyProvider(const sptr<IRemoteObject> &object) override;
