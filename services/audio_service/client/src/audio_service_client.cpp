@@ -49,6 +49,7 @@ AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t INIT_TIMEOUT_IN_SEC = 3;
+const uint32_t GET_LATENCY_TIMEOUT_IN_SEC = 3;
 const uint32_t CONNECT_TIMEOUT_IN_SEC = 10;
 const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
 const uint32_t CORK_TIMEOUT_IN_SEC = 3;
@@ -2262,16 +2263,8 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timestamp)
     CHECK_AND_RETURN_RET(ret >= 0, AUDIO_CLIENT_PA_ERR);
     pa_threaded_mainloop_lock(mainLoop);
 
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
-        if (operation != nullptr) {
-            while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-                pa_threaded_mainloop_wait(mainLoop);
-            }
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-        }
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && HandleRenderUpdateTimingInfo() != AUDIO_CLIENT_SUCCESS) {
+        return AUDIO_CLIENT_ERR;
     }
 
     const pa_timing_info *info = pa_stream_get_timing_info(paStream);
@@ -2302,6 +2295,26 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timestamp)
 
     pa_threaded_mainloop_unlock(mainLoop);
 
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::HandleRenderUpdateTimingInfo()
+{
+    pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
+    CHECK_AND_RETURN_RET_LOG(operation != nullptr, AUDIO_CLIENT_SUCCESS, "pa_stream_update_timing_info failed");
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
+        pa_threaded_mainloop_wait(mainLoop);
+        StopTimer();
+        if (IsTimeOut()) {
+            AUDIO_ERR_LOG("Get audio latency timeout");
+            TimeoutRecover(PA_ERR_TIMEOUT);
+            pa_operation_unref(operation);
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_ERR;
+        }
+    }
+    pa_operation_unref(operation);
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -2365,10 +2378,11 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
     } else {
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
-    StartTimer(INIT_TIMEOUT_IN_SEC);
+    StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
     pa_threaded_mainloop_wait(mainLoop);
     StopTimer();
     if (IsTimeOut()) {
+        TimeoutRecover(PA_ERR_TIMEOUT);
         AUDIO_ERR_LOG("Get audio position timeout");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
@@ -2458,10 +2472,11 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
     AUDIO_DEBUG_LOG("waiting for audio latency information");
-    StartTimer(INIT_TIMEOUT_IN_SEC);
+    StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
     pa_threaded_mainloop_wait(mainLoop);
     StopTimer();
     if (IsTimeOut()) {
+        TimeoutRecover(PA_ERR_TIMEOUT);
         AUDIO_ERR_LOG("Get audio latency timeout");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
