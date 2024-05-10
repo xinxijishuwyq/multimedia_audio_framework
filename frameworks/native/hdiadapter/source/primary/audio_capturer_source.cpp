@@ -140,7 +140,7 @@ private:
     std::unique_ptr<ICapturerStateCallback> audioCapturerSourceCallback_ = nullptr;
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
-    DeviceType currentActiveDevice_;
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_;
     bool latencyMeasEnabled_ = false;
     bool signalDetected_ = false;
@@ -419,6 +419,7 @@ void AudioCapturerSourceInner::DeInit()
     }
 
     audioCapture_ = nullptr;
+    currentActiveDevice_ = DEVICE_TYPE_INVALID; // the current device must be rest when closing capturer.
 
     std::lock_guard lock(managerAndAdapterMutex_);
     // Only the usb hal needs to be unloadadapter at the moment.
@@ -552,8 +553,9 @@ int32_t AudioCapturerSourceInner::CreateCapture(struct AudioPort &capturePort)
     }
     deviceDesc.desc = (char *)"";
 
+    AUDIO_INFO_LOG("CreateCapture for audioAdapter_: audio sourceType %{public}d, hdi sourceType %{public}d",
+        attr_.sourceType, param.sourceType);
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
-    AUDIO_DEBUG_LOG("CreateCapture param.sourceType: %{public}d", param.sourceType);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr && ret >= 0, ERR_NOT_STARTED, "Create capture failed");
 
     return 0;
@@ -812,7 +814,7 @@ int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice)
 int32_t AudioCapturerSourceInner::SetInputRoute(DeviceType inputDevice, AudioPortPin &inputPortPin)
 {
     if (inputDevice == currentActiveDevice_) {
-        AUDIO_INFO_LOG("SetInputRoute input device not change");
+        AUDIO_INFO_LOG("SetInputRoute input device not change. currentActiveDevice %{public}d", currentActiveDevice_);
         return SUCCESS;
     }
     currentActiveDevice_ = inputDevice;

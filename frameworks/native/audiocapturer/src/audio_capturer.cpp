@@ -107,14 +107,13 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 
-    if (capturer == nullptr) {
-        return capturer;
-    }
-
+    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, nullptr, "Failed to create capturer object");
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
         capturer->cachePath_ = cachePath;
     }
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Create. sourceType: %{public}d, uid: %{public}d",
+        sourceType, appInfo.appUid);
 
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
 
@@ -201,7 +200,7 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
 
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
-    AUDIO_INFO_LOG("AudioCapturer::SetParams");
+    AUDIO_INFO_LOG("StreamClientState for Capturer::SetParams.");
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
@@ -425,7 +424,8 @@ void AudioCapturerPrivate::UnsetCapturerPeriodPositionCallback()
 
 bool AudioCapturerPrivate::Start() const
 {
-    AUDIO_INFO_LOG("AudioCapturer::Start %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
+        sessionID_, audioInterrupt_.audioFocusType.sourceType);
 
     if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
         bool recordingStateChange = audioStream_->CheckRecordingStateChange(appInfo_.appTokenId,
@@ -436,8 +436,6 @@ bool AudioCapturerPrivate::Start() const
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
 
-    AUDIO_INFO_LOG("sourceType: %{public}d, sessionID: %{public}d",
-        audioInterrupt_.audioFocusType.sourceType, audioInterrupt_.sessionId);
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
 
@@ -469,7 +467,7 @@ bool AudioCapturerPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioCapturerPrivate::Pause() const
 {
-    AUDIO_INFO_LOG("AudioCapturer::Pause %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
 
     if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
         if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
@@ -491,7 +489,7 @@ bool AudioCapturerPrivate::Pause() const
 
 bool AudioCapturerPrivate::Stop() const
 {
-    AUDIO_INFO_LOG("AudioCapturer::Stop %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
 
     if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
         if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
@@ -512,13 +510,13 @@ bool AudioCapturerPrivate::Stop() const
 
 bool AudioCapturerPrivate::Flush() const
 {
-    AUDIO_INFO_LOG("AudioCapturer::Flush");
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Flush. id %{public}u", sessionID_);
     return audioStream_->FlushAudioStream();
 }
 
 bool AudioCapturerPrivate::Release()
 {
-    AUDIO_INFO_LOG("AudioCapturer::Release %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
 
     abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
