@@ -1435,8 +1435,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             pa_cvolume vol;
             pa_sink_input_get_volume(input, &vol, true);
             pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
-                pa_cvolume_is_norm(&vol);
+            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
             if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
                 g_effectAllStreamVolumeZeroMap[i] = false;
                 g_effectStartVolZeroTimeMap[i] = 0;
@@ -1484,8 +1483,7 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
             pa_cvolume vol;
             pa_sink_input_get_volume(input, &vol, true);
             pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol)
-                || pa_cvolume_is_norm(&vol);
+            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
             if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
                 g_speakerPaAllStreamVolumeZero = false;
                 g_speakerPaAllStreamStartVolZeroTime = 0;
