@@ -2282,7 +2282,7 @@ int32_t AudioPolicyService::LoadDpModule(string deviceInfo)
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
         if (IOHandles_.find(moduleInfo.name) == IOHandles_.end()) {
             GetDPModuleInfo(moduleInfo, deviceInfo);
-            OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+            return OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         }
     }
 
@@ -4538,11 +4538,10 @@ int32_t AudioPolicyService::SetDeviceAbsVolumeSupported(const std::string &macAd
         usleep(ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS);
     }
 
-    AUDIO_INFO_LOG("success for macAddress:[%{public}s], support: %{public}d",
-        GetEncryptAddr(macAddress).c_str(), support);
+    AUDIO_INFO_LOG("success for macAddress:[%{public}s], support: %{public}d, active bt:[%{public}s]",
+        GetEncryptAddr(macAddress).c_str(), support, GetEncryptAddr(activeBTDevice_).c_str());
 
-    std::unique_ptr<AudioDeviceDescriptor> deviceDes = GetActiveBluetoothDevice();
-    if (deviceDes != nullptr && deviceDes->macAddress_ == macAddress) {
+    if (activeBTDevice_ == macAddress) {
         int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevel(STREAM_MUSIC);
         audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
     }
