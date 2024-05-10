@@ -765,6 +765,9 @@ private:
 
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
+    int32_t HandleDeviceChangeForFetchOutputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
+        unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
