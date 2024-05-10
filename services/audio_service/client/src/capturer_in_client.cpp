@@ -217,6 +217,11 @@ public:
         const std::shared_ptr<RendererOrCapturerPolicyServiceDiedCallback> &callback) override;
     int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
     bool RestoreAudioStream() override;
+
+    bool GetOffloadEnable() override;
+    bool GetSpatializationEnabled() override;
+    bool GetHighResolutionEnabled() override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -432,6 +437,7 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL;
     AUDIO_INFO_LOG("SetCapturerInfo with SourceType %{public}d flag %{public}d", capturerInfo_.sourceType,
         capturerInfo_.capturerFlags);
     return;
@@ -444,6 +450,7 @@ void CapturerInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         AUDIO_INFO_LOG("Calling register tracker, sessionid = %{public}d", sessionId_);
         AudioRegisterTrackerInfo registerTrackerInfo;
 
+        capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
         registerTrackerInfo.sessionId = sessionId_;
         registerTrackerInfo.clientPid = clientPid_;
         registerTrackerInfo.state = state_;
@@ -1803,6 +1810,24 @@ void CapturerInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
 void CapturerInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 {
     // in plan
+}
+
+bool CapturerInClientInner::GetOffloadEnable()
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return false;
+}
+
+bool CapturerInClientInner::GetSpatializationEnabled()
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return false;
+}
+
+bool CapturerInClientInner::GetHighResolutionEnabled()
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return false;
 }
 
 IAudioStream::StreamClass CapturerInClientInner::GetStreamClass()

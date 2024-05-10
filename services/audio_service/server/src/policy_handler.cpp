@@ -22,6 +22,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,26 +51,23 @@ PolicyHandler::~PolicyHandler()
     AUDIO_INFO_LOG("~PolicyHandler()");
 }
 
-void PolicyHandler::Dump(std::stringstream &dumpStringStream)
+void PolicyHandler::Dump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("PolicyHandler dump begin");
     if (iPolicyProvider_ == nullptr || policyVolumeMap_ == nullptr || volumeVector_ == nullptr) {
-        dumpStringStream << "PolicyHandler is null..." << std::endl;
+        dumpString += "PolicyHandler is null...\n";
         AUDIO_INFO_LOG("nothing to dump");
         return;
     }
-    dumpStringStream << std::endl;
     // dump active output device
-    dumpStringStream << "active output device:[" << deviceType_ << "]" << std::endl;
+    AppendFormat(dumpString, "  - active output device: %d\n", deviceType_);
     // dump volume
-    int formatSize = 2;
     for (size_t i = 0; i < IPolicyProvider::GetVolumeVectorSize(); i++) {
-        dumpStringStream << "streamtype[" << g_volumeIndexVector[i].first << "] ";
-        dumpStringStream << "device[" << std::setw(formatSize) << g_volumeIndexVector[i].second << "]: ";
-        dumpStringStream << "isMute[" << (volumeVector_[i].isMute ? "true" : "false") << "] ";
-        dumpStringStream << "volFloat[" << volumeVector_[i].volumeFloat << "] ";
-        dumpStringStream << "volint[" << volumeVector_[i].volumeInt << "] ";
-        dumpStringStream << std::endl;
+        AppendFormat(dumpString, "  streamtype: %d ", g_volumeIndexVector[i].first);
+        AppendFormat(dumpString, "  device: %d ", g_volumeIndexVector[i].second);
+        AppendFormat(dumpString, "  isMute: %s ", (volumeVector_[i].isMute ? "true" : "false"));
+        AppendFormat(dumpString, "  volFloat: %f ", volumeVector_[i].volumeFloat);
+        AppendFormat(dumpString, "  volint: %d \n", volumeVector_[i].volumeInt);
     }
 }
 

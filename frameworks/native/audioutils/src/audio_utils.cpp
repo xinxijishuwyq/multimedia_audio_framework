@@ -884,6 +884,170 @@ void LatencyMonitor::ShowBluetoothTimestamp()
     AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
         rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
 }
+
+const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
+{
+    std::string name;
+    switch (streamType) {
+        case STREAM_VOICE_ASSISTANT:
+            name = "VOICE_ASSISTANT";
+            break;
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
+            name = "VOICE_CALL";
+
+            break;
+        case STREAM_SYSTEM:
+            name = "SYSTEM";
+            break;
+        case STREAM_RING:
+            name = "RING";
+            break;
+        case STREAM_MUSIC:
+            name = "MUSIC";
+            break;
+        case STREAM_ALARM:
+            name = "ALARM";
+            break;
+        case STREAM_NOTIFICATION:
+            name = "NOTIFICATION";
+            break;
+        case STREAM_BLUETOOTH_SCO:
+            name = "BLUETOOTH_SCO";
+            break;
+        case STREAM_DTMF:
+            name = "DTMF";
+            break;
+        case STREAM_TTS:
+            name = "TTS";
+            break;
+        case STREAM_ACCESSIBILITY:
+            name = "ACCESSIBILITY";
+            break;
+        case STREAM_ULTRASONIC:
+            name = "ULTRASONIC";
+            break;
+        case STREAM_WAKEUP:
+            name = "WAKEUP";
+            break;
+        default:
+            name = "UNKNOWN";
+    }
+
+    const std::string streamName = name;
+    return streamName;
+}
+
+const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
+{
+    std::string device;
+    switch (deviceType) {
+        case DEVICE_TYPE_EARPIECE:
+            device = "EARPIECE";
+            break;
+        case DEVICE_TYPE_SPEAKER:
+            device = "SPEAKER";
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            device = "WIRED_HEADSET";
+            break;
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+            device = "WIRED_HEADPHONES";
+            break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+             device = "BLUETOOTH_SCO";
+            break;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            device = "BLUETOOTH_A2DP";
+            break;
+        case DEVICE_TYPE_MIC:
+            device = "MIC";
+            break;
+        case DEVICE_TYPE_WAKEUP:
+            device = "WAKEUP";
+            break;
+        case DEVICE_TYPE_NONE:
+            device = "NONE";
+            break;
+        case DEVICE_TYPE_INVALID:
+            device = "INVALID";
+            break;
+        default:
+            device = "UNKNOWN";
+    }
+
+    const std::string deviceTypeName = device;
+    return deviceTypeName;
+}
+
+const std::string AudioInfoDumpUtils::GetConnectTypeName(ConnectType connectType)
+{
+    std::string connectName;
+    switch (connectType) {
+        case OHOS::AudioStandard::CONNECT_TYPE_LOCAL:
+            connectName = "LOCAL";
+            break;
+        case OHOS::AudioStandard::CONNECT_TYPE_DISTRIBUTED:
+            connectName = "REMOTE";
+            break;
+        default:
+            connectName = "UNKNOWN";
+            break;
+    }
+    const std::string connectTypeName = connectName;
+    return connectTypeName;
+}
+
+const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
+{
+    std::string name;
+    switch (sourceType) {
+        case SOURCE_TYPE_INVALID:
+            name = "INVALID";
+            break;
+        case SOURCE_TYPE_MIC:
+            name = "MIC";
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            name = "VOICE_RECOGNITION";
+            break;
+        case SOURCE_TYPE_ULTRASONIC:
+            name = "ULTRASONIC";
+            break;
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            name = "VOICE_COMMUNICATION";
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            name = "WAKEUP";
+            break;
+        default:
+            name = "UNKNOWN";
+    }
+
+    const std::string sourceName = name;
+    return sourceName;
+}
+
+const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType deviceType)
+{
+    std::string device;
+    switch (deviceType) {
+        case EARPIECE_VOLUME_TYPE:
+            device = "EARPIECE";
+            break;
+        case SPEAKER_VOLUME_TYPE:
+            device = "SPEAKER";
+            break;
+        case HEADSET_VOLUME_TYPE:
+            device = "HEADSET";
+            break;
+        default:
+            device = "UNKNOWN";
+    }
+
+    const std::string deviceTypeName = device;
+    return deviceTypeName;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

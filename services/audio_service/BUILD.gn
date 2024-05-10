@@ -155,6 +155,7 @@ ohos_shared_library("audio_client") {
 
   deps = [
     ":audio_common",
+    ":audio_process_service",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",
   ]
@@ -333,6 +334,7 @@ ohos_shared_library("audio_service") {
     "server/src/audio_manager_listener_proxy.cpp",
     "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",
+    "server/src/audio_server_dump.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
 

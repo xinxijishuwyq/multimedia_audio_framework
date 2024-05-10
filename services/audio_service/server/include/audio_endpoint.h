@@ -84,7 +84,7 @@ public:
 
     virtual int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) = 0;
 
-    virtual void Dump(std::stringstream &dumpStringStream) = 0;
+    virtual void Dump(std::string &dumpString) = 0;
 
     virtual DeviceRole GetDeviceRole() = 0;
     virtual float GetMaxAmplitude() = 0;
@@ -113,7 +113,7 @@ public:
     int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
     int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
 
-    void Dump(std::stringstream &dumpStringStream) override;
+    void Dump(std::string &dumpString) override;
 
     std::string GetEndpointName() override;
 

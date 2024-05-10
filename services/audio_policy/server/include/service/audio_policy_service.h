@@ -444,9 +444,28 @@ public:
 
     int32_t DisableSafeMediaVolume();
 
-    int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
-
     void NotifyAccountsChanged(const int &id);
+
+    // for hidump
+    void DevicesInfoDump(std::string &dumpString);
+    void AudioModeDump(std::string &dumpString);
+    void AudioPolicyParserDump(std::string &dumpString);
+    void XmlParsedDataMapDump(std::string &dumpString);
+    void StreamVolumesDump(std::string &dumpString);
+    void DeviceVolumeInfosDump(std::string &dumpString, DeviceVolumeInfoMap &deviceVolumeInfos);
+    void AudioStreamDump(std::string &dumpString);
+    void GetVolumeConfigDump(std::string &dumpString);
+    void GetGroupInfoDump(std::string &dumpString);
+    void GetCallStatusDump(std::string &dumpString);
+    void GetRingerModeDump(std::string &dumpString);
+    void GetMicrophoneDescriptorsDump(std::string &dumpString);
+    void GetCapturerStreamDump(std::string &dumpString);
+    void GetSafeVolumeDump(std::string &dumpString);
+    void GetOffloadStatusDump(std::string &dumpString);
+    std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
+    std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
+    bool IsStreamSupported(AudioStreamType streamType);
+    int32_t GetCurActivateCount();
 
 private:
     AudioPolicyService()
@@ -919,6 +938,10 @@ private:
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;
     std::condition_variable dialogSelectCondition_;
+
+    DeviceType priorityOutputDevice_;
+    DeviceType priorityInputDevice_;
+    ConnectType conneceType_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
