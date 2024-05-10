@@ -404,9 +404,9 @@ public:
 #endif
     void GetA2dpOffloadCodecAndSendToDsp();
 
-    int32_t HandleA2dpDeviceInOffload();
+    int32_t HandleA2dpDeviceInOffload(BluetoothOffloadState a2dpOffloadFlag);
 
-    int32_t HandleA2dpDeviceOutOffload();
+    int32_t HandleA2dpDeviceOutOffload(BluetoothOffloadState a2dpOffloadFlag);
 
     void ConfigDistributedRoutingRole(const sptr<AudioDeviceDescriptor> descriptor, CastType type);
 
@@ -786,7 +786,6 @@ private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
     BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
-    BluetoothOffloadState preA2dpOffloadFlag_ = NO_A2DP_DEVICE;
     std::mutex switchA2dpOffloadMutex_;
     bool sameDeviceSwitchFlag_ = false;
 
