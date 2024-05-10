@@ -123,7 +123,7 @@ void NoneMixEngine::MixStreams()
     int32_t result = stream_->Peek(&audioBuffer);
     writeCount_++;
     if (result != SUCCESS || audioBuffer.size() == 0) {
-        AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}ld", result, audioBuffer.size());
+        AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}zu", result, audioBuffer.size());
         failedCount_++;
         StandbySleep();
         return;
@@ -214,10 +214,17 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     attr.format = GetDirectDeviceFormate(streamInfo.format);
     attr.channelLayout = streamInfo.channels >= 2 ? 3 : 4;
     attr.deviceType = device_.deviceType;
+    attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
     AUDIO_INFO_LOG("sink name:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d", sinkName.c_str(),
-                   attr.deviceType, attr.sampleRate, attr.format)
-    return renderSink_->Init(attr);
+                   attr.deviceType, attr.sampleRate, attr.format);
+    int32_t ret = renderSink_->Init(attr);
+    if (ret != SUCCESS) {
+        return ret;
+    }
+    float volume = 1.0f;
+    ret = renderSink_->SetVolume(volume, volume);
+    return ret;
 }
 
 int32_t NoneMixEngine::SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip)

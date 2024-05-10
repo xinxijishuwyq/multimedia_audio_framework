@@ -20,6 +20,7 @@
 #include "i_renderer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
+#include "i_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -116,6 +117,7 @@ private:
     std::mutex writeLock_;
     FILE *dumpC2S_ = nullptr; // client to server dump file
     uint32_t underRunLogFlag_ = 0;
+    ManagerType managerType_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

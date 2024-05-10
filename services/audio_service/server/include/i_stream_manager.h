@@ -24,8 +24,8 @@ namespace AudioStandard {
 enum ManagerType : int32_t {
     PLAYBACK = 0,
     DUP_PLAYBACK,
-    DIRECT,
-    VOIP,
+    DIRECT_PLAYBACK,
+    VOIP_PLAYBACK,
     RECORDER,
 };
 

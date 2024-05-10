@@ -15,6 +15,8 @@
 #ifndef PRO_RENDERER_STREAM_IMPL_H
 #define PRO_RENDERER_STREAM_IMPL_H
 #include <atomic>
+#include <queue>
+#include <mutex>
 #include "i_renderer_stream.h"
 #include "audio_resample.h"
 #include "linear_pos_time_model.h"
@@ -62,7 +64,6 @@ public:
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
-    void AbortCallback(int32_t abortTimes) override;
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
@@ -73,6 +74,8 @@ public:
     // offload end
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;
+    int32_t UpdateMaxLength(uint32_t maxLength) override;
+
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
     int32_t Peek(std::vector<char> *audioBuffer) override;
     int32_t TriggerStartIfNecessary(bool isBlock) override;
@@ -90,6 +93,7 @@ private:
 private:
     bool isDirect_;
     bool isNeedResample_;
+    bool isNeedReFormat_;
     bool isBlock_;
     int32_t privacyType_;
     int32_t renderRate_;
@@ -101,7 +105,6 @@ private:
     size_t spanSizeInFrame_;
     size_t totalBytesWritten_;
     size_t minBufferSize_;
-    int32_t abortFlag_;
     float powerVolumeFactor_;
     std::atomic<ProStreamStatus> status_;
     std::weak_ptr<IStatusCallback> statusCallback_;

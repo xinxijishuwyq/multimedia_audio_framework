@@ -118,8 +118,8 @@ int32_t RendererInServer::Init()
          processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
         processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= 48000 &&
         processConfig_.streamInfo.format >= SAMPLE_S24LE) {
-        if (IStreamManager::GetPlaybackManager(DIRECT).GetStreamCount() <= 0) {
-            managerType_ = DIRECT;
+        if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
+            managerType_ = DIRECT_PLAYBACK;
         }
     }
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
@@ -319,7 +319,7 @@ int32_t RendererInServer::UpdateWriteIndex()
 {
     Trace trace("RendererInServer::UpdateWriteIndex");
     if (managerType_ != PLAYBACK) {
-        IStreamManager::GetDupPlaybackManager(managerType_).TriggerStartIfNecessary(streamIndex_, false);
+        IStreamManager::GetPlaybackManager(managerType_).TriggerStartIfNecessary(streamIndex_, false);
     }
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {

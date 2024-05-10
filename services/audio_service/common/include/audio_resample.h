@@ -25,7 +25,7 @@ class AudioResample {
 public:
     AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity);
     ~AudioResample();
-    int32_t ProcessFloadResample(const std::vector<float> &input, std::vector<float> &output);
+    int32_t ProcessFloatResample(const std::vector<float> &input, std::vector<float> &output);
 
 private:
     struct SpeexResample;

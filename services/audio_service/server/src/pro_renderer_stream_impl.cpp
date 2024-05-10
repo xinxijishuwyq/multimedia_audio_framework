@@ -19,6 +19,8 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "securec.h"
+#include "policy_handler.h"
 #include "audio_common_converter.h"
 
 namespace OHOS {
@@ -31,6 +33,7 @@ const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
     : isDirect_(isDirect),
       isNeedResample_(false),
+      isNeedReFormat_(false),
       isBlock_(false),
       privacyType_(0),
       renderRate_(0),
@@ -42,7 +45,6 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
       spanSizeInFrame_(0),
       totalBytesWritten_(0),
       minBufferSize_(0),
-      abortFlag_(0),
       powerVolumeFactor_(1.f),
       status_(ProStreamStatus::RELEASED),
       resample_(nullptr),
@@ -56,7 +58,7 @@ ProRendererStreamImpl::~ProRendererStreamImpl()
 {
     AUDIO_DEBUG_LOG("~ProRendererStreamImpl");
     status_ = ProStreamStatus::RELEASED;
-    DumpFileUtil::CloseDumpFile(dumpFile_);
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 AudioSamplingRate ProRendererStreamImpl::GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept
@@ -96,15 +98,15 @@ int32_t ProRendererStreamImpl::InitParams()
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     int32_t frameSize = spanSizeInFrame_ * streamInfo.channels;
-    if (streamInfo.format != desFormat_) { // todo
+    if (streamInfo.samplingRate != desSamplingRate_) {
         isNeedResample_ = true;
         resample_ = std::make_shared<AudioResample>(streamInfo.channels, streamInfo.samplingRate, desSamplingRate_, 2);
         resampleSrcBuffer.resize(frameSize, 0.f);
         resampleDesBuffer.resize((frameSize * desSamplingRate_) / streamInfo.samplingRate, 0.f);
-        resample_->ProcessFloadResample(resampleSrcBuffer, resampleDesBuffer);
+        resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
     }
     uint32_t bufferSize = (GetSamplePerFrame(desFormat_) * frameSize * desSamplingRate_) / streamInfo.samplingRate;
-    sinkBuffer_.resize(4, std::vector<float>(bufferSize, 0));
+    sinkBuffer_.resize(4, std::vector<char>(bufferSize, 0));
     for (int32_t i = 0; i < 4; i++) {
         writeQueue_.emplace(i);
     }
@@ -124,7 +126,7 @@ int32_t ProRendererStreamImpl::Start()
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STARTED);
     }
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_DIRECT_STREAM_FILE, dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_DIRECT_STREAM_FILE, &dumpFile_);
     return SUCCESS;
 }
 
@@ -310,18 +312,28 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     if (isNeedResample_) {
         ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength);
         auto start = std::chrono::steady_clock::now();
-        resample_->ProcessFloadResample(resampleSrcBuffer, resampleDesBuffer);
+        resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
         auto end = std::chrono::steady_clock::now();
         ConvertFloatToDes(writeIndex);
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
         AUDIO_INFO_LOG("resample cost:%{public}" PRIu64 "", duration);
     } else {
-        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
-                 bufferDesc.bufLength);
+        auto streamInfo = processConfig_.streamInfo;
+        uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
+        float volume = GetStreamVolume();
+        if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
+            AudioCommonConverter::ConvertBufferTo16Bit(bufferDesc.buffer, streamInfo.format,
+                                                       (int16_t *)sinkBuffer_[writeIndex].data(),
+                                                       bufferDesc.bufLength / samplePerFrame, volume);
+        } else {
+            AudioCommonConverter::ConvertBufferTo32Bit(bufferDesc.buffer, streamInfo.format,
+                                                       (int32_t *)sinkBuffer_[writeIndex].data(),
+                                                       bufferDesc.bufLength / samplePerFrame, volume);
+        }
     }
     readQueue_.emplace(writeIndex);
     // DumpFileUtil::WriteDumpFile(dumpFile_, sinkBuffer_.data(), sinkBuffer_.size());
-    AUDIO_INFO_LOG("buffer length:%{public}" PRIu64 ",sink buffer length:%{public}" PRIu64 "", bufferDesc.bufLength,
+    AUDIO_INFO_LOG("buffer length:%{public}zu ,sink buffer length:%{public}zu", bufferDesc.bufLength,
                    sinkBuffer_.size());
     totalBytesWritten_ += bufferDesc.bufLength;
     return SUCCESS;
@@ -351,11 +363,6 @@ void ProRendererStreamImpl::SetStreamIndex(uint32_t index)
 uint32_t ProRendererStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
-}
-
-void ProRendererStreamImpl::AbortCallback(int32_t abortTimes)
-{
-    abortFlag_ += abortTimes;
 }
 
 // offload
@@ -428,12 +435,17 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer)
     return result;
 }
 
+int32_t ProRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
+{
+    return SUCCESS;
+}
+
 int32_t ProRendererStreamImpl::PopWriteBufferIndex()
 {
     int32_t writeIndex = -1;
     if (!writeQueue_.empty()) {
         writeIndex = writeQueue_.front();
-        writeQueue_.pop_front();
+        writeQueue_.pop();
     }
     return writeIndex;
 }
@@ -442,9 +454,9 @@ void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer)
 {
     if (!readQueue_.empty()) {
         int32_t readIndex = readQueue_.front();
-        readQueue_.pop_front();
+        readQueue_.pop();
         *audioBuffer = sinkBuffer_[readIndex];
-        writeQueue_.push_back(readIndex);
+        writeQueue_.emplace(readIndex);
     } else {
         audioBuffer = nullptr;
     }
@@ -477,25 +489,33 @@ void ProRendererStreamImpl::ConvertSrcToFloat(uint8_t *buffer, size_t bufLength)
 {
     auto streamInfo = processConfig_.streamInfo;
     uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
+    float volume = GetStreamVolume();
     if (streamInfo.format == AudioSampleFormat::SAMPLE_F32LE) {
-        memcpy_s(resampleSrcBuffer.data(), resampleSrcBuffer.size() * samplePerFrame, buffer, bufLength);
+        if (volume >= 1.0f) {
+            memcpy_s(resampleSrcBuffer.data(), resampleSrcBuffer.size() * samplePerFrame, buffer, bufLength);
+        } else {
+            float *tempBuffer = reinterpret_cast<float *>(buffer);
+            for (uint32_t i = 0; i < resampleSrcBuffer.size(); i++) {
+                resampleSrcBuffer[i] = volume * tempBuffer[i];
+            }
+        }
         return;
     }
-    AUDIO_INFO_LOG("ConvertSrcToFloat resample buffer,samplePerFrame:%{public}d,size:%{public}" PRIu64 "",
-                   samplePerFrame, resampleSrcBuffer.size());
+    AUDIO_INFO_LOG("ConvertSrcToFloat resample buffer,samplePerFrame:%{public}d,size:%{public}zu", samplePerFrame,
+                   resampleSrcBuffer.size());
     uint32_t convertValue = samplePerFrame * 8 - 1;
     for (uint32_t i = 0; i < resampleSrcBuffer.size(); i++) {
         int32_t sampleValue = 0;
         if (samplePerFrame == 3) {
             sampleValue = (buffer[i * samplePerFrame + 2] & 0xff) << 24 |
                           (buffer[i * samplePerFrame + 1] & 0xff) << 16 | (buffer[i * samplePerFrame] & 0xff) << 8;
-            resampleSrcBuffer[i] = sampleValue * (1.0f / AUDIO_SAMPLE_32BIT_VALUE);
+            resampleSrcBuffer[i] = sampleValue * volume * (1.0f / AUDIO_SAMPLE_32BIT_VALUE);
             continue;
         }
         for (uint32_t j = 0; j < samplePerFrame; j++) {
             sampleValue |= (buffer[i * samplePerFrame + j] & 0xff) << (j * 8);
         }
-        resampleSrcBuffer[i] = sampleValue * (1.0f / (1U << convertValue));
+        resampleSrcBuffer[i] = sampleValue * volume * (1.0f / (1U << convertValue));
     }
 }
 
@@ -519,7 +539,7 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 
 float ProRendererStreamImpl::GetStreamVolume()
 {
-    float volume = powerVolumeFactor_;
+    float volume = 1.0f;
     Volume vol = {true, 1.0f, 0};
     AudioStreamType streamType = processConfig_.streamType;
     AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(streamType);
@@ -527,30 +547,30 @@ float ProRendererStreamImpl::GetStreamVolume()
     bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(processConfig_, deviceInfo);
     if (!ret) {
         AUDIO_ERR_LOG("GetProcessDeviceInfo failed.");
-        return ERR_DEVICE_INIT;
+        return volume;
     }
-    if (deviceInfo_.networkId == LOCAL_NETWORK_ID &&
+    if (deviceInfo.networkId == LOCAL_NETWORK_ID &&
         PolicyHandler::GetInstance().GetSharedVolume(volumeType, processConfig_.deviceType, vol)) {
-        volume = vol.isMute ? 0 : static_cast<int32_t>(volume * vol.volumeFloat);
+        volume = vol.isMute ? 0 : vol.volumeFloat;
     }
     return volume;
 }
 
-void AudioProcessInClientInner::CopyWithVolume(uint8_t *buffer, float volume) const
-{
-    if (volume >= 1.f) {
-        return;
-    }
-    if (streamInfo.format == AudioSampleFormat::SAMPLE_F32LE) {
-        float *tempBuffer = reinterpret_cast<float *>(buffer);
-        for (uint32_t i = 0; i < resampleSrcBuffer.size(); i++) {
-            resampleSrcBuffer[i] = volume * tempBuffer[i];
-        }
-        return;
-    }
-}
+// void ProRendererStreamImpl::CopyWithVolume(uint8_t *buffer, float volume) const
+// {
+//     if (volume >= 1.f) {
+//         return;
+//     }
+//     if (streamInfo.format == AudioSampleFormat::SAMPLE_F32LE) {
+//         float *tempBuffer = reinterpret_cast<float *>(buffer);
+//         for (uint32_t i = 0; i < resampleSrcBuffer.size(); i++) {
+//             resampleSrcBuffer[i] = volume * tempBuffer[i];
+//         }
+//         return;
+//     }
+// }
 
-int32_t PaRendererStreamImpl::TriggerStartIfNecessary(bool isBlock)
+int32_t ProRendererStreamImpl::TriggerStartIfNecessary(bool isBlock)
 {
     isBlock_ = isBlock;
     return SUCCESS;

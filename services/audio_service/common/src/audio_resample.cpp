@@ -47,7 +47,7 @@ AudioResample::~AudioResample()
 #endif
 }
 
-int32_t AudioResample::ProcessFloadResample(const std::vector<float> &input, std::vector<float> &output)
+int32_t AudioResample::ProcessFloatResample(const std::vector<float> &input, std::vector<float> &output)
 {
     int32_t ret = 0;
 #ifdef SONIC_ENABLE

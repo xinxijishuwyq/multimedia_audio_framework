@@ -191,7 +191,7 @@ int32_t PaAdapterManager::GetStreamCount() const noexcept
     if (managerType_ == RECORDER) {
         return capturerStreamMap_.size();
     } else {
-        return rendererStreamMap_.size()
+        return rendererStreamMap_.size();
     }
 }
 

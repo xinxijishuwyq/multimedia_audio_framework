@@ -23,6 +23,7 @@
 #include "policy_handler.h"
 #include "pro_renderer_stream_impl.h"
 #include "audio_engine_manager.h"
+#include "none_mix_engine.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,7 +45,7 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
     DeviceInfo deviceInfo;
 
-    std::shared_ptr<ProRendererStreamImpl> rendererStream = CreateRendererStream(processConfig_);
+    std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init rendererStream");
     int32_t ret = UpdateRendererPreSelectedDeviceInfo(deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret != SUCCESS, ERR_DEVICE_INIT, "Failed to update Renderer ProSelected deviceInfo");
@@ -72,7 +73,7 @@ int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
     int32_t result = rendererStreamMap_[streamIndex]->Start();
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to start rendererStream");
     if (!playbackEngine_) {
-        playbackEngine_ = std::make_unique<NoneMixEngine>(config, managerType_ == VOIP);
+        playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, managerType_ == VOIP_PLAYBACK);
         playbackEngine_->AddRenderer(rendererStreamMap_[streamIndex]);
     }
     playbackEngine_->Start();
@@ -114,6 +115,7 @@ int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex)
 int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Release renderer start");
+    std::shared_ptr<IRendererStream> currentRender;
     {
         std::lock_guard<std::mutex> lock(streamMapMutex_);
         auto it = rendererStreamMap_.find(streamIndex);
@@ -121,7 +123,7 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
             AUDIO_WARNING_LOG("No matching stream");
             return SUCCESS;
         }
-        std::shared_ptr<IRendererStream> currentRender = rendererStreamMap_[streamIndex];
+        currentRender = rendererStreamMap_[streamIndex];
         rendererStreamMap_[streamIndex] = nullptr;
         rendererStreamMap_.erase(streamIndex);
     }
@@ -139,7 +141,8 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
     }
     return SUCCESS;
 }
-int32_t PaAdapterManager::TriggerStartIfNecessary(uint32_t streamIndex, bool isBlock)
+
+int32_t ProAudioStreamManager::TriggerStartIfNecessary(uint32_t streamIndex, bool isBlock)
 {
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     auto it = rendererStreamMap_.find(streamIndex);
@@ -163,7 +166,7 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
 {
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     std::shared_ptr<ProRendererStreamImpl> rendererStream =
-        std::make_shared<ProRendererStreamImpl>(processConfig, managerType_ == DIRECT);
+        std::make_shared<ProRendererStreamImpl>(processConfig, managerType_ == DIRECT_PLAYBACK);
     if (rendererStream->InitParams() != SUCCESS) {
         AUDIO_ERR_LOG("Create rendererStream Failed");
         return nullptr;
@@ -190,11 +193,6 @@ int32_t ProAudioStreamManager::CreateCapturer(AudioProcessConfig processConfig,
 int32_t ProAudioStreamManager::ReleaseCapturer(uint32_t streamIndex)
 {
     AUDIO_ERR_LOG("Unsupported operation: ReleaseCapturer");
-    return SUCCESS;
-}
-
-int32_t ProAudioStreamManager::GetInfo()
-{
     return SUCCESS;
 }
 } // namespace AudioStandard
