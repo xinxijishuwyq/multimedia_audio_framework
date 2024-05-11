@@ -365,6 +365,7 @@ void AudioServiceClient::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, in
         asClient->isGetLatencySuccess_ = false;
     }
     const pa_timing_info *info = pa_stream_get_timing_info(stream);
+    CHECK_AND_RETURN_LOG(info, "get pa_timing_info is null");
     asClient->offloadWriteIndex_ = pa_bytes_to_usec(info->write_index, &asClient->sampleSpec);
     asClient->offloadReadIndex_ = pa_bytes_to_usec(info->read_index, &asClient->sampleSpec);
     asClient->offloadTimeStamp_ = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
