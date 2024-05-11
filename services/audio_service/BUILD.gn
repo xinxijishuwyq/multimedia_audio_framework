@@ -123,6 +123,7 @@ config("audio_sasdk_public_config") {
 }
 
 ohos_shared_library("audio_client") {
+  stack_protector_ret = false
   install_enable = true
   sources = [
     "client/src/audio_device_descriptor.cpp",
