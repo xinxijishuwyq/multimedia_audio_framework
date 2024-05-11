@@ -123,7 +123,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     bool GetCurSpatializationEnabled();
     void ResetEffectBuffer();
-    void ResetForTest();
+    void ResetInfo();  // Use for testing temporarily.
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);

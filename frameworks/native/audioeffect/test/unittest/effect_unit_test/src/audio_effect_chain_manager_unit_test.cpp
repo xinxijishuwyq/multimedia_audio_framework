@@ -16,6 +16,12 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioEffectChainManagerUnitTest"
 
+#include <chrono>
+#include <thread>
+#include <fstream>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
 #include "audio_effect_chain_manager_unit_test.h"
 
 #include "audio_effect.h"
@@ -23,12 +29,6 @@
 #include "audio_log.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_errors.h"
-
-#include <chrono>
-#include <thread>
-#include <fstream>
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
 using namespace std;
 using namespace testing::ext;
@@ -38,23 +38,26 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
-    constexpr uint32_t infoChannels = 2;
-    constexpr uint64_t infoChannelLayout = 0x3;
-    constexpr uint32_t infoVolume = 50;
-    vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
-    unordered_map<string, string> map = {
+    constexpr uint32_t INFOCHANNELS = 2;
+    constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
+    constexpr uint32_t INFOVOLUME = 50;
+    
+    vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
+
+    unordered_map<string, string> DEFAULT_MAP = {
         {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
         {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
     };
-    vector<shared_ptr<AudioEffectLibEntry>> effectLibraryList = {};
-    SessionEffectInfo info = {
+
+    vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
+    SessionEffectInfo DEFAULT_INFO = {
         "EFFECT_DEFAULT",
         "SCENE_MOVIE",
-        infoChannels,
-        infoChannelLayout,
+        INFOCHANNELS,
+        INFOCHANNELLAYOUT,
         "0",
-        infoVolume
-    };
+        INFOVOLUME
+};
 }
 
 void AudioEffectChainManagerUnitTest::SetUpTestCase(void) {}
@@ -72,11 +75,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_001, TestS
 {
     string sceneType = "";
     
-    AudioEffectChainManager::GetInstance()->ResetForTest();
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
 
     int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -89,10 +92,10 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_002, TestS
 {
     string sceneType = "123";
 
-    AudioEffectChainManager::GetInstance()->ResetForTest();
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -105,10 +108,10 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamic_003, TestS
 {
     string sceneType = "SCENE_MOVIE";
 
-    AudioEffectChainManager::GetInstance()->ResetForTest();
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result =  AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -120,9 +123,9 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndAddSessionID_001, TestSize.Level
 {
     string sessionID = "123456";
 
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     bool result = AudioEffectChainManager::GetInstance()->CheckAndAddSessionID(sessionID);
     EXPECT_EQ(true, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -133,11 +136,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndAddSessionID_001, TestSize.Level
 HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_001, TestSize.Level1)
 {
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     AudioEffectChainManager::GetInstance()->CheckAndAddSessionID(sessionID);
 
     bool result = AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID("123");
     EXPECT_EQ(false, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -148,11 +151,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_001, TestSize.Le
 HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_002, TestSize.Level1)
 {
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     AudioEffectChainManager::GetInstance()->CheckAndAddSessionID(sessionID);
 
     bool result = AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID(sessionID);
     EXPECT_EQ(true, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -163,10 +166,10 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_002, TestSize.Le
 HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_003, TestSize.Level1)
 {
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     bool result = AudioEffectChainManager::GetInstance()->CheckAndRemoveSessionID(sessionID);
     EXPECT_EQ(false, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -177,12 +180,12 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndRemoveSessionID_003, TestSize.Le
 HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_001, TestSize.Level1)
 {
     string sceneType = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result =  AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -193,12 +196,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_001, Test
 HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_002, TestSize.Level1)
 {
     string sceneType = "123";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result =  AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -209,12 +212,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_002, Test
 HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamic_003, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result =  AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -227,11 +230,11 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_001, TestSize.Leve
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     string spatializationEnabled = "0";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
     spatializationEnabled);
     EXPECT_EQ(false, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -244,13 +247,13 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_002, TestSize.Leve
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     string spatializationEnabled = "0";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
         spatializationEnabled);
     EXPECT_EQ(false, result);  // Use 'false' as the criterion for judgment because of the empty effect chain.
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -263,13 +266,13 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_003, TestSize.Leve
     string sceneType = "";
     string effectMode = "";
     string spatializationEnabled = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
         spatializationEnabled);
     EXPECT_EQ(false, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -282,13 +285,13 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_004, TestSize.Leve
     string sceneType = "123";
     string effectMode = "123";
     string spatializationEnabled = "123";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
         spatializationEnabled);
     EXPECT_EQ(false, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -301,12 +304,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_005, TestSize.Leve
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     string spatializationEnabled = "0";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     bool result =  AudioEffectChainManager::GetInstance()->ExistAudioEffectChain(sceneType, effectMode,
         spatializationEnabled);
     EXPECT_EQ(false, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -328,12 +331,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_001, TestSize.Leve
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
     string sceneType = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -355,12 +358,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_002, TestSize.Leve
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
     string sceneType = "SCENE_MOVIE";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -382,12 +385,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_003, TestSize.Leve
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
     string sceneType = "123";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -409,11 +412,11 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_004, TestSize.Leve
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
     string sceneType = "SCENE_MOVIE";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -426,10 +429,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_001, TestSize.Level1
 {
     int32_t device = 2;
     string sinkName = "Speaker";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -442,10 +445,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_002, TestSize.Level1
 {
     int32_t device = 2;
     string sinkName = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -458,10 +461,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_003, TestSize.Level1
 {
     int32_t device = 2;
     string sinkName = "123";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -471,10 +474,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SetOutputDeviceSink_003, TestSize.Level1
 */
 HWTEST(AudioEffectChainManagerUnitTest, GetDeviceSinkName_001, TestSize.Level1)
 {
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     string result = AudioEffectChainManager::GetInstance()->GetDeviceSinkName();
 
     EXPECT_EQ(true, result != "");
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -484,10 +487,10 @@ HWTEST(AudioEffectChainManagerUnitTest, GetDeviceSinkName_001, TestSize.Level1)
 */
 HWTEST(AudioEffectChainManagerUnitTest, GetOffloadEnabled_001, TestSize.Level1)
 {
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     bool result = AudioEffectChainManager::GetInstance()->GetOffloadEnabled();
 
     EXPECT_EQ(false, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -508,12 +511,12 @@ HWTEST(AudioEffectChainManagerUnitTest, Dump_001, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_001, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -524,12 +527,12 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_001, TestSize.L
 HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_002, TestSize.Level1)
 {
     string sceneType = "123";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -540,12 +543,12 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_002, TestSize.L
 HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_003, TestSize.Level1)
 {
     string sceneType = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -556,11 +559,11 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_003, TestSize.L
 HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_004, TestSize.Level1)
 {
     string sceneType = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -571,10 +574,10 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateMultichannelConfig_004, TestSize.L
 HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_001, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -585,11 +588,11 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_001, TestSiz
 HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_002, TestSize.Level1)
 {
     string sceneType = "SCENE_MOVIE";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -600,11 +603,11 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_002, TestSiz
 HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_003, TestSize.Level1)
 {
     string sceneType = "123";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -615,11 +618,11 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_003, TestSiz
 HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_004, TestSize.Level1)
 {
     string sceneType = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -631,10 +634,10 @@ HWTEST(AudioEffectChainManagerUnitTest, InitAudioEffectChainDynamic_004, TestSiz
 HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_001, TestSize.Level1)
 {
     AudioSpatializationState spatializationState = {false, false};
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -646,10 +649,10 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_001, TestSize.
 HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_002, TestSize.Level1)
 {
     AudioSpatializationState spatializationState = {true, true};
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -662,10 +665,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_001, TestSize.Level1)
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     bool enabled = true;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -678,11 +681,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_002, TestSize.Level1)
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     bool enabled = true;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -695,11 +698,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_003, TestSize.Level1)
     string sceneType = "SCENE_MOVIE";
     string effectMode = "EFFECT_DEFAULT";
     bool enabled = false;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -712,11 +715,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_004, TestSize.Level1)
     string sceneType = "";
     string effectMode = "";
     bool enabled = true;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -729,11 +732,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_005, TestSize.Level1)
     string sceneType = "123";
     string effectMode = "123";
     bool enabled = true;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(effectChains, map, effectLibraryList);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -744,10 +747,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_005, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_001, TestSize.Level1)
 {
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     
-    int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -758,10 +761,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_001, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapAdd_002, TestSize.Level1)
 {
     string sessionID = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     
-    int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -773,10 +776,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_001, TestSize.Level
 {
     string sceneType = "SCENE_MOVIE";
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -788,13 +791,13 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_002, TestSize.Level
 {
     string sceneType = "SCENE_MOVIE";
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     
-    int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     EXPECT_EQ(SUCCESS, addRes);
 
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -806,11 +809,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_003, TestSize.Level
 {
     string sceneType = "123";
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -822,11 +825,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SessionInfoMapDelete_004, TestSize.Level
 {
     string sceneType = "";
     string sessionID = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->SessionInfoMapDelete(sceneType, sessionID);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -839,11 +842,11 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_001, TestSize.Le
     string sceneType = "SCENE_MOVIE";
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels,
         &channelLayout);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -857,14 +860,14 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_002, TestSize.Le
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    int32_t addRes = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     EXPECT_EQ(SUCCESS, addRes);
 
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels,
         &channelLayout);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -878,12 +881,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_003, TestSize.Le
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels,
         &channelLayout);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -897,12 +900,12 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_004, TestSize.Le
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, &channels,
         &channelLayout);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -916,11 +919,11 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_001, TestSize.Lev
     uint32_t channels = 2;
     uint64_t channelLayout = 0x3;
     string sessionID = "123456";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -932,9 +935,9 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_001, T
 {
     string sceneType = "SCENE_MOVIE";
     string operation = "Register";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->RegisterEffectChainCountBackupMap(sceneType, operation);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -946,9 +949,9 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_002, T
 {
     string sceneType = "SCENE_MOVIE";
     string operation = "Deregister";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->RegisterEffectChainCountBackupMap(sceneType, operation);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -960,9 +963,9 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_003, T
 {
     string sceneType = "SCENE_MOVIE";
     string operation = "";
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     AudioEffectChainManager::GetInstance()->RegisterEffectChainCountBackupMap(sceneType, operation);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -974,10 +977,10 @@ HWTEST(AudioEffectChainManagerUnitTest, RegisterEffectChainCountBackupMap_003, T
 HWTEST(AudioEffectChainManagerUnitTest, EffectRotationUpdate_001, TestSize.Level1)
 {
     uint32_t rotationState = 0;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->EffectRotationUpdate(rotationState);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -1003,12 +1006,12 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdate_001, TestSize.Level1)
 {
     string sessionIDString = "123456";
     uint32_t volume = 60;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionIDString, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionIDString, DEFAULT_INFO);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic("SCENE_MOVIE");
     int32_t result = AudioEffectChainManager::GetInstance()->EffectVolumeUpdate(sessionIDString, volume);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -1021,12 +1024,12 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdate_002, TestSize.Level1)
 {
     string sessionIDString = "123456";
     uint32_t volume = 123456;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionIDString, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionIDString, DEFAULT_INFO);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic("SCENE_MOVIE");
     int32_t result = AudioEffectChainManager::GetInstance()->EffectVolumeUpdate(sessionIDString, volume);
     EXPECT_EQ(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -1037,11 +1040,11 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdate_002, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, GetLatency_001, TestSize.Level1)
 {
     string sessionID = "123456" ;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     uint32_t result = AudioEffectChainManager::GetInstance()->GetLatency(sessionID);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -1052,11 +1055,11 @@ HWTEST(AudioEffectChainManagerUnitTest, GetLatency_001, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, GetLatency_002, TestSize.Level1)
 {
     string sessionID = "" ;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     uint32_t result = AudioEffectChainManager::GetInstance()->GetLatency(sessionID);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 
@@ -1069,10 +1072,10 @@ HWTEST(AudioEffectChainManagerUnitTest, GetLatency_002, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_001, TestSize.Level1)
 {
     AudioSpatializationSceneType spatializationSceneType = SPATIALIZATION_SCENE_TYPE_DEFAULT;
-    AudioEffectChainManager::GetInstance()->ResetForTest();
 
     int32_t result = AudioEffectChainManager::GetInstance()->SetSpatializationSceneType(spatializationSceneType);
     EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -1082,9 +1085,9 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_001, TestSize
 */
 HWTEST(AudioEffectChainManagerUnitTest, GetCurSpatializationEnabled_001, TestSize.Level1)
 {
-    AudioEffectChainManager::GetInstance()->ResetForTest();
     bool result = AudioEffectChainManager::GetInstance()->GetCurSpatializationEnabled();
     EXPECT_EQ(false, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**

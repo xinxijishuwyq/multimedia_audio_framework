@@ -1090,7 +1090,7 @@ void AudioEffectChainManager::ResetEffectBuffer()
     }
 }
 
-void AudioEffectChainManager::ResetForTest()
+void AudioEffectChainManager::ResetInfo()
 {
     EffectToLibraryEntryMap_.clear();
     EffectToLibraryNameMap_.clear();
