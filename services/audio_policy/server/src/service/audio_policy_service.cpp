@@ -6160,11 +6160,6 @@ int32_t AudioPolicyService::DisableSafeMediaVolume()
     return SUCCESS;
 }
 
-int32_t AudioPolicyService::Dump(int32_t fd, const std::vector<std::u16string> &args)
-{
-   return audioPolicyManager_.Dump(fd, args);
-}
-
 DeviceUsage AudioPolicyService::GetDeviceUsage(const AudioDeviceDescriptor &desc)
 {
     return audioDeviceManager_.GetDeviceUsage(desc);
@@ -6173,6 +6168,429 @@ DeviceUsage AudioPolicyService::GetDeviceUsage(const AudioDeviceDescriptor &desc
 void AudioPolicyService::NotifyAccountsChanged(const int &id)
 {
     audioPolicyManager_.NotifyAccountsChanged(id);
+}
+
+void AudioPolicyService::GetSafeVolumeDump(std::string &dumpString)
+{
+   audioPolicyManager_.SafeVolumeDump(dumpString);
+}
+
+void AudioPolicyService::DevicesInfoDump(std::string &dumpString)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    dumpString += "\nInput local Devices:\n";
+    audioDeviceDescriptors = GetDumpDeviceInfo(dumpString, INPUT_DEVICES_FLAG);
+    AppendFormat(dumpString, "- %d Input Devices (s) available\n", audioDeviceDescriptors.size());
+
+    dumpString += "\nOutput local Devices:\n";
+    audioDeviceDescriptors = GetDumpDeviceInfo(dumpString, OUTPUT_DEVICES_FLAG);
+    AppendFormat(dumpString, "- %d output Devices (s) available\n", audioDeviceDescriptors.size());
+
+    dumpString += "\nInput distributed Devices:\n";
+    audioDeviceDescriptors = GetDumpDeviceInfo(dumpString, DISTRIBUTED_INPUT_DEVICES_FLAG);
+    AppendFormat(dumpString, "- %d output Devices (s) available\n", audioDeviceDescriptors.size());
+
+    dumpString += "\nOutput distributed Devices:\n";
+    audioDeviceDescriptors = GetDumpDeviceInfo(dumpString, DISTRIBUTED_OUTPUT_DEVICES_FLAG);
+    AppendFormat(dumpString, "- %d output Devices (s) available\n", audioDeviceDescriptors.size());
+
+    priorityOutputDevice_ = GetActiveOutputDevice();
+    priorityInputDevice_ = GetActiveInputDevice();
+    AppendFormat(dumpString, "\nHighest priority output device: %s",
+        AudioInfoDumpUtils::GetDeviceTypeName(priorityOutputDevice_).c_str());
+    AppendFormat(dumpString, "\nHighest priority input device: %s \n",
+        AudioInfoDumpUtils::GetDeviceTypeName(priorityInputDevice_).c_str());
+
+    GetMicrophoneDescriptorsDump(dumpString);
+    GetOffloadStatusDump(dumpString);
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpDeviceInfo(std::string &dumpString,
+    DeviceFlag deviceFlag)
+{
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = GetDumpDevices(deviceFlag);
+
+    for (auto &desc : deviceDescs) {
+        sptr<AudioDeviceDescriptor> devDesc = new(std::nothrow) AudioDeviceDescriptor(*desc);
+        dumpString += "\n";
+        AppendFormat(dumpString, "  - device name:%s\n",
+            AudioInfoDumpUtils::GetDeviceTypeName(devDesc->deviceType_).c_str());
+        AppendFormat(dumpString, "  - device type:%d\n", devDesc->deviceType_);
+        AppendFormat(dumpString, "  - device id:%d\n", devDesc->deviceId_);
+        if (deviceFlag == DeviceFlag::INPUT_DEVICES_FLAG || deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
+            conneceType_  = CONNECT_TYPE_LOCAL;
+        } else if (deviceFlag == DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG ||
+                deviceFlag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG) {
+            conneceType_  = CONNECT_TYPE_DISTRIBUTED;
+        }
+        AppendFormat(dumpString, "  - connect type:%s\n", AudioInfoDumpUtils::GetConnectTypeName(conneceType_).c_str());
+        for (auto &samplingRate : devDesc->audioStreamInfo_.samplingRate) {
+            AppendFormat(dumpString, "  - device sampleRates:%d\n", samplingRate);
+        }
+        for (auto &channel : devDesc->audioStreamInfo_.channels) {
+            AppendFormat(dumpString, "  - device channels:%d\n", channel);
+        }
+        AppendFormat(dumpString, "  - device format:%d\n", devDesc->audioStreamInfo_.format);
+    }
+    return deviceDescs;
+}
+
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetDumpDevices(DeviceFlag deviceFlag)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    switch (deviceFlag) {
+        case NONE_DEVICES_FLAG:
+        case DISTRIBUTED_OUTPUT_DEVICES_FLAG:
+        case DISTRIBUTED_INPUT_DEVICES_FLAG:
+        case ALL_DISTRIBUTED_DEVICES_FLAG:
+        case ALL_L_D_DEVICES_FLAG:
+            if (!hasSystemPermission) {
+                AUDIO_ERR_LOG("GetDevices: No system permission");
+                std::vector<sptr<AudioDeviceDescriptor>> info = {};
+                return info;
+            }
+            break;
+        default:
+            break;
+    }
+
+    std::vector<sptr<AudioDeviceDescriptor>> deviceDescs = GetDevices(deviceFlag);
+
+    if (!hasSystemPermission) {
+        for (sptr<AudioDeviceDescriptor> desc : deviceDescs) {
+            desc->networkId_ = "";
+            desc->interruptGroupId_ = GROUP_ID_NONE;
+            desc->volumeGroupId_ = GROUP_ID_NONE;
+        }
+    }
+    return deviceDescs;
+}
+
+void AudioPolicyService::AudioModeDump(std::string &dumpString)
+{
+    GetCallStatusDump(dumpString);
+    GetRingerModeDump(dumpString);
+}
+
+void AudioPolicyService::GetCallStatusDump(std::string &dumpString)
+{
+    dumpString += "\nAudio Scene:";
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    AudioScene callStatus = GetAudioScene(hasSystemPermission);
+    switch (callStatus) {
+        case AUDIO_SCENE_DEFAULT:
+            dumpString += "DEFAULT";
+            break;
+        case AUDIO_SCENE_RINGING:
+            dumpString += "RINGING";
+            break;
+        case AUDIO_SCENE_PHONE_CALL:
+            dumpString += "PHONE_CALL";
+            break;
+        case AUDIO_SCENE_PHONE_CHAT:
+            dumpString += "PHONE_CHAT";
+            break;
+        default:
+            dumpString += "UNKNOWN";
+    }
+    dumpString += "\n";
+}
+
+void AudioPolicyService::GetRingerModeDump(std::string &dumpString)
+{
+    dumpString += "Ringer Mode:";
+    AudioRingerMode ringerMode = GetRingerMode();
+    switch (ringerMode) {
+        case RINGER_MODE_NORMAL:
+            dumpString += "NORMAL";
+            break;
+        case RINGER_MODE_SILENT:
+            dumpString += "SILENT";
+            break;
+        case RINGER_MODE_VIBRATE:
+            dumpString += "VIBRATE";
+            break;
+        default:
+            dumpString += "UNKNOWN";
+    }
+    dumpString += "\n\n";
+}
+
+void AudioPolicyService::GetMicrophoneDescriptorsDump(std::string &dumpString)
+{
+    dumpString += "\nAvailable MicrophoneDescriptors:\n";
+
+    std::vector<sptr<MicrophoneDescriptor>> micDescs = GetAvailableMicrophones();
+    for (auto it = micDescs.begin();
+        it != micDescs.end(); ++it) {
+        AppendFormat(dumpString, " - id:%d \n", (*it)->micId_);
+        AppendFormat(dumpString, " - device type:%d  \n", (*it)->deviceType_);
+        AppendFormat(dumpString, " - group id:%d  \n", (*it)->groupId_);
+        AppendFormat(dumpString, " - sensitivity:%d  \n", (*it)->sensitivity_);
+        AppendFormat(dumpString, " - position:%f %f %f (x, y, z)\n",
+            (*it)->position_.x, (*it)->position_.y, (*it)->position_.z);
+        AppendFormat(dumpString, " - orientation:%f %f %f (x, y, z)\n",
+            (*it)->orientation_.x, (*it)->orientation_.y, (*it)->orientation_.z);
+    }
+}
+
+void AudioPolicyService::AudioPolicyParserDump(std::string &dumpString)
+{
+    dumpString += "\nAudioPolicyParser:\n";
+    GetAudioAdapterInfos(adapterInfoMap_);
+    GetVolumeGroupData(volumeGroupData_);
+    GetInterruptGroupData(interruptGroupData_);
+    GetGlobalConfigs(globalConfigs_);
+    for (auto &[adapterType, adapterInfo] : adapterInfoMap_) {
+        AppendFormat(dumpString, " - adapter : %s -- adapterType:%u\n", adapterInfo.adapterName_.c_str(), adapterType);
+        for (auto &deviceInfo : adapterInfo.deviceInfos_) {
+            AppendFormat(dumpString, "     - device --  name:%s, pin:%s, type:%s, role:%s\n", deviceInfo.name_.c_str(),
+                deviceInfo.pin_.c_str(), deviceInfo.type_.c_str(), deviceInfo.role_.c_str());
+        }
+        for (auto &pipeInfo : adapterInfo.pipeInfos_) {
+            AppendFormat(dumpString, "     - module : -- name:%s, pipeRole:%s, pipeFlags:%s, lib:%s, paPropRole:%s, "
+                "fixedLatency:%s, renderInIdleState:%s\n", pipeInfo.name_.c_str(),
+                pipeInfo.pipeRole_.c_str(), pipeInfo.pipeFlags_.c_str(), pipeInfo.lib_.c_str(),
+                pipeInfo.paPropRole_.c_str(), pipeInfo.fixedLatency_.c_str(), pipeInfo.renderInIdleState_.c_str());
+
+            for (auto &configInfo : pipeInfo.configInfos_) {
+                AppendFormat(dumpString, "         - config : -- name:%s, value:%s\n", configInfo.name_.c_str(),
+                    configInfo.value_.c_str());
+            }
+        }
+    }
+    for (auto& volume : volumeGroupData_) {
+        AppendFormat(dumpString, " - volumeGroupMap_ first:%s, second:%s\n\n", volume.first.c_str(),
+            volume.second.c_str());
+    }
+    for (auto& interrupt : interruptGroupData_) {
+        AppendFormat(dumpString, " - interruptGroupMap_ first:%s, second:%s\n", interrupt.first.c_str(),
+            interrupt.second.c_str());
+    }
+    AppendFormat(dumpString, " - globalConfig  adapter:%s, pipe:%s, device:%s, updateRouteSupport:%d, "
+        "audioLatency:%s, sinkLatency:%s\n", globalConfigs_.adapter_.c_str(),
+        globalConfigs_.pipe_.c_str(), globalConfigs_.device_.c_str(),
+        globalConfigs_.updateRouteSupport_,
+        globalConfigs_.globalPaConfigs_.audioLatency_.c_str(),
+        globalConfigs_.globalPaConfigs_.sinkLatency_.c_str());
+    for (auto &outputConfig : globalConfigs_.outputConfigInfos_) {
+        AppendFormat(dumpString, " - output config name:%s, type:%s, value:%s\n", outputConfig.name_.c_str(),
+            outputConfig.type_.c_str(), outputConfig.value_.c_str());
+    }
+    for (auto &inputConfig : globalConfigs_.inputConfigInfos_) {
+        AppendFormat(dumpString, " - input config name:%s, type_%s, value:%s\n\n", inputConfig.name_.c_str(),
+            inputConfig.type_.c_str(), inputConfig.value_.c_str());
+    }
+    AppendFormat(dumpString, " - module curActiveCount:%d\n\n", GetCurActivateCount());
+}
+
+void AudioPolicyService::XmlParsedDataMapDump(std::string &dumpString)
+{
+    dumpString += "\nXmlParsedDataParser:\n";
+
+    GetDeviceClassInfo(deviceClassInfo_);
+
+    for (auto &[adapterType, deviceClassInfos] : deviceClassInfo_) {
+        AppendFormat(dumpString, " - DeviceClassInfo type %d\n", adapterType);
+        for (auto &deviceClassInfo : deviceClassInfos) {
+            AppendFormat(dumpString, " - Data : className:%s, name:%s, adapter:%s, id:%s, lib:%s, role:%s, rate:%s\n",
+                deviceClassInfo.className.c_str(), deviceClassInfo.name.c_str(),
+                deviceClassInfo.adapterName.c_str(), deviceClassInfo.id.c_str(),
+                deviceClassInfo.lib.c_str(), deviceClassInfo.role.c_str(), deviceClassInfo.rate.c_str());
+
+            for (auto rate : deviceClassInfo.supportedRate_) {
+                AppendFormat(dumpString, "     - rate:%u\n", rate);
+            }
+
+            for (auto supportedChannel : deviceClassInfo.supportedChannels_) {
+                AppendFormat(dumpString, "     - supportedChannel:%u\n", supportedChannel);
+            }
+
+            AppendFormat(dumpString, " -DeviceClassInfo : format:%s, channels:%s, bufferSize:%s, fixedLatency:%s, "
+                " sinkLatency:%s, renderInIdleState:%s, OpenMicSpeaker:%s, fileName:%s, networkId:%s, "
+                "deviceType:%s, sceneName:%s, sourceType:%s, offloadEnable:%s\n",
+                deviceClassInfo.format.c_str(), deviceClassInfo.channels.c_str(), deviceClassInfo.bufferSize.c_str(),
+                deviceClassInfo.fixedLatency.c_str(), deviceClassInfo.sinkLatency.c_str(),
+                deviceClassInfo.renderInIdleState.c_str(), deviceClassInfo.OpenMicSpeaker.c_str(),
+                deviceClassInfo.fileName.c_str(), deviceClassInfo.networkId.c_str(), deviceClassInfo.deviceType.c_str(),
+                deviceClassInfo.sceneName.c_str(), deviceClassInfo.sourceType.c_str(),
+                deviceClassInfo.offloadEnable.c_str());
+        }
+        AppendFormat(dumpString, "-----EndOfXmlParsedDataMap-----\n");
+    }
+}
+
+void AudioPolicyService::GetGroupInfoDump(std::string &dumpString)
+{
+    dumpString += "\nVolume GroupInfo:\n";
+    // Get group info
+    std::vector<sptr<VolumeGroupInfo>> groupInfos = GetVolumeGroupInfos();
+    AppendFormat(dumpString, "- %d Group Infos (s) available :\n", groupInfos.size());
+
+    for (auto it = groupInfos.begin(); it != groupInfos.end(); it++) {
+        AppendFormat(dumpString, "  Group Infos %d\n", it - groupInfos.begin() + 1);
+        AppendFormat(dumpString, "  - ConnectType(0 for Local, 1 for Remote): %d\n", (*it)->connectType_);
+        AppendFormat(dumpString, "  - Name: %s\n", (*it)->groupName_.c_str());
+        AppendFormat(dumpString, "  - Id: %d\n", (*it)->volumeGroupId_);
+    }
+    dumpString += "\n";
+}
+
+void AudioPolicyService::StreamVolumesDump(std::string &dumpString)
+{
+    dumpString += "\nStream Volumes:\n";
+    // Get stream volumes
+    std::map<AudioStreamType, int32_t> streamVolumes_;
+    for (int stream = AudioStreamType::STREAM_VOICE_CALL; stream <= AudioStreamType::STREAM_TYPE_MAX; stream++) {
+        AudioStreamType streamType = (AudioStreamType)stream;
+
+        if (IsStreamSupported(streamType)) {
+            if (streamType == STREAM_ALL) {
+                streamType = STREAM_MUSIC;
+                AUDIO_DEBUG_LOG("GetVolume of STREAM_ALL for streamType = %{public}d ", streamType);
+            }
+            int32_t volume = GetSystemVolumeLevel(streamType);
+            streamVolumes_.insert({ streamType, volume });
+        }
+    }
+    AppendFormat(dumpString, "   [StreamName]: [Volume]\n");
+    for (auto it = streamVolumes_.cbegin(); it != streamVolumes_.cend();
+        ++it) {
+        AppendFormat(dumpString, " - %s: %d\n", AudioInfoDumpUtils::GetStreamName(it->first).c_str(), it->second);
+    }
+    GetVolumeConfigDump(dumpString);
+    GetGroupInfoDump(dumpString);
+    GetSafeVolumeDump(dumpString);
+}
+
+bool AudioPolicyService::IsStreamSupported(AudioStreamType streamType)
+{
+    switch (streamType) {
+        case STREAM_MUSIC:
+        case STREAM_RING:
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
+        case STREAM_VOICE_ASSISTANT:
+        case STREAM_WAKEUP:
+            return true;
+        default:
+            return false;
+    }
+}
+
+void AudioPolicyService::GetVolumeConfigDump(std::string &dumpString)
+{
+    dumpString += "\nVolume config of streams:\n";
+
+    StreamVolumeInfoMap streamVolumeInfos;
+    GetStreamVolumeInfoMap(streamVolumeInfos);
+    for (auto it = streamVolumeInfos.cbegin();
+        it != streamVolumeInfos.cend(); ++it) {
+        auto streamType = it->first;
+        AppendFormat(dumpString, " %s: ", AudioInfoDumpUtils::GetStreamName(streamType).c_str());
+        if (streamType == STREAM_ALL) {
+            streamType = STREAM_MUSIC;
+            AUDIO_INFO_LOG("GetStreamMute of STREAM_ALL for streamType = %{public}d ", streamType);
+        }
+        AppendFormat(dumpString, "mute = %d  ", GetStreamMute(streamType));
+        auto streamVolumeInfo = it->second;
+        AppendFormat(dumpString, "minLevel = %d  ", streamVolumeInfo->minLevel);
+        AppendFormat(dumpString, "maxLevel = %d  ", streamVolumeInfo->maxLevel);
+        AppendFormat(dumpString, "defaultLevel = %d\n", streamVolumeInfo->defaultLevel);
+        DeviceVolumeInfosDump(dumpString, streamVolumeInfo->deviceVolumeInfos);
+    }
+}
+
+void AudioPolicyService::DeviceVolumeInfosDump(std::string &dumpString, DeviceVolumeInfoMap &deviceVolumeInfos)
+{
+    for (auto iter = deviceVolumeInfos.cbegin(); iter != deviceVolumeInfos.cend(); ++iter) {
+        AppendFormat(dumpString, "    %s : {", AudioInfoDumpUtils::GetDeviceVolumeTypeName(iter->first).c_str());
+        auto volumePoints = iter->second->volumePoints;
+        for (auto volPoint = volumePoints.cbegin(); volPoint != volumePoints.cend(); ++volPoint) {
+            AppendFormat(dumpString, "[%d, %d]", volPoint->index, volPoint->dbValue);
+            if (volPoint + 1 != volumePoints.cend()) {
+                dumpString += ", ";
+            }
+        }
+        dumpString += "}\n";
+    }
+}
+
+void AudioPolicyService::AudioStreamDump(std::string &dumpString)
+{
+    dumpString += "\nAudioRenderer stream:\n";
+    vector<unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+
+    AppendFormat(dumpString, " - audiorenderer stream size : %d\n", audioRendererChangeInfos.size());
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        if ((*it)->rendererInfo.rendererFlags == STREAM_FLAG_NORMAL) {
+            AppendFormat(dumpString, " - normal AudioCapturer stream:\n");
+        } else if ((*it)->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
+            AppendFormat(dumpString, " - fast AudioCapturer stream:\n");
+        }
+        AppendFormat(dumpString, " - clientUID : %d\n", (*it)->clientUID);
+        AppendFormat(dumpString, " - streamId : %d\n", (*it)->sessionId);
+        AppendFormat(dumpString, " - deviceType : %d\n", (*it)->outputDeviceInfo.deviceType);
+        AppendFormat(dumpString, " - contentType : %d\n", (*it)->rendererInfo.contentType);
+        AppendFormat(dumpString, " - streamUsage : %d\n", (*it)->rendererInfo.streamUsage);
+        AppendFormat(dumpString, " - samplingRate : %d\n", (*it)->rendererInfo.samplingRate);
+        AudioStreamType streamType = GetStreamType((*it)->sessionId);
+        AppendFormat(dumpString, " - volume : %f\n", GetSystemVolumeDb(streamType));
+        AppendFormat(dumpString, " - pipeType : %d\n", (*it)->rendererInfo.pipeType);
+    }
+    GetCapturerStreamDump(dumpString);
+}
+
+void AudioPolicyService::GetCapturerStreamDump(std::string &dumpString)
+{
+    dumpString += "\nAudioCapturer stream:\n";
+    vector<unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    streamCollector_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    AppendFormat(dumpString, " - audiocapturer stream size : %d\n", audioCapturerChangeInfos.size());
+    for (auto it = audioCapturerChangeInfos.begin(); it != audioCapturerChangeInfos.end(); it++) {
+        if ((*it)->capturerInfo.capturerFlags == STREAM_FLAG_NORMAL) {
+            AppendFormat(dumpString, " - normal AudioCapturer stream:\n");
+        } else if ((*it)->capturerInfo.capturerFlags == STREAM_FLAG_FAST) {
+            AppendFormat(dumpString, " - fast AudioCapturer stream:\n");
+        }
+        AppendFormat(dumpString, " - clientUID : %d\n", (*it)->clientUID);
+        AppendFormat(dumpString, " - streamId : %d\n", (*it)->sessionId);
+        AppendFormat(dumpString, " - is muted : %s\n", (*it)->muted ? "true" : "false");
+        AppendFormat(dumpString, " - deviceType : %d\n", (*it)->inputDeviceInfo.deviceType);
+        AppendFormat(dumpString, " - samplingRate : %d\n", (*it)->capturerInfo.samplingRate);
+        AppendFormat(dumpString, " - pipeType : %d\n", (*it)->capturerInfo.pipeType);
+    }
+}
+
+void AudioPolicyService::GetOffloadStatusDump(std::string &dumpString)
+{
+    dumpString += "\nOffload status:";
+    DeviceType dev = GetActiveOutputDevice();
+    if (dev != DEVICE_TYPE_SPEAKER && dev != DEVICE_TYPE_USB_HEADSET && dev != DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AppendFormat(dumpString, " - current device do not supportted offload: %d\n", dev);
+    }
+    dumpString += "\nPrimary Offload\n";
+    if (dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_USB_HEADSET) {
+        AppendFormat(dumpString, " - primary deviceType : %d\n", dev);
+        AppendFormat(dumpString, " - primary offloadEnable : %d\n", GetOffloadAvailableFromXml());
+    } else {
+        AppendFormat(dumpString, " - current device is not primary\n");
+    }
+    dumpString += "\nA2DP offload\n";
+    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AppendFormat(dumpString, " - A2DP deviceType: %d\n", dev);
+        AppendFormat(dumpString, " - A2DP offloadstatus : %d\n", a2dpOffloadFlag_);
+    } else {
+        AppendFormat(dumpString, " - current device is not A2DP\n");
+    }
+    AppendFormat(dumpString, "\n");
+}
+
+int32_t AudioPolicyService::GetCurActivateCount()
+{
+    return audioPolicyManager_.GetCurActivateCount();
 }
 } // namespace AudioStandard
 } // namespace OHOS

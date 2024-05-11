@@ -1384,108 +1384,9 @@ int32_t AudioPolicyServer::ReconfigureAudioChannel(const uint32_t &count, Device
     return audioPolicyService_.ReconfigureAudioChannel(count, deviceType);
 }
 
-void AudioPolicyServer::GetPolicyData(PolicyData &policyData)
-{
-    policyData.ringerMode = GetRingerMode();
-    policyData.callStatus = GetAudioScene();
-
-    // Get stream volumes
-    for (int stream = AudioStreamType::STREAM_VOICE_CALL; stream <= AudioStreamType::STREAM_TYPE_MAX; stream++) {
-        AudioStreamType streamType = (AudioStreamType)stream;
-
-        if (AudioServiceDump::IsStreamSupported(streamType)) {
-            int32_t volume = GetSystemVolumeLevel(streamType);
-            policyData.streamVolumes.insert({ streamType, volume });
-        }
-    }
-
-    if (interruptService_ != nullptr) {
-        interruptService_->AddDumpInfo(policyData);
-    }
-    GetDeviceInfo(policyData);
-    GetGroupInfo(policyData);
-    GetStreamVolumeInfoMap(policyData.streamVolumeInfos);
-    policyData.availableMicrophones = GetAvailableMicrophones();
-    // Get Audio Effect Manager Information
-    audioPolicyService_.GetEffectManagerInfo(policyData.oriEffectConfig, policyData.availableEffects);
-    audioPolicyService_.GetAudioAdapterInfos(policyData.adapterInfoMap);
-    audioPolicyService_.GetVolumeGroupData(policyData.volumeGroupData);
-    audioPolicyService_.GetInterruptGroupData(policyData.interruptGroupData);
-    audioPolicyService_.GetDeviceClassInfo(policyData.deviceClassInfo);
-    audioPolicyService_.GetGlobalConfigs(policyData.globalConfigs);
-}
-
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap& streamVolumeInfos)
 {
     audioPolicyService_.GetStreamVolumeInfoMap(streamVolumeInfos);
-}
-
-void AudioPolicyServer::GetDeviceInfo(PolicyData& policyData)
-{
-    DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
-    std::vector<sptr<AudioDeviceDescriptor>> audioDeviceDescriptors = GetDevices(deviceFlag);
-
-    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
-        AudioDeviceDescriptor audioDeviceDescriptor = **it;
-        DevicesInfo deviceInfo;
-        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
-        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
-        deviceInfo.conneceType  = CONNECT_TYPE_LOCAL;
-        policyData.inputDevices.push_back(deviceInfo);
-    }
-
-    deviceFlag = DeviceFlag::OUTPUT_DEVICES_FLAG;
-    audioDeviceDescriptors = GetDevices(deviceFlag);
-
-    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
-        AudioDeviceDescriptor audioDeviceDescriptor = **it;
-        DevicesInfo deviceInfo;
-        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
-        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
-        deviceInfo.conneceType  = CONNECT_TYPE_LOCAL;
-        policyData.outputDevices.push_back(deviceInfo);
-    }
-
-    deviceFlag = DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG;
-    audioDeviceDescriptors = GetDevices(deviceFlag);
-
-    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
-        AudioDeviceDescriptor audioDeviceDescriptor = **it;
-        DevicesInfo deviceInfo;
-        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
-        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
-        deviceInfo.conneceType  = CONNECT_TYPE_DISTRIBUTED;
-        policyData.inputDevices.push_back(deviceInfo);
-    }
-
-    deviceFlag = DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG;
-    audioDeviceDescriptors = GetDevices(deviceFlag);
-
-    for (auto it = audioDeviceDescriptors.begin(); it != audioDeviceDescriptors.end(); it++) {
-        AudioDeviceDescriptor audioDeviceDescriptor = **it;
-        DevicesInfo deviceInfo;
-        deviceInfo.deviceType = audioDeviceDescriptor.deviceType_;
-        deviceInfo.deviceRole = audioDeviceDescriptor.deviceRole_;
-        deviceInfo.conneceType  = CONNECT_TYPE_DISTRIBUTED;
-        policyData.outputDevices.push_back(deviceInfo);
-    }
-
-    policyData.priorityOutputDevice = GetActiveOutputDevice();
-    policyData.priorityInputDevice = GetActiveInputDevice();
-}
-
-void AudioPolicyServer::GetGroupInfo(PolicyData& policyData)
-{
-    // Get group info
-    std::vector<sptr<VolumeGroupInfo>> groupInfos = audioPolicyService_.GetVolumeGroupInfos();
-
-    for (auto volumeGroupInfo : groupInfos) {
-        GroupInfo info;
-        info.groupId = volumeGroupInfo->volumeGroupId_;
-        info.groupName = volumeGroupInfo->groupName_;
-        info.type = volumeGroupInfo->connectType_;
-        policyData.groupInfos.push_back(info);
-    }
 }
 
 int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
@@ -1496,20 +1397,106 @@ int32_t AudioPolicyServer::Dump(int32_t fd, const std::vector<std::u16string> &a
         argQue.push(args[index]);
     }
     std::string dumpString;
-    PolicyData policyData;
-    AudioServiceDump dumpObj;
+    InitPolicyDumpMap();
+    ArgInfoDump(dumpString, argQue);
 
-    int32_t res = dumpObj.Initialize();
-    CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
-        "Audio Service Dump Not initialised\n");
+    return write(fd, dumpString.c_str(), dumpString.size());
+}
 
-    GetPolicyData(policyData);
+void AudioPolicyServer::InitPolicyDumpMap()
+{
+    dumpFuncMap[u"-h"] = &AudioPolicyServer::InfoDumpHelp;
+    dumpFuncMap[u"-d"] = &AudioPolicyServer::AudioDevicesDump;
+    dumpFuncMap[u"-m"] = &AudioPolicyServer::AudioModeDump;
+    dumpFuncMap[u"-v"] = &AudioPolicyServer::AudioVolumeDump;
+    dumpFuncMap[u"-az"] = &AudioPolicyServer::AudioInterruptZoneDump;
+    dumpFuncMap[u"-apc"] = &AudioPolicyServer::AudioPolicyParserDump;
+    dumpFuncMap[u"-s"] = &AudioPolicyServer::AudioStreamDump;
+    dumpFuncMap[u"-xp"] = &AudioPolicyServer::XmlParsedDataMapDump;
+}
 
-    dumpObj.AudioDataDump(policyData, dumpString, argQue);
+void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
+{
+    AudioDevicesDump(dumpString);
+    AudioModeDump(dumpString);
+    AudioVolumeDump(dumpString);
+    AudioInterruptZoneDump(dumpString);
+    AudioPolicyParserDump(dumpString);
+    AudioStreamDump(dumpString);
+    XmlParsedDataMapDump(dumpString);
+}
 
-    write(fd, dumpString.c_str(), dumpString.size());
+void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
+{
+    audioPolicyService_.DevicesInfoDump(dumpString);
+}
 
-    return audioPolicyService_.Dump(fd, args);
+void AudioPolicyServer::AudioModeDump(std::string &dumpString)
+{
+    audioPolicyService_.AudioModeDump(dumpString);
+}
+
+void AudioPolicyServer::AudioInterruptZoneDump(std::string &dumpString)
+{
+    interruptService_->AudioInterruptZoneDump(dumpString);
+}
+
+void AudioPolicyServer::AudioPolicyParserDump(std::string &dumpString)
+{
+    audioPolicyService_.AudioPolicyParserDump(dumpString);
+}
+
+void AudioPolicyServer::AudioVolumeDump(std::string &dumpString)
+{
+    audioPolicyService_.StreamVolumesDump(dumpString);
+}
+
+void AudioPolicyServer::AudioStreamDump(std::string &dumpString)
+{
+    audioPolicyService_.AudioStreamDump(dumpString);
+}
+
+void AudioPolicyServer::XmlParsedDataMapDump(std::string &dumpString)
+{
+    audioPolicyService_.XmlParsedDataMapDump(dumpString);
+}
+
+void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue)
+{
+    dumpString += "AudioPolicyServer Data Dump:\n\n";
+    if (argQue.empty()) {
+        PolicyDataDump(dumpString);
+        return;
+    }
+    while (!argQue.empty()) {
+        std::u16string para = argQue.front();
+        if (para == u"-h") {
+            dumpString.clear();
+            (this->*dumpFuncMap[para])(dumpString);
+            return;
+        } else if (dumpFuncMap.count(para) == 0) {
+            dumpString.clear();
+            AppendFormat(dumpString, "Please input correct param:\n");
+            InfoDumpHelp(dumpString);
+            return;
+        } else {
+            (this->*dumpFuncMap[para])(dumpString);
+        }
+        argQue.pop();
+    }
+}
+
+void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
+{
+    AppendFormat(dumpString, "usage:\n");
+    AppendFormat(dumpString, "  -h\t\t\t|help text for hidumper audio\n");
+    AppendFormat(dumpString, "  -d\t\t\t|dump devices info\n");
+    AppendFormat(dumpString, "  -m\t\t\t|dump ringer mode and call status\n");
+    AppendFormat(dumpString, "  -v\t\t\t|dump stream volume info\n");
+    AppendFormat(dumpString, "  -az\t\t\t|dump audio in interrupt zone info\n");
+    AppendFormat(dumpString, "  -apc\t\t\t|dump audio policy config xml parser info\n");
+    AppendFormat(dumpString, "  -s\t\t\t|dump stream info\n");
+    AppendFormat(dumpString, "  -xp\t\t\t|dump xml data map\n");
 }
 
 int32_t AudioPolicyServer::GetAudioLatencyFromXml()

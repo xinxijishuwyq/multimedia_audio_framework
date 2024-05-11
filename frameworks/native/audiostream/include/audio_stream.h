@@ -124,6 +124,10 @@ public:
 
     bool RestoreAudioStream() override;
 
+    bool GetOffloadEnable() override;
+    bool GetSpatializationEnabled() override;
+    bool GetHighResolutionEnabled() override;
+
 private:
     enum {
         BIN_TEST_MODE = 1,   //for bin file test

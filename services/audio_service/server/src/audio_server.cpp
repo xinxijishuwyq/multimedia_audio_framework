@@ -165,16 +165,24 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
+    audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
 
 void AudioServer::OnDump() {}
 
 int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
     AUDIO_INFO_LOG("Dump Process Invoked");
-    std::stringstream dumpStringStream;
-    AudioService::GetInstance()->Dump(dumpStringStream);
-    std::string dumpString = dumpStringStream.str();
+    std::queue<std::u16string> argQue;
+    for (decltype(args.size()) index = 0; index < args.size(); ++index) {
+        argQue.push(args[index]);
+    }
+    std::string dumpString;
+
+    AudioServerDump dumpObj;
+    int32_t res = dumpObj.Initialize();
+    CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+        "Audio Service Dump Not initialised\n");
+    dumpObj.AudioDataDump(dumpString, argQue);
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 

@@ -56,6 +56,7 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+#include "policy_handler.h"
 
 #include "media_monitor_manager.h"
 #include "event_bean.h"
@@ -218,6 +219,15 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
     rendererInfo_.spatializationEnabled = spatializationState.spatializationEnabled;
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
+    if (GetOffloadEnable()) {
+        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    } else if (GetHighResolutionEnabled()) {
+        rendererInfo_.pipeType = PIPE_TYPE_HIGHRESOLUTION;
+    } else if (spatializationState.spatializationEnabled) {
+        rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
+    } else {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL;
+    }
 }
 
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -232,6 +242,8 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         // make sure sessionId_ is valid.
         AUDIO_INFO_LOG("Calling register tracker, sessionid is %{public}d", sessionId_);
         AudioRegisterTrackerInfo registerTrackerInfo;
+
+        rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
 
         registerTrackerInfo.sessionId = sessionId_;
         registerTrackerInfo.clientPid = clientPid_;
@@ -1987,6 +1999,21 @@ void RendererInClientInner::OnSpatializationStateChange(const AudioSpatializatio
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     CHECK_AND_RETURN_LOG(ipcStream_->UpdateSpatializationState(spatializationState.spatializationEnabled,
         spatializationState.headTrackingEnabled) == SUCCESS, "Update spatialization state failed");
+}
+
+bool RendererInClientInner::GetOffloadEnable()
+{
+    return offloadEnable_;
+}
+
+bool RendererInClientInner::GetSpatializationEnabled()
+{
+    return rendererInfo_.spatializationEnabled;
+}
+
+bool RendererInClientInner::GetHighResolutionEnabled()
+{
+    return PolicyHandler::GetInstance().GetHighResolutionExist();
 }
 
 int32_t RendererInClientInner::RegisterSpatializationStateEventListener()

@@ -541,22 +541,23 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
     }
 }
 
-void AudioService::Dump(std::stringstream &dumpStringStream)
+void AudioService::Dump(std::string &dumpString)
 {
     AUDIO_INFO_LOG("AudioService dump begin");
     if (workingInnerCapId_ != 0) {
-        dumpStringStream << "InnerCap filter:" << ProcessConfig::DumpInnerCapConfig(workingConfig_) << std::endl;
+        AppendFormat(dumpString, "  - InnerCap filter: %s\n",
+            ProcessConfig::DumpInnerCapConfig(workingConfig_).c_str());
     }
     // dump process
     for (auto paired : linkedPairedList_) {
-        paired.first->Dump(dumpStringStream);
+        paired.first->Dump(dumpString);
     }
     // dump endpoint
     for (auto item : endpointList_) {
-        dumpStringStream << std::endl << "Endpoint device id:" << item.first << std::endl;
-        item.second->Dump(dumpStringStream);
+        AppendFormat(dumpString, "  - Endpoint device id: %s\n", item.first.c_str());
+        item.second->Dump(dumpString);
     }
-    PolicyHandler::GetInstance().Dump(dumpStringStream);
+    PolicyHandler::GetInstance().Dump(dumpString);
 }
 
 float AudioService::GetMaxAmplitude(bool isOutputDevice)

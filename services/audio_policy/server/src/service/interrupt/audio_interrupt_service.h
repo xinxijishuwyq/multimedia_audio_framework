@@ -29,20 +29,21 @@
 namespace OHOS {
 namespace AudioStandard {
 
+typedef struct {
+    int32_t zoneId; // Zone ID value should 0 on local device.
+    std::set<int32_t> pids; // When Zone ID is 0, there does not need to be a value.
+    std::set<uint32_t> interruptCbSessionIdsMap;
+    std::set<int32_t> audioPolicyClientProxyCBClientPidMap;
+    std::unordered_map<uint32_t /* sessionID */, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap;
+    std::unordered_map<int32_t /* clientPid */, sptr<IAudioPolicyClient>> audioPolicyClientProxyCBMap;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
+} AudioInterruptZone;
+
 class AudioPolicyServerHandler;
 
 class AudioInterruptService : public std::enable_shared_from_this<AudioInterruptService>,
                               public IAudioInterruptEventDispatcher {
 public:
-    // Inner class AudioInterruptZone
-    typedef struct {
-        int32_t zoneId; // Zone ID value should 0 on local device.
-        std::set<int32_t> pids; // When Zone ID is 0, there does not need to be a value.
-        std::unordered_map<uint32_t /* sessionID */, std::shared_ptr<AudioInterruptCallback>> interruptCbsMap;
-        std::unordered_map<int32_t /* clientPid */, sptr<IAudioPolicyClient>> audioPolicyClientProxyCBMap;
-        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
-    } AudioInterruptZone;
-
     AudioInterruptService();
     virtual ~AudioInterruptService();
 
@@ -51,7 +52,7 @@ public:
         uint32_t sessionId, const InterruptEventInternal &interruptEvent) override;
 
     void Init(sptr<AudioPolicyServer> server);
-    void AddDumpInfo(PolicyData &policyData);
+    void AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> &audioInterruptZonesMapDump);
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
 
     // deprecated interrupt interfaces
@@ -79,6 +80,8 @@ public:
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
     void ClearAudioFocusInfoListOnAccountsChanged(const int &id);
+    void AudioInterruptZoneDump(std::string &dumpString);
+
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr float DUCK_FACTOR = 0.2f;

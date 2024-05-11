@@ -65,11 +65,13 @@ int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureC
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
+    rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY;
 }
 
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
+    capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY;
 }
 
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
@@ -769,6 +771,9 @@ int32_t FastAudioStream::SetVolumeWithRamp(float volume, int32_t duration)
 
 void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo)
 {
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
+    capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
+
     registerTrackerInfo.sessionId = sessionId_;
     registerTrackerInfo.clientPid = clientPid_;
     registerTrackerInfo.state = state_;
@@ -871,6 +876,24 @@ bool FastAudioStream::RestoreAudioStream()
 error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
+    return false;
+}
+
+bool FastAudioStream::GetOffloadEnable()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
+    return false;
+}
+
+bool FastAudioStream::GetSpatializationEnabled()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
+    return false;
+}
+
+bool FastAudioStream::GetHighResolutionEnabled()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
 }
 

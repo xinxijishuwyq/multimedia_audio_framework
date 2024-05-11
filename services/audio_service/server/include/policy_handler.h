@@ -32,7 +32,7 @@ public:
 
     ~PolicyHandler();
 
-    void Dump(std::stringstream &dumpString);
+    void Dump(std::string &dumpString);
 
     // would be called only once
     bool ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyProvider);
