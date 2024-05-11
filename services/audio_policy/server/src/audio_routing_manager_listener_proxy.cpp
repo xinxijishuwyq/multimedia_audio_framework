@@ -54,7 +54,7 @@ void AudioRoutingManagerListenerProxy::OnDistributedRoutingRoleChange(const sptr
 
 int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, StreamUsage streamUsage,
-    int32_t clientUid, RenderMode renderMode)
+    int32_t clientUid, AudioPipeType audioPipeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -70,7 +70,7 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
     data.WriteInt32(routerType);
     data.WriteInt32(streamUsage);
     data.WriteInt32(clientUid);
-    data.WriteInt32(renderMode);
+    data.WriteInt32(audioPipeType);
 
     int error = Remote()->SendRequest(ON_AUDIO_OUTPUT_DEVICE_REFINERD, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "OnAudioOutputDeviceRefined, error: %{public}d", error);
@@ -89,7 +89,7 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioOutputDeviceRefined(
 
 int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs, RouterType routerType, SourceType sourceType,
-    int32_t clientUid, RenderMode renderMode)
+    int32_t clientUid, AudioPipeType audioPipeType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -105,7 +105,7 @@ int32_t AudioRoutingManagerListenerProxy::OnAudioInputDeviceRefined(
     data.WriteInt32(routerType);
     data.WriteInt32(sourceType);
     data.WriteInt32(clientUid);
-    data.WriteInt32(renderMode);
+    data.WriteInt32(audioPipeType);
 
     int error = Remote()->SendRequest(ON_AUDIO_INPUT_DEVICE_REFINERD, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "OnAudioInputDeviceRefined, error: %{public}d", error);

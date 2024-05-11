@@ -66,14 +66,12 @@ int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureC
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
-    rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
-    capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
     capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
@@ -160,6 +158,11 @@ int32_t FastAudioStream::GetAudioSessionID(uint32_t &sessionID)
     int32_t ret = processClient_->GetSessionID(sessionID);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSessionID error.");
     return ret;
+}
+
+void FastAudioStream::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = eMode_ == AUDIO_MODE_PLAYBACK ? rendererInfo_.pipeType : capturerInfo_.pipeType;
 }
 
 State FastAudioStream::GetState()

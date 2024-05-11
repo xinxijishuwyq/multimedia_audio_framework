@@ -19,6 +19,8 @@
 #include <cstdint>
 #include "audio_client_tracker_callback_stub.h"
 #include "audio_effect.h"
+#include "audio_concurrency_callback.h"
+#include "audio_concurrency_state_listener_stub.h"
 #include "audio_interrupt_callback.h"
 #include "audio_policy_base.h"
 #include "audio_policy_manager_listener_stub.h"
@@ -365,6 +367,12 @@ public:
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID,
+        const std::shared_ptr<AudioConcurrencyCallback> &callback);
+
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

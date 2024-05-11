@@ -32,9 +32,9 @@ public:
     void SetDistributedRoutingRoleCallback(const std::weak_ptr<AudioDistributedRoutingRoleCallback> &callback);
     void SetAudioDeviceRefinerCallback(const std::weak_ptr<AudioDeviceRefiner> &callback);
     int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, RenderMode renderMode) override;
+        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) override;
     int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, SourceType sourceType, int32_t clientUid, RenderMode renderMode) override;
+        RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) override;
 private:
     void OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply);
     void OnAudioInputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply);
