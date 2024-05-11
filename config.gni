@@ -18,7 +18,7 @@ declare_args() {
   audio_framework_feature_opensl_es = true
   sonic_enable = true
   if (!defined(global_parts_info) ||
-      defined(global_parts_info.distributedhardware_distributed_audio)) {
+      defined(global_parts_info.drivers_interface_distributed_audio)) {
     audio_framework_feature_daudio_enable = true
   } else {
     audio_framework_feature_daudio_enable = false
