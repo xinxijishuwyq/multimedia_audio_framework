@@ -34,6 +34,7 @@ public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
     void SetAudioPrivacyType(AudioPrivacyType privacyType) override;
+    AudioPrivacyType GetAudioPrivacyType() override;
     int32_t SetParams(const AudioRendererParams params) override;
     int32_t GetParams(AudioRendererParams &params) const override;
     int32_t GetRendererInfo(AudioRendererInfo &rendererInfo) const override;
@@ -200,7 +201,6 @@ private:
     AudioInterrupt audioInterrupt_ {};
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
-    float instanceVolBeforeDucking_ = 1.0f;
 };
 
 class AudioStreamCallbackRenderer : public AudioStreamCallback {

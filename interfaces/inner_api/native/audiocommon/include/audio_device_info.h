@@ -376,7 +376,9 @@ public:
     int32_t interruptGroupId;
     int32_t volumeGroupId;
     bool isLowLatencyDevice;
+    int32_t a2dpOffloadFlag;
     ConnectState connectState = CONNECTED;
+    DeviceCategory deviceCategory = CATEGORY_DEFAULT;
 
     DeviceInfo() = default;
     ~DeviceInfo() = default;
@@ -394,7 +396,9 @@ public:
             && parcel.WriteString(displayName)
             && parcel.WriteInt32(interruptGroupId)
             && parcel.WriteInt32(volumeGroupId)
-            && parcel.WriteBool(isLowLatencyDevice);
+            && parcel.WriteBool(isLowLatencyDevice)
+            && parcel.WriteInt32(a2dpOffloadFlag)
+            && parcel.WriteInt32(static_cast<int32_t>(deviceCategory));
     }
     bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
     {
@@ -437,7 +441,9 @@ public:
             && parcel.WriteString(displayName)
             && parcel.WriteInt32(hasSystemPermission ? interruptGroupId : INVALID_GROUP_ID)
             && parcel.WriteInt32(hasSystemPermission ? volumeGroupId : INVALID_GROUP_ID)
-            && parcel.WriteBool(isLowLatencyDevice);
+            && parcel.WriteBool(isLowLatencyDevice)
+            && parcel.WriteInt32(a2dpOffloadFlag)
+            && parcel.WriteInt32(static_cast<int32_t>(deviceCategory));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -454,6 +460,8 @@ public:
         interruptGroupId = parcel.ReadInt32();
         volumeGroupId = parcel.ReadInt32();
         isLowLatencyDevice = parcel.ReadBool();
+        a2dpOffloadFlag = parcel.ReadInt32();
+        deviceCategory = static_cast<DeviceCategory>(parcel.ReadInt32());
     }
 };
 

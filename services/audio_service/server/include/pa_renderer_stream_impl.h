@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class PaRendererStreamImpl : public IRendererStream {
+class PaRendererStreamImpl : public std::enable_shared_from_this<PaRendererStreamImpl>, public IRendererStream {
 public:
     PaRendererStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop);
     ~PaRendererStreamImpl();
@@ -60,6 +60,7 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
     int32_t OffloadSetVolume(float volume) override;
     size_t GetWritableSize() override;
+    int32_t UpdateMaxLength(uint32_t maxLength) override;
     // offload end
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;
@@ -94,7 +95,6 @@ private:
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
-    std::mutex rendererStreamLock_;
     int32_t streamCmdStatus_;
     int32_t streamDrainStatus_;
     int32_t streamFlushStatus_;

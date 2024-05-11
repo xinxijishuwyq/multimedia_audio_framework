@@ -86,6 +86,7 @@ std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::Cre
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_DTMF)] = STREAM_DTMF;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
 
     return streamMap;
 }
@@ -178,6 +179,7 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
         auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
         if (rateItem == AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end()) {
+            AUDIO_WARNING_LOG("Sampling rate %{public}d does not meet the requirements", samplingRate);
             return false;
         }
 
@@ -186,6 +188,7 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
         auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
         if (channelItem == AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end()) {
+            AUDIO_WARNING_LOG("Audio channel %{public}d does not meet the requirements", channels);
             return false;
         }
 
@@ -194,6 +197,7 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
         auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
             AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
         if (formatItem == AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end()) {
+            AUDIO_WARNING_LOG("Audio sample format %{public}d does not meet the requirements", format);
             return false;
         }
     }
@@ -210,12 +214,6 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     }
 
     if (streamClass == PA_STREAM) {
-        int32_t ipcFlag = -1;
-        GetSysPara("persist.multimedia.audioflag.forceipc.renderer", ipcFlag);
-        if (getuid() == MEDIA_UID && ipcFlag != FORCED_IPC) {
-            AUDIO_INFO_LOG("Create normal playback stream");
-            return std::make_shared<AudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
-        }
         AUDIO_INFO_LOG("Create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
     }

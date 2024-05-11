@@ -156,7 +156,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallbac
 }
 
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererPrivacy(OH_AudioStreamBuilder* builder,
-    OH_AudioStream_AudioPrivacyType privacy)
+    OH_AudioStream_PrivacyType privacy)
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");

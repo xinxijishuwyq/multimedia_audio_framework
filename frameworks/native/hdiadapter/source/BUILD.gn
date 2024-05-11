@@ -18,6 +18,7 @@ ohos_shared_library("audio_capturer_source") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -56,6 +57,7 @@ ohos_shared_library("fast_audio_capturer_source") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -92,6 +94,7 @@ ohos_shared_library("remote_audio_capturer_source") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -131,6 +134,7 @@ ohos_shared_library("remote_fast_audio_capturer_source") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -170,6 +174,7 @@ ohos_shared_library("audio_capturer_file_source") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -186,10 +191,10 @@ ohos_shared_library("audio_capturer_file_source") {
     "../common/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
-
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -199,6 +204,7 @@ ohos_shared_library("capturer_source_adapter") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -211,8 +217,6 @@ ohos_shared_library("capturer_source_adapter") {
   cflags = [ "-fPIC" ]
   cflags += [ "-Wall" ]
 
-  cflags_cc = cflags
-
   include_dirs = [
     "common",
     "file",
@@ -223,16 +227,24 @@ ohos_shared_library("capturer_source_adapter") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   deps = [
     ":audio_capturer_file_source",
     ":audio_capturer_source",
-    ":remote_audio_capturer_source",
-    ":remote_fast_audio_capturer_source",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  if (audio_framework_feature_daudio_enable == true) {
+    deps += [
+      ":remote_audio_capturer_source",
+      ":remote_fast_audio_capturer_source",
+    ]
+    cflags += [ "-DDAUDIO_ENABLE" ]
+  }
+
+  cflags_cc = cflags
+  external_deps = [
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

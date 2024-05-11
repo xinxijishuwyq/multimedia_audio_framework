@@ -24,6 +24,9 @@
 #include "hisysevent.h"
 #include "audio_spatialization_service.h"
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -83,6 +86,7 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_DTMF)] = STREAM_DTMF;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
 
     return streamMap;
 }
@@ -227,7 +231,7 @@ void AudioStreamCollector::SetRendererStreamParam(AudioStreamChangeInfo &streamC
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     rendererChangeInfo->callerPid = streamChangeInfo.audioRendererChangeInfo.callerPid;
     rendererChangeInfo->clientPid = streamChangeInfo.audioRendererChangeInfo.clientPid;
-    rendererChangeInfo->tokenId = IPCSkeleton::GetCallingTokenID();
+    rendererChangeInfo->tokenId = static_cast<int32_t>(IPCSkeleton::GetCallingTokenID());
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
@@ -744,13 +748,19 @@ AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sou
         case SOURCE_TYPE_MIC:
             return STREAM_MUSIC;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
+        case SOURCE_TYPE_VOICE_CALL:
             return STREAM_VOICE_CALL;
         case SOURCE_TYPE_ULTRASONIC:
             return STREAM_ULTRASONIC;
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+        case SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SOURCE_TYPE_REMOTE_CAST:
+        case SOURCE_TYPE_VIRTUAL_CAPTURE:
+        case SOURCE_TYPE_VOICE_MESSAGE:
         default:
-            return STREAM_MUSIC;
+            return (AudioStreamType)sourceType;
     }
 }
 
@@ -845,45 +855,68 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    bool isOutput = true;
-    AudioStreamType streamType;
-    uint64_t transactionId = 0;
-
     if (mode == AUDIO_MODE_PLAYBACK) {
-        streamType = GetVolumeTypeFromContentUsage(streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType,
-            streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
-        transactionId = audioSystemMgr_->GetTransactionId(
-            streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType, OUTPUT_DEVICE);
-
-        HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CHANGE",
-            HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-            "ISOUTPUT", isOutput ? 1 : 0,
-            "STREAMID", streamChangeInfo.audioRendererChangeInfo.sessionId,
-            "UID", streamChangeInfo.audioRendererChangeInfo.clientUID,
-            "PID", streamChangeInfo.audioRendererChangeInfo.clientPid,
-            "TRANSACTIONID", transactionId,
-            "STREAMTYPE", streamType,
-            "STATE", streamChangeInfo.audioRendererChangeInfo.rendererState,
-            "DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType,
-            "NETWORKID", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId);
+        WriterRenderStreamChangeSysEvent(streamChangeInfo);
     } else {
-        isOutput = false;
-        streamType = GetStreamTypeFromSourceType(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
-        transactionId = audioSystemMgr_->GetTransactionId(
-            streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType, INPUT_DEVICE);
-
-        HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CHANGE",
-            HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-            "ISOUTPUT", isOutput ? 1 : 0,
-            "STREAMID", streamChangeInfo.audioCapturerChangeInfo.sessionId,
-            "UID", streamChangeInfo.audioCapturerChangeInfo.clientUID,
-            "PID", streamChangeInfo.audioCapturerChangeInfo.clientPid,
-            "TRANSACTIONID", transactionId,
-            "STREAMTYPE", streamType,
-            "STATE", streamChangeInfo.audioCapturerChangeInfo.capturerState,
-            "DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType,
-            "NETWORKID", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId);
+        WriterCaptureStreamChangeSysEvent(streamChangeInfo);
     }
+}
+
+void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInfo &streamChangeInfo)
+{
+    bool isOutput = true;
+    AudioStreamType streamType = GetVolumeTypeFromContentUsage(
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.contentType,
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
+    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+        streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType, OUTPUT_DEVICE);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", isOutput ? 1 : 0);
+    bean->Add("STREAMID", streamChangeInfo.audioRendererChangeInfo.sessionId);
+    bean->Add("UID", streamChangeInfo.audioRendererChangeInfo.clientUID);
+    bean->Add("PID", streamChangeInfo.audioRendererChangeInfo.clientPid);
+    bean->Add("TRANSACTIONID", transactionId);
+    bean->Add("STREAMTYPE", streamType);
+    bean->Add("STATE", streamChangeInfo.audioRendererChangeInfo.rendererState);
+    bean->Add("DEVICETYPE", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType);
+    bean->Add("DEVICECATEGORY", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceCategory);
+    bean->Add("APP_NAME", streamChangeInfo.audioRendererChangeInfo.rendererInfo.appName);
+    bean->Add("PIPE_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType);
+    bean->Add("STREAM_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
+    bean->Add("SAMPLE_RATE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.samplingRate);
+    bean->Add("NETWORKID", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeInfo &streamChangeInfo)
+{
+    bool isOutput = false;
+    AudioStreamType streamType = GetStreamTypeFromSourceType(
+        streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
+    uint64_t transactionId = audioSystemMgr_->GetTransactionId(
+        streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType, INPUT_DEVICE);
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", isOutput ? 1 : 0);
+    bean->Add("STREAMID", streamChangeInfo.audioCapturerChangeInfo.sessionId);
+    bean->Add("UID", streamChangeInfo.audioCapturerChangeInfo.clientUID);
+    bean->Add("PID", streamChangeInfo.audioCapturerChangeInfo.clientPid);
+    bean->Add("TRANSACTIONID", transactionId);
+    bean->Add("STREAMTYPE", streamType);
+    bean->Add("STATE", streamChangeInfo.audioCapturerChangeInfo.capturerState);
+    bean->Add("DEVICETYPE", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType);
+    bean->Add("DEVICECATEGORY", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceCategory);
+    bean->Add("APP_NAME", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.appName);
+    bean->Add("PIPE_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.pipeType);
+    bean->Add("STREAM_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
+    bean->Add("SAMPLE_RATE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.samplingRate);
+    bean->Add("MUTED", streamChangeInfo.audioCapturerChangeInfo.muted);
+    bean->Add("NETWORKID", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 
@@ -894,17 +927,25 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
         audioRendererChangeInfo->rendererInfo.streamUsage);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
         audioRendererChangeInfo->outputDeviceInfo.deviceType, OUTPUT_DEVICE);
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CHANGE",
-        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1,
-        "STREAMID", audioRendererChangeInfo->sessionId,
-        "UID", audioRendererChangeInfo->clientUID,
-        "PID", audioRendererChangeInfo->clientPid,
-        "TRANSACTIONID", transactionId,
-        "STREAMTYPE", streamType,
-        "STATE", audioRendererChangeInfo->rendererState,
-        "DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType,
-        "NETWORKID", audioRendererChangeInfo->outputDeviceInfo.networkId);
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", audioRendererChangeInfo->sessionId);
+    bean->Add("UID", audioRendererChangeInfo->clientUID);
+    bean->Add("PID", audioRendererChangeInfo->clientPid);
+    bean->Add("TRANSACTIONID", transactionId);
+    bean->Add("STREAMTYPE", streamType);
+    bean->Add("STATE", audioRendererChangeInfo->rendererState);
+    bean->Add("DEVICETYPE", audioRendererChangeInfo->outputDeviceInfo.deviceType);
+    bean->Add("DEVICECATEGORY", audioRendererChangeInfo->outputDeviceInfo.deviceCategory);
+    bean->Add("APP_NAME", audioRendererChangeInfo->rendererInfo.appName);
+    bean->Add("PIPE_TYPE", audioRendererChangeInfo->rendererInfo.pipeType);
+    bean->Add("STREAM_TYPE", audioRendererChangeInfo->rendererInfo.streamUsage);
+    bean->Add("SAMPLE_RATE", audioRendererChangeInfo->rendererInfo.samplingRate);
+    bean->Add("NETWORKID", audioRendererChangeInfo->outputDeviceInfo.networkId);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
@@ -913,17 +954,26 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     AudioStreamType streamType = GetStreamTypeFromSourceType(audioCapturerChangeInfo->capturerInfo.sourceType);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
         audioCapturerChangeInfo->inputDeviceInfo.deviceType, INPUT_DEVICE);
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CHANGE",
-        HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 0,
-        "STREAMID", audioCapturerChangeInfo->sessionId,
-        "UID", audioCapturerChangeInfo->clientUID,
-        "PID", audioCapturerChangeInfo->clientPid,
-        "TRANSACTIONID", transactionId,
-        "STREAMTYPE", streamType,
-        "STATE", audioCapturerChangeInfo->capturerState,
-        "DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType,
-        "NETWORKID", audioCapturerChangeInfo->inputDeviceInfo.networkId);
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", audioCapturerChangeInfo->sessionId);
+    bean->Add("UID", audioCapturerChangeInfo->clientUID);
+    bean->Add("PID", audioCapturerChangeInfo->clientPid);
+    bean->Add("TRANSACTIONID", transactionId);
+    bean->Add("STREAMTYPE", streamType);
+    bean->Add("STATE", audioCapturerChangeInfo->capturerState);
+    bean->Add("DEVICETYPE", audioCapturerChangeInfo->inputDeviceInfo.deviceType);
+    bean->Add("DEVICECATEGORY", audioCapturerChangeInfo->inputDeviceInfo.deviceCategory);
+    bean->Add("APP_NAME", audioCapturerChangeInfo->capturerInfo.appName);
+    bean->Add("PIPE_TYPE", audioCapturerChangeInfo->capturerInfo.pipeType);
+    bean->Add("STREAM_TYPE", audioCapturerChangeInfo->capturerInfo.sourceType);
+    bean->Add("SAMPLE_RATE", audioCapturerChangeInfo->capturerInfo.samplingRate);
+    bean->Add("MUTED", audioCapturerChangeInfo->muted);
+    bean->Add("NETWORKID", audioCapturerChangeInfo->inputDeviceInfo.networkId);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 } // namespace AudioStandard
 } // namespace OHOS

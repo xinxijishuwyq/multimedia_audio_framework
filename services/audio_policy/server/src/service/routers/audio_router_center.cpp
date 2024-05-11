@@ -87,7 +87,7 @@ unique_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchOutputDevice(StreamUsa
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         AudioScene audioScene = AudioPolicyService::GetAudioPolicyService().GetAudioScene();
         if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
-            (audioScene == AUDIO_SCENE_RINGING && HasScoDevice())) {
+            ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) && HasScoDevice())) {
             auto isPresent = [] (const unique_ptr<RouterBase> &router) {
                 return router->name_ == "package_filter_router";
             };
@@ -180,5 +180,9 @@ int32_t AudioRouterCenter::UnsetAudioDeviceRefinerCallback()
     return SUCCESS;
 }
 
+bool AudioRouterCenter::isCallRenderRouter(StreamUsage streamUsage)
+{
+    return renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1435,8 +1435,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
             pa_cvolume vol;
             pa_sink_input_get_volume(input, &vol, true);
             pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol) ||
-                pa_cvolume_is_norm(&vol);
+            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
             if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
                 g_effectAllStreamVolumeZeroMap[i] = false;
                 g_effectStartVolZeroTimeMap[i] = 0;
@@ -1484,8 +1483,7 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
             pa_cvolume vol;
             pa_sink_input_get_volume(input, &vol, true);
             pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol)
-                || pa_cvolume_is_norm(&vol);
+            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
             if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
                 g_speakerPaAllStreamVolumeZero = false;
                 g_speakerPaAllStreamStartVolZeroTime = 0;
@@ -3331,35 +3329,31 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
 static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
 {
     pa_sink *s;
-    uint32_t idx;
-    struct Userdata *u = NULL;
-    int32_t nOpened = 0;
-    pa_core *c = ((struct Userdata *)(sink->userdata))->core;
-    PA_IDXSET_FOREACH(s, c->sinks, idx) {
-        if (u == NULL || !u->offload_enable) {
-            u = s->userdata;
-        }
-
-        if (s != sink && s->thread_info.state != PA_SINK_SUSPENDED) {
-            nOpened += 1;
-        }
-    }
-    if (u == NULL || !u->offload_enable) {
-        return;
-    }
-
+    struct Userdata *u = (struct Userdata *)(sink->userdata);
     const bool starting = PA_SINK_IS_OPENED(newState);
     const bool stopping = newState == PA_SINK_SUSPENDED;
-    if (!u->offload.inited && starting) {
-        if (PrepareDeviceOffload(u) < 0) {
+    AUDIO_INFO_LOG("starting: %{public}d, stopping: %{public}d, offload_enable: %{public}d",
+        starting, stopping, u->offload_enable);
+    if (starting && u->offload_enable && !u->offload.inited && PrepareDeviceOffload(u) == 0) {
+        u->offload.inited = true;
+    } else if (stopping) {
+        pa_core *c = u->core;
+        uint32_t idx;
+        int32_t nOpened = 0;
+        PA_IDXSET_FOREACH(s, c->sinks, idx) {
+            AUDIO_INFO_LOG("sink name: %{public}s, driver: %{public}s", s->name, s->driver);
+            bool isHdiSink = !strncmp(s->driver, "module_hdi_sink", 15); // 15 cmp length
+            if (isHdiSink && ((struct Userdata *)(s->userdata))->offload_enable) {
+                u = s->userdata;
+            }
+            if (isHdiSink && s != sink && s->thread_info.state != PA_SINK_SUSPENDED) {
+                nOpened += 1;
+            }
+        }
+        AUDIO_INFO_LOG("nOpened: %{public}d, offload_enable: %{public}d", nOpened, u->offload_enable);
+        if (!u->offload_enable || nOpened > 0) {
             return;
         }
-        u->offload.inited = true;
-        return;
-    }
-
-    AUDIO_INFO_LOG("stopping: %{public}d, nOpened: %{public}d", stopping, nOpened);
-    if (stopping && nOpened == 0) {
         if (u->offload.isHDISinkStarted) {
             u->offload.sinkAdapter->RendererSinkStop(u->offload.sinkAdapter);
             AUDIO_INFO_LOG("Stopped Offload HDI renderer, DeInit later");
@@ -3372,7 +3366,6 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
             u->offload.sinkAdapter->RendererSinkDeInit(u->offload.sinkAdapter);
             AUDIO_INFO_LOG("DeInited Offload HDI renderer");
         }
-        return;
     }
 }
 
@@ -4015,7 +4008,24 @@ static void UserdataFree(struct Userdata *u)
 
     UserdataFreeOffload(u);
     UserdataFreeMultiChannel(u);
+
+    // free heap allocated in userdata init
+    if (u->bufferAttr == NULL) {
+        pa_xfree(u);
+        AUDIO_DEBUG_LOG("buffer attr is null, free done");
+        return;
+    }
+    free(u->bufferAttr->bufIn);
+    free(u->bufferAttr->bufOut);
+    free(u->bufferAttr->tempBufIn);
+    free(u->bufferAttr->tempBufOut);
+    u->bufferAttr->bufIn = NULL;
+    u->bufferAttr->bufOut = NULL;
+    u->bufferAttr->tempBufIn = NULL;
+    u->bufferAttr->tempBufOut = NULL;
+
     pa_xfree(u);
+
     AUDIO_DEBUG_LOG("UserdataFree done");
 }
 

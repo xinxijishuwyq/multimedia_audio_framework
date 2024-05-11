@@ -76,6 +76,7 @@ public:
     int32_t ResetRouteForDisconnect(DeviceType type) override;
     uint32_t GetEffectLatency(const std::string &sessionId) override;
     float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) override;
+    void ResetAudioEndpoint() override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
     int32_t GetAsrAecMode(AsrAecMode &asrAecMode) override;

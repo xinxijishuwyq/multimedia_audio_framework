@@ -134,27 +134,12 @@ int32_t RendererInServer::Init()
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
-    AUDIO_INFO_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
+    AUDIO_DEBUG_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
     operation_ = operation;
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
     switch (operation) {
-        case OPERATION_UNDERRUN:
-            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
-                audioServerBuffer_->GetAvailableDataFrames());
-            // In plan, maxlength is 4
-            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
-                AUDIO_INFO_LOG("Buffer is empty");
-                needForceWrite_ = 0;
-            } else {
-                AUDIO_INFO_LOG("Buffer is not empty");
-                WriteData();
-            }
-            stateListener->OnOperationHandled(BUFFER_UNDERRUN, 0);
-            break;
-        case OPERATION_UNDERFLOW:
-            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
-            break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
             stateListener->OnOperationHandled(START_STREAM, 0);
@@ -189,6 +174,22 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     switch (operation) {
+        case OPERATION_UNDERRUN:
+            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
+                audioServerBuffer_->GetAvailableDataFrames());
+            // In plan, maxlength is 4
+            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
+                AUDIO_INFO_LOG("Buffer is empty");
+                needForceWrite_ = 0;
+            } else {
+                AUDIO_INFO_LOG("Buffer is not empty");
+                WriteData();
+            }
+            stateListener->OnOperationHandled(BUFFER_UNDERRUN, 0);
+            break;
+        case OPERATION_UNDERFLOW:
+            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
+            break;
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
@@ -246,8 +247,6 @@ int32_t RendererInServer::WriteData()
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-        uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
-        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
         if (isInnerCapEnabled_) {
             Trace traceDup("RendererInServer::WriteData DupSteam write");
             std::lock_guard<std::mutex> lock(dupMutex_);
@@ -256,6 +255,9 @@ int32_t RendererInServer::WriteData()
             }
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
+        // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
+        uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
+        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
@@ -309,7 +311,7 @@ int32_t RendererInServer::UpdateWriteIndex()
     Trace trace("RendererInServer::UpdateWriteIndex");
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {
-            AUDIO_INFO_LOG("Start force write data");
+            AUDIO_DEBUG_LOG("Start force write data");
             WriteData();
             needForceWrite_++;
             writeLock_.unlock();
@@ -433,12 +435,6 @@ int32_t RendererInServer::Flush()
 
 int32_t RendererInServer::DrainAudioBuffer()
 {
-    return SUCCESS;
-}
-
-int32_t RendererInServer::GetInfo()
-{
-    IStreamManager::GetPlaybackManager().GetInfo();
     return SUCCESS;
 }
 
@@ -645,12 +641,26 @@ int32_t StreamCallbacks::OnWriteData(size_t length)
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    return stream_->SetOffloadMode(state, isAppBack);
+    int32_t ret = stream_->SetOffloadMode(state, isAppBack);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->UpdateMaxLength(350); // 350 for cover offload
+        }
+    }
+    return ret;
 }
 
 int32_t RendererInServer::UnsetOffloadMode()
 {
-    return stream_->UnsetOffloadMode();
+    int32_t ret = stream_->UnsetOffloadMode();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->UpdateMaxLength(20); // 20 for unset offload
+        }
+    }
+    return ret;
 }
 
 int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,

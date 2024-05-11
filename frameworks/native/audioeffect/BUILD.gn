@@ -16,9 +16,6 @@ import("../../../config.gni")
 import("../../../sensor.gni")
 import("../../../window_manager.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 config("audio_effect_config") {
   include_dirs = [
     "include",
@@ -28,8 +25,6 @@ config("audio_effect_config") {
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/test/example",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -50,14 +45,12 @@ ohos_shared_library("audio_effect") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
 
   configs = [ ":audio_effect_config" ]
-
-  # include_dirs = audio_gateway_include_dirs
-  include_dirs = [ multimedia_audio_framework_pulse_audio ]
 
   sources = [
     "src/audio_effect_chain.cpp",
@@ -70,10 +63,7 @@ ohos_shared_library("audio_effect") {
     "src/audio_head_tracker.cpp",
   ]
 
-  deps = [
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "../audioutils:audio_utils",
-  ]
+  deps = [ "../audioutils:audio_utils" ]
 
   external_deps = [
     "c_utils:utils",
@@ -81,6 +71,7 @@ ohos_shared_library("audio_effect") {
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
 
   if (sensor_enable == true) {

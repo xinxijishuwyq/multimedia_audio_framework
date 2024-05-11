@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class PaCapturerStreamImpl : public ICapturerStream {
+class PaCapturerStreamImpl : public std::enable_shared_from_this<PaCapturerStreamImpl>, public ICapturerStream {
 public:
     PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConfig processConfig, pa_threaded_mainloop *mainloop);
     ~PaCapturerStreamImpl();

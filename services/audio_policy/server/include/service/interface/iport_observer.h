@@ -23,7 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 class IPortObserver {
 public:
-    virtual void OnAudioPolicyXmlParsingCompleted(const std::map<AdaptersType, AudioAdapterInfo>
+    virtual void OnAudioPolicyXmlParsingCompleted(const std::unordered_map<AdaptersType, AudioAdapterInfo>
         adapterInfoMap) = 0;
     virtual void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata) = 0;
     virtual void OnUpdateRouteSupport(bool isSupported) = 0;

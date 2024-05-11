@@ -32,6 +32,9 @@
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 using namespace std;
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -45,6 +48,7 @@ const unsigned long long TIME_CONVERSION_NS_S = 1000000000ULL; /* ns to s */
 constexpr int32_t WRITE_RETRY_DELAY_IN_US = 500;
 constexpr int32_t CB_WRITE_BUFFERS_WAIT_IN_MS = 80;
 constexpr int32_t CB_READ_BUFFERS_WAIT_IN_MS = 80;
+constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
 #ifdef SONIC_ENABLE
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 #endif
@@ -52,6 +56,8 @@ static AppExecFwk::BundleInfo gBundleInfo_;
 
 static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
 {
+    AudioXCollie audioXCollie("AudioStream::GetBundleInfoFromUid", GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS);
+
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -164,11 +170,22 @@ void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
     SetStreamUsage(rendererInfo.streamUsage);
+
+    if (GetOffloadEnable()) {
+        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    } else if (GetHighResolutionEnabled()) {
+        rendererInfo_.pipeType = PIPE_TYPE_HIGHRESOLUTION;
+    } else if (GetSpatializationEnabled()) {
+        rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
+    } else {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL;
+    }
 }
 
 void AudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL;
 }
 
 int32_t AudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
@@ -741,6 +758,11 @@ float AudioStream::GetVolume()
     return GetStreamVolume();
 }
 
+int32_t AudioStream::SetDuckVolume(float volume)
+{
+    return SetStreamDuckVolume(volume);
+}
+
 int32_t AudioStream::SetRenderRate(AudioRendererRate renderRate)
 {
     return SetStreamRenderRate(renderRate);
@@ -1212,10 +1234,12 @@ void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
             AUDIO_WARNING_LOG("write silent data for some time");
             isUpEvent_ = true;
-            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "BACKGROUND_SILENT_PLAYBACK",
-                HiviewDFX::HiSysEvent::EventType::STATISTIC,
-                "APP_NAME", name,
-                "APP_VERSION_CODE", versionCode);
+            std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                Media::MediaMonitor::AUDIO, Media::MediaMonitor::BACKGROUND_SILENT_PLAYBACK,
+                Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+            bean->Add("APP_NAME", name);
+            bean->Add("APP_VERSION_CODE", versionCode);
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         }
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
@@ -1352,6 +1376,21 @@ int32_t AudioStream::NotifyCapturerAdded(uint32_t sessionID)
     streamInfo.samplingRate = static_cast<AudioSamplingRate> (streamParams_.samplingRate);
     streamInfo.channels = static_cast<AudioChannel> (streamParams_.channels);
     return AudioPolicyManager::GetInstance().NotifyCapturerAdded(capturerInfo_, streamInfo, sessionID);
+}
+
+bool AudioStream::GetOffloadEnable()
+{
+    return offloadEnable_;
+}
+
+bool AudioStream::GetSpatializationEnabled()
+{
+    return rendererInfo_.spatializationEnabled;
+}
+
+bool AudioStream::GetHighResolutionEnabled()
+{
+    return AudioPolicyManager::GetInstance().IsHighResolutionExist();
 }
 
 AudioStreamPolicyServiceDiedCallbackImpl::AudioStreamPolicyServiceDiedCallbackImpl()

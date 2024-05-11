@@ -26,6 +26,7 @@ namespace AudioStandard {
 class FastAudioCapturerSource : public IMmapAudioCapturerSource {
 public:
     static FastAudioCapturerSource *GetInstance();
+    static FastAudioCapturerSource *GetVoipInstance();
     FastAudioCapturerSource() = default;
     virtual ~FastAudioCapturerSource() = default;
 };

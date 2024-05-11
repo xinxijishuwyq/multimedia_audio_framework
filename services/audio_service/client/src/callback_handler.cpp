@@ -63,7 +63,7 @@ void CallbackHandlerInner::SendCallbackEvent(uint32_t eventCode, int64_t data)
 void CallbackHandlerInner::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventCode = event->GetInnerEventId();
-    uint64_t data = event->GetParam();
+    int64_t data = event->GetParam();
     std::shared_ptr<IHandler> handler = iHandler_.lock();
     if (handler == nullptr) {
         AUDIO_ERR_LOG("iHandler is nullptr");

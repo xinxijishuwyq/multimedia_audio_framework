@@ -2761,7 +2761,7 @@ bool GetOffloadAvailable()
     }
     string s;
     while (ifs >> s) {
-        if (s.find("offload_enable=\"1\"") != string::npos) {
+        if (s.find("name=\"offload_output\"") != string::npos) {
             return true;
         }
     }

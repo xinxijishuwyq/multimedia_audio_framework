@@ -189,7 +189,7 @@ void AudioVolumeParser::ParseVolumePoints(xmlNode *node, std::shared_ptr<DeviceV
             struct VolumePoint volumePoint;
             char *pValue = reinterpret_cast<char*>(xmlGetProp(currNode,
                 reinterpret_cast<xmlChar*>(const_cast<char*>("idx"))));
-            volumePoint.index = atoi(pValue);
+            volumePoint.index = static_cast<uint32_t>(atoi(pValue));
             AUDIO_DEBUG_LOG("idx: %{public}d", atoi(pValue));
             xmlFree(pValue);
             pValue = reinterpret_cast<char*>(xmlGetProp(currNode,

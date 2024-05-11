@@ -35,7 +35,11 @@ AudioPlayerAdapter* AudioPlayerAdapter::GetInstance()
 
 AudioRenderer* AudioPlayerAdapter::GetAudioRenderById(SLuint32 id)
 {
-    return renderMap_.find(id)->second;
+    auto it = renderMap_.find(id);
+    if (it == renderMap_.end()) {
+        return nullptr;
+    }
+    return it->second;
 }
 
 void AudioPlayerAdapter::EraseAudioRenderById(SLuint32 id)

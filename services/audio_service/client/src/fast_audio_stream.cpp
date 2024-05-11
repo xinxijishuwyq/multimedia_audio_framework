@@ -37,7 +37,7 @@ FastAudioStream::FastAudioStream(AudioStreamType eStreamType, AudioMode eMode, i
       captureMode_(CAPTURE_MODE_CALLBACK)
 {
     AUDIO_INFO_LOG("FastAudioStream ctor, appUID = %{public}d", appUid);
-    audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
+    audioStreamTracker_ = std::make_unique<AudioStreamTracker>(eMode, appUid);
     AUDIO_DEBUG_LOG("AudioStreamTracker created");
 }
 
@@ -65,11 +65,13 @@ int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureC
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
+    rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY;
 }
 
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
+    capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY;
 }
 
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
@@ -167,8 +169,8 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "GetAudioTime failed: null process");
     int64_t timeSec = 0;
     int64_t timeNsec = 0;
-    int32_t ret = processClient_->GetAudioTime(timestamp.framePosition, timeSec, timeNsec);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetBufferSize error.");
+    bool ret = processClient_->GetAudioTime(timestamp.framePosition, timeSec, timeNsec);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "GetBufferSize error.");
     timestamp.time.tv_sec = timeSec;
     timestamp.time.tv_nsec = timeNsec;
     return true;
@@ -222,6 +224,14 @@ float FastAudioStream::GetVolume()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 1.0f, "SetVolume failed: null process"); // 1.0f for default
     return processClient_->GetVolume();
+}
+
+int32_t FastAudioStream::SetDuckVolume(float volume)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetDuckVolume failed: null process");
+    int32_t ret = processClient_->SetDuckVolume(volume);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDuckVolume error.");
+    return ret;
 }
 
 int32_t FastAudioStream::SetRenderRate(AudioRendererRate renderRate)
@@ -346,13 +356,13 @@ int32_t FastAudioStream::Clear()
 int32_t FastAudioStream::SetLowPowerVolume(float volume)
 {
     AUDIO_INFO_LOG("SetLowPowerVolume enter.");
-    return 1.0f;
+    return SUCCESS;
 }
 
 float FastAudioStream::GetLowPowerVolume()
 {
     AUDIO_INFO_LOG("GetLowPowerVolume enter.");
-    return 1.0f;
+    return SUCCESS;
 }
 
 int32_t FastAudioStream::SetOffloadMode(int32_t state, bool isAppBack)
@@ -761,6 +771,9 @@ int32_t FastAudioStream::SetVolumeWithRamp(float volume, int32_t duration)
 
 void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo)
 {
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
+    capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
+
     registerTrackerInfo.sessionId = sessionId_;
     registerTrackerInfo.clientPid = clientPid_;
     registerTrackerInfo.state = state_;
@@ -863,6 +876,24 @@ bool FastAudioStream::RestoreAudioStream()
 error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
+    return false;
+}
+
+bool FastAudioStream::GetOffloadEnable()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
+    return false;
+}
+
+bool FastAudioStream::GetSpatializationEnabled()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
+    return false;
+}
+
+bool FastAudioStream::GetHighResolutionEnabled()
+{
+    AUDIO_WARNING_LOG("not supported in fast audio stream");
     return false;
 }
 

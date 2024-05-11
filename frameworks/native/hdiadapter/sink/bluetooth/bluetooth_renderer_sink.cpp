@@ -27,6 +27,7 @@
 #include <unistd.h>
 
 #include "audio_proxy_manager.h"
+#include "audio_attribute.h"
 #ifdef FEATURE_POWER_MANAGER
 #include "running_lock.h"
 #include "power_mgr_client.h"
@@ -50,6 +51,8 @@ const uint32_t AUDIO_CHANNELCOUNT = 2;
 const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
 const uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
 const uint32_t RENDER_FRAME_INTERVAL_IN_MICROSECONDS = 10000;
+const uint32_t SECOND_TO_NANOSECOND = 1000000000;
+const uint32_t SECOND_TO_MILLISECOND = 1000;
 const uint32_t INT_32_MAX = 0x7fffffff;
 const uint32_t PCM_8_BIT = 8;
 const uint32_t PCM_16_BIT = 16;
@@ -104,7 +107,7 @@ public:
     bool GetAudioMonoState();
     float GetAudioBalanceValue();
 
-    BluetoothRendererSinkInner();
+    explicit BluetoothRendererSinkInner(bool isBluetoothLowLatency = false);
     ~BluetoothRendererSinkInner();
 private:
     BluetoothSinkAttr attr_;
@@ -122,6 +125,19 @@ private:
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
     float rightBalanceCoef_ = 1.0f;
+
+    // Low latency
+    int32_t PrepareMmapBuffer();
+    int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
+        uint32_t &byteSizePerFrame) override;
+    int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanosec) override;
+
+    bool isBluetoothLowLatency_ = false;
+    uint32_t bufferTotalFrameSize_ = 0;
+    int32_t bufferFd_ = INVALID_FD;
+    uint32_t frameSizeInByte_ = 1;
+    uint32_t eachReadFrameSize_ = 0;
+    size_t bufferSize_ = 0;
 
     // for get amplitude
     float maxAmplitude_ = 0;
@@ -150,10 +166,10 @@ private:
     FILE *dumpFile_ = nullptr;
 };
 
-BluetoothRendererSinkInner::BluetoothRendererSinkInner()
+BluetoothRendererSinkInner::BluetoothRendererSinkInner(bool isBluetoothLowLatency)
     : rendererInited_(false), started_(false), paused_(false), leftVolume_(DEFAULT_VOLUME_LEVEL),
       rightVolume_(DEFAULT_VOLUME_LEVEL), audioManager_(nullptr), audioAdapter_(nullptr),
-      audioRender_(nullptr), handle_(nullptr)
+      audioRender_(nullptr), handle_(nullptr), isBluetoothLowLatency_(isBluetoothLowLatency)
 {
     attr_ = {};
 }
@@ -166,6 +182,13 @@ BluetoothRendererSinkInner::~BluetoothRendererSinkInner()
 BluetoothRendererSink *BluetoothRendererSink::GetInstance()
 {
     static BluetoothRendererSinkInner audioRenderer;
+
+    return &audioRenderer;
+}
+
+IMmapAudioRendererSink *BluetoothRendererSink::GetMmapInstance()
+{
+    static BluetoothRendererSinkInner audioRenderer(true);
 
     return &audioRenderer;
 }
@@ -249,6 +272,7 @@ void InitAttrs(struct AudioSampleAttributes &attrs)
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
+    // Bluetooth HDI use adapterNameCase to choose lowLatency / normal
     attrs.type = AUDIO_IN_MEDIA;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
@@ -388,7 +412,7 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
     attr_.channel = attr.channel;
     attr_.volume = attr.volume;
 
-    string adapterNameCase = "bt_a2dp";  // Set sound card information
+    string adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp";  // Set sound card information
     enum AudioPortDirection port = PORT_OUT; // Set port information
 
     CHECK_AND_RETURN_RET_LOG(InitAudioManager() == 0, ERR_NOT_STARTED,
@@ -415,6 +439,11 @@ int32_t BluetoothRendererSinkInner::Init(const IAudioSinkAttr &attr)
 
     int32_t result = CreateRender(audioPort);
     CHECK_AND_RETURN_RET_LOG(result == 0, ERR_NOT_STARTED, "Create render failed");
+
+    if (isBluetoothLowLatency_) {
+        result = PrepareMmapBuffer();
+        CHECK_AND_RETURN_RET_LOG(result == 0, ERR_NOT_STARTED, "Prepare mmap buffer failed");
+    }
 
     rendererInited_ = true;
 
@@ -852,6 +881,66 @@ int64_t BluetoothRendererSinkInner::BytesToNanoTime(size_t lens)
 {
     int64_t res = AUDIO_NS_PER_SECOND * lens / (attr_.sampleRate * attr_.channel * HdiFormatToByte(attr_.format));
     return res;
+}
+
+int32_t BluetoothRendererSinkInner::PrepareMmapBuffer()
+{
+    uint32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
+    frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
+    uint32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / SECOND_TO_MILLISECOND);
+
+    struct AudioMmapBufferDescriptor desc = {0};
+    // reqBufferFrameSize means frames in total, for example, 40ms * 48K = 1920
+    // transferFrameSize means frames in one block, for example 5ms per block, 5ms * 48K = 240
+    int32_t ret = audioRender_->attr.ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "ReqMmapBuffer failed, ret:%{public}d", ret);
+    AUDIO_INFO_LOG("AudioMmapBufferDescriptor memoryAddress[%{private}p] memoryFd[%{public}d] totalBufferFrames"
+        "[%{public}d] transferFrameSize[%{public}d] isShareable[%{public}d] offset[%{public}d]", desc.memoryAddress,
+        desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
+
+    bufferFd_ = desc.memoryFd; // fcntl(fd, 1030,3) after dup?
+    int32_t periodFrameMaxSize = 1920000; // 192khz * 10s
+    CHECK_AND_RETURN_RET_LOG(desc.totalBufferFrames >= 0 && desc.transferFrameSize >= 0 &&
+        desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
+        "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
+        desc.totalBufferFrames, desc.transferFrameSize);
+    bufferTotalFrameSize_ = desc.totalBufferFrames; // 1440 ~ 3840
+    eachReadFrameSize_ = desc.transferFrameSize; // 240
+
+    CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
+        "BufferSize will overflow!");
+    bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte_;
+    return SUCCESS;
+}
+
+int32_t BluetoothRendererSinkInner::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
+    uint32_t &byteSizePerFrame)
+{
+    CHECK_AND_RETURN_RET_LOG(bufferFd_ != INVALID_FD, ERR_INVALID_HANDLE, "buffer fd has been released!");
+    fd = bufferFd_;
+    totalSizeInframe = bufferTotalFrameSize_;
+    spanSizeInframe = eachReadFrameSize_;
+    byteSizePerFrame = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
+    return SUCCESS;
+}
+
+int32_t BluetoothRendererSinkInner::GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "Audio render is null!");
+
+    struct AudioTimeStamp timestamp = {};
+    int32_t ret = audioRender_->attr.GetMmapPosition(audioRender_, &frames, &timestamp);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_OPERATION_FAILED, "Hdi GetMmapPosition filed, ret:%{public}d!", ret);
+
+    int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it.
+    CHECK_AND_RETURN_RET_LOG(timestamp.tvSec >= 0 && timestamp.tvSec <= maxSec && timestamp.tvNSec >= 0 &&
+        timestamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
+        "Hdi GetMmapPosition get invaild second:%{public}" PRId64 " or nanosecond:%{public}" PRId64 " !",
+        timestamp.tvSec, timestamp.tvNSec);
+    timeSec = timestamp.tvSec;
+    timeNanoSec = timestamp.tvNSec;
+
+    return SUCCESS;
 }
 
 void BluetoothRendererSinkInner::InitLatencyMeasurement()

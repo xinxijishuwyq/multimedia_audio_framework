@@ -15,25 +15,17 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../config.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 module_output_path = "multimedia_audio_framework/audio_balance"
 
 config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
     "../../common/include",
     "../../client/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
   ]
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
 }
 
 ohos_unittest("audio_balance_unit_test") {
@@ -47,18 +39,18 @@ ohos_unittest("audio_balance_unit_test") {
   configs = [ ":module_private_config" ]
 
   deps = [
-    "$pulseaudio_build_path/src/pulse:pulse",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
     "../../../audio_service:audio_common",
-    "//third_party/googletest:gtest_main",
   ]
 
   external_deps = [
     "c_utils:utils",
+    "googletest:gtest",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

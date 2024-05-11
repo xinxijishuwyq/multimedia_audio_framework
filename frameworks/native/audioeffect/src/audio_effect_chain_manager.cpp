@@ -94,8 +94,7 @@ AudioEffectChainManager::AudioEffectChainManager()
 
 AudioEffectChainManager::~AudioEffectChainManager()
 {
-    delete audioRotationListener_;
-    audioRotationListener_ = nullptr;
+    AUDIO_INFO_LOG("~AudioEffectChainManager destroy");
 }
 
 AudioEffectChainManager *AudioEffectChainManager::GetInstance()
@@ -389,6 +388,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
         descriptor.effectName = effect;
         int32_t ret = EffectToLibraryEntryMap_[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
         CHECK_AND_CONTINUE_LOG(ret == 0, "EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
+        AUDIO_DEBUG_LOG("createEffect, EffectToLibraryEntryMap [%{public}s], effectChainKey [%{public}s]",
+            effect.c_str(), effectChainKey.c_str());
         AudioEffectScene currSceneType;
         if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
             currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
@@ -437,6 +438,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
 
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
+    AUDIO_DEBUG_LOG("releaseEffect, sceneTypeAndDeviceKey [%{public}s]", sceneTypeAndDeviceKey.c_str());
     return SUCCESS;
 }
 
@@ -799,6 +801,7 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
             uint32_t tmpChannelCount = DEFAULT_MCH_NUM_CHANNEL;
             uint64_t tmpChannelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
             if (info.channels > DEFAULT_NUM_CHANNEL &&
+                info.channels <= DSP_MAX_NUM_CHANNEL &&
                 !ExistAudioEffectChain(it->first, info.sceneMode, info.spatializationEnabled) &&
                 IsChannelLayoutHVSSupported(info.channelLayout)) {
                 tmpChannelLayout = info.channelLayout;

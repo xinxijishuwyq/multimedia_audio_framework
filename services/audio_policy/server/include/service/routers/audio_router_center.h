@@ -42,6 +42,7 @@ public:
     std::unique_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
+    bool isCallRenderRouter(StreamUsage streamUsage);
 
 private:
     AudioRouterCenter()

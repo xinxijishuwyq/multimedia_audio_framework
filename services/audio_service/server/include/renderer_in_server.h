@@ -77,7 +77,6 @@ public:
     int32_t WriteData();
     void WriteEmptyData();
     int32_t DrainAudioBuffer();
-    int32_t GetInfo();
 
     // for inner-cap
     int32_t EnableInnerCap();
@@ -109,7 +108,7 @@ private:
     bool isBufferConfiged_  = false;
     std::atomic<bool> isInited_ = false;
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
-    int32_t needForceWrite_ = 0;
+    size_t needForceWrite_ = 0;
     bool afterDrain = false;
     std::mutex updateIndexLock_;
     bool resetTime_ = false;

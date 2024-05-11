@@ -120,7 +120,7 @@ struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(cons
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr,
         "Get all adapters fail, audioMgrType %{public}d, ret %{public}d.", audioMgrType_, ret);
 
-    uint32_t targetIdx = INVALID_INDEX;
+    int32_t targetIdx = INVALID_INDEX;
     for (uint32_t index = 0; index < descriptors_.size(); index++) {
         struct AudioAdapterDescriptor desc = descriptors_[index];
         if (desc.adapterName.c_str() == nullptr) {
@@ -130,7 +130,7 @@ struct AudioAdapterDescriptor *AudioDeviceManagerImpl::GetTargetAdapterDesc(cons
             AUDIO_INFO_LOG("[%{public}d] is not target adapter", index);
             continue;
         }
-        targetIdx = index;
+        targetIdx = static_cast<int32_t>(index);
     }
     CHECK_AND_RETURN_RET_LOG((targetIdx >= 0), nullptr, "can not find target adapter.");
     return &descriptors_[targetIdx];

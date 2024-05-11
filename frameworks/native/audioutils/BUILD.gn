@@ -13,7 +13,6 @@
 
 import("//build/ohos.gni")
 import("../../../config.gni")
-pulseaudio_dir = "//third_party/pulseaudio"
 config("audio_utils_public_config") {
   include_dirs = [ "./include" ]
 }
@@ -21,6 +20,8 @@ config("audio_utils_public_config") {
 ohos_shared_library("audio_utils") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   public_configs = [ ":audio_utils_public_config" ]
@@ -28,7 +29,7 @@ ohos_shared_library("audio_utils") {
   include_dirs = [
     "./include",
     "../../../interfaces/inner_api/native/audiocommon/include/",
-    "../../..//services/audio_service/client/include",
+    "../../../services/audio_service/client/include",
   ]
 
   sources = [
@@ -52,8 +53,7 @@ ohos_shared_library("audio_utils") {
   ]
 
   if (sonic_enable == true) {
-    include_dirs += [ "$pulseaudio_dir/sonic" ]
-    deps = [ "$pulseaudio_dir/sonic:sonic" ]
+    external_deps += [ "pulseaudio:sonic" ]
   }
 
   defines = []

@@ -14,8 +14,6 @@
 import("//build/ohos.gni")
 import("../../../config.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-
 config("audio_toneplayer_config") {
   include_dirs = [
     "include",
@@ -29,8 +27,6 @@ config("audio_toneplayer_config") {
     "../../../services/audio_policy/include",
     "../../../services/audio_service/client",
     "../../../services/test",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -48,6 +44,7 @@ if (!audio_framework_feature_dtmf_tone) {
     sanitize = {
       cfi = true
       cfi_cross_dso = true
+      cfi_vcall_icall_only = true
       debug = false
     }
     install_enable = true
@@ -74,6 +71,7 @@ if (!audio_framework_feature_dtmf_tone) {
       "c_utils:utils",
       "hilog:libhilog",
       "ipc:ipc_single",
+      "pulseaudio:pulse",
     ]
 
     version_script = "../../../audio_framework.versionscript"
@@ -100,7 +98,10 @@ if (!audio_framework_feature_dtmf_tone) {
 
     deps = [ ":audio_toneplayer" ]
 
-    external_deps = [ "hilog:libhilog" ]
+    external_deps = [
+      "hilog:libhilog",
+      "pulseaudio:pulse",
+    ]
 
     part_name = "audio_framework"
     subsystem_name = "multimedia"

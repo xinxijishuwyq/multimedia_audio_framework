@@ -37,6 +37,9 @@
 #include "power_mgr_client.h"
 #endif
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -46,6 +49,7 @@ AudioRendererCallbacks::~AudioRendererCallbacks() = default;
 AudioCapturerCallbacks::~AudioCapturerCallbacks() = default;
 const uint32_t CHECK_UTIL_SUCCESS = 0;
 const uint32_t INIT_TIMEOUT_IN_SEC = 3;
+const uint32_t GET_LATENCY_TIMEOUT_IN_SEC = 3;
 const uint32_t CONNECT_TIMEOUT_IN_SEC = 10;
 const uint32_t DRAIN_TIMEOUT_IN_SEC = 3;
 const uint32_t CORK_TIMEOUT_IN_SEC = 3;
@@ -100,7 +104,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_VOICE_MESSAGE, "voice_message"},
     {STREAM_NAVIGATION, "navigation"},
     {STREAM_SOURCE_VOICE_CALL, "source_voice_call"},
-    {STREAM_VOICE_COMMUNICATION, "voice_call"}
+    {STREAM_VOICE_COMMUNICATION, "voice_call"},
+    {STREAM_VOICE_RING, "ring"},
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -360,6 +365,7 @@ void AudioServiceClient::PAStreamUpdateTimingInfoSuccessCb(pa_stream *stream, in
         asClient->isGetLatencySuccess_ = false;
     }
     const pa_timing_info *info = pa_stream_get_timing_info(stream);
+    CHECK_AND_RETURN_LOG(info, "get pa_timing_info is null");
     asClient->offloadWriteIndex_ = pa_bytes_to_usec(info->write_index, &asClient->sampleSpec);
     asClient->offloadReadIndex_ = pa_bytes_to_usec(info->read_index, &asClient->sampleSpec);
     asClient->offloadTimeStamp_ = info->timestamp.tv_sec * AUDIO_US_PER_SECOND + info->timestamp.tv_usec;
@@ -1076,6 +1082,7 @@ int32_t AudioServiceClient::SetPaProplist(pa_proplist *propList, pa_channel_map 
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "stream.volumeFactor", std::to_string(volumeFactor_).c_str());
     pa_proplist_sets(propList, "stream.powerVolumeFactor", std::to_string(powerVolumeFactor_).c_str());
+    pa_proplist_sets(propList, "stream.duckVolumeFactor", std::to_string(duckVolumeFactor_).c_str());
     sessionID_ = pa_context_get_index(context);
     pa_proplist_sets(propList, "stream.sessionID", std::to_string(sessionID_).c_str());
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
@@ -2257,16 +2264,8 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timestamp)
     CHECK_AND_RETURN_RET(ret >= 0, AUDIO_CLIENT_PA_ERR);
     pa_threaded_mainloop_lock(mainLoop);
 
-    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK) {
-        pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
-        if (operation != nullptr) {
-            while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
-                pa_threaded_mainloop_wait(mainLoop);
-            }
-            pa_operation_unref(operation);
-        } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
-        }
+    if (eAudioClientType == AUDIO_SERVICE_CLIENT_PLAYBACK && HandleRenderUpdateTimingInfo() != AUDIO_CLIENT_SUCCESS) {
+        return AUDIO_CLIENT_ERR;
     }
 
     const pa_timing_info *info = pa_stream_get_timing_info(paStream);
@@ -2297,6 +2296,26 @@ int32_t AudioServiceClient::GetCurrentTimeStamp(uint64_t &timestamp)
 
     pa_threaded_mainloop_unlock(mainLoop);
 
+    return AUDIO_CLIENT_SUCCESS;
+}
+
+int32_t AudioServiceClient::HandleRenderUpdateTimingInfo()
+{
+    pa_operation *operation = pa_stream_update_timing_info(paStream, NULL, NULL);
+    CHECK_AND_RETURN_RET_LOG(operation != nullptr, AUDIO_CLIENT_SUCCESS, "pa_stream_update_timing_info failed");
+    while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
+        pa_threaded_mainloop_wait(mainLoop);
+        StopTimer();
+        if (IsTimeOut()) {
+            AUDIO_ERR_LOG("Get audio latency timeout");
+            TimeoutRecover(PA_ERR_TIMEOUT);
+            pa_operation_unref(operation);
+            pa_threaded_mainloop_unlock(mainLoop);
+            return AUDIO_CLIENT_ERR;
+        }
+    }
+    pa_operation_unref(operation);
     return AUDIO_CLIENT_SUCCESS;
 }
 
@@ -2360,10 +2379,11 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
     } else {
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
-    StartTimer(INIT_TIMEOUT_IN_SEC);
+    StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
     pa_threaded_mainloop_wait(mainLoop);
     StopTimer();
     if (IsTimeOut()) {
+        TimeoutRecover(PA_ERR_TIMEOUT);
         AUDIO_ERR_LOG("Get audio position timeout");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
@@ -2453,10 +2473,11 @@ int32_t AudioServiceClient::GetAudioLatency(uint64_t &latency)
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
     AUDIO_DEBUG_LOG("waiting for audio latency information");
-    StartTimer(INIT_TIMEOUT_IN_SEC);
+    StartTimer(GET_LATENCY_TIMEOUT_IN_SEC);
     pa_threaded_mainloop_wait(mainLoop);
     StopTimer();
     if (IsTimeOut()) {
+        TimeoutRecover(PA_ERR_TIMEOUT);
         AUDIO_ERR_LOG("Get audio latency timeout");
         pa_threaded_mainloop_unlock(mainLoop);
         return AUDIO_CLIENT_ERR;
@@ -2716,6 +2737,68 @@ float AudioServiceClient::GetStreamVolume()
     return volumeFactor_;
 }
 
+int32_t AudioServiceClient::SetStreamDuckVolume(float volume)
+{
+    Trace trace("AudioServiceClient::SetStreamDuckVolume " +std::to_string(volume));
+    lock_guard<mutex> lock(ctrlMutex_);
+    AUDIO_INFO_LOG("SetDuckVolume volume: %{public}f", volume);
+
+    int32_t res = CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
+    CHECK_AND_RETURN_RET_LOG(res >= 0, AUDIO_CLIENT_PA_ERR, "set stream duck volume: invalid stream state");
+
+    /* Validate and return INVALID_PARAMS error */
+    CHECK_AND_RETURN_RET_LOG((volume >= MIN_STREAM_VOLUME_LEVEL) && (volume <= MAX_STREAM_VOLUME_LEVEL),
+        AUDIO_CLIENT_INVALID_PARAMS_ERR, "Invalid Volume Input!");
+
+    pa_threaded_mainloop_lock(mainLoop);
+    int32_t ret = SetStreamDuckVolumeInML(volume);
+    pa_threaded_mainloop_unlock(mainLoop);
+
+    return ret;
+}
+
+int32_t AudioServiceClient::SetStreamDuckVolumeInML(float volume)
+{
+    duckVolumeFactor_ = volume;
+    pa_proplist *propList = pa_proplist_new();
+    if (propList == nullptr) {
+        AUDIO_ERR_LOG("pa_proplist_new failed");
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_sets(propList, "stream.duckVolumeFactor", std::to_string(duckVolumeFactor_).c_str());
+    pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
+        nullptr, nullptr);
+    if (updatePropOperation == nullptr) {
+        AUDIO_ERR_LOG("pa_stream_proplist_update returned null");
+        pa_proplist_free(propList);
+        return AUDIO_CLIENT_ERR;
+    }
+
+    pa_proplist_free(propList);
+    pa_operation_unref(updatePropOperation);
+
+    if (!streamInfoUpdated_) {
+        uint32_t idx = pa_stream_get_index(paStream);
+        pa_operation *operation = pa_context_get_sink_input_info(context, idx, AudioServiceClient::GetSinkInputInfoCb,
+            reinterpret_cast<void *>(this));
+        if (operation == nullptr) {
+            AUDIO_ERR_LOG("pa_context_get_sink_input_info_list returned null");
+            return AUDIO_CLIENT_ERR;
+        }
+
+        while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+            pa_threaded_mainloop_wait(mainLoop);
+        }
+
+        pa_operation_unref(operation);
+    } else {
+        SetPaVolume(*this);
+    }
+
+    return AUDIO_CLIENT_SUCCESS;
+}
+
 int32_t AudioServiceClient::InitializePAProbListOffload()
 {
     if (CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR) < 0) {
@@ -2866,6 +2949,11 @@ int32_t AudioServiceClient::UnsetStreamOffloadMode()
 {
     lastOffloadUpdateFinishTime_ = 0;
     offloadEnable_ = false;
+
+    int32_t retCheck = CheckPaStatusIfinvalid(mainLoop, context, paStream, AUDIO_CLIENT_PA_ERR);
+    AUDIO_INFO_LOG("calling unset stream offloadMode paStatus: %{public}d", retCheck);
+    CHECK_AND_RETURN_RET(retCheck >= 0, AUDIO_CLIENT_PA_ERR);
+
     pa_threaded_mainloop_lock(mainLoop);
     int32_t ret = UpdatePolicyOffload(OFFLOAD_ACTIVE_FOREGROUND);
     pa_threaded_mainloop_unlock(mainLoop);
@@ -2930,17 +3018,20 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
 
     AUDIO_INFO_LOG("Applied volume %{public}f, systemVolume %{public}f, volumeFactor %{public}f", vol, systemVolumeDb,
         client.volumeFactor_);
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
-        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1,
-        "STREAMID", client.sessionID_,
-        "APP_UID", client.clientUid_,
-        "APP_PID", client.clientPid_,
-        "STREAMTYPE", client.streamType_,
-        "VOLUME", vol,
-        "SYSVOLUME", systemVolumeLevel,
-        "VOLUMEFACTOR", client.volumeFactor_,
-        "POWERVOLUMEFACTOR", client.powerVolumeFactor_);
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::VOLUME_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", static_cast<int32_t>(client.sessionID_));
+    bean->Add("APP_UID", client.clientUid_);
+    bean->Add("APP_PID", client.clientPid_);
+    bean->Add("STREAMTYPE", client.streamType_);
+    bean->Add("VOLUME", vol);
+    bean->Add("SYSVOLUME", systemVolumeLevel);
+    bean->Add("VOLUMEFACTOR", client.volumeFactor_);
+    bean->Add("POWERVOLUMEFACTOR", client.powerVolumeFactor_);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType streamType)
@@ -2955,6 +3046,7 @@ AudioVolumeType AudioServiceClient::GetVolumeTypeFromStreamType(AudioStreamType 
         case STREAM_NOTIFICATION:
         case STREAM_SYSTEM_ENFORCED:
         case STREAM_DTMF:
+        case STREAM_VOICE_RING:
             return STREAM_RING;
         case STREAM_MUSIC:
         case STREAM_MEDIA:
@@ -3123,7 +3215,7 @@ float AudioServiceClient::GetSingleStreamVol()
     DeviceType deviceType = audioSystemManager_->GetActiveOutputDevice();
     float systemVolumeDb = AudioPolicyManager::GetInstance().GetSystemVolumeInDb(streamType_,
         systemVolumeLevel, deviceType);
-    return systemVolumeDb * volumeFactor_ * powerVolumeFactor_;
+    return systemVolumeDb * volumeFactor_ * powerVolumeFactor_ * duckVolumeFactor_;
 }
 
 // OnRenderMarkReach by eventHandler

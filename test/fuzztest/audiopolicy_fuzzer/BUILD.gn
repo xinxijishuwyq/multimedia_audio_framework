@@ -24,11 +24,6 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
     "../../../services/audio_policy/server/include",
     "../../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
-
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
-
-  include_dirs += [ multimedia_audio_framework_pulse_audio_src ]
-
   cflags = [
     "-g",
     "-O0",
@@ -58,6 +53,7 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
   if (accessibility_enable == true) {

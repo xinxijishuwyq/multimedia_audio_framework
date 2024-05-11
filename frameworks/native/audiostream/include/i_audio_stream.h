@@ -53,7 +53,6 @@ public:
     enum StreamClass : uint32_t {
         PA_STREAM = 0,
         FAST_STREAM,
-        FORCED_PA_STREAM,
     };
 
     struct SwitchInfo {
@@ -133,6 +132,7 @@ public:
     virtual int32_t SetAudioStreamType(AudioStreamType audioStreamType) = 0;
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
+    virtual int32_t SetDuckVolume(float volume) = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
@@ -223,6 +223,13 @@ public:
     virtual IAudioStream::StreamClass GetStreamClass() = 0;
     virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
     virtual void GetSwitchInfo(SwitchInfo& info) = 0;
+
+    // for get pipetype
+    virtual bool GetOffloadEnable() = 0;
+
+    virtual bool GetSpatializationEnabled() = 0;
+
+    virtual bool GetHighResolutionEnabled() = 0;
 
     //for wakeup capturer
     virtual void SetWakeupCapturerState(bool isWakeupCapturer) = 0;

@@ -149,7 +149,7 @@ int32_t IpcStreamStub::HandleGetAudioTime(MessageParcel &data, MessageParcel &re
     uint64_t timestamp = 0;
     reply.WriteInt32(GetAudioTime(framePos, timestamp));
     reply.WriteUint64(framePos);
-    reply.WriteInt64(timestamp);
+    reply.WriteUint64(timestamp);
     return AUDIO_OK;
 }
 
@@ -160,7 +160,7 @@ int32_t IpcStreamStub::HandleGetAudioPosition(MessageParcel &data, MessageParcel
     uint64_t timestamp = 0;
     reply.WriteInt32(GetAudioPosition(framePos, timestamp));
     reply.WriteUint64(framePos);
-    reply.WriteInt64(timestamp);
+    reply.WriteUint64(timestamp);
     return AUDIO_OK;
 }
 

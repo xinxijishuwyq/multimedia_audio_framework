@@ -186,6 +186,9 @@ public:
     std::string fixedLatency_ = STR_INIT;
     std::string renderInIdleState_ = STR_INIT;
 
+    int32_t audioFlag_ = AUDIO_FLAG_NORMAL;
+    int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
+
     std::list<StreamPropInfo> streamPropInfos_ {};
     std::list<uint32_t> sampleRates_ {};
     std::list<uint32_t> channelLayouts_ {};
@@ -228,6 +231,9 @@ class AudioAdapterInfo {
 public:
     AudioAdapterInfo() = default;
     virtual ~AudioAdapterInfo() = default;
+
+    PipeInfo *GetPipeByName(std::string &pipeName);
+    AudioPipeDeviceInfo *GetDeviceInfoByDeviceType(DeviceType deviceType);
 
     std::string adapterName_ = STR_INIT;
     std::string adaptersupportScene_ = STR_INIT;

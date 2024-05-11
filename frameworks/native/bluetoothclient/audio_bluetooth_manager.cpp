@@ -206,7 +206,9 @@ int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &session
 
 void AudioA2dpManager::CheckA2dpDeviceReconnect()
 {
-    a2dpInstance_ = A2dpSource::GetProfile();
+    if (a2dpInstance_ == nullptr) {
+        a2dpInstance_ = A2dpSource::GetProfile();
+    }
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
@@ -272,6 +274,20 @@ void AudioHfpManager::UnregisterBluetoothScoListener()
     hfpInstance_ = nullptr;
 }
 
+void AudioHfpManager::CheckHfpDeviceReconnect()
+{
+    if (hfpInstance_ == nullptr) {
+        hfpInstance_ = HandsFreeAudioGateway::GetProfile();
+    }
+    CHECK_AND_RETURN_LOG(hfpInstance_ != nullptr, "HFP profile instance unavailable");
+    std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
+    std::vector<BluetoothRemoteDevice> devices = hfpInstance_->GetDevicesByStates(states);
+    for (auto &device : devices) {
+        hfpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
+            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+    }
+}
+
 int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
 {
     AUDIO_INFO_LOG("AudioHfpManager::SetActiveHfpDevice");
@@ -316,7 +332,7 @@ int32_t AudioHfpManager::ConnectScoWithAudioScene(AudioScene scene)
     CHECK_AND_RETURN_RET_LOG(hfpInstance_ != nullptr, ERROR, "HFP AG profile instance unavailable");
     bool isInbardingEnabled = false;
     hfpInstance_->IsInbandRingingEnabled(isInbardingEnabled);
-    if (scene == AUDIO_SCENE_RINGING && !isInbardingEnabled) {
+    if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbardingEnabled) {
         AUDIO_INFO_LOG("The inbarding switch is off, ignore the ring scene.");
         return SUCCESS;
     }
@@ -356,9 +372,10 @@ int32_t AudioHfpManager::DisconnectSco()
 int8_t AudioHfpManager::GetScoCategoryFromScene(AudioScene scene)
 {
     switch (scene) {
-        case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_VOICE_RINGING:
         case AUDIO_SCENE_PHONE_CALL:
             return ScoCategory::SCO_CALLULAR;
+        case AUDIO_SCENE_RINGING:
         case AUDIO_SCENE_PHONE_CHAT:
             return ScoCategory::SCO_VIRTUAL;
         default:

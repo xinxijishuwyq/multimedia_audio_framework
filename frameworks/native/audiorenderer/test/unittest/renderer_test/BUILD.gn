@@ -13,9 +13,6 @@
 
 import("//build/test.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 module_output_path = "multimedia_audio_framework/audio_renderer"
 
 ohos_unittest("audio_renderer_unit_test") {
@@ -28,10 +25,6 @@ ohos_unittest("audio_renderer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
   ]
   cflags = [
     "-Wall",
@@ -41,7 +34,6 @@ ohos_unittest("audio_renderer_unit_test") {
   sources = [ "src/audio_renderer_unit_test.cpp" ]
 
   deps = [
-    "$pulseaudio_build_path/src/pulse:pulse",
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiorenderer:audio_renderer",
@@ -50,6 +42,7 @@ ohos_unittest("audio_renderer_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "pulseaudio:pulse",
   ]
 
   resource_config_file =
@@ -66,10 +59,6 @@ ohos_unittest("audio_fast_renderer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
   ]
   cflags = [
     "-Wall",
@@ -79,7 +68,6 @@ ohos_unittest("audio_fast_renderer_unit_test") {
   sources = [ "src/audio_fast_renderer_unit_test.cpp" ]
 
   deps = [
-    "$pulseaudio_build_path/src/pulse:pulse",
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiorenderer:audio_renderer",
@@ -88,6 +76,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "pulseaudio:pulse",
   ]
 
   resource_config_file =
@@ -106,10 +95,6 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
   ]
 
   cflags = [
@@ -120,7 +105,6 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
   sources = [ "src/renderer_capture_interrupt_unit_test.cpp" ]
 
   deps = [
-    "$pulseaudio_build_path/src/pulse:pulse",
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
@@ -130,6 +114,7 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "pulseaudio:pulse",
   ]
 
   resource_config_file =
@@ -148,10 +133,6 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
   ]
 
   cflags = [
@@ -162,7 +143,6 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
   sources = [ "src/capture_renderer_interrupt_unit_test.cpp" ]
 
   deps = [
-    "$pulseaudio_build_path/src/pulse:pulse",
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
@@ -172,6 +152,7 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "pulseaudio:pulse",
   ]
 
   resource_config_file =

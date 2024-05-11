@@ -14,9 +14,6 @@
 import("//build/ohos.gni")
 import("../../../config.gni")
 
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-pulseaudio_dir = "//third_party/pulseaudio"
-
 config("audio_renderer_config") {
   include_dirs = [
     "./include",
@@ -26,14 +23,7 @@ config("audio_renderer_config") {
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/test/example",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
-
-  if (sonic_enable == true) {
-    include_dirs += [ "$pulseaudio_dir/sonic" ]
-  }
-
   cflags = [
     "-Wall",
     "-Werror",
@@ -45,15 +35,9 @@ config("audio_renderer_config") {
 }
 
 ohos_shared_library("audio_renderer") {
-  sanitize = {
-    cfi = true
-    debug = false
-  }
   install_enable = true
 
   configs = [ ":audio_renderer_config" ]
-
-  include_dirs = [ multimedia_audio_framework_pulse_audio ]
 
   sources = [
     "src/audio_renderer.cpp",
@@ -65,18 +49,17 @@ ohos_shared_library("audio_renderer") {
     "../../../services/audio_service:audio_client",
     "../audioutils:audio_utils",
   ]
-
-  if (sonic_enable == true) {
-    deps += [ "$pulseaudio_dir/sonic:sonic" ]
-  }
-
-  public_configs = [ ":audio_external_library_config" ]
-
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
+  if (sonic_enable == true) {
+    external_deps += [ "pulseaudio:sonic" ]
+  }
+
+  public_configs = [ ":audio_external_library_config" ]
 
   version_script = "../../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
@@ -160,8 +143,6 @@ ohos_executable("audio_voip_test") {
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../services/audio_service/client/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -176,7 +157,10 @@ ohos_executable("audio_voip_test") {
     "../audiocapturer:audio_capturer",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+  ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -222,25 +206,19 @@ ohos_executable("audio_blendmode_test") {
 
   configs = [ ":audio_renderer_config" ]
 
-  include_dirs = [
-    "$pulseaudio_build_path/include",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_dir/src",
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "//third_party/bounds_checking_function/include",
-  ]
-
   deps = [
     ":audio_renderer",
     "../../../services/audio_service:audio_client",
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "ipc:ipc_single",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
   ]
 
   part_name = "audio_framework"

@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static SafeMap<void *, bool> paCapturerMap_;
+static SafeMap<void *, std::weak_ptr<PaCapturerStreamImpl>> paCapturerMap_;
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
     do {
@@ -51,13 +51,12 @@ PaCapturerStreamImpl::~PaCapturerStreamImpl()
         fclose(capturerServerDumpFile_);
         capturerServerDumpFile_ = nullptr;
     }
-    std::lock_guard<std::mutex> lock(streamImplLock_);
     paCapturerMap_.Erase(this);
 }
 
 int32_t PaCapturerStreamImpl::InitParams()
 {
-    paCapturerMap_.Insert(this, true);
+    paCapturerMap_.Insert(this, weak_from_this());
     PaLockGuard lock(mainloop_);
     pa_stream_set_moved_callback(paStream_, PAStreamMovedCb,
         reinterpret_cast<void *>(this)); // used to notify sink/source moved
@@ -402,7 +401,14 @@ void PaCapturerStreamImpl::PAStreamStartSuccessCb(pa_stream *stream, int32_t suc
         return;
     }
 
-    PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
+    std::weak_ptr<PaCapturerStreamImpl> paCapturerStreamWeakPtr;
+    if (!paCapturerMap_.Find(userdata, paCapturerStreamWeakPtr)) {
+        AUDIO_ERR_LOG("streamImpl is null");
+        return;
+    }
+    auto streamImpl = paCapturerStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
+
     streamImpl->state_ = RUNNING;
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
@@ -448,18 +454,18 @@ void PaCapturerStreamImpl::PAStreamStopSuccessCb(pa_stream *stream, int32_t succ
         return;
     }
 
-    bool isUserdataExist;
-    if (!paCapturerMap_.Find(userdata, isUserdataExist)) {
-        AUDIO_ERR_LOG("userdata is null");
+    std::weak_ptr<PaCapturerStreamImpl> paCapturerStreamWeakPtr;
+    if (!paCapturerMap_.Find(userdata, paCapturerStreamWeakPtr)) {
+        AUDIO_ERR_LOG("streamImpl is null");
         return;
     }
-    PaCapturerStreamImpl *streamImpl = static_cast<PaCapturerStreamImpl *>(userdata);
-    std::unique_lock<std::mutex> lock(streamImpl->streamImplLock_);
+    auto streamImpl = paCapturerStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
+
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
     }
-    lock.unlock();
 }
 
 int32_t PaCapturerStreamImpl::GetMinimumBufferSize(size_t &minBufferSize) const

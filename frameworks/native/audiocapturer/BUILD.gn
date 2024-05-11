@@ -14,8 +14,6 @@
 import("//build/ohos.gni")
 import("../../../config.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-
 config("audio_capturer_config") {
   include_dirs = [
     "include",
@@ -23,8 +21,6 @@ config("audio_capturer_config") {
     "../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../frameworks/native/audiostream/include",
     "../../../services/audio_service/client/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -37,13 +33,12 @@ ohos_shared_library("audio_capturer") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
 
   configs = [ ":audio_capturer_config" ]
-
-  include_dirs = [ multimedia_audio_framework_pulse_audio ]
 
   sources = [
     "src/audio_capturer.cpp",
@@ -62,6 +57,7 @@ ohos_shared_library("audio_capturer") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
 
   version_script = "../../../audio_framework.versionscript"
@@ -73,8 +69,11 @@ ohos_shared_library("audio_capturer") {
 
 config("audio_external_library_config") {
   include_dirs = [
+    "include",
     "../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../frameworks/native/audiostream/include",
+    "../../../services/audio_service/client/include",
   ]
 }
 

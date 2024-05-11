@@ -135,7 +135,7 @@ void AudioBlend::ProcessBlendLRModeWithFormat(T *buffer, size_t count, AudioChan
 template <typename T>
 void AudioBlend::ProcessAllLeftModeWithFormat(T *buffer, size_t count, AudioChannel channel)
 {
-    for (int i = count; i > 0; i--) {
+    for (uint32_t i = count; i > 0; i--) {
         switch (channel) {
             case CHANNEL_8:
                 buffer[CHANNEL_EIGHT] = buffer[CHANNEL_SEVEN];
@@ -163,7 +163,7 @@ void AudioBlend::ProcessAllLeftModeWithFormat(T *buffer, size_t count, AudioChan
 template <typename T>
 void AudioBlend::ProcessAllRightModeWithFormat(T *buffer, size_t count, AudioChannel channel)
 {
-    for (int i = count; i > 0; i--) {
+    for (uint32_t i = count; i > 0; i--) {
         switch (channel) {
             case CHANNEL_8:
                 buffer[CHANNEL_SEVEN] = buffer[CHANNEL_EIGHT];

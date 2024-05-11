@@ -65,10 +65,16 @@ public:
         std::vector<std::unique_ptr<AudioDeviceDescriptor>> &captureDescs)
     {
         for (auto &captureDesc : captureDescs) {
-            if (captureDesc->deviceId_ == desc->deviceId_ && captureDesc->connectState_ != SUSPEND_CONNECTED &&
+            if (captureDesc->deviceId_ != desc->deviceId_) {
+                continue;
+            }
+            if (captureDesc->connectState_ != SUSPEND_CONNECTED &&
                 !captureDesc->exceptionFlag_ && captureDesc->isEnable_) {
                 return std::move(captureDesc);
             }
+            AUDIO_INFO_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] isEnable[%{public}d]" \
+                "exceptionFlag[%{public}d]", captureDesc->deviceType_, captureDesc->connectState_,
+                captureDesc->isEnable_, captureDesc->exceptionFlag_);
         }
         return std::make_unique<AudioDeviceDescriptor>();
     }
