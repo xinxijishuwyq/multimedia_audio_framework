@@ -738,7 +738,7 @@ void AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sin
     MessageParcel replyParcel;
     MessageOption option;
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_LOG(ret == false, "SetOutputDeviceSink failed");
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     dataParcel.WriteInt32(deviceType);
     dataParcel.WriteString(sinkName);
 

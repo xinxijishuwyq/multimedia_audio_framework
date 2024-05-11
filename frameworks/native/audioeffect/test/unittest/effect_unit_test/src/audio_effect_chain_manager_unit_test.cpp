@@ -38,6 +38,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
+    constexpr uint32_t infoChannels = 2;
+    constexpr uint64_t infoChannelLayout = 0x3;
+    constexpr uint32_t infoVolume = 50;
     vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
     unordered_map<string, string> map = {
         {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
@@ -47,10 +50,10 @@ namespace {
     SessionEffectInfo info = {
         "EFFECT_DEFAULT",
         "SCENE_MOVIE",
-        2,
-        0x3,
+        infoChannels,
+        infoChannelLayout,
         "0",
-        50
+        infoVolume
     };
 }
 
@@ -313,8 +316,14 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChain_005, TestSize.Leve
 */
 HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_001, TestSize.Level1)
 {
-    float bufIn[10000] = {0};
-    float bufOut[10000] = {0};
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
     int numChans = 2;
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
@@ -334,8 +343,14 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_001, TestSize.Leve
 */
 HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_002, TestSize.Level1)
 {
-    float bufIn[10000] = {0};
-    float bufOut[10000] = {0};
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
     int numChans = 2;
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
@@ -355,8 +370,14 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_002, TestSize.Leve
 */
 HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_003, TestSize.Level1)
 {
-    float bufIn[10000] = {0};
-    float bufOut[10000] = {0};
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
     int numChans = 2;
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
@@ -376,8 +397,14 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_003, TestSize.Leve
 */
 HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_004, TestSize.Level1)
 {
-    float bufIn[10000] = {0};
-    float bufOut[10000] = {0};
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
     int numChans = 2;
     int frameLen = 960;
     auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen);
@@ -1069,5 +1096,5 @@ HWTEST(AudioEffectChainManagerUnitTest, ResetEffectBuffer_001, TestSize.Level1)
 {
     AudioEffectChainManager::GetInstance()->ResetEffectBuffer();
 }
-}
-}
+} // namespace AudioStandard
+} // namespace OHOS
