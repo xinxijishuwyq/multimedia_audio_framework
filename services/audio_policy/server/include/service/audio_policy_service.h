@@ -444,6 +444,8 @@ public:
 
     int32_t DisableSafeMediaVolume();
 
+    int32_t SafeVolumeDialogDisapper();
+
     void NotifyAccountsChanged(const int &id);
 
     // for hidump
@@ -772,6 +774,10 @@ private:
 
     void CreateCheckMusicActiveThread();
 
+    void CreateSafeVolumeDialogThread();
+
+    void SetDeviceSafeVolumeStatus();
+
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
 
     void CheckWiredActiveMusicTime(int32_t safeVolume);
@@ -937,6 +943,8 @@ private:
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;
     std::condition_variable dialogSelectCondition_;
+    std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
+    std::atomic<bool> isSafeVolumeDialogShowing_ = false;
 
     DeviceType priorityOutputDevice_;
     DeviceType priorityInputDevice_;

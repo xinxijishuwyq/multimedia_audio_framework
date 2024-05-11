@@ -465,7 +465,7 @@ int32_t AudioPolicyService::SetSystemVolumeLevel(AudioStreamType streamType, int
                 sVolumeLevel = DealWithSafeVolume(volumeLevel, false);
                 break;
             default:
-                AUDIO_INFO_LOG("unsupport safe volume");
+                AUDIO_INFO_LOG("unsupport safe volume:%{public}d", currentActiveDevice_.deviceType_);
                 break;
         }
     }
@@ -4671,6 +4671,21 @@ void AudioPolicyService::CreateCheckMusicActiveThread()
     }
 }
 
+void AudioPolicyService::CreateSafeVolumeDialogThread()
+{
+    AUDIO_INFO_LOG("enter");
+    if (safeVolumeDialogThrd_ != nullptr && safeVolumeDialogThrd_->joinable()) {
+        AUDIO_INFO_LOG("safeVolumeDialogThread exit");
+        safeVolumeDialogThrd_->join();
+        safeVolumeDialogThrd_.reset();
+        safeVolumeDialogThrd_ = nullptr;
+    }
+
+    AUDIO_INFO_LOG("create safeVolumeDialogThread");
+    safeVolumeDialogThrd_ = std::make_unique<std::thread>(&AudioPolicyService::ShowDialog, this);
+    pthread_setname_np(safeVolumeDialogThrd_->native_handle(), "OS_AudioSafeDialog");
+}
+
 int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool isA2dpDevice)
 {
     if (isA2dpDevice) {
@@ -4689,32 +4704,16 @@ int32_t AudioPolicyService::DealWithSafeVolume(const int32_t volumeLevel, bool i
         return sVolumeLevel;
     }
 
-    if (isA2dpDevice && (safeStatusBt_ == SAFE_ACTIVE)) {
-        if (ShowDialog() != SUCCESS) {
-            return volumeLevel;
-        }
+    if ((isA2dpDevice && safeStatusBt_ == SAFE_ACTIVE) ||
+        (!isA2dpDevice && safeStatus_ == SAFE_ACTIVE)) {
         sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
-        if (userSelect_) {
-            safeStatusBt_ = SAFE_INACTIVE;
-            audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
-            CreateCheckMusicActiveThread();
-        }
-        return sVolumeLevel;
-    } else if (!isA2dpDevice && safeStatus_ == SAFE_ACTIVE) {
-        if (ShowDialog() != SUCCESS) {
-            return volumeLevel;
-        }
-        sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
-        if (userSelect_) {
-            safeStatus_ = SAFE_INACTIVE;
-            audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
-            CreateCheckMusicActiveThread();
+        if (!isSafeVolumeDialogShowing_.load()) {
+            CreateSafeVolumeDialogThread();
         }
         return sVolumeLevel;
     }
     return sVolumeLevel;
 }
-
 
 int32_t AudioPolicyService::ShowDialog()
 {
@@ -4731,7 +4730,9 @@ int32_t AudioPolicyService::ShowDialog()
         AppExecFwk::Constants::INVALID_USERID);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "ConnectAbility failed");
 
+    AUDIO_INFO_LOG("show safe Volume Dialog");
     std::unique_lock<std::mutex> lock(dialogMutex_);
+    isSafeVolumeDialogShowing_.store(true);
     if (!isDialogSelectDestroy_.load()) {
         auto status = dialogSelectCondition_.wait_for(lock, std::chrono::seconds(WAIT_DIALOG_CLOSE_TIME_S),
             [this] () { return isDialogSelectDestroy_.load(); });
@@ -6150,6 +6151,33 @@ int32_t AudioPolicyService::TriggerFetchDevice()
     return SUCCESS;
 }
 
+void AudioPolicyService::SetDeviceSafeVolumeStatus()
+{
+    if (!userSelect_) {
+        return;
+    }
+
+    switch (currentActiveDevice_.deviceType_) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            safeStatusBt_ = SAFE_INACTIVE;
+            audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
+            CreateCheckMusicActiveThread();
+            break;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            safeStatus_ = SAFE_INACTIVE;
+            audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
+            CreateCheckMusicActiveThread();
+            break;
+        default:
+            AUDIO_INFO_LOG("safeVolume unsupported device:%{public}d", currentActiveDevice_.deviceType_);
+            break;
+    }
+}
+
 int32_t AudioPolicyService::DisableSafeMediaVolume()
 {
     AUDIO_INFO_LOG("Enter");
@@ -6157,6 +6185,17 @@ int32_t AudioPolicyService::DisableSafeMediaVolume()
     userSelect_ = true;
     isDialogSelectDestroy_.store(true);
     dialogSelectCondition_.notify_all();
+    SetDeviceSafeVolumeStatus();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::SafeVolumeDialogDisapper()
+{
+    AUDIO_INFO_LOG("Enter");
+    std::lock_guard<std::mutex> lock(dialogMutex_);
+    dialogSelectCondition_.notify_all();
+    isSafeVolumeDialogShowing_.store(false);
+    SetDeviceSafeVolumeStatus();
     return SUCCESS;
 }
 

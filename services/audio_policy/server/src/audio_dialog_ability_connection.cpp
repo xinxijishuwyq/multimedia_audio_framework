@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioDialogAbilityConnection"
 
 #include "audio_dialog_ability_connection.h"
+#include "audio_policy_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,9 +59,12 @@ void AudioDialogAbilityConnection::OnAbilityConnectDone(const AppExecFwk::Elemen
 void AudioDialogAbilityConnection::OnAbilityDisconnectDone(const AppExecFwk::ElementName &element, int resultCode)
 {
     AUDIO_INFO_LOG("element: %{public}s, resultCode:%{public}d", element.GetURI().c_str(), resultCode);
-    std::lock_guard<std::mutex> lock(mutex_);
-    isDialogDestroy_.store(true);
-    dialogCondition_.notify_all();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        isDialogDestroy_.store(true);
+        dialogCondition_.notify_all();
+    }
+    AudioPolicyService::GetAudioPolicyService().SafeVolumeDialogDisapper();
 }
 } // namespace AudioStandard
 } // namespace OHOS
