@@ -3497,17 +3497,10 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
     int32_t ret = HandleDistributedDeviceUpdate(statusInfo, descForCb);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "HandleDistributedDeviceUpdate return directly.");
 
-    AudioStreamDeviceChangeReason reason;
-    if (statusInfo.isConnected) {
-        reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-    } else {
-        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-    }
-
     TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
-    FetchDevice(true, reason);
+    FetchDevice(true);
     FetchDevice(false);
 
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
