@@ -169,6 +169,7 @@ if (!audio_framework_feature_opensl_es) {
     deps = [ ":opensles" ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "hilog:libhilog",
       "opensles:libSLES",
       "pulseaudio:pulse",
