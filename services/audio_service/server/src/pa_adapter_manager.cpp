@@ -174,15 +174,8 @@ int32_t PaAdapterManager::PauseRender(uint32_t streamIndex)
     return SUCCESS;
 }
 
-int32_t PaAdapterManager::TriggerStartIfNecessary(uint32_t streamIndex, bool isBlock)
+int32_t PaAdapterManager::TriggerStartIfNecessary()
 {
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    rendererStreamMap_[streamIndex]->TriggerStartIfNecessary(isBlock);
     return SUCCESS;
 }
 

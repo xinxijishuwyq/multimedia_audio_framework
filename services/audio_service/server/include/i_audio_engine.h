@@ -20,10 +20,11 @@ class IAudioEngine {
 public:
     IAudioEngine() = default;
     virtual ~IAudioEngine() = default;
-    virtual void Start() = 0;
-    virtual void Stop() = 0;
-    virtual void Pause() = 0;
-    virtual void Flush() = 0;
+    virtual int32_t Start() = 0;
+    virtual int32_t Stop() = 0;
+    virtual int32_t Pause() = 0;
+    virtual int32_t Flush() = 0;
+    virtual bool IsPlaybackEngineRunning() const noexcept = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

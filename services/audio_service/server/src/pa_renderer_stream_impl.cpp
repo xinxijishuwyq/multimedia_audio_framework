@@ -1062,12 +1062,13 @@ AudioProcessConfig PaRendererStreamImpl::GetAudioProcessConfig() const noexcept
 {
     return processConfig_;
 }
-int32_t PaRendererStreamImpl::Peek(std::vector<char> *audioBuffer)
+
+int32_t PaRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &index)
 {
     return SUCCESS;
 }
 
-int32_t PaRendererStreamImpl::TriggerStartIfNecessary(bool isBlock)
+int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
 {
     return SUCCESS;
 }

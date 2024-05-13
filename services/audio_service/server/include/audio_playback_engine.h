@@ -29,10 +29,12 @@ public:
     virtual int32_t AddRenderer(const std::shared_ptr<IRendererStream> &stream);
     virtual void RemoveRenderer(const std::shared_ptr<IRendererStream> &stream);
 
-    virtual void Start() override {}
-    virtual void Stop() override {}
-    virtual void Pause() override {}
-    virtual void Flush() override {}
+    virtual int32_t Start() override;
+    virtual int32_t Stop() override;
+    virtual int32_t Pause() override;
+    virtual int32_t Flush() override;
+
+    virtual bool IsPlaybackEngineRunning() const noexcept override;
 
 protected:
     virtual void MixStreams() {}

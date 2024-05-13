@@ -130,6 +130,7 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
     if (playbackEngine_) {
         playbackEngine_->Stop();
         playbackEngine_->RemoveRenderer(currentRender);
+        playbackEngine_ = nullptr;
     }
     if (currentRender->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
@@ -142,16 +143,9 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
     return SUCCESS;
 }
 
-int32_t ProAudioStreamManager::TriggerStartIfNecessary(uint32_t streamIndex, bool isBlock)
+int32_t ProAudioStreamManager::TriggerStartIfNecessary()
 {
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    rendererStreamMap_[streamIndex]->TriggerStartIfNecessary(isBlock);
-    if (playbackEngine_) {
+    if (playbackEngine_ && !playbackEngine_->IsPlaybackEngineRunning()) {
         playbackEngine_->Start();
     }
     return SUCCESS;

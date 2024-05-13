@@ -319,7 +319,7 @@ int32_t RendererInServer::UpdateWriteIndex()
 {
     Trace trace("RendererInServer::UpdateWriteIndex");
     if (managerType_ != PLAYBACK) {
-        IStreamManager::GetPlaybackManager(managerType_).TriggerStartIfNecessary(streamIndex_, false);
+        IStreamManager::GetPlaybackManager(managerType_).TriggerStartIfNecessary();
     }
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {

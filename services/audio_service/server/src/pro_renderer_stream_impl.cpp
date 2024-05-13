@@ -33,8 +33,8 @@ const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
     : isDirect_(isDirect),
       isNeedResample_(false),
-      isNeedReFormat_(false),
       isBlock_(false),
+      isDrain_(false),
       privacyType_(0),
       renderRate_(0),
       streamIndex_(static_cast<uint32_t>(-1)),
@@ -105,11 +105,14 @@ int32_t ProRendererStreamImpl::InitParams()
         resampleDesBuffer.resize((frameSize * desSamplingRate_) / streamInfo.samplingRate, 0.f);
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
     }
-    uint32_t bufferSize = (GetSamplePerFrame(desFormat_) * frameSize * desSamplingRate_) / streamInfo.samplingRate;
+    uint32_t desSpanSize = (desSamplingRate_ * 20) / 1000;
+    uint32_t bufferSize = GetSamplePerFrame(desFormat_) * desSpanSize * streamInfo.channels;
     sinkBuffer_.resize(4, std::vector<char>(bufferSize, 0));
     for (int32_t i = 0; i < 4; i++) {
         writeQueue_.emplace(i);
     }
+    SetOffloadDisable();
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_DIRECT_STREAM_FILE, &dumpFile_);
     status_ = ProStreamStatus::INITIALIZED;
     return SUCCESS;
 }
@@ -118,15 +121,17 @@ int32_t ProRendererStreamImpl::Start()
 {
     isBlock_ = false;
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Start");
-    if (status_ != ProStreamStatus::INITIALIZED) {
+    if (status_ == ProStreamStatus::RELEASED) {
         return ERR_ILLEGAL_STATE;
+    }
+    if (status_ == ProStreamStatus::RUNNING) {
+        return SUCCESS;
     }
     status_ = ProStreamStatus::RUNNING;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STARTED);
     }
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_DIRECT_STREAM_FILE, &dumpFile_);
     return SUCCESS;
 }
 
@@ -148,22 +153,40 @@ int32_t ProRendererStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Flush");
     status_ = ProStreamStatus::FLUSHED;
+    {
+        std::lock_guard lock(enqueueMutex);
+        while (!readQueue_.empty()) {
+            int32_t index = readQueue_.front();
+            readQueue_.pop();
+            writeQueue_.emplace(index);
+        }
+        if (isDrain_) {
+            drainSync_.notify_all();
+        }
+    }
+    for (auto &buffer : sinkBuffer_) {
+        memset_s(buffer.data(), buffer.size(), 0, buffer.size());
+    }
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_FLUSHED);
     }
-    isBlock_ = true;
     return SUCCESS;
 }
 
 int32_t ProRendererStreamImpl::Drain()
 {
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Drain");
+    isDrain_ = true;
+    if (!readQueue_.empty()) {
+        std::unique_lock lock(enqueueMutex);
+        drainSync_.wait_for(lock, std::chrono::milliseconds(100), [this] { return readQueue_.empty(); });
+    }
+    isDrain_ = false;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_DRAINED);
     }
-    isBlock_ = true;
     status_ = ProStreamStatus::DRAIN;
     return SUCCESS;
 }
@@ -172,11 +195,11 @@ int32_t ProRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Stop");
     status_ = ProStreamStatus::STOPED;
+    isBlock_ = true;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
     }
-    isBlock_ = true;
     return SUCCESS;
 }
 
@@ -184,11 +207,11 @@ int32_t ProRendererStreamImpl::Release()
 {
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Release");
     status_ = ProStreamStatus::RELEASED;
+    isBlock_ = true;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_RELEASED);
     }
-    isBlock_ = true;
     return SUCCESS;
 }
 
@@ -303,20 +326,16 @@ BufferDesc ProRendererStreamImpl::DequeueBuffer(size_t length)
 
 int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
-    std::lock_guard lock(enqueueMutex);
     int32_t writeIndex = PopWriteBufferIndex();
     if (writeIndex < 0) {
         return ERR_WRITE_BUFFER;
     }
-    uint64_t duration;
+    std::lock_guard lock(peekMutex);
     if (isNeedResample_) {
         ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength);
-        auto start = std::chrono::steady_clock::now();
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
-        auto end = std::chrono::steady_clock::now();
+        DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
         ConvertFloatToDes(writeIndex);
-        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-        AUDIO_INFO_LOG("resample cost:%{public}" PRIu64 "", duration);
     } else {
         auto streamInfo = processConfig_.streamInfo;
         uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
@@ -332,7 +351,6 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         }
     }
     readQueue_.emplace(writeIndex);
-    // DumpFileUtil::WriteDumpFile(dumpFile_, sinkBuffer_.data(), sinkBuffer_.size());
     AUDIO_INFO_LOG("buffer length:%{public}zu ,sink buffer length:%{public}zu", bufferDesc.bufLength,
                    sinkBuffer_.size());
     totalBytesWritten_ += bufferDesc.bufLength;
@@ -360,6 +378,7 @@ void ProRendererStreamImpl::SetStreamIndex(uint32_t index)
     AUDIO_INFO_LOG("Using index/sessionId %{public}d", index);
     streamIndex_ = index;
 }
+
 uint32_t ProRendererStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
@@ -368,10 +387,12 @@ uint32_t ProRendererStreamImpl::GetStreamIndex()
 // offload
 int32_t ProRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
 {
+    SetOffloadDisable();
     return SUCCESS;
 }
 int32_t ProRendererStreamImpl::UnsetOffloadMode()
 {
+    SetOffloadDisable();
     return SUCCESS;
 }
 int32_t ProRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
@@ -410,16 +431,17 @@ bool ProRendererStreamImpl::GetAudioTime(uint64_t &framePos, int64_t &sec, int64
     return true;
 }
 
-int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer)
+int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &index)
 {
     int32_t result = SUCCESS;
     if (isBlock_) {
         return ERR_WRITE_BUFFER;
     }
     if (!readQueue_.empty()) {
-        PopSinkBuffer(audioBuffer);
+        PopSinkBuffer(audioBuffer, index);
         return result;
     }
+
     std::shared_ptr<IWriteCallback> writeCallback = writeCallback_.lock();
     if (writeCallback != nullptr) {
         result = writeCallback->OnWriteData(sinkBuffer_[0].size());
@@ -427,12 +449,25 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer)
             AUDIO_ERR_LOG("Write callback failed,result:%{public}d", result);
             return result;
         }
-        PopSinkBuffer(audioBuffer);
+        PopSinkBuffer(audioBuffer, index);
     } else {
         AUDIO_ERR_LOG("Write callback is nullptr");
         result = ERR_WRITE_BUFFER;
     }
     return result;
+}
+
+int32_t ProRendererStreamImpl::ReturnIndex(int32_t index)
+{
+    if (isBlock_) {
+        return SUCCESS;
+    }
+    if (index < 0) {
+        return SUCCESS;
+    }
+    std::lock_guard lock(enqueueMutex);
+    writeQueue_.emplace(index);
+    return SUCCESS;
 }
 
 int32_t ProRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
@@ -442,6 +477,7 @@ int32_t ProRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
 
 int32_t ProRendererStreamImpl::PopWriteBufferIndex()
 {
+    std::lock_guard lock(enqueueMutex);
     int32_t writeIndex = -1;
     if (!writeQueue_.empty()) {
         writeIndex = writeQueue_.front();
@@ -450,15 +486,16 @@ int32_t ProRendererStreamImpl::PopWriteBufferIndex()
     return writeIndex;
 }
 
-void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer)
+void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index)
 {
+    std::lock_guard lock(enqueueMutex);
     if (!readQueue_.empty()) {
-        int32_t readIndex = readQueue_.front();
+        index = readQueue_.front();
         readQueue_.pop();
-        *audioBuffer = sinkBuffer_[readIndex];
-        writeQueue_.emplace(readIndex);
-    } else {
-        audioBuffer = nullptr;
+        *audioBuffer = sinkBuffer_[index];
+    }
+    if (readQueue_.empty() && isDrain_) {
+        drainSync_.notify_all();
     }
 }
 
@@ -483,6 +520,14 @@ uint32_t ProRendererStreamImpl::GetSamplePerFrame(AudioSampleFormat format) cons
         break;
     }
     return audioPerSampleLength;
+}
+
+void ProRendererStreamImpl::SetOffloadDisable()
+{
+    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
+    if (statusCallback != nullptr) {
+        statusCallback->OnStatusUpdate(OPERATION_UNSET_OFFLOAD_ENABLE);
+    }
 }
 
 void ProRendererStreamImpl::ConvertSrcToFloat(uint8_t *buffer, size_t bufLength)
@@ -554,26 +599,6 @@ float ProRendererStreamImpl::GetStreamVolume()
         volume = vol.isMute ? 0 : vol.volumeFloat;
     }
     return volume;
-}
-
-// void ProRendererStreamImpl::CopyWithVolume(uint8_t *buffer, float volume) const
-// {
-//     if (volume >= 1.f) {
-//         return;
-//     }
-//     if (streamInfo.format == AudioSampleFormat::SAMPLE_F32LE) {
-//         float *tempBuffer = reinterpret_cast<float *>(buffer);
-//         for (uint32_t i = 0; i < resampleSrcBuffer.size(); i++) {
-//             resampleSrcBuffer[i] = volume * tempBuffer[i];
-//         }
-//         return;
-//     }
-// }
-
-int32_t ProRendererStreamImpl::TriggerStartIfNecessary(bool isBlock)
-{
-    isBlock_ = isBlock;
-    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

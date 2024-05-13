@@ -34,5 +34,30 @@ void AudioPlaybackEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> 
         streams_.erase(it);
     }
 }
+
+int32_t AudioPlaybackEngine::Start()
+{
+    return SUCCESS;
+}
+
+int32_t AudioPlaybackEngine::Stop()
+{
+    return SUCCESS;
+}
+
+int32_t AudioPlaybackEngine::Pause()
+{
+    return SUCCESS;
+}
+
+int32_t AudioPlaybackEngine::Flush()
+{
+    return SUCCESS;
+}
+
+bool AudioPlaybackEngine::IsPlaybackEngineRunning() const noexcept
+{
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

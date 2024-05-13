@@ -24,13 +24,14 @@ public:
     NoneMixEngine(DeviceInfo type, bool isVoip);
     ~NoneMixEngine() override;
 
-    void Start() override;
-    void Stop() override;
-    void Pause() override;
-    void Flush() override;
+    int32_t Start() override;
+    int32_t Stop() override;
+    int32_t Pause() override;
+    int32_t Flush() override;
 
     int32_t AddRenderer(const std::shared_ptr<IRendererStream> &stream) override;
     void RemoveRenderer(const std::shared_ptr<IRendererStream> &stream) override;
+    bool IsPlaybackEngineRunning() const noexcept override;
 
 protected:
     void MixStreams() override;

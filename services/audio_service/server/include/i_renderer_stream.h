@@ -56,9 +56,9 @@ public:
     virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) = 0;
     virtual int32_t UpdateMaxLength(uint32_t maxLength) = 0;
 
-    virtual int32_t Peek(std::vector<char> *audioBuffer) = 0;
+    virtual int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) = 0;
+    virtual int32_t ReturnIndex(int32_t index) = 0;
     virtual AudioProcessConfig GetAudioProcessConfig() const noexcept = 0;
-    virtual int32_t TriggerStartIfNecessary(bool isBlock) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

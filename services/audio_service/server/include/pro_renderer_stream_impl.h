@@ -17,6 +17,7 @@
 #include <atomic>
 #include <queue>
 #include <mutex>
+#include <condition_variable>
 #include "i_renderer_stream.h"
 #include "audio_resample.h"
 #include "linear_pos_time_model.h"
@@ -77,8 +78,8 @@ public:
     int32_t UpdateMaxLength(uint32_t maxLength) override;
 
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
-    int32_t Peek(std::vector<char> *audioBuffer) override;
-    int32_t TriggerStartIfNecessary(bool isBlock) override;
+    int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override;
+    int32_t ReturnIndex(int32_t index) override;
 
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
@@ -87,14 +88,15 @@ private:
     void ConvertSrcToFloat(uint8_t *buffer, size_t bufLength);
     void ConvertFloatToDes(int32_t writeIndex);
     float GetStreamVolume();
-    void PopSinkBuffer(std::vector<char> *audioBuffer);
+    void PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index);
     int32_t PopWriteBufferIndex();
+    void SetOffloadDisable();
 
 private:
     bool isDirect_;
     bool isNeedResample_;
-    bool isNeedReFormat_;
     bool isBlock_;
+    bool isDrain_;
     int32_t privacyType_;
     int32_t renderRate_;
     uint32_t streamIndex_; // invalid index
@@ -119,6 +121,8 @@ private:
     AudioProcessConfig processConfig_;
 
     std::mutex enqueueMutex;
+    std::mutex peekMutex;
+    std::condition_variable drainSync_;
     FILE *dumpFile_;
 };
 } // namespace AudioStandard

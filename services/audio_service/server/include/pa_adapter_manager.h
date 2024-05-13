@@ -66,7 +66,7 @@ public:
     int32_t StopRender(uint32_t streamIndex) override;
     int32_t PauseRender(uint32_t streamIndex) override;
     int32_t GetStreamCount() const noexcept override;
-    int32_t TriggerStartIfNecessary(uint32_t streamIndex, bool isBlock) override;
+    int32_t TriggerStartIfNecessary() override;
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex_) override;
     uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);

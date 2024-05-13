@@ -49,14 +49,19 @@ NoneMixEngine::~NoneMixEngine()
     writeCount_ = 0;
     failedCount_ = 0;
     fwkSyncTime_ = 0;
-    playbackThread_->Stop();
-    playbackThread_ = nullptr;
-    renderSink_->Stop();
-    renderSink_->DeInit();
+    if (playbackThread_) {
+        playbackThread_->Stop();
+        playbackThread_ = nullptr;
+    }
+    if (renderSink_ && renderSink_->IsInited()) {
+        renderSink_->Stop();
+        renderSink_->DeInit();
+    }
 }
 
-void NoneMixEngine::Start()
+int32_t NoneMixEngine::Start()
 {
+    int32_t ret = SUCCESS;
     AUDIO_INFO_LOG("Enter NoneMixEngine::Start");
     fwkSyncTime_ = ClockTime::GetCurNano();
     writeCount_ = 0;
@@ -66,46 +71,64 @@ void NoneMixEngine::Start()
         playbackThread_->RegisterJob([this] { this->MixStreams(); });
     }
     if (isPause_) {
-        renderSink_->Resume();
+        ret = renderSink_->Resume();
         isPause_ = false;
     } else if (!isStart_) {
-        renderSink_->Start();
+        ret = renderSink_->Start();
         isStart_ = true;
         playbackThread_->Start();
     }
+    return ret;
 }
 
-void NoneMixEngine::Stop()
+int32_t NoneMixEngine::Stop()
 {
     AUDIO_INFO_LOG("Enter NoneMixEngine::Stop");
+    int32_t ret = SUCCESS;
     writeCount_ = 0;
     failedCount_ = 0;
-    playbackThread_->Stop();
-    playbackThread_ = nullptr;
-    renderSink_->Stop();
+    if (playbackThread_) {
+        playbackThread_->Stop();
+        playbackThread_ = nullptr;
+    }
+    if (renderSink_ && renderSink_->IsInited()) {
+        ret = renderSink_->Stop();
+    }
     isStart_ = false;
+    return ret;
 }
 
 void NoneMixEngine::PauseAsync()
 {
-    playbackThread_->PauseAsync();
-    renderSink_->Pause();
+    if (playbackThread_) {
+        playbackThread_->PauseAsync();
+    }
+    if (renderSink_ && renderSink_->IsInited()) {
+        renderSink_->Pause();
+    }
     isPause_ = true;
 }
 
-void NoneMixEngine::Pause()
+int32_t NoneMixEngine::Pause()
 {
     AUDIO_INFO_LOG("Enter NoneMixEngine::Pause");
+    int32_t ret = SUCCESS;
     writeCount_ = 0;
     failedCount_ = 0;
-    playbackThread_->Pause();
-    renderSink_->Pause();
+    if (playbackThread_) {
+        playbackThread_->Pause();
+    }
+    if (renderSink_ && renderSink_->IsInited()) {
+        ret = renderSink_->Pause();
+    }
     isPause_ = true;
+    return ret;
 }
 
-void NoneMixEngine::Flush()
+int32_t NoneMixEngine::Flush()
 {
     AUDIO_INFO_LOG("Enter NoneMixEngine::Flush");
+    return SUCCESS;
 }
 
 void NoneMixEngine::MixStreams()
@@ -120,10 +143,12 @@ void NoneMixEngine::MixStreams()
         return;
     }
     std::vector<char> audioBuffer;
-    int32_t result = stream_->Peek(&audioBuffer);
+    int32_t index = -1;
+    int32_t result = stream_->Peek(&audioBuffer, index);
     writeCount_++;
-    if (result != SUCCESS || audioBuffer.size() == 0) {
-        AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}zu", result, audioBuffer.size());
+    if (index < 0) {
+        AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
+        stream_->ReturnIndex(index);
         failedCount_++;
         StandbySleep();
         return;
@@ -131,6 +156,7 @@ void NoneMixEngine::MixStreams()
     failedCount_ = 0;
     uint64_t written = 0;
     renderSink_->RenderFrame(*audioBuffer.data(), audioBuffer.size(), written);
+    stream_->ReturnIndex(index);
     StandbySleep();
 }
 
@@ -157,6 +183,11 @@ void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &strea
         renderSink_->DeInit();
         stream_ = nullptr;
     }
+}
+
+bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
+{
+    return (isStart_ && !isPause_);
 }
 
 void NoneMixEngine::StandbySleep()

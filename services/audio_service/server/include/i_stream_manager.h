@@ -42,7 +42,7 @@ public:
     virtual int32_t StartRender(uint32_t streamIndex) = 0;
     virtual int32_t StopRender(uint32_t streamIndex) = 0;
     virtual int32_t PauseRender(uint32_t streamIndex) = 0;
-    virtual int32_t TriggerStartIfNecessary(uint32_t streamIndex, bool isBlock) = 0;
+    virtual int32_t TriggerStartIfNecessary() = 0;
     virtual int32_t GetStreamCount() const noexcept = 0;
     virtual int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) = 0;
     virtual int32_t ReleaseCapturer(uint32_t streamIndex_) = 0;
