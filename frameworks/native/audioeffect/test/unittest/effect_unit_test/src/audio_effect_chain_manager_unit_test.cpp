@@ -733,7 +733,8 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_005, TestSize.Level1)
     string effectMode = "123";
     bool enabled = true;
 
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_MAP, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType, effectMode, enabled);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();

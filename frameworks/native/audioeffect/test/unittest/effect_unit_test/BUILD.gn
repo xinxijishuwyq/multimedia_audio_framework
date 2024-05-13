@@ -16,9 +16,6 @@ import("../../../../../../config.gni")
 
 module_output_path = "multimedia_audio_framework/audio_effect_chain_manager"
 
-pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 ohos_unittest("audio_effect_chain_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -37,8 +34,6 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
   deps = [
     "../../../../audioeffect:audio_effect",
     "../../../../audioutils:audio_utils",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
   ]
 
   external_deps = [
@@ -48,6 +43,8 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "pulseaudio:pulse",
+    "googletest:gmock",
+    "googletest:gtest",
   ]
 
   part_name = "audio_framework"
