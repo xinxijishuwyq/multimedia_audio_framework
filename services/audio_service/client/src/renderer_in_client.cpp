@@ -1669,7 +1669,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
     }
 }
 
-void ReportDataToResSched()
+void RendererInClientInner::ReportDataToResSched()
 {
     #ifdef RESSCHE_ENABLE
     std::unordered_map<std::string, std::string> payload;
