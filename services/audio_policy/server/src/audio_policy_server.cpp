@@ -76,6 +76,7 @@ constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
+constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -1883,6 +1884,8 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
 
 int32_t AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName(std::string bundle_name, int user_id)
 {
+    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
+        GET_BUNDLE_TIME_OUT_SECONDS);
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
         return ERR_INVALID_PARAM;
@@ -2484,6 +2487,8 @@ int32_t AudioPolicyServer::DisableSafeMediaVolume()
 
 AppExecFwk::BundleInfo AudioPolicyServer::GetBundleInfoFromUid()
 {
+    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
+        GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();

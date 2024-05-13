@@ -78,6 +78,8 @@ static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID
 };
 
+static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+
 std::map<std::string, AsrAecMode> aecModeMap = {
     {"BYPASS", AsrAecMode::BYPASS},
     {"STANDARD", AsrAecMode::STANDARD}
@@ -935,6 +937,8 @@ int32_t AudioServer::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
 
 int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
 {
+    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
+        GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
