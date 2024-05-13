@@ -29,6 +29,7 @@
 #include "audio_log.h"
 #include "audio_volume_parser.h"
 #include "audio_utils.h"
+#include "audio_policy_server_handler.h"
 
 using namespace std;
 
@@ -172,6 +173,14 @@ void AudioAdapterManager::InitKVStoreInternal()
     bool isFirstBoot = false;
     volumeDataMaintainer_.RegisterCloned();
     InitAudioPolicyKvStore(isFirstBoot);
+    auto handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendKvDataUpdate(isFirstBoot);
+    }
+}
+
+void AudioAdapterManager::HandleKvData(bool isFirstBoot)
+{
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
