@@ -30,6 +30,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t MAX_DELAY_TIME = 4 * 1000;
 
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
@@ -64,6 +65,7 @@ public:
         HEAD_TRACKING_DEVICE_CHANGE,
         SPATIALIZATION_ENABLED_CHANGE,
         HEAD_TRACKING_ENABLED_CHANGE,
+        DATABASE_UPDATE,
     };
     /* event data */
     class EventContextObj {
@@ -152,6 +154,7 @@ public:
     int32_t RemoveAudioDeviceRefinerCb();
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
+    bool SendKvDataUpdate(const bool &isFirstBoot);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -181,6 +184,7 @@ private:
     void HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
