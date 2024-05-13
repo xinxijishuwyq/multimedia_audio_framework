@@ -40,11 +40,11 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     "c_utils:utils",
     "drivers_interface_audio:effect_idl_headers",
     "drivers_interface_audio:libeffect_proxy_1.0",
+    "googletest:gmock",    
+    "googletest:gtest",
     "hilog:libhilog",
     "ipc:ipc_single",
     "pulseaudio:pulse",
-    "googletest:gmock",
-    "googletest:gtest",
   ]
 
   part_name = "audio_framework"
