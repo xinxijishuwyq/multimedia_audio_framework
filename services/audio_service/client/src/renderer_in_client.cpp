@@ -95,7 +95,6 @@ constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
 constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
 static const int32_t MEDIA_SERVICE_UID = 1013;
-static const int32_t CAST_ENGINE_SERVICE_UID = 5526;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -1675,7 +1674,7 @@ void ReportDataToResSched()
     #ifdef RESSCHE_ENABLE
     std::unordered_map<std::string, std::string> payload;
     int32_t uid;
-    if (clientUid_ == MEDIA_SERVICE_UID || clientUid_ == CAST_ENGINE_SERVICE_UID) {
+    if (clientUid_ == MEDIA_SERVICE_UID) {
         uid = appUid_;
     } else {
         uid = clientUid_;
