@@ -134,7 +134,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
         if (!spkOffloadEnabled_) {
             effectHdiInput_[0] = HDI_INIT;
             ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
-            if (ret != 0) {
+            if (ret != SUCCESS) {
                 AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
                 spkOffloadEnabled_ = false;
             } else {
@@ -146,7 +146,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
         if (spkOffloadEnabled_) {
             effectHdiInput_[0] = HDI_DESTROY;
             ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
-            if (ret != 0) {
+            if (ret != SUCCESS) {
                 AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
             }
             spkOffloadEnabled_ = false;
@@ -241,12 +241,12 @@ void AudioEffectChainManager::InitHdiState()
     effectHdiInput_[1] = 1;
     AUDIO_INFO_LOG("set hdi bluetooth mode: %{public}d", effectHdiInput_[1]);
     int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi bluetooth mode failed");
     }
     effectHdiInput_[0] = HDI_INIT;
     ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
         spkOffloadEnabled_ = false;
     } else {
@@ -733,8 +733,8 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
             if (spatializationEnabled_) {
                 effectHdiInput_[0] = HDI_INIT;
                 int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-                if (ret != 0) {
-                    AUDIO_WARNING_LOG("set hdi init failed, backup spatialization entered");
+                if (ret != SUCCESS) {
+                    AUDIO_ERR_LOG("set hdi init failed, enter route of escape in ARM");
                     btOffloadEnabled_ = false;
                 } else {
                     AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
@@ -745,8 +745,8 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 effectHdiInput_[0] = HDI_DESTROY;
                 AUDIO_INFO_LOG("set hdi destroy.");
                 int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-                if (ret != 0) {
-                    AUDIO_WARNING_LOG("set hdi destroy failed");
+                if (ret != SUCCESS) {
+                    AUDIO_ERR_LOG("set hdi destroy failed");
                 }
                 btOffloadEnabled_ = false;
                 if (!spkOffloadEnabled_) {
@@ -754,7 +754,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
                 }
             }
         } else {
-            AUDIO_INFO_LOG("Not a2dp-offload, and render in ARM");
+            AUDIO_INFO_LOG("Not a2dp-offload, spatialization enabled and rendered in ARM");
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
@@ -873,7 +873,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
     effectHdiInput_[1] = enabled == true ? 0 : 1;
     AUDIO_INFO_LOG("set hdi bypass: %{public}d", effectHdiInput_[1]);
     int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi bypass failed");
         return ret;
     }
@@ -891,7 +891,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const std::string &sceneType, const
     AUDIO_INFO_LOG("set hdi room mode sceneType: %{public}d, effectMode: %{public}d", effectHdiInput_[1],
         effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO]);
     ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
         return ret;
     }
@@ -904,7 +904,7 @@ void AudioEffectChainManager::UpdateSensorState()
     effectHdiInput_[1] = headTrackingEnabled_ == true ? 1 : 0;
     AUDIO_INFO_LOG("set hdi head mode: %{public}d", effectHdiInput_[1]);
     int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi head mode failed");
     }
 
@@ -918,11 +918,11 @@ void AudioEffectChainManager::UpdateSensorState()
             ret = headTracker_->SensorSetConfig(ARM_SPATIALIZER_ENGINE);
         }
 
-        if (ret != 0) {
+        if (ret != SUCCESS) {
             AUDIO_ERR_LOG("SensorSetConfig error!");
         }
 
-        if (headTracker_->SensorActive() != 0) {
+        if (headTracker_->SensorActive() != SUCCESS) {
             AUDIO_ERR_LOG("SensorActive failed");
         }
 #endif
@@ -934,7 +934,7 @@ void AudioEffectChainManager::UpdateSensorState()
     }
 
 #ifdef SENSOR_ENABLE
-    if (headTracker_->SensorDeactive() != 0) {
+    if (headTracker_->SensorDeactive() != SUCCESS) {
         AUDIO_ERR_LOG("SensorDeactive failed");
     }
     headTracker_->SensorUnsubscribe();
@@ -1040,7 +1040,7 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     AudioEffectScene sceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(hdiSceneType_));
     effectHdiInput_[1] = static_cast<int32_t>(sceneType);
     effectHdiInput_[HDI_ROOM_MODE_INDEX_TWO] = hdiEffectMode_;
-    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != 0) {
+    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
     }
     AUDIO_DEBUG_LOG("set spatialization scene type to hdi: %{public}d", effectHdiInput_[1]);
@@ -1074,7 +1074,7 @@ void AudioEffectChainManager::UpdateEffectChainParams(AudioEffectScene sceneType
             continue;
         }
 
-        if (audioEffectChain->SetEffectParam(sceneType) != 0) {
+        if (audioEffectChain->SetEffectParam(sceneType) != SUCCESS) {
             AUDIO_WARNING_LOG("set param to effect chain failed");
             continue;
         }
