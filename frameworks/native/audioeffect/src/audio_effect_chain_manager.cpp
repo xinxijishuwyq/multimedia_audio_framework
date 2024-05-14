@@ -728,29 +728,33 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (spatializationEnabled_ != spatializationState.spatializationEnabled) {
         spatializationEnabled_ = spatializationState.spatializationEnabled;
-        memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
-        if (spatializationEnabled_) {
-            effectHdiInput_[0] = HDI_INIT;
-            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-            if (ret != 0) {
-                AUDIO_WARNING_LOG("set hdi init failed, backup spatialization entered");
-                btOffloadEnabled_ = false;
+        if (CheckA2dpOffload()) {
+            memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
+            if (spatializationEnabled_) {
+                effectHdiInput_[0] = HDI_INIT;
+                int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+                if (ret != 0) {
+                    AUDIO_WARNING_LOG("set hdi init failed, backup spatialization entered");
+                    btOffloadEnabled_ = false;
+                } else {
+                    AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
+                    btOffloadEnabled_ = true;
+                    DeleteAllChains();
+                }
             } else {
-                AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
-                btOffloadEnabled_ = true;
-                DeleteAllChains();
+                effectHdiInput_[0] = HDI_DESTROY;
+                AUDIO_INFO_LOG("set hdi destroy.");
+                int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+                if (ret != 0) {
+                    AUDIO_WARNING_LOG("set hdi destroy failed");
+                }
+                btOffloadEnabled_ = false;
+                if (!spkOffloadEnabled_) {
+                    RecoverAllChains();
+                }
             }
         } else {
-            effectHdiInput_[0] = HDI_DESTROY;
-            AUDIO_INFO_LOG("set hdi destroy.");
-            int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-            if (ret != 0) {
-                AUDIO_WARNING_LOG("set hdi destroy failed");
-            }
-            btOffloadEnabled_ = false;
-            if (!spkOffloadEnabled_) {
-                RecoverAllChains();
-            }
+            AUDIO_INFO_LOG("Not a2dp-offload, and render in ARM");
         }
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
@@ -1133,5 +1137,13 @@ void AudioEffectChainManager::AudioRotationListener::OnChange(Rosen::DisplayId d
     audioEffectChainManager->EffectRotationUpdate(static_cast<uint32_t>(newRotationState));
 }
 #endif
+
+bool AudioEffectChainManager::CheckA2dpOffload()
+{
+    if ((GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP") && (GetDeviceSinkName() == "Speaker")) {
+        return true;
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
