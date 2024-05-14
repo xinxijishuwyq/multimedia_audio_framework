@@ -17,6 +17,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr float AUDIO_SAMPLE_32BIT_VALUE = 2147483647.f;
+constexpr int32_t BYTES_ALIGNMENT_SIZE = 8;
 
 void AudioCommonConverter::ConvertBufferTo32Bit(const uint8_t *buffer, int32_t format, int32_t *dst, size_t count,
                                                 float volume)
@@ -116,17 +117,18 @@ void AudioCommonConverter::ConvertBufferTo16Bit(const uint8_t *buffer, int32_t f
 void AudioCommonConverter::ConvertBufferToFloat(const uint8_t *buffer, uint32_t samplePerFrame,
                                                 std::vector<float> &floatBuffer, float volume)
 {
-    uint32_t convertValue = samplePerFrame * 8 - 1;
+    uint32_t convertValue = samplePerFrame * BYTES_ALIGNMENT_SIZE - 1;
     for (uint32_t i = 0; i < floatBuffer.size(); i++) {
         int32_t sampleValue = 0;
         if (samplePerFrame == 3) {
             sampleValue = (buffer[i * samplePerFrame + 2] & 0xff) << 24 |
-                          (buffer[i * samplePerFrame + 1] & 0xff) << 16 | (buffer[i * samplePerFrame] & 0xff) << 8;
+                          (buffer[i * samplePerFrame + 1] & 0xff) << 16 |
+                          (buffer[i * samplePerFrame] & 0xff) << BYTES_ALIGNMENT_SIZE;
             floatBuffer[i] = sampleValue * volume * (1.0f / AUDIO_SAMPLE_32BIT_VALUE);
             continue;
         }
         for (uint32_t j = 0; j < samplePerFrame; j++) {
-            sampleValue |= (buffer[i * samplePerFrame + j] & 0xff) << (j * 8);
+            sampleValue |= (buffer[i * samplePerFrame + j] & 0xff) << (j * BYTES_ALIGNMENT_SIZE);
         }
         floatBuffer[i] = sampleValue * volume * (1.0f / (1U << convertValue));
     }
@@ -135,11 +137,11 @@ void AudioCommonConverter::ConvertBufferToFloat(const uint8_t *buffer, uint32_t 
 void AudioCommonConverter::ConvertFloatToAudioBuffer(const std::vector<float> &floatBuffer, uint8_t *buffer,
                                                      uint32_t samplePerFrame)
 {
-    uint32_t convertValue = samplePerFrame * 8 - 1;
+    uint32_t convertValue = samplePerFrame * BYTES_ALIGNMENT_SIZE - 1;
     for (uint32_t i = 0; i < floatBuffer.size(); i++) {
         int32_t sampleValue = static_cast<int32_t>(floatBuffer[i] * std::pow(2, convertValue));
         for (uint32_t j = 0; j < samplePerFrame; j++) {
-            uint8_t tempValue = (sampleValue >> (8 * j)) & 0xff;
+            uint8_t tempValue = (sampleValue >> (BYTES_ALIGNMENT_SIZE * j)) & 0xff;
             buffer[samplePerFrame * i + j] = tempValue;
         }
     }

@@ -26,8 +26,11 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
+constexpr int32_t SECOND_TO_MILLISECOND = 1000;
+constexpr int32_t DEFAULT_BUFFER_MILLISECOND = 20;
+constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
 constexpr uint32_t DOUBLE_VALUE = 2;
-constexpr float AUDIO_SAMPLE_32BIT_VALUE = 2147483647.f;
+constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 4;
 const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
 
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
@@ -94,7 +97,7 @@ int32_t ProRendererStreamImpl::InitParams()
     if (!isDirect_) {
         desFormat_ = AudioSampleFormat::SAMPLE_S16LE;
     }
-    spanSizeInFrame_ = (streamInfo.samplingRate * 20) / 1000;
+    spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     int32_t frameSize = spanSizeInFrame_ * streamInfo.channels;
@@ -105,10 +108,10 @@ int32_t ProRendererStreamImpl::InitParams()
         resampleDesBuffer.resize((frameSize * desSamplingRate_) / streamInfo.samplingRate, 0.f);
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
     }
-    uint32_t desSpanSize = (desSamplingRate_ * 20) / 1000;
+    uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     uint32_t bufferSize = GetSamplePerFrame(desFormat_) * desSpanSize * streamInfo.channels;
-    sinkBuffer_.resize(4, std::vector<char>(bufferSize, 0));
-    for (int32_t i = 0; i < 4; i++) {
+    sinkBuffer_.resize(DEFAULT_TOTAL_SPAN_COUNT, std::vector<char>(bufferSize, 0));
+    for (int32_t i = 0; i < DEFAULT_TOTAL_SPAN_COUNT; i++) {
         writeQueue_.emplace(i);
     }
     SetOffloadDisable();
@@ -424,7 +427,7 @@ bool ProRendererStreamImpl::GetAudioTime(uint64_t &framePos, int64_t &sec, int64
 {
     GetStreamFramesWritten(framePos);
     int64_t time = handleTimeModel_.GetTimeOfPos(framePos);
-    int64_t deltaTime = 20000000; // note: 20ms
+    int64_t deltaTime = DEFAULT_BUFFER_MICROSECOND; // note: 20ms
     time += deltaTime;
     sec = time / AUDIO_NS_PER_S;
     nanoSec = time % AUDIO_NS_PER_S;
@@ -546,22 +549,10 @@ void ProRendererStreamImpl::ConvertSrcToFloat(uint8_t *buffer, size_t bufLength)
         }
         return;
     }
+
     AUDIO_INFO_LOG("ConvertSrcToFloat resample buffer,samplePerFrame:%{public}d,size:%{public}zu", samplePerFrame,
                    resampleSrcBuffer.size());
-    uint32_t convertValue = samplePerFrame * 8 - 1;
-    for (uint32_t i = 0; i < resampleSrcBuffer.size(); i++) {
-        int32_t sampleValue = 0;
-        if (samplePerFrame == 3) {
-            sampleValue = (buffer[i * samplePerFrame + 2] & 0xff) << 24 |
-                          (buffer[i * samplePerFrame + 1] & 0xff) << 16 | (buffer[i * samplePerFrame] & 0xff) << 8;
-            resampleSrcBuffer[i] = sampleValue * volume * (1.0f / AUDIO_SAMPLE_32BIT_VALUE);
-            continue;
-        }
-        for (uint32_t j = 0; j < samplePerFrame; j++) {
-            sampleValue |= (buffer[i * samplePerFrame + j] & 0xff) << (j * 8);
-        }
-        resampleSrcBuffer[i] = sampleValue * volume * (1.0f / (1U << convertValue));
-    }
+    AudioCommonConverter::ConvertBufferToFloat(buffer, samplePerFrame, resampleSrcBuffer, volume);
 }
 
 void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
@@ -572,14 +563,8 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
                  resampleSrcBuffer.size() * samplePerFrame);
         return;
     }
-    uint32_t convertValue = samplePerFrame * 8 - 1;
-    for (uint32_t i = 0; i < resampleDesBuffer.size(); i++) {
-        int32_t sampleValue = static_cast<int32_t>(resampleDesBuffer[i] * std::pow(2, convertValue));
-        for (uint32_t j = 0; j < samplePerFrame; j++) {
-            uint8_t tempValue = (sampleValue >> (8 * j)) & 0xff;
-            sinkBuffer_[writeIndex][samplePerFrame * i + j] = tempValue;
-        }
-    }
+    AudioCommonConverter::ConvertFloatToAudioBuffer(resampleDesBuffer, (uint8_t *)sinkBuffer_[writeIndex].data(),
+                                                    samplePerFrame);
 }
 
 float ProRendererStreamImpl::GetStreamVolume()

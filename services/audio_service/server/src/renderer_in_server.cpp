@@ -116,7 +116,7 @@ int32_t RendererInServer::Init()
 {
     if ((processConfig_.deviceType == DEVICE_TYPE_WIRED_HEADSET ||
          processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
-        processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= 48000 &&
+        processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= SAMPLE_RATE_48000 &&
         processConfig_.streamInfo.format >= SAMPLE_S24LE) {
         if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
             managerType_ = DIRECT_PLAYBACK;

@@ -26,6 +26,9 @@ namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000;          // 20ms
 constexpr int32_t PERIOD_NANO_SECOND = 20000000; // 20ms
 constexpr int32_t MAX_ERROR_COUNT = 5;
+constexpr int16_t STEREO_CHANNEL_COUNT = 2;
+constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
+constexpr int16_t HDI_MONO_CHANNEL_LAYOUT = 4;
 const std::string THREAD_NAME = "noneMixThread";
 const std::string VOIP_SINK_NAME = "voip";
 const std::string DIRECT_SINK_NAME = "direct";
@@ -61,8 +64,8 @@ NoneMixEngine::~NoneMixEngine()
 
 int32_t NoneMixEngine::Start()
 {
-    int32_t ret = SUCCESS;
     AUDIO_INFO_LOG("Enter NoneMixEngine::Start");
+    int32_t ret = SUCCESS;
     fwkSyncTime_ = ClockTime::GetCurNano();
     writeCount_ = 0;
     failedCount_ = 0;
@@ -76,6 +79,9 @@ int32_t NoneMixEngine::Start()
     } else if (!isStart_) {
         ret = renderSink_->Start();
         isStart_ = true;
+    }
+
+    if (playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->Start();
     }
     return ret;
@@ -241,9 +247,10 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
     attr.sampleRate = GetDirectSampleRate(streamInfo.samplingRate);
-    attr.channel = streamInfo.channels >= 2 ? 2 : 1; // 2 two channel
+    attr.channel = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     attr.format = GetDirectDeviceFormate(streamInfo.format);
-    attr.channelLayout = streamInfo.channels >= 2 ? 3 : 4;
+    attr.channelLayout =
+        streamInfo.channels >= STEREO_CHANNEL_COUNT ? HDI_STEREO_CHANNEL_LAYOUT : HDI_MONO_CHANNEL_LAYOUT;
     attr.deviceType = device_.deviceType;
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;

@@ -60,21 +60,25 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
 int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Start renderer enter");
-    std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
+    std::shared_ptr<IRendererStream> currentRender;
+    {
+        std::lock_guard<std::mutex> lock(streamMapMutex_);
+        auto it = rendererStreamMap_.find(streamIndex);
+        if (it == rendererStreamMap_.end()) {
+            AUDIO_WARNING_LOG("No matching stream");
+            return SUCCESS;
+        }
     }
+    currentRender = rendererStreamMap_[streamIndex];
     DeviceInfo deviceInfo;
-    AudioProcessConfig config = rendererStreamMap_[streamIndex]->GetAudioProcessConfig();
+    AudioProcessConfig config = currentRender->GetAudioProcessConfig();
     bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
-    int32_t result = rendererStreamMap_[streamIndex]->Start();
+    int32_t result = currentRender->Start();
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to start rendererStream");
     if (!playbackEngine_) {
         playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, managerType_ == VOIP_PLAYBACK);
-        playbackEngine_->AddRenderer(rendererStreamMap_[streamIndex]);
+        playbackEngine_->AddRenderer(currentRender);
     }
     playbackEngine_->Start();
     return SUCCESS;
