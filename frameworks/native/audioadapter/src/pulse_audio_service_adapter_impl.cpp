@@ -853,8 +853,8 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
     CHECK_AND_RETURN_LOG(i->proplist != nullptr,
         "Invalid Proplist for sink input (%{public}d).", i->index);
 
-    std::string streamMode = pa_proplist_gets(i->proplist, "stream.mode");
-    if (streamMode == DUP_STREAM) {
+    const char *streamMode = pa_proplist_gets(i->proplist, "stream.mode");
+    if (streamMode != nullptr && streamMode == DUP_STREAM) {
         AUDIO_INFO_LOG("Dup stream dismissed:%{public}u", i->index);
         return;
     }
