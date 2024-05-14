@@ -702,18 +702,16 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
     return true;
 }
 
-bool AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
+void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
 {
     Trace trace("AudioServer::SetOutputDeviceSink:" + std::to_string(deviceType) + " sink:" + sinkName);
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
-        return false;
+        return;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName) != SUCCESS) {
-        return false;
-    }
-    return true;
+    audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName);
+    return;
 }
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)

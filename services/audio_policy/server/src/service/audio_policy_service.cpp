@@ -3653,9 +3653,8 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
             CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
             std::string sinkName = GetSinkPortName(deviceType);
             std::string identity = IPCSkeleton::ResetCallingIdentity();
-            bool ret = gsp->SetOutputDeviceSink(deviceType, sinkName);
+            gsp->SetOutputDeviceSink(deviceType, sinkName);
             IPCSkeleton::SetCallingIdentity(identity);
-            CHECK_AND_RETURN_LOG(ret, "Failed to set output device sink");
             int res = audioPolicyManager_.UpdateSwapDeviceStatus();
             CHECK_AND_RETURN_LOG(res == SUCCESS, "Failed to update client swap device status");
             break;

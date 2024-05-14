@@ -103,7 +103,7 @@ public:
     bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
         const std::string &spatializationEnabled);
     int32_t ApplyAudioEffectChain(const std::string &sceneType, const std::unique_ptr<EffectBufferAttr> &bufferAttr);
-    int32_t SetOutputDeviceSink(int32_t device, const std::string &sinkName);
+    void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     std::string GetDeviceTypeName();
     std::string GetDeviceSinkName();
     bool GetOffloadEnabled();
@@ -123,6 +123,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     bool GetCurSpatializationEnabled();
     void ResetEffectBuffer();
+    void ResetInfo();  // Use for testing temporarily.
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
