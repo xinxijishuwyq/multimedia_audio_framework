@@ -1548,7 +1548,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
         }
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
-    return audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object);
+    int32_t apiVersion = GetApiTargerVersion();
+    return audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
