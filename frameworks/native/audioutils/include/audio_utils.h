@@ -141,7 +141,7 @@ enum AudioDumpFileType {
     AUDIO_PULSE = 2,
 };
 
-const std::string DUMP_SERVER_PARA = "sys.audio.dump.writehdi.enable";
+const std::string DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
 const std::string DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
 const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";

@@ -198,6 +198,7 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
     libHandle_ = dlopen(absolutePath.c_str(), 1);
     CHECK_AND_RETURN_RET_LOG(libHandle_, false, "<log error> dlopen lib %{public}s Fail", relativePath.c_str());
     AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
+    dlerror(); // clear error, only need to check libHandle_ is not nullptr
 
     AudioEffectLibrary *audioEffectLibHandle =
         static_cast<AudioEffectLibrary *>(dlsym(libHandle_, AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
