@@ -238,6 +238,8 @@ private:
     int32_t RegisterRendererInClientPolicyServerDiedCb();
     int32_t UnregisterRendererInClientPolicyServerDiedCb();
 
+    void ReportDataToResSched();
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;

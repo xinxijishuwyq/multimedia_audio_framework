@@ -37,6 +37,11 @@
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
+#ifdef RESSCHE_ENABLE
+#include "res_type.h"
+#include "res_sched_client.h"
+#endif
+
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_manager_base.h"
@@ -89,6 +94,7 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
 constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
+static const int32_t MEDIA_SERVICE_UID = 1013;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -1656,10 +1662,27 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
             bean->Add("APP_NAME", name);
             bean->Add("APP_VERSION_CODE", versionCode);
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+            ReportDataToResSched();
         }
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
     }
+}
+
+void RendererInClientInner::ReportDataToResSched()
+{
+    #ifdef RESSCHE_ENABLE
+    std::unordered_map<std::string, std::string> payload;
+    int32_t uid;
+    if (clientUid_ == MEDIA_SERVICE_UID) {
+        uid = appUid_;
+    } else {
+        uid = clientUid_;
+    }
+    payload["uid"] = std::to_string(uid);
+    uint32_t type = ResourceSchedule::ResType::RES_TYPE_AUDIO_SILENT_PLAYBACK;
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
+    #endif
 }
 
 int32_t RendererInClientInner::WriteCacheData()
