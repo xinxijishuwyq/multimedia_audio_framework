@@ -16,13 +16,13 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioEffectChainManagerUnitTest"
 
+#include "audio_effect_chain_manager_unit_test.h"
+
 #include <chrono>
 #include <thread>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-
-#include "audio_effect_chain_manager_unit_test.h"
 
 #include "audio_effect.h"
 #include "audio_utils.h"
@@ -38,25 +38,25 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
-    constexpr uint32_t INFOCHANNELS = 2;
-    constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
-    constexpr uint32_t INFOVOLUME = 50;
+constexpr uint32_t INFOCHANNELS = 2;
+constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
+constexpr uint32_t INFOVOLUME = 50;
     
-    vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
+vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 
-    unordered_map<string, string> DEFAULT_MAP = {
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
-        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
-    };
+unordered_map<string, string> DEFAULT_MAP = {
+    {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
+    {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
+};
 
-    vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
-    SessionEffectInfo DEFAULT_INFO = {
-        "EFFECT_DEFAULT",
-        "SCENE_MOVIE",
-        INFOCHANNELS,
-        INFOCHANNELLAYOUT,
-        "0",
-        INFOVOLUME
+vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
+SessionEffectInfo DEFAULT_INFO = {
+    "EFFECT_DEFAULT",
+    "SCENE_MOVIE",
+    INFOCHANNELS,
+    INFOCHANNELLAYOUT,
+    "0",
+    INFOVOLUME
 };
 }
 
