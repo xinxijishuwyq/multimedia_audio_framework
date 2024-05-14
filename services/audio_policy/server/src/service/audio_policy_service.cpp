@@ -4083,13 +4083,15 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfoForRecord(AudioStreamChange
 }
 
 int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-    const sptr<IRemoteObject> &object)
+    const sptr<IRemoteObject> &object, const int32_t apiVersion)
 {
     if (mode == AUDIO_MODE_RECORD) {
         AddAudioCapturerMicrophoneDescriptor(streamChangeInfo.audioCapturerChangeInfo.sessionId, DEVICE_TYPE_NONE);
-        UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo,
-            new AudioDeviceDescriptor(currentActiveInputDevice_), false, false);
-    } else {
+        if (apiVersion < API_11) {
+            UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo,
+                new AudioDeviceDescriptor(currentActiveInputDevice_), false, false);
+        }
+    } else if (apiVersion < API_11) {
         UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo,
             new AudioDeviceDescriptor(currentActiveDevice_), false, false);
     }
