@@ -1408,7 +1408,7 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
     int32_t bitSize = (int32_t) pa_sample_size_of_format(u->format);
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
     void *dst = pa_memblock_acquire_chunk(chunkIn);
-    int32_t frameLen = bitSize > 0 ? (int32_t)((int32_t) length / bitSize) : 0;
+    int32_t frameLen = bitSize > 0 ? ((int32_t) length / bitSize) : 0;
     for (int32_t i = 0; i < frameLen; i++) {
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] > 0.99f ? 0.99f : u->bufferAttr->tempBufOut[i];
         u->bufferAttr->tempBufOut[i] = u->bufferAttr->tempBufOut[i] < -0.99f ? -0.99f : u->bufferAttr->tempBufOut[i];
@@ -1566,7 +1566,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->index = 0;
         chunkIn->length = tmpLength;
         void *src = pa_memblock_acquire_chunk(chunkIn);
-        int32_t frameLen = bitSize > 0 ? (int32_t)(tmpLength / (size_t)bitSize) : 0;
+        int32_t frameLen = bitSize > 0 ? ((int32_t)tmpLength / bitSize) : 0;
 
         ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
