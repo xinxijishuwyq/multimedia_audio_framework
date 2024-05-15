@@ -284,9 +284,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
     }
-    if (!IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout)) {
-        return ERR_NOT_SUPPORTED;
-    }
 
     streamParams_ = curStreamParams_ = info; // keep it for later use
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -297,6 +294,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             return ERR_NOT_SUPPORTED;
         }
         converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
+    }
+
+    if (!IsPlaybackChannelRelatedInfoValid(curStreamParams_.channels, curStreamParams_.channelLayout)) {
+        return ERR_NOT_SUPPORTED;
     }
 
     CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
