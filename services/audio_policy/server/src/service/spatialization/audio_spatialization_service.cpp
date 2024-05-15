@@ -61,8 +61,8 @@ static void UnpackSpatializationState(uint32_t pack, AudioSpatializationState &s
 
 static uint32_t PackSpatializationState(AudioSpatializationState state)
 {
-    return ((unsigned int)state.spatializationEnabled << SPATIALIZATION_OFFSET) |
-        ((unsigned int)state.headTrackingEnabled << HEADTRACKING_OFFSET);
+    return ((uint32_t)state.spatializationEnabled << SPATIALIZATION_OFFSET) |
+        ((uint32_t)state.headTrackingEnabled << HEADTRACKING_OFFSET);
 }
 
 static bool IsAudioSpatialDeviceStateEqual(const AudioSpatialDeviceState &a, const AudioSpatialDeviceState &b)
