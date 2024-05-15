@@ -89,6 +89,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process)
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
+    Trace trace("AudioService::GetIpcStream");
     if (innerCapturerMgr_ == nullptr) {
         innerCapturerMgr_ = PlaybackCapturerManager::GetInstance(); // As mgr is a singleton, lock is needless here.
         innerCapturerMgr_->RegisterCapturerFilterListener(this);

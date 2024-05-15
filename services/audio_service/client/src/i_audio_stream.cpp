@@ -207,6 +207,7 @@ bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParam
 std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
     AudioStreamType eStreamType, int32_t appUid)
 {
+    Trace trace("IAudioStream::GetPlaybackStream");
     if (streamClass == FAST_STREAM) {
         (void)params;
         AUDIO_INFO_LOG("Create fast playback stream");
@@ -223,6 +224,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
 std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamClass, AudioStreamParams params,
     AudioStreamType eStreamType, int32_t appUid)
 {
+    Trace trace("IAudioStream::GetRecordStream");
     if (streamClass == FAST_STREAM) {
         (void)params;
         AUDIO_INFO_LOG("Create fast record stream");

@@ -284,6 +284,7 @@ int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
 
 int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParams)
 {
+    Trace trace("AudioRenderer::InitAudioStream");
     AudioRenderer *renderer = this;
     rendererProxyObj_->SaveRendererObj(renderer);
     audioStream_->SetRendererInfo(rendererInfo_);
@@ -556,11 +557,13 @@ bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Tim
 
 bool AudioRendererPrivate::Drain() const
 {
+    Trace trace("AudioRenderer::Drain");
     return audioStream_->DrainAudioStream();
 }
 
 bool AudioRendererPrivate::Flush() const
 {
+    Trace trace("AudioRenderer::Flush");
     return audioStream_->FlushAudioStream();
 }
 
@@ -658,6 +661,7 @@ bool AudioRendererPrivate::Release() const
 
 int32_t AudioRendererPrivate::GetBufferSize(size_t &bufferSize) const
 {
+    Trace trace("AudioRenderer::GetBufferSize");
     return audioStream_->GetBufferSize(bufferSize);
 }
 
