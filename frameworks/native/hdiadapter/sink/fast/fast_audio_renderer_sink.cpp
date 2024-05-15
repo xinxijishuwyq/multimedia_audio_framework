@@ -604,6 +604,7 @@ int32_t FastAudioRendererSinkInner::CheckPositionTime()
 
 int32_t FastAudioRendererSinkInner::Start(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Start");
     AUDIO_INFO_LOG("FastAudioRendererSinkInner::Start");
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
@@ -779,6 +780,7 @@ int32_t FastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 
 int32_t FastAudioRendererSinkInner::Stop(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop.");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -819,6 +821,7 @@ int32_t FastAudioRendererSinkInner::Pause(void)
 
 int32_t FastAudioRendererSinkInner::Resume(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Resume");
     int32_t ret;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -839,6 +842,7 @@ int32_t FastAudioRendererSinkInner::Resume(void)
 
 int32_t FastAudioRendererSinkInner::Reset(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Reset");
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
@@ -853,6 +857,7 @@ int32_t FastAudioRendererSinkInner::Reset(void)
 
 int32_t FastAudioRendererSinkInner::Flush(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Flush");
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {

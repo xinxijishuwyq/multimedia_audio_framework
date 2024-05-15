@@ -436,6 +436,7 @@ void RendererInClientInner::InitCallbackHandler()
 // call this without lock, we should be able to call deinit in any case.
 int32_t RendererInClientInner::DeinitIpcStream()
 {
+    Trace trace("RendererInClientInner::DeinitIpcStream");
     ipcStream_->Release();
     // in plan:
     ipcStream_ = nullptr;
@@ -525,6 +526,7 @@ int32_t RendererInClientInner::InitCacheBuffer(size_t targetSize)
 
 int32_t RendererInClientInner::InitIpcStream()
 {
+    Trace trace("RendererInClientInner::InitIpcStream");
     AudioProcessConfig config = ConstructConfig();
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
