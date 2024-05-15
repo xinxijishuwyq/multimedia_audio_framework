@@ -51,6 +51,7 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_stream_builder_test:audio_oh_builder_unit_test",
     "../frameworks/native/toneplayer/test/unnittest:audio_toneplayer_unit_test",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
+    "../services/audio_service/test/unittest:policy_handler_unit_test",
   ]
 
   if (audio_framework_feature_opensl_es) {
