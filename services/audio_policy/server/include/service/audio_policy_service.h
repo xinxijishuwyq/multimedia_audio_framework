@@ -334,7 +334,7 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
-    void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
+    void GetEffectManagerInfo();
 
     float GetMinStreamVolume(void);
 
@@ -464,6 +464,7 @@ public:
     void GetCapturerStreamDump(std::string &dumpString);
     void GetSafeVolumeDump(std::string &dumpString);
     void GetOffloadStatusDump(std::string &dumpString);
+    void EffectManagerInfoDump(std::string &dumpString);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
@@ -949,6 +950,9 @@ private:
     DeviceType priorityOutputDevice_;
     DeviceType priorityInputDevice_;
     ConnectType conneceType_;
+
+    SupportedEffectConfig supportedEffectConfig_;
+    ConverterConfig converterConfig_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

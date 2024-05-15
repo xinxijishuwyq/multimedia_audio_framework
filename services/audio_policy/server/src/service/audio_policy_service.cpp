@@ -3810,11 +3810,10 @@ void AudioPolicyService::LoadEffectLibrary()
     AudioSpatializationService::GetAudioSpatializationService().Init(supportedEffectConfig.effectChains);
 }
 
-void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
-                                              std::vector<Effect>& availableEffects)
+void AudioPolicyService::GetEffectManagerInfo()
 {
-    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
-    audioEffectManager_.GetAvailableEffects(availableEffects);
+    converterConfig_ = GetConverterConfig();
+    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig_);
 }
 
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
@@ -6459,6 +6458,73 @@ void AudioPolicyService::XmlParsedDataMapDump(std::string &dumpString)
         }
         AppendFormat(dumpString, "-----EndOfXmlParsedDataMap-----\n");
     }
+}
+
+static void StreamEffectSceneInfoDump(string &dumpString, const ProcessNew &processNew, const string processType)
+{
+    int32_t count;
+    AppendFormat(dumpString, "- %d %s supported :\n", processNew.stream.size(), processType.c_str());
+
+    for (Stream x : processNew.stream) {
+        AppendFormat(dumpString, "  %s stream scene = %s \n", processType.c_str(), x.scene.c_str());
+        count = 0;
+        for (StreamEffectMode mode : x.streamEffectMode) {
+            count++;
+            AppendFormat(dumpString, "  - modeName%d = %s \n", count, mode.mode.c_str());
+            int32_t n = 0;
+            for (Device deviceInfo : mode.devicePort) {
+                n++;
+                AppendFormat(dumpString, "    - device%d type = %s \n", n, deviceInfo.type.c_str());
+                AppendFormat(dumpString, "    - device%d chain = %s \n", n, deviceInfo.chain.c_str());
+            }
+        }
+        dumpString += "\n";
+    }
+}
+
+void AudioPolicyService::EffectManagerInfoDump(string &dumpString)
+{
+    int32_t count = 0;
+    GetEffectManagerInfo();
+    GetAudioAdapterInfos(adapterInfoMap_);
+
+    dumpString += "==== Audio Effect Manager INFO ====\n";
+
+    // effectChain info
+    count = 0;
+    AppendFormat(dumpString, "- system support %d effectChain(s):\n",
+        supportedEffectConfig_.effectChains.size());
+    for (EffectChain x : supportedEffectConfig_.effectChains) {
+        count++;
+        AppendFormat(dumpString, "  effectChain%d :\n", count);
+        AppendFormat(dumpString, "  - effectChain name = %s \n", x.name.c_str());
+        int32_t countEffect = 0;
+        for (string effectUnit : x.apply) {
+            countEffect++;
+            AppendFormat(dumpString, "    - effectUnit%d = %s \n", countEffect, effectUnit.c_str());
+        }
+        dumpString += "\n";
+    }
+
+    // converter info
+    AppendFormat(dumpString, "- system support audio converter for special streams:\n");
+    AppendFormat(dumpString, "  - converter name: %s\n", converterConfig_.library.name.c_str());
+    AppendFormat(dumpString, "  - converter out channel layout: %" PRId64 "\n",
+        converterConfig_.outChannelLayout);
+    dumpString += "\n";
+
+    // preProcess info
+    StreamEffectSceneInfoDump(dumpString, supportedEffectConfig_.preProcessNew, "preProcess");
+    dumpString += "\n";
+    // postProcess info
+    StreamEffectSceneInfoDump(dumpString, supportedEffectConfig_.postProcessNew, "postProcess");
+
+    // postProcess scene maping
+    AppendFormat(dumpString, "- postProcess scene maping config:\n");
+    for (SceneMappingItem it: supportedEffectConfig_.postProcessSceneMap) {
+        AppendFormat(dumpString, "  - streamUsage: %s = %s \n", it.name.c_str(), it.sceneType.c_str());
+    }
+    dumpString += "\n";
 }
 
 void AudioPolicyService::GetGroupInfoDump(std::string &dumpString)

@@ -397,6 +397,7 @@ public:
     void AudioStreamDump(std::string &dumpString);
     void OffloadStatusDump(std::string &dumpString);
     void XmlParsedDataMapDump(std::string &dumpString);
+    void EffectManagerInfoDump(std::string &dumpString);
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
