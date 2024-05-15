@@ -74,14 +74,14 @@ int32_t NoneMixEngine::Start()
         playbackThread_->RegisterJob([this] { this->MixStreams(); });
     }
     if (isPause_) {
-        ret = renderSink_->Resume();
+        // ret = renderSink_->Resume();
         isPause_ = false;
     } else if (!isStart_) {
         ret = renderSink_->Start();
         isStart_ = true;
     }
 
-    if (playbackThread_->CheckThreadIsRunning()) {
+    if (!playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->Start();
     }
     return ret;
@@ -110,7 +110,7 @@ void NoneMixEngine::PauseAsync()
         playbackThread_->PauseAsync();
     }
     if (renderSink_ && renderSink_->IsInited()) {
-        renderSink_->Pause();
+        // renderSink_->Pause();
     }
     isPause_ = true;
 }
@@ -125,7 +125,7 @@ int32_t NoneMixEngine::Pause()
         playbackThread_->Pause();
     }
     if (renderSink_ && renderSink_->IsInited()) {
-        ret = renderSink_->Pause();
+        // ret = renderSink_->Pause();
     }
     isPause_ = true;
     return ret;

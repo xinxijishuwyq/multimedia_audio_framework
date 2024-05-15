@@ -33,7 +33,6 @@ public:
     int32_t PauseRender(uint32_t streamIndex) override;
     int32_t GetStreamCount() const noexcept override;
     int32_t TriggerStartIfNecessary() override;
-    int32_t UpdateRendererPreSelectedDeviceInfo(DeviceInfo device);
 
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex) override;

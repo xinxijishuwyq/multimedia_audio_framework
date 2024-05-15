@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include "none_mix_engine.h"
 #include "pro_renderer_stream_impl.h"
+#include "audio_errors.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -26,10 +27,10 @@ public:
     void SetUp();
     void TearDown();
 
-private:
+protected:
     AudioProcessConfig InitProcessConfig();
 
-private:
+protected:
     std::unique_ptr<AudioPlaybackEngine> playbackEngine_;
 };
 
@@ -64,12 +65,12 @@ AudioProcessConfig NoneMixEngineUnitTest::InitProcessConfig()
     config.appInfo.appUid = 10;
     config.appInfo.appPid = 10;
     config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLING_RATE_48000;
-    config.streamInfo.channels = 2;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
     config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
     config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     config.streamType = AudioStreamType::STREAM_MUSIC;
-    processConfig_.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
     return config;
 }
 
@@ -79,7 +80,7 @@ AudioProcessConfig NoneMixEngineUnitTest::InitProcessConfig()
  * @tc.number: DirectAudioSinkCreate_001
  * @tc.desc  : Test create direct sink success
  */
-HWTEST(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
@@ -101,7 +102,7 @@ HWTEST(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
  * @tc.number: DirectAudioSinkCreate_001
  * @tc.desc  : Test create direct sink success
  */
-HWTEST(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);

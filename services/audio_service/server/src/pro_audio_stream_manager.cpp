@@ -47,8 +47,6 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
 
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init rendererStream");
-    int32_t ret = UpdateRendererPreSelectedDeviceInfo(deviceInfo);
-    CHECK_AND_RETURN_RET_LOG(ret != SUCCESS, ERR_DEVICE_INIT, "Failed to update Renderer ProSelected deviceInfo");
 
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -170,15 +168,6 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
         return nullptr;
     }
     return rendererStream;
-}
-
-int32_t ProAudioStreamManager::UpdateRendererPreSelectedDeviceInfo(DeviceInfo device)
-{
-    AUDIO_DEBUG_LOG("UpdateRendererPreSelectedDeviceInfo start");
-    // AudioPolicyService::GetAudioPolicyService().UpdateRendererPreSelectedDeviceInfo(device);
-
-    // todo
-    return SUCCESS;
 }
 
 int32_t ProAudioStreamManager::CreateCapturer(AudioProcessConfig processConfig,

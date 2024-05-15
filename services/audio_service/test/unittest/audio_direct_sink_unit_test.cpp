@@ -14,12 +14,14 @@
  */
 #include <gtest/gtest.h>
 #include "audio_renderer_sink.h"
+#include "audio_errors.h"
+
 using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 const std::string DIRECT_SINK_NAME = "direct";
 const std::string VOIP_SINK_NAME = "voip";
-const std::string SINK_ADAPTER_NAME = "primary";
+const char *SINK_ADAPTER_NAME = "primary";
 class AudioDirectSinkUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -27,7 +29,7 @@ public:
     void SetUp();
     void TearDown();
 
-private:
+protected:
     AudioRendererSink *sink;
 };
 
@@ -59,7 +61,7 @@ void AudioDirectSinkUnitTest::TearDown(void)
  * @tc.number: DirectAudioSinkCreate_001
  * @tc.desc  : Test create direct sink success
  */
-HWTEST(AudioDirectSinkUnitTest, DirectAudioSinkCreate_001, TestSize.Level1)
+HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkCreate_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, sink);
 }
@@ -70,7 +72,7 @@ HWTEST(AudioDirectSinkUnitTest, DirectAudioSinkCreate_001, TestSize.Level1)
  * @tc.number: InitAudioSinkCreate_001
  * @tc.desc  : Test init direct sink success
  */
-HWTEST(AudioDirectSinkUnitTest, DirectAudioSinkInit_001, TestSize.Level1)
+HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkInit_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, sink);
     IAudioSinkAttr attr = {};
@@ -95,7 +97,7 @@ HWTEST(AudioDirectSinkUnitTest, DirectAudioSinkInit_001, TestSize.Level1)
  * @tc.number: DirectAudioSinkState_001
  * @tc.desc  : Test direct sink state
  */
-HWTEST(AudioDirectSinkUnitTest, DirectAudioSinkState_001, TestSize.Level1)
+HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, sink);
     IAudioSinkAttr attr = {};
@@ -115,7 +117,7 @@ HWTEST(AudioDirectSinkUnitTest, DirectAudioSinkState_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
-    ret = sink->Pause();
+    ret = sink->Pause(); // todo
     EXPECT_EQ(SUCCESS, ret);
     ret = sink->Stop();
     EXPECT_EQ(SUCCESS, ret);
@@ -127,7 +129,7 @@ HWTEST(AudioDirectSinkUnitTest, DirectAudioSinkState_001, TestSize.Level1)
  * @tc.number: VoipAudioSinkCreate_001
  * @tc.desc  : Test create voip sink success
  */
-HWTEST(AudioDirectSinkUnitTest, VoipAudioSinkCreate_001, TestSize.Level1)
+HWTEST_F(AudioDirectSinkUnitTest, VoipAudioSinkCreate_001, TestSize.Level1)
 {
     AudioRendererSink *voipSink = AudioRendererSink::GetInstance(VOIP_SINK_NAME);
     EXPECT_NE(nullptr, voipSink);
