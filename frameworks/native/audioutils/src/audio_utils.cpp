@@ -587,7 +587,8 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
 
     if (para == DUMP_SERVER_PARA) {
         if (fileName == DUMP_BLUETOOTH_RENDER_SINK_FILENAME || fileName == DUMP_RENDER_SINK_FILENAME ||
-            fileName == DUMP_CAPTURER_SOURCE_FILENAME || fileName == DUMP_OFFLOAD_RENDER_SINK_FILENAME) {
+            fileName == DUMP_CAPTURER_SOURCE_FILENAME || fileName == DUMP_OFFLOAD_RENDER_SINK_FILENAME ||
+            fileName.find("effect") != std::string::npos) { // special name for audio effect
             *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_PULSE);
             return;
         }
@@ -612,7 +613,7 @@ static void MemcpyToI32FromI24(uint8_t *src, int32_t *dst, size_t count)
     for (size_t i = 0; i < count; i++) {
         uint8_t *tmp = src + 3 * i; // 3 is byte size of SAMPLE_S24LE;
         *(dst + i) = static_cast<uint32_t>(tmp[2] << (2 * sizeof(uint8_t))) |
-            static_cast<uint32_t>(tmp[1] << sizeof(uuint8_t)) | static_cast<uint32_t>(tmp[0]);
+            static_cast<uint32_t>(tmp[1] << sizeof(uint8_t)) | static_cast<uint32_t>(tmp[0]);
     }
 }
 
