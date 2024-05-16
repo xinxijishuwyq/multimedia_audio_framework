@@ -2782,7 +2782,7 @@ static void ThreadFuncRendererTimerMultiChannel(void *userdata)
 
         pa_usec_t now = 0;
 
-        int sleepForUsec = -1;
+        int64_t sleepForUsec = -1;
 
         bool flag = ThreadFuncRendererTimerMultiChannelFlagJudge(u);
         if (flag) {

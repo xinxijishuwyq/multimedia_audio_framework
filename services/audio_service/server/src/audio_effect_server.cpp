@@ -56,13 +56,12 @@ static bool LoadLibrary(const std::string &relativePath, std::shared_ptr<AudioEf
         return false;
     }
 
-    char * realPathRes = NULL;
-    realPathRes = realpath(relativePath.c_str(), NULL);
-    if (!realPathRes) {
+    char path[PATH_MAX + 1] = {0x00};
+    char* resultpath = realpath(relativePath.c_str(), path);
+    if ((strlen(relativePath.c_str()) > PATH_MAX) || !resultpath) {
         AUDIO_ERR_LOG("<log error> realpath lib %{public}s Fail", relativePath.c_str());
         return false;
     }
-    free(realPathRes);
 
     void* handle = dlopen(absolutePath.c_str(), 1);
     if (!handle) {
