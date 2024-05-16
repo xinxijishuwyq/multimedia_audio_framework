@@ -1398,6 +1398,7 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList)
 
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
+    Trace trace("AudioRendererSinkInner::SetPaPower flag:%d", flag);
     int32_t ret = ERROR;
     char keyValueList[DEVICE_PARAM_MAX_LEN] = {0};
     const char keyValueList1[] = "zero_volume=false";

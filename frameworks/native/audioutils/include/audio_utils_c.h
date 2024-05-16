@@ -26,12 +26,18 @@ extern "C" {
 
 typedef struct CTrace CTrace;
 
+#define AUTO_NAME_LINE_INNER(name, line) name##line
+
+#define AUTO_NAME_LINE(name, line) AUTO_NAME_LINE_INNER(name, line)
+
+#define AUTO_NAME(name) AUTO_NAME_LINE(name, __LINE__)
+
 // must use string length less than 256
 #define AUTO_CTRACE(fmt, args...)                                           \
-    char str[SPRINTF_STRING_LEN] = {0};                                     \
-    int ret = sprintf_s(str, SPRINTF_STRING_LEN, fmt, ##args);              \
-    AUTO_CLEAR CTrace *tmpCtrace = (ret >= 0 ? GetAndStart(str) : NULL);    \
-    (void)tmpCtrace
+    char AUTO_NAME(str)[SPRINTF_STRING_LEN] = {0};                                     \
+    int AUTO_NAME(ret) = sprintf_s(AUTO_NAME(str), SPRINTF_STRING_LEN, fmt, ##args);              \
+    AUTO_CLEAR CTrace *AUTO_NAME(tmpCtrace) = (AUTO_NAME(ret) >= 0 ? GetAndStart(AUTO_NAME(str)) : NULL);    \
+    (void)AUTO_NAME(tmpCtrace)
 
 // must call with AUTO_CLEAR
 CTrace *GetAndStart(const char *traceName);
