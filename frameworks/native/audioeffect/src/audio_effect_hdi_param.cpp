@@ -92,7 +92,11 @@ int32_t AudioEffectHdiParam::SetHdiCommand(IEffectControl *hdiControl, int8_t *e
 
 int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
 {
-    int32_t ret;
+    if (hdiModel_ == nullptr) {
+        AUDIO_WARNING_LOG("hdiModel_ is nullptr.");
+        return ERROR;
+    }
+    int32_t ret = ERROR;
     for (const auto &item : DeviceTypeToHdiControlMap_) {
         IEffectControl *hdiControl = item.second;
         if (hdiControl == nullptr) {
@@ -107,6 +111,10 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput)
 
 int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput, DeviceType deviceType)
 {
+    if (hdiModel_ == nullptr) {
+        AUDIO_WARNING_LOG("hdiModel_ is nullptr.");
+        return ERROR;
+    }
     IEffectControl *hdiControl = DeviceTypeToHdiControlMap_[deviceType];
     if (hdiControl == nullptr) {
         AUDIO_WARNING_LOG("hdiControl is nullptr.");
