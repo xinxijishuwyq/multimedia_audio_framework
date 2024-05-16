@@ -59,6 +59,8 @@ ohos_shared_library("audio_effect") {
     "src/audio_effect_hdi_param.cpp",
     "src/audio_effect_rotation.cpp",
     "src/audio_effect_volume.cpp",
+    "src/audio_enhance_chain.cpp",
+    "src/audio_enhance_chain_adapter.cpp",
     "src/audio_enhance_chain_manager.cpp",
     "src/audio_head_tracker.cpp",
   ]

@@ -120,7 +120,7 @@ private:
     bool isMainLoopStarted_;
     ManagerType managerType_ = PLAYBACK;
     bool waitConnect_ = true;
-    AudioEffectMode enhanceMode_ = EFFECT_DEFAULT;
+    AudioEffectMode enhanceMode_ = EFFECT_NONE;
     uint32_t highResolutionIndex_ = 0;
     bool isHighResolutionExist_ = false;
 };
