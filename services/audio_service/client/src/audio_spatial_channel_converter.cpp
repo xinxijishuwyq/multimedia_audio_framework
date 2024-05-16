@@ -133,7 +133,7 @@ bool AudioSpatialChannelConverter::AllocateMem()
 void AudioSpatialChannelConverter::GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen)
 {
     buffer = outPcmBuf_.get();
-    bufferLen = GetPcmLength(outChannel_, bps_);
+    bufferLen = static_cast<uint32_t>(GetPcmLength(outChannel_, bps_));
 }
 
 void AudioSpatialChannelConverter::Process(const BufferDesc bufDesc)
