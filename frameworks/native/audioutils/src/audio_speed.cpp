@@ -136,9 +136,13 @@ int32_t AudioSpeed::ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
         return ERR_MEMORY_ALLOC_FAILED;
     }
     float* bitTofloat = new(std::nothrow) float[bufferSize];
+    if (!bitTofloat)
+        return ERROR;
     ConvertFrom24BitToFloat(bufferSize / formatSize_, buffer, bitTofloat);
 
     float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
+    if (!speedBuf)
+        return ERROR;
     int32_t ret = ChangeSpeedForFloat(bitTofloat, bufferSize, speedBuf, outBufferSize);
 
     ConvertFromFloatTo24Bit(outBufferSize / formatSize_, speedBuf, outBuffer.get());
