@@ -414,6 +414,18 @@ void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConf
     }
 }
 
+void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig)
+{
+    pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
+    pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
+    pa_proplist_sets(propList, "stream.isIpcCapturer", std::to_string(true).c_str());
+    pa_proplist_sets(propList, "stream.capturerSource",
+        std::to_string(processConfig.capturerInfo.sourceType).c_str());
+    pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
+    enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
+    pa_proplist_sets(propList, "scene.mode", GetEnhanceModeName(enhanceMode_).c_str());
+}
+
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
     const std::string &streamName, uint32_t sessionId)
 {
@@ -450,14 +462,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
         SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
-        pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
-        pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
-        pa_proplist_sets(propList, "stream.isIpcCapturer", std::to_string(true).c_str());
-        pa_proplist_sets(propList, "stream.capturerSource",
-            std::to_string(processConfig.capturerInfo.sourceType).c_str());
-        pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
-        enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
-        pa_proplist_sets(propList, "scene.mode", GetEnhanceModeName(enhanceMode_).c_str());
+        SetRecordProplist(propList, processConfig);
     }
 
     AUDIO_INFO_LOG("Creating stream of channels %{public}d", processConfig.streamInfo.channels);
