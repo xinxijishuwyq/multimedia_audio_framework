@@ -437,7 +437,7 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
-    capturerInfo_.pipeType = PIPE_TYPE_NORMAL;
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     AUDIO_INFO_LOG("SetCapturerInfo with SourceType %{public}d flag %{public}d", capturerInfo_.sourceType,
         capturerInfo_.capturerFlags);
     return;

@@ -232,7 +232,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
     } else if (spatializationState.spatializationEnabled) {
         rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
     } else {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL;
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
 }
 
