@@ -178,14 +178,14 @@ void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
     } else if (GetSpatializationEnabled()) {
         rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
     } else {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL;
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
 }
 
 void AudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
-    capturerInfo_.pipeType = PIPE_TYPE_NORMAL;
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
 }
 
 int32_t AudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
