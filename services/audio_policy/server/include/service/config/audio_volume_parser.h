@@ -48,6 +48,7 @@ private:
     void ParseDeviceVolumeInfos(xmlNode *node, std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
     void ParseVolumePoints(xmlNode *node, std::shared_ptr<DeviceVolumeInfo> &deviceVolInfo);
     int32_t ParseVolumeConfig(const char *path, StreamVolumeInfoMap &streamVolumeInfoMap);
+    void WriteVolumeConfigErrorEvent();
 };
 } // namespace AudioStandard
 } // namespace OHOS

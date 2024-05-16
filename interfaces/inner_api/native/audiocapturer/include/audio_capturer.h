@@ -650,12 +650,16 @@ public:
      */
     virtual int32_t SetCaptureSilentState(bool state) = 0;
 
-    virtual uint32_t GetOverflowCount() = 0;
+    virtual uint32_t GetOverflowCount() const = 0;
 
     virtual ~AudioCapturer();
 
 protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);
+
+private:
+    static void SendCapturerCreateError(const SourceType &sourceType,
+        const int32_t &errorCode);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -26,6 +26,8 @@
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 
+#include "media_monitor_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -37,6 +39,7 @@ static const std::vector<StreamUsage> NEED_VERIFY_PERMISSION_STREAMS = {
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION
 };
 static constexpr uid_t UID_MSDP_SA = 6699;
+static constexpr int32_t WRITE_UNDERRUN_NUM = 100;
 
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
@@ -93,6 +96,30 @@ int32_t AudioRenderer::CheckMaxRendererInstances()
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     AUDIO_INFO_LOG("Audio current renderer change infos size: %{public}zu", audioRendererChangeInfos.size());
     int32_t maxRendererInstances = AudioPolicyManager::GetInstance().GetMaxRendererInstances();
+    if (audioRendererChangeInfos.size() >= static_cast<size_t>(maxRendererInstances)) {
+        std::map<int32_t, int32_t> appUseNumMap;
+        int32_t INITIAL_VALUE = 1;
+        int32_t mostAppUid = -1;
+        int32_t mostAppNum = -1;
+        for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+            auto appUseNum = appUseNumMap.find((*it)->clientUID);
+            if (appUseNum != appUseNumMap.end()) {
+                appUseNumMap[(*it)->clientUID] = ++appUseNum->second;
+            } else {
+                appUseNumMap.emplace((*it)->clientUID, INITIAL_VALUE);
+            }
+        }
+        for (auto iter = appUseNumMap.begin(); iter != appUseNumMap.end(); iter++) {
+            mostAppNum = iter->second > mostAppNum ? iter->second : mostAppNum;
+            mostAppUid = iter->first > mostAppUid ? iter->first : mostAppUid;
+        }
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
+            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+        bean->Add("CLIENT_UID", mostAppUid);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    }
+
     CHECK_AND_RETURN_RET_LOG(audioRendererChangeInfos.size() < static_cast<size_t>(maxRendererInstances), ERR_OVERFLOW,
         "The current number of audio renderer streams is greater than the maximum number of configured instances");
 
@@ -161,29 +188,23 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 {
     Trace trace("AudioRenderer::Create");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(AudioRenderer::CheckMaxRendererInstances() == SUCCESS, nullptr,
-        "Too many renderer instances");
-    ContentType contentType = rendererOptions.rendererInfo.contentType;
-    CHECK_AND_RETURN_RET_LOG(contentType >= CONTENT_TYPE_UNKNOWN && contentType <= CONTENT_TYPE_ULTRASONIC, nullptr,
-                             "Invalid content type");
+    int32_t ret = AudioRenderer::CreateCheckParam(rendererOptions, appInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
 
-    StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN &&
-        streamUsage <= STREAM_USAGE_MAX, nullptr, "Invalid stream usage");
-    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
-        if (!PermissionUtil::VerifySelfPermission()) {
-            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
-                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
-            return nullptr;
-        }
+    AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
+        rendererOptions.rendererInfo.streamUsage);
+    if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
+        return nullptr;
     }
 
-    AudioStreamType audioStreamType = IAudioStream::GetStreamType(contentType, streamUsage);
-    CHECK_AND_RETURN_RET_LOG((audioStreamType != STREAM_ULTRASONIC || getuid() == UID_MSDP_SA),
-        nullptr, "ULTRASONIC can only create by MSDP");
-
     auto audioRenderer = std::make_unique<AudioRendererPrivate>(audioStreamType, appInfo, false);
-
+    if (audioRenderer == nullptr) {
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
+            ERR_OPERATION_FAILED);
+    }
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
@@ -192,19 +213,72 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "flags: %{public}d, uid: %{public}d", contentType, streamUsage, rendererFlags, appInfo.appUid);
+        "flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
+        rendererOptions.rendererInfo.streamUsage, rendererFlags, appInfo.appUid);
 
-    audioRenderer->rendererInfo_.contentType = contentType;
-    audioRenderer->rendererInfo_.streamUsage = streamUsage;
+    audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
+    audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
         audioRenderer = nullptr;
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
+            ERR_OPERATION_FAILED);
     }
 
     return audioRenderer;
+}
+
+int32_t AudioRenderer::CreateCheckParam(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
+{
+    int32_t ret = AudioRenderer::CheckMaxRendererInstances();
+    if (ret != SUCCESS) {
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ret);
+        AUDIO_ERR_LOG("Too many renderer instances");
+        return ERR_INVALID_PARAM;
+    }
+    ContentType contentType = rendererOptions.rendererInfo.contentType;
+    if (contentType < CONTENT_TYPE_UNKNOWN || contentType > CONTENT_TYPE_ULTRASONIC) {
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid content type");
+        return ERR_INVALID_PARAM;
+    }
+
+    StreamUsage streamUsage = rendererOptions.rendererInfo.streamUsage;
+    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_MAX) {
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid stream usage");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
+        if (!PermissionUtil::VerifySelfPermission()) {
+            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
+                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
+            AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
+                ERR_PERMISSION_DENIED);
+            return ERR_PERMISSION_DENIED;
+        }
+    }
+    return SUCCESS;
+}
+
+void AudioRenderer::SendRendererCreateError(const StreamUsage &sreamUsage,
+    const int32_t &errorCode)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_STREAM_CREATE_ERROR_STATS,
+        Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("IS_PLAYBACK", 1);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+    bean->Add("STREAM_TYPE", sreamUsage);
+    bean->Add("ERROR_CODE", errorCode);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
@@ -633,6 +707,7 @@ bool AudioRendererPrivate::Stop() const
         return true;
     }
 
+    WriteUnderrunEvent();
     bool result = audioStream_->StopAudioStream();
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
@@ -1260,6 +1335,16 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         isSwitching_ = false;
         switchResult= true;
     }
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_PIPE_CHANGE,
+        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+        bean->Add("CLIENT_UID", appInfo_.appUid);
+        bean->Add("IS_PLAYBACK", 1);
+        bean->Add("STREAM_TYPE", rendererInfo_.streamUsage);
+        bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_LOWLATENCY_OUT);
+        bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_NORMAL_OUT);
+        bean->Add("REASON", Media::MediaMonitor::DEVICE_CHANGE_FROM_FAST);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     return switchResult;
 }
 
@@ -1398,6 +1483,34 @@ void AudioRendererPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
     audioInterrupt = audioInterrupt_;
 }
 
+void AudioRendererPrivate::WriteUnderrunEvent() const
+{
+    AUDIO_INFO_LOG("AudioRendererPrivate WriteUnderrunEvent!");
+    if (GetUnderflowCount() < WRITE_UNDERRUN_NUM) {
+        return;
+    }
+    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
+    IAudioStream::StreamClass streamClass = audioStream_->GetStreamClass();
+    if (streamClass == IAudioStream::FAST_STREAM) {
+        pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+    } else if (streamClass == IAudioStream::PA_STREAM) {
+        if (audioStream_->GetOffloadEnable()) {
+            pipeType = PIPE_TYPE_OFFLOAD;
+        } else if (audioStream_->GetSpatializationEnabled()) {
+            pipeType = PIPE_TYPE_SPATIALIZATION;
+        } else if (audioStream_->GetHighResolutionEnabled()) {
+            pipeType = PIPE_TYPE_HIGHRESOLUTION;
+        }
+    }
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::PERFORMANCE_UNDER_OVERRUN_STATS,
+        Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("IS_PLAYBACK", 1);
+    bean->Add("CLIENT_UID", appInfo_.appUid);
+    bean->Add("PIPE_TYPE", pipeType);
+    bean->Add("STREAM_TYPE", rendererInfo_.streamUsage);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
 
 int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
 {

@@ -85,7 +85,7 @@ public:
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
 
-    uint32_t GetOverflowCount() override;
+    uint32_t GetOverflowCount() const override;
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -117,6 +117,7 @@ private:
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
+    void WriteOverflowEvent() const;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     AppInfo appInfo_ = {};

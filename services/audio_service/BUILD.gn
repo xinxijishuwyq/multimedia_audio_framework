@@ -372,6 +372,8 @@ ohos_shared_library("audio_service") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "pulseaudio:pulseaudio",
     "safwk:system_ability_fwk",

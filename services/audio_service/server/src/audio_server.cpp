@@ -47,6 +47,7 @@
 #include "playback_capturer_manager.h"
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
+#include "media_monitor_manager.h"
 
 #define PA
 #ifdef PA
@@ -195,6 +196,7 @@ void AudioServer::OnStart()
     bool res = Publish(this);
     if (!res) {
         AUDIO_ERR_LOG("start err");
+        WriteServiceStartupError();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
 #ifdef PA
@@ -202,6 +204,7 @@ void AudioServer::OnStart()
     pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
     if (ret != 0) {
         AUDIO_ERR_LOG("pthread_create failed %d", ret);
+        WriteServiceStartupError();
     }
     AUDIO_DEBUG_LOG("Created paDaemonThread\n");
 #endif
@@ -209,10 +212,23 @@ void AudioServer::OnStart()
     RegisterAudioCapturerSourceCallback();
 
     std::unique_ptr<AudioParamParser> audioParamParser = make_unique<AudioParamParser>();
+    if (audioParamParser == nullptr) {
+        WriteServiceStartupError();
+    }
     CHECK_AND_RETURN_LOG(audioParamParser != nullptr, "Failed to create audio extra parameters parser");
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
+}
+
+void AudioServer::WriteServiceStartupError()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_SERVER_ID));
+    bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_SERVER));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)

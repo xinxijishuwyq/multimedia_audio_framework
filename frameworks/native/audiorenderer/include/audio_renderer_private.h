@@ -158,6 +158,7 @@ private:
     void SetSelfRendererStateCallback();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
+    void WriteUnderrunEvent() const;
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

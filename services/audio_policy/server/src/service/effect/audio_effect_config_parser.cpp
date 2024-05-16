@@ -21,6 +21,7 @@
 #ifdef USE_CONFIG_POLICY
 #include "config_policy_utils.h"
 #endif
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,6 +63,11 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
     CfgFiles *cfgFiles = GetCfgFiles(AUDIO_EFFECT_CONFIG_FILE);
     if (cfgFiles == nullptr) {
         AUDIO_ERR_LOG("Not found audio_effect_config.xml!");
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_EFFECT_CONFIG);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         return FILE_PARSE_ERROR;
     }
 
@@ -77,6 +83,13 @@ static int32_t ParseEffectConfigFile(xmlDoc* &doc)
     AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_EFFECT_CONFIG_FILE);
     doc = xmlReadFile(AUDIO_EFFECT_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
 #endif
+    if (doc == nullptr) {
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_EFFECT_CONFIG);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    }
     CHECK_AND_RETURN_RET_LOG(doc != nullptr, FILE_PARSE_ERROR, "load audio effect config fail");
     return 0;
 }
