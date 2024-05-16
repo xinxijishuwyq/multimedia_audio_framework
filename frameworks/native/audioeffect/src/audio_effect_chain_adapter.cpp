@@ -177,18 +177,6 @@ int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t vol
     return SUCCESS;
 }
 
-#ifdef WINDOW_MANAGER_ENABLE
-int32_t EffectChainManagerRotationUpdate(const uint32_t rotationState)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    if (audioEffectChainManager->EffectRotationUpdate(rotationState) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-#endif
-
 uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap)
 {
     if (channelLayout == CH_LAYOUT_MONO) {
@@ -256,7 +244,9 @@ bool EffectChainManagerCheckA2dpOffload()
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     std::string effectChainManagerDeviceType = audioEffectChainManager->GetDeviceTypeName();
     std::string effectChainManagerDeviceSink = audioEffectChainManager->GetDeviceSinkName();
-    if ((effectChainManagerDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") && (effectChainManagerDeviceSink == "Speaker")) {
+    if ((effectChainManagerDeviceSink == "Speaker") &&
+        ((effectChainManagerDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") ||
+        (effectChainManagerDeviceType == "DEVICE_TYPE_SPEAKER"))) {
         return true;
     }
     return false;
