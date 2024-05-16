@@ -1903,7 +1903,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
     unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
-        !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED && !sameDeviceSwitchFlag_)) {
+        !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED)) {
         AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
         if (!IsSameDevice(desc, currentActiveDevice_)) {
             currentActiveDevice_ = AudioDeviceDescriptor(*desc);
@@ -1956,7 +1956,6 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         }
         SelectNewOutputDevice(rendererChangeInfo, desc, reason);
     }
-    sameDeviceSwitchFlag_ = false;
     if (isUpdateActiveDevice) {
         OnPreferredOutputDeviceUpdated(currentActiveDevice_);
     }
@@ -2877,7 +2876,6 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(const AudioDeviceDescript
         if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             A2dpDeviceConfigInfo configInfo = {updatedDesc.audioStreamInfo_, false};
             connectedA2dpDeviceMap_.insert(make_pair(updatedDesc.macAddress_, configInfo));
-            sameDeviceSwitchFlag_ = true;
         }
     }
 
@@ -3208,24 +3206,20 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(activeBTDevice_)
         && IsDeviceActive(deviceType)) {
         UpdateA2dpOffloadFlagForAllStream();
-        if (!IsConfigurationUpdated(deviceType, streamInfo)) {
+        AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag_: %{public}d",
+            streamInfo.samplingRate, a2dpOffloadFlag_);
+        if (!IsConfigurationUpdated(deviceType, streamInfo) || a2dpOffloadFlag_ == A2DP_OFFLOAD) {
             AUDIO_DEBUG_LOG("Audio configuration same");
-            lastBTDevice_ = macAddress;
             return;
         }
 
-        uint32_t bufferSize = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
-            * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
-        AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
-        if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
-            ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
-        }
+        ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
     } else if (connectedA2dpDeviceMap_.find(macAddress) != connectedA2dpDeviceMap_.end()) {
-        AUDIO_DEBUG_LOG("Audio configuration update, macAddress:[%{public}s]", GetEncryptAddr(macAddress).c_str());
+        AUDIO_DEBUG_LOG("Audio configuration update, macAddress:[%{public}s], streamInfo.sampleRate: %{public}d",
+            GetEncryptAddr(macAddress).c_str(), streamInfo.samplingRate);
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
     }
-    lastBTDevice_ = macAddress;
 }
 
 void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
@@ -3233,6 +3227,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
 {
     uint32_t bufferSize = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
         * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+    AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
 
     auto a2dpModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
     if (a2dpModulesPos != deviceClassInfo_.end()) {

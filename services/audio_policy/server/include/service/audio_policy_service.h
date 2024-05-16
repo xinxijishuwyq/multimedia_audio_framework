@@ -813,7 +813,6 @@ private:
 
     BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     std::mutex switchA2dpOffloadMutex_;
-    bool sameDeviceSwitchFlag_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -842,7 +841,6 @@ private:
     std::unordered_map<int32_t, sptr<MicrophoneDescriptor>> audioCaptureMicrophoneDescriptor_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
-    std::string lastBTDevice_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
