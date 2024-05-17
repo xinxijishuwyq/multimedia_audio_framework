@@ -731,35 +731,7 @@ int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationSt
         spatializationEnabled_, headTrackingEnabled_);
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     if (spatializationEnabled_ != spatializationState.spatializationEnabled) {
-        spatializationEnabled_ = spatializationState.spatializationEnabled;
-        if (CheckA2dpOffload()) {
-            memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
-            if (spatializationEnabled_) {
-                effectHdiInput_[0] = HDI_INIT;
-                int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-                if (ret != SUCCESS) {
-                    AUDIO_ERR_LOG("set hdi init failed, enter route of escape in ARM");
-                    btOffloadEnabled_ = false;
-                } else {
-                    AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
-                    btOffloadEnabled_ = true;
-                    DeleteAllChains();
-                }
-            } else {
-                effectHdiInput_[0] = HDI_DESTROY;
-                AUDIO_INFO_LOG("set hdi destroy.");
-                int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
-                if (ret != SUCCESS) {
-                    AUDIO_ERR_LOG("set hdi destroy failed");
-                }
-                btOffloadEnabled_ = false;
-                if (!spkOffloadEnabled_) {
-                    RecoverAllChains();
-                }
-            }
-        } else {
-            AUDIO_INFO_LOG("Not a2dp-offload, spatialization enabled and rendered in ARM");
-        }
+        UpdateSpatializationEnabled(spatializationState);
     }
     if (headTrackingEnabled_ != spatializationState.headTrackingEnabled) {
         headTrackingEnabled_ = spatializationState.headTrackingEnabled;
@@ -1150,6 +1122,38 @@ bool AudioEffectChainManager::CheckA2dpOffload()
         return true;
     }
     return false;
+}
+
+void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationState spatializationState)
+{
+    std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
+    spatializationEnabled_ = spatializationState.spatializationEnabled;
+    CHECK_AND_RETURN_LOG(CheckA2dpOffload(), "Not a2dp-offload, spatialization works in ARM");
+
+    memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
+    if (spatializationEnabled_) {
+        effectHdiInput_[0] = HDI_INIT;
+        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("set hdi init failed, enter route of escape in ARM");
+            btOffloadEnabled_ = false;
+        } else {
+            AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
+            btOffloadEnabled_ = true;
+            DeleteAllChains();
+        }
+    } else {
+        effectHdiInput_[0] = HDI_DESTROY;
+        AUDIO_INFO_LOG("set hdi destroy.");
+        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("set hdi destroy failed");
+        }
+        btOffloadEnabled_ = false;
+        if (!spkOffloadEnabled_) {
+            RecoverAllChains();
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
