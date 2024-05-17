@@ -30,7 +30,10 @@ constexpr int32_t SECOND_TO_MILLISECOND = 1000;
 constexpr int32_t DEFAULT_BUFFER_MILLISECOND = 20;
 constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
 constexpr uint32_t DOUBLE_VALUE = 2;
+constexpr int32_t DEFAULT_RESAMPLE_QUANTITY = 2;
+constexpr int32_t STEREO_CHANNEL_COUNT = 2;
 constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 4;
+constexpr int32_t DRAIN_WAIT_TIMEOUT_TIME = 100;
 const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
 
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
@@ -103,16 +106,17 @@ int32_t ProRendererStreamImpl::InitParams()
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     int32_t frameSize = spanSizeInFrame_ * streamInfo.channels;
-    uint32_t desChannels = streamInfo.channels >= 2 ? 2 : 1;
+    uint32_t desChannels = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     if (streamInfo.samplingRate != desSamplingRate_) {
         isNeedResample_ = true;
-        resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_, 2);
+        resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_,
+                                                    DEFAULT_RESAMPLE_QUANTITY);
         resampleSrcBuffer.resize(frameSize, 0.f);
         resampleDesBuffer.resize(desSpanSize * desChannels, 0.f);
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
     }
-    if (streamInfo.channels > 2) {
+    if (streamInfo.channels > STEREO_CHANNEL_COUNT) {
         isNeedMcr_ = true;
         if (!isNeedResample_) {
             resampleSrcBuffer.resize(frameSize, 0.f);
@@ -199,7 +203,8 @@ int32_t ProRendererStreamImpl::Drain()
     isDrain_ = true;
     if (!readQueue_.empty()) {
         std::unique_lock lock(enqueueMutex);
-        drainSync_.wait_for(lock, std::chrono::milliseconds(100), [this] { return readQueue_.empty(); });
+        drainSync_.wait_for(lock, std::chrono::milliseconds(DRAIN_WAIT_TIMEOUT_TIME),
+                            [this] { return readQueue_.empty(); });
     }
     isDrain_ = false;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
@@ -273,16 +278,16 @@ int32_t ProRendererStreamImpl::SetRate(int32_t rate)
 {
     uint32_t currentRate = processConfig_.streamInfo.samplingRate;
     switch (rate) {
-    case RENDER_RATE_NORMAL:
-        break;
-    case RENDER_RATE_DOUBLE:
-        currentRate *= DOUBLE_VALUE;
-        break;
-    case RENDER_RATE_HALF:
-        currentRate /= DOUBLE_VALUE;
-        break;
-    default:
-        return ERR_INVALID_PARAM;
+        case RENDER_RATE_NORMAL:
+            break;
+        case RENDER_RATE_DOUBLE:
+            currentRate *= DOUBLE_VALUE;
+            break;
+        case RENDER_RATE_HALF:
+            currentRate /= DOUBLE_VALUE;
+            break;
+        default:
+            return ERR_INVALID_PARAM;
     }
     renderRate_ = rate;
     return SUCCESS;
@@ -369,14 +374,13 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     } else if (!isNeedMcr_) {
         auto streamInfo = processConfig_.streamInfo;
         uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
+        uint32_t frameLength = bufferDesc.bufLength / samplePerFrame;
         if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
             AudioCommonConverter::ConvertBufferTo16Bit(bufferDesc.buffer, streamInfo.format,
-                                                       (int16_t *)sinkBuffer_[writeIndex].data(),
-                                                       bufferDesc.bufLength / samplePerFrame, volume);
+                                                       (int16_t *)sinkBuffer_[writeIndex].data(), frameLength, volume);
         } else {
             AudioCommonConverter::ConvertBufferTo32Bit(bufferDesc.buffer, streamInfo.format,
-                                                       (int32_t *)sinkBuffer_[writeIndex].data(),
-                                                       bufferDesc.bufLength / samplePerFrame, volume);
+                                                       (int32_t *)sinkBuffer_[writeIndex].data(), frameLength, volume);
         }
     }
     readQueue_.emplace(writeIndex);
@@ -532,21 +536,21 @@ uint32_t ProRendererStreamImpl::GetSamplePerFrame(AudioSampleFormat format) cons
 {
     uint32_t audioPerSampleLength = 2; // 2 byte
     switch (format) {
-    case AudioSampleFormat::SAMPLE_U8:
-        audioPerSampleLength = 1;
-        break;
-    case AudioSampleFormat::SAMPLE_S16LE:
-        audioPerSampleLength = 2; // 2 byte
-        break;
-    case AudioSampleFormat::SAMPLE_S24LE:
-        audioPerSampleLength = 3; // 3 byte
-        break;
-    case AudioSampleFormat::SAMPLE_S32LE:
-    case AudioSampleFormat::SAMPLE_F32LE:
-        audioPerSampleLength = 4; // 4 byte
-        break;
-    default:
-        break;
+        case AudioSampleFormat::SAMPLE_U8:
+            audioPerSampleLength = 1;
+            break;
+        case AudioSampleFormat::SAMPLE_S16LE:
+            audioPerSampleLength = 2; // 2 byte
+            break;
+        case AudioSampleFormat::SAMPLE_S24LE:
+            audioPerSampleLength = 3; // 3 byte
+            break;
+        case AudioSampleFormat::SAMPLE_S32LE:
+        case AudioSampleFormat::SAMPLE_F32LE:
+            audioPerSampleLength = 4; // 4 byte
+            break;
+        default:
+            break;
     }
     return audioPerSampleLength;
 }
@@ -584,8 +588,11 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 {
     uint32_t samplePerFrame = GetSamplePerFrame(desFormat_);
     if (desFormat_ == AudioSampleFormat::SAMPLE_F32LE) {
-        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), resampleDesBuffer.data(),
-                 resampleDesBuffer.size() * samplePerFrame);
+        auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), resampleDesBuffer.data(),
+                              resampleDesBuffer.size() * samplePerFrame);
+        if (error != EOK) {
+            AUDIO_ERR_LOG("copy failed");
+        }
         return;
     }
     AudioCommonConverter::ConvertFloatToAudioBuffer(resampleDesBuffer, (uint8_t *)sinkBuffer_[writeIndex].data(),

@@ -17,7 +17,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr int TIME_OUT_MS = 500;
+constexpr int32_t TIME_OUT_MS = 500;
+constexpr int32_t MAX_THREAD_NAME_LENGTH = 15;
 AudioThreadTask::AudioThreadTask(const std::string &name) : name_(name), state_(RunningState::STOPPED), loop_(nullptr)
 {
 }
@@ -53,7 +54,7 @@ void AudioThreadTask::Start()
 
     if (!loop_) {
         loop_ = std::make_unique<std::thread>(&AudioThreadTask::RunJob, this);
-        pthread_setname_np(loop_->native_handle(), name_.substr(0, 15).c_str());
+        pthread_setname_np(loop_->native_handle(), name_.substr(0, MAX_THREAD_NAME_LENGTH).c_str());
     }
     cond_.notify_all();
 }
@@ -92,22 +93,23 @@ void AudioThreadTask::Pause()
 {
     std::unique_lock lock(stateMutex_);
     switch (state_.load()) {
-    case RunningState::STARTED: {
-        state_ = RunningState::PAUSING;
-        cond_.wait(lock,
-                   [this] { return state_.load() == RunningState::PAUSED || state_.load() == RunningState::STOPPED; });
-        break;
-    }
-    case RunningState::STOPPING: {
-        cond_.wait(lock, [this] { return state_.load() == RunningState::STOPPED; });
-        break;
-    }
-    case RunningState::PAUSING: {
-        cond_.wait(lock, [this] { return state_.load() == RunningState::PAUSED; });
-        break;
-    }
-    default:
-        break;
+        case RunningState::STARTED: {
+            state_ = RunningState::PAUSING;
+            cond_.wait(lock, [this] {
+                return state_.load() == RunningState::PAUSED || state_.load() == RunningState::STOPPED;
+            });
+            break;
+        }
+        case RunningState::STOPPING: {
+            cond_.wait(lock, [this] { return state_.load() == RunningState::STOPPED; });
+            break;
+        }
+        case RunningState::PAUSING: {
+            cond_.wait(lock, [this] { return state_.load() == RunningState::PAUSED; });
+            break;
+        }
+        default:
+            break;
     }
 }
 

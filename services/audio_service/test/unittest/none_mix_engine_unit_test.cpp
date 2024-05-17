@@ -20,6 +20,7 @@
 using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t DEFAULT_STREAM_ID = 10;
 class NoneMixEngineUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -62,8 +63,8 @@ void NoneMixEngineUnitTest::TearDown(void)
 AudioProcessConfig NoneMixEngineUnitTest::InitProcessConfig()
 {
     AudioProcessConfig config;
-    config.appInfo.appUid = 10;
-    config.appInfo.appPid = 10;
+    config.appInfo.appUid = DEFAULT_STREAM_ID;
+    config.appInfo.appPid = DEFAULT_STREAM_ID;
     config.streamInfo.format = SAMPLE_S32LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
     config.streamInfo.channels = STEREO;
@@ -86,7 +87,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = playbackEngine_->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = playbackEngine_->Stop();
@@ -107,7 +108,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_002, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -130,7 +131,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_003, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -153,7 +154,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_004, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -176,7 +177,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_005, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -199,7 +200,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_006, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -222,7 +223,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_007, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -245,7 +246,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_008, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -268,7 +269,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_009, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -291,7 +292,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_010, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -314,7 +315,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_011, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -337,7 +338,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_012, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
@@ -360,7 +361,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_013, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
-    rendererStream->SetStreamIndex(10);
+    rendererStream->SetStreamIndex(DEFAULT_STREAM_ID);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();

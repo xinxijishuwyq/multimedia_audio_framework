@@ -186,7 +186,7 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_003, TestSize.Level1)
     ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = sink->Stop();
-    EXPECT_EQ(SUCCESS, ret);    
+    EXPECT_EQ(SUCCESS, ret);
 
     // start -> start -> stop
     ret = sink->Start();
@@ -198,7 +198,7 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test Audio Direct Sink Attribute 
+ * @tc.name  : Test Audio Direct Sink Attribute
  * @tc.type  : FUNC
  * @tc.number: DirectAudioSinkSetAttribute_001
  * @tc.desc  : Test audio direct sink attribute(sampleRate) success

@@ -45,7 +45,6 @@ private:
 
 private:
     bool isVoip_;
-    bool isPause_;
     bool isStart_;
     DeviceInfo device_;
     uint32_t failedCount_;

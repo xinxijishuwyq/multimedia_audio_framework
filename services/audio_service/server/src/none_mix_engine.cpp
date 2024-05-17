@@ -36,7 +36,6 @@ const char *SINK_ADAPTER_NAME = "primary";
 
 NoneMixEngine::NoneMixEngine(DeviceInfo type, bool isVoip)
     : isVoip_(isVoip),
-      isPause_(false),
       isStart_(false),
       device_(type),
       failedCount_(0),
@@ -73,10 +72,7 @@ int32_t NoneMixEngine::Start()
         playbackThread_ = std::make_unique<AudioThreadTask>(THREAD_NAME);
         playbackThread_->RegisterJob([this] { this->MixStreams(); });
     }
-    if (isPause_) {
-        // ret = renderSink_->Resume();
-        isPause_ = false;
-    } else if (!isStart_) {
+    if (!isStart_) {
         ret = renderSink_->Start();
         isStart_ = true;
     }
@@ -109,10 +105,6 @@ void NoneMixEngine::PauseAsync()
     if (playbackThread_) {
         playbackThread_->PauseAsync();
     }
-    if (renderSink_ && renderSink_->IsInited()) {
-        // renderSink_->Pause();
-    }
-    isPause_ = true;
 }
 
 int32_t NoneMixEngine::Pause()
@@ -124,10 +116,6 @@ int32_t NoneMixEngine::Pause()
     if (playbackThread_) {
         playbackThread_->Pause();
     }
-    if (renderSink_ && renderSink_->IsInited()) {
-        // ret = renderSink_->Pause();
-    }
-    isPause_ = true;
     return ret;
 }
 
@@ -193,7 +181,7 @@ void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &strea
 
 bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 {
-    return (isStart_ && !isPause_);
+    return isStart_;
 }
 
 void NoneMixEngine::StandbySleep()
@@ -206,17 +194,17 @@ AudioSamplingRate NoneMixEngine::GetDirectSampleRate(AudioSamplingRate sampleRat
 {
     AudioSamplingRate result = sampleRate;
     switch (sampleRate) {
-    case AudioSamplingRate::SAMPLE_RATE_44100:
-        result = AudioSamplingRate::SAMPLE_RATE_48000;
-        break;
-    case AudioSamplingRate::SAMPLE_RATE_88200:
-        result = AudioSamplingRate::SAMPLE_RATE_96000;
-        break;
-    case AudioSamplingRate::SAMPLE_RATE_176400:
-        result = AudioSamplingRate::SAMPLE_RATE_192000;
-        break;
-    default:
-        break;
+        case AudioSamplingRate::SAMPLE_RATE_44100:
+            result = AudioSamplingRate::SAMPLE_RATE_48000;
+            break;
+        case AudioSamplingRate::SAMPLE_RATE_88200:
+            result = AudioSamplingRate::SAMPLE_RATE_96000;
+            break;
+        case AudioSamplingRate::SAMPLE_RATE_176400:
+            result = AudioSamplingRate::SAMPLE_RATE_192000;
+            break;
+        default:
+            break;
     }
     return result;
 }
@@ -224,16 +212,16 @@ AudioSamplingRate NoneMixEngine::GetDirectSampleRate(AudioSamplingRate sampleRat
 HdiAdapterFormat GetDirectDeviceFormate(AudioSampleFormat format)
 {
     switch (format) {
-    case AudioSampleFormat::SAMPLE_U8:
-    case AudioSampleFormat::SAMPLE_S16LE:
-        return HdiAdapterFormat::SAMPLE_S16;
-    case AudioSampleFormat::SAMPLE_S24LE:
-    case AudioSampleFormat::SAMPLE_S32LE:
-        return HdiAdapterFormat::SAMPLE_S32;
-    case AudioSampleFormat::SAMPLE_F32LE:
-        return HdiAdapterFormat::SAMPLE_F32;
-    default:
-        return HdiAdapterFormat::SAMPLE_S16;
+        case AudioSampleFormat::SAMPLE_U8:
+        case AudioSampleFormat::SAMPLE_S16LE:
+            return HdiAdapterFormat::SAMPLE_S16;
+        case AudioSampleFormat::SAMPLE_S24LE:
+        case AudioSampleFormat::SAMPLE_S32LE:
+            return HdiAdapterFormat::SAMPLE_S32;
+        case AudioSampleFormat::SAMPLE_F32LE:
+            return HdiAdapterFormat::SAMPLE_F32;
+        default:
+            return HdiAdapterFormat::SAMPLE_S16;
     }
 }
 

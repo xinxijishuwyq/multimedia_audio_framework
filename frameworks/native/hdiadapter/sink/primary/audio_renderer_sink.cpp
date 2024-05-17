@@ -893,18 +893,18 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
 AudioPortPin AudioRendererSinkInner::GetAudioPortPin() const noexcept
 {
     switch (attr_.deviceType) {
-    case DEVICE_TYPE_SPEAKER:
-        return PIN_OUT_SPEAKER;
-    case DEVICE_TYPE_WIRED_HEADSET:
-        return PIN_OUT_HEADSET;
-    case DEVICE_TYPE_WIRED_HEADPHONES:
-        return PIN_OUT_HEADPHONE;
-    case DEVICE_TYPE_BLUETOOTH_SCO:
-        return PIN_OUT_BLUETOOTH_SCO;
-    case DEVICE_TYPE_USB_HEADSET:
-        return PIN_OUT_USB_EXT;
-    default:
-        return PIN_OUT_SPEAKER;
+        case DEVICE_TYPE_SPEAKER:
+            return PIN_OUT_SPEAKER;
+        case DEVICE_TYPE_WIRED_HEADSET:
+            return PIN_OUT_HEADSET;
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+            return PIN_OUT_HEADPHONE;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            return PIN_OUT_BLUETOOTH_SCO;
+        case DEVICE_TYPE_USB_HEADSET:
+            return PIN_OUT_USB_EXT;
+        default:
+            return PIN_OUT_SPEAKER;
     }
 }
 
@@ -1333,7 +1333,7 @@ int32_t AudioRendererSinkInner::InitRender()
             ret = SetOutputRoute(DEVICE_TYPE_DP);
         } else {
             DeviceType type = static_cast<DeviceType>(attr_.deviceType);
-            if(type == DEVICE_TYPE_INVALID){
+            if (type == DEVICE_TYPE_INVALID) {
                 type = DEVICE_TYPE_SPEAKER;
             }
             ret = SetOutputRoute(type);

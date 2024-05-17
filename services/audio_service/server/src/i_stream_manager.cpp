@@ -21,16 +21,16 @@ namespace AudioStandard {
 IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
 {
     switch (managerType) {
-    case DIRECT_PLAYBACK:
-        static ProAudioStreamManager directManager(DIRECT_PLAYBACK);
-        return directManager;
-    case VOIP_PLAYBACK:
-        static ProAudioStreamManager voipManager(VOIP_PLAYBACK);
-        return voipManager;
-    case PLAYBACK:
-    default:
-        static PaAdapterManager adapterManager(PLAYBACK);
-        return adapterManager;
+        case DIRECT_PLAYBACK:
+            static ProAudioStreamManager directManager(DIRECT_PLAYBACK);
+            return directManager;
+        case VOIP_PLAYBACK:
+            static ProAudioStreamManager voipManager(VOIP_PLAYBACK);
+            return voipManager;
+        case PLAYBACK:
+        default:
+            static PaAdapterManager adapterManager(PLAYBACK);
+            return adapterManager;
     }
 }
 

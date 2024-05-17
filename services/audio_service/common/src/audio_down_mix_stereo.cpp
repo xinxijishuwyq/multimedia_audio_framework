@@ -19,7 +19,7 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include <dlfcn.h>
-#include <inttypes.h>
+#include <cinttypes>
 namespace OHOS {
 namespace AudioStandard {
 #if (defined(__aarch64__) || defined(__x86_64__))
