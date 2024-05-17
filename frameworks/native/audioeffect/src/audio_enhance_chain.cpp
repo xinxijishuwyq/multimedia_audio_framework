@@ -79,6 +79,7 @@ void AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLi
 
 void GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint8_t> &input, uint32_t inputLen)
 {
+    int32_t ret = 0;
     input.reserve(inputLen);
     std::vector<std::vector<uint8_t>> cache;
     cache.resize(enhanceBufferAttr->batchLen);
@@ -87,16 +88,16 @@ void GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint
     }
     // ref channel
     for (uint32_t j = 0; j < enhanceBufferAttr->refNum; ++j) {
-        memset_s(cache[j].data(), cache[j].size(), 0, cache[j].size());
+        ret = memset_s(cache[j].data(), cache[j].size(), 0, cache[j].size());
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memset error in ref channel memcpy");
     }
     uint32_t index = 0;
     for (uint32_t i = 0; i < enhanceBufferAttr->byteLenPerFrame / enhanceBufferAttr->bitDepth; ++i) {
         // mic channel
         for (uint32_t j = enhanceBufferAttr->refNum; j < enhanceBufferAttr->batchLen; ++j) {
-            int32_t ret = 0;
             ret = memcpy_s(&cache[j][i * enhanceBufferAttr->bitDepth], enhanceBufferAttr->bitDepth,
                 enhanceBufferAttr->input + index, enhanceBufferAttr->bitDepth);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in GetOneFrameInputData");
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in mic channel memcpy");
             index += enhanceBufferAttr->bitDepth;
         }
     }
