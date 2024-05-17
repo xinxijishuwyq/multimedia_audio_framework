@@ -75,10 +75,10 @@ AudioProcessConfig NoneMixEngineUnitTest::InitProcessConfig()
 }
 
 /**
- * @tc.name  : Test Create Direct Sink
+ * @tc.name  : Test Direct Audio Playback Engine
  * @tc.type  : FUNC
- * @tc.number: DirectAudioSinkCreate_001
- * @tc.desc  : Test create direct sink success
+ * @tc.number: DirectAudioPlayBackEngine_001
+ * @tc.desc  : Test direct audio playback engine success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
 {
@@ -87,35 +87,304 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
     rendererStream->SetStreamIndex(10);
-    ret = playbackEngine_->AddRendererStream(rendererStream);
-    EXPECT_EQ(SUCCESS, ret);
     ret = playbackEngine_->Start();
     EXPECT_EQ(SUCCESS, ret);
-    playbackEngine_->RemoveRenderer(rendererStream);
     ret = playbackEngine_->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = playbackEngine_->Release();
     EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
- * @tc.name  : Test Create Direct Sink
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
- * @tc.number: DirectAudioSinkCreate_001
- * @tc.desc  : Test create direct sink success
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_001
+ * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
+    config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
     int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
     rendererStream->SetStreamIndex(10);
     ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
-    ret = rendererStream->Pause();
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_002
+ * @tc.desc  : Test direct audio playback engine set config(deviceType) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_002, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Stop();
     EXPECT_EQ(SUCCESS, ret);
     ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_003
+ * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_003, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_176400;
+    config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_004
+ * @tc.desc  : Test direct audio playback engine set config(deviceType) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_004, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_176400;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_005
+ * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_005, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_006
+ * @tc.desc  : Test direct audio playback engine set config(deviceType) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_006, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_007
+ * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_007, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_88200;
+    config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_008
+ * @tc.desc  : Test direct audio playback engine set config(deviceType) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_008, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_88200;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_009
+ * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_009, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_010
+ * @tc.desc  : Test direct audio playback engine set config(deviceType) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_010, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_011
+ * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_011, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    config.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_002
+ * @tc.desc  : Test direct audio playback engine set config(deviceType) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_012, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    int32_t ret = rendererStream->InitParams();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererStream->SetStreamIndex(10);
+    ret = rendererStream->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererStream->Release();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Direct Audio Playback Engine Set Config
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioPlayBackEngineSetConfig_013
+ * @tc.desc  : Test direct audio playback engine set config(non-deviceType) success
+ */
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_012, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    config.deviceType = DEVICE_TYPE_NONE;
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    EXPECT_NE(nullptr, rendererStream);
+    int32_t ret = rendererStream->InitParams();
     EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard

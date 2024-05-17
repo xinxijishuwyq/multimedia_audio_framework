@@ -31,6 +31,7 @@ public:
 
 protected:
     AudioRendererSink *sink;
+    AudioRendererSink *voipSink;
 };
 
 void AudioDirectSinkUnitTest::SetUpTestCase(void)
@@ -46,12 +47,16 @@ void AudioDirectSinkUnitTest::TearDownTestCase(void)
 void AudioDirectSinkUnitTest::SetUp(void)
 {
     sink = AudioRendererSink::GetInstance(DIRECT_SINK_NAME);
+    voipSink = AudioRendererSink::GetInstance(VOIP_SINK_NAME);
 }
 
 void AudioDirectSinkUnitTest::TearDown(void)
 {
-    if (sink && sink->isInited()) {
+    if (sink && sink->IsInited()) {
         sink->DeInit();
+    }
+    if (voipSink && voipSink->IsInited()) {
+        voipSink->DeInit();
     }
 }
 
@@ -63,7 +68,7 @@ void AudioDirectSinkUnitTest::TearDown(void)
  */
 HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkCreate_001, TestSize.Level1)
 {
-    EXPECT_NE(nullptr, sink);
+    EXPECT_NE(nullptr, this->sink);
 }
 
 /**
@@ -74,7 +79,7 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkCreate_001, TestSize.Level1)
  */
 HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkInit_001, TestSize.Level1)
 {
-    EXPECT_NE(nullptr, sink);
+    EXPECT_NE(nullptr, this->sink);
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
     attr.sampleRate = 48000;
@@ -95,11 +100,11 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkInit_001, TestSize.Level1)
  * @tc.name  : Test Direct Sink State
  * @tc.type  : FUNC
  * @tc.number: DirectAudioSinkState_001
- * @tc.desc  : Test direct sink state
+ * @tc.desc  : Test direct sink state success
  */
 HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_001, TestSize.Level1)
 {
-    EXPECT_NE(nullptr, sink);
+    EXPECT_NE(nullptr, this->sink);
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
     attr.sampleRate = 48000;
@@ -114,12 +119,133 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_001, TestSize.Level1)
     ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = sink->Stop();
+}
+
+/**
+ * @tc.name  : Test Direct Sink Init State
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioSinkState_002
+ * @tc.desc  : Test direct sink init state success
+ */
+HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, this->sink);
+    IAudioSinkAttr attr = {};
+    attr.adapterName = SINK_ADAPTER_NAME;
+    attr.sampleRate = 48000;
+    attr.channel = 2; // 2 two channel
+    attr.format = HdiAdapterFormat::SAMPLE_S32;
+    attr.channelLayout = 3;
+    attr.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    attr.volume = 1.0f;
+    attr.openMicSpeaker = 1;
+    bool isInited = sink->isInited();
+    EXPECT_EQ(false, isInited);
+
+    int32_t ret = sink->Init(attr);
     EXPECT_EQ(SUCCESS, ret);
-    ret = sink->Start();
+
+    isInited = sink->isInited();
+    EXPECT_EQ(true, isInited);
+
+    sink->DeInit();
+
+    isInited = sink->isInited();
+    EXPECT_EQ(false, isInited);
+
+    // Continuous execution init
+    ret = sink->Init(attr);
     EXPECT_EQ(SUCCESS, ret);
-    ret = sink->Pause(); // todo
+    ret = sink->Init(attr);
     EXPECT_EQ(SUCCESS, ret);
-    ret = sink->Stop();
+    isInited = sink->isInited();
+    EXPECT_EQ(true, isInited);
+}
+
+/**
+ * @tc.name  : Test Direct Sink Start State
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioSinkState_003
+ * @tc.desc  : Test direct sink start state success
+ */
+HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, this->sink);
+    IAudioSinkAttr attr = {};
+    attr.adapterName = SINK_ADAPTER_NAME;
+    attr.sampleRate = 48000;
+    attr.channel = 2; // 2 two channel
+    attr.format = HdiAdapterFormat::SAMPLE_S32;
+    attr.channelLayout = 3;
+    attr.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    attr.volume = 1.0f;
+    attr.openMicSpeaker = 1;
+    int32_t ret = sink->Init(attr);
+    EXPECT_EQ(SUCCESS, ret);
+
+    int32_t ret = sink->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret = sink->Stop();
+    EXPECT_EQ(SUCCESS, ret);    
+
+    // start -> start -> stop
+    int32_t ret = sink->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret = sink->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Audio Direct Sink Attribute 
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioSinkSetAttribute_001
+ * @tc.desc  : Test audio direct sink attribute(sampleRate) success
+ */
+HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkSetAttribute_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, this->sink);
+    IAudioSinkAttr attr = {};
+    attr.adapterName = SINK_ADAPTER_NAME;
+    attr.sampleRate = 192000;
+    attr.channel = 2; // 2 two channel
+    attr.format = HdiAdapterFormat::SAMPLE_S32;
+    attr.channelLayout = 3;
+    attr.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    attr.volume = 1.0f;
+    attr.openMicSpeaker = 1;
+    int32_t ret = sink->Init(attr);
+    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret = sink->Stop();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Audio Direct Sink Attribute 
+ * @tc.type  : FUNC
+ * @tc.number: DirectAudioSinkSetAttribute_002
+ * @tc.desc  : Test audio direct sink attribute(deviceType) success
+ */
+HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkSetAttribute_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, this->sink);
+    IAudioSinkAttr attr = {};
+    attr.adapterName = SINK_ADAPTER_NAME;
+    attr.sampleRate = 192000;
+    attr.channel = 2; // 2 two channel
+    attr.format = HdiAdapterFormat::SAMPLE_S32;
+    attr.channelLayout = 3;
+    attr.deviceType = DEVICE_TYPE_USB_HEADSET;
+    attr.volume = 1.0f;
+    attr.openMicSpeaker = 1;
+    int32_t ret = sink->Init(attr);
+    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret = sink->Stop();
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -131,8 +257,7 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_001, TestSize.Level1)
  */
 HWTEST_F(AudioDirectSinkUnitTest, VoipAudioSinkCreate_001, TestSize.Level1)
 {
-    AudioRendererSink *voipSink = AudioRendererSink::GetInstance(VOIP_SINK_NAME);
-    EXPECT_NE(nullptr, voipSink);
+    EXPECT_NE(nullptr, this->voipSink);
 }
 } // namespace AudioStandard
 } // namespace OHOS
