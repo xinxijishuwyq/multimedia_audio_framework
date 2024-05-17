@@ -89,7 +89,7 @@ void GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint
     // ref channel
     for (uint32_t j = 0; j < enhanceBufferAttr->refNum; ++j) {
         ret = memset_s(cache[j].data(), cache[j].size(), 0, cache[j].size());
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memset error in ref channel memcpy");
+        CHECK_AND_RETURN_LOG(ret == 0, "memset error in ref channel memcpy");
     }
     uint32_t index = 0;
     for (uint32_t i = 0; i < enhanceBufferAttr->byteLenPerFrame / enhanceBufferAttr->bitDepth; ++i) {
@@ -97,7 +97,7 @@ void GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint
         for (uint32_t j = enhanceBufferAttr->refNum; j < enhanceBufferAttr->batchLen; ++j) {
             ret = memcpy_s(&cache[j][i * enhanceBufferAttr->bitDepth], enhanceBufferAttr->bitDepth,
                 enhanceBufferAttr->input + index, enhanceBufferAttr->bitDepth);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in mic channel memcpy");
+            CHECK_AND_RETURN_LOG(ret == 0, "memcpy error in mic channel memcpy");
             index += enhanceBufferAttr->bitDepth;
         }
     }
