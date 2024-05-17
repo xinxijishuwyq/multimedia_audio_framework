@@ -1140,7 +1140,9 @@ void AudioEffectChainManager::AudioRotationListener::OnChange(Rosen::DisplayId d
 
 bool AudioEffectChainManager::CheckA2dpOffload()
 {
-    if ((GetDeviceTypeName() == "DEVICE_TYPE_BLUETOOTH_A2DP") && (GetDeviceSinkName() == "Speaker")) {
+    std::string curDeviceType = GetDeviceTypeName();
+    if ((GetDeviceSinkName() == "Speaker") && ((curDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") ||
+        (curDeviceType == "DEVICE_TYPE_SPEAKER"))) {
         return true;
     }
     return false;
