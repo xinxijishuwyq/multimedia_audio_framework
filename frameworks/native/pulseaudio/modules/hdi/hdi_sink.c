@@ -1571,7 +1571,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
 
         ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
         memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
-        u->bufferAttr->numChanIn = processChannels;
+        u->bufferAttr->numChanIn = (int32_t)processChannels;
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);
     }
@@ -2950,9 +2950,9 @@ static void ThreadFuncRendererTimer(void *userdata)
 
 static void ThreadFuncRendererTimerBusSendMsgq(struct Userdata *u)
 {
-    unsigned nPrimary;
-    unsigned nOffload;
-    unsigned nMultiChannel;
+    unsigned nPrimary = 0;
+    unsigned nOffload = 0;
+    unsigned nMultiChannel = 0;
     int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
 
     if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
