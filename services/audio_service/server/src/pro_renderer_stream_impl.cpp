@@ -73,17 +73,17 @@ AudioSamplingRate ProRendererStreamImpl::GetDirectSampleRate(AudioSamplingRate s
 {
     AudioSamplingRate result = sampleRate;
     switch (sampleRate) {
-    case AudioSamplingRate::SAMPLE_RATE_44100:
-        result = AudioSamplingRate::SAMPLE_RATE_48000;
-        break;
-    case AudioSamplingRate::SAMPLE_RATE_88200:
-        result = AudioSamplingRate::SAMPLE_RATE_96000;
-        break;
-    case AudioSamplingRate::SAMPLE_RATE_176400:
-        result = AudioSamplingRate::SAMPLE_RATE_192000;
-        break;
-    default:
-        break;
+        case AudioSamplingRate::SAMPLE_RATE_44100:
+            result = AudioSamplingRate::SAMPLE_RATE_48000;
+            break;
+        case AudioSamplingRate::SAMPLE_RATE_88200:
+            result = AudioSamplingRate::SAMPLE_RATE_96000;
+            break;
+        case AudioSamplingRate::SAMPLE_RATE_176400:
+            result = AudioSamplingRate::SAMPLE_RATE_192000;
+            break;
+        default:
+            break;
     }
     return result;
 }

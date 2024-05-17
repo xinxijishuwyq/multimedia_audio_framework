@@ -224,7 +224,7 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkSetAttribute_001, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test Audio Direct Sink Attribute 
+ * @tc.name  : Test Audio Direct Sink Attribute
  * @tc.type  : FUNC
  * @tc.number: DirectAudioSinkSetAttribute_002
  * @tc.desc  : Test audio direct sink attribute(deviceType) success
