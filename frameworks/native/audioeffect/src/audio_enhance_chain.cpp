@@ -47,7 +47,10 @@ void AudioEnhanceChain::SetEnhanceMode(const std::string &mode)
 void AudioEnhanceChain::ReleaseEnhanceChain()
 {
     for (uint32_t i = 0; i < standByEnhanceHandles_.size() && i < enhanceLibHandles_.size(); i++) {
-        if (!enhanceLibHandles_[i] || !standByEnhanceHandles_[i]) {
+        if (!enhanceLibHandles_[i]) {
+            continue;
+        }
+        if (!standByEnhanceHandles_[i]) {
             continue;
         }
         if (!enhanceLibHandles_[i]->releaseEffect) {
@@ -102,6 +105,8 @@ void GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint
 
 int32_t AudioEnhanceChain::ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAttr)
 {
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr != nullptr, ERROR, "enhance buffer is null");
+    
     enhanceBufferAttr->refNum = REF_CHANNEL_NUM_MAP.find(sceneType_)->second;
     enhanceBufferAttr->batchLen = enhanceBufferAttr->refNum + enhanceBufferAttr->micNum;
     uint32_t inputLen = enhanceBufferAttr->byteLenPerFrame * enhanceBufferAttr->batchLen;

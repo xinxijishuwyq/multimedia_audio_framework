@@ -230,6 +230,7 @@ int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(const std::str
 int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(const std::string &sceneType,
     EnhanceBufferAttr *enhanceBufferAttr)
 {
+    CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr != nullptr, ERROR, "enhance buffer is null");
     std::lock_guard<std::mutex> lock(chainMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetUpAndDownDevice();
     if (!sceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey)) {
