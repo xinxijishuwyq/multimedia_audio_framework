@@ -46,7 +46,8 @@ void AudioCommonConverter::ConvertBufferTo32Bit(const uint8_t *buffer, int32_t f
             for (; count > 0; --count) {
                 *--dst = (int32_t)((*--src << AUDIO_SAMPLE_16BIT_LENGTH) * volume);
             }
-        } break;
+            break;
+        }
         case AUDIO_SAMPLE_FORMAT_24BIT:
             dst += count;
             buffer += count * AUDIO_24BIT_LENGTH;
@@ -96,6 +97,7 @@ void AudioCommonConverter::ConvertBufferTo16Bit(const uint8_t *buffer, int32_t f
             for (; count > 0; --count) {
                 *--dst = (*--src * volume);
             }
+            break;
         }
         case AUDIO_SAMPLE_FORMAT_24BIT:
             dst += count;
