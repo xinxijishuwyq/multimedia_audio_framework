@@ -6024,6 +6024,11 @@ int32_t AudioPolicyService::SetCallDeviceActive(InternalDeviceType deviceType, b
 
 std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDevice()
 {
+    unique_ptr<AudioDeviceDescriptor> preferredDesc = audioStateManager_.GetPerferredCallRenderDevice();
+    if (preferredDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        return preferredDesc;
+    }
+
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioPrivacyDeviceDescriptors =
         audioDeviceManager_.GetCommRenderPrivacyDevices();
     std::vector<unique_ptr<AudioDeviceDescriptor>> activeDeviceDescriptors;
