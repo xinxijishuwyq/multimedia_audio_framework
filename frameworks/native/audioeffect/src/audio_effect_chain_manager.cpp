@@ -95,6 +95,10 @@ AudioEffectChainManager::AudioEffectChainManager()
 AudioEffectChainManager::~AudioEffectChainManager()
 {
     AUDIO_INFO_LOG("~AudioEffectChainManager destroy");
+#ifdef WINDOW_MANAGER_ENABLE
+    delete audioRotationListener_;
+    audioRotationListener_ = nullptr;
+#endif
 }
 
 AudioEffectChainManager *AudioEffectChainManager::GetInstance()

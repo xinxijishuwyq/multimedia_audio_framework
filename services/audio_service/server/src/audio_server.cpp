@@ -1015,6 +1015,7 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
 {
+    Trace trace("AudioServer::CreateAudioProcess");
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 

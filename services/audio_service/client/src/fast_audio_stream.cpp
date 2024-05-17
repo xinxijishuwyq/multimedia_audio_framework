@@ -65,13 +65,13 @@ int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureC
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
-    rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY;
+    rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
 }
 
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
-    capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY;
+    capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
 }
 
 int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,

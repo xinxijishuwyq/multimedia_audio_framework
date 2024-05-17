@@ -275,7 +275,7 @@ public:
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-        const sptr<IRemoteObject> &object);
+        const sptr<IRemoteObject> &object, const int32_t apiVersion);
 
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
 
@@ -334,7 +334,7 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
-    void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
+    void GetEffectManagerInfo();
 
     float GetMinStreamVolume(void);
 
@@ -464,6 +464,7 @@ public:
     void GetCapturerStreamDump(std::string &dumpString);
     void GetSafeVolumeDump(std::string &dumpString);
     void GetOffloadStatusDump(std::string &dumpString);
+    void EffectManagerInfoDump(std::string &dumpString);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
@@ -812,7 +813,6 @@ private:
 
     BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     std::mutex switchA2dpOffloadMutex_;
-    bool sameDeviceSwitchFlag_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -841,7 +841,6 @@ private:
     std::unordered_map<int32_t, sptr<MicrophoneDescriptor>> audioCaptureMicrophoneDescriptor_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
-    std::string lastBTDevice_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
@@ -949,6 +948,9 @@ private:
     DeviceType priorityOutputDevice_;
     DeviceType priorityInputDevice_;
     ConnectType conneceType_;
+
+    SupportedEffectConfig supportedEffectConfig_;
+    ConverterConfig converterConfig_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
