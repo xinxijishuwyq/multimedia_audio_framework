@@ -27,7 +27,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static int32_t GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint8_t> &input, uint32_t inputLen)
+static int32_t GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint8_t> &input,
+    uint32_t inputLen)
 {
     CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr->bitDepth != 0, ERROR, "bitDepth is zero");
 
@@ -37,7 +38,7 @@ static int32_t GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::v
     for (auto &it : cache) {
         it.resize(enhanceBufferAttr->byteLenPerFrame);
     }
-    
+
     int32_t ret = 0;
     // ref channel
     for (uint32_t j = 0; j < enhanceBufferAttr->refNum; ++j) {
@@ -119,7 +120,7 @@ void AudioEnhanceChain::SetHandleConfig(AudioEffectHandle handle, DataDescriptio
     cmdInfo.size = sizeof(desc);
     
     ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "[%{publc}s] with mode [%{public}s], either one of libs \
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{publc}s] with mode [%{public}s], either one of libs \
         EFFECT_CMD_SET_CONFIG fai", sceneType_.c_str(), enhanceMode_.c_str());
     setConfigFlag_ = true;
 }
