@@ -218,7 +218,7 @@ private:
     int32_t FlushRingCache();
     int32_t DrainRingCache();
 
-    int32_t WriteCacheData();
+    int32_t WriteCacheData(bool isDrain = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WriteCallbackFunc();
@@ -234,6 +234,8 @@ private:
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
 
     void FirstFrameProcess();
+
+    void VolumeHandle(BufferDesc &desc);
 
     void ResetFramePosition();
 
