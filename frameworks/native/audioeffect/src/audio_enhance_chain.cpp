@@ -93,8 +93,10 @@ void GetOneFrameInputData(EnhanceBufferAttr *enhanceBufferAttr, std::vector<uint
     for (uint32_t i = 0; i < enhanceBufferAttr->byteLenPerFrame / enhanceBufferAttr->bitDepth; ++i) {
         // mic channel
         for (uint32_t j = enhanceBufferAttr->refNum; j < enhanceBufferAttr->batchLen; ++j) {
-            memcpy_s(&cache[j][i * enhanceBufferAttr->bitDepth], enhanceBufferAttr->bitDepth,
+            int32_t ret = 0;
+            ret = memcpy_s(&cache[j][i * enhanceBufferAttr->bitDepth], enhanceBufferAttr->bitDepth,
                 enhanceBufferAttr->input + index, enhanceBufferAttr->bitDepth);
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in GetOneFrameInputData");
             index += enhanceBufferAttr->bitDepth;
         }
     }
@@ -114,7 +116,7 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAtt
     if (IsEmptyEnhanceHandles()) {
         AUDIO_ERR_LOG("audioEnhanceChain->standByEnhanceHandles is empty");
         CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBufferAttr->output, outputLen, enhanceBufferAttr->input,
-            outputLen) == 0, ERROR, "memcpy error in apply enhance");
+            outputLen) == 0, ERROR, "memcpy error in IsEmptyEnhanceHandles");
         return ERROR;
     }
     std::vector<uint8_t> input;
@@ -151,7 +153,8 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAtt
             CHECK_AND_CONTINUE_LOG(ret == 0, "[%{publc}s] with mode [%{public}s], either one of libs process fail",
                 sceneType_.c_str(), enhanceMode_.c_str());
         }
-        memcpy_s(enhanceBufferAttr->output, outputLen, audioBufOut_.raw, outputLen);
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBufferAttr->output, outputLen, audioBufOut_.raw, outputLen) == 0,
+            ERROR, "memcpy error in audioBufOut_ to enhanceBufferAttr->output");
         return SUCCESS;
     }
 }
