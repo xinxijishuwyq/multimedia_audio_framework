@@ -51,6 +51,7 @@ public:
     ~AudioEnhanceChain();
     void SetEnhanceMode(const std::string &mode);
     void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle);
+    void SetHandleConfig(AudioEffectHandle handle, DataDescription desc);
     int32_t ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAttr);
     bool IsEmptyEnhanceHandles();
 
@@ -58,7 +59,7 @@ private:
     void ReleaseEnhanceChain();
 
     bool setConfigFlag_;
-    std::mutex reloadMutex_;
+    std::mutex chainMutex_;
     std::string sceneType_;
     std::string enhanceMode_;
     std::vector<AudioEffectHandle> standByEnhanceHandles_;

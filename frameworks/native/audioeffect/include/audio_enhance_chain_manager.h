@@ -54,7 +54,7 @@ private:
     std::map<std::string, std::vector<std::string>> enhanceChainToEnhancesMap_;
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> enhanceToLibraryEntryMap_;
     std::map<std::string, std::string> enhanceToLibraryNameMap_;
-    std::mutex chainMutex_;
+    std::mutex chainManagerMutex_;
     bool isInitialized_;
     std::string upAndDownDevice_;
 };

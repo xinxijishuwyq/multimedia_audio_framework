@@ -86,7 +86,7 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
     std::unordered_map<std::string, std::string> &enhanceChainNameMap,
     std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList)
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
     std::set<std::string> enhanceSet;
     for (EffectChain enhanceChain : enhanceChains) {
         for (std::string enhance : enhanceChain.apply) {
@@ -128,7 +128,7 @@ void AudioEnhanceChainManager::InitAudioEnhanceChainManager(std::vector<EffectCh
 int32_t AudioEnhanceChainManager::CreateAudioEnhanceChainDynamic(const std::string &sceneType,
     const std::string &enhanceMode, const std::string &upAndDownDevice)
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
     upAndDownDevice_ = upAndDownDevice;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + upAndDownDevice;
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain = nullptr;
@@ -208,7 +208,7 @@ int32_t AudioEnhanceChainManager::SetAudioEnhanceChainDynamic(const std::string 
 int32_t AudioEnhanceChainManager::ReleaseAudioEnhanceChainDynamic(const std::string &sceneType,
     const std::string &upAndDownDevice)
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
     CHECK_AND_RETURN_RET_LOG(sceneType != "", ERROR, "null sceneType");
 
@@ -231,7 +231,7 @@ int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(const std::string &scen
     EnhanceBufferAttr *enhanceBufferAttr)
 {
     CHECK_AND_RETURN_RET_LOG(enhanceBufferAttr != nullptr, ERROR, "enhance buffer is null");
-    std::lock_guard<std::mutex> lock(chainMutex_);
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetUpAndDownDevice();
     if (!sceneTypeToEnhanceChainMap_.count(sceneTypeAndDeviceKey)) {
         uint32_t totalLen = enhanceBufferAttr->byteLenPerFrame * enhanceBufferAttr->outNum;
@@ -251,7 +251,7 @@ int32_t AudioEnhanceChainManager::ApplyAudioEnhanceChain(const std::string &scen
 
 bool AudioEnhanceChainManager::ExistAudioEnhanceChain(const std::string &sceneType)
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
+    std::lock_guard<std::mutex> lock(chainManagerMutex_);
     if (!isInitialized_) {
         AUDIO_ERR_LOG("audioEnhanceChainManager has not been initialized.");
         return false;
