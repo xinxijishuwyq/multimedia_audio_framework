@@ -139,18 +139,18 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_002, TestSize.Level1)
     attr.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
-    bool isInited = sink->isInited();
+    bool isInited = sink->IsInited();
     EXPECT_EQ(false, isInited);
 
     int32_t ret = sink->Init(attr);
     EXPECT_EQ(SUCCESS, ret);
 
-    isInited = sink->isInited();
+    isInited = sink->IsInited();
     EXPECT_EQ(true, isInited);
 
     sink->DeInit();
 
-    isInited = sink->isInited();
+    isInited = sink->IsInited();
     EXPECT_EQ(false, isInited);
 
     // Continuous execution init
@@ -158,7 +158,7 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_002, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = sink->Init(attr);
     EXPECT_EQ(SUCCESS, ret);
-    isInited = sink->isInited();
+    isInited = sink->IsInited();
     EXPECT_EQ(true, isInited);
 }
 
@@ -183,17 +183,17 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_003, TestSize.Level1)
     int32_t ret = sink->Init(attr);
     EXPECT_EQ(SUCCESS, ret);
 
-    int32_t ret = sink->Start();
+    ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
-    int32_t ret = sink->Stop();
+    ret = sink->Stop();
     EXPECT_EQ(SUCCESS, ret);    
 
     // start -> start -> stop
-    int32_t ret = sink->Start();
+    ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
-    int32_t ret = sink->Start();
+    ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
-    int32_t ret = sink->Stop();
+    ret = sink->Stop();
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -217,9 +217,9 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkSetAttribute_001, TestSize.Leve
     attr.openMicSpeaker = 1;
     int32_t ret = sink->Init(attr);
     EXPECT_EQ(SUCCESS, ret);
-    int32_t ret = sink->Start();
+    ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
-    int32_t ret = sink->Stop();
+    ret = sink->Stop();
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -243,9 +243,9 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkSetAttribute_002, TestSize.Leve
     attr.openMicSpeaker = 1;
     int32_t ret = sink->Init(attr);
     EXPECT_EQ(SUCCESS, ret);
-    int32_t ret = sink->Start();
+    ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
-    int32_t ret = sink->Stop();
+    ret = sink->Stop();
     EXPECT_EQ(SUCCESS, ret);
 }
 

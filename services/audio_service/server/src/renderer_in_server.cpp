@@ -120,11 +120,17 @@ int32_t RendererInServer::Init()
         processConfig_.streamInfo.format >= SAMPLE_S24LE) {
         if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
             managerType_ = DIRECT_PLAYBACK;
+            AUDIO_INFO_LOG("current stream marked as high resolution");
         }
     }
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
+    if (ret != SUCCESS && managerType_ == DIRECT_PLAYBACK) {
+        managerType_ = PLAYBACK;
+        ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
+        AUDIO_DEBUG_LOG("high resolution create failed use normal replace");
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
-        "Construct rendererInServer failed: %{public}d", ret);
+                             "Construct rendererInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,

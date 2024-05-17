@@ -21,7 +21,7 @@
 #include "i_renderer_stream.h"
 #include "audio_resample.h"
 #include "linear_pos_time_model.h"
-
+#include "audio_down_mix_stereo.h"
 namespace OHOS {
 namespace AudioStandard {
 enum class ProStreamStatus : int32_t {
@@ -85,7 +85,7 @@ private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;
     uint32_t GetSamplePerFrame(AudioSampleFormat format) const noexcept;
-    void ConvertSrcToFloat(uint8_t *buffer, size_t bufLength);
+    void ConvertSrcToFloat(uint8_t *buffer, size_t bufLength, float volume);
     void ConvertFloatToDes(int32_t writeIndex);
     float GetStreamVolume();
     void PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index);
@@ -95,6 +95,7 @@ private:
 private:
     bool isDirect_;
     bool isNeedResample_;
+    bool isNeedMcr_;
     bool isBlock_;
     bool isDrain_;
     int32_t privacyType_;
@@ -119,6 +120,7 @@ private:
     std::queue<int32_t> writeQueue_;
     LinearPosTimeModel handleTimeModel_;
     AudioProcessConfig processConfig_;
+    std::unique_ptr<AudioDownMixStereo> downMixer_;
 
     std::mutex enqueueMutex;
     std::mutex peekMutex;

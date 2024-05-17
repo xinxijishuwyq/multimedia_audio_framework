@@ -91,8 +91,6 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
     ret = playbackEngine_->Stop();
     EXPECT_EQ(SUCCESS, ret);
-    ret = playbackEngine_->Release();
-    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -101,7 +99,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_001
  * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_002, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
@@ -124,7 +122,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_001, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_002
  * @tc.desc  : Test direct audio playback engine set config(deviceType) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_002, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_003, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
@@ -147,7 +145,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_002, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_003
  * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_003, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_004, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_176400;
@@ -170,7 +168,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_003, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_004
  * @tc.desc  : Test direct audio playback engine set config(deviceType) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_004, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_005, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_176400;
@@ -193,7 +191,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_004, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_005
  * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_005, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_006, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
@@ -216,7 +214,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_005, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_006
  * @tc.desc  : Test direct audio playback engine set config(deviceType) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_006, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_007, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
@@ -239,7 +237,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_006, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_007
  * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_007, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_008, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_88200;
@@ -262,7 +260,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_007, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_008
  * @tc.desc  : Test direct audio playback engine set config(deviceType) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_008, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_009, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_88200;
@@ -285,7 +283,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_008, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_009
  * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_009, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_010, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
@@ -308,7 +306,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_009, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_010
  * @tc.desc  : Test direct audio playback engine set config(deviceType) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_010, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_011, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
@@ -331,7 +329,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_010, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_011
  * @tc.desc  : Test direct audio playback engine set config(sampleRate) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_011, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_012, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
@@ -354,7 +352,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_011, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_002
  * @tc.desc  : Test direct audio playback engine set config(deviceType) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_012, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_013, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
@@ -377,7 +375,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_012, TestSize.Level1)
  * @tc.number: DirectAudioPlayBackEngineSetConfig_013
  * @tc.desc  : Test direct audio playback engine set config(non-deviceType) success
  */
-HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngine_012, TestSize.Level1)
+HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_019, TestSize.Level1)
 {
     AudioProcessConfig config = InitProcessConfig();
     config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;

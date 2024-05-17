@@ -36,7 +36,8 @@ const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
     : isDirect_(isDirect),
       isNeedResample_(false),
-      isBlock_(false),
+      isNeedMcr_(false),
+      isBlock_(true),
       isDrain_(false),
       privacyType_(0),
       renderRate_(0),
@@ -52,6 +53,7 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
       status_(ProStreamStatus::RELEASED),
       resample_(nullptr),
       processConfig_(processConfig),
+      downMixer_(nullptr),
       dumpFile_(nullptr)
 {
     AUDIO_DEBUG_LOG("ProRendererStreamImpl constructor");
@@ -101,14 +103,28 @@ int32_t ProRendererStreamImpl::InitParams()
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     int32_t frameSize = spanSizeInFrame_ * streamInfo.channels;
+    uint32_t desChannels = streamInfo.channels >= 2 ? 2 : 1;
+    uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     if (streamInfo.samplingRate != desSamplingRate_) {
         isNeedResample_ = true;
-        resample_ = std::make_shared<AudioResample>(streamInfo.channels, streamInfo.samplingRate, desSamplingRate_, 2);
+        resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_, 2);
         resampleSrcBuffer.resize(frameSize, 0.f);
-        resampleDesBuffer.resize((frameSize * desSamplingRate_) / streamInfo.samplingRate, 0.f);
+        resampleDesBuffer.resize(desSpanSize * desChannels, 0.f);
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
     }
-    uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
+    if (streamInfo.channels > 2) {
+        isNeedMcr_ = true;
+        if (!isNeedResample_) {
+            resampleSrcBuffer.resize(frameSize, 0.f);
+            resampleDesBuffer.resize(desSpanSize * desChannels, 0.f);
+        }
+        downMixer_ = std::make_unique<AudioDownMixStereo>();
+        int32_t ret = downMixer_->InitMixer(streamInfo.channelLayout, streamInfo.channels);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("down mixer not supported.");
+            return ret;
+        }
+    }
     uint32_t bufferSize = GetSamplePerFrame(desFormat_) * desSpanSize * streamInfo.channels;
     sinkBuffer_.resize(DEFAULT_TOTAL_SPAN_COUNT, std::vector<char>(bufferSize, 0));
     for (int32_t i = 0; i < DEFAULT_TOTAL_SPAN_COUNT; i++) {
@@ -334,15 +350,25 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         return ERR_WRITE_BUFFER;
     }
     std::lock_guard lock(peekMutex);
+    float volume = GetStreamVolume();
+    if (isNeedMcr_ && !isNeedResample_) {
+        ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength, volume);
+        downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleDesBuffer.data());
+        ConvertFloatToDes(writeIndex);
+    } else if (isNeedMcr_ && isNeedResample_) {
+        ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength, volume);
+        downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleSrcBuffer.data());
+    }
     if (isNeedResample_) {
-        ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength);
+        if (!isNeedMcr_) {
+            ConvertSrcToFloat(bufferDesc.buffer, bufferDesc.bufLength, volume);
+        }
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
         DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
         ConvertFloatToDes(writeIndex);
-    } else {
+    } else if (!isNeedMcr_) {
         auto streamInfo = processConfig_.streamInfo;
         uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
-        float volume = GetStreamVolume();
         if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
             AudioCommonConverter::ConvertBufferTo16Bit(bufferDesc.buffer, streamInfo.format,
                                                        (int16_t *)sinkBuffer_[writeIndex].data(),
@@ -447,7 +473,7 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
 
     std::shared_ptr<IWriteCallback> writeCallback = writeCallback_.lock();
     if (writeCallback != nullptr) {
-        result = writeCallback->OnWriteData(sinkBuffer_[0].size());
+        result = writeCallback->OnWriteData(spanSizeInFrame_ * byteSizePerFrame_);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Write callback failed,result:%{public}d", result);
             return result;
@@ -533,11 +559,10 @@ void ProRendererStreamImpl::SetOffloadDisable()
     }
 }
 
-void ProRendererStreamImpl::ConvertSrcToFloat(uint8_t *buffer, size_t bufLength)
+void ProRendererStreamImpl::ConvertSrcToFloat(uint8_t *buffer, size_t bufLength, float volume)
 {
     auto streamInfo = processConfig_.streamInfo;
     uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
-    float volume = GetStreamVolume();
     if (streamInfo.format == AudioSampleFormat::SAMPLE_F32LE) {
         if (volume >= 1.0f) {
             memcpy_s(resampleSrcBuffer.data(), resampleSrcBuffer.size() * samplePerFrame, buffer, bufLength);
@@ -559,8 +584,8 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
 {
     uint32_t samplePerFrame = GetSamplePerFrame(desFormat_);
     if (desFormat_ == AudioSampleFormat::SAMPLE_F32LE) {
-        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), resampleSrcBuffer.data(),
-                 resampleSrcBuffer.size() * samplePerFrame);
+        memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), resampleDesBuffer.data(),
+                 resampleDesBuffer.size() * samplePerFrame);
         return;
     }
     AudioCommonConverter::ConvertFloatToAudioBuffer(resampleDesBuffer, (uint8_t *)sinkBuffer_[writeIndex].data(),
