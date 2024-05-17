@@ -147,11 +147,7 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(EnhanceBufferAttr *enhanceBufferAtt
                     EFFECT_CMD_SET_CONFIG fai", sceneType_.c_str(), enhanceMode_.c_str());
                 setConfigFlag_ = true;
             }
-            auto start = std::chrono::high_resolution_clock::now();
             ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
-            auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-            AUDIO_DEBUG_LOG("process in microseconds = %{public}lld", (long long)duration.count());
             CHECK_AND_CONTINUE_LOG(ret == 0, "[%{publc}s] with mode [%{public}s], either one of libs process fail",
                 sceneType_.c_str(), enhanceMode_.c_str());
         }
