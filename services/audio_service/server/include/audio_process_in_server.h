@@ -74,7 +74,7 @@ public:
     AudioStreamType GetAudioStreamType() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
-    void Dump(std::stringstream &dumpStringStream);
+    void Dump(std::string &dumpString);
 
     int32_t ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
          const std::shared_ptr<OHAudioBuffer> &endpoint = nullptr);

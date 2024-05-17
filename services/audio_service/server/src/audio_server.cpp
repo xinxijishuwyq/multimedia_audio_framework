@@ -78,6 +78,8 @@ static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID
 };
 
+static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+
 std::map<std::string, AsrAecMode> aecModeMap = {
     {"BYPASS", AsrAecMode::BYPASS},
     {"STANDARD", AsrAecMode::STANDARD}
@@ -165,16 +167,24 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-      audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
+    audioEffectServer_(std::make_unique<AudioEffectServer>()) {}
 
 void AudioServer::OnDump() {}
 
 int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 {
     AUDIO_INFO_LOG("Dump Process Invoked");
-    std::stringstream dumpStringStream;
-    AudioService::GetInstance()->Dump(dumpStringStream);
-    std::string dumpString = dumpStringStream.str();
+    std::queue<std::u16string> argQue;
+    for (decltype(args.size()) index = 0; index < args.size(); ++index) {
+        argQue.push(args[index]);
+    }
+    std::string dumpString;
+
+    AudioServerDump dumpObj;
+    int32_t res = dumpObj.Initialize();
+    CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+        "Audio Service Dump Not initialised\n");
+    dumpObj.AudioDataDump(dumpString, argQue);
     return write(fd, dumpString.c_str(), dumpString.size());
 }
 
@@ -692,18 +702,16 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
     return true;
 }
 
-bool AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
+void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
 {
     Trace trace("AudioServer::SetOutputDeviceSink:" + std::to_string(deviceType) + " sink:" + sinkName);
     int32_t audio_policy_server_id = 1041;
     if (IPCSkeleton::GetCallingUid() != audio_policy_server_id) {
-        return false;
+        return;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName) != SUCCESS) {
-        return false;
-    }
-    return true;
+    audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName);
+    return;
 }
 
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
@@ -927,6 +935,8 @@ int32_t AudioServer::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
 
 int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
 {
+    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
+        GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -1005,6 +1015,7 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
 {
+    Trace trace("AudioServer::CreateAudioProcess");
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 

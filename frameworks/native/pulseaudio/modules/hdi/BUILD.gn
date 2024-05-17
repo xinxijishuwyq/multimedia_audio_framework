@@ -15,13 +15,11 @@ import("//build/ohos.gni")
 import("../../../../../config.gni")
 import("../../../../../ressche_part.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-
 config("hdi_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "$pulseaudio_dir/include",
+    ".",
     "../../../audioschedule/include",
     "../../../hdiadapter/common/include",
     "../../../hdiadapter/sink/bluetooth",
@@ -54,6 +52,7 @@ ohos_shared_library("module-hdi-sink") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [
@@ -98,6 +97,7 @@ ohos_shared_library("module-hdi-source") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [

@@ -74,7 +74,11 @@ void AudioFastRendererUnitTest::SetUpTestCase(void)
 
     InitializeFastRendererOptions(rendererOptions);
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    bool isFast = audioRenderer->IsFastRenderer();
+    bool isFast;
+    if (audioRenderer != nullptr) {
+        isFast = audioRenderer->IsFastRenderer();
+    }
+
     if (audioRenderer == nullptr || !isFast) {
         g_isFastRenderer = false;
     }

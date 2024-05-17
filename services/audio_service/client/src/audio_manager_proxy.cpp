@@ -730,7 +730,7 @@ bool AudioManagerProxy::CreateEffectChainManager(std::vector<EffectChain> &effec
     return true;
 }
 
-bool AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
+void AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
 {
     int32_t error;
 
@@ -738,15 +738,14 @@ bool AudioManagerProxy::SetOutputDeviceSink(int32_t deviceType, std::string &sin
     MessageParcel replyParcel;
     MessageOption option;
     bool ret = dataParcel.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
     dataParcel.WriteInt32(deviceType);
     dataParcel.WriteString(sinkName);
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK), dataParcel, replyParcel, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false,
-        "SetOutputDeviceSink failed, error: %{public}d", error);
-    return true;
+        CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetOutputDeviceSink failed, error: %{public}d", error);
+    return;
 }
 
 bool AudioManagerProxy::CreatePlaybackCapturerManager()

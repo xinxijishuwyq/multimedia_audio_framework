@@ -129,13 +129,17 @@ public:
 
     virtual int32_t GetSafeVolumeTimeout() const = 0;
 
-    virtual int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) = 0;
+    virtual void SafeVolumeDump(std::string &dumpString) = 0;
 
     virtual void SetActiveDevice(DeviceType deviceType) = 0;
 
     virtual DeviceType GetActiveDevice() = 0;
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
+
+    virtual int32_t GetCurActivateCount() const = 0;
+
+    virtual void HandleKvData(bool isFirstBoot) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

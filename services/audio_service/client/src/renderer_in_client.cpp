@@ -37,6 +37,11 @@
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
+#ifdef RESSCHE_ENABLE
+#include "res_type.h"
+#include "res_sched_client.h"
+#endif
+
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_manager_base.h"
@@ -56,6 +61,7 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+#include "policy_handler.h"
 
 #include "media_monitor_manager.h"
 #include "event_bean.h"
@@ -87,11 +93,15 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
+constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
+static const int32_t MEDIA_SERVICE_UID = 1013;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
 static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
 {
+    AudioXCollie audioXCollie("RendererInClient::GetBundleInfoFromUid", GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS);
+
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -215,6 +225,15 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
     rendererInfo_.spatializationEnabled = spatializationState.spatializationEnabled;
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
+    if (GetOffloadEnable()) {
+        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    } else if (GetHighResolutionEnabled()) {
+        rendererInfo_.pipeType = PIPE_TYPE_HIGHRESOLUTION;
+    } else if (spatializationState.spatializationEnabled) {
+        rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
+    } else {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    }
 }
 
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -229,6 +248,8 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         // make sure sessionId_ is valid.
         AUDIO_INFO_LOG("Calling register tracker, sessionid is %{public}d", sessionId_);
         AudioRegisterTrackerInfo registerTrackerInfo;
+
+        rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
 
         registerTrackerInfo.sessionId = sessionId_;
         registerTrackerInfo.clientPid = clientPid_;
@@ -263,9 +284,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
     }
-    if (!IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout)) {
-        return ERR_NOT_SUPPORTED;
-    }
 
     streamParams_ = curStreamParams_ = info; // keep it for later use
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -276,6 +294,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             return ERR_NOT_SUPPORTED;
         }
         converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
+    }
+
+    if (!IsPlaybackChannelRelatedInfoValid(curStreamParams_.channels, curStreamParams_.channelLayout)) {
+        return ERR_NOT_SUPPORTED;
     }
 
     CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
@@ -414,6 +436,7 @@ void RendererInClientInner::InitCallbackHandler()
 // call this without lock, we should be able to call deinit in any case.
 int32_t RendererInClientInner::DeinitIpcStream()
 {
+    Trace trace("RendererInClientInner::DeinitIpcStream");
     ipcStream_->Release();
     // in plan:
     ipcStream_ = nullptr;
@@ -503,6 +526,7 @@ int32_t RendererInClientInner::InitCacheBuffer(size_t targetSize)
 
 int32_t RendererInClientInner::InitIpcStream()
 {
+    Trace trace("RendererInClientInner::InitIpcStream");
     AudioProcessConfig config = ConstructConfig();
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
@@ -607,7 +631,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 
     timestamp.time.tv_sec = static_cast<time_t>(audioTimeResult / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(audioTimeResult % AUDIO_NS_PER_SECOND);
-
+    AUDIO_DEBUG_LOG("audioTimeResult: %{public}" PRIi64, audioTimeResult);
     return true;
 }
 
@@ -1641,10 +1665,27 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
             bean->Add("APP_NAME", name);
             bean->Add("APP_VERSION_CODE", versionCode);
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+            ReportDataToResSched();
         }
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
     }
+}
+
+void RendererInClientInner::ReportDataToResSched()
+{
+    #ifdef RESSCHE_ENABLE
+    std::unordered_map<std::string, std::string> payload;
+    int32_t uid;
+    if (clientUid_ == MEDIA_SERVICE_UID) {
+        uid = appUid_;
+    } else {
+        uid = clientUid_;
+    }
+    payload["uid"] = std::to_string(uid);
+    uint32_t type = ResourceSchedule::ResType::RES_TYPE_AUDIO_SILENT_PLAYBACK;
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
+    #endif
 }
 
 int32_t RendererInClientInner::WriteCacheData()
@@ -1984,6 +2025,21 @@ void RendererInClientInner::OnSpatializationStateChange(const AudioSpatializatio
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     CHECK_AND_RETURN_LOG(ipcStream_->UpdateSpatializationState(spatializationState.spatializationEnabled,
         spatializationState.headTrackingEnabled) == SUCCESS, "Update spatialization state failed");
+}
+
+bool RendererInClientInner::GetOffloadEnable()
+{
+    return offloadEnable_;
+}
+
+bool RendererInClientInner::GetSpatializationEnabled()
+{
+    return rendererInfo_.spatializationEnabled;
+}
+
+bool RendererInClientInner::GetHighResolutionEnabled()
+{
+    return PolicyHandler::GetInstance().GetHighResolutionExist();
 }
 
 int32_t RendererInClientInner::RegisterSpatializationStateEventListener()

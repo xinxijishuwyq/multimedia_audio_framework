@@ -191,8 +191,8 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     }
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    AUDIO_INFO_LOG("create audiorenderer with usage: %{public}d, content: %{public}d, flags: %{public}d, "\
-        "uid: %{public}d", streamUsage, contentType, rendererFlags, appInfo.appUid);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
+        "flags: %{public}d, uid: %{public}d", contentType, streamUsage, rendererFlags, appInfo.appUid);
 
     audioRenderer->rendererInfo_.contentType = contentType;
     audioRenderer->rendererInfo_.streamUsage = streamUsage;
@@ -284,6 +284,7 @@ int32_t AudioRendererPrivate::InitOutputDeviceChangeCallback()
 
 int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParams)
 {
+    Trace trace("AudioRenderer::InitAudioStream");
     AudioRenderer *renderer = this;
     rendererProxyObj_->SaveRendererObj(renderer);
     audioStream_->SetRendererInfo(rendererInfo_);
@@ -333,6 +334,7 @@ AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 {
     Trace trace("AudioRenderer::SetParams");
+    AUDIO_INFO_LOG("StreamClientState for Renderer::SetParams.");
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
@@ -493,8 +495,8 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Start");
-
-    AUDIO_INFO_LOG("AudioRenderer::Start id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
+        "interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.mode);
 
     RendererState state = GetStatus();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
@@ -502,9 +504,6 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
 
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "Start failed. Switching state: %{public}d", isSwitching_);
-
-    AUDIO_INFO_LOG("interruptMode: %{public}d, streamType: %{public}d, sessionID: %{public}d",
-        audioInterrupt_.mode, audioInterrupt_.audioFocusType.streamType, audioInterrupt_.sessionId);
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
         audioInterrupt_.sessionId == INVALID_SESSION_ID) {
@@ -558,18 +557,20 @@ bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Tim
 
 bool AudioRendererPrivate::Drain() const
 {
+    Trace trace("AudioRenderer::Drain");
     return audioStream_->DrainAudioStream();
 }
 
 bool AudioRendererPrivate::Flush() const
 {
+    Trace trace("AudioRenderer::Flush");
     return audioStream_->FlushAudioStream();
 }
 
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::PauseTransitent");
-    AUDIO_INFO_LOG("AudioRenderer::PauseTransitent");
+    AUDIO_INFO_LOG("StreamClientState for Renderer::PauseTransitent. id: %{public}u", sessionID_);
     if (isSwitching_) {
         AUDIO_ERR_LOG("failed. Switching state: %{public}d", isSwitching_);
         return false;
@@ -593,7 +594,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 {
     Trace trace("AudioRenderer::Pause");
 
-    AUDIO_INFO_LOG("AudioRenderer::Pause id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
 
@@ -621,7 +622,7 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType) const
 
 bool AudioRendererPrivate::Stop() const
 {
-    AUDIO_INFO_LOG("AudioRenderer::Stop id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
     if (audioInterrupt_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -643,7 +644,7 @@ bool AudioRendererPrivate::Stop() const
 
 bool AudioRendererPrivate::Release() const
 {
-    AUDIO_INFO_LOG("AudioRenderer::Release id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
 
     bool result = audioStream_->ReleaseAudioStream();
 
@@ -660,6 +661,7 @@ bool AudioRendererPrivate::Release() const
 
 int32_t AudioRendererPrivate::GetBufferSize(size_t &bufferSize) const
 {
+    Trace trace("AudioRenderer::GetBufferSize");
     return audioStream_->GetBufferSize(bufferSize);
 }
 

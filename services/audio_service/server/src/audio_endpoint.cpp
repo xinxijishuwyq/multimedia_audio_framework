@@ -118,7 +118,7 @@ public:
 
     int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
 
-    void Dump(std::stringstream &dumpStringStream) override;
+    void Dump(std::string &dumpString) override;
 
     std::string GetEndpointName() override;
     EndpointType GetEndpointType() override
@@ -553,31 +553,31 @@ AudioEndpointInner::~AudioEndpointInner()
     AUDIO_INFO_LOG("~AudioEndpoint()");
 }
 
-void AudioEndpointInner::Dump(std::stringstream &dumpStringStream)
+void AudioEndpointInner::Dump(std::string &dumpString)
 {
     // dump endpoint stream info
-    dumpStringStream << std::endl << "Endpoint stream info:" << std::endl;
-    dumpStringStream << " samplingRate:" << dstStreamInfo_.samplingRate << std::endl;
-    dumpStringStream << " channels:" << dstStreamInfo_.channels << std::endl;
-    dumpStringStream << " format:" << dstStreamInfo_.format << std::endl;
-    dumpStringStream << " sink type:" << fastSinkType_ << std::endl;
-    dumpStringStream << " source type:" << fastSourceType_ << std::endl;
+    dumpString += "Endpoint stream info:\n";
+    AppendFormat(dumpString, "  - samplingRate: %d\n", dstStreamInfo_.samplingRate);
+    AppendFormat(dumpString, "  - channels: %d\n", dstStreamInfo_.channels);
+    AppendFormat(dumpString, "  - format: %d\n", dstStreamInfo_.format);
+    AppendFormat(dumpString, "  - sink type: %d\n", fastSinkType_);
+    AppendFormat(dumpString, "  - source type: %d\n", fastSourceType_);
 
     // dump status info
-    dumpStringStream << " Current endpoint status:" << GetStatusStr(endpointStatus_) << std::endl;
+    AppendFormat(dumpString, "  - Current endpoint status: %s\n", GetStatusStr(endpointStatus_).c_str());
     if (dstAudioBuffer_ != nullptr) {
-        dumpStringStream << " Currend hdi read position:" << dstAudioBuffer_->GetCurReadFrame() << std::endl;
-        dumpStringStream << " Currend hdi write position:" << dstAudioBuffer_->GetCurWriteFrame() << std::endl;
+        AppendFormat(dumpString, "  - Currend hdi read position: %d\n", dstAudioBuffer_->GetCurReadFrame());
+        AppendFormat(dumpString, "  - Currend hdi write position: %d\n", dstAudioBuffer_->GetCurWriteFrame());
     }
 
     // dump linked process info
     std::lock_guard<std::mutex> lock(listLock_);
-    dumpStringStream << processBufferList_.size() << " linked process:" << std::endl;
+    AppendFormat(dumpString, "  - linked process:: %d\n", processBufferList_.size());
     for (auto item : processBufferList_) {
-        dumpStringStream << " process read position:" << item->GetCurReadFrame() << std::endl;
-        dumpStringStream << " process write position:" << item->GetCurWriteFrame() << std::endl << std::endl;
+        AppendFormat(dumpString, "  - process read position: %d\n", item->GetCurReadFrame());
+        AppendFormat(dumpString, "  - process write position: %d\n", item->GetCurWriteFrame());
     }
-    dumpStringStream << std::endl;
+    dumpString += "\n";
 }
 
 bool AudioEndpointInner::ConfigInputPoint(const DeviceInfo &deviceInfo)
@@ -1832,7 +1832,7 @@ void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
         return;
     }
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
-    size_t byteSize = GetFormatByteSize(dstStreamInfo_.format);
+    size_t byteSize = static_cast<size_t>(GetFormatByteSize(dstStreamInfo_.format));
     size_t newlyCheckedTime = bufferSize / (dstStreamInfo_.samplingRate /
         MILLISECOND_PER_SECOND) / (byteSize * sizeof(uint8_t) * dstStreamInfo_.channels);
     detectedTime_ += newlyCheckedTime;

@@ -264,9 +264,9 @@ public:
     /**
      * Set output device sink for effect chain manager.
      *
-     * @return true/false.
+     * @return none.
      */
-    virtual bool SetOutputDeviceSink(int32_t device, std::string &sinkName) = 0;
+    virtual void SetOutputDeviceSink(int32_t device, std::string &sinkName) = 0;
 
     /**
      * Regiest policy provider.

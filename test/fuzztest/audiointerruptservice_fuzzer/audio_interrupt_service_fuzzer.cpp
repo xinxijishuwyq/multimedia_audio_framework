@@ -44,11 +44,11 @@ void AddDumpInfoFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    
-    PolicyData policyData;
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
 
-    interruptService->AddDumpInfo(policyData);
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMapDump;
+
+    interruptService->AddDumpInfo(audioInterruptZonesMapDump);
 }
 
 void SetCallbackHandlerFuzzTest(const uint8_t *rawData, size_t size)

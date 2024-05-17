@@ -196,6 +196,10 @@ public:
     int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
     bool RestoreAudioStream() override;
 
+    bool GetOffloadEnable() override;
+    bool GetSpatializationEnabled() override;
+    bool GetHighResolutionEnabled() override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -233,6 +237,8 @@ private:
 
     int32_t RegisterRendererInClientPolicyServerDiedCb();
     int32_t UnregisterRendererInClientPolicyServerDiedCb();
+
+    void ReportDataToResSched();
 
 private:
     AudioStreamType eStreamType_;

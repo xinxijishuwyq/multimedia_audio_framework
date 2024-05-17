@@ -22,6 +22,7 @@
 
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -197,20 +198,20 @@ int AudioProcessInServer::Dump(int fd, const std::vector<std::u16string> &args)
     return SUCCESS;
 }
 
-void AudioProcessInServer::Dump(std::stringstream &dumpStringStream)
+void AudioProcessInServer::Dump(std::string &dumpString)
 {
-    dumpStringStream << std::endl << "uid:" << processConfig_.appInfo.appUid;
-    dumpStringStream << " pid:" << processConfig_.appInfo.appPid << std::endl;
-    dumpStringStream << " process info:" << std::endl;
-    dumpStringStream << " stream info:" << std::endl;
-    dumpStringStream << "   samplingRate:" << processConfig_.streamInfo.samplingRate << std::endl;
-    dumpStringStream << "   channels:" << processConfig_.streamInfo.channels << std::endl;
-    dumpStringStream << "   format:" << processConfig_.streamInfo.format << std::endl;
-    dumpStringStream << "   encoding:" << processConfig_.streamInfo.encoding << std::endl;
+    AppendFormat(dumpString, "\n  - uid: %d\n", processConfig_.appInfo.appUid);
+    AppendFormat(dumpString, "- pid: %d\n", processConfig_.appInfo.appUid);
+    dumpString += "process info:\n";
+    dumpString += "stream info:\n";
+    AppendFormat(dumpString, "  - samplingRate: %d\n", processConfig_.streamInfo.samplingRate);
+    AppendFormat(dumpString, "  - channels: %d\n", processConfig_.streamInfo.channels);
+    AppendFormat(dumpString, "  - format: %d\n", processConfig_.streamInfo.format);
+    AppendFormat(dumpString, "  - encoding: %d\n", processConfig_.streamInfo.encoding);
     if (streamStatus_ != nullptr) {
-        dumpStringStream << "Status:" << streamStatus_->load() << std::endl;
+        AppendFormat(dumpString, "  - Status: %d\n", streamStatus_->load());
     }
-    dumpStringStream << std::endl;
+    dumpString += "\n";
 }
 
 std::shared_ptr<OHAudioBuffer> AudioProcessInServer::GetStreamBuffer()

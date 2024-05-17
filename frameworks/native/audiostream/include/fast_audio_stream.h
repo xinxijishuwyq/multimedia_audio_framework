@@ -175,6 +175,10 @@ public:
 
     bool RestoreAudioStream() override;
 
+    bool GetOffloadEnable() override;
+    bool GetSpatializationEnabled() override;
+    bool GetHighResolutionEnabled() override;
+
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
 

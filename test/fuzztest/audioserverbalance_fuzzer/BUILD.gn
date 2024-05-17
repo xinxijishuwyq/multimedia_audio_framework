@@ -39,6 +39,7 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
 }
