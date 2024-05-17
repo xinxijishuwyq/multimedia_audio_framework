@@ -1806,6 +1806,7 @@ void AudioPolicyService::FetchOutputDeviceWhenNoRunningStream()
 {
     AUDIO_INFO_LOG("In");
     unique_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchOutputDevice(STREAM_USAGE_MEDIA, -1);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     if (desc->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(desc, currentActiveDevice_)) {
         AUDIO_DEBUG_LOG("output device is not change");
         return;
@@ -1903,7 +1904,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
     unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     if (desc->deviceType_ == DEVICE_TYPE_NONE || (IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo) &&
-        !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED && !sameDeviceSwitchFlag_)) {
+        !NeedRehandleA2DPDevice(desc) && desc->connectState_ != DEACTIVE_CONNECTED)) {
         AUDIO_INFO_LOG("stream %{public}d device not change, no need move device", rendererChangeInfo->sessionId);
         if (!IsSameDevice(desc, currentActiveDevice_)) {
             currentActiveDevice_ = AudioDeviceDescriptor(*desc);
@@ -1956,7 +1957,6 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
         }
         SelectNewOutputDevice(rendererChangeInfo, desc, reason);
     }
-    sameDeviceSwitchFlag_ = false;
     if (isUpdateActiveDevice) {
         OnPreferredOutputDeviceUpdated(currentActiveDevice_);
     }
@@ -2877,7 +2877,6 @@ int32_t AudioPolicyService::HandleLocalDeviceConnected(const AudioDeviceDescript
         if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             A2dpDeviceConfigInfo configInfo = {updatedDesc.audioStreamInfo_, false};
             connectedA2dpDeviceMap_.insert(make_pair(updatedDesc.macAddress_, configInfo));
-            sameDeviceSwitchFlag_ = true;
         }
     }
 
@@ -3208,24 +3207,20 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(activeBTDevice_)
         && IsDeviceActive(deviceType)) {
         UpdateA2dpOffloadFlagForAllStream();
-        if (!IsConfigurationUpdated(deviceType, streamInfo)) {
+        AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag_: %{public}d",
+            streamInfo.samplingRate, a2dpOffloadFlag_);
+        if (!IsConfigurationUpdated(deviceType, streamInfo) || a2dpOffloadFlag_ == A2DP_OFFLOAD) {
             AUDIO_DEBUG_LOG("Audio configuration same");
-            lastBTDevice_ = macAddress;
             return;
         }
 
-        uint32_t bufferSize = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
-            * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
-        AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
-        if (a2dpOffloadFlag_ != A2DP_OFFLOAD) {
-            ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
-        }
+        ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
     } else if (connectedA2dpDeviceMap_.find(macAddress) != connectedA2dpDeviceMap_.end()) {
-        AUDIO_DEBUG_LOG("Audio configuration update, macAddress:[%{public}s]", GetEncryptAddr(macAddress).c_str());
+        AUDIO_DEBUG_LOG("Audio configuration update, macAddress:[%{public}s], streamInfo.sampleRate: %{public}d",
+            GetEncryptAddr(macAddress).c_str(), streamInfo.samplingRate);
         connectedA2dpDeviceMap_[macAddress].streamInfo = streamInfo;
     }
-    lastBTDevice_ = macAddress;
 }
 
 void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
@@ -3233,6 +3228,7 @@ void AudioPolicyService::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType,
 {
     uint32_t bufferSize = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
         * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+    AUDIO_DEBUG_LOG("Updated buffer size: %{public}d", bufferSize);
 
     auto a2dpModulesPos = deviceClassInfo_.find(ClassType::TYPE_A2DP);
     if (a2dpModulesPos != deviceClassInfo_.end()) {
@@ -3810,11 +3806,10 @@ void AudioPolicyService::LoadEffectLibrary()
     AudioSpatializationService::GetAudioSpatializationService().Init(supportedEffectConfig.effectChains);
 }
 
-void AudioPolicyService::GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig,
-                                              std::vector<Effect>& availableEffects)
+void AudioPolicyService::GetEffectManagerInfo()
 {
-    audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
-    audioEffectManager_.GetAvailableEffects(availableEffects);
+    converterConfig_ = GetConverterConfig();
+    audioEffectManager_.GetSupportedEffectConfig(supportedEffectConfig_);
 }
 
 void AudioPolicyService::AddAudioDevice(AudioModuleInfo& moduleInfo, InternalDeviceType devType)
@@ -4083,13 +4078,15 @@ void AudioPolicyService::UpdateStreamChangeDeviceInfoForRecord(AudioStreamChange
 }
 
 int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-    const sptr<IRemoteObject> &object)
+    const sptr<IRemoteObject> &object, const int32_t apiVersion)
 {
     if (mode == AUDIO_MODE_RECORD) {
         AddAudioCapturerMicrophoneDescriptor(streamChangeInfo.audioCapturerChangeInfo.sessionId, DEVICE_TYPE_NONE);
-        UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo,
-            new AudioDeviceDescriptor(currentActiveInputDevice_), false, false);
-    } else {
+        if (apiVersion < API_11) {
+            UpdateDeviceInfo(streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo,
+                new AudioDeviceDescriptor(currentActiveInputDevice_), false, false);
+        }
+    } else if (apiVersion < API_11) {
         UpdateDeviceInfo(streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo,
             new AudioDeviceDescriptor(currentActiveDevice_), false, false);
     }
@@ -6457,6 +6454,73 @@ void AudioPolicyService::XmlParsedDataMapDump(std::string &dumpString)
         }
         AppendFormat(dumpString, "-----EndOfXmlParsedDataMap-----\n");
     }
+}
+
+static void StreamEffectSceneInfoDump(string &dumpString, const ProcessNew &processNew, const string processType)
+{
+    int32_t count;
+    AppendFormat(dumpString, "- %d %s supported :\n", processNew.stream.size(), processType.c_str());
+
+    for (Stream x : processNew.stream) {
+        AppendFormat(dumpString, "  %s stream scene = %s \n", processType.c_str(), x.scene.c_str());
+        count = 0;
+        for (StreamEffectMode mode : x.streamEffectMode) {
+            count++;
+            AppendFormat(dumpString, "  - modeName%d = %s \n", count, mode.mode.c_str());
+            int32_t n = 0;
+            for (Device deviceInfo : mode.devicePort) {
+                n++;
+                AppendFormat(dumpString, "    - device%d type = %s \n", n, deviceInfo.type.c_str());
+                AppendFormat(dumpString, "    - device%d chain = %s \n", n, deviceInfo.chain.c_str());
+            }
+        }
+        dumpString += "\n";
+    }
+}
+
+void AudioPolicyService::EffectManagerInfoDump(string &dumpString)
+{
+    int32_t count = 0;
+    GetEffectManagerInfo();
+    GetAudioAdapterInfos(adapterInfoMap_);
+
+    dumpString += "==== Audio Effect Manager INFO ====\n";
+
+    // effectChain info
+    count = 0;
+    AppendFormat(dumpString, "- system support %d effectChain(s):\n",
+        supportedEffectConfig_.effectChains.size());
+    for (EffectChain x : supportedEffectConfig_.effectChains) {
+        count++;
+        AppendFormat(dumpString, "  effectChain%d :\n", count);
+        AppendFormat(dumpString, "  - effectChain name = %s \n", x.name.c_str());
+        int32_t countEffect = 0;
+        for (string effectUnit : x.apply) {
+            countEffect++;
+            AppendFormat(dumpString, "    - effectUnit%d = %s \n", countEffect, effectUnit.c_str());
+        }
+        dumpString += "\n";
+    }
+
+    // converter info
+    AppendFormat(dumpString, "- system support audio converter for special streams:\n");
+    AppendFormat(dumpString, "  - converter name: %s\n", converterConfig_.library.name.c_str());
+    AppendFormat(dumpString, "  - converter out channel layout: %" PRId64 "\n",
+        converterConfig_.outChannelLayout);
+    dumpString += "\n";
+
+    // preProcess info
+    StreamEffectSceneInfoDump(dumpString, supportedEffectConfig_.preProcessNew, "preProcess");
+    dumpString += "\n";
+    // postProcess info
+    StreamEffectSceneInfoDump(dumpString, supportedEffectConfig_.postProcessNew, "postProcess");
+
+    // postProcess scene maping
+    AppendFormat(dumpString, "- postProcess scene maping config:\n");
+    for (SceneMappingItem it: supportedEffectConfig_.postProcessSceneMap) {
+        AppendFormat(dumpString, "  - streamUsage: %s = %s \n", it.name.c_str(), it.sceneType.c_str());
+    }
+    dumpString += "\n";
 }
 
 void AudioPolicyService::GetGroupInfoDump(std::string &dumpString)

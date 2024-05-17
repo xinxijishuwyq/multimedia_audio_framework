@@ -72,6 +72,7 @@ constexpr uid_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr uid_t UID_MEDIA_SA = 1013;
 constexpr uid_t UID_VM_MANAGER = 7700;
 constexpr uid_t UID_AUDIO = 1041;
+constexpr uid_t UID_CAMERA = 1047;
 constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_DISTRIBUTED_CALL_SA = 3069;
@@ -88,7 +89,8 @@ const std::list<uid_t> AudioPolicyServer::RECORD_ALLOW_BACKGROUND_LIST = {
     UID_DISTRIBUTED_AUDIO_SA,
     UID_AUDIO,
     UID_FOUNDATION_SA,
-    UID_DISTRIBUTED_CALL_SA
+    UID_DISTRIBUTED_CALL_SA,
+    UID_CAMERA
 };
 
 const std::list<uid_t> AudioPolicyServer::RECORD_PASS_APPINFO_LIST = {
@@ -1414,6 +1416,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-apc"] = &AudioPolicyServer::AudioPolicyParserDump;
     dumpFuncMap[u"-s"] = &AudioPolicyServer::AudioStreamDump;
     dumpFuncMap[u"-xp"] = &AudioPolicyServer::XmlParsedDataMapDump;
+    dumpFuncMap[u"-e"] = &AudioPolicyServer::EffectManagerInfoDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -1425,6 +1428,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     AudioPolicyParserDump(dumpString);
     AudioStreamDump(dumpString);
     XmlParsedDataMapDump(dumpString);
+    EffectManagerInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
@@ -1460,6 +1464,11 @@ void AudioPolicyServer::AudioStreamDump(std::string &dumpString)
 void AudioPolicyServer::XmlParsedDataMapDump(std::string &dumpString)
 {
     audioPolicyService_.XmlParsedDataMapDump(dumpString);
+}
+
+void AudioPolicyServer::EffectManagerInfoDump(std::string &dumpString)
+{
+    audioPolicyService_.EffectManagerInfoDump(dumpString);
 }
 
 void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue)
@@ -1498,6 +1507,7 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -apc\t\t\t|dump audio policy config xml parser info\n");
     AppendFormat(dumpString, "  -s\t\t\t|dump stream info\n");
     AppendFormat(dumpString, "  -xp\t\t\t|dump xml data map\n");
+    AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager Info\n");
 }
 
 int32_t AudioPolicyServer::GetAudioLatencyFromXml()
@@ -1548,7 +1558,8 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
         }
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
-    return audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object);
+    int32_t apiVersion = GetApiTargerVersion();
+    return audioPolicyService_.RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
 int32_t AudioPolicyServer::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

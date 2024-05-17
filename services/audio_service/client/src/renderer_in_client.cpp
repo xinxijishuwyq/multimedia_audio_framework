@@ -232,7 +232,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
     } else if (spatializationState.spatializationEnabled) {
         rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
     } else {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL;
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
 }
 
@@ -284,9 +284,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
     }
-    if (!IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout)) {
-        return ERR_NOT_SUPPORTED;
-    }
 
     streamParams_ = curStreamParams_ = info; // keep it for later use
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -297,6 +294,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             return ERR_NOT_SUPPORTED;
         }
         converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
+    }
+
+    if (!IsPlaybackChannelRelatedInfoValid(curStreamParams_.channels, curStreamParams_.channelLayout)) {
+        return ERR_NOT_SUPPORTED;
     }
 
     CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
@@ -435,6 +436,7 @@ void RendererInClientInner::InitCallbackHandler()
 // call this without lock, we should be able to call deinit in any case.
 int32_t RendererInClientInner::DeinitIpcStream()
 {
+    Trace trace("RendererInClientInner::DeinitIpcStream");
     ipcStream_->Release();
     // in plan:
     ipcStream_ = nullptr;
@@ -524,6 +526,7 @@ int32_t RendererInClientInner::InitCacheBuffer(size_t targetSize)
 
 int32_t RendererInClientInner::InitIpcStream()
 {
+    Trace trace("RendererInClientInner::InitIpcStream");
     AudioProcessConfig config = ConstructConfig();
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");

@@ -703,6 +703,8 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         Trace::Count("AudioRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
     }
     CheckLatencySignal(reinterpret_cast<uint8_t*>(&data), len);
+
+    Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED,
