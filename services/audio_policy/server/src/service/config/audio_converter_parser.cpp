@@ -108,29 +108,8 @@ static void WriteConverterConfigError()
 
 static void ParseEffectConfigFile(xmlDoc* &doc)
 {
-#ifdef USE_CONFIG_POLICY
-    CfgFiles *cfgFiles = GetCfgFiles(AUDIO_CONVERTER_CONFIG_FILE);
-    if (cfgFiles == nullptr) {
-        AUDIO_ERR_LOG("Not found audio_converter_config.xml!");
-        WriteConverterConfigError();
-        return;
-    }
-    for (int32_t i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; i--) {
-        if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
-            AUDIO_INFO_LOG("converter config file path:%{public}s", cfgFiles->paths[i]);
-            doc = xmlReadFile(cfgFiles->paths[i], nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-            break;
-        }
-    }
-    FreeCfgFiles(cfgFiles);
-#else
     AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
     doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-#endif
-    if (doc == nullptr) {
-        WriteConverterConfigError();
-        return;
-    }
 }
 
 AudioConverterParser::AudioConverterParser()

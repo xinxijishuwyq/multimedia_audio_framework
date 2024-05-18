@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -228,7 +229,18 @@ bool LibLoader::AddAlgoHandle(Library library)
     libEntry_ = std::make_unique<AudioEffectLibEntry>();
     libEntry_->libraryName = library.name;
     bool loadLibrarySuccess = LoadLibrary(library.path);
-    CHECK_AND_RETURN_RET_LOG(loadLibrarySuccess, false, "<log error> loadLibrary fail, please check logs!");
+    if (!loadLibrarySuccess) {
+        // hisysevent for load engine error
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_EFFECT_ENGINE_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("ENGINE_TYPE", Media::MediaMonitor::AUDIO_CONVERTER_ENGINE);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+
+        AUDIO_ERR_LOG("loadLibrary fail, please check logs!");
+        return false;
+    }
+
     int32_t ret = libEntry_->audioEffectLibHandle->createEffect(descriptor, &handle_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "%{public}s create fail", library.name.c_str());
     return true;

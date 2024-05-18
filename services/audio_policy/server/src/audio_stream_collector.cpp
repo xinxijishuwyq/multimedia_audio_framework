@@ -878,6 +878,12 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
         streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
         streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.deviceType, OUTPUT_DEVICE);
+
+    uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
+        streamChangeInfo.audioRendererChangeInfo.rendererInfo.sceneType) ?
+        EFFECT_CHAIN_TYPE_MAP.at(streamChangeInfo.audioRendererChangeInfo.rendererInfo.sceneType) :
+        EFFECT_CHAIN_TYPE_MAP.at("UNKNOWN");
+
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_CHANGE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
@@ -894,6 +900,9 @@ void AudioStreamCollector::WriterRenderStreamChangeSysEvent(AudioStreamChangeInf
     bean->Add("STREAM_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage);
     bean->Add("SAMPLE_RATE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.samplingRate);
     bean->Add("NETWORKID", streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo.networkId);
+    bean->Add("ENCODING_TYPE", streamChangeInfo.audioRendererChangeInfo.rendererInfo.encodingType);
+    bean->Add("CHANNEL_LAYOUT", streamChangeInfo.audioRendererChangeInfo.rendererInfo.channelLayout);
+    bean->Add("EFFECT_CHAIN", effectChainType);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -904,6 +913,11 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
         streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.deviceType, INPUT_DEVICE);
+
+    uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
+        streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sceneType) ?
+        EFFECT_CHAIN_TYPE_MAP.at(streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sceneType) :
+        EFFECT_CHAIN_TYPE_MAP.at("UNKNOWN");
 
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_CHANGE,
@@ -922,6 +936,9 @@ void AudioStreamCollector::WriterCaptureStreamChangeSysEvent(AudioStreamChangeIn
     bean->Add("SAMPLE_RATE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.samplingRate);
     bean->Add("MUTED", streamChangeInfo.audioCapturerChangeInfo.muted);
     bean->Add("NETWORKID", streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo.networkId);
+    bean->Add("ENCODING_TYPE", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.encodingType);
+    bean->Add("CHANNEL_LAYOUT", streamChangeInfo.audioCapturerChangeInfo.capturerInfo.channelLayout);
+    bean->Add("EFFECT_CHAIN", effectChainType);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -933,6 +950,11 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
         audioRendererChangeInfo->rendererInfo.streamUsage);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
         audioRendererChangeInfo->outputDeviceInfo.deviceType, OUTPUT_DEVICE);
+
+    uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
+        audioRendererChangeInfo->rendererInfo.sceneType) ?
+        EFFECT_CHAIN_TYPE_MAP.at(audioRendererChangeInfo->rendererInfo.sceneType) :
+        EFFECT_CHAIN_TYPE_MAP.at("UNKNOWN");
 
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_CHANGE,
@@ -950,6 +972,9 @@ void AudioStreamCollector::WriteRenderStreamReleaseSysEvent(
     bean->Add("STREAM_TYPE", audioRendererChangeInfo->rendererInfo.streamUsage);
     bean->Add("SAMPLE_RATE", audioRendererChangeInfo->rendererInfo.samplingRate);
     bean->Add("NETWORKID", audioRendererChangeInfo->outputDeviceInfo.networkId);
+    bean->Add("ENCODING_TYPE", audioRendererChangeInfo->rendererInfo.encodingType);
+    bean->Add("CHANNEL_LAYOUT", audioRendererChangeInfo->rendererInfo.channelLayout);
+    bean->Add("EFFECT_CHAIN", effectChainType);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -959,6 +984,11 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     AudioStreamType streamType = GetStreamTypeFromSourceType(audioCapturerChangeInfo->capturerInfo.sourceType);
     uint64_t transactionId = audioSystemMgr_->GetTransactionId(
         audioCapturerChangeInfo->inputDeviceInfo.deviceType, INPUT_DEVICE);
+
+    uint8_t effectChainType = EFFECT_CHAIN_TYPE_MAP.count(
+        audioCapturerChangeInfo->capturerInfo.sceneType) ?
+        EFFECT_CHAIN_TYPE_MAP.at(audioCapturerChangeInfo->capturerInfo.sceneType) :
+        EFFECT_CHAIN_TYPE_MAP.at("UNKNOWN");
 
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::STREAM_CHANGE,
@@ -977,6 +1007,9 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
     bean->Add("SAMPLE_RATE", audioCapturerChangeInfo->capturerInfo.samplingRate);
     bean->Add("MUTED", audioCapturerChangeInfo->muted);
     bean->Add("NETWORKID", audioCapturerChangeInfo->inputDeviceInfo.networkId);
+    bean->Add("ENCODING_TYPE", audioCapturerChangeInfo->capturerInfo.encodingType);
+    bean->Add("CHANNEL_LAYOUT", audioCapturerChangeInfo->capturerInfo.channelLayout);
+    bean->Add("EFFECT_CHAIN", effectChainType);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 } // namespace AudioStandard
