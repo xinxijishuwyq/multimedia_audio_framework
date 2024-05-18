@@ -437,7 +437,7 @@ public:
     void UnloadA2dpModule();
 
     float GetMaxAmplitude(const int32_t deviceId);
-    
+
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
 
     int32_t TriggerFetchDevice();
@@ -521,7 +521,9 @@ private:
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
 
-    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo, const AudioStreamInfo &streamInfo);
+    bool FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
+        AudioModuleInfo &audioModuleInfo);
+    bool ConstructWakeupAudioModuleInfo(const AudioStreamInfo &streamInfo, AudioModuleInfo &audioModuleInfo);
 
     AudioIOHandle GetSinkIOHandle(InternalDeviceType deviceType);
 
@@ -893,9 +895,6 @@ private:
     AudioEffectManager& audioEffectManager_;
 
     bool isMicrophoneMute_ = false;
-
-    int wakeupCount_ = 0;
-    std::mutex wakeupCountMutex_;
 
     std::mutex deviceClassInfoMutex_;
 
