@@ -71,13 +71,7 @@ const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUT
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 const std::string REMOTE_NETWORK_ID = "RemoteDevice";
 
-constexpr int32_t WAKEUP_LIMIT = 2;
 constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
-constexpr std::string_view PRIMARY_WAKEUP_MIRROR = "Built_in_wakeup_mirror";
-constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
-    PRIMARY_WAKEUP,
-    PRIMARY_WAKEUP_MIRROR
-};
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
 const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
@@ -314,6 +308,9 @@ struct AudioRendererInfo {
     int32_t originalFlag = AUDIO_FLAG_NORMAL;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    uint8_t encodingType = 0;
+    uint64_t channelLayout = 0ULL;
+
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
@@ -324,7 +321,9 @@ struct AudioRendererInfo {
             && parcel.WriteBool(spatializationEnabled)
             && parcel.WriteBool(headTrackingEnabled)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
-            && parcel.WriteInt32(static_cast<int32_t>(samplingRate));
+            && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
+            && parcel.WriteUint8(encodingType)
+            && parcel.WriteUint64(channelLayout);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -337,6 +336,8 @@ struct AudioRendererInfo {
         headTrackingEnabled = parcel.ReadBool();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        encodingType = parcel.ReadUint8();
+        channelLayout = parcel.ReadUint64();
     }
 };
 
@@ -347,6 +348,10 @@ public:
     int32_t originalFlag = AUDIO_FLAG_NORMAL;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    uint8_t encodingType = 0;
+    uint64_t channelLayout = 0ULL;
+    std::string sceneType = "";
+
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
     AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo)
@@ -361,7 +366,10 @@ public:
             parcel.WriteInt32(capturerFlags) &&
             parcel.WriteInt32(originalFlag) &&
             parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
-            parcel.WriteInt32(static_cast<int32_t>(samplingRate));
+            parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
+            parcel.WriteUint8(encodingType) &&
+            parcel.WriteUint64(channelLayout) &&
+            parcel.WriteString(sceneType);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -370,6 +378,9 @@ public:
         originalFlag = parcel.ReadInt32();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        encodingType = parcel.ReadUint8();
+        channelLayout = parcel.ReadUint64();
+        sceneType = parcel.ReadString();
     }
 };
 

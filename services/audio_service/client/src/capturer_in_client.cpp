@@ -441,6 +441,8 @@ void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
     capturerInfo_ = capturerInfo;
     capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
+    capturerInfo_.encodingType = streamParams_.encoding;
+    capturerInfo_.channelLayout = streamParams_.channelLayout;
     AUDIO_INFO_LOG("SetCapturerInfo with SourceType %{public}d flag %{public}d", capturerInfo_.sourceType,
         capturerInfo_.capturerFlags);
     return;
@@ -1315,6 +1317,9 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType)
 
     state_ = RUNNING; // change state_ to RUNNING, then notify cbThread
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        if (cbBufferQueue_.IsEmpty()) {
+            cbBufferQueue_.Push({cbBuffer_.get(), cbBufferSize_, cbBufferSize_});
+        }
         // start the callback-write thread
         cbThreadCv_.notify_all();
     }
