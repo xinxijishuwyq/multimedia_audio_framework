@@ -67,6 +67,7 @@ static const std::string PIPE_DISTRIBUTED_OUTPUT = "distributed_output";
 static const std::string PIPE_FAST_DISTRIBUTED_OUTPUT = "fast_distributed_output";
 static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
 static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
+std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -1603,30 +1604,71 @@ AudioModuleInfo AudioPolicyService::ConstructRemoteAudioModuleInfo(std::string n
     return audioModuleInfo;
 }
 
-// private method
-AudioModuleInfo AudioPolicyService::ConstructWakeUpAudioModuleInfo(int32_t wakeupNo, const AudioStreamInfo &streamInfo)
+bool AudioPolicyService::FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
+    AudioModuleInfo &audioModuleInfo)
 {
-    uint32_t bufferSize = (streamInfo.samplingRate * GetSampleFormatValue(streamInfo.format)
-        * streamInfo.channels) / (PCM_8_BIT * BT_BUFFER_ADJUSTMENT_FACTOR);
+    if (pipeInfo == nullptr) {
+        AUDIO_ERR_LOG("wakeup pipe info is nullptr");
+        return false;
+    }
 
-    AudioModuleInfo audioModuleInfo = {};
-    audioModuleInfo.lib = "libmodule-hdi-source.z.so";
-    audioModuleInfo.format = ConvertToHDIAudioFormat(streamInfo.format);
+    if (pipeInfo->streamPropInfos_.size() == 0) {
+        AUDIO_ERR_LOG("no stream prop info");
+        return false;
+    }
 
-    audioModuleInfo.name = WAKEUP_NAMES[wakeupNo];
+    auto targetIt = pipeInfo->streamPropInfos_.begin();
+    for (auto it = pipeInfo->streamPropInfos_.begin(); it != pipeInfo->streamPropInfos_.end(); ++it) {
+        if (it -> channelLayout_ == static_cast<uint32_t>(streamInfo.channels)) {
+            AUDIO_INFO_LOG("");
+            targetIt = it;
+            break;
+        }
+    }
+
+    audioModuleInfo.format = targetIt->format_;
+    audioModuleInfo.channels = std::to_string(targetIt->channelLayout_);
+    audioModuleInfo.rate = std::to_string(targetIt->sampleRate_);
+    audioModuleInfo.bufferSize =  std::to_string(targetIt->bufferSize_);
+
+    AUDIO_INFO_LOG("stream prop info, format:%{public}s, channels:%{public}s, rate:%{public}s, buffer size:%{public}s",
+        audioModuleInfo.format.c_str(), audioModuleInfo.channels.c_str(),
+        audioModuleInfo.rate.c_str(), audioModuleInfo.bufferSize.c_str());
+    return true;
+}
+
+bool AudioPolicyService::ConstructWakeupAudioModuleInfo(const AudioStreamInfo &streamInfo,
+    AudioModuleInfo &audioModuleInfo)
+{
+    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[std::string(PRIMARY_WAKEUP)]));
+    if (it == adapterInfoMap_.end()) {
+        AUDIO_ERR_LOG("can not find adapter info");
+        return false;
+    }
+
+    auto pipeInfo = it->second.GetPipeByName(PIPE_WAKEUP_INPUT);
+    if (pipeInfo == nullptr) {
+        AUDIO_ERR_LOG("wakeup pipe info is nullptr");
+        return false;
+    }
+
+    if (!FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo)) {
+        AUDIO_ERR_LOG("failed to fill pipe stream prop info");
+        return false;
+    }
+
+    audioModuleInfo.adapterName = it->second.adapterName_;
+    audioModuleInfo.name = pipeInfo->moduleName_;
+    audioModuleInfo.lib = pipeInfo->lib_;
     audioModuleInfo.networkId = "LocalDevice";
-
-    audioModuleInfo.adapterName = "primary";
     audioModuleInfo.className = "primary";
     audioModuleInfo.fileName = "";
-
-    audioModuleInfo.channels = std::to_string(streamInfo.channels);
-    audioModuleInfo.rate = std::to_string(streamInfo.samplingRate);
-    audioModuleInfo.bufferSize = std::to_string(bufferSize);
     audioModuleInfo.OpenMicSpeaker = "1";
-
     audioModuleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_WAKEUP);
-    return audioModuleInfo;
+
+    AUDIO_INFO_LOG("wakeup auido module info, adapter name:%{public}s, name:%{public}s, lib:%{public}s",
+        audioModuleInfo.adapterName.c_str(), audioModuleInfo.name.c_str(), audioModuleInfo.lib.c_str());
+    return true;
 }
 
 void AudioPolicyService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor)
@@ -1661,27 +1703,16 @@ void AudioPolicyService::OnPreferredDeviceUpdated(const AudioDeviceDescriptor& a
 
 int32_t AudioPolicyService::SetWakeUpAudioCapturer(InternalAudioCapturerOptions options)
 {
-    AUDIO_INFO_LOG("Start");
-
-    int32_t wakeupNo = 0;
-    {
-        std::lock_guard<std::mutex> lock(wakeupCountMutex_);
-        if (wakeupCount_ < 0) {
-            AUDIO_ERR_LOG("wakeupCount_ = %{public}d", wakeupCount_);
-            wakeupCount_ = 0;
-        }
-        if (wakeupCount_ >= WAKEUP_LIMIT) {
-            return ERROR;
-        }
-        wakeupNo = wakeupCount_;
-        wakeupCount_++;
+    AUDIO_INFO_LOG("set wakeup audio capturer start");
+    AudioModuleInfo moduleInfo = {};
+    if (!ConstructWakeupAudioModuleInfo(options.streamInfo, moduleInfo)) {
+        AUDIO_ERR_LOG("failed to construct wakeup audio module info");
+        return ERROR;
     }
-
-    AudioModuleInfo moduleInfo = ConstructWakeUpAudioModuleInfo(wakeupNo, options.streamInfo);
     OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
-    AUDIO_DEBUG_LOG("Active Success!");
-    return wakeupNo;
+    AUDIO_DEBUG_LOG("set wakeup audio capturer end");
+    return SUCCESS;
 }
 
 int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
@@ -1712,30 +1743,17 @@ bool AudioPolicyService::IsAbsVolumeSupported()
 
 int32_t AudioPolicyService::CloseWakeUpAudioCapturer()
 {
-    AUDIO_INFO_LOG("Start");
-
-    {
-        std::lock_guard<std::mutex> lock(wakeupCountMutex_);
-        wakeupCount_--;
-        if (wakeupCount_ > 0) {
-            return SUCCESS;
-        }
-        for (auto key : WAKEUP_NAMES) {
-            AudioIOHandle ioHandle;
-            {
-                std::lock_guard<std::mutex> lck(ioHandlesMutex_);
-                auto ioHandleIter = IOHandles_.find(std::string(key));
-                if (ioHandleIter == IOHandles_.end()) {
-                    AUDIO_ERR_LOG("failed");
-                    continue;
-                } else {
-                    ioHandle = ioHandleIter->second;
-                    IOHandles_.erase(ioHandleIter);
-                }
-            }
-            audioPolicyManager_.CloseAudioPort(ioHandle);
-        }
+    AUDIO_INFO_LOG("close wakeup audio capturer start");
+    std::lock_guard<std::mutex> lck(ioHandlesMutex_);
+    auto ioHandleIter = IOHandles_.find(std::string(PRIMARY_WAKEUP));
+    if (ioHandleIter == IOHandles_.end()) {
+        AUDIO_ERR_LOG("close wakeup audio capturer failed");
+        return ERROR;
     }
+
+    auto ioHandle = ioHandleIter->second;
+    IOHandles_.erase(ioHandleIter);
+    audioPolicyManager_.CloseAudioPort(ioHandle);
     return SUCCESS;
 }
 
