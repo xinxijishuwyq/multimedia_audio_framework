@@ -81,7 +81,7 @@ AUDIO_STREAM_CREATE_ERROR_STATS:
   ERROR_CODE: {type: INT32, desc: error code}
   TIMES: {type: UINT32, desc: how many times when this error happen}
 
-AUDIO_STREAM_UTILIZATION_STATS:
+STREAM_UTILIZATION_STATS:
   __BASE: {type: STATISTIC, level: MINOR, desc: audio stream utilization statistic}
   IS_PLAYBACK: {type: BOOL, desc: this stream is used for playback or capture}
   STREAM_TYPE: {type: UINT8, desc: stream type which can be either StreamUsage in playback or SourceType in capture}

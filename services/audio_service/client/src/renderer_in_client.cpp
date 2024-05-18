@@ -34,8 +34,6 @@
 #include "securec.h"
 #include "safe_block_queue.h"
 #include "hisysevent.h"
-#include "bundle_mgr_interface.h"
-#include "bundle_mgr_proxy.h"
 
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -64,7 +62,6 @@
 #include "policy_handler.h"
 
 #include "media_monitor_manager.h"
-#include "event_bean.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -93,43 +90,10 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
-constexpr unsigned int GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS = 10;
 static const int32_t MEDIA_SERVICE_UID = 1013;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
-static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
-{
-    AudioXCollie audioXCollie("RendererInClient::GetBundleInfoFromUid", GET_BUNDLE_INFO_FROM_UID_TIME_OUT_SECONDS);
-
-    std::string bundleName {""};
-    AppExecFwk::BundleInfo bundleInfo;
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemAbilityManager == nullptr) {
-        return bundleInfo;
-    }
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (remoteObject == nullptr) {
-        return bundleInfo;
-    }
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    if (bundleMgrProxy == nullptr) {
-        return bundleInfo;
-    }
-    if (bundleMgrProxy != nullptr) {
-        bundleMgrProxy->GetNameForUid(appUid, bundleName);
-    }
-
-    bundleMgrProxy->GetBundleInfoForSelf(AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo);
-    return bundleInfo;
-}
 
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -142,7 +106,6 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
     state_ = NEW;
-    gBundleInfo_ = GetBundleInfoFromUid(appUid);
 }
 
 RendererInClientInner::~RendererInClientInner()
@@ -1550,6 +1513,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
     BufferDesc bufDesc = {pcmBuffer, pcmBufferSize, pcmBufferSize, metaBuffer, metaBufferSize};
     CHECK_AND_RETURN_RET_LOG(converter_ != nullptr, ERR_WRITE_FAILED, "Write: converter isn't init.");
     CHECK_AND_RETURN_RET_LOG(converter_->CheckInputValid(bufDesc), ERR_INVALID_PARAM, "Write: Invalid input.");
+
+    WriteMuteDataSysEvent(pcmBuffer, pcmBufferSize);
+
     converter_->Process(bufDesc);
     uint8_t *buffer;
     uint32_t bufferSize;
@@ -1633,7 +1599,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     return bufferSize - targetSize;
 }
 
-
 void RendererInClientInner::ResetFramePosition()
 {
     Trace trace("RendererInClientInner::ResetFramePosition");
@@ -1649,8 +1614,6 @@ void RendererInClientInner::ResetFramePosition()
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
-    std::string name = gBundleInfo_.name;
-    int32_t versionCode = gBundleInfo_.versionCode;
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -1662,8 +1625,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
             std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
                 Media::MediaMonitor::AUDIO, Media::MediaMonitor::BACKGROUND_SILENT_PLAYBACK,
                 Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
-            bean->Add("APP_NAME", name);
-            bean->Add("APP_VERSION_CODE", versionCode);
+            bean->Add("CLIENT_UID", appUid_);
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
             ReportDataToResSched();
         }

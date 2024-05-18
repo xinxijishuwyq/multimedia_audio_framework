@@ -591,7 +591,8 @@ private:
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
-    void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void FetchDevice(bool isOutputDevice = true,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -791,8 +792,23 @@ private:
 
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
+    void WriteServiceStartupError(string reason);
+
+    bool LoadToneDtmfConfig();
+
+    void CreateRecoveryThread();
+    void RecoveryPerferredDevices();
+
+    int32_t HandleRecoveryPerferredDevices(int32_t perferredType, int32_t deviceType,
+        int32_t usageOrSourceType);
+
     int32_t HandleDeviceChangeForFetchOutputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
+    void WriteOutputRouteChangeEvent(unique_ptr<AudioDeviceDescriptor> &desc,
+        const AudioStreamDeviceChangeReason reason);
+    void WriteInputRouteChangeEvent(unique_ptr<AudioDeviceDescriptor> &desc,
+        const AudioStreamDeviceChangeReason reason);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -951,6 +967,8 @@ private:
 
     SupportedEffectConfig supportedEffectConfig_;
     ConverterConfig converterConfig_;
+
+    std::unique_ptr<std::thread> RecoveryDevicesThread_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

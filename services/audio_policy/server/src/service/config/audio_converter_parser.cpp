@@ -24,6 +24,8 @@
 #include "config_policy_utils.h"
 #endif
 
+#include "media_monitor_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -95,15 +97,24 @@ static std::map<std::string, AudioChannelLayout> str2layout = {
     {"CH_LAYOUT_AMB_ORDER3_FUMA", CH_LAYOUT_HOA_ORDER3_FUMA},
 };
 
+static void WriteConverterConfigError()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_CONVERTER_CONFIG);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 static void ParseEffectConfigFile(xmlDoc* &doc)
 {
 #ifdef USE_CONFIG_POLICY
     CfgFiles *cfgFiles = GetCfgFiles(AUDIO_CONVERTER_CONFIG_FILE);
     if (cfgFiles == nullptr) {
         AUDIO_ERR_LOG("Not found audio_converter_config.xml!");
+        WriteConverterConfigError();
         return;
     }
-
     for (int32_t i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; i--) {
         if (cfgFiles->paths[i] && *(cfgFiles->paths[i]) != '\0') {
             AUDIO_INFO_LOG("converter config file path:%{public}s", cfgFiles->paths[i]);
@@ -116,6 +127,10 @@ static void ParseEffectConfigFile(xmlDoc* &doc)
     AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
     doc = xmlReadFile(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
 #endif
+    if (doc == nullptr) {
+        WriteConverterConfigError();
+        return;
+    }
 }
 
 AudioConverterParser::AudioConverterParser()
@@ -193,6 +208,9 @@ ConverterConfig AudioConverterParser::LoadConfig()
     ConverterConfig &result = *cfg_;
 
     ParseEffectConfigFile(doc);
+    if (doc == nullptr) {
+        WriteConverterConfigError();
+    }
     CHECK_AND_RETURN_RET_LOG(doc != nullptr, result, "error: could not parse file %{public}s",
         AUDIO_CONVERTER_CONFIG_FILE);
 
@@ -226,6 +244,5 @@ ConverterConfig AudioConverterParser::LoadConfig()
     xmlCleanupParser();
     return result;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

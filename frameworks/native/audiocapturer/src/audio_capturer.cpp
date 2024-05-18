@@ -25,9 +25,13 @@
 #include "audio_log.h"
 #include "audio_policy_manager.h"
 
+#include "media_monitor_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
+static constexpr int32_t WRITE_OVERFLOW_NUM = 100;
+
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
     {AudioStreamType::STREAM_MEDIA, SourceType::SOURCE_TYPE_MIC},
@@ -85,14 +89,17 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 {
     Trace trace("AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
+    if (sourceType <= SOURCE_TYPE_MIC || sourceType >= SOURCE_TYPE_MAX) {
+        AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
+    }
     CHECK_AND_RETURN_RET_LOG(sourceType >= SOURCE_TYPE_MIC && sourceType <= SOURCE_TYPE_MAX, nullptr,
         "Invalid source type %{public}d!", sourceType);
-
+    if (sourceType == SOURCE_TYPE_ULTRASONIC && getuid() != UID_MSDP_SA) {
+        AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
+    }
     CHECK_AND_RETURN_RET_LOG(sourceType != SOURCE_TYPE_ULTRASONIC || getuid() == UID_MSDP_SA, nullptr,
         "Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
-
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
-
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
     params.samplingRate = capturerOptions.streamInfo.samplingRate;
@@ -105,30 +112,29 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     }
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
-
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
-
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, nullptr, "Failed to create capturer object");
+    if (capturer == nullptr) {
+        AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
+        return capturer;
+    }
     if (!cachePath.empty()) {
         AUDIO_DEBUG_LOG("Set application cache path");
         capturer->cachePath_ = cachePath;
     }
     AUDIO_INFO_LOG("StreamClientState for Capturer::Create. sourceType: %{public}d, uid: %{public}d",
         sourceType, appInfo.appUid);
-
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
-
     capturer->capturerInfo_.sourceType = sourceType;
     capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
     if (capturer->SetParams(params) != SUCCESS) {
+        AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         capturer = nullptr;
     }
-
     if (capturer != nullptr && isChange) {
         capturer->isChannelChange_ = true;
     }
-
     return capturer;
 }
 
@@ -148,6 +154,19 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_OPERATION_FAILED, "Failed with null audioStream_");
 
     return audioStream_->UpdatePlaybackCaptureConfig(config);
+}
+
+void AudioCapturer::SendCapturerCreateError(const SourceType &sourceType,
+    const int32_t &errorCode)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_CREATE_ERROR_STATS,
+        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+    bean->Add("IS_PLAYBACK", 0);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+    bean->Add("STREAM_TYPE", sourceType);
+    bean->Add("ERROR_CODE", errorCode);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
@@ -504,7 +523,7 @@ bool AudioCapturerPrivate::Stop() const
             AUDIO_WARNING_LOG("Stop monitor permission failed");
         }
     }
-
+    WriteOverflowEvent();
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
         AUDIO_WARNING_LOG("AudioCapturer: DeactivateAudioInterrupt Failed");
@@ -849,6 +868,27 @@ void AudioCapturerPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
     audioInterrupt = audioInterrupt_;
 }
 
+void AudioCapturerPrivate::WriteOverflowEvent() const
+{
+    AUDIO_INFO_LOG("Write overflowEvent to media monitor");
+    if (GetOverflowCount() < WRITE_OVERFLOW_NUM) {
+        return;
+    }
+    AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
+    IAudioStream::StreamClass streamClass = audioStream_->GetStreamClass();
+    if (streamClass == IAudioStream::FAST_STREAM) {
+        pipeType = PIPE_TYPE_LOWLATENCY_IN;
+    }
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::PERFORMANCE_UNDER_OVERRUN_STATS,
+        Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("IS_PLAYBACK", 0);
+    bean->Add("CLIENT_UID", appInfo_.appUid);
+    bean->Add("PIPE_TYPE", pipeType);
+    bean->Add("STREAM_TYPE", capturerInfo_.sourceType);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 int32_t AudioCapturerPrivate::RegisterAudioCapturerEventListener()
 {
     if (!audioStateChangeCallback_) {
@@ -926,7 +966,7 @@ int32_t AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback()
     return SUCCESS;
 }
 
-uint32_t AudioCapturerPrivate::GetOverflowCount()
+uint32_t AudioCapturerPrivate::GetOverflowCount() const
 {
     return audioStream_->GetOverflowCount();
 }

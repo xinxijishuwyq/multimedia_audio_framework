@@ -312,7 +312,6 @@ struct AudioRendererInfo {
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    std::string appName = "";
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     bool Marshalling(Parcel &parcel) const
     {
@@ -323,7 +322,6 @@ struct AudioRendererInfo {
             && parcel.WriteBool(spatializationEnabled)
             && parcel.WriteBool(headTrackingEnabled)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
-            && parcel.WriteString(appName)
             && parcel.WriteInt32(static_cast<int32_t>(samplingRate));
     }
     void Unmarshalling(Parcel &parcel)
@@ -335,7 +333,6 @@ struct AudioRendererInfo {
         spatializationEnabled = parcel.ReadBool();
         headTrackingEnabled = parcel.ReadBool();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        appName = parcel.ReadString();
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
     }
 };
@@ -345,7 +342,6 @@ public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    std::string appName = "";
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -360,7 +356,6 @@ public:
         return parcel.WriteInt32(static_cast<int32_t>(sourceType))
             && parcel.WriteInt32(capturerFlags)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
-            && parcel.WriteString(appName)
             && parcel.WriteInt32(static_cast<int32_t>(samplingRate));
     }
     void Unmarshalling(Parcel &parcel)
@@ -368,7 +363,6 @@ public:
         sourceType = static_cast<SourceType>(parcel.ReadInt32());
         capturerFlags = parcel.ReadInt32();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        appName = parcel.ReadString();
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
     }
 };
@@ -719,8 +713,6 @@ public:
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
-    std::string appName;
-    AudioSamplingRate samplingRate;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {
