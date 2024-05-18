@@ -993,7 +993,7 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
         }
         ret = AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(newSessionId,
             outputDeviceChangeCallback_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register de  vice change callback for new session failed");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Register device change callback for new session failed");
         ret = AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Unregister device change callback for old session failed");
     }
