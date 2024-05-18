@@ -1313,6 +1313,9 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType)
 
     state_ = RUNNING; // change state_ to RUNNING, then notify cbThread
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        if (cbBufferQueue_.IsEmpty()) {
+            cbBufferQueue_.Push({cbBuffer_.get(), cbBufferSize_, cbBufferSize_});
+        }
         // start the callback-write thread
         cbThreadCv_.notify_all();
     }
