@@ -63,6 +63,10 @@ LOAD_CONFIG_ERROR:
   __BASE: {type: FAULT, level: CRITICAL, desc: load configuration failed on audio policy service startup}
   CATEGORY: {type: UINT16, desc: category of audio policy configuration in uint16}
 
+LOAD_EFFECT_ENGINE_ERROR:
+  __BASE: {type: FAULT, level: CRITICAL, desc: load effect engine failed on audio service startup}
+  ENGINE_TYPE: {type: UINT16, desc: type of audio effect engine in uint16}
+
 AUDIO_SERVICE_STARTUP_ERROR:
   __BASE: {type: FAULT, level: CRITICAL, desc: audio service start up failed}
   SERVICE_ID: {type: UINT8, desc: audio service id}
@@ -81,13 +85,23 @@ AUDIO_STREAM_CREATE_ERROR_STATS:
   ERROR_CODE: {type: INT32, desc: error code}
   TIMES: {type: UINT32, desc: how many times when this error happen}
 
+STREAM_PROPERTY_STATS:
+  __BASE: {type: STATISTIC, level: MINOR, desc: audio stream property statistic}
+  IS_PLAYBACK: {type: BOOL, desc: created stream is used for playback or capture}
+  STREAM_TYPE: {type: UINT8, desc: stream type which can be either StreamUsage in playback or SourceType in capture}
+  APP_NAME: {type: STRING, desc: Application name which is using this stream}
+  ENCODING_TYPE: {type: UINT8, desc: encoding type of this stream}
+  CHANNEL_LAYOUT: {type: UINT64, desc: channel layout of this stream}
+  DURATION: {type: UINT32, desc: duration of this stream}
+
 STREAM_UTILIZATION_STATS:
   __BASE: {type: STATISTIC, level: MINOR, desc: audio stream utilization statistic}
-  IS_PLAYBACK: {type: BOOL, desc: this stream is used for playback or capture}
+  IS_PLAYBACK: {type: BOOL, desc: created stream is used for playback or capture}
   STREAM_TYPE: {type: UINT8, desc: stream type which can be either StreamUsage in playback or SourceType in capture}
   PIPE_TYPE: {type: UINT8, desc: pipe type e.g. normal/lowlatency/offload/multichannel e.t.c.}
   APP_NAME: {type: STRING, desc: Application name which is using this stream}
   SAMPLE_RATE: {type: UINT32, desc: sample rate of this stream}
+  EFFECT_CHAIN: {type: UINT8, desc: effect chain of this stream}
   DURATION: {type: UINT32, desc: duration of this stream}
 
 AUDIO_DEVICE_UTILIZATION_STATS:

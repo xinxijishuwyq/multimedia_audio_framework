@@ -188,6 +188,9 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
     rendererInfo_.spatializationEnabled = spatializationState.spatializationEnabled;
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
+    rendererInfo_.encodingType = curStreamParams_.encoding;
+    rendererInfo_.channelLayout = curStreamParams_.channelLayout;
+
     if (GetOffloadEnable()) {
         rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
     } else if (GetHighResolutionEnabled()) {
