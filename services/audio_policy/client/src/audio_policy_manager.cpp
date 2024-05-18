@@ -774,8 +774,8 @@ int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t c
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::RegisterOutputDeviceChangeWithInfoCallback(
-    const uint32_t sessionID, const std::shared_ptr<OutputDeviceChangeWithInfoCallback> &callback)
+int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
+    const uint32_t sessionID, const std::shared_ptr<DeviceChangeWithInfoCallback> &callback)
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -796,15 +796,15 @@ int32_t AudioPolicyManager::RegisterOutputDeviceChangeWithInfoCallback(
         }
     }
 
-    audioPolicyClientStubCB_->AddOutputDeviceChangeWithInfoCallback(sessionID, callback);
+    audioPolicyClientStubCB_->AddDeviceChangeWithInfoCallback(sessionID, callback);
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnregisterOutputDeviceChangeWithInfoCallback(const uint32_t sessionID)
+int32_t AudioPolicyManager::UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID)
 {
     AUDIO_DEBUG_LOG("Entered %{public}s", __func__);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveOutputDeviceChangeWithInfoCallback(sessionID);
+        audioPolicyClientStubCB_->RemoveDeviceChangeWithInfoCallback(sessionID);
     }
     return SUCCESS;
 }

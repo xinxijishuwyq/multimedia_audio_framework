@@ -636,7 +636,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t SetRenderMode(AudioRenderMode renderMode) const = 0;
+    virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
 
     /**
      * @brief Obtains the render mode.

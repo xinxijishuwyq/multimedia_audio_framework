@@ -42,6 +42,8 @@ private:
     void HandleRendererStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleCapturerStateChange(MessageParcel &data, MessageParcel &reply);
     void HandleRendererDeviceChange(MessageParcel &data, MessageParcel &reply);
+    void HandleRecreateRendererStreamEvent(MessageParcel &data, MessageParcel &reply);
+    void HandleRecreateCapturerStreamEvent(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply);
     void HandleSpatializationEnabledChange(MessageParcel &data, MessageParcel &reply);
     void HandleHeadTrackingEnabledChange(MessageParcel &data, MessageParcel &reply);
@@ -60,6 +62,8 @@ private:
         &AudioPolicyClientStub::HandleRendererStateChange,
         &AudioPolicyClientStub::HandleCapturerStateChange,
         &AudioPolicyClientStub::HandleRendererDeviceChange,
+        &AudioPolicyClientStub::HandleRecreateRendererStreamEvent,
+        &AudioPolicyClientStub::HandleRecreateCapturerStreamEvent,
         &AudioPolicyClientStub::HandleHeadTrackingDeviceChange,
         &AudioPolicyClientStub::HandleSpatializationEnabledChange,
         &AudioPolicyClientStub::HandleHeadTrackingEnabledChange,

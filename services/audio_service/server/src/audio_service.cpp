@@ -319,14 +319,24 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
     return SUCCESS;
 }
 
+bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config)
+{
+    if ((config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION &&
+        config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST) ||
+        (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        config.capturerInfo.capturerFlags == AUDIO_FLAG_VOIP_FAST)) {
+        return true;
+    }
+    return false;
+}
+
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
-        config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-        config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+        IsEndpointTypeVoip(config));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
 
     uint32_t totalSizeInframe = 0;
@@ -370,8 +380,7 @@ void AudioService::ResetAudioEndpoint()
 
             DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
-                config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-                config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+                IsEndpointTypeVoip(config));
             CHECK_AND_RETURN_LOG(audioEndpoint != nullptr, "Get new endpoint failed");
 
             ret = LinkProcessToEndpoint((*paired).first, audioEndpoint);
@@ -511,8 +520,10 @@ DeviceInfo AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &confi
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInfo &deviceInfo,
     AudioStreamType streamType, bool isVoipStream)
 {
+    int32_t endpointSeparateFlag = -1;
+    GetSysPara("persist.multimedia.audioflag.fast.disableseparate", endpointSeparateFlag);
     if (deviceInfo.deviceRole == INPUT_DEVICE || deviceInfo.networkId != LOCAL_NETWORK_ID ||
-        deviceInfo.deviceRole == OUTPUT_DEVICE) {
+        deviceInfo.deviceRole == OUTPUT_DEVICE || endpointSeparateFlag == 1) {
         // Create shared stream.
         int32_t endpointFlag = AUDIO_FLAG_MMAP;
         if (isVoipStream) {

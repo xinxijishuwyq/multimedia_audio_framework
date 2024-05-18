@@ -479,7 +479,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) const = 0;
+    virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) = 0;
 
     /**
      * @brief Obtains the capture mode.

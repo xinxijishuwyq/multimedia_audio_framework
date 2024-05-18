@@ -42,6 +42,8 @@ enum class AudioPolicyClientCode {
     ON_RENDERERSTATE_CHANGE,
     ON_CAPTURERSTATE_CHANGE,
     ON_RENDERER_DEVICE_CHANGE,
+    ON_RECREATE_RENDERER_STREAM_EVENT,
+    ON_RECREATE_CAPTURER_STREAM_EVENT,
     ON_HEAD_TRACKING_DEVICE_CHANGE,
     ON_SPATIALIZATION_ENABLED_CHANGE,
     ON_HEAD_TRACKING_ENABLED_CHANGE,
@@ -64,6 +66,8 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
     virtual void OnRendererDeviceChange(const uint32_t sessionId,
         const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) = 0;
+    virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag) = 0;
+    virtual void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag) = 0;
     virtual void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) = 0;
     virtual void OnSpatializationEnabledChange(const bool &enabled) = 0;
     virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;
