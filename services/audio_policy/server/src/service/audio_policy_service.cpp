@@ -5364,9 +5364,9 @@ int32_t AudioPolicyService::GetVoipPlaybackDeviceInfo(const AudioProcessConfig &
 {
     AudioRendererInfo rendererInfo = config.rendererInfo;
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredOutputDeviceDescriptors(rendererInfo);
-    deviceInfo.deviceRole = OUTPUT_DEVICE;
     int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
         rendererInfo.originalFlag);
+    deviceInfo.deviceRole = OUTPUT_DEVICE;
     return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
 
