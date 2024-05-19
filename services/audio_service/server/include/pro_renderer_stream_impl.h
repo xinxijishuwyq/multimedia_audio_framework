@@ -14,6 +14,7 @@
  */
 #ifndef PRO_RENDERER_STREAM_IMPL_H
 #define PRO_RENDERER_STREAM_IMPL_H
+
 #include <atomic>
 #include <queue>
 #include <mutex>
@@ -22,6 +23,7 @@
 #include "audio_resample.h"
 #include "linear_pos_time_model.h"
 #include "audio_down_mix_stereo.h"
+
 namespace OHOS {
 namespace AudioStandard {
 enum class ProStreamStatus : int32_t {

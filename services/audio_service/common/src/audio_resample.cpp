@@ -30,22 +30,22 @@ struct AudioResample::SpeexResample {
 #endif
 };
 AudioResample::AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity)
-    : speex(std::make_unique<SpeexResample>())
+    : speex_(std::make_unique<SpeexResample>())
 {
 #ifdef SONIC_ENABLE
     int32_t error;
-    speex->channelCount_ = channels;
-    speex->resampler = speex_resampler_init(channels, inRate, outRate, quantity, &error);
-    speex_resampler_skip_zeros(speex->resampler);
+    speex_->channelCount_ = channels;
+    speex_->resampler = speex_resampler_init(channels, inRate, outRate, quantity, &error);
+    speex_resampler_skip_zeros(speex_->resampler);
 #endif
 }
 
 AudioResample::~AudioResample()
 {
 #ifdef SONIC_ENABLE
-    if (!speex->resampler)
+    if (!speex_->resampler)
         return;
-    speex_resampler_destroy(speex->resampler);
+    speex_resampler_destroy(speex_->resampler);
 #endif
 }
 
@@ -53,9 +53,9 @@ int32_t AudioResample::ProcessFloatResample(const std::vector<float> &input, std
 {
     int32_t ret = 0;
 #ifdef SONIC_ENABLE
-    uint32_t inSize = input.size() / speex->channelCount_;
-    uint32_t outSize = output.size() / speex->channelCount_;
-    ret = speex_resampler_process_interleaved_float(speex->resampler, input.data(), &inSize, output.data(), &outSize);
+    uint32_t inSize = input.size() / speex_->channelCount_;
+    uint32_t outSize = output.size() / speex_->channelCount_;
+    ret = speex_resampler_process_interleaved_float(speex_->resampler, input.data(), &inSize, output.data(), &outSize);
     AUDIO_INFO_LOG("after in size:%{public}d,out size:%{public}d,result:%{public}d", inSize, outSize, ret);
 #endif
     return ret;

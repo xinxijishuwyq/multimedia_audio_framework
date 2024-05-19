@@ -2045,6 +2045,22 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
     return SUCCESS;
 }
 
+bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
+    const AudioStreamDeviceChangeReason reason, const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
+    if (!IsSameDevice(desc, currentActiveDevice_)) {
+        WriteOutputRouteChangeEvent(desc, reason);
+        currentActiveDevice_ = AudioDeviceDescriptor(*desc);
+        AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
+        return true;
+    }
+    if (reason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE && audioScene_ == AUDIO_SCENE_DEFAULT &&
+        !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
+        MuteSinkPort(desc);
+    }
+    return false
+}
+
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReason reason)
 {
@@ -2075,17 +2091,8 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
         }
         if (needUpdateActiveDevice) {
-            if (!IsSameDevice(desc, currentActiveDevice_)) {
-                WriteOutputRouteChangeEvent(desc, reason);
-                currentActiveDevice_ = AudioDeviceDescriptor(*desc);
-                AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
-                isUpdateActiveDevice = true;
-            }
+            isUpdateActiveDevice = UpdateDevice(desc, reason, rendererChangeInfo);
             needUpdateActiveDevice = false;
-            if (reason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE &&
-                audioScene_ == AUDIO_SCENE_DEFAULT && !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
-                MuteSinkPort(desc);
-            }
         }
         if (!isHasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo)) {
             isHasDirectChangeDevice = true;

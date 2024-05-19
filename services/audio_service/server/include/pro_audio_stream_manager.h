@@ -39,6 +39,7 @@ public:
 
 private:
     std::shared_ptr<IRendererStream> CreateRendererStream(AudioProcessConfig processConfig);
+    int32_t CreatePlayBackEngine(const std::shared_ptr<IRendererStream> &stream);
 
 private:
     std::mutex streamMapMutex_;

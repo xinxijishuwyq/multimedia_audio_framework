@@ -14,6 +14,7 @@
  */
 #include "audio_common_converter.h"
 #include <cmath>
+
 namespace OHOS {
 namespace AudioStandard {
 constexpr float AUDIO_SAMPLE_32BIT_VALUE = 2147483647.f;

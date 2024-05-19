@@ -47,7 +47,14 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
 
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init rendererStream");
-
+    int32_t ret = CreatePlayBackEngine(rendererStream);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Create play back engine failed. ret:%{public}d", ret);
+        playbackEngine_ = nullptr;
+        rendererStream->Release();
+        rendererStream = nullptr;
+        return ret;
+    }
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     rendererStreamMap_[sessionId] = rendererStream;
@@ -68,17 +75,11 @@ int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
         }
     }
     currentRender = rendererStreamMap_[streamIndex];
-    DeviceInfo deviceInfo;
-    AudioProcessConfig config = currentRender->GetAudioProcessConfig();
-    bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
     int32_t result = currentRender->Start();
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to start rendererStream");
     if (!playbackEngine_) {
-        playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, managerType_ == VOIP_PLAYBACK);
-        playbackEngine_->AddRenderer(currentRender);
+        playbackEngine_->Start();
     }
-    playbackEngine_->Start();
     return SUCCESS;
 }
 
@@ -156,6 +157,20 @@ int32_t ProAudioStreamManager::TriggerStartIfNecessary()
 int32_t ProAudioStreamManager::GetStreamCount() const noexcept
 {
     return rendererStreamMap_.size();
+}
+
+int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRendererStream> &stream)
+{
+    int32_t ret = SUCCESS;
+    if (!playbackEngine_) {
+        DeviceInfo deviceInfo;
+        AudioProcessConfig config = stream->GetAudioProcessConfig();
+        bool ret = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, deviceInfo);
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
+        playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, managerType_ == VOIP_PLAYBACK);
+        ret = playbackEngine_->AddRenderer(stream);
+    }
+    return ret;
 }
 
 std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(AudioProcessConfig processConfig)

@@ -27,7 +27,7 @@ public:
 
 private:
     struct SpeexResample;
-    std::unique_ptr<SpeexResample> speex;
+    std::unique_ptr<SpeexResample> speex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
