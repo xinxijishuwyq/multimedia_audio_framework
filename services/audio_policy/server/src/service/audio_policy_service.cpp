@@ -2144,14 +2144,14 @@ bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendere
     if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType) &&
         rendererChangeInfo->rendererInfo.isDirectStream) {
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-                                              AUDIO_FLAG_DIRECT);
+            AUDIO_FLAG_DIRECT);
         return true;
     } else if (IsDirectSupportedDevice(currentActiveDevice_.deviceType_)) {
         AudioRendererInfo info = rendererChangeInfo->rendererInfo;
         if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
             info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
             TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-                                                  AUDIO_FLAG_DIRECT);
+                AUDIO_FLAG_DIRECT);
             return true;
         }
     }
@@ -2160,10 +2160,7 @@ bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendere
 
 bool AudioPolicyService::IsDirectSupportedDevice(DeviceType deviceType)
 {
-    if (deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET) {
-        return true;
-    }
-    return false;
+    return deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET;
 }
 
 void AudioPolicyService::TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag)

@@ -82,7 +82,7 @@ bool AudioThreadTask::CheckThreadIsRunning() const noexcept
 
 void AudioThreadTask::StopAsync()
 {
-    std::unique_lock lock(stateMutex_);
+    std::lock_guard lock(stateMutex_);
     if (state_.load() != RunningState::STOPPING || state_.load() != RunningState::STOPPED) {
         state_ = RunningState::STOPPING;
         cond_.notify_all();

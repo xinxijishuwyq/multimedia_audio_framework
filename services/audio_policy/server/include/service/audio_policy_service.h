@@ -815,7 +815,7 @@ private:
     bool IsDirectSupportedDevice(DeviceType deviceType);
 
     bool NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
-                                      const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+        const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
 
     void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);
 

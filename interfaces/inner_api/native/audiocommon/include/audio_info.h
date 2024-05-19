@@ -57,6 +57,7 @@ constexpr uint32_t STREAM_FLAG_NORMAL = 0;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr int32_t EMPTY_UID = 0;
+constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 3;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
@@ -740,27 +741,44 @@ public:
     ~AudioRendererChangeInfo() = default;
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(createrUID) && parcel.WriteInt32(clientUID) && parcel.WriteInt32(sessionId) &&
-               parcel.WriteInt32(callerPid) && parcel.WriteInt32(clientPid) && parcel.WriteInt32(tokenId) &&
-               parcel.WriteInt32(channelCount) && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType)) &&
-               parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage)) &&
-               parcel.WriteInt32(rendererInfo.rendererFlags) && parcel.WriteInt32(rendererInfo.originalFlag) &&
-               parcel.WriteInt32(rendererInfo.samplingRate) && parcel.WriteBool(rendererInfo.isDirectStream) &&
-               parcel.WriteInt32(rendererInfo.format) && rendererInfo.Marshalling(parcel) &&
-               parcel.WriteInt32(static_cast<int32_t>(rendererState)) && outputDeviceInfo.Marshalling(parcel);
+		return parcel.WriteInt32(createrUID)
+            && parcel.WriteInt32(clientUID)
+            && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(callerPid)
+            && parcel.WriteInt32(clientPid)
+            && parcel.WriteInt32(tokenId)
+            && parcel.WriteInt32(channelCount)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(rendererInfo.originalFlag)
+			&& parcel.WriteInt32(rendererInfo.samplingRate)
+			&& parcel.WriteBool(rendererInfo.isDirectStream)
+			&& parcel.WriteInt32(rendererInfo.format)
+            && rendererInfo.Marshalling(parcel)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererState))
+            && outputDeviceInfo.Marshalling(parcel);
     }
     bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
     {
-        return parcel.WriteInt32(createrUID) && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID) &&
-               parcel.WriteInt32(sessionId) && parcel.WriteInt32(callerPid) && parcel.WriteInt32(clientPid) &&
-               parcel.WriteInt32(tokenId) && parcel.WriteInt32(channelCount) &&
-               parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType)) &&
-               parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage)) &&
-               parcel.WriteInt32(rendererInfo.rendererFlags) && parcel.WriteInt32(rendererInfo.originalFlag) &&
-               parcel.WriteInt32(rendererInfo.samplingRate) && parcel.WriteBool(rendererInfo.isDirectStream) &&
-               parcel.WriteInt32(rendererInfo.format) && rendererInfo.Marshalling(parcel) &&
-               parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) : RENDERER_INVALID) &&
-               outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion);
+		return parcel.WriteInt32(createrUID)
+            && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
+            && parcel.WriteInt32(sessionId)
+            && parcel.WriteInt32(callerPid)
+            && parcel.WriteInt32(clientPid)
+            && parcel.WriteInt32(tokenId)
+            && parcel.WriteInt32(channelCount)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(rendererInfo.originalFlag)
+			&& parcel.WriteInt32(rendererInfo.samplingRate)
+			&& parcel.WriteBool(rendererInfo.isDirectStream)
+			&& parcel.WriteInt32(rendererInfo.format)
+            && rendererInfo.Marshalling(parcel)
+            && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
+                RENDERER_INVALID)
+            && outputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion);
     }
     void Unmarshalling(Parcel &parcel)
     {

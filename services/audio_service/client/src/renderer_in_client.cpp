@@ -285,7 +285,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     int32_t type = ipcStream_->GetStreamManagerType();
-    if (type == 3) { // 3 means direct stream
+    if (type == AUDIO_DIRECT_MANAGER_TYPE) {
         rendererInfo_.isDirectStream = true;
     }
     proxyObj_ = proxyObj;
