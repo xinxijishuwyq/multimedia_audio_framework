@@ -26,13 +26,15 @@ namespace AudioStandard {
 struct AudioResample::SpeexResample {
 #ifdef SONIC_ENABLE
     SpeexResamplerState *resampler;
+    uint32_t channelCount_;
 #endif
 };
 AudioResample::AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity)
-    : channelCount_(channels), speex(std::make_unique<SpeexResample>())
+    : speex(std::make_unique<SpeexResample>())
 {
 #ifdef SONIC_ENABLE
     int32_t error;
+    speex->channelCount_ = channels;
     speex->resampler = speex_resampler_init(channels, inRate, outRate, quantity, &error);
     speex_resampler_skip_zeros(speex->resampler);
 #endif
@@ -51,8 +53,8 @@ int32_t AudioResample::ProcessFloatResample(const std::vector<float> &input, std
 {
     int32_t ret = 0;
 #ifdef SONIC_ENABLE
-    uint32_t inSize = input.size() / channelCount_;
-    uint32_t outSize = output.size() / channelCount_;
+    uint32_t inSize = input.size() / speex->channelCount_;
+    uint32_t outSize = output.size() / speex->channelCount_;
     ret = speex_resampler_process_interleaved_float(speex->resampler, input.data(), &inSize, output.data(), &outSize);
     AUDIO_INFO_LOG("after in size:%{public}d,out size:%{public}d,result:%{public}d", inSize, outSize, ret);
 #endif

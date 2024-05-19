@@ -27,7 +27,6 @@ public:
 
 private:
     struct SpeexResample;
-    uint32_t channelCount_;
     std::unique_ptr<SpeexResample> speex;
 };
 } // namespace AudioStandard
