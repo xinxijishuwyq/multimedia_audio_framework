@@ -98,10 +98,7 @@ int32_t ProRendererStreamImpl::InitParams()
                    streamInfo.format, streamInfo.samplingRate);
     currentRate_ = streamInfo.samplingRate;
     desSamplingRate_ = GetDirectSampleRate(streamInfo.samplingRate);
-    desFormat_ = AudioSampleFormat::SAMPLE_S32LE;
-    if (!isDirect_) {
-        desFormat_ = AudioSampleFormat::SAMPLE_S16LE;
-    }
+    desFormat_ = isDirect_ ? SAMPLE_S32LE : SAMPLE_S16LE;
     spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
