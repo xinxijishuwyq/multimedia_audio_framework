@@ -317,13 +317,19 @@ struct AudioRendererInfo {
 
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(static_cast<int32_t>(contentType)) &&
-               parcel.WriteInt32(static_cast<int32_t>(streamUsage)) && parcel.WriteInt32(rendererFlags) &&
-               parcel.WriteInt32(originalFlag) && parcel.WriteString(sceneType) &&
-               parcel.WriteBool(spatializationEnabled) && parcel.WriteBool(headTrackingEnabled) &&
-               parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
-               parcel.WriteInt32(static_cast<int32_t>(samplingRate)) && parcel.WriteUint8(encodingType) &&
-               parcel.WriteUint64(channelLayout) && parcel.WriteBool(isDirectStream) && parcel.WriteInt32(format);
+        return parcel.WriteInt32(static_cast<int32_t>(contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteInt32(rendererFlags)
+            && parcel.WriteInt32(originalFlag)
+            && parcel.WriteString(sceneType)
+            && parcel.WriteBool(spatializationEnabled)
+            && parcel.WriteBool(headTrackingEnabled)
+            && parcel.WriteInt32(static_cast<int32_t>(pipeType))
+            && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
+            && parcel.WriteUint8(encodingType)
+            && parcel.WriteUint64(channelLayout)
+            && parcel.WriteBool(isDirectStream)
+            && parcel.WriteInt32(format);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -741,7 +747,7 @@ public:
     ~AudioRendererChangeInfo() = default;
     bool Marshalling(Parcel &parcel) const
     {
-		return parcel.WriteInt32(createrUID)
+        return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUID)
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(callerPid)
@@ -752,16 +758,16 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
             && parcel.WriteInt32(rendererInfo.originalFlag)
-			&& parcel.WriteInt32(rendererInfo.samplingRate)
-			&& parcel.WriteBool(rendererInfo.isDirectStream)
-			&& parcel.WriteInt32(rendererInfo.format)
+            && parcel.WriteInt32(rendererInfo.samplingRate)
+            && parcel.WriteBool(rendererInfo.isDirectStream)
+            && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererState))
             && outputDeviceInfo.Marshalling(parcel);
     }
     bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const
     {
-		return parcel.WriteInt32(createrUID)
+        return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(hasSystemPermission ? clientUID : EMPTY_UID)
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(callerPid)
@@ -772,9 +778,9 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
             && parcel.WriteInt32(rendererInfo.rendererFlags)
             && parcel.WriteInt32(rendererInfo.originalFlag)
-			&& parcel.WriteInt32(rendererInfo.samplingRate)
-			&& parcel.WriteBool(rendererInfo.isDirectStream)
-			&& parcel.WriteInt32(rendererInfo.format)
+            && parcel.WriteInt32(rendererInfo.samplingRate)
+            && parcel.WriteBool(rendererInfo.isDirectStream)
+            && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
                 RENDERER_INVALID)
