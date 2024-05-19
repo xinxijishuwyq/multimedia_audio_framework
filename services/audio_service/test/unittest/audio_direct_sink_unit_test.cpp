@@ -61,10 +61,10 @@ void AudioDirectSinkUnitTest::TearDown(void)
 }
 
 /**
- * @tc.name  : Test Create Direct Sink
+ * @tc.name  : Test Audio Direct Sink Create
  * @tc.type  : FUNC
  * @tc.number: DirectAudioSinkCreate_001
- * @tc.desc  : Test create direct sink success
+ * @tc.desc  : Test audio direct sink create success
  */
 HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkCreate_001, TestSize.Level1)
 {
@@ -72,10 +72,10 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkCreate_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test Init Direct Sink
+ * @tc.name  : Test Audio Direct Sink
  * @tc.type  : FUNC
  * @tc.number: DirectAudioSinkInit_001
- * @tc.desc  : Test init direct sink success
+ * @tc.desc  : Test audio direct sink init(setVolume) success
  */
 HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkInit_001, TestSize.Level1)
 {
@@ -100,7 +100,7 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkInit_001, TestSize.Level1)
  * @tc.name  : Test Direct Sink State
  * @tc.type  : FUNC
  * @tc.number: DirectAudioSinkState_001
- * @tc.desc  : Test direct sink state success
+ * @tc.desc  : Test direct sink state(init->start->stop) success
  */
 HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkState_001, TestSize.Level1)
 {

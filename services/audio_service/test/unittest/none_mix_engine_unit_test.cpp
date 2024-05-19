@@ -79,7 +79,7 @@ AudioProcessConfig NoneMixEngineUnitTest::InitProcessConfig()
  * @tc.name  : Test Direct Audio Playback Engine State
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineState_001
- * @tc.desc  : Test direct audio playback engine state success
+ * @tc.desc  : Test direct audio playback engine state(start->pause->flush->stop->release) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineState_001, TestSize.Level1)
 {
@@ -238,7 +238,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineState_006, TestSize.Lev
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_001
- * @tc.desc  : Test direct audio playback engine set config (sampleRate) success
+ * @tc.desc  : Test direct audio playback engine set config (sampleRate 192000) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_001, TestSize.Level1)
 {
@@ -261,7 +261,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_001, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_002
- * @tc.desc  : Test direct audio playback engine set config (deviceType) success
+ * @tc.desc  : Test direct audio playback engine set config (deviceType DEVICE_TYPE_USB_HEADSET) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_002, TestSize.Level1)
 {
@@ -284,7 +284,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_002, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_003
- * @tc.desc  : Test direct audio playback engine set config (sampleRate) success
+ * @tc.desc  : Test direct audio playback engine set config (sampleRate 176400) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_003, TestSize.Level1)
 {
@@ -307,7 +307,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_003, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_004
- * @tc.desc  : Test direct audio playback engine set config (deviceType) success
+ * @tc.desc  : Test direct audio playback engine set config (deviceType DEVICE_TYPE_USB_HEADSET) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_004, TestSize.Level1)
 {
@@ -330,7 +330,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_004, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_005
- * @tc.desc  : Test direct audio playback engine set config (sampleRate) success
+ * @tc.desc  : Test direct audio playback engine set config (sampleRate 96000) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_005, TestSize.Level1)
 {
@@ -353,7 +353,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_005, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_006
- * @tc.desc  : Test direct audio playback engine set config (deviceType) success
+ * @tc.desc  : Test direct audio playback engine set config (deviceType DEVICE_TYPE_USB_HEADSET) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_006, TestSize.Level1)
 {
@@ -376,7 +376,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_006, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_007
- * @tc.desc  : Test direct audio playback engine set config (sampleRate) success
+ * @tc.desc  : Test direct audio playback engine set config (sampleRate 88200) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_007, TestSize.Level1)
 {
@@ -399,7 +399,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_007, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_008
- * @tc.desc  : Test direct audio playback engine set config (deviceType) success
+ * @tc.desc  : Test direct audio playback engine set config (deviceType DEVICE_TYPE_USB_HEADSET) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_008, TestSize.Level1)
 {
@@ -422,7 +422,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_008, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_009
- * @tc.desc  : Test direct audio playback engine set config (sampleRate) success
+ * @tc.desc  : Test direct audio playback engine set config (sampleRate 48000) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_009, TestSize.Level1)
 {
@@ -445,7 +445,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_009, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_010
- * @tc.desc  : Test direct audio playback engine set config (deviceType) success
+ * @tc.desc  : Test direct audio playback engine set config (deviceType DEVICE_TYPE_USB_HEADSET) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_010, TestSize.Level1)
 {
@@ -468,7 +468,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_010, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_011
- * @tc.desc  : Test direct audio playback engine set config (sampleRate) success
+ * @tc.desc  : Test direct audio playback engine set config (sampleRate 44100) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_011, TestSize.Level1)
 {
@@ -491,7 +491,7 @@ HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_011, TestSize
  * @tc.name  : Test Direct Audio Playback Engine Set Config
  * @tc.type  : FUNC
  * @tc.number: DirectAudioPlayBackEngineSetConfig_012
- * @tc.desc  : Test direct audio playback engine set config (deviceType) success
+ * @tc.desc  : Test direct audio playback engine set config (deviceType DEVICE_TYPE_USB_HEADSET) success
  */
 HWTEST_F(NoneMixEngineUnitTest, DirectAudioPlayBackEngineSetConfig_012, TestSize.Level1)
 {
