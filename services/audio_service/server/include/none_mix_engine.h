@@ -15,6 +15,7 @@
 #ifndef NONE_MIX_ENGINE_H
 #define NONE_MIX_ENGINE_H
 #include <mutex>
+#include <atomic>
 #include "audio_playback_engine.h"
 
 namespace OHOS {
@@ -47,7 +48,7 @@ private:
     bool isVoip_;
     bool isStart_;
     DeviceInfo device_;
-    uint32_t failedCount_;
+    std::atomic<uint32_t> failedCount_;
     uint64_t writeCount_;
     uint64_t fwkSyncTime_;
     std::shared_ptr<IRendererStream> stream_;

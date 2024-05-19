@@ -20,8 +20,6 @@
 namespace OHOS {
 namespace AudioStandard {
 class AudioResample {
-    struct SpeexResamplerState;
-
 public:
     AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity);
     ~AudioResample();

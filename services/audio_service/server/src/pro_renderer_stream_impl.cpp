@@ -109,6 +109,7 @@ int32_t ProRendererStreamImpl::InitParams()
     uint32_t desChannels = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     if (streamInfo.samplingRate != desSamplingRate_) {
+        AUDIO_INFO_LOG("stream need resample, dest:%{public}d", desSamplingRate_);
         isNeedResample_ = true;
         resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_,
                                                     DEFAULT_RESAMPLE_QUANTITY);
@@ -352,6 +353,7 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
     int32_t writeIndex = PopWriteBufferIndex();
     if (writeIndex < 0) {
+        AUDIO_ERR_LOG("write index is empty.");
         return ERR_WRITE_BUFFER;
     }
     std::lock_guard lock(peekMutex);
@@ -385,7 +387,7 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     }
     readQueue_.emplace(writeIndex);
     AUDIO_INFO_LOG("buffer length:%{public}zu ,sink buffer length:%{public}zu", bufferDesc.bufLength,
-                   sinkBuffer_.size());
+                   sinkBuffer_[0].size());
     totalBytesWritten_ += bufferDesc.bufLength;
     return SUCCESS;
 }
@@ -440,7 +442,7 @@ int32_t ProRendererStreamImpl::OffloadSetVolume(float volume)
 
 size_t ProRendererStreamImpl::GetWritableSize()
 {
-    return writeQueue_.size() * sinkBuffer_[0].size();
+    return writeQueue_.size() * minBufferSize_;
 }
 // offload end
 int32_t ProRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -477,7 +479,7 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
 
     std::shared_ptr<IWriteCallback> writeCallback = writeCallback_.lock();
     if (writeCallback != nullptr) {
-        result = writeCallback->OnWriteData(spanSizeInFrame_ * byteSizePerFrame_);
+        result = writeCallback->OnWriteData(minBufferSize_);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Write callback failed,result:%{public}d", result);
             return result;

@@ -133,6 +133,7 @@ void NoneMixEngine::MixStreams()
     }
 
     if (failedCount_ >= MAX_ERROR_COUNT) {
+        AUDIO_WARNING_LOG("failed count is overflow.");
         PauseAsync();
         return;
     }

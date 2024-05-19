@@ -2052,6 +2052,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
+    bool isHasDirectChangeDevice = false;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (!IsRendererStreamRunning(rendererChangeInfo) || (audioScene_ == AUDIO_SCENE_DEFAULT &&
             audioRouterCenter_.isCallRenderRouter(rendererChangeInfo->rendererInfo.streamUsage))) {
@@ -2085,6 +2086,10 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
                 audioScene_ == AUDIO_SCENE_DEFAULT && !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
                 MuteSinkPort(desc);
             }
+        }
+        if (!isHasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo)) {
+            isHasDirectChangeDevice = true;
+            continue;
         }
         if (NotifyRecreateRendererStream(isUpdateActiveDevice, rendererChangeInfo)) { continue; }
         SelectNewOutputDevice(rendererChangeInfo, desc, reason);
@@ -2129,6 +2134,36 @@ bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
             currentActiveDevice_.deviceType_, rendererChangeInfo->rendererInfo.originalFlag);
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, streamClass);
+        return true;
+    }
+    return false;
+}
+
+bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
+    if (!IsRendererStreamRunning(rendererChangeInfo)) {
+        return false;
+    }
+    if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType) &&
+        rendererChangeInfo->rendererInfo.isDirectStream) {
+        TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
+                                              AUDIO_FLAG_DIRECT);
+        return true;
+    } else if (IsDirectSupportedDevice(currentActiveDevice_.deviceType_)) {
+        AudioRendererInfo info = rendererChangeInfo->rendererInfo;
+        if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
+            info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
+            TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
+                                                  AUDIO_FLAG_DIRECT);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioPolicyService::IsDirectSupportedDevice(DeviceType deviceType)
+{
+    if (deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET) {
         return true;
     }
     return false;

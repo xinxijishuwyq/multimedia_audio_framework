@@ -59,6 +59,8 @@ private:
 
     int32_t HandleUpdateSpatializationState(MessageParcel &data, MessageParcel &reply);
 
+    int32_t HandleGetStreamManagerType(MessageParcel &data, MessageParcel &reply);
+
     using HandlerFunc = int32_t(IpcStreamStub::*)(MessageParcel &data, MessageParcel &reply);
     // Using the same order in IpcStreamMsg::Code when add func!
     static inline HandlerFunc funcList_[IpcStreamMsg::IPC_STREAM_MAX_MSG] = {
@@ -89,6 +91,7 @@ private:
         &IpcStreamStub::HandleGetOffloadApproximatelyCacheTime,
         &IpcStreamStub::HandleOffloadSetVolume,
         &IpcStreamStub::HandleUpdateSpatializationState,
+        &IpcStreamStub::HandleGetStreamManagerType,
     };
 };
 } // namespace AudioStandard

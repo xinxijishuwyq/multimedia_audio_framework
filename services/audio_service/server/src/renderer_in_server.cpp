@@ -695,5 +695,10 @@ int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, 
 {
     return stream_->UpdateSpatializationState(spatializationEnabled, headTrackingEnabled);
 }
+
+int32_t RendererInServer::GetStreamManagerType() const noexcept
+{
+    return managerType_;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -216,7 +216,7 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         AudioRegisterTrackerInfo registerTrackerInfo;
 
         rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
-
+        rendererInfo_.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
         registerTrackerInfo.sessionId = sessionId_;
         registerTrackerInfo.clientPid = clientPid_;
         registerTrackerInfo.state = state_;
@@ -284,7 +284,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-
+    int32_t type = ipcStream_->GetStreamManagerType();
+    if (type == 3) { // 3 means direct stream
+        rendererInfo_.isDirectStream = true;
+    }
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
     RegisterSpatializationStateEventListener();

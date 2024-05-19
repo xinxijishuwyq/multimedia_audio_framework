@@ -104,8 +104,11 @@ public:
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override; // renderer only
 
+    int32_t GetStreamManagerType() override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
+
 private:
     int32_t ConfigRenderer();
     int32_t ConfigCapturer();

@@ -83,6 +83,9 @@ public:
     int32_t EnableInnerCap();
     int32_t DisableInnerCap();
     int32_t InitDupStream();
+
+    int32_t GetStreamManagerType() const noexcept;
+
 public:
     const AudioProcessConfig processConfig_;
 private:
