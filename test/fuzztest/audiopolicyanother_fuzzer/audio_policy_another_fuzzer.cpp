@@ -58,13 +58,16 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
     std::string sceneType(reinterpret_cast<const char*>(rawData), size - 1);
     bool spatializationEnabled = *reinterpret_cast<const bool *>(rawData);
     bool headTrackingEnabled = *reinterpret_cast<const bool *>(rawData);
+    int32_t originalFlag = *reinterpret_cast<const int32_t *>(rawData);
+
     AudioRendererInfo rendererInfo = {
         contentType,
         streamUsage,
         rendererFlags,
         sceneType,
         spatializationEnabled,
-        headTrackingEnabled
+        headTrackingEnabled,
+        originalFlag
     };
     AudioPolicyServerPtr->GetPreferredOutputStreamType(rendererInfo);
 

@@ -198,6 +198,20 @@ void AudioPolicyClientStub::HandleRendererDeviceChange(MessageParcel &data, Mess
     OnRendererDeviceChange(sessionId, deviceInfo, reason);
 }
 
+void AudioPolicyClientStub::HandleRecreateRendererStreamEvent(MessageParcel &data, MessageParcel &reply)
+{
+    const uint32_t sessionId = data.ReadUint32();
+    const uint32_t streamFlag = data.ReadUint32();
+    OnRecreateRendererStreamEvent(sessionId, streamFlag);
+}
+
+void AudioPolicyClientStub::HandleRecreateCapturerStreamEvent(MessageParcel &data, MessageParcel &reply)
+{
+    const uint32_t sessionId = data.ReadUint32();
+    const uint32_t streamFlag = data.ReadUint32();
+    OnRecreateCapturerStreamEvent(sessionId, streamFlag);
+}
+
 void AudioPolicyClientStub::HandleHeadTrackingDeviceChange(MessageParcel &data, MessageParcel &reply)
 {
     std::unordered_map<std::string, bool> changeInfo;

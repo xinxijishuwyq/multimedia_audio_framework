@@ -175,10 +175,10 @@ public:
 
     int32_t UnregisterAudioCapturerEventListener(const int32_t clientPid);
 
-    int32_t RegisterOutputDeviceChangeWithInfoCallback(
-        const uint32_t sessionID, const std::shared_ptr<OutputDeviceChangeWithInfoCallback> &callback);
+    int32_t RegisterDeviceChangeWithInfoCallback(
+        const uint32_t sessionID, const std::shared_ptr<DeviceChangeWithInfoCallback> &callback);
     
-    int32_t UnregisterOutputDeviceChangeWithInfoCallback(const uint32_t sessionID);
+    int32_t UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const std::shared_ptr<AudioClientTracker> &clientTrackerObj);

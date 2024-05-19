@@ -196,6 +196,8 @@ public:
     int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
     bool RestoreAudioStream() override;
 
+    void GetStreamSwitchInfo(SwitchInfo &info);
+
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;

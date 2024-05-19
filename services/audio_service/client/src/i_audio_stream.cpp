@@ -204,7 +204,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     AudioStreamType eStreamType, int32_t appUid)
 {
     Trace trace("IAudioStream::GetPlaybackStream");
-    if (streamClass == FAST_STREAM) {
+    if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
         (void)params;
         AUDIO_INFO_LOG("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
@@ -221,7 +221,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     AudioStreamType eStreamType, int32_t appUid)
 {
     Trace trace("IAudioStream::GetRecordStream");
-    if (streamClass == FAST_STREAM) {
+    if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
         (void)params;
         AUDIO_INFO_LOG("Create fast record stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);

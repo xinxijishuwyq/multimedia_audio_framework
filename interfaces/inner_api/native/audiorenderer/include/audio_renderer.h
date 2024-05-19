@@ -636,7 +636,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t SetRenderMode(AudioRenderMode renderMode) const = 0;
+    virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
 
     /**
      * @brief Obtains the render mode.
@@ -950,6 +950,10 @@ public:
 
     virtual ~AudioRenderer();
 private:
+    static int32_t CreateCheckParam(const AudioRendererOptions &rendererOptions,
+        const AppInfo &appInfo);
+    static void SendRendererCreateError(const StreamUsage &sreamUsage,
+        const int32_t &errorCode);
     static std::mutex createRendererMutex_;
 };
 }  // namespace AudioStandard
