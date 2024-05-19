@@ -32,6 +32,7 @@
 #include "hisysevent.h"
 
 #include "audio_capturer_source.h"
+#include "fast_audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_asr.h"
@@ -812,7 +813,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeOutpu
 int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
 {
     AUDIO_INFO_LOG("SetIORoute deviceType: %{public}d, flag: %{public}d", type, flag);
-    AudioCapturerSource *audioCapturerSourceInstance;
+    IAudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
@@ -820,6 +821,9 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
     } else {
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+        if (!audioCapturerSourceInstance->IsInited()) {
+            audioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
+        }
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr && audioRendererSinkInstance != nullptr,
         ERR_INVALID_PARAM, "SetIORoute failed for null instance!");

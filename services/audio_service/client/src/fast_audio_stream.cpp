@@ -103,10 +103,12 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
         config.rendererInfo.contentType = rendererInfo_.contentType;
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+        config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
         config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+        config.capturerInfo.originalFlag = capturerInfo_.originalFlag;
     } else {
         return ERR_INVALID_OPERATION;
     }

@@ -236,6 +236,8 @@ private:
     int32_t InitSharedBuffer();
     int32_t FlushRingCache();
 
+    void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
+
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 
@@ -1815,7 +1817,31 @@ void CapturerInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
 
 void CapturerInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    // in plan
+    info.params = streamParams_;
+
+    info.rendererInfo = rendererInfo_;
+    info.capturerInfo = capturerInfo_;
+    info.eStreamType = eStreamType_;
+    info.state = state_;
+    info.sessionId = sessionId_;
+    info.streamTrackerRegistered = streamTrackerRegistered_;
+    GetStreamSwitchInfo(info);
+}
+
+void CapturerInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
+{
+    info.cachePath = cachePath_;
+    info.overFlowCount = overflowCount_;
+    info.clientPid = clientPid_;
+    info.clientUid = clientUid_;
+
+    info.frameMarkPosition = capturerMarkPosition_;
+    info.capturePositionCb = capturerPositionCallback_;
+
+    info.framePeriodNumber = capturerPeriodSize_;
+    info.capturePeriodPositionCb = capturerPeriodPositionCallback_;
+
+    info.capturerReadCallback = readCb_;
 }
 
 bool CapturerInClientInner::GetOffloadEnable()

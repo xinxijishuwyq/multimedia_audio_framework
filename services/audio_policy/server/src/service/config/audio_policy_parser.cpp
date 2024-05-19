@@ -470,6 +470,9 @@ void AudioPolicyParser::ParseConfigs(xmlNode &node, PipeInfo &pipeInfo)
         }
         configNode = configNode->next;
     }
+    if (pipeInfo.audioUsage_ == AUDIO_USAGE_VOIP && pipeInfo.audioFlag_ == AUDIO_FLAG_MMAP) {
+        portObserver_.OnVoipConfigParsed(true);
+    }
     pipeInfo.configInfos_ = configInfos;
 }
 

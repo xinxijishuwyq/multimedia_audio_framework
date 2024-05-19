@@ -301,10 +301,11 @@ struct A2dpDeviceConfigInfo {
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    int32_t rendererFlags = 0;
+    int32_t rendererFlags = AUDIO_FLAG_NORMAL;
     std::string sceneType = "";
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
+    int32_t originalFlag = AUDIO_FLAG_NORMAL;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     uint8_t encodingType = 0;
@@ -315,6 +316,7 @@ struct AudioRendererInfo {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
             && parcel.WriteInt32(rendererFlags)
+            && parcel.WriteInt32(originalFlag)
             && parcel.WriteString(sceneType)
             && parcel.WriteBool(spatializationEnabled)
             && parcel.WriteBool(headTrackingEnabled)
@@ -328,6 +330,7 @@ struct AudioRendererInfo {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         rendererFlags = parcel.ReadInt32();
+        originalFlag = parcel.ReadInt32();
         sceneType = parcel.ReadString();
         spatializationEnabled = parcel.ReadBool();
         headTrackingEnabled = parcel.ReadBool();
@@ -342,6 +345,7 @@ class AudioCapturerInfo {
 public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
+    int32_t originalFlag = AUDIO_FLAG_NORMAL;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     uint8_t encodingType = 0;
@@ -358,18 +362,20 @@ public:
     ~AudioCapturerInfo()= default;
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(static_cast<int32_t>(sourceType))
-            && parcel.WriteInt32(capturerFlags)
-            && parcel.WriteInt32(static_cast<int32_t>(pipeType))
-            && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
-            && parcel.WriteUint8(encodingType)
-            && parcel.WriteUint64(channelLayout)
-            && parcel.WriteString(sceneType);
+        return parcel.WriteInt32(static_cast<int32_t>(sourceType)) &&
+            parcel.WriteInt32(capturerFlags) &&
+            parcel.WriteInt32(originalFlag) &&
+            parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
+            parcel.WriteUint8(encodingType) &&
+            parcel.WriteUint64(channelLayout) &&
+            parcel.WriteString(sceneType);
     }
     void Unmarshalling(Parcel &parcel)
     {
         sourceType = static_cast<SourceType>(parcel.ReadInt32());
         capturerFlags = parcel.ReadInt32();
+        originalFlag = parcel.ReadInt32();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
         encodingType = parcel.ReadUint8();
@@ -740,6 +746,10 @@ public:
             && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
             && parcel.WriteInt32(channelCount)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(rendererInfo.originalFlag)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererState))
             && outputDeviceInfo.Marshalling(parcel);
@@ -753,6 +763,10 @@ public:
             && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
             && parcel.WriteInt32(channelCount)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(rendererInfo.originalFlag)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
                 RENDERER_INVALID)
@@ -768,6 +782,10 @@ public:
         tokenId = parcel.ReadInt32();
         channelCount = parcel.ReadInt32();
 
+        rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+        rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        rendererInfo.rendererFlags = parcel.ReadInt32();
+        rendererInfo.originalFlag = parcel.ReadInt32();
         rendererInfo.Unmarshalling(parcel);
 
         rendererState = static_cast<RendererState>(parcel.ReadInt32());

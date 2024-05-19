@@ -1977,7 +1977,35 @@ void RendererInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
 
 void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    // in plan
+    info.params = streamParams_;
+
+    info.rendererInfo = rendererInfo_;
+    info.capturerInfo = capturerInfo_;
+    info.eStreamType = eStreamType_;
+    info.renderMode = renderMode_;
+    info.state = state_;
+    info.sessionId = sessionId_;
+    info.streamTrackerRegistered = streamTrackerRegistered_;
+    GetStreamSwitchInfo(info);
+}
+
+void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
+{
+    info.cachePath = cachePath_;
+    info.underFlowCount = underrunCount_;
+    info.effectMode = effectMode_;
+    info.renderRate = rendererRate_;
+    info.clientPid = clientPid_;
+    info.clientUid = clientUid_;
+    info.volume = clientVolume_;
+
+    info.frameMarkPosition = rendererMarkPosition_;
+    info.renderPositionCb = rendererPositionCallback_;
+
+    info.framePeriodNumber = rendererPeriodSize_;
+    info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
+
+    info.rendererWriteCallback = writeCb_;
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()

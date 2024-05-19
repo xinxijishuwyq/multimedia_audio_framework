@@ -46,6 +46,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+    static constexpr int64_t RECORD_DELAY_TIME = 4000000; // 4ms
+    static constexpr int64_t RECORD_VOIP_DELAY_TIME = 10000000; // 10ms
     static constexpr int64_t MAX_SPAN_DURATION_IN_NANO = 100000000; // 100ms
     static constexpr int64_t DELAY_STOP_HDI_TIME = 10000000000; // 10s
     static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME = 4000000000; // 4s
@@ -1337,7 +1339,8 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         AudioStreamType streamType = processList_[i]->GetAudioStreamType();
         AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(streamType);
         DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-        if (deviceInfo_.networkId == LOCAL_NETWORK_ID && !isSupportAbsVolume_ &&
+        if (deviceInfo_.networkId == LOCAL_NETWORK_ID &&
+            (deviceInfo_.deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || !isSupportAbsVolume_) &&
             PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol)) {
             streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat);
         } else {
@@ -1469,7 +1472,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
 {
     uint64_t nextHandlePos = curReadPos + dstSpanSizeInframe_;
     int64_t nextHdiWriteTime = GetPredictNextWriteTime(nextHandlePos);
-    int64_t tempDelay = 4000000; // 4ms
+    int64_t tempDelay = endpointType_ == TYPE_VOIP_MMAP ? RECORD_VOIP_DELAY_TIME : RECORD_DELAY_TIME;
     wakeUpTime = nextHdiWriteTime + tempDelay;
 
     int32_t ret = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos);

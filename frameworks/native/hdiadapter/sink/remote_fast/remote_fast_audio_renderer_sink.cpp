@@ -313,9 +313,9 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "PrepareMmapBuffer: Audio render is null.");
 
-    int32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
+    int32_t totalBufferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
-    int32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
+    int32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc;
     int32_t ret = audioRender_->ReqMmapBuffer(reqBufferFrameSize, desc);

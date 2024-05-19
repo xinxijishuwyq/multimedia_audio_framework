@@ -35,12 +35,14 @@ public:
         const std::vector<std::unique_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
 };
 
-class OutputDeviceChangeWithInfoCallback {
+class DeviceChangeWithInfoCallback {
 public:
-    virtual ~OutputDeviceChangeWithInfoCallback() = default;
+    virtual ~DeviceChangeWithInfoCallback() = default;
 
-    virtual void OnOutputDeviceChangeWithInfo(
+    virtual void OnDeviceChangeWithInfo(
         const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) = 0;
+
+    virtual void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag) = 0;
 };
 
 class AudioCapturerStateChangeCallback {

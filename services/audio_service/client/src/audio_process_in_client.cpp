@@ -294,7 +294,10 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     AudioProcessConfig resetConfig = config;
-    resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+    if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+        resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
+    }
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(resetConfig);
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, nullptr, "Create failed with null ipcProxy.");
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
@@ -667,7 +670,13 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 
 bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
 {
-    if (config.streamInfo.encoding != ENCODING_PCM || config.streamInfo.samplingRate != SAMPLE_RATE_48000) {
+    if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION &&
+        config.streamInfo.samplingRate != SAMPLE_RATE_48000) {
+        return false;
+    }
+
+    if (config.streamInfo.encoding != ENCODING_PCM) {
         return false;
     }
 
