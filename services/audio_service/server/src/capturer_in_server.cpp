@@ -126,6 +126,7 @@ int32_t CapturerInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConfigServerBuffer failed: %{public}d", ret);
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
+
     return SUCCESS;
 }
 
@@ -273,6 +274,20 @@ int32_t CapturerInServer::Start()
         AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_);
         return ERR_ILLEGAL_STATE;
     }
+
+    if (!needCheckBackground_ && PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid,
+        processConfig_.capturerInfo.sourceType)) {
+        AUDIO_INFO_LOG("set needCheckBackground_: true");
+        needCheckBackground_ = true;
+    }
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
+            "VerifyBackgroundCapture failed!");
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START);
+    }
+
     status_ = I_STATUS_STARTING;
     int ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
@@ -286,6 +301,10 @@ int32_t CapturerInServer::Pause()
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_);
         return ERR_ILLEGAL_STATE;
+    }
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
@@ -342,6 +361,12 @@ int32_t CapturerInServer::Stop()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;
+
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+    }
+
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     return SUCCESS;
@@ -371,6 +396,10 @@ int32_t CapturerInServer::Release()
         } else {
             PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(false);
         }
+    }
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
     }
     return SUCCESS;
 }

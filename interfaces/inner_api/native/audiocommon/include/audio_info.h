@@ -684,6 +684,8 @@ enum InnerCapMode : uint32_t {
 };
 
 struct AudioProcessConfig {
+    int32_t callerUid = INVALID_UID;
+
     AppInfo appInfo;
 
     AudioStreamInfo streamInfo;

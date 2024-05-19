@@ -66,6 +66,8 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
+    bool needCheckBackground_ = false;
+
     AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;
     AudioProcessConfig processConfig_;
