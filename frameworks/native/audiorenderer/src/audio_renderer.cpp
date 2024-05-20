@@ -1385,7 +1385,7 @@ void AudioRendererPrivate::SetSelfRendererStateCallback()
 
 int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 {
-    AUDIO_INFO_LOG("SetVolume WithRamp volume:%{public}f duration:%{public}d", volume, duration);
+    AUDIO_INFO_LOG("SetVolumeWithRamp volume:%{public}f duration:%{public}d", volume, duration);
     CHECK_AND_RETURN_RET(audioStream_ != nullptr, ERR_INVALID_PARAM, "Error status");
     return audioStream_->SetVolumeWithRamp(volume, duration);
 }
