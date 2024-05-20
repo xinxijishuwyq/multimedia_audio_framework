@@ -1052,7 +1052,7 @@ bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
 {
     AUDIO_INFO_LOG("RequestIndependentInterrupt : foncusType");
     AudioInterrupt audioInterrupt;
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    uint32_t clientId = GetCallingPid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
     audioInterrupt.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     audioInterrupt.audioFocusType.streamType = AudioStreamType::STREAM_RECORDING;

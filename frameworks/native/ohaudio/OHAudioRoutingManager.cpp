@@ -152,6 +152,9 @@ OH_AudioDeviceDescriptorArray* OHAudioRoutingManager::GetDevices(DeviceFlag devi
     if (audioDeviceDescriptorArray) {
         audioDeviceDescriptorArray->descriptors =
             (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
+        if (audioDeviceDescriptorArray->descriptors == nullptr) {
+            return nullptr;
+        }    
         audioDeviceDescriptorArray->size = size;
         uint32_t index = 0;
         for (auto deviceDescriptor : audioDeviceDescriptors) {
