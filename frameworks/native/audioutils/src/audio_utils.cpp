@@ -755,7 +755,7 @@ bool AudioLatencyMeasurement::MockPcmData(uint8_t *buffer, size_t bufferLen)
     memset_s(buffer, bufferLen, 0, bufferLen);
     int16_t *signal = signalData_.get();
     size_t newlyMocked = bufferLen * MILLISECOND_PER_SECOND /
-        (uint32_t)(channelCount_ * sampleRate_ * formatByteSize_);
+        static_cast<uint32_t>(channelCount_ * sampleRate_ * formatByteSize_);
     mockedTime_ += newlyMocked;
     if (mockedTime_ >= MOCK_INTERVAL) {
         mockedTime_ = 0;
