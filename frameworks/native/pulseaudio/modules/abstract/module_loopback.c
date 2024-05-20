@@ -622,7 +622,7 @@ static int SourceOutputProcessMsgCb(pa_msgobject *obj, int code, void *data, int
         u->latency_snapshot.send_counter = u->send_counter;
         /* Add content of delay memblockq to the source latency */
         u->latency_snapshot.source_latency = pa_source_get_latency_within_thread(u->source_output->source, true) +
-            (int64_t)pa_bytes_to_usec(length, &u->source_output->source->sample_spec);
+            static_cast<int64_t>(pa_bytes_to_usec(length, &u->source_output->source->sample_spec));
         u->latency_snapshot.source_timestamp = pa_rtclock_now();
 
         return 0;
