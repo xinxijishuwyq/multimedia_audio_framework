@@ -2058,7 +2058,7 @@ bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
         MuteSinkPort(desc);
     }
-    return false
+    return false;
 }
 
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
