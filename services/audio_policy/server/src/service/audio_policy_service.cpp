@@ -822,7 +822,7 @@ bool AudioPolicyService::CheckActiveOutputDeviceSupportOffload()
 {
     DeviceType dev = GetActiveOutputDevice();
     return dev == DEVICE_TYPE_SPEAKER || (dev == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD) ||
-        dev == DEVICE_TYPE_USB_HEADSET;
+        (dev == DEVICE_TYPE_USB_HEADSET && !isArmUsbDevice_);
 }
 
 void AudioPolicyService::SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo)
@@ -3363,7 +3363,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
     FetchDevice(false);
 
     // update a2dp offload
-    UpdateA2dpOffloadFlagForAllStream();
+    if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        UpdateA2dpOffloadFlagForAllStream();
+    }
 }
 
 #ifdef FEATURE_DTMF_TONE
