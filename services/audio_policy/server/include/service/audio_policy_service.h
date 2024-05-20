@@ -182,6 +182,8 @@ public:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 
+    bool GetVoipConfig();
+
     // Audio Policy Parser callbacks
     void OnAudioPolicyXmlParsingCompleted(const std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap);
 
@@ -193,6 +195,8 @@ public:
     void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData);
 
     void OnGlobalConfigsParsed(GlobalConfigs &globalConfigs);
+
+    void OnVoipConfigParsed(bool enableFastVoip);
 
     void OnUpdateRouteSupport(bool isSupported);
 
@@ -334,7 +338,7 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
-    void GetEffectManagerInfo(OriginalEffectConfig& oriEffectConfig, std::vector<Effect>& availableEffects);
+    void GetEffectManagerInfo();
 
     float GetMinStreamVolume(void);
 
@@ -437,7 +441,7 @@ public:
     void UnloadA2dpModule();
 
     float GetMaxAmplitude(const int32_t deviceId);
-    
+
     int32_t ParsePolicyConfigXmlNodeModuleInfos(ModuleInfo moduleInfo);
 
     int32_t TriggerFetchDevice();
@@ -464,6 +468,7 @@ public:
     void GetCapturerStreamDump(std::string &dumpString);
     void GetSafeVolumeDump(std::string &dumpString);
     void GetOffloadStatusDump(std::string &dumpString);
+    void EffectManagerInfoDump(std::string &dumpString);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
@@ -520,7 +525,9 @@ private:
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);
 
-    AudioModuleInfo ConstructWakeUpAudioModuleInfo(int32_t wakeupNo, const AudioStreamInfo &streamInfo);
+    bool FillWakeupStreamPropInfo(const AudioStreamInfo &streamInfo, PipeInfo *pipeInfo,
+        AudioModuleInfo &audioModuleInfo);
+    bool ConstructWakeupAudioModuleInfo(const AudioStreamInfo &streamInfo, AudioModuleInfo &audioModuleInfo);
 
     AudioIOHandle GetSinkIOHandle(InternalDeviceType deviceType);
 
@@ -590,7 +597,8 @@ private:
     int32_t HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 
-    void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    void FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void FetchDevice(bool isOutputDevice = true,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -786,12 +794,50 @@ private:
 
     int32_t ShowDialog();
 
+    int32_t GetVoipPlaybackDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+
+    int32_t GetVoipRecordDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
+
+    int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
+        std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
+
+    int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags);
+
+    int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags);
+
+    bool NotifyRecreateRendererStream(bool isUpdateActiveDevice,
+        const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
+    void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);
+
+    bool NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
+        const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+
+    void TriggerRecreateCapturerStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);
+
+    bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
+
     int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel);
 
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
 
+    void WriteServiceStartupError(string reason);
+
+    bool LoadToneDtmfConfig();
+
+    void CreateRecoveryThread();
+    void RecoveryPerferredDevices();
+
+    int32_t HandleRecoveryPerferredDevices(int32_t perferredType, int32_t deviceType,
+        int32_t usageOrSourceType);
+
     int32_t HandleDeviceChangeForFetchOutputDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
+    void WriteOutputRouteChangeEvent(unique_ptr<AudioDeviceDescriptor> &desc,
+        const AudioStreamDeviceChangeReason reason);
+    void WriteInputRouteChangeEvent(unique_ptr<AudioDeviceDescriptor> &desc,
+        const AudioStreamDeviceChangeReason reason);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
@@ -807,12 +853,12 @@ private:
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
     bool isOffloadAvailable_ = false;
+    bool enableFastVoip_ = false;
 
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
 
     BluetoothOffloadState a2dpOffloadFlag_ = NO_A2DP_DEVICE;
     std::mutex switchA2dpOffloadMutex_;
-    bool sameDeviceSwitchFlag_ = false;
 
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -841,7 +887,6 @@ private:
     std::unordered_map<int32_t, sptr<MicrophoneDescriptor>> audioCaptureMicrophoneDescriptor_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     std::string activeBTDevice_;
-    std::string lastBTDevice_;
 
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
@@ -878,9 +923,6 @@ private:
     AudioEffectManager& audioEffectManager_;
 
     bool isMicrophoneMute_ = false;
-
-    int wakeupCount_ = 0;
-    std::mutex wakeupCountMutex_;
 
     std::mutex deviceClassInfoMutex_;
 
@@ -949,6 +991,11 @@ private:
     DeviceType priorityOutputDevice_;
     DeviceType priorityInputDevice_;
     ConnectType conneceType_;
+
+    SupportedEffectConfig supportedEffectConfig_;
+    ConverterConfig converterConfig_;
+
+    std::unique_ptr<std::thread> RecoveryDevicesThread_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

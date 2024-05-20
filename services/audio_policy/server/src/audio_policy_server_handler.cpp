@@ -379,6 +379,26 @@ bool AudioPolicyServerHandler::SendWakeupCloseEvent(bool isSync)
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->clientId = clientId;
+    eventContextObj->sessionId = sessionID;
+    eventContextObj->streamFlag = streamFlag;
+    return SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT));
+}
+
+bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->clientId = clientId;
+    eventContextObj->sessionId = sessionID;
+    eventContextObj->streamFlag = streamFlag;
+    return SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT));
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingDeviceChangeEvent(
     const std::unordered_map<std::string, bool> &changeInfo)
 {
@@ -692,9 +712,37 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
     AudioPolicyService::GetAudioPolicyService().OnCapturerSessionRemoved(sessionId);
 }
 
-void AudioPolicyServerHandler::HandleWakeupCloaseEvent(const AppExecFwk::InnerEvent::Pointer &event)
+void AudioPolicyServerHandler::HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     AudioPolicyService::GetAudioPolicyService().CloseWakeUpAudioCapturer();
+}
+
+void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
+        AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
+    }
+    sptr<IAudioPolicyClient> rendererCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
+    CHECK_AND_RETURN_LOG(rendererCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
+
+    rendererCb->OnRecreateRendererStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag);
+}
+
+void AudioPolicyServerHandler::HandleSendRecreateCapturerStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    if (audioPolicyClientProxyAPSCbsMap_.count(eventContextObj->clientId) == 0) {
+        AUDIO_ERR_LOG("No client id %{public}d", eventContextObj->clientId);
+    }
+    sptr<IAudioPolicyClient> capturerCb = audioPolicyClientProxyAPSCbsMap_.at(eventContextObj->clientId);
+    CHECK_AND_RETURN_LOG(capturerCb != nullptr, "Callback for id %{public}d is null", eventContextObj->clientId);
+
+    capturerCb->OnRecreateCapturerStreamEvent(eventContextObj->sessionId, eventContextObj->streamFlag);
 }
 
 void AudioPolicyServerHandler::HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -782,7 +830,13 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             HandleCapturerRemovedEvent(event);
             break;
         case EventAudioServerCmd::ON_WAKEUP_CLOSE:
-            HandleWakeupCloaseEvent(event);
+            HandleWakeupCloseEvent(event);
+            break;
+        case EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT:
+            HandleSendRecreateRendererStreamEvent(event);
+            break;
+        case EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT:
+            HandleSendRecreateCapturerStreamEvent(event);
             break;
         case EventAudioServerCmd::DATABASE_UPDATE:
             HandleUpdateKvDataEvent(event);

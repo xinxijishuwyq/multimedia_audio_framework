@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -133,7 +134,7 @@ bool AudioSpatialChannelConverter::AllocateMem()
 void AudioSpatialChannelConverter::GetOutputBufferStream(uint8_t *&buffer, uint32_t &bufferLen)
 {
     buffer = outPcmBuf_.get();
-    bufferLen = GetPcmLength(outChannel_, bps_);
+    bufferLen = static_cast<uint32_t>(GetPcmLength(outChannel_, bps_));
 }
 
 void AudioSpatialChannelConverter::Process(const BufferDesc bufDesc)
@@ -198,6 +199,7 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
     libHandle_ = dlopen(absolutePath.c_str(), 1);
     CHECK_AND_RETURN_RET_LOG(libHandle_, false, "<log error> dlopen lib %{public}s Fail", relativePath.c_str());
     AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
+    dlerror(); // clear error, only need to check libHandle_ is not nullptr
 
     AudioEffectLibrary *audioEffectLibHandle =
         static_cast<AudioEffectLibrary *>(dlsym(libHandle_, AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
@@ -227,7 +229,18 @@ bool LibLoader::AddAlgoHandle(Library library)
     libEntry_ = std::make_unique<AudioEffectLibEntry>();
     libEntry_->libraryName = library.name;
     bool loadLibrarySuccess = LoadLibrary(library.path);
-    CHECK_AND_RETURN_RET_LOG(loadLibrarySuccess, false, "<log error> loadLibrary fail, please check logs!");
+    if (!loadLibrarySuccess) {
+        // hisysevent for load engine error
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_EFFECT_ENGINE_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("ENGINE_TYPE", Media::MediaMonitor::AUDIO_CONVERTER_ENGINE);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+
+        AUDIO_ERR_LOG("loadLibrary fail, please check logs!");
+        return false;
+    }
+
     int32_t ret = libEntry_->audioEffectLibHandle->createEffect(descriptor, &handle_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "%{public}s create fail", library.name.c_str());
     return true;
