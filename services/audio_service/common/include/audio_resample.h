@@ -23,6 +23,7 @@ class AudioResample {
 public:
     AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity);
     ~AudioResample();
+    bool IsResampleInit() const noexcept;
     int32_t ProcessFloatResample(const std::vector<float> &input, std::vector<float> &output);
 
 private:

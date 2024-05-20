@@ -110,6 +110,10 @@ int32_t ProRendererStreamImpl::InitParams()
         isNeedResample_ = true;
         resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_,
                                                     DEFAULT_RESAMPLE_QUANTITY);
+        if (!resample_->IsResampleInit()) {
+            AUDIO_ERR_LOG("resample not supported.");
+            return ERR_INVALID_PARAM;
+        }
         resampleSrcBuffer.resize(frameSize, 0.f);
         resampleDesBuffer.resize(desSpanSize * desChannels, 0.f);
         resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);

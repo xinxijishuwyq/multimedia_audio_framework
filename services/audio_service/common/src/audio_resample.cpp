@@ -17,32 +17,40 @@
 #include "audio_log.h"
 #include "audio_utils.h"
 #include <cinttypes>
-#ifdef SONIC_ENABLE
+#ifdef SPEEX_ENABLE
 #include <speex/speex_resampler.h>
 #endif
 
 namespace OHOS {
 namespace AudioStandard {
 struct AudioResample::SpeexResample {
-#ifdef SONIC_ENABLE
+#ifdef SPEEX_ENABLE
     SpeexResamplerState *resampler;
     uint32_t channelCount_;
 #endif
 };
-AudioResample::AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity)
-    : speex_(std::make_unique<SpeexResample>())
+AudioResample::AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity) : speex_(nullptr)
 {
-#ifdef SONIC_ENABLE
+#ifdef SPEEX_ENABLE
     int32_t error;
+    speex_ = std::make_unique<SpeexResample>();
     speex_->channelCount_ = channels;
     speex_->resampler = speex_resampler_init(channels, inRate, outRate, quantity, &error);
     speex_resampler_skip_zeros(speex_->resampler);
 #endif
 }
 
+bool AudioResample::IsResampleInit() const noexcept
+{
+    if (speex_) {
+        return true;
+    }
+    return false;
+}
+
 AudioResample::~AudioResample()
 {
-#ifdef SONIC_ENABLE
+#ifdef SPEEX_ENABLE
     if (!speex_->resampler)
         return;
     speex_resampler_destroy(speex_->resampler);
@@ -52,7 +60,7 @@ AudioResample::~AudioResample()
 int32_t AudioResample::ProcessFloatResample(const std::vector<float> &input, std::vector<float> &output)
 {
     int32_t ret = 0;
-#ifdef SONIC_ENABLE
+#ifdef SPEEX_ENABLE
     uint32_t inSize = input.size() / speex_->channelCount_;
     uint32_t outSize = output.size() / speex_->channelCount_;
     ret = speex_resampler_process_interleaved_float(speex_->resampler, input.data(), &inSize, output.data(), &outSize);
