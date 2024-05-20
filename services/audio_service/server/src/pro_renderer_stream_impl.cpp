@@ -96,12 +96,7 @@ int32_t ProRendererStreamImpl::InitParams()
     AudioStreamInfo streamInfo = processConfig_.streamInfo;
     AUDIO_INFO_LOG("sampleSpec: channels: %{public}u, formats: %{public}d, rate: %{public}d", streamInfo.channels,
                    streamInfo.format, streamInfo.samplingRate);
-    currentRate_ = streamInfo.samplingRate;
-    desSamplingRate_ = GetDirectSampleRate(streamInfo.samplingRate);
-    desFormat_ = isDirect_ ? SAMPLE_S32LE : SAMPLE_S16LE;
-    spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
-    byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
-    minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
+    InitBasicInfo(streamInfo);
     int32_t frameSize = spanSizeInFrame_ * streamInfo.channels;
     uint32_t desChannels = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
@@ -619,6 +614,16 @@ float ProRendererStreamImpl::GetStreamVolume()
         volume = vol.isMute ? 0 : vol.volumeFloat;
     }
     return volume;
+}
+
+void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
+{
+    currentRate_ = streamInfo.samplingRate;
+    desSamplingRate_ = GetDirectSampleRate(streamInfo.samplingRate);
+    desFormat_ = isDirect_ ? SAMPLE_S32LE : SAMPLE_S16LE;
+    spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
+    byteSizePerFrame_ = GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
+    minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -93,6 +93,7 @@ private:
     void PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index);
     int32_t PopWriteBufferIndex();
     void SetOffloadDisable();
+    void InitBasicInfo(const AudioStreamInfo &streamInfo);
 
 private:
     bool isDirect_;
