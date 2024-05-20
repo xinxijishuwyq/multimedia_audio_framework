@@ -234,7 +234,7 @@ private:
     bool AttributesCheck(AudioSampleAttributes &attrInfo);
     int32_t SetAudioAttrInfo(AudioSampleAttributes &attrInfo);
     std::string GetAudioAttrInfo();
-    int32_t GetCurDeviceParam(char *keyValueList,size_t len);
+    int32_t GetCurDeviceParam(char *keyValueList, size_t len);
 
     FILE *dumpFile_ = nullptr;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
@@ -1356,7 +1356,7 @@ void AudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
     }
 }
 
-int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList,size_t len)
+int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len)
 {
     int32_t ret = ERROR;
     switch (currentActiveDevice_) {
