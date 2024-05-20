@@ -79,6 +79,10 @@ const uint32_t DEVICE_PARAM_MAX_LEN = 40;
 
 const std::string VOIP_HAL_NAME = "voip";
 const std::string DIRECT_HAL_NAME = "direct";
+#ifdef FEATURE_POWER_MANAGER
+const std::string PRIMARY_LOCK_NAME = "AudioPrimaryBackgroundPlay";
+const std::string DIRECT_LOCK_NAME = "AudioDirectBackgroundPlay";
+#endif
 }
 
 int32_t ConvertByteToAudioFormat(int32_t format)
@@ -769,12 +773,15 @@ int32_t AudioRendererSinkInner::Start(void)
     AUDIO_INFO_LOG("Start.");
     Trace trace("AudioRendererSinkInner::Start");
 #ifdef FEATURE_POWER_MANAGER
+    std::string lockName = PRIMARY_LOCK_NAME;
+    if (halName_ == DIRECT_HAL_NAME) {
+        lockName = DIRECT_LOCK_NAME;
+    }
     AudioXCollie audioXCollie("AudioRendererSinkInner::CreateRunningLock", TIME_OUT_SECONDS);
     if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryBackgroundPlay",
-            PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock(
+            lockName, PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
     }
-
     if (keepRunningLock_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock lock result: %{public}d",
             keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
@@ -788,7 +795,6 @@ int32_t AudioRendererSinkInner::Start(void)
         fileName = DUMP_DIRECT_RENDER_SINK_FILENAME;
     }
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, fileName, &dumpFile_);
-
     int32_t ret;
     InitLatencyMeasurement();
     if (!started_) {
@@ -801,7 +807,6 @@ int32_t AudioRendererSinkInner::Start(void)
             return ERR_NOT_STARTED;
         }
     }
-
     return SUCCESS;
 }
 
