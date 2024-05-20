@@ -53,7 +53,7 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
       totalBytesWritten_(0),
       minBufferSize_(0),
       powerVolumeFactor_(1.f),
-      status_(ProStreamStatus::RELEASED),
+      status_(I_STATUS_INVALID),
       resample_(nullptr),
       processConfig_(processConfig),
       downMixer_(nullptr),
@@ -65,7 +65,7 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
 ProRendererStreamImpl::~ProRendererStreamImpl()
 {
     AUDIO_DEBUG_LOG("~ProRendererStreamImpl");
-    status_ = ProStreamStatus::RELEASED;
+    status_ = I_STATUS_INVALID;
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -90,7 +90,7 @@ AudioSamplingRate ProRendererStreamImpl::GetDirectSampleRate(AudioSamplingRate s
 
 int32_t ProRendererStreamImpl::InitParams()
 {
-    if (status_ != ProStreamStatus::RELEASED) {
+    if (status_ != I_STATUS_INVALID) {
         return ERR_ILLEGAL_STATE;
     }
     AudioStreamInfo streamInfo = processConfig_.streamInfo;
@@ -133,7 +133,7 @@ int32_t ProRendererStreamImpl::InitParams()
     }
     SetOffloadDisable();
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_DIRECT_STREAM_FILE, &dumpFile_);
-    status_ = ProStreamStatus::INITIALIZED;
+    status_ = I_STATUS_IDLE;
     return SUCCESS;
 }
 
@@ -141,13 +141,13 @@ int32_t ProRendererStreamImpl::Start()
 {
     isBlock_ = false;
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Start");
-    if (status_ == ProStreamStatus::RELEASED) {
+    if (status_ == I_STATUS_INVALID) {
         return ERR_ILLEGAL_STATE;
     }
-    if (status_ == ProStreamStatus::RUNNING) {
+    if (status_ == I_STATUS_STARTED) {
         return SUCCESS;
     }
-    status_ = ProStreamStatus::RUNNING;
+    status_ = I_STATUS_STARTED;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STARTED);
@@ -158,8 +158,8 @@ int32_t ProRendererStreamImpl::Start()
 int32_t ProRendererStreamImpl::Pause()
 {
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Pause");
-    if (status_ == ProStreamStatus::RUNNING) {
-        status_ = ProStreamStatus::PAUSED;
+    if (status_ == I_STATUS_STARTED) {
+        status_ = I_STATUS_PAUSED;
     }
     isBlock_ = true;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
@@ -172,7 +172,6 @@ int32_t ProRendererStreamImpl::Pause()
 int32_t ProRendererStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Flush");
-    status_ = ProStreamStatus::FLUSHED;
     {
         std::lock_guard lock(enqueueMutex);
         while (!readQueue_.empty()) {
@@ -208,14 +207,14 @@ int32_t ProRendererStreamImpl::Drain()
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_DRAINED);
     }
-    status_ = ProStreamStatus::DRAIN;
+    status_ = I_STATUS_DRAINED;
     return SUCCESS;
 }
 
 int32_t ProRendererStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Stop");
-    status_ = ProStreamStatus::STOPED;
+    status_ = I_STATUS_STOPPED;
     isBlock_ = true;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
@@ -227,7 +226,7 @@ int32_t ProRendererStreamImpl::Stop()
 int32_t ProRendererStreamImpl::Release()
 {
     AUDIO_INFO_LOG("Enter ProRendererStreamImpl::Release");
-    status_ = ProStreamStatus::RELEASED;
+    status_ = I_STATUS_INVALID;
     isBlock_ = true;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
@@ -337,7 +336,7 @@ void ProRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCall
 BufferDesc ProRendererStreamImpl::DequeueBuffer(size_t length)
 {
     BufferDesc bufferDesc = {nullptr, 0, 0};
-    if (status_ != ProStreamStatus::RUNNING) {
+    if (status_ != I_STATUS_STARTED) {
         return bufferDesc;
     }
     bufferDesc.buffer = reinterpret_cast<uint8_t *>(sinkBuffer_[0].data());

@@ -23,8 +23,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr int32_t DELTA_TIME = 4000000;          // 20ms
-constexpr int32_t PERIOD_NANO_SECOND = 20000000; // 20ms
+constexpr int32_t DELTA_TIME = 4000000; // 4ms
+constexpr int32_t PERIOD_NS = 20000000; // 20ms
 constexpr int32_t MAX_ERROR_COUNT = 5;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
@@ -63,7 +63,7 @@ NoneMixEngine::~NoneMixEngine()
 
 int32_t NoneMixEngine::Start()
 {
-    AUDIO_INFO_LOG("Enter NoneMixEngine::Start");
+    AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
     fwkSyncTime_ = ClockTime::GetCurNano();
     writeCount_ = 0;
@@ -85,7 +85,7 @@ int32_t NoneMixEngine::Start()
 
 int32_t NoneMixEngine::Stop()
 {
-    AUDIO_INFO_LOG("Enter NoneMixEngine::Stop");
+    AUDIO_INFO_LOG("Enter");
     int32_t ret = SUCCESS;
     writeCount_ = 0;
     failedCount_ = 0;
@@ -109,7 +109,7 @@ void NoneMixEngine::PauseAsync()
 
 int32_t NoneMixEngine::Pause()
 {
-    AUDIO_INFO_LOG("Enter NoneMixEngine::Pause");
+    AUDIO_INFO_LOG("Enter");
     int32_t ret = SUCCESS;
     writeCount_ = 0;
     failedCount_ = 0;
@@ -121,7 +121,7 @@ int32_t NoneMixEngine::Pause()
 
 int32_t NoneMixEngine::Flush()
 {
-    AUDIO_INFO_LOG("Enter NoneMixEngine::Flush");
+    AUDIO_INFO_LOG("Enter");
     return SUCCESS;
 }
 
@@ -157,7 +157,7 @@ void NoneMixEngine::MixStreams()
 
 int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
-    AUDIO_INFO_LOG("Enter NoneMixEngine::AddRenderer");
+    AUDIO_INFO_LOG("Enter add");
     bool isNeedInit = false;
     if (!stream_) {
         stream_ = stream;
@@ -172,7 +172,7 @@ int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &strea
 
 void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
-    AUDIO_INFO_LOG("Enter NoneMixEngine::RemoveRenderer");
+    AUDIO_INFO_LOG("step in remove");
     if (stream->GetStreamIndex() == stream_->GetStreamIndex()) {
         Stop();
         renderSink_->DeInit();
@@ -187,7 +187,7 @@ bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 
 void NoneMixEngine::StandbySleep()
 {
-    int64_t writeTime = fwkSyncTime_ + writeCount_ * PERIOD_NANO_SECOND + DELTA_TIME;
+    int64_t writeTime = fwkSyncTime_ + writeCount_ * PERIOD_NS + DELTA_TIME;
     ClockTime::AbsoluteSleep(writeTime);
 }
 

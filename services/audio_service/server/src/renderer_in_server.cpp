@@ -114,14 +114,9 @@ int32_t RendererInServer::InitBufferStatus()
 
 int32_t RendererInServer::Init()
 {
-    if ((processConfig_.deviceType == DEVICE_TYPE_WIRED_HEADSET ||
-         processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
-        processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= SAMPLE_RATE_48000 &&
-        processConfig_.streamInfo.format >= SAMPLE_S24LE) {
-        if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
-            managerType_ = DIRECT_PLAYBACK;
-            AUDIO_INFO_LOG("current stream marked as high resolution");
-        }
+    if (IsHightResolution()) {
+        managerType_ = DIRECT_PLAYBACK;
+        AUDIO_INFO_LOG("current stream marked as high resolution");
     }
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
     if (ret != SUCCESS && managerType_ == DIRECT_PLAYBACK) {
@@ -130,7 +125,7 @@ int32_t RendererInServer::Init()
         AUDIO_DEBUG_LOG("high resolution create failed use normal replace");
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
-                             "Construct rendererInServer failed: %{public}d", ret);
+        "Construct rendererInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
@@ -699,6 +694,19 @@ int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, 
 int32_t RendererInServer::GetStreamManagerType() const noexcept
 {
     return managerType_;
+}
+
+bool RendererInServer::IsHightResolution() const noexcept
+{
+    if ((processConfig_.deviceType == DEVICE_TYPE_WIRED_HEADSET ||
+        processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
+        processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= SAMPLE_RATE_48000 &&
+        processConfig_.streamInfo.format >= SAMPLE_S24LE) {
+        if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -237,6 +237,12 @@ void RendererInClientInner::UpdateTracker(const std::string &updateCase)
     }
 }
 
+bool RendererInClientInner::IsHightResolution() const noexcept
+{
+    return eStreamType_ == STREAM_MUSIC && curStreamParams_.samplingRate >= SAMPLE_RATE_48000 &&
+           curStreamParams_.format >= SAMPLE_S24LE;
+}
+
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj)
 {
@@ -285,13 +291,13 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     int32_t type = -1;
-    if (eStreamType_ == STREAM_MUSIC && curStreamParams_.samplingRate >= SAMPLE_RATE_48000 &&
-        curStreamParams_.format >= SAMPLE_S24LE) {
+    if (IsHightResolution()) {
         type = ipcStream_->GetStreamManagerType();
+        if (type == AUDIO_DIRECT_MANAGER_TYPE) {
+            rendererInfo_.isDirectStream = true;
+        }
     }
-    if (type == AUDIO_DIRECT_MANAGER_TYPE) {
-        rendererInfo_.isDirectStream = true;
-    }
+
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
     RegisterSpatializationStateEventListener();

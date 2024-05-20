@@ -139,7 +139,7 @@ void AudioThreadTask::RunJob()
             state_ = RunningState::PAUSED;
             cond_.notify_all();
             cond_.wait_for(lock, std::chrono::milliseconds(TIME_OUT_MS),
-                           [this] { return state_.load() != RunningState::PAUSED; });
+                [this] { return state_.load() != RunningState::PAUSED; });
         }
         if (state_.load() == RunningState::STOPPING || state_.load() == RunningState::STOPPED) {
             state_ = RunningState::STOPPED;

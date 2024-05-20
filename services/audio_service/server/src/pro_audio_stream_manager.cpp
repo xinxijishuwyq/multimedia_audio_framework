@@ -43,7 +43,6 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
 {
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
-    DeviceInfo deviceInfo;
 
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init rendererStream");
@@ -65,13 +64,11 @@ int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Start renderer enter");
     std::shared_ptr<IRendererStream> currentRender;
-    {
-        std::lock_guard<std::mutex> lock(streamMapMutex_);
-        auto it = rendererStreamMap_.find(streamIndex);
-        if (it == rendererStreamMap_.end()) {
-            AUDIO_WARNING_LOG("No matching stream");
-            return SUCCESS;
-        }
+    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    auto it = rendererStreamMap_.find(streamIndex);
+    if (it == rendererStreamMap_.end()) {
+        AUDIO_WARNING_LOG("No matching stream");
+        return SUCCESS;
     }
     currentRender = rendererStreamMap_[streamIndex];
     int32_t result = currentRender->Start();
@@ -168,6 +165,9 @@ int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRende
         CHECK_AND_RETURN_RET_LOG(ret, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
         playbackEngine_ = std::make_unique<NoneMixEngine>(deviceInfo, managerType_ == VOIP_PLAYBACK);
         ret = playbackEngine_->AddRenderer(stream);
+    } else {
+        AUDIO_ERR_LOG("only one stream supported");
+        ret = ERR_NOT_SUPPORTED;
     }
     return ret;
 }

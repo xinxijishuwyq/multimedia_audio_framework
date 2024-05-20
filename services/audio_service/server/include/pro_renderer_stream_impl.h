@@ -26,15 +26,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum class ProStreamStatus : int32_t {
-    RELEASED = 0,
-    INITIALIZED,
-    FLUSHED,
-    PAUSED,
-    STOPED,
-    RUNNING,
-    DRAIN,
-};
 class ProRendererStreamImpl : public IRendererStream {
 public:
     ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect);
@@ -112,7 +103,7 @@ private:
     size_t totalBytesWritten_;
     size_t minBufferSize_;
     float powerVolumeFactor_;
-    std::atomic<ProStreamStatus> status_;
+    std::atomic<IStatus> status_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
     std::vector<float> resampleSrcBuffer;

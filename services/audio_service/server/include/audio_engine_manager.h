@@ -19,7 +19,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum class PlaybackType : int32_t { DIRECT, VOIP };
+enum class PlaybackType : int32_t {
+    DIRECT,
+    VOIP
+};
 class AudioEngineManager {
 public:
     static AudioEngineManager GetInstance();

@@ -90,6 +90,7 @@ public:
     const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
+    bool IsHightResolution() const noexcept;
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<IRendererStream> stream_ = nullptr;
