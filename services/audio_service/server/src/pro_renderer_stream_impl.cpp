@@ -420,11 +420,13 @@ int32_t ProRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
     SetOffloadDisable();
     return SUCCESS;
 }
+
 int32_t ProRendererStreamImpl::UnsetOffloadMode()
 {
     SetOffloadDisable();
     return SUCCESS;
 }
+
 int32_t ProRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
                                                                 uint64_t &cacheTimeDsp, uint64_t &cacheTimePa)
 {
@@ -566,7 +568,11 @@ void ProRendererStreamImpl::ConvertSrcToFloat(uint8_t *buffer, size_t bufLength,
     uint32_t samplePerFrame = GetSamplePerFrame(streamInfo.format);
     if (streamInfo.format == AudioSampleFormat::SAMPLE_F32LE) {
         if (volume >= 1.0f) {
-            memcpy_s(resampleSrcBuffer.data(), resampleSrcBuffer.size() * samplePerFrame, buffer, bufLength);
+            auto error =
+                memcpy_s(resampleSrcBuffer.data(), resampleSrcBuffer.size() * samplePerFrame, buffer, bufLength);
+            if (error != EOK) {
+                AUDIO_ERR_LOG("copy failed");
+            }
         } else {
             float *tempBuffer = reinterpret_cast<float *>(buffer);
             for (uint32_t i = 0; i < resampleSrcBuffer.size(); i++) {
