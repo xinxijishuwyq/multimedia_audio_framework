@@ -28,11 +28,11 @@ AudioEffectHdiParam::AudioEffectHdiParam()
     AUDIO_DEBUG_LOG("constructor.");
     DeviceTypeToHdiControlMap_.clear();
     int32_t ret = memset_s(static_cast<void *>(input_), sizeof(input_), 0, sizeof(input_));
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_ERR_LOG("hdi constructor memset input failed");
     }
     ret = memset_s(static_cast<void *>(output_), sizeof(output_), 0, sizeof(output_));
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_ERR_LOG("hdi constructor memset output failed");
     }
     replyLen_ = GET_HDI_BUFFER_LEN;
@@ -57,7 +57,7 @@ void AudioEffectHdiParam::CreateHdiControl()
         ControllerId controllerId;
         IEffectControl *hdiControl = nullptr;
         int32_t ret = hdiModel_->CreateEffectController(hdiModel_, &info, &hdiControl, &controllerId);
-        if ((ret != 0) || (hdiControl == nullptr)) {
+        if ((ret != SUCCESS) || (hdiControl == nullptr)) {
             AUDIO_WARNING_LOG("hdi init failed");
         } else {
             DeviceTypeToHdiControlMap_.emplace(item.first, hdiControl);
@@ -81,7 +81,7 @@ int32_t AudioEffectHdiParam::SetHdiCommand(IEffectControl *hdiControl, int8_t *e
 {
     int32_t ret = memcpy_s(static_cast<void *>(input_), sizeof(input_),
         static_cast<void *>(effectHdiInput), sizeof(input_));
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("hdi memcpy failed");
     }
     uint32_t replyLen = GET_HDI_BUFFER_LEN;

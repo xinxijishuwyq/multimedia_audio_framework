@@ -124,6 +124,8 @@ public:
     bool GetCurSpatializationEnabled();
     void ResetEffectBuffer();
     void ResetInfo();  // Use for testing temporarily.
+    bool CheckA2dpOffload();
+    void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);

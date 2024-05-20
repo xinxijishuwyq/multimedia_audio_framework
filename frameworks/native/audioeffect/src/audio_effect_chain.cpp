@@ -335,7 +335,7 @@ void AudioEffectChain::SetHeadTrackingDisabled()
         AudioEffectTransInfo cmdInfo = {sizeof(HeadPostureData), &imuDataDisabled};
         AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
-        if (ret != 0) {
+        if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("SetHeadTrackingDisabled failed");
         }
     }
