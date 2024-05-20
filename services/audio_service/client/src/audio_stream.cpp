@@ -1028,7 +1028,7 @@ void AudioStream::ReadCbThreadLoop()
                 AUDIO_ERR_LOG("ReadCb ReadStream fail, ret: %{public}d", readLen);
             } else {
                 AUDIO_DEBUG_LOG("ReadCb ReadStream, bytesRead:%{public}d", readLen);
-                freeBufferQ_.front().dataLength = readLen;
+                freeBufferQ_.front().dataLength = static_cast<uint32_t>(readLen);
                 filledBufferQ_.emplace(freeBufferQ_.front());
                 freeBufferQ_.pop();
                 SendReadBufferRequestEvent();
