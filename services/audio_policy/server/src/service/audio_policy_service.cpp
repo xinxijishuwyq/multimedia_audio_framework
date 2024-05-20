@@ -6524,6 +6524,7 @@ void AudioPolicyService::SetDeviceSafeVolumeStatus()
         case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             safeStatus_ = SAFE_INACTIVE;
             audioPolicyManager_.SetDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
             CreateCheckMusicActiveThread();
