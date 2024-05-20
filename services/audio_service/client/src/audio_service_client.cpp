@@ -38,7 +38,6 @@
 #endif
 
 #include "media_monitor_manager.h"
-#include "event_bean.h"
 
 using namespace std;
 

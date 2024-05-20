@@ -286,20 +286,12 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
     deviceName = "";
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         if (processConfig.isWakeupCapturer) {
-            int32_t no = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
-            if (no < 0) {
-                AUDIO_ERR_LOG("ErrorCode: %{public}d", no);
-                return no;
-            }
-
-            if (no >= WAKEUP_LIMIT) {
-                AUDIO_ERR_LOG("no is greater then WAKEUP_LIMIT no=: %{public}d", no);
+            int32_t ret = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
+            if (ret < 0) {
+                AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
                 return ERROR;
             }
-
-            if (no < WAKEUP_LIMIT) {
-                deviceName = WAKEUP_NAMES[no];
-            }
+            deviceName = PRIMARY_WAKEUP;
         }
         if (processConfig.isInnerCapturer) {
             if (processConfig.innerCapMode == MODERN_INNER_CAP) {

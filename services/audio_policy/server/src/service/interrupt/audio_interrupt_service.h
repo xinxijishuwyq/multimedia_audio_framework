@@ -151,6 +151,8 @@ private:
     int32_t NewAudioInterruptZoneByPids(std::shared_ptr<AudioInterruptZone> &audioInterruptZone,
         const std::set<int32_t> &pids, const int32_t &zoneId);
     int32_t ArchiveToNewAudioInterruptZone(const int32_t &fromZoneId, const int32_t &toZoneId);
+    void WriteFocusMigrateEvent(const int32_t &toZoneId);
+    void WriteServiceStartupError();
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

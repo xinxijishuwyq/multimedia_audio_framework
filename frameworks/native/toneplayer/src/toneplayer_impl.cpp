@@ -51,7 +51,7 @@ TonePlayerImpl::TonePlayerImpl(const std::string cachePath, const AudioRendererI
 
     // streamUsage::STREAM_USAGE_MEDIA;
     rendererOptions_.rendererInfo.streamUsage = rendereInfo.streamUsage;
-    rendererOptions_.rendererInfo.rendererFlags = 0; // use 0 for normal
+    rendererOptions_.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL; // use 0 for normal
     supportedTones_ = AudioPolicyManager::GetInstance().GetSupportedTones();
     toneInfo_ = NULL;
     initialToneInfo_ = NULL;

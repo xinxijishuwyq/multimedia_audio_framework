@@ -50,6 +50,8 @@
 #include "parameter.h"
 #include "parameters.h"
 
+#include "media_monitor_manager.h"
+
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
 using namespace std;
@@ -150,6 +152,12 @@ void AudioPolicyServer::OnStart()
 #endif
     bool res = Publish(this);
     if (!res) {
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,
+            Media::MediaMonitor::EventType::FAULT_EVENT);
+        bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
+        bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVER));
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         AUDIO_INFO_LOG("publish sa err");
     }
 
