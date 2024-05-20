@@ -51,7 +51,6 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Create play back engine failed. ret:%{public}d", ret);
         playbackEngine_ = nullptr;
-        rendererStream->Release();
         rendererStream = nullptr;
         return ret;
     }
@@ -77,7 +76,7 @@ int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
     currentRender = rendererStreamMap_[streamIndex];
     int32_t result = currentRender->Start();
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to start rendererStream");
-    if (!playbackEngine_) {
+    if (playbackEngine_) {
         playbackEngine_->Start();
     }
     return SUCCESS;
