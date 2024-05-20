@@ -242,6 +242,8 @@ private:
 
     void ReportDataToResSched();
 
+    bool IsHightResolution() const noexcept;
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;

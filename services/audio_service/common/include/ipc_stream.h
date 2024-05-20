@@ -89,6 +89,7 @@ public:
 
     virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) = 0; // rendererOnly
 
+    virtual int32_t GetStreamManagerType() = 0;
     // IPC code.
     enum IpcStreamMsg : uint32_t {
         ON_REGISTER_STREAM_LISTENER = 0,
@@ -118,6 +119,7 @@ public:
         ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME,
         ON_SET_OFFLOAD_VOLUME,
         ON_UPDATE_SPATIALIZATION_STATE,
+        ON_GET_STREAM_MANAGER_TYPE,
         IPC_STREAM_MAX_MSG
     };
 

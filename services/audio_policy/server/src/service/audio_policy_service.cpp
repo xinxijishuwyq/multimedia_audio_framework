@@ -2045,6 +2045,22 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
     return SUCCESS;
 }
 
+bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
+    const AudioStreamDeviceChangeReason reason, const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
+    if (!IsSameDevice(desc, currentActiveDevice_)) {
+        WriteOutputRouteChangeEvent(desc, reason);
+        currentActiveDevice_ = AudioDeviceDescriptor(*desc);
+        AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
+        return true;
+    }
+    if (reason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE && audioScene_ == AUDIO_SCENE_DEFAULT &&
+        !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
+        MuteSinkPort(desc);
+    }
+    return false;
+}
+
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReason reason)
 {
@@ -2052,6 +2068,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
+    bool isHasDirectChangeDevice = false;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (!IsRendererStreamRunning(rendererChangeInfo) || (audioScene_ == AUDIO_SCENE_DEFAULT &&
             audioRouterCenter_.isCallRenderRouter(rendererChangeInfo->rendererInfo.streamUsage))) {
@@ -2074,17 +2091,12 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
         }
         if (needUpdateActiveDevice) {
-            if (!IsSameDevice(desc, currentActiveDevice_)) {
-                WriteOutputRouteChangeEvent(desc, reason);
-                currentActiveDevice_ = AudioDeviceDescriptor(*desc);
-                AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
-                isUpdateActiveDevice = true;
-            }
+            isUpdateActiveDevice = UpdateDevice(desc, reason, rendererChangeInfo);
             needUpdateActiveDevice = false;
-            if (reason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE &&
-                audioScene_ == AUDIO_SCENE_DEFAULT && !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
-                MuteSinkPort(desc);
-            }
+        }
+        if (!isHasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo)) {
+            isHasDirectChangeDevice = true;
+            continue;
         }
         if (NotifyRecreateRendererStream(isUpdateActiveDevice, rendererChangeInfo)) { continue; }
         SelectNewOutputDevice(rendererChangeInfo, desc, reason);
@@ -2132,6 +2144,30 @@ bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
         return true;
     }
     return false;
+}
+
+bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+{
+    if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType) &&
+        rendererChangeInfo->rendererInfo.isDirectStream) {
+        TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
+            AUDIO_FLAG_DIRECT);
+        return true;
+    } else if (IsDirectSupportedDevice(currentActiveDevice_.deviceType_)) {
+        AudioRendererInfo info = rendererChangeInfo->rendererInfo;
+        if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
+            info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
+            TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
+                AUDIO_FLAG_DIRECT);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioPolicyService::IsDirectSupportedDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET;
 }
 
 void AudioPolicyService::TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag)
