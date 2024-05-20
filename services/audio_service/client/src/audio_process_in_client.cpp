@@ -1115,7 +1115,10 @@ int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame,
 {
     Trace trace("AudioProcessInClient::GetPredictNextRead");
     CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, 0, "spanSizeInFrame is 0.");
-    uint64_t handleSpanCnt = posInFrame / spanSizeInFrame_;
+    uint64_t handleSpanCnt = 0;
+    if (spanSizeInFrame_ != 0) {
+        handleSpanCnt = posInFrame / spanSizeInFrame_;
+    }
     uint32_t startPeriodCnt = 20; // sync each time when start
     uint32_t oneBigPeriodCnt = 40; // 200ms
     if (isIndependent) {

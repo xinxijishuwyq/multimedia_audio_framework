@@ -230,7 +230,7 @@ public:
     void UnsetAudioRendererObj();
 private:
     std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
-    AudioRendererPrivate *renderer_;
+    AudioRendererPrivate *renderer_{nullptr};
     std::mutex mutex_;
 };
 

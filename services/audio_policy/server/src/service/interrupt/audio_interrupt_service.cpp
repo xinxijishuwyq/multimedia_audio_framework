@@ -217,7 +217,7 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "create cb failed");
 
     if (interruptClients_.find(sessionId) == interruptClients_.end()) {
-        uid_t uid = IPCSkeleton::GetCallingUid();
+        uid_t uid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         pid_t pid = IPCSkeleton::GetCallingPid();
         sptr<AudioInterruptClient> client = new AudioInterruptClient(
             shared_from_this(), callback, uid, pid, sessionId);
