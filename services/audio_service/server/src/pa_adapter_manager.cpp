@@ -612,7 +612,6 @@ int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEf
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed.");
-        pa_threaded_mainloop_unlock(mainLoop_);
         return ERROR;
     }
     std::string upDevice = "DEVICE_TYPE_MIC";
