@@ -284,7 +284,11 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    int32_t type = ipcStream_->GetStreamManagerType();
+    int32_t type = -1;
+    if (eStreamType_ == STREAM_MUSIC && curStreamParams_.samplingRate >= SAMPLE_RATE_48000 &&
+        curStreamParams_.format >= SAMPLE_S24LE) {
+        type = ipcStream_->GetStreamManagerType();
+    }
     if (type == AUDIO_DIRECT_MANAGER_TYPE) {
         rendererInfo_.isDirectStream = true;
     }
