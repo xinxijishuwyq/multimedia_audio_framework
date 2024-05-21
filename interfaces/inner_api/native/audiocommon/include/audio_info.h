@@ -57,7 +57,7 @@ constexpr uint32_t STREAM_FLAG_NORMAL = 0;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr int32_t EMPTY_UID = 0;
-constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 3;
+constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";

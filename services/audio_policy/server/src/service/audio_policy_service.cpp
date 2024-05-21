@@ -2148,8 +2148,10 @@ bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
 
 bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
+    AUDIO_DEBUG_LOG("current pipe type is:%{public}d", rendererChangeInfo->rendererInfo.pipeType);
     if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType)
         && rendererChangeInfo->rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
+        AUDIO_DEBUG_LOG("direct stream changed to normal.");
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
             AUDIO_FLAG_DIRECT);
         return true;
@@ -2157,6 +2159,7 @@ bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendere
         AudioRendererInfo info = rendererChangeInfo->rendererInfo;
         if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
             info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
+            AUDIO_DEBUG_LOG("stream change to direct.");
             TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
                 AUDIO_FLAG_DIRECT);
             return true;
