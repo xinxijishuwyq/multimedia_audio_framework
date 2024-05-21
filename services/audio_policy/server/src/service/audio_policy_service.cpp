@@ -604,7 +604,9 @@ void AudioPolicyService::SetOffloadVolume(AudioStreamType streamType, int32_t vo
     } else {
         volumeDb = GetSystemVolumeInDb(streamType, volume, currentActiveDevice_.deviceType_);
     }
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->OffloadSetVolume(volumeDb);
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 
 AudioStreamType AudioPolicyService::OffloadStreamType()
@@ -1247,9 +1249,11 @@ int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioR
         "Device error: no such device:%{public}s", networkId.c_str());
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->CheckRemoteDeviceState(networkId, deviceRole, true);
     IPCSkeleton::SetCallingIdentity(identity);
+
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     std::lock_guard<std::mutex> lock(routerMapMutex_);
@@ -1330,9 +1334,11 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
 
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t res = gsp->CheckRemoteDeviceState(networkId, deviceRole, true);
     IPCSkeleton::SetCallingIdentity(identity);
+
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
@@ -1455,9 +1461,11 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<SourceOutput> so
 
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t res = gsp->CheckRemoteDeviceState(networkId, deviceRole, true);
     IPCSkeleton::SetCallingIdentity(identity);
+
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
@@ -2195,7 +2203,9 @@ void AudioPolicyService::FetchStreamForA2dpOffload(vector<unique_ptr<AudioRender
             if (rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
                 const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
                 CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+                std::string identity = IPCSkeleton::ResetCallingIdentity();
                 gsp->ResetAudioEndpoint();
+                IPCSkeleton::SetCallingIdentity(identity);
             }
             SelectNewOutputDevice(rendererChangeInfo, desc);
         }
@@ -2374,9 +2384,11 @@ int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
     AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->SetMicrophoneMute(isMute);
     IPCSkeleton::SetCallingIdentity(identity);
+
     if (ret == SUCCESS) {
         isMicrophoneMute_ = isMute;
         streamCollector_.UpdateCapturerInfoMuteStatus(0, isMute);
@@ -3920,9 +3932,11 @@ void AudioPolicyService::UpdateEffectDefaultSink(DeviceType deviceType)
             const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
             CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
             std::string sinkName = GetSinkPortName(deviceType);
+
             std::string identity = IPCSkeleton::ResetCallingIdentity();
             gsp->SetOutputDeviceSink(deviceType, sinkName);
             IPCSkeleton::SetCallingIdentity(identity);
+
             int res = audioPolicyManager_.UpdateSwapDeviceStatus();
             CHECK_AND_RETURN_LOG(res == SUCCESS, "Failed to update client swap device status");
             break;
@@ -3940,9 +3954,11 @@ void AudioPolicyService::LoadSinksForCapturer()
     LoadReceiverSink();
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
+
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool ret = gsp->CreatePlaybackCapturerManager();
     IPCSkeleton::SetCallingIdentity(identity);
+
     CHECK_AND_RETURN_LOG(ret, "PlaybackCapturerManager create failed");
 }
 
@@ -4049,11 +4065,13 @@ void AudioPolicyService::LoadEffectLibrary()
     OriginalEffectConfig oriEffectConfig = {};
     audioEffectManager_.GetOriginalEffectConfig(oriEffectConfig);
     vector<Effect> successLoadedEffects;
+
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool loadSuccess = gsp->LoadAudioEffectLibraries(oriEffectConfig.libraries,
                                                      oriEffectConfig.effects,
                                                      successLoadedEffects);
     IPCSkeleton::SetCallingIdentity(identity);
+
     if (!loadSuccess) {
         AUDIO_ERR_LOG("Load audio effect failed, please check log");
     }
@@ -4068,10 +4086,12 @@ void AudioPolicyService::LoadEffectLibrary()
     audioEffectManager_.ConstructSceneTypeToEffectChainNameMap(sceneTypeToEffectChainNameMap);
     std::unordered_map<std::string, std::string> sceneTypeToEnhanceChainNameMap;
     audioEffectManager_.ConstructSceneTypeToEnhanceChainNameMap(sceneTypeToEnhanceChainNameMap);
+
     identity = IPCSkeleton::ResetCallingIdentity();
     bool ret = gsp->CreateEffectChainManager(supportedEffectConfig.effectChains,
         sceneTypeToEffectChainNameMap, sceneTypeToEnhanceChainNameMap);
     IPCSkeleton::SetCallingIdentity(identity);
+
     CHECK_AND_RETURN_LOG(ret, "EffectChainManager create failed");
 
     audioEffectManager_.SetEffectChainManagerAvailable();
@@ -5354,9 +5374,11 @@ void AudioPolicyService::RegiestPolicy()
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "Get null PolicyProviderWrapper");
     sptr<IRemoteObject> object = wrapper->AsObject();
     CHECK_AND_RETURN_LOG(object != nullptr, "RegiestPolicy AsObject is nullptr");
+
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->RegiestPolicyProvider(object);
     IPCSkeleton::SetCallingIdentity(identity);
+
     AUDIO_DEBUG_LOG("result:%{public}d", ret);
 }
 
@@ -5491,10 +5513,13 @@ bool AudioPolicyService::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     volumeVector_[index].isMute = vol.isMute;
     volumeVector_[index].volumeFloat = vol.volumeFloat;
     volumeVector_[index].volumeInt = vol.volumeInt;
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
+
     CHECK_AND_RETURN_RET_LOG(g_adProxy != nullptr, false, "Audio server Proxy is null");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     g_adProxy->NotifyStreamVolumeChanged(streamType, vol.volumeFloat);
     IPCSkeleton::SetCallingIdentity(identity);
+
     return true;
 }
 
@@ -5515,6 +5540,7 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
         return;
     }
     AUDIO_DEBUG_LOG("done");
+
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SetParameterCallback(object);
     IPCSkeleton::SetCallingIdentity(identity);
@@ -5663,6 +5689,7 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t ret = gsp->SetCaptureSilentState(config.silentCapture);
     IPCSkeleton::SetCallingIdentity(identity);
+
     CHECK_AND_RETURN_RET_LOG(!ret, ERR_OPERATION_FAILED, "SetCaptureSilentState failed");
 
     std::vector<int32_t> targetUsages;
@@ -5676,6 +5703,7 @@ int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCa
     identity = IPCSkeleton::ResetCallingIdentity();
     int32_t res = gsp->SetSupportStreamUsage(targetUsages);
     IPCSkeleton::SetCallingIdentity(identity);
+
     return res;
 }
 
@@ -5687,7 +5715,11 @@ int32_t AudioPolicyService::SetCaptureSilentState(bool state)
         return ERR_OPERATION_FAILED;
     }
 
-    return gsp->SetCaptureSilentState(state);
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t res = gsp->SetCaptureSilentState(state);
+    IPCSkeleton::SetCallingIdentity(identity);
+
+    return res;
 }
 
 bool AudioPolicyService::IsConnectedOutputDevice(const sptr<AudioDeviceDescriptor> &desc)
@@ -6064,8 +6096,12 @@ void AudioPolicyService::GetA2dpOffloadCodecAndSendToDsp()
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific5) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific6) + ","
         + std::to_string(offloadCodeStatus.offloadInfo.codecSpecific7) + ";";
+
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SetAudioParameter(key, value);
+    IPCSkeleton::SetCallingIdentity(identity);
+
     AUDIO_INFO_LOG("update offloadcodec[%{public}s]", value.c_str());
 #endif
 }
@@ -6437,12 +6473,16 @@ float AudioPolicyService::GetMaxAmplitude(const int32_t deviceId)
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
 
     if (deviceId == currentActiveDevice_.deviceId_) {
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         float outputMaxAmplitude = gsp->GetMaxAmplitude(true, currentActiveDevice_.deviceType_);
+        IPCSkeleton::SetCallingIdentity(identity);
         return outputMaxAmplitude;
     }
 
     if (deviceId == currentActiveInputDevice_.deviceId_) {
+        std::string identity = IPCSkeleton::ResetCallingIdentity();
         float inputMaxAmplitude = gsp->GetMaxAmplitude(false, currentActiveInputDevice_.deviceType_);
+        IPCSkeleton::SetCallingIdentity(identity);
         return inputMaxAmplitude;
     }
 
