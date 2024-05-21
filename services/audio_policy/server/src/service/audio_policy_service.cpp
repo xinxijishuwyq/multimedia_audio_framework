@@ -887,7 +887,7 @@ int32_t AudioPolicyService::SetStreamMute(AudioStreamType streamType, bool mute)
 
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;
-    vol.volumeInt = GetSystemVolumeLevel(streamType);
+    vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevel(streamType));
     vol.volumeFloat = GetSystemVolumeInDb(streamType, vol.volumeInt, currentActiveDevice_.deviceType_);
     SetSharedVolume(streamType, currentActiveDevice_.deviceType_, vol);
     return result;

@@ -224,7 +224,7 @@ int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
         delete[] effectParam;
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set rotation EFFECT_CMD_SET_PARAM fail");
-        latency_ += replyData;
+        latency_ += static_cast<uint32_t>replyData;
     }
     return SUCCESS;
 }
