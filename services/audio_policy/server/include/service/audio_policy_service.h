@@ -810,6 +810,13 @@ private:
 
     void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag);
 
+    bool NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
+    bool IsDirectSupportedDevice(DeviceType deviceType);
+
+    bool UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReason reason,
+        const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+
     bool NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         const std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
 

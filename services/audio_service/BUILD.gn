@@ -41,8 +41,12 @@ ohos_shared_library("audio_common") {
   ]
 
   sources = [
+    "common/src/audio_common_converter.cpp",
+    "common/src/audio_down_mix_stereo.cpp",
     "common/src/audio_process_config.cpp",
+    "common/src/audio_resample.cpp",
     "common/src/audio_ring_cache.cpp",
+    "common/src/audio_thread_task.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/volume_tools.cpp",
@@ -67,6 +71,11 @@ ohos_shared_library("audio_common") {
 
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
+  }
+
+  if (speex_enable == true) {
+    include_dirs += [ "//third_party/pulseaudio/speex/include" ]
+    external_deps += [ "pulseaudio:speexresampler" ]
   }
 
   subsystem_name = "multimedia"
@@ -96,6 +105,10 @@ config("audio_client_public_config") {
 
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
+  }
+
+  if (speex_enable == true) {
+    cflags += [ "-DSPEEX_ENABLE" ]
   }
 
   external_deps = []
@@ -266,6 +279,8 @@ ohos_shared_library("audio_process_service") {
   sources = [
     "server/src/audio_endpoint.cpp",
     "server/src/audio_endpoint_separate.cpp",
+    "server/src/audio_engine_manager.cpp",
+    "server/src/audio_playback_engine.cpp",
     "server/src/audio_process_in_server.cpp",
     "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",
@@ -274,11 +289,14 @@ ohos_shared_library("audio_process_service") {
     "server/src/ipc_stream_in_server.cpp",
     "server/src/ipc_stream_listener_proxy.cpp",
     "server/src/ipc_stream_stub.cpp",
+    "server/src/none_mix_engine.cpp",
     "server/src/pa_adapter_manager.cpp",
     "server/src/pa_capturer_stream_impl.cpp",
     "server/src/pa_renderer_stream_impl.cpp",
     "server/src/policy_handler.cpp",
     "server/src/policy_provider_proxy.cpp",
+    "server/src/pro_audio_stream_manager.cpp",
+    "server/src/pro_renderer_stream_impl.cpp",
     "server/src/renderer_in_server.cpp",
   ]
 
@@ -289,6 +307,7 @@ ohos_shared_library("audio_process_service") {
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",

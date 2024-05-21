@@ -671,7 +671,7 @@ bool SignalDetectAgent::CheckAudioData(uint8_t *buffer, size_t bufferLen)
 {
     CHECK_AND_RETURN_RET_LOG(formatByteSize_ != 0, false, "LatencyMeas checkAudioData failed, "
         "formatByteSize_ %{public}d", formatByteSize_);
-    frameCountIgnoreChannel_ = bufferLen / formatByteSize_;
+    frameCountIgnoreChannel_ = bufferLen / static_cast<uint32_t>(formatByteSize_);
     if (cacheAudioData_.capacity() < frameCountIgnoreChannel_) {
         cacheAudioData_.clear();
         cacheAudioData_.reserve(frameCountIgnoreChannel_);

@@ -225,7 +225,7 @@ public:
         capturer_ = nullptr;
     }
 private:
-    AudioCapturerPrivate *capturer_;
+    AudioCapturerPrivate *capturer_ = nullptr;
     std::mutex mutex_;
 };
 
