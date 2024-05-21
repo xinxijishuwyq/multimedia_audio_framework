@@ -370,11 +370,6 @@ void MultiChannelRendererSinkInner::DeInit()
     }
     audioRender_ = nullptr;
     renderInited_ = false;
-
-    if (audioManager_ != nullptr) {
-        audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
-    }
-    audioAdapter_ = nullptr;
     audioManager_ = nullptr;
     adapterInited_ = false;
 
@@ -691,6 +686,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AUDIO_IN_MEDIA;
             break;
         case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_VOICE_RINGING:
             audioCategory = AUDIO_IN_RINGTONE;
             break;
         case AUDIO_SCENE_PHONE_CALL:
@@ -817,7 +813,7 @@ int32_t MultiChannelRendererSinkInner::SetAudioScene(AudioScene audioScene, Devi
 {
     AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
-    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("SetAudioScene failed audio render handle is null!");
@@ -1027,7 +1023,7 @@ int32_t MultiChannelRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfo
         sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
 
     // usb default config
-    attr_.sampleRate = stoi(sampleRateStr);
+    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
 

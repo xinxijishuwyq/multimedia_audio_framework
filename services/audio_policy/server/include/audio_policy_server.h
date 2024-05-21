@@ -51,6 +51,7 @@ namespace AudioStandard {
 
 constexpr uint64_t DSTATUS_SESSION_ID = 4294967296;
 constexpr uint32_t DSTATUS_DEFAULT_RATE = 48000;
+constexpr uint32_t LOCAL_USER_ID = 100;
 
 class AudioPolicyService;
 class AudioInterruptService;
@@ -67,11 +68,6 @@ public:
     enum DeathRecipientId {
         TRACKER_CLIENT = 0,
         LISTENER_CLIENT
-    };
-
-    enum SpatializationEventCategory {
-        SPATIALIZATION_ENABLED_CHANGE_EVENT,
-        HEAD_TRACKING_ENABLED_CHANGE_EVENT,
     };
 
     const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
@@ -212,6 +208,10 @@ public:
 
     uint32_t GetSinkLatencyFromXml() override;
 
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
+
+    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
+
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object) override;
 
@@ -285,15 +285,6 @@ public:
 
     int32_t UnsetAvailableDeviceChangeCallback(const int32_t clientId, AudioDeviceUsage usage) override;
 
-    bool SpatializationClientDeathRecipientExist(SpatializationEventCategory eventCategory, pid_t uid);
-
-    void RegisterSpatializationClientDeathRecipient(const sptr<IRemoteObject> &object,
-        SpatializationEventCategory eventCategory);
-
-    void RegisteredSpatializationEnabledClientDied(pid_t uid);
-
-    void RegisteredHeadTrackingEnabledClientDied(pid_t uid);
-
     bool IsSpatializationEnabled() override;
 
     int32_t SetSpatializationEnabled(const bool enable) override;
@@ -301,14 +292,6 @@ public:
     bool IsHeadTrackingEnabled() override;
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
-
-    int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t UnregisterSpatializationEnabledEventListener() override;
-
-    int32_t UnregisterHeadTrackingEnabledEventListener() override;
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 
@@ -403,6 +386,19 @@ public:
 
     int32_t SetHighResolutionExist(bool highResExist) override;
 
+    void NotifyAccountsChanged(const int &id);
+
+    // for hidump
+    void AudioDevicesDump(std::string &dumpString);
+    void AudioModeDump(std::string &dumpString);
+    void AudioInterruptZoneDump(std::string &dumpString);
+    void AudioPolicyParserDump(std::string &dumpString);
+    void AudioVolumeDump(std::string &dumpString);
+    void AudioStreamDump(std::string &dumpString);
+    void OffloadStatusDump(std::string &dumpString);
+    void XmlParsedDataMapDump(std::string &dumpString);
+    void EffectManagerInfoDump(std::string &dumpString);
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -444,9 +440,10 @@ private:
     void CheckSubscribePowerStateChange();
 
     // for audio volume and mute status
+    int32_t SetRingerModeInternal(AudioRingerMode ringMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
-    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, bool isFromVolumeKey);
+    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi);
@@ -464,11 +461,6 @@ private:
     bool CheckRootCalling(uid_t callingUid, int32_t appUid);
     void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 
-    // common
-    void GetPolicyData(PolicyData &policyData);
-    void GetDeviceInfo(PolicyData &policyData);
-    void GetGroupInfo(PolicyData &policyData);
-
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene);
 
@@ -482,6 +474,8 @@ private:
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
 #endif
+    void AddAudioServiceOnStart();
+    void SubscribeOsAccountChangeEvents();
     void SubscribePowerStateChangeEvents();
     void InitMicrophoneMute();
     void InitKVStore();
@@ -495,6 +489,11 @@ private:
 
     void OnDistributedRoutingRoleChange(const sptr<AudioDeviceDescriptor> descriptor, const CastType type);
 
+    void InitPolicyDumpMap();
+    void PolicyDataDump(std::string &dumpString);
+    void ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue);
+    void InfoDumpHelp(std::string &dumpString);
+
     AudioPolicyService& audioPolicyService_;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
@@ -504,16 +503,12 @@ private:
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
     std::vector<pid_t> clientDiedListenerState_;
-    std::vector<pid_t> spatializationEnabledListenerState_;
-    std::vector<pid_t> headTrackingEnabledListenerState_;
     sptr<PowerStateListener> powerStateListener_;
     bool powerStateCallbackRegister_;
 
     std::mutex keyEventMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
-    std::mutex spatializationEnabledListenerStateMutex_;
-    std::mutex headTrackingEnabledListenerStateMutex_;
 
     SessionProcessor sessionProcessor_{std::bind(&AudioPolicyServer::ProcessSessionRemoved,
         this, std::placeholders::_1, std::placeholders::_2),
@@ -529,6 +524,36 @@ private:
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
     AudioRouterCenter &audioRouterCenter_;
+    using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
+    std::map<std::u16string, DumpFunc> dumpFuncMap;
+};
+
+class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
+public:
+    explicit AudioOsAccountInfo(const AccountSA::OsAccountSubscribeInfo &subscribeInfo,
+        AudioPolicyServer *audioPolicyServer) : AccountSA::OsAccountSubscriber(subscribeInfo),
+        audioPolicyServer_(audioPolicyServer) {}
+
+    ~AudioOsAccountInfo()
+    {
+        AUDIO_WARNING_LOG("Destructor AudioOsAccountInfo");
+    }
+
+    void OnAccountsChanged(const int &id) override
+    {
+        AUDIO_INFO_LOG("OnAccountsChanged received, id: %{public}d", id);
+    }
+
+    void OnAccountsSwitch(const int &newId, const int &oldId) override
+    {
+        CHECK_AND_RETURN_LOG(oldId >= LOCAL_USER_ID, "invalid id");
+        AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldid: %{public}d", newId, oldId);
+        if (audioPolicyServer_ != nullptr) {
+            audioPolicyServer_->NotifyAccountsChanged(newId);
+        }
+    }
+private:
+    AudioPolicyServer *audioPolicyServer_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

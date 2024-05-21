@@ -252,32 +252,6 @@ void AudioPolicyClientProxy::OnRendererStateChange(
     reply.ReadInt32();
 }
 
-void AudioPolicyClientProxy::UpdateCapturerDeviceInfo(
-    std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos)
-{
-    if (!hasBTPermission_) {
-        size_t capturerChangeInfoLength = capturerChangeInfos.size();
-        for (size_t i = 0; i < capturerChangeInfoLength; i++) {
-            if ((capturerChangeInfos[i]->inputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)
-                || (capturerChangeInfos[i]->inputDeviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_SCO)) {
-                capturerChangeInfos[i]->inputDeviceInfo.deviceName = "";
-                capturerChangeInfos[i]->inputDeviceInfo.macAddress = "";
-            }
-        }
-    }
-
-    if (!hasSystemPermission_) {
-        size_t capturerChangeInfoLength = capturerChangeInfos.size();
-        for (size_t i = 0; i < capturerChangeInfoLength; i++) {
-            capturerChangeInfos[i]->clientUID = 0;
-            capturerChangeInfos[i]->capturerState = CAPTURER_INVALID;
-            capturerChangeInfos[i]->inputDeviceInfo.networkId = "";
-            capturerChangeInfos[i]->inputDeviceInfo.interruptGroupId = GROUP_ID_NONE;
-            capturerChangeInfos[i]->inputDeviceInfo.volumeGroupId = GROUP_ID_NONE;
-        }
-    }
-}
-
 void AudioPolicyClientProxy::OnCapturerStateChange(
     std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
@@ -289,7 +263,6 @@ void AudioPolicyClientProxy::OnCapturerStateChange(
         return;
     }
 
-    UpdateCapturerDeviceInfo(audioCapturerChangeInfos);
     size_t size = audioCapturerChangeInfos.size();
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_CAPTURERSTATE_CHANGE));
     data.WriteInt32(size);
@@ -331,6 +304,48 @@ void AudioPolicyClientProxy::OnRendererDeviceChange(const uint32_t sessionId,
     reply.ReadInt32();
 }
 
+void AudioPolicyClientProxy::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RECREATE_RENDERER_STREAM_EVENT));
+
+    data.WriteUint32(sessionId);
+    data.WriteInt32(streamFlag);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending recreate stream event: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
+void AudioPolicyClientProxy::OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_RECREATE_CAPTURER_STREAM_EVENT));
+
+    data.WriteUint32(sessionId);
+    data.WriteInt32(streamFlag);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending recreate stream event: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
 void AudioPolicyClientProxy::OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo)
 {
     MessageParcel data;
@@ -354,6 +369,56 @@ void AudioPolicyClientProxy::OnHeadTrackingDeviceChange(const std::unordered_map
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != 0) {
         AUDIO_ERR_LOG("Error while sending change info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
+void AudioPolicyClientProxy::OnSpatializationEnabledChange(const bool &enabled)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_SPATIALIZATION_ENABLED_CHANGE));
+
+    if (hasSystemPermission_) {
+        data.WriteBool(enabled);
+    } else {
+        data.WriteBool(false);
+    }
+
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending enabled info: %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
+void AudioPolicyClientProxy::OnHeadTrackingEnabledChange(const bool &enabled)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_HEAD_TRACKING_ENABLED_CHANGE));
+
+    if (hasSystemPermission_) {
+        data.WriteBool(enabled);
+    } else {
+        data.WriteBool(false);
+    }
+
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending enabled info: %{public}d", error);
     }
     reply.ReadInt32();
 }

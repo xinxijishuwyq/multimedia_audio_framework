@@ -20,17 +20,28 @@
 #include <stdint.h>
 #include <pulse/pulseaudio.h>
 
-#include "audio_effect_chain_adapter.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int32_t EnhanceChainManagerProcess(char *sceneType, BufferAttr *bufferAttr);
-int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode,
-    const char *upDevice, const char *downDevice);
-int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceMode,
-    const char *upDevice, const char *downDevice);
+typedef struct EnhanceBufferAttr {
+    uint8_t *input;
+    uint8_t *output;
+    uint32_t refNum;
+    uint32_t micNum;
+    uint32_t outNum;
+    uint32_t sampleRate;
+    uint32_t frameLength;
+    uint32_t dataFormat;
+    uint32_t bitDepth;
+    uint32_t batchLen;
+    uint32_t byteLenPerFrame;
+} EnhanceBufferAttr;
+
+int32_t EnhanceChainManagerProcess(const char *sceneType, EnhanceBufferAttr *enhanceBufferAttr);
+int32_t EnhanceChainManagerCreateCb(const char *sceneType, const char *enhanceMode, const char *upAndDownDevice);
+int32_t EnhanceChainManagerReleaseCb(const char *sceneType, const char *enhanceMode, const char *upAndDownDevice);
+bool EnhanceChainManagerExist(const char *sceneType);
 
 #ifdef __cplusplus
 }

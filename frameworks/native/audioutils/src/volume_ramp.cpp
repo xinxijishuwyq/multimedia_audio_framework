@@ -40,6 +40,7 @@ void VolumeRamp::SetVolumeCurve(vector<float> &volumes)
     vector<float> times = {0.0f, 1.0f};
     CHECK_AND_RETURN_LOG(volumes.size() == VOLUME_SIZE, "Array size must 2!");
 
+    std::lock_guard<std::mutex> lock(curveMapMutex_);
     curvePoints_.clear();
     for (size_t i = 0; i < times.size(); i++) {
         curvePoints_.emplace(times[i], volumes[i]);
@@ -114,6 +115,9 @@ float VolumeRamp::GetScaledTime(int64_t currentTime)
 
 float VolumeRamp::FindRampVolume(float time)
 {
+    std::lock_guard<std::mutex> lock(curveMapMutex_);
+    CHECK_AND_RETURN_RET_LOG(!curvePoints_.empty(), 0.0f, "Curve points map is empty");
+
     auto lowPoint = curvePoints_.begin();
     auto highPoint = curvePoints_.rbegin();
 

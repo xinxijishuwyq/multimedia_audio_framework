@@ -16,6 +16,13 @@ import("../../../config.gni")
 import("../../../ressche_part.gni")
 
 ohos_static_library("audio_schedule") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+
   include_dirs = [ "include" ]
 
   sources = [ "audio_schedule.cpp" ]

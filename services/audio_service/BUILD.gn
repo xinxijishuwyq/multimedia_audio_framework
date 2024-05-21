@@ -17,9 +17,6 @@ import("../../ressche_part.gni")
 import("../../sensor.gni")
 import("../../window_manager.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 group("audio_service_packages") {
   deps = [
     ":audio_common",
@@ -31,6 +28,8 @@ group("audio_service_packages") {
 ohos_shared_library("audio_common") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
 
@@ -42,8 +41,12 @@ ohos_shared_library("audio_common") {
   ]
 
   sources = [
+    "common/src/audio_common_converter.cpp",
+    "common/src/audio_down_mix_stereo.cpp",
     "common/src/audio_process_config.cpp",
+    "common/src/audio_resample.cpp",
     "common/src/audio_ring_cache.cpp",
+    "common/src/audio_thread_task.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/volume_tools.cpp",
@@ -59,17 +62,21 @@ ohos_shared_library("audio_common") {
 
   deps = [ "../../frameworks/native/audioutils:audio_utils" ]
 
-  if (sonic_enable == true) {
-    include_dirs += [ "$pulseaudio_dir/sonic" ]
-    deps += [ "$pulseaudio_dir/sonic:sonic" ]
-  }
-
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
   ]
+
+  if (sonic_enable == true) {
+    external_deps += [ "pulseaudio:sonic" ]
+  }
+
+  if (speex_enable == true) {
+    include_dirs += [ "//third_party/pulseaudio/speex/include" ]
+    external_deps += [ "pulseaudio:speexresampler" ]
+  }
 
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
@@ -100,8 +107,14 @@ config("audio_client_public_config") {
     cflags += [ "-DSONIC_ENABLE" ]
   }
 
+  if (speex_enable == true) {
+    cflags += [ "-DSPEEX_ENABLE" ]
+  }
+
+  external_deps = []
+
   if (sonic_enable == true) {
-    include_dirs += [ "$pulseaudio_dir/sonic" ]
+    external_deps += [ "pulseaudio:sonic" ]
   }
 
   if (target_cpu == "arm") {
@@ -123,12 +136,7 @@ config("audio_sasdk_public_config") {
 }
 
 ohos_shared_library("audio_client") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    integer_overflow = true
-    debug = false
-  }
+  stack_protector_ret = false
   install_enable = true
   sources = [
     "client/src/audio_device_descriptor.cpp",
@@ -161,28 +169,15 @@ ohos_shared_library("audio_client") {
 
   deps = [
     ":audio_common",
-    "$pulseaudio_build_path/src/pulse:pulse",
+    ":audio_process_service",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_policy_client",
-    "//third_party/libxml2:xml2",
   ]
 
-  include_dirs = [
-    "server/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "//third_party/bounds_checking_function/include",
-    "//third_party/libxml2/include",
-  ]
-
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
+  include_dirs = [ "server/include" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -191,8 +186,16 @@ ohos_shared_library("audio_client") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+  ]
+
+  public_external_deps = [
+    "libxml2:libxml2",
+    "pulseaudio:sonic",
   ]
 
   defines = []
@@ -201,9 +204,9 @@ ohos_shared_library("audio_client") {
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
-  if (sonic_enable == true) {
-    include_dirs += [ "$pulseaudio_dir/sonic" ]
-    deps += [ "$pulseaudio_dir/sonic:sonic" ]
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    defines += [ "RESSCHE_ENABLE" ]
   }
 
   version_script = "../../audio_framework.versionscript"
@@ -229,10 +232,6 @@ config("audio_service_config") {
     "client/include",
     "server/include",
     "server/include/config",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_dir/include/pulse",
     "../audio_policy/server/include/service/effect",
     "../../frameworks/native/audioeffect/include",
     "../../frameworks/native/audiopolicy/include",
@@ -257,10 +256,14 @@ config("audio_service_config") {
     "../../interfaces/inner_api/native/audiomanager/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
+  cflags = []
 
   if (target_cpu == "arm") {
-    cflags = [ "-DBINDER_IPC_32BIT" ]
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+
+  if (audio_framework_feature_daudio_enable == true) {
+    cflags += [ "-DDAUDIO_ENABLE" ]
   }
 }
 
@@ -268,6 +271,7 @@ ohos_shared_library("audio_process_service") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -275,6 +279,8 @@ ohos_shared_library("audio_process_service") {
   sources = [
     "server/src/audio_endpoint.cpp",
     "server/src/audio_endpoint_separate.cpp",
+    "server/src/audio_engine_manager.cpp",
+    "server/src/audio_playback_engine.cpp",
     "server/src/audio_process_in_server.cpp",
     "server/src/audio_process_stub.cpp",
     "server/src/audio_service.cpp",
@@ -283,11 +289,14 @@ ohos_shared_library("audio_process_service") {
     "server/src/ipc_stream_in_server.cpp",
     "server/src/ipc_stream_listener_proxy.cpp",
     "server/src/ipc_stream_stub.cpp",
+    "server/src/none_mix_engine.cpp",
     "server/src/pa_adapter_manager.cpp",
     "server/src/pa_capturer_stream_impl.cpp",
     "server/src/pa_renderer_stream_impl.cpp",
     "server/src/policy_handler.cpp",
     "server/src/policy_provider_proxy.cpp",
+    "server/src/pro_audio_stream_manager.cpp",
+    "server/src/pro_renderer_stream_impl.cpp",
     "server/src/renderer_in_server.cpp",
   ]
 
@@ -295,20 +304,23 @@ ohos_shared_library("audio_process_service") {
 
   deps = [
     ":audio_common",
-    "$pulseaudio_build_path/src/pulse:pulse",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
+    "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
+    "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:fast_audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
-    "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
-  public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
+  if (audio_framework_feature_daudio_enable == true) {
+    deps += [
+      "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
+      "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
+    ]
+  }
 
   external_deps = [
     "c_utils:utils",
@@ -317,7 +329,10 @@ ohos_shared_library("audio_process_service") {
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
+
+  public_external_deps = [ "bounds_checking_function:libsec_static" ]
 
   defines = []
   if (audio_framework_feature_power_manager) {
@@ -334,6 +349,7 @@ ohos_shared_library("audio_service") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -343,35 +359,25 @@ ohos_shared_library("audio_service") {
     "server/src/audio_manager_listener_proxy.cpp",
     "server/src/audio_manager_stub.cpp",
     "server/src/audio_server.cpp",
+    "server/src/audio_server_dump.cpp",
     "server/src/config/audio_param_parser.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
 
-  include_dirs = [
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-  ]
-  include_dirs += [ multimedia_audio_framework_pulse_audio ]
-
   deps = [
     ":audio_common",
     ":audio_process_service",
-    "$pulseaudio_build_path/src/daemon:pulseaudio",
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "${third_party_path}/libxml2:xml2",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter/sink:audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:bluetooth_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:offload_audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:remote_audio_renderer_sink",
-    "../../frameworks/native/hdiadapter/sink:remote_fast_audio_renderer_sink",
     "../../frameworks/native/hdiadapter/sink:renderer_sink_adapter",
     "../../frameworks/native/hdiadapter/source:audio_capturer_source",
     "../../frameworks/native/hdiadapter/source:capturer_source_adapter",
-    "../../frameworks/native/hdiadapter/source:remote_fast_audio_capturer_source",
+    "../../frameworks/native/hdiadapter/source:fast_audio_capturer_source",
     "../../frameworks/native/playbackcapturer:playback_capturer",
   ]
 
@@ -386,9 +392,15 @@ ohos_shared_library("audio_service") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "pulseaudio:pulse",
+    "pulseaudio:pulseaudio",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  public_external_deps = [ "libxml2:libxml2" ]
 
   defines = []
   if (audio_framework_config_policy_enable) {
@@ -423,6 +435,7 @@ ohos_shared_library("audio_sasdk") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
 
@@ -483,6 +496,7 @@ ohos_executable("audio_process_client_test") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -504,8 +518,6 @@ ohos_executable("audio_hdi_device_test") {
     "../../interfaces/inner_api/native/audiocommon/include",
   ]
 
-  include_dirs += [ multimedia_audio_framework_drivers ]
-
   cflags = [ "-DDEBUG_DIRECT_USE_HDI" ]
 
   sources = [ "test/example/audio_hdi_device_test.cpp" ]
@@ -519,6 +531,7 @@ ohos_executable("audio_hdi_device_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "pulseaudio:pulse",
   ]
 
   part_name = "audio_framework"
@@ -534,20 +547,11 @@ ohos_executable("audio_service_playback_test") {
 
   deps = [ ":audio_client" ]
 
-  include_dirs = [
-    "$pulseaudio_build_path/include",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_dir/src",
-    "../../../../commonlibrary/c_utils/base/include",
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "//third_party/bounds_checking_function/include",
-  ]
-
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
 
   part_name = "audio_framework"
@@ -568,22 +572,13 @@ ohos_executable("audio_faststream_playback_test") {
     "../../frameworks/native/audioutils:audio_utils",
   ]
 
-  include_dirs = [
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_build_path/include",
-    "//third_party/bounds_checking_function/include",
-  ]
-
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
 
   part_name = "audio_framework"
@@ -597,22 +592,13 @@ ohos_executable("audio_service_record_test") {
 
   configs = [ ":audio_client_public_config" ]
 
-  include_dirs = [
-    "$pulseaudio_build_path/include",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_dir/src",
-    "../../../../commonlibrary/c_utils/base/include",
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "//third_party/bounds_checking_function/include",
-  ]
-
   deps = [ ":audio_client" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -625,22 +611,13 @@ ohos_executable("audio_multichannel_test") {
 
   configs = [ ":audio_client_public_config" ]
 
-  include_dirs = [
-    "$pulseaudio_build_path/include",
-    "$pulseaudio_dir/confgure/src",
-    "$pulseaudio_dir/include",
-    "$pulseaudio_dir/src",
-    "../../../../foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
-    "../../../../utils/system/safwk/native/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "//third_party/bounds_checking_function/include",
-  ]
-
   deps = [ ":audio_client" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "pulseaudio:pulse",
   ]
 
   part_name = "audio_framework"

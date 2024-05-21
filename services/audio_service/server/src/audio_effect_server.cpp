@@ -23,6 +23,7 @@
 #include "unistd.h"
 #include "audio_log.h"
 #include "audio_effect_server.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,6 +64,7 @@ static bool LoadLibrary(const std::string &relativePath, std::shared_ptr<AudioEf
     } else {
         AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
     }
+    dlerror(); // clean existing errors;
 
     AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(handle,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
@@ -91,6 +93,14 @@ static void LoadLibraries(const std::vector<Library> &libs, std::vector<std::sha
         bool loadLibrarySuccess = LoadLibrary(library.path, libEntry);
         if (!loadLibrarySuccess) {
             AUDIO_ERR_LOG("<log error> loadLibrary fail, please check logs!");
+
+            // hisysevent for load engine error
+            std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_EFFECT_ENGINE_ERROR,
+                Media::MediaMonitor::FAULT_EVENT);
+            bean->Add("ENGINE_TYPE", Media::MediaMonitor::AUDIO_EFFECT_PROCESS_ENGINE);
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+
             continue;
         }
 

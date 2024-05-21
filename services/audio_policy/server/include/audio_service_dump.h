@@ -100,7 +100,7 @@ typedef struct {
     StreamVolumeInfoMap streamVolumeInfos;
     std::vector<sptr<MicrophoneDescriptor>> availableMicrophones;
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZoneDump>> audioInterruptZonesMapDump;
-    std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
+    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap;
     std::unordered_map<std::string, std::string> volumeGroupData;
     std::unordered_map<std::string, std::string> interruptGroupData;
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo;

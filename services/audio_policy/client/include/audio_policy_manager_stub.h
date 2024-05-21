@@ -63,6 +63,8 @@ private:
     void ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
     void GetSinkLatencyFromXmlInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply);
     void RegisterTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateTrackerInternal(MessageParcel &data, MessageParcel &reply);
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
@@ -110,10 +112,6 @@ private:
     void SetSpatializationEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void IsHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
     void SetHeadTrackingEnabledInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void RegisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
-    void UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data, MessageParcel &reply);
     void GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsSpatializationSupportedForDeviceInternal(MessageParcel &data, MessageParcel &reply);
@@ -185,6 +183,8 @@ private:
         &AudioPolicyManagerStub::ReconfigureAudioChannelInternal,
         &AudioPolicyManagerStub::GetAudioLatencyFromXmlInternal,
         &AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal,
+        &AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal,
+        &AudioPolicyManagerStub::GetPerferredInputStreamTypeInternal,
         &AudioPolicyManagerStub::RegisterTrackerInternal,
         &AudioPolicyManagerStub::UpdateTrackerInternal,
         &AudioPolicyManagerStub::GetRendererChangeInfosInternal,
@@ -229,10 +229,6 @@ private:
         &AudioPolicyManagerStub::SetSpatializationEnabledInternal,
         &AudioPolicyManagerStub::IsHeadTrackingEnabledInternal,
         &AudioPolicyManagerStub::SetHeadTrackingEnabledInternal,
-        &AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal,
-        &AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal,
-        &AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal,
-        &AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal,
         &AudioPolicyManagerStub::GetSpatializationStateInternal,
         &AudioPolicyManagerStub::IsSpatializationSupportedInternal,
         &AudioPolicyManagerStub::IsSpatializationSupportedForDeviceInternal,

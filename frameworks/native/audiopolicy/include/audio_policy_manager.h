@@ -161,6 +161,10 @@ public:
 
     uint32_t GetSinkLatencyFromXml();
 
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
+
+    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
+
     int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioRendererStateChangeCallback> &callback);
 
@@ -171,10 +175,10 @@ public:
 
     int32_t UnregisterAudioCapturerEventListener(const int32_t clientPid);
 
-    int32_t RegisterOutputDeviceChangeWithInfoCallback(
-        const uint32_t sessionID, const std::shared_ptr<OutputDeviceChangeWithInfoCallback> &callback);
+    int32_t RegisterDeviceChangeWithInfoCallback(
+        const uint32_t sessionID, const std::shared_ptr<DeviceChangeWithInfoCallback> &callback);
     
-    int32_t UnregisterOutputDeviceChangeWithInfoCallback(const uint32_t sessionID);
+    int32_t UnregisterDeviceChangeWithInfoCallback(const uint32_t sessionID);
 
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const std::shared_ptr<AudioClientTracker> &clientTrackerObj);
@@ -370,6 +374,8 @@ private:
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
     sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
+    std::atomic<bool> isAudioPolicyClientRegisted_ = false;
+
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static sptr<AudioPolicyClientStubImpl> audioStaticPolicyClientStubCB_;
     static std::vector<std::shared_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;

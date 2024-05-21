@@ -14,13 +14,6 @@
 import("//build/ohos.gni")
 import("../../../config.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-opensles_dir = "//third_party/openSLES"
-
-group("libsl") {
-  public_deps = [ "//third_party/openSLES:libSLES" ]
-}
-
 config("audio_config") {
   include_dirs = [
     "../audiocapturer/include",
@@ -31,8 +24,6 @@ config("audio_config") {
     "../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../interfaces/inner_api/native/audiostream/include",
     "../../../services/audio_service/client/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -46,15 +37,14 @@ if (!audio_framework_feature_opensl_es) {
     deps = []
   }
 } else {
-  opensles_version = "1.0.1"
   ohos_shared_library("opensles") {
     sanitize = {
       cfi = true
       cfi_cross_dso = true
+      cfi_vcall_icall_only = true
       debug = false
     }
     include_dirs = [
-      "$opensles_dir/api/$opensles_version",
       "include",
       "../../../interfaces/inner_api/native/andiocapturer/include/",
       "../../../interfaces/inner_api/native/andiomanager/include/",
@@ -64,8 +54,6 @@ if (!audio_framework_feature_opensl_es) {
     configs = [ ":audio_config" ]
 
     sources = [
-      "$opensles_dir/api/$opensles_version/OpenSLES_IID.c",
-      "$opensles_dir/api/$opensles_version/OpenSLES_OpenHarmony_IID.c",
       "src/adapter/audiocapturer_adapter.cpp",
       "src/adapter/audioplayer_adapter.cpp",
       "src/adapter/readorwritecallback_adapter.cpp",
@@ -86,7 +74,6 @@ if (!audio_framework_feature_opensl_es) {
     cflags = [ "-Werror" ]
 
     deps = [
-      ":libsl",
       "../../../services/audio_service:audio_client",
       "../audiocapturer:audio_capturer",
       "../audiorenderer:audio_renderer",
@@ -95,6 +82,7 @@ if (!audio_framework_feature_opensl_es) {
     external_deps = [
       "hilog:libhilog",
       "ipc:ipc_single",
+      "opensles:libSLES",
     ]
 
     output_name = "OpenSLES"
@@ -123,8 +111,6 @@ config("audio_operation_config") {
     "../../../interfaces/inner_api/native/audiostream/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/test/example",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir/confgure/src",
   ]
 
   cflags = [
@@ -134,10 +120,7 @@ config("audio_operation_config") {
 }
 
 config("audio_opensles_config") {
-  include_dirs = [
-    "include",
-    "$opensles_dir/api/1.0.1",
-  ]
+  include_dirs = [ "include" ]
 }
 
 if (!audio_framework_feature_opensl_es) {
@@ -155,12 +138,13 @@ if (!audio_framework_feature_opensl_es) {
       ":audio_operation_config",
     ]
 
-    deps = [
-      ":libsl",
-      ":opensles",
-    ]
+    deps = [ ":opensles" ]
 
-    external_deps = [ "hilog:libhilog" ]
+    external_deps = [
+      "hilog:libhilog",
+      "opensles:libSLES",
+      "pulseaudio:pulse",
+    ]
 
     part_name = "audio_framework"
     subsystem_name = "multimedia"
@@ -182,12 +166,14 @@ if (!audio_framework_feature_opensl_es) {
       ":audio_operation_config",
     ]
 
-    deps = [
-      ":libsl",
-      ":opensles",
-    ]
+    deps = [ ":opensles" ]
 
-    external_deps = [ "hilog:libhilog" ]
+    external_deps = [
+      "bounds_checking_function:libsec_shared",
+      "hilog:libhilog",
+      "opensles:libSLES",
+      "pulseaudio:pulse",
+    ]
 
     part_name = "audio_framework"
     subsystem_name = "multimedia"

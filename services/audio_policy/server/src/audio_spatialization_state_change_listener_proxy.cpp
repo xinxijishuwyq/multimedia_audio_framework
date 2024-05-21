@@ -23,76 +23,6 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-AudioSpatializationEnabledChangeListenerProxy::AudioSpatializationEnabledChangeListenerProxy(
-    const sptr<IRemoteObject> &impl)
-    : IRemoteProxy<IStandardSpatializationEnabledChangeListener>(impl)
-{
-    AUDIO_DEBUG_LOG("AudioSpatializationEnabledChangeListenerProxy:Instances create");
-}
-
-AudioSpatializationEnabledChangeListenerProxy::~AudioSpatializationEnabledChangeListenerProxy()
-{
-    AUDIO_DEBUG_LOG("~AudioSpatializationEnabledChangeListenerProxy: Instance destroy");
-}
-
-void AudioSpatializationEnabledChangeListenerProxy::OnSpatializationEnabledChange(const bool &enabled)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-
-    AUDIO_DEBUG_LOG("AudioSpatializationEnabledChangeListenerProxy OnSpatializationEnabledChange entered");
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioSpatializationEnabledChangeListener: WriteInterfaceToken failed");
-        return;
-    }
-
-    data.WriteBool(enabled);
-
-    int32_t error = Remote()->SendRequest(ON_SPATIALIZATION_ENABLED_CHANGE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioSpatializationEnabledChangeListener failed, error: %{public}d", error);
-    }
-
-    return;
-}
-
-AudioHeadTrackingEnabledChangeListenerProxy::AudioHeadTrackingEnabledChangeListenerProxy(
-    const sptr<IRemoteObject> &impl)
-    : IRemoteProxy<IStandardHeadTrackingEnabledChangeListener>(impl)
-{
-    AUDIO_DEBUG_LOG("AudioHeadTrackingEnabledChangeListenerProxy:Instances create");
-}
-
-AudioHeadTrackingEnabledChangeListenerProxy::~AudioHeadTrackingEnabledChangeListenerProxy()
-{
-    AUDIO_DEBUG_LOG("~AudioHeadTrackingEnabledChangeListenerProxy: Instance destroy");
-}
-
-void AudioHeadTrackingEnabledChangeListenerProxy::OnHeadTrackingEnabledChange(const bool &enabled)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-
-    AUDIO_DEBUG_LOG("AudioHeadTrackingEnabledChangeListenerProxy OnHeadTrackingEnabledChange entered");
-
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        AUDIO_ERR_LOG("AudioHeadTrackingEnabledChangeListener: WriteInterfaceToken failed");
-        return;
-    }
-
-    data.WriteBool(enabled);
-
-    int32_t error = Remote()->SendRequest(ON_HEAD_TRACKING_ENABLED_CHANGE, data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("AudioHeadTrackingEnabledChangeListener failed, error: %{public}d", error);
-    }
-
-    return;
-}
-
 AudioSpatializationStateChangeListenerProxy::AudioSpatializationStateChangeListenerProxy(
     const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardSpatializationStateChangeListener>(impl)
@@ -128,54 +58,6 @@ void AudioSpatializationStateChangeListenerProxy::OnSpatializationStateChange(
     }
 
     return;
-}
-
-AudioSpatializationEnabledChangeListenerCallback::AudioSpatializationEnabledChangeListenerCallback(
-    const sptr<IStandardSpatializationEnabledChangeListener> &listener, bool hasSystemPermission)
-    : listener_(listener), hasSystemPermission_(hasSystemPermission)
-{
-    AUDIO_DEBUG_LOG("AudioSpatializationEnabledChangeListenerCallback: Instance create");
-}
-
-AudioSpatializationEnabledChangeListenerCallback::~AudioSpatializationEnabledChangeListenerCallback()
-{
-    AUDIO_DEBUG_LOG("AudioSpatializationEnabledChangeListenerCallback: Instance destroy");
-}
-
-void AudioSpatializationEnabledChangeListenerCallback::OnSpatializationEnabledChange(const bool &enabled)
-{
-    AUDIO_DEBUG_LOG("AudioSpatializationEnabledChangeListenerCallback OnSpatializationEnabledChange entered");
-    if (listener_ != nullptr) {
-        if (hasSystemPermission_) {
-            listener_->OnSpatializationEnabledChange(enabled);
-        } else {
-            listener_->OnSpatializationEnabledChange(false);
-        }
-    }
-}
-
-AudioHeadTrackingEnabledChangeListenerCallback::AudioHeadTrackingEnabledChangeListenerCallback(
-    const sptr<IStandardHeadTrackingEnabledChangeListener> &listener, bool hasSystemPermission)
-    : listener_(listener), hasSystemPermission_(hasSystemPermission)
-{
-    AUDIO_DEBUG_LOG("AudioHeadTrackingEnabledChangeListenerCallback: Instance create");
-}
-
-AudioHeadTrackingEnabledChangeListenerCallback::~AudioHeadTrackingEnabledChangeListenerCallback()
-{
-    AUDIO_DEBUG_LOG("AudioHeadTrackingEnabledChangeListenerCallback: Instance destroy");
-}
-
-void AudioHeadTrackingEnabledChangeListenerCallback::OnHeadTrackingEnabledChange(const bool &enabled)
-{
-    AUDIO_DEBUG_LOG("AudioHeadTrackingEnabledChangeListenerCallback OnHeadTrackingEnabledChange entered");
-    if (listener_ != nullptr) {
-        if (hasSystemPermission_) {
-            listener_->OnHeadTrackingEnabledChange(enabled);
-        } else {
-            listener_->OnHeadTrackingEnabledChange(false);
-        }
-    }
 }
 
 AudioSpatializationStateChangeListenerCallback::AudioSpatializationStateChangeListenerCallback(

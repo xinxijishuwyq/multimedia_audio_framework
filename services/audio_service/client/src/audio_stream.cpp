@@ -29,8 +29,7 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "bundle_mgr_interface.h"
-#include "bundle_mgr_proxy.h"
+#include "media_monitor_manager.h"
 
 using namespace std;
 using namespace OHOS::HiviewDFX;
@@ -48,40 +47,6 @@ constexpr int32_t CB_READ_BUFFERS_WAIT_IN_MS = 80;
 #ifdef SONIC_ENABLE
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 #endif
-static AppExecFwk::BundleInfo gBundleInfo_;
-
-static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t appUid)
-{
-    std::string bundleName {""};
-    AppExecFwk::BundleInfo bundleInfo;
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemAbilityManager == nullptr) {
-        return bundleInfo;
-    }
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (remoteObject == nullptr) {
-        return bundleInfo;
-    }
-
-    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    if (bundleMgrProxy == nullptr) {
-        return bundleInfo;
-    }
-    if (bundleMgrProxy != nullptr) {
-        bundleMgrProxy->GetNameForUid(appUid, bundleName);
-    }
-
-    bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO |
-        AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo,
-        AppExecFwk::Constants::ALL_USERID);
-
-    return bundleInfo;
-}
 
 AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t appUid)
     : eStreamType_(eStreamType),
@@ -100,7 +65,7 @@ AudioStream::AudioStream(AudioStreamType eStreamType, AudioMode eMode, int32_t a
 {
     AUDIO_DEBUG_LOG("AudioStream ctor, appUID = %{public}d", appUid);
     audioStreamTracker_ =  std::make_unique<AudioStreamTracker>(eMode, appUid);
-    gBundleInfo_ = GetBundleInfoFromUid(appUid);
+    appUid_ = appUid;
     AUDIO_DEBUG_LOG("AudioStreamTracker created");
 }
 
@@ -164,11 +129,24 @@ void AudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
     SetStreamUsage(rendererInfo.streamUsage);
+
+    if (GetOffloadEnable()) {
+        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    } else if (GetHighResolutionEnabled()) {
+        rendererInfo_.pipeType = PIPE_TYPE_HIGHRESOLUTION;
+    } else if (GetSpatializationEnabled()) {
+        rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
+    } else {
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    }
+    rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
 }
 
 void AudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
+    capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
 }
 
 int32_t AudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
@@ -212,7 +190,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
         if (eMode_ == AUDIO_MODE_PLAYBACK) {
             timestamp.framePosition = GetStreamFramesWritten() * speed_;
         } else {
-            timestamp.framePosition = GetStreamFramesRead();
+            timestamp.framePosition = static_cast<uint64_t>(GetStreamFramesRead());
         }
 
         uint64_t delta = paTimeStamp > resetTimestamp_ ? paTimeStamp - resetTimestamp_ : 0;
@@ -741,6 +719,11 @@ float AudioStream::GetVolume()
     return GetStreamVolume();
 }
 
+int32_t AudioStream::SetDuckVolume(float volume)
+{
+    return SetStreamDuckVolume(volume);
+}
+
 int32_t AudioStream::SetRenderRate(AudioRendererRate renderRate)
 {
     return SetStreamRenderRate(renderRate);
@@ -1045,7 +1028,7 @@ void AudioStream::ReadCbThreadLoop()
                 AUDIO_ERR_LOG("ReadCb ReadStream fail, ret: %{public}d", readLen);
             } else {
                 AUDIO_DEBUG_LOG("ReadCb ReadStream, bytesRead:%{public}d", readLen);
-                freeBufferQ_.front().dataLength = readLen;
+                freeBufferQ_.front().dataLength = static_cast<uint32_t>(readLen);
                 filledBufferQ_.emplace(freeBufferQ_.front());
                 freeBufferQ_.pop();
                 SendReadBufferRequestEvent();
@@ -1202,8 +1185,6 @@ void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
 
 void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
-    std::string name = gBundleInfo_.name;
-    int32_t versionCode = gBundleInfo_.versionCode;
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -1212,10 +1193,11 @@ void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
             AUDIO_WARNING_LOG("write silent data for some time");
             isUpEvent_ = true;
-            HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "BACKGROUND_SILENT_PLAYBACK",
-                HiviewDFX::HiSysEvent::EventType::STATISTIC,
-                "APP_NAME", name,
-                "APP_VERSION_CODE", versionCode);
+            std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                Media::MediaMonitor::AUDIO, Media::MediaMonitor::BACKGROUND_SILENT_PLAYBACK,
+                Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+            bean->Add("CLIENT_UID", appUid_);
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         }
     } else if (buffer[0] != 0 && startMuteTime_ != 0) {
         startMuteTime_ = 0;
@@ -1352,6 +1334,21 @@ int32_t AudioStream::NotifyCapturerAdded(uint32_t sessionID)
     streamInfo.samplingRate = static_cast<AudioSamplingRate> (streamParams_.samplingRate);
     streamInfo.channels = static_cast<AudioChannel> (streamParams_.channels);
     return AudioPolicyManager::GetInstance().NotifyCapturerAdded(capturerInfo_, streamInfo, sessionID);
+}
+
+bool AudioStream::GetOffloadEnable()
+{
+    return offloadEnable_;
+}
+
+bool AudioStream::GetSpatializationEnabled()
+{
+    return rendererInfo_.spatializationEnabled;
+}
+
+bool AudioStream::GetHighResolutionEnabled()
+{
+    return AudioPolicyManager::GetInstance().IsHighResolutionExist();
 }
 
 AudioStreamPolicyServiceDiedCallbackImpl::AudioStreamPolicyServiceDiedCallbackImpl()

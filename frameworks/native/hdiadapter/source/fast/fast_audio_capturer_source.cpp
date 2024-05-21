@@ -61,7 +61,7 @@ public:
     uint64_t GetTransactionId() override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     void RegisterWakeupCloseCallback(IAudioSourceCallback *callback) override;
-    void RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback) override;
+    void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
 
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -131,7 +131,14 @@ FastAudioCapturerSourceInner::~FastAudioCapturerSourceInner()
 {
     AUDIO_DEBUG_LOG("~FastAudioCapturerSourceInner");
 }
+
 FastAudioCapturerSource *FastAudioCapturerSource::GetInstance()
+{
+    static FastAudioCapturerSourceInner audioCapturer;
+    return &audioCapturer;
+}
+
+FastAudioCapturerSource *FastAudioCapturerSource::GetVoipInstance()
 {
     static FastAudioCapturerSourceInner audioCapturer;
     return &audioCapturer;
@@ -164,10 +171,8 @@ void FastAudioCapturerSourceInner::InitAttrsCapture(struct AudioSampleAttributes
     /* Initialization of audio parameters for playback */
     attrs.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
     attrs.channelCount = AUDIO_CHANNELCOUNT;
-    attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = true;
     attrs.streamId = FAST_INPUT_STREAM_ID;
-    attrs.type = AUDIO_MMAP_NOIRQ; // enable mmap!
     attrs.period = 0;
     attrs.frameSize = PCM_16_BIT * attrs.channelCount / PCM_8_BIT;
     attrs.isBigEndian = false;
@@ -241,12 +246,45 @@ AudioFormat FastAudioCapturerSourceInner::ConvertToHdiFormat(HdiAdapterFormat fo
     return hdiFormat;
 }
 
+static enum AudioInputType ConvertToHDIAudioInputType(const int32_t currSourceType)
+{
+    enum AudioInputType hdiAudioInputType;
+    switch (currSourceType) {
+        case SOURCE_TYPE_INVALID:
+            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
+            break;
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SOURCE_TYPE_ULTRASONIC:
+            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
+            break;
+        default:
+            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+    }
+    return hdiAudioInputType;
+}
+
 int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capturePort)
 {
     int32_t ret;
     struct AudioSampleAttributes param;
     // User needs to set
     InitAttrsCapture(param);
+    param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ; // enable mmap!
     param.sampleRate = attr_.sampleRate;
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
@@ -259,7 +297,8 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = 0;
-
+    AUDIO_INFO_LOG("Type: %{public}d, sampleRate: %{public}u, channel: %{public}d, format: %{public}d, "
+        "device:%{public}d", param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
     char desc[] = "";
@@ -275,11 +314,15 @@ int32_t FastAudioCapturerSourceInner::CreateCapture(const struct AudioPort &capt
         case DEVICE_TYPE_USB_HEADSET:
             deviceDesc.pins = PIN_IN_USB_EXT;
             break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            deviceDesc.pins = PIN_IN_BLUETOOTH_SCO_HEADSET;
+            break;
         default:
             AUDIO_WARNING_LOG("Unsupported device type:%{public}d, use default mic instead", attr_.deviceType);
             deviceDesc.pins = PIN_IN_MIC;
             break;
     }
+    AUDIO_INFO_LOG("Capturer device type: %{public}d", attr_.deviceType);
 
     ret = audioAdapter_->CreateCapture(audioAdapter_, &deviceDesc, &param, &audioCapture_, &captureId_);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr && ret >= 0,
@@ -338,9 +381,9 @@ int32_t FastAudioCapturerSourceInner::GetMmapHandlePosition(uint64_t &frames, in
 
 int32_t FastAudioCapturerSourceInner::PrepareMmapBuffer()
 {
-    uint32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
+    uint32_t totalBufferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     uint32_t frameSizeInByte = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
-    uint32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
+    uint32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc = {0};
     int32_t ret = audioCapture_->ReqMmapBuffer(audioCapture_, reqBufferFrameSize, &desc);
@@ -499,6 +542,9 @@ static int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
             source.ext.device.type = PIN_IN_HS_MIC;
             source.ext.device.desc = const_cast<char*>("pin_in_hs_mic");
             break;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            source.ext.device.type = PIN_IN_BLUETOOTH_SCO_HEADSET;
+            source.ext.device.desc = (char *)"pin_in_bluetooth_sco_headset";
         default:
             ret = ERR_NOT_SUPPORTED;
             break;
@@ -587,7 +633,7 @@ void FastAudioCapturerSourceInner::RegisterWakeupCloseCallback(IAudioSourceCallb
     AUDIO_ERR_LOG("RegisterWakeupCloseCallback FAILED");
 }
 
-void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(IAudioSourceCallback *callback)
+void FastAudioCapturerSourceInner::RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback)
 {
     AUDIO_ERR_LOG("RegisterAudioCapturerSourceCallback FAILED");
 }

@@ -131,6 +131,10 @@ public:
 
     uint32_t GetSinkLatencyFromXml() override;
 
+    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) override;
+
+    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) override;
+
     int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) override;
 
@@ -210,14 +214,6 @@ public:
     bool IsHeadTrackingEnabled() override;
 
     int32_t SetHeadTrackingEnabled(const bool enable) override;
-
-    int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) override;
-
-    int32_t UnregisterSpatializationEnabledEventListener() override;
-
-    int32_t UnregisterHeadTrackingEnabledEventListener() override;
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) override;
 

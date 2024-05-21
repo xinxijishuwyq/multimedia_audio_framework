@@ -241,7 +241,7 @@ public:
      * @param config the config of the AudioProcess
      *
      * @return Returns AudioProcess client.
-    */
+     */
     virtual sptr<IRemoteObject> CreateAudioProcess(const AudioProcessConfig &config) = 0;
 
     /**
@@ -264,9 +264,9 @@ public:
     /**
      * Set output device sink for effect chain manager.
      *
-     * @return true/false.
+     * @return none.
      */
-    virtual bool SetOutputDeviceSink(int32_t device, std::string &sinkName) = 0;
+    virtual void SetOutputDeviceSink(int32_t device, std::string &sinkName) = 0;
 
     /**
      * Regiest policy provider.
@@ -293,7 +293,7 @@ public:
      * @param usage value of StreamUsage which support inner capturer.
      *
      * @return result of setting. 0 if success, error number else.
-    */
+     */
     virtual int32_t SetSupportStreamUsage(std::vector<int32_t> usage) = 0;
 
     /**
@@ -302,7 +302,7 @@ public:
      * @param state identify the capture state
      *
      * @return result of setting. 0 if success, error number else.
-    */
+     */
     virtual int32_t SetCaptureSilentState(bool state) = 0;
 
     /**
@@ -311,7 +311,7 @@ public:
      * @param state identify the enabled state
      *
      * @return result of setting. 0 if success, error number else.
-    */
+     */
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
 
     /**
@@ -321,7 +321,7 @@ public:
      * @param volume stream volume in float
      *
      * @return result of notify. 0 if success, error number else.
-    */
+     */
     virtual int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume) = 0;
 
     /**
@@ -330,7 +330,7 @@ public:
      * @param spatializationSceneType identify the spatialization rendering scene type to be set.
      *
      * @return result of setting. 0 if success, error number else.
-    */
+     */
     virtual int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) = 0;
 
     virtual int32_t ResetRouteForDisconnect(DeviceType type) = 0;
@@ -341,7 +341,7 @@ public:
      * @param sessionId the session ID value for the stream
      *
      * @return Returns the effect algorithmic latency in ms.
-    */
+     */
     virtual uint32_t GetEffectLatency(const std::string &sessionId) = 0;
 
     /**
@@ -351,8 +351,13 @@ public:
      * @param deviceType specified deviceType to get max amplitude
      *
      * @return result of max amplitude.
-    */
+     */
     virtual float GetMaxAmplitude(bool isOutputDevice, int32_t deviceType) = 0;
+
+    /**
+     * Release old endpoint and re-create one.
+     */
+    virtual void ResetAudioEndpoint() = 0;
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
@@ -402,6 +407,7 @@ private:
     int HandleNotifyStreamVolumeChanged(MessageParcel &data, MessageParcel &reply);
     int HandleSetSpatializationSceneType(MessageParcel &data, MessageParcel &reply);
     int HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &reply);
+    int HandleResetAudioEndpoint(MessageParcel &data, MessageParcel &reply);
     int HandleResetRouteForDisconnect(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectLatency(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateLatencyTimestamp(MessageParcel &data, MessageParcel &reply);
@@ -449,6 +455,7 @@ private:
         &AudioManagerStub::HandleGetRenderPresentationPosition,
         &AudioManagerStub::HandleSetSpatializationSceneType,
         &AudioManagerStub::HandleGetMaxAmplitude,
+        &AudioManagerStub::HandleResetAudioEndpoint,
         &AudioManagerStub::HandleResetRouteForDisconnect,
         &AudioManagerStub::HandleGetEffectLatency,
         &AudioManagerStub::HandleUpdateLatencyTimestamp,

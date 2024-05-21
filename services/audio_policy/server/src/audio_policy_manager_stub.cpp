@@ -491,6 +491,22 @@ void AudioPolicyManagerStub::GetSinkLatencyFromXmlInternal(MessageParcel &data, 
     reply.WriteUint32(ret);
 }
 
+void AudioPolicyManagerStub::GetPerferredOutputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioRendererInfo rendererInfo;
+    rendererInfo.Unmarshalling(data);
+    int32_t result = GetPreferredOutputStreamType(rendererInfo);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetPerferredInputStreamTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.Unmarshalling(data);
+    int32_t result = GetPreferredInputStreamType(capturerInfo);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::ReconfigureAudioChannelInternal(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t count = data.ReadUint32();
@@ -650,7 +666,7 @@ static void PreprocessMode(SupportedEffectConfig &supportedEffectConfig, Message
     uint32_t countDev = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
-        for (int32_t k = 0; k < countDev; k++) {
+        for (uint32_t k = 0; k < countDev; k++) {
             reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
             reply.WriteString(supportedEffectConfig.preProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
@@ -662,7 +678,7 @@ static void PreprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mess
     uint32_t countMode = supportedEffectConfig.preProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
-        for (int32_t j = 0; j < countMode; j++) {
+        for (uint32_t j = 0; j < countMode; j++) {
             PreprocessMode(supportedEffectConfig, reply, i, j);
         }
     }
@@ -673,7 +689,7 @@ static void PostprocessMode(SupportedEffectConfig &supportedEffectConfig, Messag
     uint32_t countDev = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort.size();
     reply.WriteInt32(countDev);
     if (countDev > 0) {
-        for (int32_t k = 0; k < countDev; k++) {
+        for (uint32_t k = 0; k < countDev; k++) {
             reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].type);
             reply.WriteString(supportedEffectConfig.postProcessNew.stream[i].streamEffectMode[j].devicePort[k].chain);
         }
@@ -686,7 +702,7 @@ static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mes
     uint32_t countMode = supportedEffectConfig.postProcessNew.stream[i].streamEffectMode.size();
     reply.WriteInt32(countMode);
     if (countMode > 0) {
-        for (int32_t j = 0; j < countMode; j++) {
+        for (uint32_t j = 0; j < countMode; j++) {
             PostprocessMode(supportedEffectConfig, reply, i, j);
         }
     }
@@ -694,7 +710,7 @@ static void PostprocessProcess(SupportedEffectConfig &supportedEffectConfig, Mes
 
 void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t i;
+    uint32_t i;
     SupportedEffectConfig supportedEffectConfig;
     int32_t ret = QueryEffectSceneMode(supportedEffectConfig); // audio_policy_server.cpp
     CHECK_AND_RETURN_LOG(ret != -1, "default mode is unavailable !");
@@ -702,9 +718,9 @@ void AudioPolicyManagerStub::QueryEffectSceneModeInternal(MessageParcel &data, M
     uint32_t countPre = supportedEffectConfig.preProcessNew.stream.size();
     uint32_t countPost = supportedEffectConfig.postProcessNew.stream.size();
     uint32_t countPostMap = supportedEffectConfig.postProcessSceneMap.size();
-    reply.WriteInt32(countPre);
-    reply.WriteInt32(countPost);
-    reply.WriteInt32(countPostMap);
+    reply.WriteUint32(countPre);
+    reply.WriteUint32(countPost);
+    reply.WriteUint32(countPostMap);
     if (countPre > 0) {
         for (i = 0; i < countPre; i++) {
             PreprocessProcess(supportedEffectConfig, reply, i);
@@ -886,38 +902,6 @@ void AudioPolicyManagerStub::SetHeadTrackingEnabledInternal(MessageParcel &data,
     bool enable = data.ReadBool();
     int32_t result = SetHeadTrackingEnabled(enable);
     reply.WriteInt32(result);
-}
-
-void AudioPolicyManagerStub::RegisterSpatializationEnabledEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "AudioSpatializationEnabledChangeCallback obj is null");
-    int32_t ret = RegisterSpatializationEnabledEventListener(remoteObject);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::RegisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    sptr<IRemoteObject> remoteObject = data.ReadRemoteObject();
-    CHECK_AND_RETURN_LOG(remoteObject != nullptr, "AudioHeadTrackingEnabledChangeCallback obj is null");
-    int32_t ret = RegisterHeadTrackingEnabledEventListener(remoteObject);
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::UnregisterSpatializationEnabledEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    int32_t ret = UnregisterSpatializationEnabledEventListener();
-    reply.WriteInt32(ret);
-}
-
-void AudioPolicyManagerStub::UnregisterHeadTrackingEnabledEventListenerInternal(MessageParcel &data,
-    MessageParcel &reply)
-{
-    int32_t ret = UnregisterHeadTrackingEnabledEventListener();
-    reply.WriteInt32(ret);
 }
 
 void AudioPolicyManagerStub::GetSpatializationStateInternal(MessageParcel &data, MessageParcel &reply)

@@ -18,6 +18,7 @@ ohos_shared_library("audio_device_manager") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -41,6 +42,7 @@ ohos_shared_library("audio_device_manager") {
   deps = [ "../../audioutils:audio_utils" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "drivers_interface_distributed_audio:libdaudio_proxy_1.0",
     "hilog:libhilog",

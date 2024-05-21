@@ -36,6 +36,7 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
     : processConfig_(processConfig)
 {
     streamListener_ = streamListener;
+    managerType_ = PLAYBACK;
 }
 
 RendererInServer::~RendererInServer()
@@ -113,7 +114,16 @@ int32_t RendererInServer::InitBufferStatus()
 
 int32_t RendererInServer::Init()
 {
-    int32_t ret = IStreamManager::GetPlaybackManager().CreateRender(processConfig_, stream_);
+    if (IsHightResolution()) {
+        managerType_ = DIRECT_PLAYBACK;
+        AUDIO_INFO_LOG("current stream marked as high resolution");
+    }
+    int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
+    if (ret != SUCCESS && managerType_ == DIRECT_PLAYBACK) {
+        managerType_ = PLAYBACK;
+        ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
+        AUDIO_DEBUG_LOG("high resolution create failed use normal replace");
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
     streamIndex_ = stream_->GetStreamIndex();
@@ -134,27 +144,12 @@ int32_t RendererInServer::Init()
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
-    AUDIO_INFO_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
+    AUDIO_DEBUG_LOG("RendererInServer::OnStatusUpdate operation: %{public}d", operation);
     operation_ = operation;
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
     switch (operation) {
-        case OPERATION_UNDERRUN:
-            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
-                audioServerBuffer_->GetAvailableDataFrames());
-            // In plan, maxlength is 4
-            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
-                AUDIO_INFO_LOG("Buffer is empty");
-                needForceWrite_ = 0;
-            } else {
-                AUDIO_INFO_LOG("Buffer is not empty");
-                WriteData();
-            }
-            stateListener->OnOperationHandled(BUFFER_UNDERRUN, 0);
-            break;
-        case OPERATION_UNDERFLOW:
-            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
-            break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
             stateListener->OnOperationHandled(START_STREAM, 0);
@@ -189,6 +184,21 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     switch (operation) {
+        case OPERATION_UNDERRUN:
+            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetAvailableDataFrames(): %{public}d",
+                audioServerBuffer_->GetAvailableDataFrames());
+            // In plan, maxlength is 4
+            if (audioServerBuffer_->GetAvailableDataFrames() == static_cast<int32_t>(4 * spanSizeInFrame_)) {
+                AUDIO_INFO_LOG("Buffer is empty");
+                needForceWrite_ = 0;
+            } else {
+                AUDIO_INFO_LOG("Buffer is not empty");
+                WriteData();
+            }
+            break;
+        case OPERATION_UNDERFLOW:
+            stateListener->OnOperationHandled(UNDERFLOW_COUNT_ADD, 0);
+            break;
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
@@ -246,8 +256,6 @@ int32_t RendererInServer::WriteData()
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-        uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
-        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
         if (isInnerCapEnabled_) {
             Trace traceDup("RendererInServer::WriteData DupSteam write");
             std::lock_guard<std::mutex> lock(dupMutex_);
@@ -256,6 +264,9 @@ int32_t RendererInServer::WriteData()
             }
         }
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
+        // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
+        uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
+        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
@@ -307,9 +318,12 @@ int32_t RendererInServer::OnWriteData(size_t length)
 int32_t RendererInServer::UpdateWriteIndex()
 {
     Trace trace("RendererInServer::UpdateWriteIndex");
+    if (managerType_ != PLAYBACK) {
+        IStreamManager::GetPlaybackManager(managerType_).TriggerStartIfNecessary();
+    }
     if (needForceWrite_ < 3 && stream_->GetWritableSize() >= spanSizeInByte_) { // 3 is maxlength - 1
         if (writeLock_.try_lock()) {
-            AUDIO_INFO_LOG("Start force write data");
+            AUDIO_DEBUG_LOG("Start force write data");
             WriteData();
             needForceWrite_++;
             writeLock_.unlock();
@@ -350,7 +364,7 @@ int32_t RendererInServer::Start()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
-    int ret = stream_->Start();
+    int ret = IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -377,7 +391,7 @@ int32_t RendererInServer::Pause()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_PAUSING;
-    int ret = stream_->Pause();
+    int ret = IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_);
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
@@ -436,12 +450,6 @@ int32_t RendererInServer::DrainAudioBuffer()
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetInfo()
-{
-    IStreamManager::GetPlaybackManager().GetInfo();
-    return SUCCESS;
-}
-
 int32_t RendererInServer::Drain()
 {
     {
@@ -476,7 +484,7 @@ int32_t RendererInServer::Stop()
         }
         status_ = I_STATUS_STOPPING;
     }
-    int ret = stream_->Stop();
+    int ret = IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_);
     if (isInnerCapEnabled_) {
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
@@ -497,7 +505,7 @@ int32_t RendererInServer::Release()
             return SUCCESS;
         }
     }
-    int32_t ret = IStreamManager::GetPlaybackManager().ReleaseRender(streamIndex_);
+    int32_t ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
@@ -645,12 +653,26 @@ int32_t StreamCallbacks::OnWriteData(size_t length)
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    return stream_->SetOffloadMode(state, isAppBack);
+    int32_t ret = stream_->SetOffloadMode(state, isAppBack);
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->UpdateMaxLength(350); // 350 for cover offload
+        }
+    }
+    return ret;
 }
 
 int32_t RendererInServer::UnsetOffloadMode()
 {
-    return stream_->UnsetOffloadMode();
+    int32_t ret = stream_->UnsetOffloadMode();
+    if (isInnerCapEnabled_) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->UpdateMaxLength(20); // 20 for unset offload
+        }
+    }
+    return ret;
 }
 
 int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
@@ -667,6 +689,24 @@ int32_t RendererInServer::OffloadSetVolume(float volume)
 int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
 {
     return stream_->UpdateSpatializationState(spatializationEnabled, headTrackingEnabled);
+}
+
+int32_t RendererInServer::GetStreamManagerType() const noexcept
+{
+    return managerType_;
+}
+
+bool RendererInServer::IsHightResolution() const noexcept
+{
+    if ((processConfig_.deviceType == DEVICE_TYPE_WIRED_HEADSET ||
+        processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
+        processConfig_.streamType == STREAM_MUSIC && processConfig_.streamInfo.samplingRate >= SAMPLE_RATE_48000 &&
+        processConfig_.streamInfo.format >= SAMPLE_S24LE) {
+        if (IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetStreamCount() <= 0) {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

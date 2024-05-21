@@ -352,8 +352,7 @@ int AudioManagerStub::HandleSetOutputDeviceSink(MessageParcel &data, MessageParc
     CHECK_AND_RETURN_RET_LOG(deviceType >= DEVICE_TYPE_NONE && deviceType <= DEVICE_TYPE_MAX, AUDIO_ERR,
         "Set output device sink failed, please check log");
     std::string sinkName = data.ReadString();
-    bool ret = SetOutputDeviceSink(deviceType, sinkName);
-    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "Set output device sink failed, please check log");
+    SetOutputDeviceSink(deviceType, sinkName);
     return AUDIO_OK;
 }
 
@@ -531,6 +530,12 @@ int AudioManagerStub::HandleGetMaxAmplitude(MessageParcel &data, MessageParcel &
     int32_t deviceType = data.ReadInt32();
     float result = GetMaxAmplitude(isOutputDevice, deviceType);
     reply.WriteFloat(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleResetAudioEndpoint(MessageParcel &data, MessageParcel &reply)
+{
+    ResetAudioEndpoint();
     return AUDIO_OK;
 }
 

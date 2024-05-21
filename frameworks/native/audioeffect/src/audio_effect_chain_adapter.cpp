@@ -111,9 +111,11 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
     }
     if (audioEffectChainManager->GetOffloadEnabled()) {
         audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Register");
+        AUDIO_DEBUG_LOG("registerEffectChainCountBackupMap");
         return SUCCESS;
     }
     if (audioEffectChainManager->CreateAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
+        AUDIO_DEBUG_LOG("createAudioEffectChainDynamic");
         return ERROR;
     }
     return SUCCESS;
@@ -136,9 +138,11 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
     }
     if (audioEffectChainManager->GetOffloadEnabled()) {
         audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Deregister");
+        AUDIO_DEBUG_LOG("deRegisterEffectChainCountBackupMap");
         return SUCCESS;
     }
     if (audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneTypeString) != SUCCESS) {
+        AUDIO_DEBUG_LOG("releaseAudioEffectChainDynamic");
         return ERROR;
     }
     return SUCCESS;
@@ -172,18 +176,6 @@ int32_t EffectChainManagerVolumeUpdate(const char *sessionID, const uint32_t vol
     }
     return SUCCESS;
 }
-
-#ifdef WINDOW_MANAGER_ENABLE
-int32_t EffectChainManagerRotationUpdate(const uint32_t rotationState)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    if (audioEffectChainManager->EffectRotationUpdate(rotationState) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
-}
-#endif
 
 uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap)
 {
@@ -250,12 +242,7 @@ bool EffectChainManagerCheckA2dpOffload()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string effectChainManagerDeviceType = audioEffectChainManager->GetDeviceTypeName();
-    std::string effectChainManagerDeviceSink = audioEffectChainManager->GetDeviceSinkName();
-    if ((effectChainManagerDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") && (effectChainManagerDeviceSink == "Speaker")) {
-        return true;
-    }
-    return false;
+    return audioEffectChainManager->CheckA2dpOffload();
 }
 
 int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack)

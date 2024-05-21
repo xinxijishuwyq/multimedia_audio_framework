@@ -300,12 +300,24 @@ enum AudioSpatializationSceneType {
     SPATIALIZATION_SCENE_TYPE_MUSIC = 1,
     SPATIALIZATION_SCENE_TYPE_MOVIE = 2,
     SPATIALIZATION_SCENE_TYPE_AUDIOBOOK = 3,
+    SPATIALIZATION_SCENE_TYPE_MAX = SPATIALIZATION_SCENE_TYPE_AUDIOBOOK,
 };
 
 const std::unordered_map<DeviceType, std::vector<std::string>> HDI_EFFECT_LIB_MAP {
     {DEVICE_TYPE_SPEAKER, {"libspeaker_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966oo"}},
     {DEVICE_TYPE_BLUETOOTH_A2DP, {"libspatialization_processing_dsp", "aaaabbbb-8888-9999-6666-aabbccdd9966gg"}},
 };
+
+const std::unordered_map<std::string, uint8_t> EFFECT_CHAIN_TYPE_MAP {
+    {"UNKNOWN", 0},
+    {"NONE", 1},
+    {"SCENE_MUSIC", 2},
+    {"SCENE_MOVIE", 3},
+    {"SCENE_GAME", 4},
+    {"SCENE_SPEECH", 5},
+    {"SCENE_RING", 6},
+    {"SCENE_OTHERS", 7}
+} ;
 
 struct AudioRendererInfoForSpatialization {
     RendererState rendererState;

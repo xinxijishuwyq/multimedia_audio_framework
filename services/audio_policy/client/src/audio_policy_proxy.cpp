@@ -558,7 +558,7 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioCapturerFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    int validSize = 20; // Use 20 as limit.
+    uint32_t validSize = 20; // Use 20 as limit.
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
@@ -937,6 +937,44 @@ uint32_t AudioPolicyProxy::GetSinkLatencyFromXml()
     return reply.ReadUint32();
 }
 
+int32_t AudioPolicyProxy::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_FLAG_INVALID, "WriteInterfaceToken failed");
+
+    ret = rendererInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_FLAG_INVALID, "Marshalling rendererInfo failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_OUTPUT_STREAM_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_FLAG_INVALID, "Failed to send request, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_FLAG_INVALID, "WriteInterfaceToken failed");
+
+    ret = capturerInfo.Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_FLAG_INVALID, "Marshalling capturerInfo failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_PREFERRED_INPUT_STREAM_TYPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_FLAG_INVALID, "Failed to send request, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object)
 {
@@ -1286,7 +1324,7 @@ static Stream PostprocessProcess(MessageParcel &reply)
     return stream;
 }
 
-static int32_t QueryEffectSceneModeChkReply(int countPre, int countPost)
+static int32_t QueryEffectSceneModeChkReply(uint32_t countPre, uint32_t countPost)
 {
     CHECK_AND_RETURN_RET_LOG((countPre >= 0) && (countPre <= AUDIO_EFFECT_COUNT_UPPER_LIMIT), -1,
         "QUERY_EFFECT_SCENEMODE read replyParcel failed");
@@ -1297,7 +1335,7 @@ static int32_t QueryEffectSceneModeChkReply(int countPre, int countPost)
 
 int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
-    int i;
+    uint32_t i;
     int32_t error;
     MessageParcel data;
     MessageParcel reply;
@@ -1307,9 +1345,9 @@ int32_t AudioPolicyProxy::QueryEffectSceneMode(SupportedEffectConfig &supportedE
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::QUERY_EFFECT_SCENEMODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
-    int countPre = reply.ReadInt32();
-    int countPost = reply.ReadInt32();
-    int32_t countPostMap = reply.ReadInt32();
+    uint32_t countPre = reply.ReadUint32();
+    uint32_t countPost = reply.ReadUint32();
+    uint32_t countPostMap = reply.ReadUint32();
     error = QueryEffectSceneModeChkReply(countPre, countPost);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get scene & mode failed, error: %d", error);
     // preprocess
@@ -1596,79 +1634,6 @@ int32_t AudioPolicyProxy::SetHeadTrackingEnabled(const bool enable)
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_HEAD_TRACKING_ENABLED), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
         "SetHeadTrackingEnabled failed, error: %{public}d", error);
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "Event object is null");
-
-    data.WriteRemoteObject(object);
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_SPATIALIZATION_ENABLED_EVENT), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "failed , error: %{public}d", error);
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "Event object is null");
-
-    data.WriteRemoteObject(object);
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::REGISTER_HEAD_TRACKING_ENABLED_EVENT), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
-        "RegisterHeadTrackingEnabledEventListener failed , error: %{public}d", error);
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::UnregisterSpatializationEnabledEventListener()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
-
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_SPATIALIZATION_ENABLED_EVENT), data, reply, option);
-    if (error != ERR_NONE) {
-        AUDIO_ERR_LOG("UnregisterSpatializationEnabledEventListener failed , error: %{public}d", error);
-        return ERROR;
-    }
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::UnregisterHeadTrackingEnabledEventListener()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
-
-    int32_t error = Remote() ->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::UNREGISTER_HEAD_TRACKING_ENABLED_EVENT), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR,
-        "UnregisterHeadTrackingEnabledEventListener failed , error: %{public}d", error);
-
     return reply.ReadInt32();
 }
 

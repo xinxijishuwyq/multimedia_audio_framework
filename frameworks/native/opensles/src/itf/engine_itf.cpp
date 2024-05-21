@@ -19,6 +19,7 @@ using namespace OHOS::AudioStandard;
 
 static SLuint32 audioPlayerId = 0;
 static SLuint32 audioRecorderId = 0;
+static std::mutex playerIdMutex;
 
 static SLresult CreateLEDDevice(
     SLEngineItf self, SLObjectItf *pDevice, SLuint32 deviceID, SLuint32 numInterfaces,
@@ -46,7 +47,9 @@ static SLresult CreateAudioPlayer(
     if (thiz == nullptr) {
         return SL_RESULT_PARAMETER_INVALID;
     }
-    thiz->mId = audioPlayerId;
+    std::unique_lock<std::mutex> lock(playerIdMutex);
+    thiz->mId = audioPlayerId++;
+    lock.unlock();
     IObjectInit(&thiz->mObject);
     IPlayInit(&thiz->mPlay, audioPlayerId);
     IVolumeInit(&thiz->mVolume, audioPlayerId);
@@ -57,7 +60,6 @@ static SLresult CreateAudioPlayer(
     if (ret != SL_RESULT_SUCCESS) {
         return SL_RESULT_RESOURCE_ERROR;
     }
-    audioPlayerId++;
 
     return SL_RESULT_SUCCESS;
 }

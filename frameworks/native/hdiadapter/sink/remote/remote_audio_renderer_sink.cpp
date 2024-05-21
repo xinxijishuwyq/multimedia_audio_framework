@@ -204,6 +204,7 @@ void RemoteAudioRendererSinkInner::ClearRender()
 
 void RemoteAudioRendererSinkInner::DeInit()
 {
+    Trace trace("RemoteAudioRendererSinkInner::DeInit");
     std::lock_guard<std::mutex> lock(g_rendererSinksMutex);
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::DeInit");
     ClearRender();
@@ -388,6 +389,7 @@ float RemoteAudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t RemoteAudioRendererSinkInner::Start(void)
 {
+    Trace trace("RemoteAudioRendererSinkInner::Start");
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Start");
     std::lock_guard<std::mutex> lock(createRenderMutex_);
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_REMOTE_RENDER_SINK_FILENAME, &dumpFile_);
@@ -410,6 +412,7 @@ int32_t RemoteAudioRendererSinkInner::Start(void)
 
 int32_t RemoteAudioRendererSinkInner::Stop(void)
 {
+    Trace trace("RemoteAudioRendererSinkInner::Stop");
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Stop");
     if (!started_.load()) {
         AUDIO_INFO_LOG("Remote render is already stopped.");
@@ -442,6 +445,7 @@ int32_t RemoteAudioRendererSinkInner::Pause(void)
 
 int32_t RemoteAudioRendererSinkInner::Resume(void)
 {
+    Trace trace("RemoteAudioRendererSinkInner::Resume");
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Resume");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Resume invalid state!");
 
@@ -459,6 +463,7 @@ int32_t RemoteAudioRendererSinkInner::Resume(void)
 
 int32_t RemoteAudioRendererSinkInner::Reset(void)
 {
+    Trace trace("RemoteAudioRendererSinkInner::Reset");
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Reset");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Reset invalid state!");
 
@@ -470,6 +475,7 @@ int32_t RemoteAudioRendererSinkInner::Reset(void)
 
 int32_t RemoteAudioRendererSinkInner::Flush(void)
 {
+    Trace trace("RemoteAudioRendererSinkInner::Flush");
     AUDIO_INFO_LOG("RemoteAudioRendererSinkInner::Flush");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "Flush invalid state!");
 
@@ -528,6 +534,7 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
             audioCategory = AudioCategory::AUDIO_IN_MEDIA;
             break;
         case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_VOICE_RINGING:
             audioCategory = AudioCategory::AUDIO_IN_RINGTONE;
             break;
         case AUDIO_SCENE_PHONE_CALL:
@@ -603,7 +610,7 @@ int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, Devic
 {
     AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
         audioScene, activeDevice);
-    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene <= AUDIO_SCENE_PHONE_CHAT,
+    CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
 
     int32_t ret = OpenOutput(DEVICE_TYPE_SPEAKER);

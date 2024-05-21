@@ -44,12 +44,14 @@ public:
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
     void OnRendererDeviceChange(const uint32_t sessionId,
         const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+    void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
+    void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
     void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
+    void OnSpatializationEnabledChange(const bool &enabled) override;
+    void OnHeadTrackingEnabledChange(const bool &enabled) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
-
-    void UpdateCapturerDeviceInfo(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
 };
 } // namespace AudioStandard
 } // namespace OHOS

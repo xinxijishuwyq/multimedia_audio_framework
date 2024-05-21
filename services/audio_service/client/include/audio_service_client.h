@@ -442,6 +442,15 @@ public:
      */
     float GetStreamVolume();
 
+    /**
+     * @brief Set the track duck volume
+     *
+     * @param volume The duck volume to be set for the current track.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetStreamDuckVolume(float volume);
+
     int32_t SetStreamOffloadMode(int32_t state, bool isAppBack);
     int32_t UnsetStreamOffloadMode();
     /**
@@ -780,12 +789,14 @@ private:
     int32_t WaitWriteable(size_t length, size_t &writableSize);
     int32_t AdjustAcache(const StreamBuffer &stream, size_t &cachedLen);
     int32_t SetStreamVolumeInML(float volume);
+    int32_t SetStreamDuckVolumeInML(float volume);
     void HandleRenderPositionCallbacks(size_t bytesWritten);
     void HandleCapturePositionCallbacks(size_t bytesRead);
 
     void WriteStateChangedSysEvents();
     int32_t SetPaProplist(pa_proplist *propList, pa_channel_map &map,
         AudioStreamParams &audioParams, const std::string &streamName, const std::string &streamStartTime);
+    int32_t HandleRenderUpdateTimingInfo();
 
     void UpdatePropListForFlush();
     void TimeoutRecover(int error);

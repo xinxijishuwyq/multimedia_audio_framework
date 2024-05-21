@@ -28,6 +28,9 @@ class NapiAudioError {
 public:
     static napi_status ThrowError(napi_env env, const char *napiMessage, int32_t napiCode);
     static void ThrowError(napi_env env, int32_t code);
+    static void ThrowError(napi_env env, int32_t code, const std::string &errMessage);
+    static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode);
+    static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode, const std::string &errMessage);
     static std::string GetMessageByCode(int32_t &code);
 };
 

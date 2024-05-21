@@ -30,6 +30,9 @@
 #include "hisysevent.h"
 #include <set>
 
+#include "media_monitor_manager.h"
+#include "event_bean.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -708,7 +711,6 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
     UserData *userData = reinterpret_cast<UserData*>(userdata);
     PulseAudioServiceAdapterImpl *thiz = userData->thiz;
 
-    AUDIO_DEBUG_LOG("GetSinkInputInfoVolumeCb enter.");
     if (eol < 0) {
         pa_threaded_mainloop_signal(thiz->mMainLoop, 1);
         delete userData;
@@ -725,45 +727,66 @@ void PulseAudioServiceAdapterImpl::PaGetSinkInputInfoVolumeCb(pa_context *c, con
 
     CHECK_AND_RETURN_LOG(i->proplist != nullptr, "Invalid Proplist for sink input (%{public}d).", i->index);
 
-    std::string streamMode = pa_proplist_gets(i->proplist, "stream.mode");
-    if (streamMode == DUP_STREAM) { return; }
+    const char *streamMode = pa_proplist_gets(i->proplist, "stream.mode");
+    if (streamMode != nullptr && streamMode == DUP_STREAM) { return; }
 
+    HandleSinkInputInfoVolume(c, i, userdata);
+}
+
+void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, const pa_sink_input_info *i,
+    void *userdata)
+{
+    UserData *userData = reinterpret_cast<UserData*>(userdata);
+    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
     const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
+    const char *streamDuckVolume = pa_proplist_gets(i->proplist, "stream.duckVolumeFactor");
     const char *sessionCStr = pa_proplist_gets(i->proplist, "stream.sessionID");
     int32_t uid = -1;
     int32_t pid = -1;
     CastValue<int32_t>(uid, pa_proplist_gets(i->proplist, "stream.client.uid"));
     CastValue<int32_t>(pid, pa_proplist_gets(i->proplist, "stream.client.pid"));
     CHECK_AND_RETURN_LOG((streamtype != nullptr) && (streamVolume != nullptr) && (streamPowerVolume != nullptr) &&
-        (sessionCStr != nullptr), "Invalid Stream parameter info.");
+        (streamDuckVolume != nullptr) && (sessionCStr != nullptr), "Invalid Stream parameter info.");
 
     uint32_t sessionID = 0;
     CastValue<uint32_t>(sessionID, sessionCStr);
-
     sinkIndexSessionIDMap[i->index] = sessionID;
 
     string streamType(streamtype);
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
+    float duckVolumeFactor = atof(streamDuckVolume);
     AudioStreamType streamTypeID = thiz->GetIdByStreamType(streamType);
     auto volumePair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamTypeID);
     float volumeDbCb = volumePair.first;
     int32_t volumeLevel = volumePair.second;
-    float vol = volumeDbCb * volumeFactor * powerVolumeFactor;
+    float vol = volumeDbCb * volumeFactor * powerVolumeFactor * duckVolumeFactor;
 
     pa_cvolume cv = i->volume;
     uint32_t volume = pa_sw_volume_from_linear(vol);
     pa_cvolume_set(&cv, i->channel_map.channels, volume);
 
     if (streamTypeID == userData->streamType || userData->isSubscribingCb) {
+        AUDIO_INFO_LOG("set pa volume type:%{public}d id:%{public}d vol:%{public}f db:%{public}f stream:%{public}f " \
+            "power:%{public}f duck:%{public}f", streamTypeID, sessionID, vol, volumeDbCb, volumeFactor,
+            powerVolumeFactor, duckVolumeFactor);
         pa_operation_unref(pa_context_set_sink_input_volume(c, i->index, &cv, nullptr, nullptr));
     }
-    HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
-        "VOLUME_CHANGE", HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        "ISOUTPUT", 1, "STREAMID", sessionID, "APP_UID", uid, "APP_PID", pid, "STREAMTYPE", streamTypeID, "VOLUME", vol,
-        "SYSVOLUME", volumeLevel, "VOLUMEFACTOR", volumeFactor, "POWERVOLUMEFACTOR", powerVolumeFactor);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::VOLUME_CHANGE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ISOUTPUT", 1);
+    bean->Add("STREAMID", static_cast<int32_t>(sessionID));
+    bean->Add("APP_UID", uid);
+    bean->Add("APP_PID", pid);
+    bean->Add("STREAMTYPE", streamTypeID);
+    bean->Add("VOLUME", vol);
+    bean->Add("SYSVOLUME", volumeLevel);
+    bean->Add("VOLUMEFACTOR", volumeFactor);
+    bean->Add("POWERVOLUMEFACTOR", powerVolumeFactor);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_source_output_info *i, int eol,
@@ -830,8 +853,8 @@ void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_
     CHECK_AND_RETURN_LOG(i->proplist != nullptr,
         "Invalid Proplist for sink input (%{public}d).", i->index);
 
-    std::string streamMode = pa_proplist_gets(i->proplist, "stream.mode");
-    if (streamMode == DUP_STREAM) {
+    const char *streamMode = pa_proplist_gets(i->proplist, "stream.mode");
+    if (streamMode != nullptr && streamMode == DUP_STREAM) {
         AUDIO_INFO_LOG("Dup stream dismissed:%{public}u", i->index);
         return;
     }

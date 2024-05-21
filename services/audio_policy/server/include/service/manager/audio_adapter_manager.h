@@ -65,9 +65,9 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, bool isFromVolumeKey = false);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType, bool isFromVolumeKey = false);
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     float GetSystemVolumeDb(AudioStreamType streamType);
 
@@ -149,7 +149,7 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
-    int32_t Dump(int32_t fd, const std::vector<std::u16string> &args);
+    void SafeVolumeDump(std::string &dumpString);
 
     int32_t DoRestoreData();
     SafeStatus GetCurrentDeviceSafeStatus(DeviceType deviceType);
@@ -163,6 +163,10 @@ public:
     int32_t GetSafeVolumeLevel() const;
 
     int32_t GetSafeVolumeTimeout() const;
+
+    int32_t GetCurActivateCount(void) const;
+
+    void HandleKvData(bool isFirstBoot);
 private:
     friend class PolicyCallbackImpl;
 
@@ -200,7 +204,6 @@ private:
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
-    std::string GetVolumeGroupForDevice(DeviceType deviceType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
@@ -212,8 +215,6 @@ private:
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
-    void UpdateRingerModeForVolume(AudioStreamType streamType, int32_t volumeLevel);
-    void UpdateMuteStatusForVolume(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDbForVolumeTypeGroup(const std::vector<AudioStreamType> &volumeTypeGroup, float volumeDb);
     bool GetStreamMuteInternal(AudioStreamType streamType);
@@ -228,6 +229,7 @@ private:
     void InitSafeStatus(bool isFirstBoot);
     void InitSafeTime(bool isFirstBoot);
     void ConvertSafeTime(void);
+    void UpdateSafeVolume();
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
     {
@@ -261,11 +263,14 @@ private:
     int64_t safeActiveTime_ = 0;
     int64_t safeActiveBtTime_ = 0;
     int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
+    bool isWiredBoot_ = true;
+    bool isBtBoot_ = true;
+    bool isBtFirstSetVolume_ = true;
+    int32_t curActiveCount_ = 0;
 
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     AudioSessionCallback *sessionCallback_;
     VolumeDataMaintainer &volumeDataMaintainer_;
-    std::shared_ptr<AudioOsAccountInfo> accountInfoObs_ = nullptr;
     bool isVolumeUnadjustable_;
     bool testModeOn_ {false};
     float getSystemVolumeInDb_;
@@ -339,28 +344,6 @@ public:
         }
     }
 
-private:
-    AudioAdapterManager *audioAdapterManager_;
-};
-
-class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
-public:
-    explicit AudioOsAccountInfo(const AccountSA::OsAccountSubscribeInfo &subscribeInfo,
-        AudioAdapterManager *audioAdapterManager) : AccountSA::OsAccountSubscriber(subscribeInfo),
-        audioAdapterManager_(audioAdapterManager) {}
-
-    ~AudioOsAccountInfo()
-    {
-        AUDIO_WARNING_LOG("Destructor AudioOsAccountInfo");
-    }
-
-    void OnAccountsChanged(const int &id) override
-    {
-        AUDIO_INFO_LOG("OnAccountsChanged received, id: %{public}d", id);
-        if (audioAdapterManager_ != nullptr) {
-            audioAdapterManager_->NotifyAccountsChanged(id);
-        }
-    }
 private:
     AudioAdapterManager *audioAdapterManager_;
 };

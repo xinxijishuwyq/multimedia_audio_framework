@@ -62,11 +62,14 @@ public:
 
     int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) override;
     int32_t ReleaseRender(uint32_t streamIndex_) override;
+    int32_t StartRender(uint32_t streamIndex) override;
+    int32_t StopRender(uint32_t streamIndex) override;
+    int32_t PauseRender(uint32_t streamIndex) override;
+    int32_t GetStreamCount() const noexcept override;
+    int32_t TriggerStartIfNecessary() override;
     int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) override;
     int32_t ReleaseCapturer(uint32_t streamIndex_) override;
     uint32_t ConvertChLayoutToPaChMap(const uint64_t &channelLayout, pa_channel_map &paMap);
-
-    int32_t GetInfo() override;
 
 private:
     // audio channel index
@@ -110,6 +113,7 @@ private:
     
     void SetHighResolution(pa_proplist *propList, AudioProcessConfig &processConfig, uint32_t sessionId);
     bool CheckHighResolution(const AudioProcessConfig &processConfig);
+    void SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig);
 
     std::mutex paElementsMutex_;
     pa_threaded_mainloop *mainLoop_;
@@ -122,7 +126,7 @@ private:
     bool isMainLoopStarted_;
     ManagerType managerType_ = PLAYBACK;
     bool waitConnect_ = true;
-    AudioEffectMode enhanceMode_ = EFFECT_DEFAULT;
+    AudioEffectMode enhanceMode_ = EFFECT_NONE;
     uint32_t highResolutionIndex_ = 0;
     bool isHighResolutionExist_ = false;
 };

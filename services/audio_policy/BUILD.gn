@@ -16,8 +16,6 @@ import("../../accessibility.gni")
 import("../../bluetooth_part.gni")
 import("../../config.gni")
 
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 group("audio_policy_packages") {
   deps = [
     ":audio_converter_config",
@@ -88,6 +86,7 @@ ohos_shared_library("audio_dump") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -95,32 +94,15 @@ ohos_shared_library("audio_dump") {
 
   public_configs = [ ":audio_policy_public_config" ]
 
-  deps = [
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "//third_party/bounds_checking_function:libsec_shared",
-  ]
-
-  include_dirs = [
-    "$pulseaudio_build_path/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "../../../../drivers/peripheral/audio/interfaces/include",
-    "../../../../foundation/communication/bluetooth/interfaces/inner_api/include",
-    "../../../../foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "../../../../foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "../../../../foundation/systemabilitymgr/safwk/services/safwk/include",
-    "../../../../utils/system/safwk/native/include",
-    "//third_party/bounds_checking_function/include",
-    "//third_party/cJSON",
-    "//third_party/libxml2/include",
-    "//third_party/pulseaudio/src",
-    "//third_party/pulseaudio/confgure/src",
-    "//third_party/pulseaudio/include",
-  ]
-
   external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "cJSON:cjson",
     "c_utils:utils",
     "hilog:libhilog",
+    "pulseaudio:pulse",
   ]
+
+  public_external_deps = [ "libxml2:libxml2" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -131,6 +113,7 @@ ohos_shared_library("audio_policy_service") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   install_enable = true
@@ -151,6 +134,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/audio_device_manager.cpp",
     "server/src/service/audio_policy_service.cpp",
     "server/src/service/audio_state_manager.cpp",
+    "server/src/service/config/audio_adapter_info.cpp",
     "server/src/service/config/audio_converter_parser.cpp",
     "server/src/service/config/audio_device_parser.cpp",
     "server/src/service/config/audio_focus_parser.cpp",
@@ -166,6 +150,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/listener/power_state_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
+    "server/src/service/manager/audio_setting_provider.cpp",
     "server/src/service/manager/pnp_server/audio_input_thread.cpp",
     "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
     "server/src/service/manager/pnp_server/audio_socket_thread.cpp",
@@ -206,19 +191,6 @@ ohos_shared_library("audio_policy_service") {
     "../audio_policy:audio_dump",
     "../audio_service:audio_client",
     "../audio_service:audio_common",
-    "//third_party/libxml2:xml2",
-  ]
-
-  include_dirs = [
-    "$pulseaudio_build_path/include",
-    "../../../../commonlibrary/c_utils/base/include",
-    "../../../../drivers/peripheral/audio/interfaces/include",
-    "../../../../drivers/peripheral/audio/hal/hdi_binder/server/include/",
-    "../../../../drivers/peripheral/audio/hdi_service/primary_impl/include/",
-    "//third_party/libxml2/include",
-    "//third_party/pulseaudio/src",
-    "//third_party/pulseaudio/confgure/src",
-    "//third_party/pulseaudio/include",
   ]
 
   external_deps = [
@@ -233,6 +205,7 @@ ohos_shared_library("audio_policy_service") {
     "access_token:libprivacy_sdk",
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -250,12 +223,17 @@ ohos_shared_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  public_external_deps = [ "libxml2:libxml2" ]
 
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
@@ -274,7 +252,6 @@ ohos_shared_library("audio_policy_service") {
   if (bluetooth_part_enable == true) {
     deps += [ "../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
     external_deps += [ "bluetooth:btframework" ]
-    include_dirs += [ "../../../../foundation/communication/bluetooth/interfaces/inner_api/include" ]
   }
 
   if (audio_framework_feature_input) {
@@ -392,10 +369,6 @@ config("audio_policy_client_config") {
 }
 
 ohos_shared_library("audio_policy_client") {
-  sanitize = {
-    cfi = true
-    debug = false
-  }
   install_enable = true
 
   defines = []
@@ -422,12 +395,10 @@ ohos_shared_library("audio_policy_client") {
 
   public_configs = [ ":audio_policy_client_config" ]
 
-  include_dirs = [
-    "//third_party/bounds_checking_function/include",
-    "../../frameworks/native/audioutils/include",
-  ]
+  include_dirs = [ "../../frameworks/native/audioutils/include" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
@@ -456,12 +427,12 @@ ohos_executable("audio_policy_test") {
   deps = [
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
-    "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  include_dirs = [ "//third_party/bounds_checking_function/include" ]
+  include_dirs = []
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",

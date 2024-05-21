@@ -24,7 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
-    if (streamUsage == STREAM_USAGE_RINGTONE) {
+    if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
         AUDIO_INFO_LOG("Ringtone skip user select");
         return make_unique<AudioDeviceDescriptor>();
     }

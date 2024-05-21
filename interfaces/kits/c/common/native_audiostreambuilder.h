@@ -234,11 +234,12 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetFrameSizeInCallback(OH_AudioStrea
  * @since 12
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create().
- * @param privacy The privacy type to be set.{@link #PRIVACY_TYPE_PUBLIC} or {@link #PRIVACY_TYPE_PRIVATE}.
+ * @param privacy The privacy type to be set.{@link #AUDIO_STREAM_PRIVACY_TYPE_PUBLIC} or
+ *     {@link #AUDIO_STREAM_PRIVACY_TYPE_PRIVATE}.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererPrivacy(OH_AudioStreamBuilder* builder,
-    OH_AudioStream_AudioPrivacyType privacy);
+    OH_AudioStream_PrivacyType privacy);
 
 /*
  * Set the interrupt mode of the stream client

@@ -110,7 +110,7 @@ int32_t AudioStreamManager::GetEffectInfoArray(AudioSceneEffectInfo &audioSceneE
     uint32_t streamNum = supportedEffectConfig.postProcessNew.stream.size();
     if (streamNum >= 0) {
         int32_t sceneFlag = 0;
-        for (int32_t i = 0; i < streamNum; i++) {
+        for (uint32_t i = 0; i < streamNum; i++) {
             if (effectScene == supportedEffectConfig.postProcessNew.stream[i].scene) {
                 UpdateEffectInfoArray(supportedEffectConfig, i, audioSceneEffectInfo);
                 sceneFlag = 1;
@@ -138,6 +138,7 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_VOICE_ASSISTANT:
         case STREAM_ALARM:
         case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:{
             bool ret = PermissionUtil::VerifySelfPermission();

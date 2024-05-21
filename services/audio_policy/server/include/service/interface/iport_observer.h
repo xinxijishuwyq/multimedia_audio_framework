@@ -23,7 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 class IPortObserver {
 public:
-    virtual void OnAudioPolicyXmlParsingCompleted(const std::map<AdaptersType, AudioAdapterInfo>
+    virtual void OnAudioPolicyXmlParsingCompleted(const std::unordered_map<AdaptersType, AudioAdapterInfo>
         adapterInfoMap) = 0;
     virtual void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata) = 0;
     virtual void OnUpdateRouteSupport(bool isSupported) = 0;
@@ -32,6 +32,7 @@ public:
     virtual void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData) = 0;
     virtual void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData) = 0;
     virtual void OnGlobalConfigsParsed(GlobalConfigs &globalConfig) = 0;
+    virtual void OnVoipConfigParsed(bool enableFastVoip) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

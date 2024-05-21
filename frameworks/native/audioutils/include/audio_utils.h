@@ -22,6 +22,10 @@
 #include <ctime>
 #include <sys/time.h>
 
+#include <cstdio>
+#include <queue>
+#include "securec.h"
+
 #include "audio_info.h"
 
 #define AUDIO_MS_PER_SECOND 1000
@@ -51,6 +55,7 @@ const int32_t YEAR_BASE = 1900;
 const int32_t DECIMAL_EXPONENT = 10;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
+const uint32_t STRING_BUFFER_SIZE = 4096;
 
 class Trace {
 public:
@@ -136,7 +141,7 @@ enum AudioDumpFileType {
     AUDIO_PULSE = 2,
 };
 
-const std::string DUMP_SERVER_PARA = "sys.audio.dump.writehdi.enable";
+const std::string DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
 const std::string DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
 const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
@@ -145,6 +150,7 @@ const std::string DUMP_AUDIO_RENDERER_FILENAME = "dump_client_audio.pcm";
 const std::string DUMP_AUDIO_CAPTURER_FILENAME = "dump_client_capturer_audio.pcm";
 const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
 const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
+const std::string DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
 const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
 const std::string DUMP_RENDERER_STREAM_FILENAME = "dump_renderer_stream.pcm";
 const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
@@ -165,6 +171,26 @@ public:
 private:
     static FILE *OpenDumpFileInner(std::string para, std::string fileName, AudioDumpFileType fileType);
     static void ChangeDumpFileState(std::string para, FILE **dumpFile, std::string fileName);
+};
+
+template <typename...Args>
+void AppendFormat(std::string& out, const char* fmt, Args&& ... args)
+{
+    char buf[STRING_BUFFER_SIZE] = {0};
+    int len = ::sprintf_s(buf, sizeof(buf), fmt, args...);
+    if (len <= 0) {
+        return;
+    }
+    out += buf;
+}
+
+class AudioInfoDumpUtils {
+public:
+    static const std::string GetStreamName(AudioStreamType streamType);
+    static const std::string GetDeviceTypeName(DeviceType deviceType);
+    static const std::string GetConnectTypeName(ConnectType connectType);
+    static const std::string GetSourceName(SourceType sourceType);
+    static const std::string GetDeviceVolumeTypeName(DeviceVolumeType deviceType);
 };
 
 template<typename T>

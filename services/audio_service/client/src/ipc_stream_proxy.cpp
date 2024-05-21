@@ -211,7 +211,7 @@ int32_t IpcStreamProxy::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioTime failed, error: %{public}d", ret);
     framePos = reply.ReadUint64();
-    timestamp = reply.ReadInt64();
+    timestamp = reply.ReadUint64();
     return ret;
 }
 
@@ -228,7 +228,7 @@ int32_t IpcStreamProxy::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "error: %{public}d", ret);
     framePos = reply.ReadUint64();
-    timestamp = reply.ReadInt64();
+    timestamp = reply.ReadUint64();
     return ret;
 }
 
@@ -468,6 +468,18 @@ int32_t IpcStreamProxy::UpdateSpatializationState(bool spatializationEnabled, bo
     ret = reply.ReadInt32();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
     return ret;
+}
+
+int32_t IpcStreamProxy::GetStreamManagerType()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_GET_STREAM_MANAGER_TYPE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
+    return reply.ReadInt32();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -66,6 +66,7 @@ private:
     void ParsePipeInfos(xmlNode &node, PipeInfo &pipeInfo);
     void ParseStreamProps(xmlNode &node, PipeInfo &pipeInfo);
     void ParseConfigs(xmlNode &node, PipeInfo &pipeInfo);
+    void HandleConfigFlagAndUsage(ConfigInfo &configInfo, PipeInfo &pipeInfo);
     void ParseDevices(xmlNode &node, AudioAdapterInfo &adapterInfo);
     void ParseGroups(xmlNode& node, XmlNodeType type);
     void ParseGroup(xmlNode& node, XmlNodeType type);
@@ -97,7 +98,7 @@ private:
 
     IPortObserver &portObserver_;
     xmlDoc *doc_;
-    std::map<AdaptersType, AudioAdapterInfo> adapterInfoMap_ {};
+    std::unordered_map<AdaptersType, AudioAdapterInfo> adapterInfoMap_ {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_ {};
     std::unordered_map<std::string, std::string> volumeGroupMap_;
     std::unordered_map<std::string, std::string> interruptGroupMap_;

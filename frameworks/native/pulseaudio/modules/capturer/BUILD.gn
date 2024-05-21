@@ -14,20 +14,11 @@
 import("//build/ohos.gni")
 import("../../../../../config.gni")
 
-pulseaudio_dir = "//third_party/pulseaudio"
-pulseaudio_build_path = "//third_party/pulseaudio/ohosbuild"
-
 config("capturer_config") {
   visibility = [ ":*" ]
 
-  include_dirs = [
-    "$pulseaudio_dir/include",
-    "$pulseaudio_dir/src",
-    "$pulseaudio_dir",
-    "$pulseaudio_build_path/src",
-    "$pulseaudio_build_path/include",
-    "../../../../../interfaces/inner_api/native/audiocommon/include",
-  ]
+  include_dirs =
+      [ "../../../../../interfaces/inner_api/native/audiocommon/include" ]
 
   cflags = [
     "-Wall",
@@ -42,6 +33,7 @@ ohos_shared_library("module-inner-capturer-sink") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [ "module_inner_capturer_sink.c" ]
@@ -55,14 +47,14 @@ ohos_shared_library("module-inner-capturer-sink") {
     "--no-undefined",
   ]
 
-  deps = [
-    "$pulseaudio_build_path/src:pulsecommon",
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "$pulseaudio_build_path/src/pulsecore:pulsecore",
-    "../../../audioutils:audio_utils",
-  ]
+  deps = [ "../../../audioutils:audio_utils" ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+    "pulseaudio:pulsecommon",
+    "pulseaudio:pulsecore",
+  ]
 
   public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 
@@ -74,6 +66,7 @@ ohos_shared_library("module-receiver-sink") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [ "module_receiver_sink.c" ]
@@ -87,13 +80,13 @@ ohos_shared_library("module-receiver-sink") {
     "--no-undefined",
   ]
 
-  deps = [
-    "$pulseaudio_build_path/src:pulsecommon",
-    "$pulseaudio_build_path/src/pulse:pulse",
-    "$pulseaudio_build_path/src/pulsecore:pulsecore",
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "hilog:libhilog",
+    "pulseaudio:pulse",
+    "pulseaudio:pulsecommon",
+    "pulseaudio:pulsecore",
   ]
-
-  external_deps = [ "hilog:libhilog" ]
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"

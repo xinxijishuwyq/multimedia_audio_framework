@@ -80,6 +80,8 @@ private:
     AudioStreamType GetVolumeTypeFromContentUsage(ContentType contentType, StreamUsage streamUsage);
     AudioStreamType GetStreamTypeFromSourceType(SourceType sourceType);
     void WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+    void WriterRenderStreamChangeSysEvent(AudioStreamChangeInfo &streamChangeInfo);
+    void WriterCaptureStreamChangeSysEvent(AudioStreamChangeInfo &streamChangeInfo);
     void WriteRenderStreamReleaseSysEvent(const std::unique_ptr<AudioRendererChangeInfo> &audioRendererChangeInfo);
     void WriteCaptureStreamReleaseSysEvent(const std::unique_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfo);
     void SetRendererStreamParam(AudioStreamChangeInfo &streamChangeInfo,

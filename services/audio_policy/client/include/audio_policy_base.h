@@ -125,6 +125,10 @@ public:
 
     virtual uint32_t GetSinkLatencyFromXml() = 0;
 
+    virtual int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo) = 0;
+
+    virtual int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo) = 0;
+
     virtual int32_t RegisterTracker(AudioMode &mode,
         AudioStreamChangeInfo &streamChangeInfo, const sptr<IRemoteObject> &object) = 0;
 
@@ -218,14 +222,6 @@ public:
     virtual bool IsHeadTrackingEnabled() = 0;
 
     virtual int32_t SetHeadTrackingEnabled(const bool enable) = 0;
-
-    virtual int32_t RegisterSpatializationEnabledEventListener(const sptr<IRemoteObject> &object) = 0;
-
-    virtual int32_t RegisterHeadTrackingEnabledEventListener(const sptr<IRemoteObject> &object) = 0;
-
-    virtual int32_t UnregisterSpatializationEnabledEventListener() = 0;
-
-    virtual int32_t UnregisterHeadTrackingEnabledEventListener() = 0;
 
     virtual AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage) = 0;
 

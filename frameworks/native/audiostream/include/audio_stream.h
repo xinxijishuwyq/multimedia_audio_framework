@@ -59,6 +59,7 @@ public:
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
+    int32_t SetDuckVolume(float volume) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
@@ -122,6 +123,10 @@ public:
     int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
 
     bool RestoreAudioStream() override;
+
+    bool GetOffloadEnable() override;
+    bool GetSpatializationEnabled() override;
+    bool GetHighResolutionEnabled() override;
 
 private:
     enum {
@@ -191,6 +196,8 @@ private:
 
     uint64_t lastFramePosition_ = 0;
     uint64_t lastFrameTimestamp_ = 0;
+
+    int32_t appUid_ = -1;
 };
 
 class AudioStreamPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {

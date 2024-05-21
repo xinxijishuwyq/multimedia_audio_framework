@@ -237,7 +237,7 @@ int32_t AudioSocketThread::CheckUsbDesc(struct UsbDevice *usbDevice)
         int32_t usbClass = usbDevice->desc[len + USB_IF_CLASS_OFFSET];
         int32_t subClass = usbDevice->desc[len + USB_IF_SUBCLASS_OFFSET];
         if (usbClass == USB_AUDIO_CLASS && subClass == USB_AUDIO_SUBCLASS_CTRL) {
-            AUDIO_ERR_LOG(
+            AUDIO_INFO_LOG(
                 "descType %{public}d, usbClass %{public}d, subClass %{public}d", descType, usbClass, subClass);
             return AUDIO_DEVICE_ONLINE;
         }
@@ -262,7 +262,7 @@ int32_t AudioSocketThread::ReadAndScanUsbDev(const char *devPath)
 
     while (tryTime < AUDIO_DEVICE_WAIT_TRY_TIME) {
         if (realpath(devPath, realpathRes) != NULL || (strlen(devPath) > PATH_MAX)) {
-            AUDIO_ERR_LOG("audio try[%{public}d] realpath fail[%{public}d] realpathRes [%{public}s]",
+            AUDIO_INFO_LOG("audio try[%{public}d] realpath fail[%{public}d] realpathRes [%{public}s]",
                 tryTime, errno, realpathRes);
             break;
         }
@@ -373,7 +373,7 @@ bool AudioSocketThread::DeleteAudioUsbDevice(const char *devName)
         if (g_audioUsbDeviceList[count].isUsed &&
             strncmp((char *)g_audioUsbDeviceList[count].devName, devName, strlen(devName)) == EOK) {
             g_audioUsbDeviceList[count].isUsed = false;
-            AUDIO_ERR_LOG("delete usb audio device name[%{public}s]", devName);
+            AUDIO_INFO_LOG("delete usb audio device name[%{public}s]", devName);
             return true;
         }
     }

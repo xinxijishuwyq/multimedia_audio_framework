@@ -24,22 +24,28 @@ namespace AudioStandard {
 enum ManagerType : int32_t {
     PLAYBACK = 0,
     DUP_PLAYBACK,
+    DIRECT_PLAYBACK,
+    VOIP_PLAYBACK,
     RECORDER,
 };
 
 class IStreamManager {
 public:
     ~IStreamManager() = default;
-    
-    static IStreamManager &GetPlaybackManager();
+
+    static IStreamManager &GetPlaybackManager(ManagerType managerType = PLAYBACK);
     static IStreamManager &GetRecorderManager();
     static IStreamManager &GetDupPlaybackManager();
 
     virtual int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) = 0;
     virtual int32_t ReleaseRender(uint32_t streamIndex_) = 0;
+    virtual int32_t StartRender(uint32_t streamIndex) = 0;
+    virtual int32_t StopRender(uint32_t streamIndex) = 0;
+    virtual int32_t PauseRender(uint32_t streamIndex) = 0;
+    virtual int32_t TriggerStartIfNecessary() = 0;
+    virtual int32_t GetStreamCount() const noexcept = 0;
     virtual int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) = 0;
     virtual int32_t ReleaseCapturer(uint32_t streamIndex_) = 0;
-    virtual int32_t GetInfo() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

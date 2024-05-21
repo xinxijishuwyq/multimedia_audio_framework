@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#undef LOG_TAG
+#define LOG_TAG "AudioInterruptService"
 
 #include "audio_interrupt_service.h"
 
@@ -19,6 +21,8 @@
 #include "audio_errors.h"
 #include "audio_focus_parser.h"
 #include "audio_policy_manager_listener_proxy.h"
+#include "audio_utils.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,6 +43,8 @@ inline AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInt
                audioInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) {
         return audioInterrupt.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ?
             AUDIO_SCENE_PHONE_CALL : AUDIO_SCENE_PHONE_CHAT;
+    } else if (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_RING) {
+        return AUDIO_SCENE_VOICE_RINGING;
     }
     return AUDIO_SCENE_DEFAULT;
 }
@@ -47,6 +53,7 @@ static const std::unordered_map<const AudioScene, const int> SCENE_PRIORITY = {
     // from high to low
     {AUDIO_SCENE_PHONE_CALL, 4},
     {AUDIO_SCENE_PHONE_CHAT, 3},
+    {AUDIO_SCENE_VOICE_RINGING, 2},
     {AUDIO_SCENE_RINGING, 2},
     {AUDIO_SCENE_DEFAULT, 1}
 };
@@ -74,9 +81,16 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
 
     // load configuration
     std::unique_ptr<AudioFocusParser> parser = make_unique<AudioFocusParser>();
-    CHECK_AND_RETURN_LOG(parser != nullptr, "create parser failed");
-
+    if (parser == nullptr) {
+        WriteServiceStartupError();
+    }
     CHECK_AND_RETURN_LOG(!parser->LoadConfig(focusCfgMap_), "load fail");
+
+    int32_t ret = parser->LoadConfig(focusCfgMap_);
+    if (ret) {
+        WriteServiceStartupError();
+    }
+    CHECK_AND_RETURN_LOG(!ret, "load fail");
 
     AUDIO_DEBUG_LOG("configuration loaded. mapSize: %{public}zu", focusCfgMap_.size());
 
@@ -87,12 +101,23 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     CreateAudioInterruptZoneInternal(ZONEID_DEFAULT, {});
 }
 
-void AudioInterruptService::AddDumpInfo(PolicyData &policyData)
+void AudioInterruptService::WriteServiceStartupError()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
+    bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_INTERRUPT_SERVER));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void AudioInterruptService::AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>>
+    &audioInterruptZonesMapDump)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
-        std::shared_ptr<AudioInterruptZoneDump> zoneDump = make_shared<AudioInterruptZoneDump>();
+        std::shared_ptr<AudioInterruptZone> zoneDump = make_shared<AudioInterruptZone>();
         zoneDump->zoneId = zoneId;
         zoneDump->pids = audioInterruptZone->pids;
         for (auto interruptCbInfo : audioInterruptZone->interruptCbsMap) {
@@ -102,7 +127,7 @@ void AudioInterruptService::AddDumpInfo(PolicyData &policyData)
             zoneDump->audioPolicyClientProxyCBClientPidMap.insert(audioPolicyClientProxyCBInfo.first);
         }
         zoneDump->audioFocusInfoList = audioInterruptZone->audioFocusInfoList;
-        policyData.audioInterruptZonesMapDump[zoneId] = zoneDump;
+        audioInterruptZonesMapDump[zoneId] = zoneDump;
     }
 }
 
@@ -192,7 +217,7 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "create cb failed");
 
     if (interruptClients_.find(sessionId) == interruptClients_.end()) {
-        uid_t uid = IPCSkeleton::GetCallingUid();
+        uid_t uid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         pid_t pid = IPCSkeleton::GetCallingPid();
         sptr<AudioInterruptClient> client = new AudioInterruptClient(
             shared_from_this(), callback, uid, pid, sessionId);
@@ -283,6 +308,19 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
     DeactivateAudioInterruptInternal(zoneId, audioInterrupt);
 
     return SUCCESS;
+}
+
+void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int &id)
+{
+    AUDIO_INFO_LOG("start DeactivateAudioInterrupt, current id:%{public}d", id);
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+    for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
+        for (const auto &audioFocusInfoList : audioInterruptZone->audioFocusInfoList) {
+            handler_->SendInterruptEventWithSessionIdCallback(interruptEvent,
+                audioFocusInfoList.first.sessionId);
+        }
+        audioInterruptZone->audioFocusInfoList.clear();
+    }
 }
 
 int32_t AudioInterruptService::CreateAudioInterruptZone(const int32_t zoneId, const std::set<int32_t> &pids)
@@ -573,9 +611,6 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         }
 
         SendActiveInterruptEvent(activeSessionId, interruptEvent, incomingInterrupt);
-
-        policyServer_->OffloadStreamCheck(incomingInterrupt.sessionId, incomingInterrupt.audioFocusType.streamType,
-            activeSessionId);
     }
 
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
@@ -1081,19 +1116,29 @@ int32_t AudioInterruptService::ArchiveToNewAudioInterruptZone(const int32_t &fro
         for (auto fromAudioFocusInfo : fromZoneAudioInterruptZone->audioFocusInfoList) {
             toZoneAudioInterruptZone->audioFocusInfoList.emplace_back(fromAudioFocusInfo);
         }
-
         std::shared_ptr<AudioInterruptZone> audioInterruptZone = make_shared<AudioInterruptZone>();
         audioInterruptZone->zoneId = toZoneId;
         toZoneAudioInterruptZone->pids.swap(audioInterruptZone->pids);
         toZoneAudioInterruptZone->interruptCbsMap.swap(audioInterruptZone->interruptCbsMap);
         toZoneAudioInterruptZone->audioPolicyClientProxyCBMap.swap(audioInterruptZone->audioPolicyClientProxyCBMap);
         toZoneAudioInterruptZone->audioFocusInfoList.swap(audioInterruptZone->audioFocusInfoList);
-
         zonesMap_.insert_or_assign(toZoneId, audioInterruptZone);
         zonesMap_.erase(fromZoneIt);
     }
-
+    WriteFocusMigrateEvent(toZoneId);
     return SUCCESS;
+}
+
+void AudioInterruptService::WriteFocusMigrateEvent(const int32_t &toZoneId)
+{
+    auto uid = IPCSkeleton::GetCallingUid();
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_FOCUS_MIGRATE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(uid));
+    bean->Add("MIGRATE_DIRECTION", toZoneId);
+    bean->Add("DEVICE_DESC", (toZoneId == 1) ? REMOTE_NETWORK_ID : LOCAL_NETWORK_ID);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioInterruptService::DispatchInterruptEventWithSessionId(uint32_t sessionId,
@@ -1167,5 +1212,58 @@ void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEve
     }
 }
 
+void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
+{
+    std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMapDump;
+    AddDumpInfo(audioInterruptZonesMapDump);
+    dumpString += "\nAudioInterrupt Zone:\n";
+    AppendFormat(dumpString, "- %d AudioInterruptZoneDump (s) available:\n",
+        zonesMap_.size());
+    for (const auto&[zoneID, audioInterruptZoneDump] : audioInterruptZonesMapDump) {
+        if (zoneID < 0) {
+            continue;
+        }
+        AppendFormat(dumpString, "  - Zone ID: %d\n", zoneID);
+        AppendFormat(dumpString, "  - Pids size: %d\n", audioInterruptZoneDump->pids.size());
+        for (auto pid : audioInterruptZoneDump->pids) {
+            AppendFormat(dumpString, "    - pid: %d\n", pid);
+        }
+
+        AppendFormat(dumpString, "  - Interrupt callback size: %d\n",
+            audioInterruptZoneDump->interruptCbSessionIdsMap.size());
+        AppendFormat(dumpString, "    - The sessionIds as follow:\n");
+        for (auto sessionId : audioInterruptZoneDump->interruptCbSessionIdsMap) {
+            AppendFormat(dumpString, "      - SessionId: %d -- have interrupt callback.\n", sessionId);
+        }
+
+        AppendFormat(dumpString, "  - Audio policy client proxy callback size: %d\n",
+            audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap.size());
+        AppendFormat(dumpString, "    - The clientPids as follow:\n");
+        for (auto pid : audioInterruptZoneDump->audioPolicyClientProxyCBClientPidMap) {
+            AppendFormat(dumpString, "      - ClientPid: %d -- have audiopolicy client proxy callback.\n", pid);
+        }
+
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList
+            = audioInterruptZoneDump->audioFocusInfoList;
+        AppendFormat(dumpString, "  - %d Audio Focus Info (s) available:\n", audioFocusInfoList.size());
+        uint32_t invalidSessionId = static_cast<uint32_t>(-1);
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+            if ((iter->first).sessionId == invalidSessionId) {
+                continue;
+            }
+            AppendFormat(dumpString, "    - Pid: %d\n", (iter->first).pid);
+            AppendFormat(dumpString, "    - SessionId: %d\n", (iter->first).sessionId);
+            AppendFormat(dumpString, "    - Audio Focus isPlay Id: %d\n", (iter->first).audioFocusType.isPlay);
+            AppendFormat(dumpString, "    - Stream Name: %s\n",
+                AudioInfoDumpUtils::GetStreamName((iter->first).audioFocusType.streamType).c_str());
+            AppendFormat(dumpString, "    - Source Name: %s\n",
+                AudioInfoDumpUtils::GetSourceName((iter->first).audioFocusType.sourceType).c_str());
+            AppendFormat(dumpString, "    - Audio Focus State: %d\n", iter->second);
+            dumpString += "\n";
+        }
+        dumpString += "\n";
+    }
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS
