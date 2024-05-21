@@ -61,10 +61,13 @@ int32_t AudioResample::ProcessFloatResample(const std::vector<float> &input, std
 {
     int32_t ret = 0;
 #ifdef SPEEX_ENABLE
+    if (speex_->channelCount_ <= 0) {
+        return ERR_INVALID_PARAM;
+    }
     uint32_t inSize = input.size() / speex_->channelCount_;
     uint32_t outSize = output.size() / speex_->channelCount_;
     ret = speex_resampler_process_interleaved_float(speex_->resampler, input.data(), &inSize, output.data(), &outSize);
-    AUDIO_INFO_LOG("after in size:%{public}d,out size:%{public}d,result:%{public}d", inSize, outSize, ret);
+    AUDIO_DEBUG_LOG("after in size:%{public}d,out size:%{public}d,result:%{public}d", inSize, outSize, ret);
 #endif
     return ret;
 }

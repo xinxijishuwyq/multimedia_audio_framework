@@ -41,12 +41,12 @@ private:
     void StandbySleep();
     int32_t InitSink(const AudioStreamInfo &streamInfo);
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
-    AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     void PauseAsync();
 
 private:
     bool isVoip_;
     bool isStart_;
+    bool isPause_;
     DeviceInfo device_;
     std::atomic<uint32_t> failedCount_;
     uint64_t writeCount_;

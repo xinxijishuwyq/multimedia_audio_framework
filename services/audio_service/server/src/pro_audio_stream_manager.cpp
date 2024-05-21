@@ -145,6 +145,7 @@ int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
 int32_t ProAudioStreamManager::TriggerStartIfNecessary()
 {
     if (playbackEngine_ && !playbackEngine_->IsPlaybackEngineRunning()) {
+        AUDIO_INFO_LOG("trigger re-start thread");
         playbackEngine_->Start();
     }
     return SUCCESS;

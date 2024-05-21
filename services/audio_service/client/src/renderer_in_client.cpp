@@ -298,7 +298,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     if (IsHightResolution()) {
         type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
-            rendererInfo_.isDirectStream = true;
+            rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
         }
     }
 
