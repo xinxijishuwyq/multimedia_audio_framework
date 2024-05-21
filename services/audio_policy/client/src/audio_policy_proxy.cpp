@@ -514,7 +514,7 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioRendererFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    int validSize = 20; // Use 20 as limit.
+    uint32_t validSize = 20; // Use 20 as limit.
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {

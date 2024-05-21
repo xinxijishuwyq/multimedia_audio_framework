@@ -192,7 +192,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 
 void AudioServer::OnStart()
 {
-    audioUid_ = getuid();
+    audioUid_ = static_cast<int32_t>(getuid());
     AUDIO_INFO_LOG("OnStart uid:%{public}d", audioUid_);
     bool res = Publish(this);
     if (!res) {

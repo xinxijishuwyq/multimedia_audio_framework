@@ -502,7 +502,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     const std::unique_ptr<EffectBufferAttr> &bufferAttr)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    size_t totLen = bufferAttr->frameLen * bufferAttr->numChans * sizeof(float);
+    size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
 #ifdef DEVICE_FLAG
     if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
         CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,

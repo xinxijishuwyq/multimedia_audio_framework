@@ -199,7 +199,7 @@ private:
     std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist_;
     std::vector<std::shared_ptr<AudioCapturerInfoChangeCallback>> capturerInfoChangeCallbacklist_;
     std::mutex capturerMutex_;
-    AudioCapturerPrivate *capturer_ = nullptr;
+    AudioCapturerPrivate *capturer_{nullptr};
 };
 
 class InputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {
