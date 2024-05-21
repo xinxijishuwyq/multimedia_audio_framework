@@ -714,7 +714,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
             rightZeroSignal = index + 1;
             hasNoneZero = true;
             if (currentPeakIndex == -1 || tempMax > currentPeakSignal) {
-                currentPeakIndex = static_cast<ssize_t>(index);
+                currentPeakIndex = static_cast<int32_t>(index);
                 currentPeakSignal = tempMax;
             }
         }
