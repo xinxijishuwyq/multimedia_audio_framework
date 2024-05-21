@@ -1979,7 +1979,7 @@ int32_t RendererInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
         ERR_ILLEGAL_STATE, "Illegal state %{public}d", state_.load());
 
     if (FLOAT_COMPARE_EQ(clientVolume_, volume)) {
-        AUDIO_INFO_LOG("set same volume %{publid}f", volume);
+        AUDIO_INFO_LOG("set same volume %{public}f", volume);
         return SUCCESS;
     }
 
