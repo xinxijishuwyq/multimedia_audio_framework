@@ -3418,7 +3418,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
                 AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
                 u->multiChannel.isHDISinkStarted = false;
             }
-            u->multiChannel.sinkAdapter->RendererSinkDeinit(u->multiChannel.sinkAdapter);
+            u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
             u->multiChannel.isHDISinkInited = false;
             AUDIO_INFO_LOG("MultiChannel Deinit HDI renderer");
         }
