@@ -730,7 +730,6 @@ OHOS::AudioStandard::IAudioSinkCallback* RemoteFastAudioRendererSinkInner::GetPa
 
 int32_t RemoteFastAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
-    AUDIO_WARNING_LOG("not supported.");
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }
