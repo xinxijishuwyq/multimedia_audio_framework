@@ -332,7 +332,7 @@ int32_t RemoteFastAudioCapturerSourceInner::InitAshmem(const struct AudioSampleA
         "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
         desc.totalBufferFrames, desc.transferFrameSize);
     bufferTotalFrameSize_ = desc.totalBufferFrames;
-    eachReadFrameSize_ = desc.transferFrameSize;
+    eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize);
 
 #ifdef DEBUG_DIRECT_USE_HDI
     ashmemLen_ = desc.totalBufferFrames * attrs.channelCount * attrs.format;

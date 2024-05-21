@@ -124,6 +124,7 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
+    bool logFlag = true;
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -140,15 +141,18 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
     if (operation == UNDERFLOW_COUNT_ADD) {
+        logFlag = false;
         if (!offloadEnable_) {
             underrunCount_++;
         }
-        AUDIO_WARNING_LOG("recv underrun %{public}d", underrunCount_);
+        AUDIO_DEBUG_LOG("recv underrun %{public}d", underrunCount_);
         // in plan next: do more to reduce underrun
         writeDataCV_.notify_all();
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
+    if (logFlag) {
+        AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
+    }
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
     notifiedResult_ = result;
@@ -216,7 +220,7 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         AudioRegisterTrackerInfo registerTrackerInfo;
 
         rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
-
+        rendererInfo_.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
         registerTrackerInfo.sessionId = sessionId_;
         registerTrackerInfo.clientPid = clientPid_;
         registerTrackerInfo.state = state_;
@@ -235,6 +239,12 @@ void RendererInClientInner::UpdateTracker(const std::string &updateCase)
         AUDIO_DEBUG_LOG("Renderer:Calling Update tracker for %{public}s", updateCase.c_str());
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
+}
+
+bool RendererInClientInner::IsHightResolution() const noexcept
+{
+    return eStreamType_ == STREAM_MUSIC && curStreamParams_.samplingRate >= SAMPLE_RATE_48000 &&
+           curStreamParams_.format >= SAMPLE_S24LE;
 }
 
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
@@ -284,6 +294,13 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
+    int32_t type = -1;
+    if (IsHightResolution()) {
+        type = ipcStream_->GetStreamManagerType();
+        if (type == AUDIO_DIRECT_MANAGER_TYPE) {
+            rendererInfo_.isDirectStream = true;
+        }
+    }
 
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
@@ -1962,7 +1979,7 @@ int32_t RendererInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
         ERR_ILLEGAL_STATE, "Illegal state %{public}d", state_.load());
 
     if (FLOAT_COMPARE_EQ(clientVolume_, volume)) {
-        AUDIO_INFO_LOG("set same volume %{publid}f", volume);
+        AUDIO_INFO_LOG("set same volume %{public}f", volume);
         return SUCCESS;
     }
 

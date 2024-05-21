@@ -38,6 +38,7 @@ private:
         std::string callbackName = "unknown";
         BufferDesc bufDesc {};
         NapiAudioCapturer *capturerNapiObj;
+        NapiCapturerReadDataCallback *readDataCallbackPtr;
     };
 
     static void WorkCallbackCapturerReadData(uv_work_t *work, int status);
@@ -48,6 +49,7 @@ private:
     std::shared_ptr<AutoRef> capturerReadDataCallback_ = nullptr;
     NapiAudioCapturer *napiCapturer_;
     napi_ref callback_;
+    bool isCallbackInited_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
