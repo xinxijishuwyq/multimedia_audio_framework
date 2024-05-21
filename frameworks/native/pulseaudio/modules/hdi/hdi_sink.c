@@ -2315,7 +2315,6 @@ static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels, 
             u->multiChannel.isHDISinkInited = true;
         } else {
             if (u->multiChannel.isHDISinkStarted) {
-                AUDIO_INFO_LOG("ResetMultiChannelHdiState inited and started");
                 return;
             }
         }
@@ -3411,6 +3410,17 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
             u->primary.sinkAdapter->RendererSinkStop(u->primary.sinkAdapter);
             AUDIO_INFO_LOG("Stopped HDI renderer");
             u->primary.isHDISinkStarted = false;
+        }
+
+        if (u->multiChannel.isHDISinkInited) {
+            if (u->multiChannel.isHDISinkStarted) {
+                u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+                AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
+                u->multiChannel.isHDISinkStarted = false;
+            }
+            u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
+            u->multiChannel.isHDISinkInited = false;
+            AUDIO_INFO_LOG("MultiChannel Deinit HDI renderer");
         }
     }
 
