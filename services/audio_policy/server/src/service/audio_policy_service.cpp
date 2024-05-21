@@ -2068,7 +2068,7 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
-    bool isHasDirectChangeDevice = false;
+    bool hasDirectChangeDevice = false;
     for (auto &rendererChangeInfo : rendererChangeInfos) {
         if (!IsRendererStreamRunning(rendererChangeInfo) || (audioScene_ == AUDIO_SCENE_DEFAULT &&
             audioRouterCenter_.isCallRenderRouter(rendererChangeInfo->rendererInfo.streamUsage))) {
@@ -2094,8 +2094,8 @@ void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChange
             isUpdateActiveDevice = UpdateDevice(desc, reason, rendererChangeInfo);
             needUpdateActiveDevice = false;
         }
-        if (!isHasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo)) {
-            isHasDirectChangeDevice = true;
+        if (!hasDirectChangeDevice && isUpdateActiveDevice && NotifyRecreateDirectStream(rendererChangeInfo)) {
+            hasDirectChangeDevice = true;
             continue;
         }
         if (NotifyRecreateRendererStream(isUpdateActiveDevice, rendererChangeInfo)) { continue; }
@@ -2148,8 +2148,8 @@ bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
 
 bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
-    if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType) &&
-        rendererChangeInfo->rendererInfo.isDirectStream) {
+    if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType) 
+        && rendererChangeInfo->rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
             AUDIO_FLAG_DIRECT);
         return true;

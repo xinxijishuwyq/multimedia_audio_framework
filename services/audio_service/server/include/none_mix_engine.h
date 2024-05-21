@@ -41,7 +41,6 @@ private:
     void StandbySleep();
     int32_t InitSink(const AudioStreamInfo &streamInfo);
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
-    AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     void PauseAsync();
 
 private:

@@ -312,7 +312,6 @@ struct AudioRendererInfo {
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
-    bool isDirectStream = false;
     AudioSampleFormat format;
 
     bool Marshalling(Parcel &parcel) const
@@ -328,7 +327,6 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
-            && parcel.WriteBool(isDirectStream)
             && parcel.WriteInt32(format);
     }
     void Unmarshalling(Parcel &parcel)
@@ -344,7 +342,6 @@ struct AudioRendererInfo {
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
-        isDirectStream = parcel.ReadBool();
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
     }
 };
@@ -759,7 +756,6 @@ public:
             && parcel.WriteInt32(rendererInfo.rendererFlags)
             && parcel.WriteInt32(rendererInfo.originalFlag)
             && parcel.WriteInt32(rendererInfo.samplingRate)
-            && parcel.WriteBool(rendererInfo.isDirectStream)
             && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererState))
@@ -779,7 +775,6 @@ public:
             && parcel.WriteInt32(rendererInfo.rendererFlags)
             && parcel.WriteInt32(rendererInfo.originalFlag)
             && parcel.WriteInt32(rendererInfo.samplingRate)
-            && parcel.WriteBool(rendererInfo.isDirectStream)
             && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
@@ -801,7 +796,6 @@ public:
         rendererInfo.rendererFlags = parcel.ReadInt32();
         rendererInfo.originalFlag = parcel.ReadInt32();
         rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        rendererInfo.isDirectStream = parcel.ReadBool();
         rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         rendererInfo.Unmarshalling(parcel);
 

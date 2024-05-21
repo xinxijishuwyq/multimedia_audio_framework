@@ -191,7 +191,7 @@ void NoneMixEngine::StandbySleep()
     ClockTime::AbsoluteSleep(writeTime);
 }
 
-AudioSamplingRate NoneMixEngine::GetDirectSampleRate(AudioSamplingRate sampleRate)
+static AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate)
 {
     AudioSamplingRate result = sampleRate;
     switch (sampleRate) {
@@ -244,7 +244,7 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
     AUDIO_INFO_LOG("sink name:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d", sinkName.c_str(),
-                   attr.deviceType, attr.sampleRate, attr.format);
+        attr.deviceType, attr.sampleRate, attr.format);
     int32_t ret = renderSink_->Init(attr);
     if (ret != SUCCESS) {
         return ret;

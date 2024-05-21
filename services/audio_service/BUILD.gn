@@ -74,6 +74,7 @@ ohos_shared_library("audio_common") {
   }
 
   if (speex_enable == true) {
+    cflags += [ "-DSPEEX_ENABLE" ]
     include_dirs += [ "//third_party/pulseaudio/speex/include" ]
     external_deps += [ "pulseaudio:speexresampler" ]
   }
@@ -105,10 +106,6 @@ config("audio_client_public_config") {
 
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
-  }
-
-  if (speex_enable == true) {
-    cflags += [ "-DSPEEX_ENABLE" ]
   }
 
   external_deps = []
