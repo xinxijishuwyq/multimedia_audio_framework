@@ -2148,7 +2148,7 @@ bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
 
 bool AudioPolicyService::NotifyRecreateDirectStream(std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
-    if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType) 
+    if (IsDirectSupportedDevice(rendererChangeInfo->outputDeviceInfo.deviceType)
         && rendererChangeInfo->rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
             AUDIO_FLAG_DIRECT);

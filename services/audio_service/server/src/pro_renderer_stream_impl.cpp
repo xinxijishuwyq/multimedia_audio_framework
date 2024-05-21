@@ -34,6 +34,7 @@ constexpr int32_t DEFAULT_RESAMPLE_QUANTITY = 2;
 constexpr int32_t STEREO_CHANNEL_COUNT = 2;
 constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 4;
 constexpr int32_t DRAIN_WAIT_TIMEOUT_TIME = 100;
+constexpr int32_t FIRST_FRAME_TIMEOUT_TIME = 500;
 const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
 
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
@@ -42,6 +43,7 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
       isNeedMcr_(false),
       isBlock_(true),
       isDrain_(false),
+      isFirstFrame_(true),
       privacyType_(0),
       renderRate_(0),
       streamIndex_(static_cast<uint32_t>(-1)),
@@ -162,6 +164,9 @@ int32_t ProRendererStreamImpl::Pause()
         status_ = I_STATUS_PAUSED;
     }
     isBlock_ = true;
+    if (isFirstFrame_) {
+        firstFrameSync_.notify_all();
+    }
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_PAUSED);
@@ -200,7 +205,7 @@ int32_t ProRendererStreamImpl::Drain()
     if (!readQueue_.empty()) {
         std::unique_lock lock(enqueueMutex);
         drainSync_.wait_for(lock, std::chrono::milliseconds(DRAIN_WAIT_TIMEOUT_TIME),
-                            [this] { return readQueue_.empty(); });
+            [this] { return readQueue_.empty(); });
     }
     isDrain_ = false;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
@@ -216,6 +221,9 @@ int32_t ProRendererStreamImpl::Stop()
     AUDIO_INFO_LOG("Enter");
     status_ = I_STATUS_STOPPED;
     isBlock_ = true;
+    if (isFirstFrame_) {
+        firstFrameSync_.notify_all();
+    }
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_STOPPED);
@@ -381,8 +389,11 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         }
     }
     readQueue_.emplace(writeIndex);
-    AUDIO_DEBUG_LOG("buffer length:%{public}zu ,sink buffer length:%{public}zu", bufferDesc.bufLength,
-        sinkBuffer_[0].size());
+    if (isFirstFrame_) {
+        firstFrameSync_.notify_all();
+    }
+    AUDIO_DEBUG_LOG("buffer length:%{public}zu ,sink buffer length:%{public}zu,volume:%{public}f", bufferDesc.bufLength,
+        sinkBuffer_[0].size(), volume);
     totalBytesWritten_ += bufferDesc.bufLength;
     return SUCCESS;
 }
@@ -520,6 +531,14 @@ int32_t ProRendererStreamImpl::PopWriteBufferIndex()
 
 void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index)
 {
+    if (readQueue_.empty()) {
+        std::unique_lock lock2(firstFrameMutex);
+        firstFrameSync_.wait_for(lock2, std::chrono::milliseconds(FIRST_FRAME_TIMEOUT_TIME),
+            [this] { return (!readQueue_.empty() || isBlock_); });
+        if (!readQueue_.empty()) {
+            isFirstFrame_ = false;
+        }
+    }
     std::lock_guard lock(enqueueMutex);
     if (!readQueue_.empty()) {
         index = readQueue_.front();
