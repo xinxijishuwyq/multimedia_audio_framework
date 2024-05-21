@@ -49,6 +49,7 @@ void AudioDialogAbilityConnection::OnAbilityConnectDone(const AppExecFwk::Elemen
     data.WriteString16(u"parameters");
     nlohmann::json param;
     param["ability.want.params.uiExtensionType"] = "sys/commonUI";
+    param["sysDialogZOrder"] = SYS_DIALOG_TYPE_UPPER;
     std::string paramStr = param.dump();
     data.WriteString16(Str8ToStr16(paramStr));
     int32_t errCode = remoteObject->SendRequest(IAbilityConnection::ON_ABILITY_CONNECT_DONE, data, reply, option);

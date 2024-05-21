@@ -29,6 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t WAIT_DIALOG_CLOSE_TIME_S = 3;
 constexpr int32_t MESSAGE_PARCEL_KEY_SIZE = 3;
+constexpr int32_t SYS_DIALOG_TYPE_UPPER = 2;
 class AudioDialogAbilityConnection : public OHOS::AAFwk::AbilityConnectionStub {
 public:
     AudioDialogAbilityConnection() = default;
