@@ -532,8 +532,8 @@ int32_t ProRendererStreamImpl::PopWriteBufferIndex()
 void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_t &index)
 {
     if (readQueue_.empty()) {
-        std::unique_lock lock2(firstFrameMutex);
-        firstFrameSync_.wait_for(lock2, std::chrono::milliseconds(FIRST_FRAME_TIMEOUT_TIME),
+        std::unique_lock firstFrameLock(firstFrameMutex);
+        firstFrameSync_.wait_for(firstFrameLock, std::chrono::milliseconds(FIRST_FRAME_TIMEOUT_TIME),
             [this] { return (!readQueue_.empty() || isBlock_); });
         if (!readQueue_.empty()) {
             isFirstFrame_ = false;
