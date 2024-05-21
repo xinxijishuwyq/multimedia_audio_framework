@@ -1231,7 +1231,7 @@ int32_t AudioRendererSinkInner::UpdateUsbAttrs(const std::string &usbInfoStr)
         sinkFormat_end - sinkFormat_begin - std::strlen("sink_format:"));
 
     // usb default config
-    attr_.sampleRate = stoi(sampleRateStr);
+    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
 
