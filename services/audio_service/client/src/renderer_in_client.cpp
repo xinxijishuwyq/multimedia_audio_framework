@@ -124,6 +124,7 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
+    bool logFlag = true;
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -140,15 +141,18 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
     if (operation == UNDERFLOW_COUNT_ADD) {
+        logFlag = false;
         if (!offloadEnable_) {
             underrunCount_++;
         }
-        AUDIO_WARNING_LOG("recv underrun %{public}d", underrunCount_);
+        AUDIO_DEBUG_LOG("recv underrun %{public}d", underrunCount_);
         // in plan next: do more to reduce underrun
         writeDataCV_.notify_all();
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
+    if (logFlag) {
+        AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
+    }
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
     notifiedResult_ = result;
