@@ -1149,7 +1149,7 @@ void AudioInterruptService::DispatchInterruptEventWithSessionId(uint32_t session
 }
 
 // called when the client remote object dies
-void AudioInterruptService::RemoveClient(uint32_t sessionId)
+void AudioInterruptService::RemoveClient(const int32_t zoneId, uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -1168,6 +1168,14 @@ void AudioInterruptService::RemoveClient(uint32_t sessionId)
     }
 
     interruptClients_.erase(sessionId);
+
+    // callback in zones map also need to be removed
+    auto it = zonesMap_.find(zoneId);
+    if (it != zonesMap_.end() && it->second != nullptr &&
+        it->second->interruptCbsMap.find(sessionId) != it->second->interruptCbsMap.end()) {
+        it->second->interruptCbsMap.erase(it->second->interruptCbsMap.find(sessionId));
+        zonesMap_[zoneId] = it->second;
+    }
 }
 
 void AudioInterruptService::WriteFocusMigrateEvent(const int32_t &toZoneId)
@@ -1248,7 +1256,7 @@ void AudioInterruptService::AudioInterruptDeathRecipient::OnRemoteDied(const wpt
 {
     std::shared_ptr<AudioInterruptService> service = service_.lock();
     if (service != nullptr) {
-        service->RemoveClient(sessionId_);
+        service->RemoveClient(ZONEID_DEFAULT, sessionId_);
     }
 }
 

@@ -149,7 +149,7 @@ private:
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
-    void RemoveClient(uint32_t sessionId);
+    void RemoveClient(const int32_t zoneId, uint32_t sessionId);
 
     // zone debug interfaces
     bool CheckAudioInterruptZonePermission();
