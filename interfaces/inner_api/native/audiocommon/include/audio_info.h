@@ -1115,6 +1115,25 @@ enum RenderMode {
      */
     LOW_LATENCY,
 };
+
+enum WriteDataCallbackType {
+    /**
+     * Use OH_AudioRenderer_Callbacks.
+     * @since 12
+     */
+    CALLBACKS_ON_WRITE_DATA = 0,
+    /**
+     * Use OH_AudioRenderer_OnWriteDataCallback.
+     * @since 12
+     */
+    ON_WRITE_DATA_CALLBACK = 1,
+    /**
+     * Use OH_AudioRenderer_WriteDataWithMetadataCallback.
+     * @since 12
+     */
+    WRITE_DATA_WITH_METADATA_CALLBACK = 2
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H
