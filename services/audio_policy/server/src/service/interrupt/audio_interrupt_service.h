@@ -90,28 +90,40 @@ private:
     static constexpr uid_t UID_ROOT = 0;
     static constexpr uid_t UID_AUDIO = 1041;
 
-    // Inner class AudioInterruptClient for callback and death handler
-    class AudioInterruptClient : public IRemoteObject::DeathRecipient {
+    // Inner class for death handler
+    class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
+    public:
+        explicit AudioInterruptDeathRecipient(
+            const std::shared_ptr<AudioInterruptService> &service,
+            uint32_t sessionId);
+        virtual ~AudioInterruptDeathRecipient() = default;
+
+        DISALLOW_COPY_AND_MOVE(AudioInterruptDeathRecipient);
+
+        void OnRemoteDied(const wptr<IRemoteObject> &remote);
+
+    private:
+        const std::weak_ptr<AudioInterruptService> service_;
+        const uint32_t sessionId_;
+    };
+
+    // Inner class for callback
+    class AudioInterruptClient {
     public:
         explicit AudioInterruptClient(
-            const std::shared_ptr<AudioInterruptService> &service,
             const std::shared_ptr<AudioInterruptCallback> &callback,
-            uid_t uid, pid_t pid, uint32_t sessionId);
+            const sptr<IRemoteObject> &object,
+            const std::shared_ptr<AudioInterruptDeathRecipient> &deathRecipient);
         virtual ~AudioInterruptClient();
 
         DISALLOW_COPY_AND_MOVE(AudioInterruptClient);
 
-        // DeathRecipient
-        void OnRemoteDied(const wptr<IRemoteObject> &remote);
-
         void OnInterrupt(const InterruptEventInternal &interruptEvent);
 
     private:
-        const std::weak_ptr<AudioInterruptService> service_;
         const std::shared_ptr<AudioInterruptCallback> callback_;
-        const uid_t uid_;
-        const pid_t pid_;
-        const uint32_t sessionId_;
+        const sptr<IRemoteObject> object_;
+        std::shared_ptr<AudioInterruptDeathRecipient> deathRecipient_;
     };
 
     // deprecated interrupt interfaces
