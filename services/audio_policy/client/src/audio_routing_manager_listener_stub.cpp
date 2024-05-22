@@ -88,6 +88,7 @@ void AudioRoutingManagerListenerStub::SetAudioDeviceRefinerCallback(const std::w
 void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
+    CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
     int32_t size = data.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
         descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(data)));
@@ -112,6 +113,7 @@ void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(Message
 void AudioRoutingManagerListenerStub::OnAudioInputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
+    CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
     int32_t size = data.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
         descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(data)));
