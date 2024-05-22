@@ -1947,7 +1947,7 @@ uint32_t RendererInClientInner::GetRendererSamplingRate()
 int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
     // bufferSizeInMsec is checked between 5ms and 20ms.
-    bufferSizeInMsec_ = bufferSizeInMsec;
+    bufferSizeInMsec_ = static_cast<uint32_t>(bufferSizeInMsec);
     AUDIO_INFO_LOG("SetBufferSizeInMsec to %{public}d", bufferSizeInMsec_);
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;

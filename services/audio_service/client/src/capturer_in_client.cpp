@@ -856,7 +856,7 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
-    int64_t deltaPos = writePos >= static_cast<uint64_t>(currentReadPos) ? writePos - currentReadPos : 0;
+    int64_t deltaPos = writePos >= currentReadPos ? static_cast<int64_t>(writePos - currentReadPos) : 0;
     int64_t tempLatency = 25000000; // 25000000 -> 25 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 

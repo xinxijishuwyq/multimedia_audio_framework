@@ -403,8 +403,8 @@ AudioProcessConfig AudioEndpointInner::GetInnerCapConfig()
 {
     AudioProcessConfig processConfig;
 
-    processConfig.appInfo.appPid = getpid();
-    processConfig.appInfo.appUid = getuid();
+    processConfig.appInfo.appPid = static_cast<int32_t>(getpid());
+    processConfig.appInfo.appUid = static_cast<int32_t>(getuid());
 
     processConfig.streamInfo = dstStreamInfo_;
 
