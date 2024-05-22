@@ -59,6 +59,9 @@ private:
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
+    static napi_value Off(napi_env env, napi_callback_info info);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
+        const std::string &cbName);
 
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
