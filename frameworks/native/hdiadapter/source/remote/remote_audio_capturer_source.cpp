@@ -88,6 +88,9 @@ public:
         const std::string &value) override;
     
     float GetMaxAmplitude() override;
+
+    int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 private:
     int32_t CreateCapture(const AudioPort &capturePort);
     int32_t SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source);
@@ -665,6 +668,19 @@ void RemoteAudioCapturerSourceInner::OnAudioParamChange(const std::string &adapt
 
     CHECK_AND_RETURN_LOG(paramCb_ != nullptr, "Sink audio param callback is null.");
     paramCb_->OnAudioSourceParamChange(adapterName, key, condition, value);
+}
+
+int32_t RemoteAudioCapturerSourceInner::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+    const size_t size)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t RemoteAudioCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namesapce OHOS

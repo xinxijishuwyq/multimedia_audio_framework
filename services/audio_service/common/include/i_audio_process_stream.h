@@ -38,6 +38,8 @@ public:
 
     virtual bool GetInnerCapState() = 0;
 
+    virtual AppInfo GetAppInfo() = 0;
+
     virtual ~IAudioProcessStream() = default;
 };
 } // namespace AudioStandard

@@ -209,6 +209,9 @@ private:
     void CheckRecordSignal(uint8_t *buffer, size_t bufferSize);
 
     void CheckUpdateState(char *frame, uint64_t replyBytes);
+
+    void ProcessUpdateAppsUidForPlayback();
+    void ProcessUpdateAppsUidForRecord();
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t THREE_MILLISECOND_DURATION = 3000000; // 3ms
@@ -1771,6 +1774,8 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         bool ret = RecordPrepareNextLoop(curReadPos, wakeUpTime);
         CHECK_AND_BREAK_LOG(ret, "PrepareNextLoop failed!");
 
+        ProcessUpdateAppsUidForRecord();
+
         loopTrace.End();
         threadStatus_ = SLEEPING;
         ClockTime::AbsoluteSleep(wakeUpTime);
@@ -1823,6 +1828,8 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             AUDIO_ERR_LOG("PrepareNextLoop failed!");
             break;
         }
+
+        ProcessUpdateAppsUidForPlayback();
 
         loopTrace.End();
         // start sleep
@@ -1898,6 +1905,36 @@ void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
         AUDIO_INFO_LOG("LatencyMeas fastSource signal detected");
         signalDetected_ = false;
     }
+}
+
+void AudioEndpointInner::ProcessUpdateAppsUidForPlayback()
+{
+    std::vector<int32_t> appsUid;
+    {
+        std::lock_guard<std::mutex> lock(listLock_);
+
+        appsUid.reserve(processList_.size());
+        for (auto iProccessStream : processList_) {
+            appsUid.push_back(iProccessStream->GetAppInfo().appUid);
+        }
+    }
+    CHECK_AND_RETURN_LOG(fastSink_, "fastSink_ is nullptr");
+    fastSink_->UpdateAppsUid(appsUid);
+}
+
+void AudioEndpointInner::ProcessUpdateAppsUidForRecord()
+{
+    std::vector<int32_t> appsUid;
+    {
+        std::lock_guard<std::mutex> lock(listLock_);
+
+        appsUid.reserve(processList_.size());
+        for (auto iProccessStream : processList_) {
+            appsUid.push_back(iProccessStream->GetAppInfo().appUid);
+        }
+    }
+    CHECK_AND_RETURN_LOG(fastSource_, "fastSource_ is nullptr");
+    fastSource_->UpdateAppsUid(appsUid);
 }
 } // namespace AudioStandard
 } // namespace OHOS

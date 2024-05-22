@@ -142,6 +142,7 @@ void NoneMixEngine::MixStreams()
         return;
     }
     std::vector<char> audioBuffer;
+    int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
     int32_t result = stream_->Peek(&audioBuffer, index);
     writeCount_++;
@@ -156,6 +157,7 @@ void NoneMixEngine::MixStreams()
     uint64_t written = 0;
     renderSink_->RenderFrame(*audioBuffer.data(), audioBuffer.size(), written);
     stream_->ReturnIndex(index);
+    renderSink_->UpdateAppsUid({appUid});
     StandbySleep();
 }
 

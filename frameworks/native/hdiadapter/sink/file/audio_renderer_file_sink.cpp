@@ -222,5 +222,16 @@ int32_t AudioRendererFileSink::SetPaPower(int32_t flag)
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }
+
+int32_t AudioRendererFileSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
+{
+    return SUCCESS;
+}
+
+int32_t AudioRendererFileSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
