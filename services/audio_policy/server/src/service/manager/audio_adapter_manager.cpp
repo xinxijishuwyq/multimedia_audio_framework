@@ -1568,7 +1568,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
             exp(volumePoints[pointSize - 1].dbValue * 0.115129f));
         return exp((volumePoints[pointSize - 1].dbValue / 100.0f) * 0.115129f);
     }
-    float indexFactor = ((float)(idxRatio - volumePoints[position-1].index)) /
+    float indexFactor = ((float)(idxRatio - static_cast<int32_t>(volumePoints[position-1].index))) /
         (float(volumePoints[position].index - volumePoints[position-1].index));
 
     float dbValue = (volumePoints[position-1].dbValue / 100.0f) +
