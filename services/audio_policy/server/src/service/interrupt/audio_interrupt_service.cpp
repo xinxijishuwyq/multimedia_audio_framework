@@ -1263,7 +1263,9 @@ AudioInterruptService::AudioInterruptClient::AudioInterruptClient(
 
 AudioInterruptService::AudioInterruptClient::~AudioInterruptClient()
 {
-    object_->RemoveDeathRecipient(deathRecipient_);
+    if (object_ != nullptr) {
+        object_->RemoveDeathRecipient(deathRecipient_);
+    }
 }
 
 void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEventInternal &interruptEvent)
