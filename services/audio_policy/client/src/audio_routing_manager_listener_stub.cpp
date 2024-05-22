@@ -25,6 +25,9 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+
+static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
+
 AudioRoutingManagerListenerStub::AudioRoutingManagerListenerStub()
 {
 }
@@ -88,6 +91,7 @@ void AudioRoutingManagerListenerStub::SetAudioDeviceRefinerCallback(const std::w
 void AudioRoutingManagerListenerStub::OnAudioOutputDeviceRefinedInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
+    CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
     int32_t size = data.ReadInt32();
     for (int32_t i = 0; i < size; i++) {
         descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(data)));
@@ -113,6 +117,7 @@ void AudioRoutingManagerListenerStub::OnAudioInputDeviceRefinedInternal(MessageP
 {
     std::vector<std::unique_ptr<AudioDeviceDescriptor>> descs;
     int32_t size = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(size < PREFERRED_DEVICE_VALID_SIZE, "get invalid size : %{public}d", size);
     for (int32_t i = 0; i < size; i++) {
         descs.push_back(make_unique<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(data)));
     }

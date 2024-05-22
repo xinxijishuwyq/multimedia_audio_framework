@@ -44,7 +44,7 @@ private:
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
-    napi_ref callback_;
+    napi_ref callback_ = 0;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

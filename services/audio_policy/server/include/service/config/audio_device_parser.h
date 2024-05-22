@@ -83,7 +83,7 @@ private:
     std::string ExtractPropertyValue(const std::string &propName, xmlNode *node);
     AudioDevicePrivacyType GetDevicePrivacyType(const std::string &devicePrivacyType);
 
-    xmlDoc *mDoc_;
+    xmlDoc *mDoc_ = nullptr;
     AudioDevicePrivacyType devicePrivacyType_ = {};
     AudioDeviceManager *audioDeviceManager_;
     std::unordered_map<AudioDevicePrivacyType, std::list<DevicePrivacyInfo>> devicePrivacyMaps_ = {};
