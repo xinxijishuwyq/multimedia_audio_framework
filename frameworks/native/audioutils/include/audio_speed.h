@@ -49,7 +49,7 @@ public:
     int32_t ChangeSpeed(uint8_t *buffer, int32_t bufferSize,
         std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
 private:
-    float speed_;
+    float speed_ = 0.0f;
     size_t rate_;
     size_t format_;
 

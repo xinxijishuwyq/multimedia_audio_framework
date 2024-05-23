@@ -109,6 +109,10 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
     if (!audioEffectChainManager->CheckAndAddSessionID(sessionIDString)) {
         return SUCCESS;
     }
+    // for AISS, dsp has not implemented it yet
+    if (sceneTypeString == "SCENE_MOVIE" && audioEffectChainManager->GetDeviceTypeName() == "DEVICE_TYPE_SPEAKER") {
+        audioEffectChainManager->SetSpkOffloadEnabled(false);
+    }
     if (audioEffectChainManager->GetOffloadEnabled()) {
         audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Register");
         AUDIO_DEBUG_LOG("registerEffectChainCountBackupMap");

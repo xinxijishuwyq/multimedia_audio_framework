@@ -335,7 +335,7 @@ static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *
         u->latency_snapshot.source_latency - snapshotDelay;
 
     /* Current latency */
-    int64_t currentLatency = currentSourceSinkLatency + currentBufferLatency;
+    int64_t currentLatency = currentSourceSinkLatency + (int64_t)currentBufferLatency;
 
     /* Latency at base rate */
     int64_t latencyAtOptimumRate = currentSourceSinkLatency + currentBufferLatency * oldRate / (*baseRate);

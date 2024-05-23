@@ -867,7 +867,6 @@ void BluetoothRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device
 
 int32_t BluetoothRendererSinkInner::SetPaPower(int32_t flag)
 {
-    AUDIO_WARNING_LOG("not supported.");
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }
