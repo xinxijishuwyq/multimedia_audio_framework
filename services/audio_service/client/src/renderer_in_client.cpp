@@ -1440,7 +1440,7 @@ bool RendererInClientInner::DrainAudioStream()
         return false;
     }
     std::lock_guard<std::mutex> lock(writeMutex_);
-    CHECK_AND_RETURN_RET_LOG(DrainRingCache() == SUCCESS, false, "Drain cache failed");
+    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true) == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Drain();
@@ -1632,6 +1632,32 @@ void RendererInClientInner::ResetFramePosition()
     lastFramePosition_ = 0;
 }
 
+void RendererInClientInner::VolumeHandle(BufferDesc &desc)
+{
+    // volume process in client
+    if (volumeRamp_.IsActive()) {
+        // do not call SetVolume here.
+        clientOldVolume_ = clientVolume_;
+        clientVolume_ = volumeRamp_.GetRampVolume();
+    }
+    float applyVolume = clientVolume_;
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= lowPowerVolume_;
+    }
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= duckVolume_;
+    }
+    if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
+        Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
+        AudioChannel channel = clientConfig_.streamInfo.channels;
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
+        int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
+        if (volRet != SUCCESS) {
+            AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
+        }
+    }
+}
+
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
     if (buffer[0] == 0) {
@@ -1670,9 +1696,20 @@ void RendererInClientInner::ReportDataToResSched()
     #endif
 }
 
-int32_t RendererInClientInner::WriteCacheData()
+int32_t RendererInClientInner::WriteCacheData(bool isDrain)
 {
-    Trace traceCache("RendererInClientInner::WriteCacheData");
+    std::string str = isDrain ? "RendererInClientInner::WriteCacheData" : "RendererInClientInner::DrainCacheData";
+    Trace traceCache(str);
+
+    OptResult result = ringCache_->GetReadableSize();
+    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
+    size_t readableSize = result.size;
+    if (readableSize == 0) {
+        AUDIO_WARNING_LOG("Readable size is already zero");
+        return SUCCESS;
+    }
+    size_t targetSize = isDrain ? std::min(readableSize, clientSpanSizeInByte_) : clientSpanSizeInByte_;
+
     int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
     CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
 
@@ -1690,33 +1727,13 @@ int32_t RendererInClientInner::WriteCacheData()
     uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
     int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
-    OptResult result = ringCache_->Dequeue({desc.buffer, desc.bufLength});
+    result = ringCache_->Dequeue({desc.buffer, targetSize});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
     AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
         "%{public}u", curWriteIndex, spanSizeInFrame_);
 
-    // volume process in client
-    if (volumeRamp_.IsActive()) {
-        // do not call SetVolume here.
-        clientOldVolume_ = clientVolume_;
-        clientVolume_ = volumeRamp_.GetRampVolume();
-    }
-    float applyVolume = clientVolume_;
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
-        applyVolume *= lowPowerVolume_;
-    }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
-        applyVolume *= duckVolume_;
-    }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
-        Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
-        AudioChannel channel = clientConfig_.streamInfo.channels;
-        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
-        int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
-        if (volRet != SUCCESS) {
-            AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
-        }
-    }
+    VolumeHandle(desc);
+
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
 
