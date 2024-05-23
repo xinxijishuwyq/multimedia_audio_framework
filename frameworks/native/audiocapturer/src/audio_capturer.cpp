@@ -246,7 +246,10 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     AUDIO_INFO_LOG("StreamClientState for Capturer::SetParams.");
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
-    IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
+    IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+    if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        streamClass = GetPreferredStreamClass(audioStreamParams);
+    }
 
     // check AudioStreamParams for fast stream
     if (audioStream_ == nullptr) {
