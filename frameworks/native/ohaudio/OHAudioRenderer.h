@@ -40,7 +40,7 @@ public:
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
-    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_;
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_ = nullptr;
     OH_AudioRenderer *ohAudioRenderer_;
     void *userData_;
     void *metadataUserData_;

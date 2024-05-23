@@ -332,7 +332,7 @@ static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *
     pa_usec_t currentBufferLatency = pa_bytes_to_usec(buffer, &u->sink_input->sample_spec);
     pa_usec_t snapshotDelay = u->latency_snapshot.source_timestamp - u->latency_snapshot.sink_timestamp;
     int64_t currentSourceSinkLatency = u->latency_snapshot.sink_latency +
-        u->latency_snapshot.source_latency - snapshotDelay;
+        u->latency_snapshot.source_latency - (int64_t)snapshotDelay;
 
     /* Current latency */
     int64_t currentLatency = currentSourceSinkLatency + currentBufferLatency;
