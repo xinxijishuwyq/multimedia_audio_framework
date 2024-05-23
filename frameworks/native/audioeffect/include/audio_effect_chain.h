@@ -55,6 +55,7 @@ public:
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
     int32_t SetEffectParam(AudioEffectScene currSceneType);
+    void ResetIoBufferConfig();
 
 private:
     AudioEffectConfig GetIoBufferConfig();

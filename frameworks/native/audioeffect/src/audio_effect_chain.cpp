@@ -138,14 +138,11 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_INIT fail",
-        sceneType_.c_str(), effectMode_.c_str());
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_INIT fail",
+        sceneType_.c_str(), effectMode_.c_str(), libHandle->name);
     ret = (*handle)->command(handle, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_ENABLE fail",
-        sceneType_.c_str(), effectMode_.c_str());
-    ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
-        sceneType_.c_str(), effectMode_.c_str());
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_ENABLE fail",
+        sceneType_.c_str(), effectMode_.c_str(), libHandle->name);
     // Set param
     AudioEffectParam *effectParam =
         new AudioEffectParam[sizeof(AudioEffectParam) + NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
@@ -177,8 +174,19 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
     ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     delete[] effectParam;
-    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs EFFECT_CMD_SET_PARAM fail",
-        sceneType_.c_str(), effectMode_.c_str());
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_SET_PARAM fail",
+        sceneType_.c_str(), effectMode_.c_str(), libHandle->name);
+
+    cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
+    ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_SET_CONFIG fail",
+        sceneType_.c_str(), effectMode_.c_str(), libHandle->name);
+
+    ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_GET_CONFIG fail",
+        sceneType_.c_str(), effectMode_.c_str(), libHandle->name);
+    swap(ioBufferConfig_.inputCfg, ioBufferConfig_.outputCfg); // pass outputCfg to next algo as inputCfg
+
     standByEffectHandles_.emplace_back(handle);
     libHandles_.emplace_back(libHandle);
     latency_ += static_cast<uint32_t>(replyData);
@@ -292,16 +300,42 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &chann
     if (ioBufferConfig_.inputCfg.channels == channels && ioBufferConfig_.inputCfg.channelLayout == channelLayout) {
         return SUCCESS;
     }
+    if (IsEmptyEffectHandles()) {
+        return;
+    }
     ioBufferConfig_.inputCfg.channels = channels;
     ioBufferConfig_.inputCfg.channelLayout = channelLayout;
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+    AudioEffectHandle preHandle = nullptr;
     for (AudioEffectHandle handle : standByEffectHandles_) {
-        int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
+        if (preHandle != nullptr) {
+            int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_SET_CONFIG fail");
+
+            ret = (*preHandle)->command(preHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Multichannel effect chain update EFFECT_CMD_GET_CONFIG fail");
+            swap(ioBufferConfig_.inputCfg, ioBufferConfig_.outputCfg); // pass outputCfg to next algo as inputCfg
+        }
+        preHandle = handle;
     }
+    ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
+    ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "last effect update EFFECT_CMD_SET_CONFIG fail");
+    // recover bufferconfig
+    ioBufferConfig_.inputCfg.channels = channels;
+    ioBufferConfig_.inputCfg.channelLayout = channelLayout;
     return SUCCESS;
+}
+
+void AudioEfffectChain::ResetIoBufferConfig()
+{
+    ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
+    ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
+    ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
 }
 
 AudioEffectConfig AudioEffectChain::GetIoBufferConfig()
