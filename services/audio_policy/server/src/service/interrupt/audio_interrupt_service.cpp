@@ -1264,7 +1264,7 @@ void AudioInterruptService::AudioInterruptDeathRecipient::OnRemoteDied(const wpt
 AudioInterruptService::AudioInterruptClient::AudioInterruptClient(
     const std::shared_ptr<AudioInterruptCallback> &callback,
     const sptr<IRemoteObject> &object,
-    const std::shared_ptr<AudioInterruptDeathRecipient> &deathRecipient)
+    const sptr<AudioInterruptDeathRecipient> &deathRecipient)
     : callback_(callback), object_(object), deathRecipient_(deathRecipient)
 {
 }

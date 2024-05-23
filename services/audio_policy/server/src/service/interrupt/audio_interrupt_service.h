@@ -113,7 +113,7 @@ private:
         explicit AudioInterruptClient(
             const std::shared_ptr<AudioInterruptCallback> &callback,
             const sptr<IRemoteObject> &object,
-            const std::shared_ptr<AudioInterruptDeathRecipient> &deathRecipient);
+            const sptr<AudioInterruptDeathRecipient> &deathRecipient);
         virtual ~AudioInterruptClient();
 
         DISALLOW_COPY_AND_MOVE(AudioInterruptClient);
@@ -123,7 +123,7 @@ private:
     private:
         const std::shared_ptr<AudioInterruptCallback> callback_;
         const sptr<IRemoteObject> object_;
-        std::shared_ptr<AudioInterruptDeathRecipient> deathRecipient_;
+        sptr<AudioInterruptDeathRecipient> deathRecipient_;
     };
 
     // deprecated interrupt interfaces
@@ -173,7 +173,7 @@ private:
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusCfgMap_ = {};
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> zonesMap_;
 
-    std::map<int32_t, sptr<AudioInterruptClient>> interruptClients_;
+    std::map<int32_t, std::shared_ptr<AudioInterruptClient>> interruptClients_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
