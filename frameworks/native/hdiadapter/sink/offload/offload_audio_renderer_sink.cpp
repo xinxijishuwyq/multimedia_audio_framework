@@ -964,7 +964,6 @@ void OffloadAudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len
 
 int32_t OffloadAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
-    AUDIO_WARNING_LOG("not supported.");
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }

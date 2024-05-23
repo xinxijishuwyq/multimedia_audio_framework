@@ -386,7 +386,8 @@ bool AudioPolicyServerHandler::SendRecreateRendererStreamEvent(int32_t clientId,
     eventContextObj->clientId = clientId;
     eventContextObj->sessionId = sessionID;
     eventContextObj->streamFlag = streamFlag;
-    return SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT));
+    return SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT,
+        eventContextObj));
 }
 
 bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag)
@@ -396,7 +397,8 @@ bool AudioPolicyServerHandler::SendRecreateCapturerStreamEvent(int32_t clientId,
     eventContextObj->clientId = clientId;
     eventContextObj->sessionId = sessionID;
     eventContextObj->streamFlag = streamFlag;
-    return SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT));
+    return SendSyncEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT,
+        eventContextObj));
 }
 
 bool AudioPolicyServerHandler::SendHeadTrackingDeviceChangeEvent(

@@ -253,7 +253,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSamplingRate(int32_t rate)
             AUDIO_ERR_LOG("sampleFormat input value is invalid");
             return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
-    samplingRate_ =rate;
+    samplingRate_ = rate;
     return AUDIOSTREAM_SUCCESS;
 }
 
