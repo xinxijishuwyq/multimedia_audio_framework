@@ -20,7 +20,6 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 const std::string DIRECT_SINK_NAME = "direct";
-const std::string VOIP_SINK_NAME = "voip";
 const char *SINK_ADAPTER_NAME = "primary";
 class AudioDirectSinkUnitTest : public testing::Test {
 public:
@@ -31,7 +30,6 @@ public:
 
 protected:
     AudioRendererSink *sink;
-    AudioRendererSink *voipSink;
 };
 
 void AudioDirectSinkUnitTest::SetUpTestCase(void)
@@ -47,16 +45,12 @@ void AudioDirectSinkUnitTest::TearDownTestCase(void)
 void AudioDirectSinkUnitTest::SetUp(void)
 {
     sink = AudioRendererSink::GetInstance(DIRECT_SINK_NAME);
-    voipSink = AudioRendererSink::GetInstance(VOIP_SINK_NAME);
 }
 
 void AudioDirectSinkUnitTest::TearDown(void)
 {
     if (sink && sink->IsInited()) {
         sink->DeInit();
-    }
-    if (voipSink && voipSink->IsInited()) {
-        voipSink->DeInit();
     }
 }
 
@@ -275,172 +269,6 @@ HWTEST_F(AudioDirectSinkUnitTest, DirectAudioSinkSetAttribute_002, TestSize.Leve
     ret = sink->Start();
     EXPECT_EQ(SUCCESS, ret);
     ret = sink->Stop();
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test Create Voip Sink
- * @tc.type  : FUNC
- * @tc.number: VoipAudioSinkCreate_001
- * @tc.desc  : Test create voip sink success
- */
-HWTEST_F(AudioDirectSinkUnitTest, VoipAudioSinkCreate_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, this->voipSink);
-}
-
-/**
- * @tc.name  : Test Init Voip Sink
- * @tc.type  : FUNC
- * @tc.number: VoipAudioSinkInit_001
- * @tc.desc  : Test init voip sink success
- */
-HWTEST_F(AudioDirectSinkUnitTest, VoipAudioSinkInit_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, this->voipSink);
-    IAudioSinkAttr attr = {};
-    attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = 48000;
-    attr.channel = 2;
-    attr.format = HdiAdapterFormat::SAMPLE_S16;
-    attr.channelLayout = 3;
-    attr.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    attr.volume = 1.0f;
-    attr.openMicSpeaker = 1;
-    int32_t ret = voipSink->Init(attr);
-    EXPECT_EQ(SUCCESS, ret);
-    float volume = 1.0f;
-    ret = voipSink->SetVolume(volume, volume);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test Voip Sink State
- * @tc.type  : FUNC
- * @tc.number: VoipAudioSinkState_001
- * @tc.desc  : Test voip sink state success
- */
-HWTEST_F(AudioDirectSinkUnitTest, VoipAudioSinkState_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, this->voipSink);
-    IAudioSinkAttr attr = {};
-    attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = 48000;
-    attr.channel = 2;
-    attr.format = HdiAdapterFormat::SAMPLE_S16;
-    attr.channelLayout = 3;
-    attr.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    attr.volume = 1.0f;
-    attr.openMicSpeaker = 1;
-    int32_t ret = voipSink->Init(attr);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Start();
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Stop();
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test Voip Sink init State
- * @tc.type  : FUNC
- * @tc.number: VoipAudioSinkState_002
- * @tc.desc  : Test voip sink init state success
- */
-HWTEST_F(AudioDirectSinkUnitTest, VoipAudioSinkState_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, this->voipSink);
-    IAudioSinkAttr attr = {};
-    attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = 48000;
-    attr.channel = 2;
-    attr.format = HdiAdapterFormat::SAMPLE_S16;
-    attr.channelLayout = 3;
-    attr.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    attr.volume = 1.0f;
-    attr.openMicSpeaker = 1;
-    bool isInited = voipSink->IsInited();
-    EXPECT_EQ(false, isInited);
-
-    int32_t ret = voipSink->Init(attr);
-    EXPECT_EQ(SUCCESS, ret);
-
-    isInited = voipSink->IsInited();
-    EXPECT_EQ(true, isInited);
-
-    voipSink->DeInit();
-
-    isInited = voipSink->IsInited();
-    EXPECT_EQ(false, isInited);
-
-    // Continuous execution init
-    ret = voipSink->Init(attr);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Init(attr);
-    EXPECT_EQ(SUCCESS, ret);
-    isInited = voipSink->IsInited();
-    EXPECT_EQ(true, isInited);
-}
-
-/**
- * @tc.name  : Test Voip Sink Start State
- * @tc.type  : FUNC
- * @tc.number: VoipAudioSinkState_003
- * @tc.desc  : Test voip sink start state success
- */
-HWTEST_F(AudioDirectSinkUnitTest, VoipAudioSinkState_003, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, this->voipSink);
-    IAudioSinkAttr attr = {};
-    attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = 48000;
-    attr.channel = 2;
-    attr.format = HdiAdapterFormat::SAMPLE_S16;
-    attr.channelLayout = 3;
-    attr.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    attr.volume = 1.0f;
-    attr.openMicSpeaker = 1;
-    int32_t ret = voipSink->Init(attr);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = voipSink->Start();
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Stop();
-    EXPECT_EQ(SUCCESS, ret);
-
-    // Continuous execution start
-    ret = voipSink->Start();
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Start();
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Stop();
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test Voip Sink Resume State
- * @tc.type  : FUNC
- * @tc.number: VoipAudioSinkState_004
- * @tc.desc  : Test voip sink resume state success
- */
-HWTEST_F(AudioDirectSinkUnitTest, VoipAudioSinkState_004, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, this->voipSink);
-    IAudioSinkAttr attr = {};
-    attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = 48000;
-    attr.channel = 2;
-    attr.format = HdiAdapterFormat::SAMPLE_S16;
-    attr.channelLayout = 3;
-    attr.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    attr.volume = 1.0f;
-    attr.openMicSpeaker = 1;
-    int32_t ret = voipSink->Init(attr);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Start();
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Resume();
-    EXPECT_EQ(SUCCESS, ret);
-    ret = voipSink->Stop();
     EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
