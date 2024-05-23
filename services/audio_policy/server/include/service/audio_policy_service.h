@@ -970,6 +970,7 @@ private:
 
     static std::map<std::string, uint32_t> formatStrToEnum;
     static std::map<std::string, ClassType> classStrToEnum;
+    static std::map<std::string, ClassType> portStrToEnum;
 
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
 
