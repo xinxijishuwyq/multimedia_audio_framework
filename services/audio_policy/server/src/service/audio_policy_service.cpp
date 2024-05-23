@@ -93,9 +93,23 @@ std::map<std::string, ClassType> AudioPolicyService::classStrToEnum = {
     {PRIMARY_CLASS, TYPE_PRIMARY},
     {A2DP_CLASS, TYPE_A2DP},
     {USB_CLASS, TYPE_USB},
+    {DP_CLASS, TYPE_DP},
     {FILE_CLASS, TYPE_FILE_IO},
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
     {INVALID_CLASS, TYPE_INVALID},
+};
+
+std::map<std::string, ClassType> AudioPolicyService::portStrToEnum = {
+    {PRIMARY_SPEAKER, TYPE_PRIMARY},
+    {PRIMARY_MIC, TYPE_PRIMARY},
+    {PRIMARY_WAKEUP_MIC, TYPE_PRIMARY},
+    {BLUETOOTH_SPEAKER, TYPE_A2DP},
+    {USB_SPEAKER, TYPE_USB},
+    {USB_MIC, TYPE_USB},
+    {DP_SINK, TYPE_DP},
+    {FILE_SINK, TYPE_FILE_IO},
+    {FILE_SOURCE, TYPE_FILE_IO},
+    {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
 };
 
 static const std::string SETTINGS_DATA_BASE_URI =
@@ -1628,7 +1642,6 @@ bool AudioPolicyService::FillWakeupStreamPropInfo(const AudioStreamInfo &streamI
     auto targetIt = pipeInfo->streamPropInfos_.begin();
     for (auto it = pipeInfo->streamPropInfos_.begin(); it != pipeInfo->streamPropInfos_.end(); ++it) {
         if (it -> channelLayout_ == static_cast<uint32_t>(streamInfo.channels)) {
-            AUDIO_INFO_LOG("");
             targetIt = it;
             break;
         }
@@ -1648,7 +1661,7 @@ bool AudioPolicyService::FillWakeupStreamPropInfo(const AudioStreamInfo &streamI
 bool AudioPolicyService::ConstructWakeupAudioModuleInfo(const AudioStreamInfo &streamInfo,
     AudioModuleInfo &audioModuleInfo)
 {
-    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[std::string(PRIMARY_WAKEUP)]));
+    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[std::string(PRIMARY_WAKEUP)]));
     if (it == adapterInfoMap_.end()) {
         AUDIO_ERR_LOG("can not find adapter info");
         return false;
@@ -5193,11 +5206,11 @@ int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage stream
         return AUDIO_FLAG_VOIP_FAST;
     }
     std::string sinkPortName = GetSinkPortName(deviceType);
-    if (adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
+    if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
         return AUDIO_FLAG_INVALID;
     }
     AudioAdapterInfo adapterInfo;
-    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[sinkPortName]));
+    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName]));
     if (it != adapterInfoMap_.end()) {
         adapterInfo = it->second;
     } else {
@@ -5241,11 +5254,11 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
         return AUDIO_FLAG_VOIP_FAST;
     }
     std::string sourcePortName = GetSourcePortName(deviceType);
-    if (adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
+    if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
         return AUDIO_FLAG_INVALID;
     }
     AudioAdapterInfo adapterInfo;
-    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(classStrToEnum[sourcePortName]));
+    auto it = adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName]));
     if (it != adapterInfoMap_.end()) {
         adapterInfo = it->second;
     } else {
