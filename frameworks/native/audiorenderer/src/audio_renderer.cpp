@@ -1609,7 +1609,8 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
     uint32_t sleepTime = 300000;
     bool result = false;
     int32_t ret = -1;
-    while (!result && tryCounter-- > 0) {
+    while (!result && tryCounter > 0) {
+        tryCounter--;
         usleep(sleepTime);
         if (renderer_ == nullptr || renderer_->audioStream_ == nullptr ||
             renderer_->abortRestore_) {

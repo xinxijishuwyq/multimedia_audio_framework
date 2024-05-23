@@ -658,6 +658,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
+        adapterInited_ = false;
         return ERR_NOT_STARTED;
     }
 

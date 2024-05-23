@@ -95,8 +95,8 @@ const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
-static bool g_isVolumeChange = true;
 bool g_speakerPaAllStreamVolumeZero = false;
+bool g_onlyPrimarySpeakerPaLoading = false;
 bool g_paHaveDisabled = false;
 time_t g_speakerPaAllStreamStartVolZeroTime = 0;
 bool g_effectAllStreamVolumeZeroMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
@@ -1426,26 +1426,24 @@ static void SinkRenderPrimaryAfterProcess(pa_sink *si, size_t length, pa_memchun
 
 static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime, int32_t i)
 {
-    if (g_isVolumeChange) {
-        void *state = NULL;
-        pa_sink_input *input;
-        g_effectAllStreamVolumeZeroMap[i] = true;
-        while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
-            pa_sink_input_assert_ref(input);
-            const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
-            const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
-            pa_cvolume vol;
-            pa_sink_input_get_volume(input, &vol, true);
-            pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
-            if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
-                g_effectAllStreamVolumeZeroMap[i] = false;
-                g_effectStartVolZeroTimeMap[i] = 0;
-                AUDIO_INFO_LOG("SCENE_TYPE_SET[%{public}d]:%{public}s for streamtype:[%{public}s]'s"
-                    " volume is not zero, this effect all streamtype is not zero volume.", i,
-                    SCENE_TYPE_SET[i], streamType);
-                break;
-            }
+    void *state = NULL;
+    pa_sink_input *input;
+    g_effectAllStreamVolumeZeroMap[i] = true;
+    while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+        pa_sink_input_assert_ref(input);
+        const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
+        const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
+        pa_cvolume vol;
+        pa_sink_input_get_volume(input, &vol, true);
+        pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
+        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
+        if (pa_safe_streq(sinkSceneTypeTmp, SCENE_TYPE_SET[i]) && !isZeroVolume) {
+            g_effectAllStreamVolumeZeroMap[i] = false;
+            g_effectStartVolZeroTimeMap[i] = 0;
+            AUDIO_DEBUG_LOG("SCENE_TYPE_SET[%{public}d]:%{public}s for streamtype:[%{public}s]'s"
+                " volume is not zero, this effect all streamtype is not zero volume.", i,
+                SCENE_TYPE_SET[i], streamType);
+            break;
         }
     }
 
@@ -1458,7 +1456,7 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         WAIT_CLOSE_PA_OR_EFFECT_TIME) {
         sinkSceneType = SCENE_TYPE_SET[SCENE_TYPE_NUM - 1]; // EFFECT_NONE
         if (!g_effectHaveDisabledMap[i]) {
-            AUDIO_INFO_LOG("volume change to zero over %{public}ds, close effect success. effect:%{public}s",
+            AUDIO_INFO_LOG("volume change to zero over %{public}ds, close effect:%{public}s success.",
                 WAIT_CLOSE_PA_OR_EFFECT_TIME, SCENE_TYPE_SET[i]);
             g_effectHaveDisabledMap[i] = true;
             g_effectStartVolZeroTimeMap[i] = 0;
@@ -1467,31 +1465,52 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         sinkSceneType = SCENE_TYPE_SET[i];
         if (g_effectHaveDisabledMap[i]) {
             g_effectHaveDisabledMap[i] = false;
-            AUDIO_INFO_LOG(" volume change to not zero, open effect success. effect:%{public}s",
-                SCENE_TYPE_SET[i]);
+            AUDIO_INFO_LOG("volume change to not zero, open effect:%{public}s success. ", SCENE_TYPE_SET[i]);
         }
     }
     return sinkSceneType;
 }
 
+static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
+{
+    pa_sink *s;
+    pa_core *c = u->core;
+    uint32_t idx;
+    g_onlyPrimarySpeakerPaLoading = true;
+    PA_IDXSET_FOREACH(s, c->sinks, idx) {
+        bool isHdiSink = !strncmp(s->driver, "module_hdi_sink", 15); // 15 cmp length
+        if (isHdiSink && strcmp(s->name, "Speaker")) {
+            g_onlyPrimarySpeakerPaLoading = false;
+            break;
+        }
+    }
+
+    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), "primary")) {
+        AUDIO_DEBUG_LOG("Sink[%{public}s]", GetDeviceClass(u->primary.sinkAdapter->deviceClass));
+        g_onlyPrimarySpeakerPaLoading = false;
+    }
+}
+
 static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTime)
 {
-    if (g_isVolumeChange) {
-        void *state = NULL;
-        pa_sink_input *input;
-        g_speakerPaAllStreamVolumeZero = true;
-        while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
-            pa_sink_input_assert_ref(input);
-            pa_cvolume vol;
-            pa_sink_input_get_volume(input, &vol, true);
-            pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
-            bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
-            if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
-                g_speakerPaAllStreamVolumeZero = false;
-                g_speakerPaAllStreamStartVolZeroTime = 0;
-                AUDIO_INFO_LOG("%{public}s sink all streamtype is not zero volume.", u->sink->name);
-                break;
-            }
+    CheckOnlyPrimarySpeakerPaLoading(u);
+    if (!g_onlyPrimarySpeakerPaLoading) {
+        AUDIO_DEBUG_LOG("Not only the speaker pa, dont deal speaker pa.");
+        return;
+    }
+    void *state = NULL;
+    pa_sink_input *input;
+    g_speakerPaAllStreamVolumeZero = true;
+    while ((input = pa_hashmap_iterate(u->sink->thread_info.inputs, &state, NULL))) {
+        pa_sink_input_assert_ref(input);
+        pa_cvolume vol;
+        pa_sink_input_get_volume(input, &vol, true);
+        pa_sw_cvolume_multiply(&vol, &input->sink->thread_info.soft_volume, &input->volume);
+        bool isZeroVolume = input->sink->thread_info.soft_muted || pa_cvolume_is_muted(&vol);
+        if (!strcmp(u->sink->name, "Speaker") && !isZeroVolume) {
+            g_speakerPaAllStreamVolumeZero = false;
+            g_speakerPaAllStreamStartVolZeroTime = 0;
+            break;
         }
     }
     if (g_speakerPaAllStreamVolumeZero && !g_paHaveDisabled && g_speakerPaAllStreamStartVolZeroTime == 0) {
@@ -1508,7 +1527,7 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
             g_speakerPaAllStreamStartVolZeroTime = 0;
         }
     } else {
-        if (strcmp(u->sink->name, "Speaker")) {
+        if (strcmp(u->sink->name, "Speaker") && g_paHaveDisabled) {
             if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0) == 0) {
                 AUDIO_INFO_LOG("Have new pa routing. open %{public}s pa success", u->sink->name);
             }
@@ -1516,8 +1535,7 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
         }
         if (g_paHaveDisabled) {
             if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
-                AUDIO_INFO_LOG("Speaker all streamtype volume not zero, open %{public}s pa success",
-                    u->sink->name);
+                AUDIO_INFO_LOG("Speaker all streamtype volume not zero, open %{public}s pa success", u->sink->name);
             }
             g_paHaveDisabled = false;
         }
@@ -1577,7 +1595,6 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);
     }
     CheckAndDealSpeakerPaZeroVolume(u, currentTime);
-    g_isVolumeChange = false;
     SinkRenderPrimaryAfterProcess(si, length, chunkIn);
 }
 
@@ -2460,7 +2477,6 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 
 void PaInputVolumeChangeCb(pa_sink_input *i)
 {
-    g_isVolumeChange = true;
     struct Userdata *u;
 
     pa_sink_input_assert_ref(i);

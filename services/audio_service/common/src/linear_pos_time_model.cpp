@@ -118,7 +118,7 @@ int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
             AUDIO_WARNING_LOG("posInFrame %{public}" PRIu64" is too"
                 " large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         }
-        deltaFrame = posInFrame - stampFrame_;
+        deltaFrame = static_cast<int64_t>(posInFrame - stampFrame_);
         return stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
     } else {
         if (stampFrame_ - posInFrame >= (uint64_t)sampleRate_) {
