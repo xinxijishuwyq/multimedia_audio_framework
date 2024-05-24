@@ -3648,12 +3648,21 @@ int32_t AudioPolicyService::GetDeviceNameFromDataShareHelper(std::string &device
     predicates.EqualTo(SETTINGS_DATA_FIELD_KEYWORD, PREDICATES_STRING);
 
     auto resultSet = dataShareHelper->Query(*uri, predicates, columns);
-    CHECK_AND_RETURN_RET_LOG(resultSet != nullptr, ERROR, "query fail.");
+    if (resultSet == nullptr) {
+        AUDIO_ERR_LOG("Failed to query device name from dataShareHelper!");
+        dataShareHelper->Release();
+        return ERROR;
+    }
 
     int32_t numRows = 0;
     resultSet->GetRowCount(numRows);
+    if (numRows <= 0) {
+        AUDIO_ERR_LOG("The result of querying is zero row!");
+        resultSet->Close();
+        dataShareHelper->Release();
+        return ERROR;
+    }
 
-    CHECK_AND_RETURN_RET_LOG(numRows > 0, ERROR, "row zero.");
     int columnIndex;
     resultSet->GoToFirstRow();
     resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
