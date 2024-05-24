@@ -66,7 +66,7 @@ private:
     std::mutex streamImplLock_;
     int32_t streamCmdStatus_;
     int32_t streamFlushStatus_;
-    State state_;
+    State state_ = INVALID;
     uint32_t underFlowCount_;
     pa_threaded_mainloop *mainloop_;
 
