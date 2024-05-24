@@ -31,6 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_OVERFLOW_NUM = 100;
+static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -94,11 +95,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 {
     Trace trace("AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
-    if (sourceType <= SOURCE_TYPE_MIC || sourceType >= SOURCE_TYPE_MAX) {
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid source type %{public}d!", sourceType);
+        return nullptr;
     }
-    CHECK_AND_RETURN_RET_LOG(sourceType >= SOURCE_TYPE_MIC && sourceType <= SOURCE_TYPE_MAX, nullptr,
-        "Invalid source type %{public}d!", sourceType);
     if (sourceType == SOURCE_TYPE_ULTRASONIC && getuid() != UID_MSDP_SA) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
     }
@@ -118,9 +119,9 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
-    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, nullptr, "Failed to create capturer object");
     if (capturer == nullptr) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
+        AUDIO_ERR_LOG("Failed to create capturer object");
         return capturer;
     }
     if (!cachePath.empty()) {
@@ -166,7 +167,7 @@ void AudioCapturer::SendCapturerCreateError(const SourceType &sourceType,
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_CREATE_ERROR_STATS,
-        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+        Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
     bean->Add("IS_PLAYBACK", 0);
     bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
     bean->Add("STREAM_TYPE", sourceType);
