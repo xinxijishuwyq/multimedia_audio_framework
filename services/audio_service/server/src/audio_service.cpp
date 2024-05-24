@@ -529,8 +529,8 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(DeviceInf
         if (isVoipStream) {
             endpointFlag = AUDIO_FLAG_VOIP_FAST;
         }
-        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceId) + "_" +
-            std::to_string(endpointFlag);
+        std::string deviceKey = deviceInfo.networkId + std::to_string(deviceInfo.deviceType) + "_" +
+            std::to_string(deviceInfo.deviceId) + "_" + std::to_string(endpointFlag);
         if (endpointList_.find(deviceKey) != endpointList_.end()) {
             AUDIO_INFO_LOG("AudioService find endpoint already exist for deviceKey:%{public}s", deviceKey.c_str());
             return endpointList_[deviceKey];

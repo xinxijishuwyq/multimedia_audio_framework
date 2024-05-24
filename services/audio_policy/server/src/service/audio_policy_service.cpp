@@ -2155,9 +2155,10 @@ bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
     CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
     CHECK_AND_RETURN_RET_LOG(rendererChangeInfo->rendererInfo.originalFlag != AUDIO_FLAG_NORMAL, false,
         "original flag is normal");
-    // different hal
-    if ((strcmp(GetSinkPortName(rendererChangeInfo->outputDeviceInfo.deviceType).c_str(),
-        GetSinkPortName(currentActiveDevice_.deviceType_).c_str())) ||
+    // Switch between old and new stream as they have different hals
+    std::string oldDevicePortName = rendererChangeInfo->outputDeviceInfo.isArmUsbDevice ?
+        USB_SPEAKER : GetSinkPortName(rendererChangeInfo->outputDeviceInfo.deviceType);
+    if ((strcmp(oldDevicePortName.c_str(), GetSinkPortName(currentActiveDevice_.deviceType_).c_str())) ||
         ((rendererChangeInfo->outputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
         (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
@@ -2354,9 +2355,10 @@ bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
     CHECK_AND_RETURN_RET_LOG(isUpdateActiveDevice, false, "isUpdateActiveDevice is false");
     CHECK_AND_RETURN_RET_LOG(capturerChangeInfo->capturerInfo.originalFlag == AUDIO_FLAG_MMAP, false,
         "original flag is false");
-    // different hal
-    if ((strcmp(GetSinkPortName(capturerChangeInfo->inputDeviceInfo.deviceType).c_str(),
-        GetSinkPortName(currentActiveDevice_.deviceType_).c_str())) ||
+    // Switch between old and new stream as they have different hals
+    std::string oldDevicePortName = capturerChangeInfo->inputDeviceInfo.isArmUsbDevice ?
+        USB_SPEAKER : GetSinkPortName(capturerChangeInfo->inputDeviceInfo.deviceType);
+    if ((strcmp(oldDevicePortName.c_str(), GetSinkPortName(currentActiveDevice_.deviceType_).c_str())) ||
         ((capturerChangeInfo->inputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
         (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
@@ -4359,6 +4361,7 @@ void AudioPolicyService::UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<Aud
     deviceInfo.channelIndexMasks = desc->channelIndexMasks_;
     deviceInfo.displayName = desc->displayName_;
     deviceInfo.connectState = desc->connectState_;
+    deviceInfo.isArmUsbDevice = isArmUsbDevice_;
 
     if (deviceInfo.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
@@ -5432,7 +5435,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
             return GetVoipPlaybackDeviceInfo(config, deviceInfo);
         }
-        deviceInfo.deviceId = 6; // 6 for test
+        deviceInfo.deviceId = currentActiveDevice_.deviceId_;
         deviceInfo.networkId = LOCAL_NETWORK_ID;
         deviceInfo.deviceType = currentActiveDevice_.deviceType_;
         deviceInfo.deviceRole = OUTPUT_DEVICE;
@@ -5440,7 +5443,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             return GetVoipRecordDeviceInfo(config, deviceInfo);
         }
-        deviceInfo.deviceId = 1;
+        deviceInfo.deviceId = currentActiveInputDevice_.deviceId_;
         deviceInfo.networkId = LOCAL_NETWORK_ID;
         deviceInfo.deviceRole = INPUT_DEVICE;
         deviceInfo.deviceType = currentActiveInputDevice_.deviceType_;

@@ -336,7 +336,8 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id) : endpoin
 std::string AudioEndpointInner::GetEndpointName()
 {
     // temp method to get device key, should be same with AudioService::GetAudioEndpointForDevice.
-    return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceId) + "_" + std::to_string(id_);
+    return deviceInfo_.networkId + std::to_string(deviceInfo_.deviceType) + "_" +
+        std::to_string(deviceInfo_.deviceId) + "_" + std::to_string(id_);
 }
 
 int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
