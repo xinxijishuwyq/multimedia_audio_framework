@@ -1485,9 +1485,26 @@ static void CheckOnlyPrimarySpeakerPaLoading(struct Userdata *u)
         }
     }
 
-    if (!strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), "primary")) {
-        AUDIO_DEBUG_LOG("Sink[%{public}s]", GetDeviceClass(u->primary.sinkAdapter->deviceClass));
+    if (strcmp(GetDeviceClass(u->primary.sinkAdapter->deviceClass), "primary")) {
+        AUDIO_DEBUG_LOG("Sink[%{public}s] -- no primary, dont close it.",
+            GetDeviceClass(u->primary.sinkAdapter->deviceClass));
         g_onlyPrimarySpeakerPaLoading = false;
+    }
+
+    if (!g_onlyPrimarySpeakerPaLoading && g_paHaveDisabled) {
+        AUDIO_INFO_LOG("PA have disable, open it.");
+        if (strcmp(u->sink->name, "Speaker") && g_paHaveDisabled) {
+            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
+                AUDIO_INFO_LOG("Have new pa routing. open %{public}s pa success", u->sink->name);
+            }
+            g_paHaveDisabled = false;
+        }
+        if (g_paHaveDisabled) {
+            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
+                AUDIO_INFO_LOG("Speaker all streamtype volume not zero, open %{public}s pa success", u->sink->name);
+            }
+            g_paHaveDisabled = false;
+        }
     }
 }
 
@@ -1528,7 +1545,7 @@ static void CheckAndDealSpeakerPaZeroVolume(struct Userdata *u, time_t currentTi
         }
     } else {
         if (strcmp(u->sink->name, "Speaker") && g_paHaveDisabled) {
-            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 0) == 0) {
+            if (u->primary.sinkAdapter->RendererSinkSetPaPower(u->primary.sinkAdapter, 1) == 0) {
                 AUDIO_INFO_LOG("Have new pa routing. open %{public}s pa success", u->sink->name);
             }
             g_paHaveDisabled = false;
@@ -2265,6 +2282,7 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
     } else if (stopping) {
         u->offload.sinkAdapter->RendererSinkFlush(u->offload.sinkAdapter);
         OffloadReset(u);
+        g_speakerPaAllStreamStartVolZeroTime = 0;
     }
 }
 
@@ -2413,6 +2431,7 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
         AUDIO_INFO_LOG("PaInputStateChangeCbMultiChannel, deinit mch renderer");
         u->multiChannel.isHDISinkStarted = false;
         u->multiChannel.isHDISinkInited = false;
+        g_speakerPaAllStreamStartVolZeroTime = 0;
     } else if (corking) {
         u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
         u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
@@ -3383,6 +3402,7 @@ static void OffloadSinkStateChangeCb(pa_sink *sink, pa_sink_state_t newState)
             u->offload.sinkAdapter->RendererSinkDeInit(u->offload.sinkAdapter);
             AUDIO_INFO_LOG("DeInited Offload HDI renderer");
         }
+        g_speakerPaAllStreamStartVolZeroTime = 0;
     }
 }
 
