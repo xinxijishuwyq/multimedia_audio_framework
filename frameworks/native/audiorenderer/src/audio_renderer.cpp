@@ -610,7 +610,16 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(audioInterrupt_.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION, true);
 
-    return audioStream_->StartAudioStream(cmdType);
+    bool result = audioStream_->StartAudioStream(cmdType);
+    if (!result) {
+        AUDIO_ERR_LOG("Start audio stream failed");
+        ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+        }
+    }
+
+    return result;
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
