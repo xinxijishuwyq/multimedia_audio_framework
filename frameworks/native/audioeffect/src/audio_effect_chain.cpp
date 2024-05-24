@@ -300,11 +300,11 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &chann
     if (ioBufferConfig_.inputCfg.channels == channels && ioBufferConfig_.inputCfg.channelLayout == channelLayout) {
         return SUCCESS;
     }
+    ioBufferConfig_.inputCfg.channels = channels;
+    ioBufferConfig_.inputCfg.channelLayout = channelLayout;
     if (IsEmptyEffectHandles()) {
         return;
     }
-    ioBufferConfig_.inputCfg.channels = channels;
-    ioBufferConfig_.inputCfg.channelLayout = channelLayout;
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
