@@ -2514,6 +2514,7 @@ int32_t AudioPolicyService::LoadA2dpModule(DeviceType deviceType)
             moduleInfo.format = ConvertToHDIAudioFormat(audioStreamInfo.format);
             moduleInfo.bufferSize = to_string(bufferSize);
             moduleInfo.renderInIdleState = "1";
+            moduleInfo.sinkLatency = "0";
 
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
@@ -2552,6 +2553,7 @@ int32_t AudioPolicyService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo)
     moduleInfo.format = ConvertToHDIAudioFormat(audioStreamInfo.format);
     moduleInfo.bufferSize = to_string(bufferSize);
     moduleInfo.renderInIdleState = "1";
+    moduleInfo.sinkLatency = "0";
     AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo);
     CHECK_AND_RETURN_RET_LOG(ioHandle != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
         "OpenAudioPort failed %{public}d", ioHandle);
