@@ -68,6 +68,7 @@ static const std::string PIPE_FAST_DISTRIBUTED_OUTPUT = "fast_distributed_output
 static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
 static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
 std::string PIPE_WAKEUP_INPUT = "wakeup_input";
+static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -3629,8 +3630,22 @@ std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareH
     sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, nullptr, "[Policy Service] audio service remote object is NULL.");
 
+    int64_t startTime = ClockTime::GetCurNano();
+    sptr<IRemoteObject> dataSharedServer = samgr->CheckSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    int64_t cost = ClockTime::GetCurNano() - startTime;
+    if (cost > CALL_IPC_COST_TIME_MS) {
+        AUDIO_WARNING_LOG("Call get DataShare server cost too long: %{public}" PRId64"ms.", cost / AUDIO_US_PER_SECOND);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(dataSharedServer != nullptr, nullptr, "DataShare server is not started!");
+
+    startTime = ClockTime::GetCurNano();
     std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = DataShare::DataShareHelper::Creator(remoteObject,
         SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
+    cost = ClockTime::GetCurNano() - startTime;
+    if (cost > CALL_IPC_COST_TIME_MS) {
+        AUDIO_WARNING_LOG("DataShareHelper::Creator cost too long: %{public}" PRId64"ms.", cost / AUDIO_US_PER_SECOND);
+    }
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, nullptr, "create fail.");
     return dataShareHelper;
 }
