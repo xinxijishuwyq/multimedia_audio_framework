@@ -720,6 +720,9 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     if (spkProcClientCb_) {
         info.rendererWriteCallback = spkProcClientCb_->GetRendererWriteCallback();
     }
+    if (micProcClientCb_) {
+        info.capturerReadCallback = micProcClientCb_->GetCapturerReadCallback();
+    }
     if (firstFrameWritingCb_) {
         info.rendererFirstFrameWritingCallback = firstFrameWritingCb_;
     }
@@ -753,6 +756,11 @@ void FastAudioStreamRenderCallback::ResetFirstFrameState()
 std::shared_ptr<AudioRendererWriteCallback> FastAudioStreamRenderCallback::GetRendererWriteCallback() const
 {
     return rendererWriteCallback_;
+}
+
+std::shared_ptr<AudioCapturerReadCallback> FastAudioStreamCaptureCallback::GetCapturerReadCallback() const
+{
+    return captureCallback_;
 }
 
 void FastAudioStreamCaptureCallback::OnHandleData(size_t length)

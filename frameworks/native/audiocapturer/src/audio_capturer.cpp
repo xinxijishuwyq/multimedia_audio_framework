@@ -1077,6 +1077,8 @@ void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
         audioStream->SetCapturerPeriodPositionCallback(info.framePeriodNumber, info.capturePeriodPositionCb);
     }
 
+    audioStream->SetCapturerReadCallback(info.capturerReadCallback);
+
     audioStream->SetStreamCallback(info.audioStreamCallback);
 }
 
