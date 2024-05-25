@@ -1495,8 +1495,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
-    int32_t ret = WriteInner(buffer, bufferSize);
-    return ret <= 0 ? ret : bufferSize;
+    return WriteInner(buffer, bufferSize);
 }
 
 bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize)
