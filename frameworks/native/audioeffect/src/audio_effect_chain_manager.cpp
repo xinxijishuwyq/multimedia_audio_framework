@@ -152,6 +152,10 @@ void AudioEffectChainManager::SetSpkOffloadState()
             }
             spkOffloadEnabled_ = false;
         }
+
+        if (deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            RecoverAllChains();
+        }
     }
 }
 
@@ -162,7 +166,9 @@ void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::str
         return;
     }
 
+    // store effectChain in backup map
     DeleteAllChains();
+    // recover effectChain in speaker mode
     SetSpkOffloadState();
     return;
 }
@@ -906,6 +912,7 @@ void AudioEffectChainManager::RecoverAllChains()
         std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
             CreateAudioEffectChainDynamic(sceneType);
+            UpdateMultichannelConfig(sceneType);
         }
     }
     SceneTypeToEffectChainCountBackupMap_.clear();
