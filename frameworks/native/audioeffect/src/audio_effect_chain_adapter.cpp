@@ -343,3 +343,22 @@ void EffectChainManagerFlush()
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
     return audioEffectChainManager->ResetEffectBuffer();
 }
+
+void EffectChainManagerEffectUpdate()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->UpdateRealAudioEffect();
+}
+
+bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneType)
+{
+    if (sceneType == nullptr || sinkSceneType == nullptr) {
+        return false;
+    }
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    std::string sceneTypeString = sceneType;
+    std::string sinkSceneTypeString = sinkSceneType;
+    return audioEffectChainManager->CheckSceneTypeMatch(sinkSceneType, sceneType);
+}

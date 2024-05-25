@@ -54,6 +54,7 @@ const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
+const uint32_t DEFAULT_NUM_EFFECT_INSTANCES = 3;
 
 struct SessionEffectInfo {
     std::string sceneMode;
@@ -124,6 +125,8 @@ public:
     bool GetCurSpatializationEnabled();
     void ResetEffectBuffer();
     void ResetInfo();  // Use for testing temporarily.
+    void UpdateRealAudioEffect();
+    bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -152,6 +155,7 @@ private:
     std::map<std::string, std::set<std::string>> SceneTypeToSessionIDMap_;
     std::map<std::string, SessionEffectInfo> SessionIDToEffectInfoMap_;
     std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
+    std::set<std::string> SceneTypeToSpecialEffectSet_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
     bool isInitialized_ = false;
@@ -164,6 +168,8 @@ private:
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     int32_t hdiSceneType_ = 0;
     int32_t hdiEffectMode_ = 0;
+    int32_t maxEffectInstances_ = DEFAULT_NUM_EFFECT_INSTANCES;
+    bool isCommonEffectChainExisted_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
