@@ -126,6 +126,7 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
+    void SetSpkOffloadEnabled(bool enabled); // Used for AISS scene temporarily
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -138,6 +139,7 @@ private:
     void UpdateEffectChainParams(AudioEffectScene sceneType);
     void SetSpkOffloadState();
     void InitHdiState();
+    bool CheckIfSpkDsp();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
