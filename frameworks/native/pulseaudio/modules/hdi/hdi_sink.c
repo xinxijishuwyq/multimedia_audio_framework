@@ -317,7 +317,7 @@ static void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        Write24Bit(b, ((uint32_t) v) >> BIT_8);
+        Write24Bit(b, ((int32_t) v) >> BIT_8);
         b += OFFSET_BIT_24;
     }
 }
@@ -2026,8 +2026,8 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     pa_memchunk *chunk = &(u->offload.chunk);
     chunk->index = 0;
     chunk->length = length;
-    size_t l;
-    size_t d;
+    int64_t l;
+    int64_t d;
     l = chunk->length;
     size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
     blockSize = PA_MAX(blockSize, pa_usec_to_bytes(0.6 * OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC, // 0.6 40% is hdi limit
