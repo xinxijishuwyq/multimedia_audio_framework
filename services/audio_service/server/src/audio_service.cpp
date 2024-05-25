@@ -335,6 +335,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
+    std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
         IsEndpointTypeVoip(config));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
@@ -343,7 +344,6 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    std::lock_guard<std::mutex> lock(processListMutex_);
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
 
