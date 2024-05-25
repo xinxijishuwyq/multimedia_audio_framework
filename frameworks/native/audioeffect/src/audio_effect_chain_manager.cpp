@@ -885,7 +885,6 @@ void AudioEffectChainManager::UpdateSensorState()
 
 void AudioEffectChainManager::DeleteAllChains()
 {
-    SceneTypeToEffectChainCountBackupMap_.clear();
     for (auto it = SceneTypeToEffectChainCountMap_.begin(); it != SceneTypeToEffectChainCountMap_.end(); ++it) {
         SceneTypeToEffectChainCountBackupMap_.insert(std::make_pair(it->first, it->second));
     }
