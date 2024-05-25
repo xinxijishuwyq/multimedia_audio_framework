@@ -54,6 +54,7 @@ public:
     virtual ~FastAudioStreamCaptureCallback() = default;
 
     void OnHandleData(size_t length) override;
+    std::shared_ptr<AudioCapturerReadCallback> GetCapturerReadCallback() const;
 private:
     std::shared_ptr<AudioCapturerReadCallback> captureCallback_ = nullptr;
 };
