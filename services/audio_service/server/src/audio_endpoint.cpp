@@ -97,6 +97,7 @@ public:
 
     bool Config(const DeviceInfo &deviceInfo) override;
     bool StartDevice();
+    void HandleStartDeviceFailed();
     bool StopDevice();
 
     // when audio process start.
@@ -901,18 +902,12 @@ bool AudioEndpointInner::StartDevice()
     CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL, false, "Endpoint status is %{public}s",
         GetStatusStr(endpointStatus_).c_str());
     endpointStatus_ = STARTING;
-    if (deviceInfo_.deviceRole == INPUT_DEVICE) {
-        CHECK_AND_RETURN_RET_LOG(fastSource_ != nullptr && fastSource_->Start() == SUCCESS,
-            false, "Source start failed.");
-        isStarted_ = true;
-    } else {
-        if (fastSink_ == nullptr || fastSink_->Start() != SUCCESS) {
-            AUDIO_ERR_LOG("Sink start failed.");
-            isStarted_ = false;
-        } else {
-            isStarted_ = true;
-        }
+    if ((deviceInfo_.deviceRole == INPUT_DEVICE && (fastSource_ == nullptr || fastSource_->Start() != SUCCESS)) ||
+        (deviceInfo_.deviceRole == OUTPUT_DEVICE && (fastSink_ == nullptr || fastSink_->Start() != SUCCESS))) {
+        HandleStartDeviceFailed();
+        return false;
     }
+    isStarted_ = true;
 
     if (isInnerCapEnabled_) {
         Trace trace("AudioEndpointInner::StartDupStream");
@@ -922,18 +917,26 @@ bool AudioEndpointInner::StartDevice()
         }
     }
 
-    if (isStarted_ == false) {
-        endpointStatus_ = IDEL;
-        workThreadCV_.notify_all();
-        return false;
-    }
-
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     needReSyncPosition_ = true;
     endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     return true;
+}
+
+void AudioEndpointInner::HandleStartDeviceFailed()
+{
+    AUDIO_ERR_LOG("Start failed for %{public}d, endpoint type %{public}u, process list size: %{public}zu.",
+        deviceInfo_.deviceRole, endpointType_, processList_.size());
+    std::lock_guard<std::mutex> lock(listLock_);
+    isStarted_ = false;
+    if (processList_.size() <= 1) { // The endpoint only has the current stream
+        endpointStatus_ = UNLINKED;
+    } else {
+        endpointStatus_ = IDEL;
+    }
+    workThreadCV_.notify_all();
 }
 
 // will not change state to stopped
