@@ -1480,7 +1480,13 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
     uint64_t nextHandlePos = curReadPos + dstSpanSizeInframe_;
     int64_t nextHdiWriteTime = GetPredictNextWriteTime(nextHandlePos);
     int64_t tempDelay = endpointType_ == TYPE_VOIP_MMAP ? RECORD_VOIP_DELAY_TIME : RECORD_DELAY_TIME;
-    wakeUpTime = nextHdiWriteTime + tempDelay;
+    int64_t predictWakeupTime = nextHdiWriteTime + tempDelay;
+    if (predictWakeupTime <= ClockTime::GetCurNano()) {
+        wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION;
+        AUDIO_ERR_LOG("hdi send wrong position time");
+    } else {
+        wakeUpTime = predictWakeupTime;
+    }
 
     int32_t ret = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "set dst buffer write frame fail, ret %{public}d.", ret);
@@ -1495,7 +1501,13 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
     uint64_t nextHandlePos = curWritePos + dstSpanSizeInframe_;
     Trace prepareTrace("AudioEndpoint::PrepareNextLoop " + std::to_string(nextHandlePos));
     int64_t nextHdiReadTime = GetPredictNextReadTime(nextHandlePos);
-    wakeUpTime = nextHdiReadTime - serverAheadReadTime_;
+    int64_t predictWakeupTime = nextHdiReadTime - serverAheadReadTime_;
+    if (predictWakeupTime <= ClockTime::GetCurNano()) {
+        wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION;
+        AUDIO_ERR_LOG("hdi send wrong position time");
+    } else {
+        wakeUpTime = predictWakeupTime;
+    }
 
     SpanInfo *nextWriteSpan = dstAudioBuffer_->GetSpanInfo(nextHandlePos);
     CHECK_AND_RETURN_RET_LOG(nextWriteSpan != nullptr, false, "GetSpanInfo failed, can not get next write span");
