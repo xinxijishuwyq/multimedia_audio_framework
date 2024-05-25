@@ -61,6 +61,7 @@ int32_t AudioResample::ProcessFloatResample(const std::vector<float> &input, std
 {
     int32_t ret = 0;
 #ifdef SPEEX_ENABLE
+    Trace trace("AudioResample::ProcessFloatResample");
     if (speex_->channelCount_ <= 0) {
         return ERR_INVALID_PARAM;
     }

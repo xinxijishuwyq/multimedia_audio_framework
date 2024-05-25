@@ -244,7 +244,7 @@ private:
 
     void ReportDataToResSched();
 
-    bool IsHightResolution() const noexcept;
+    bool IsHighResolution() const noexcept;
 
 private:
     AudioStreamType eStreamType_;
