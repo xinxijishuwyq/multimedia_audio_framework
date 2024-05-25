@@ -246,6 +246,8 @@ private:
 
     bool IsHightResolution() const noexcept;
 
+    void ProcessWriteInner(BufferDesc &bufferDesc);
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;

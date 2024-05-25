@@ -908,6 +908,20 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
+void RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
+{
+    int32_t result = 0; // Ensure result with default value.
+    if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
+    }
+    if (curStreamParams_.encoding == ENCODING_PCM && bufferDesc.dataLength != 0) {
+        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+    }
+    if (result < 0) {
+        AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
+    }
+}
+
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -933,12 +947,7 @@ void RendererInClientInner::WriteCallbackFunc()
             if (state_ != RUNNING) { continue; }
             traceQueuePop.End();
             // call write here.
-            int32_t result = curStreamParams_.encoding == ENCODING_PCM
-                ? WriteInner(temp.buffer, temp.bufLength)
-                : WriteInner(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
-            if (result < 0) {
-                AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
-            }
+            ProcessWriteInner(temp);
         }
         if (state_ != RUNNING) { continue; }
         // call client write

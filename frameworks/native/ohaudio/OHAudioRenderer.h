@@ -35,11 +35,18 @@ public:
         metadataUserData_(metadataUserData), encodingType_(encodingType)
     {
     }
+    OHAudioRendererModeCallback(OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback,
+        OH_AudioRenderer *audioRenderer, void *userData, AudioEncodingType encodingType)
+        : onWriteDataCallback_(onWriteDataCallback), ohAudioRenderer_(audioRenderer),
+        userData_(userData), encodingType_(encodingType)
+    {
+    }
 
     void OnWriteData(size_t length) override;
 
 private:
     OH_AudioRenderer_Callbacks callbacks_;
+    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback_;
     OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_;
     OH_AudioRenderer *ohAudioRenderer_;
     void *userData_;
@@ -142,6 +149,14 @@ private:
     void *userData_;
 };
 
+struct RendererCallback {
+    OH_AudioRenderer_Callbacks callbacks;
+
+    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback;
+
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback;
+};
+
 class OHAudioRenderer {
     public:
         OHAudioRenderer();
@@ -171,8 +186,6 @@ class OHAudioRenderer {
         AudioEffectMode GetEffectMode();
         int32_t SetEffectMode(AudioEffectMode effectMode);
 
-        void SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void *userData,
-            OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback, void *metadataUserData);
         void SetPreferredFrameSize(int32_t frameSize);
 
         void SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
@@ -187,11 +200,17 @@ class OHAudioRenderer {
         void UnsetRendererPositionCallback();
         uint32_t GetUnderflowCount();
         void SetInterruptMode(InterruptMode mode);
+
+        void SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType);
+        WriteDataCallbackType GetRendererCallbackType();
+
+        void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
     private:
         std::unique_ptr<AudioRenderer> audioRenderer_;
         std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
         std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
         std::shared_ptr<OHRendererPositionCallback> rendererPositionCallback_;
+        WriteDataCallbackType writeDataCallbackType_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

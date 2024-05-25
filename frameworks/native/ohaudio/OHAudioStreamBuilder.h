@@ -20,6 +20,7 @@
 #include "native_audiostream_base.h"
 #include "audio_interrupt_info.h"
 #include "audio_info.h"
+#include "OHAudioRenderer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,6 +48,8 @@ public:
     OH_AudioStream_Result SetRendererPrivacy(AudioPrivacyType privacyType);
     OH_AudioStream_Result SetWriteDataWithMetadataCallback(OH_AudioRenderer_WriteDataWithMetadataCallback callback,
         void *userData);
+    OH_AudioStream_Result SetRendererWriteDataCallback(OH_AudioRenderer_OnWriteDataCallback callback,
+        void* userData);
 
     OH_AudioStream_Result SetSourceType(SourceType type);
     OH_AudioStream_Result SetCapturerCallback(OH_AudioCapturer_Callbacks callbacks, void *userData);
@@ -72,17 +75,21 @@ private:
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
 
-    OH_AudioRenderer_Callbacks rendererCallbacks_ = {
-        NULL
-    };
     OH_AudioCapturer_Callbacks capturerCallbacks_ = {
         NULL
+    };
+    WriteDataCallbackType writeDataCallbackType_;
+    RendererCallback rendererCallbacks_ = {
+        {nullptr},
+
+        nullptr,
+
+        nullptr
     };
     void *userData_;
 
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
     void *outputDeviceChangeuserData_ = nullptr;
-    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_ = nullptr;
     void *metadataUserData_ = nullptr;
     InterruptMode interruptMode_ = SHARE_MODE;
 };
