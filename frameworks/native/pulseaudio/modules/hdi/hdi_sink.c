@@ -709,6 +709,7 @@ static unsigned SinkRenderPrimaryClusterCap(pa_sink *si, size_t *length, pa_mix_
                 mixlength = infoIn->chunk.length;
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+                AUTO_CTRACE("hdi_sink::SinkRenderPrimaryClusterCap::is_silence");
                 pa_memblock_unref(infoIn->chunk.memblock);
                 continue;
             }
@@ -1115,10 +1116,12 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
                 mixlength = infoIn->chunk.length;
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+                AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
                 pa_memblock_unref(infoIn->chunk.memblock);
                 continue;
             }
+            AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
 
             pa_atomic_store(&sinkIn->isFirstReaded, 1);
 
@@ -1172,6 +1175,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
                 mixlength = infoIn->chunk.length;
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+                AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
                 pa_memblock_unref(infoIn->chunk.memblock);
                 continue;
             }
@@ -1962,6 +1966,7 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
             mixlength = info[n].chunk.length;
 
         if (pa_memblock_is_silence(info[n].chunk.memblock)) {
+            AUTO_CTRACE("hdi_sink::Offload::is_silence");
             pa_memblock_unref(info[n].chunk.memblock);
             continue;
         }
