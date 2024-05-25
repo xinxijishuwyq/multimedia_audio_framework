@@ -454,7 +454,11 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
 
-    SetSpkOffloadState(); // for AISS movie scene update
+    int32_t debug_flag = 0;
+    GetSysPara("persist.multimedia.audioflag.debugaissflag", debug_flag);
+    if (debug_flag == 1) {
+        SetSpkOffloadState(); // for AISS movie scene update
+    }
 
     AUDIO_DEBUG_LOG("releaseEffect, sceneTypeAndDeviceKey [%{public}s]", sceneTypeAndDeviceKey.c_str());
     return SUCCESS;
@@ -1175,10 +1179,14 @@ bool AudioEffectChainManager::CheckIfSpkDsp()
     if (deviceType_ != DEVICE_TYPE_SPEAKER) {
         return true;
     }
-    for (auto &[key, count] : SceneTypeToEffectChainCountMap_) {
-        std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
-        if (sceneType == "SCENE_MOVIE" && count > 0) {
-            return false;
+    int32_t debug_flag = 0;
+    GetSysPara("persist.multimedia.audioflag.debugaissflag", debug_flag);
+    if (debug_flag == 1) {
+        for (auto &[key, count] : SceneTypeToEffectChainCountMap_) {
+            std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
+            if (sceneType == "SCENE_MOVIE" && count > 0) {
+                return false;
+            }
         }
     }
     return true;
