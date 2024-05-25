@@ -236,6 +236,8 @@ private:
     int32_t InitSharedBuffer();
     int32_t FlushRingCache();
 
+    void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
+
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 
@@ -437,7 +439,10 @@ void CapturerInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
-    capturerInfo_.pipeType = PIPE_TYPE_NORMAL;
+    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
+    capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
+    capturerInfo_.encodingType = streamParams_.encoding;
+    capturerInfo_.channelLayout = streamParams_.channelLayout;
     AUDIO_INFO_LOG("SetCapturerInfo with SourceType %{public}d flag %{public}d", capturerInfo_.sourceType,
         capturerInfo_.capturerFlags);
     return;
@@ -851,7 +856,7 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
-    int64_t deltaPos = writePos >= static_cast<uint64_t>(currentReadPos) ? writePos - currentReadPos : 0;
+    int64_t deltaPos = writePos >= currentReadPos ? static_cast<int64_t>(writePos - currentReadPos) : 0;
     int64_t tempLatency = 25000000; // 25000000 -> 25 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 
@@ -1312,6 +1317,9 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType)
 
     state_ = RUNNING; // change state_ to RUNNING, then notify cbThread
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        if (cbBufferQueue_.IsEmpty()) {
+            cbBufferQueue_.Push({cbBuffer_.get(), cbBufferSize_, cbBufferSize_});
+        }
         // start the callback-write thread
         cbThreadCv_.notify_all();
     }
@@ -1809,7 +1817,31 @@ void CapturerInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
 
 void CapturerInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 {
-    // in plan
+    info.params = streamParams_;
+
+    info.rendererInfo = rendererInfo_;
+    info.capturerInfo = capturerInfo_;
+    info.eStreamType = eStreamType_;
+    info.state = state_;
+    info.sessionId = sessionId_;
+    info.streamTrackerRegistered = streamTrackerRegistered_;
+    GetStreamSwitchInfo(info);
+}
+
+void CapturerInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
+{
+    info.cachePath = cachePath_;
+    info.overFlowCount = overflowCount_;
+    info.clientPid = clientPid_;
+    info.clientUid = clientUid_;
+
+    info.frameMarkPosition = capturerMarkPosition_;
+    info.capturePositionCb = capturerPositionCallback_;
+
+    info.framePeriodNumber = capturerPeriodSize_;
+    info.capturePeriodPositionCb = capturerPeriodPositionCallback_;
+
+    info.capturerReadCallback = readCb_;
 }
 
 bool CapturerInClientInner::GetOffloadEnable()

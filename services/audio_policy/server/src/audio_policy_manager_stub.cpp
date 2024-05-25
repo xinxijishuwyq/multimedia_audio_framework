@@ -261,9 +261,9 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     AudioCapturerInfo captureInfo;
     captureInfo.Unmarshalling(data);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredInputDeviceDescriptors(captureInfo);
-    int32_t size = static_cast<int32_t>(devices.size());
+    uint32_t size = static_cast<uint32_t>(devices.size());
     reply.WriteInt32(size);
-    for (size_t i = 0; i < size; i++) {
+    for (uint32_t i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
     }
 }

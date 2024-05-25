@@ -27,14 +27,21 @@
 #include "pair_device_router.h"
 #include "default_router.h"
 
+#include "media_monitor_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 bool AudioStrategyRouterParser::LoadConfiguration()
 {
     doc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
-    CHECK_AND_RETURN_RET_LOG(doc_ != nullptr, false,
-        "xmlReadFile Failed");
-
+    if (doc_ == nullptr) {
+        AUDIO_ERR_LOG("Not found audio_strategy_router.xml!");
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR, Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_STRATEGY_ROUTER);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        return false;
+    }
     return true;
 }
 

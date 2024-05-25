@@ -19,12 +19,20 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 bool AudioDeviceParser::LoadConfiguration()
 {
     mDoc_ = xmlReadFile(DEVICE_CONFIG_FILE, nullptr, 0);
+    if (mDoc_ == nullptr) {
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::AUDIO, Media::MediaMonitor::LOAD_CONFIG_ERROR,
+            Media::MediaMonitor::FAULT_EVENT);
+        bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_DEVICE_PRIVACY);
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    }
     CHECK_AND_RETURN_RET_LOG(mDoc_ != nullptr, false,
         "xmlReadFile Failed");
 

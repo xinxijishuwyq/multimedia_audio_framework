@@ -586,7 +586,7 @@ napi_value NapiAudioRenderer::GetAudioTime(napi_env env, napi_callback_info info
         Timestamp timestamp;
         if (napiAudioRenderer->audioRenderer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
             const uint64_t secToNanosecond = 1000000000;
-            context->time = timestamp.time.tv_nsec + timestamp.time.tv_sec * secToNanosecond;
+            context->time = static_cast<int64_t>(timestamp.time.tv_nsec) + timestamp.time.tv_sec * secToNanosecond;
             context->status = napi_ok;
         } else {
             context->SignError(NAPI_ERR_SYSTEM);

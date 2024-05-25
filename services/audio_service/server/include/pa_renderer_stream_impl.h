@@ -64,6 +64,9 @@ public:
     // offload end
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;
+    int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override;
+    int32_t ReturnIndex(int32_t index) override;
+    AudioProcessConfig GetAudioProcessConfig() const noexcept override;
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -98,7 +101,7 @@ private:
     int32_t streamCmdStatus_;
     int32_t streamDrainStatus_;
     int32_t streamFlushStatus_;
-    State state_;
+    State state_ = INVALID;
     uint32_t underFlowCount_ = 0;
     bool isDrain_ = false;
     pa_threaded_mainloop *mainloop_;

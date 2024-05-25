@@ -22,6 +22,7 @@
 #include "audio_focus_parser.h"
 #include "audio_policy_manager_listener_proxy.h"
 #include "audio_utils.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,9 +81,16 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
 
     // load configuration
     std::unique_ptr<AudioFocusParser> parser = make_unique<AudioFocusParser>();
-    CHECK_AND_RETURN_LOG(parser != nullptr, "create parser failed");
-
+    if (parser == nullptr) {
+        WriteServiceStartupError();
+    }
     CHECK_AND_RETURN_LOG(!parser->LoadConfig(focusCfgMap_), "load fail");
+
+    int32_t ret = parser->LoadConfig(focusCfgMap_);
+    if (ret) {
+        WriteServiceStartupError();
+    }
+    CHECK_AND_RETURN_LOG(!ret, "load fail");
 
     AUDIO_DEBUG_LOG("configuration loaded. mapSize: %{public}zu", focusCfgMap_.size());
 
@@ -91,6 +99,16 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     focussedAudioInterruptInfo_ = nullptr;
 
     CreateAudioInterruptZoneInternal(ZONEID_DEFAULT, {});
+}
+
+void AudioInterruptService::WriteServiceStartupError()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
+    bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_INTERRUPT_SERVER));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioInterruptService::AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>>
@@ -199,13 +217,14 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "create cb failed");
 
     if (interruptClients_.find(sessionId) == interruptClients_.end()) {
-        uid_t uid = IPCSkeleton::GetCallingUid();
-        pid_t pid = IPCSkeleton::GetCallingPid();
-        sptr<AudioInterruptClient> client = new AudioInterruptClient(
-            shared_from_this(), callback, uid, pid, sessionId);
-        interruptClients_[sessionId] = client;
+        // Register client death recipient first
+        sptr<AudioInterruptDeathRecipient> deathRecipient =
+            new AudioInterruptDeathRecipient(shared_from_this(), sessionId);
+        object->AddDeathRecipient(deathRecipient);
 
-        object->AddDeathRecipient(client);
+        std::shared_ptr<AudioInterruptClient> client =
+            std::make_shared<AudioInterruptClient>(callback, object, deathRecipient);
+        interruptClients_[sessionId] = client;
 
         // just record in zone map, not used currently
         auto it = zonesMap_.find(zoneId);
@@ -1098,18 +1117,16 @@ int32_t AudioInterruptService::ArchiveToNewAudioInterruptZone(const int32_t &fro
         for (auto fromAudioFocusInfo : fromZoneAudioInterruptZone->audioFocusInfoList) {
             toZoneAudioInterruptZone->audioFocusInfoList.emplace_back(fromAudioFocusInfo);
         }
-
         std::shared_ptr<AudioInterruptZone> audioInterruptZone = make_shared<AudioInterruptZone>();
         audioInterruptZone->zoneId = toZoneId;
         toZoneAudioInterruptZone->pids.swap(audioInterruptZone->pids);
         toZoneAudioInterruptZone->interruptCbsMap.swap(audioInterruptZone->interruptCbsMap);
         toZoneAudioInterruptZone->audioPolicyClientProxyCBMap.swap(audioInterruptZone->audioPolicyClientProxyCBMap);
         toZoneAudioInterruptZone->audioFocusInfoList.swap(audioInterruptZone->audioFocusInfoList);
-
         zonesMap_.insert_or_assign(toZoneId, audioInterruptZone);
         zonesMap_.erase(fromZoneIt);
     }
-
+    WriteFocusMigrateEvent(toZoneId);
     return SUCCESS;
 }
 
@@ -1132,7 +1149,7 @@ void AudioInterruptService::DispatchInterruptEventWithSessionId(uint32_t session
 }
 
 // called when the client remote object dies
-void AudioInterruptService::RemoveClient(uint32_t sessionId)
+void AudioInterruptService::RemoveClient(const int32_t zoneId, uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -1151,37 +1168,26 @@ void AudioInterruptService::RemoveClient(uint32_t sessionId)
     }
 
     interruptClients_.erase(sessionId);
-}
 
-// AudioInterruptClient impl begin
-AudioInterruptService::AudioInterruptClient::AudioInterruptClient(
-    const std::shared_ptr<AudioInterruptService> &service,
-    const std::shared_ptr<AudioInterruptCallback> &callback,
-    uid_t uid, pid_t pid, uint32_t sessionId)
-    : service_(service), callback_(callback), uid_(uid), pid_(pid), sessionId_(sessionId)
-{
-}
-
-AudioInterruptService::AudioInterruptClient::~AudioInterruptClient()
-{
-    // remove death link by object
-    (void)uid_;
-    (void)pid_;
-}
-
-void AudioInterruptService::AudioInterruptClient::OnRemoteDied(const wptr<IRemoteObject> &remote)
-{
-    std::shared_ptr<AudioInterruptService> service = service_.lock();
-    if (service != nullptr) {
-        service->RemoveClient(sessionId_);
+    // callback in zones map also need to be removed
+    auto it = zonesMap_.find(zoneId);
+    if (it != zonesMap_.end() && it->second != nullptr &&
+        it->second->interruptCbsMap.find(sessionId) != it->second->interruptCbsMap.end()) {
+        it->second->interruptCbsMap.erase(it->second->interruptCbsMap.find(sessionId));
+        zonesMap_[zoneId] = it->second;
     }
 }
 
-void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEventInternal &interruptEvent)
+void AudioInterruptService::WriteFocusMigrateEvent(const int32_t &toZoneId)
 {
-    if (callback_ != nullptr) {
-        callback_->OnInterrupt(interruptEvent);
-    }
+    auto uid = IPCSkeleton::GetCallingUid();
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_FOCUS_MIGRATE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(uid));
+    bean->Add("MIGRATE_DIRECTION", toZoneId);
+    bean->Add("DEVICE_DESC", (toZoneId == 1) ? REMOTE_NETWORK_ID : LOCAL_NETWORK_ID);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
@@ -1236,6 +1242,45 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
         dumpString += "\n";
     }
     return;
+}
+
+// AudioInterruptDeathRecipient impl begin
+AudioInterruptService::AudioInterruptDeathRecipient::AudioInterruptDeathRecipient(
+    const std::shared_ptr<AudioInterruptService> &service,
+    uint32_t sessionId)
+    : service_(service), sessionId_(sessionId)
+{
+}
+
+void AudioInterruptService::AudioInterruptDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    std::shared_ptr<AudioInterruptService> service = service_.lock();
+    if (service != nullptr) {
+        service->RemoveClient(ZONEID_DEFAULT, sessionId_);
+    }
+}
+
+// AudioInterruptClient impl begin
+AudioInterruptService::AudioInterruptClient::AudioInterruptClient(
+    const std::shared_ptr<AudioInterruptCallback> &callback,
+    const sptr<IRemoteObject> &object,
+    const sptr<AudioInterruptDeathRecipient> &deathRecipient)
+    : callback_(callback), object_(object), deathRecipient_(deathRecipient)
+{
+}
+
+AudioInterruptService::AudioInterruptClient::~AudioInterruptClient()
+{
+    if (object_ != nullptr) {
+        object_->RemoveDeathRecipient(deathRecipient_);
+    }
+}
+
+void AudioInterruptService::AudioInterruptClient::OnInterrupt(const InterruptEventInternal &interruptEvent)
+{
+    if (callback_ != nullptr) {
+        callback_->OnInterrupt(interruptEvent);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

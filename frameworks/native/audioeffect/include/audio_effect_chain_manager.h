@@ -127,6 +127,8 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     void UpdateRealAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
+    bool CheckA2dpOffload();
+    void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);

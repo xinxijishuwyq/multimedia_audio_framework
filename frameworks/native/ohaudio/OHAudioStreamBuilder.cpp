@@ -161,6 +161,11 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererPrivacy(OH_AudioStreamBui
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
 
+    if (privacy != AUDIO_STREAM_PRIVACY_TYPE_PUBLIC && privacy != AUDIO_STREAM_PRIVACY_TYPE_PRIVATE) {
+        AUDIO_ERR_LOG("Invalid param: privacy type");
+        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+
     return audioStreamBuilder->SetRendererPrivacy((AudioPrivacyType)privacy);
 }
 
@@ -248,7 +253,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSamplingRate(int32_t rate)
             AUDIO_ERR_LOG("sampleFormat input value is invalid");
             return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
-    samplingRate_ =rate;
+    samplingRate_ = rate;
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -265,8 +270,11 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetChannelCount(int32_t channelCount
         case AudioChannel::CHANNEL_8:
         case AudioChannel::CHANNEL_9:
         case AudioChannel::CHANNEL_10:
+        case AudioChannel::CHANNEL_11:
         case AudioChannel::CHANNEL_12:
+        case AudioChannel::CHANNEL_13:
         case AudioChannel::CHANNEL_14:
+        case AudioChannel::CHANNEL_15:
         case AudioChannel::CHANNEL_16:
             AUDIO_DEBUG_LOG("channelCount input value is valid");
             break;

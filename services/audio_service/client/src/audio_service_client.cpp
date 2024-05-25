@@ -38,7 +38,6 @@
 #endif
 
 #include "media_monitor_manager.h"
-#include "event_bean.h"
 
 using namespace std;
 
@@ -2414,12 +2413,12 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
 
 void AudioServiceClient::GetAudioLatencyOffload(uint64_t &latency)
 {
-    uint64_t timeNow = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
+    uint64_t timeNow = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count());
     bool offloadPwrActive = offloadStatePolicy_ != OFFLOAD_INACTIVE_BACKGROUND;
     if (offloadPwrActive ||
         timeNow >
-        static_cast<int64_t>(offloadLastUpdatePaInfoTs_ + AUDIO_US_PER_SECOND / 20)) { // 20 times per sec is max
+        static_cast<uint64_t>(offloadLastUpdatePaInfoTs_ + AUDIO_US_PER_SECOND / 20)) { // 20 times per sec is max
         pa_threaded_mainloop_lock(mainLoop);
         pa_operation *operation = pa_stream_update_timing_info(
             paStream, PAStreamUpdateTimingInfoSuccessCb, (void *)this);

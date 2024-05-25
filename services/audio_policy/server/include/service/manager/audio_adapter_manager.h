@@ -166,6 +166,7 @@ public:
 
     int32_t GetCurActivateCount(void) const;
 
+    void HandleKvData(bool isFirstBoot);
 private:
     friend class PolicyCallbackImpl;
 

@@ -17,6 +17,7 @@
 #define AUDIO_EFFECT_CHAIN_H
 
 #include "audio_effect.h"
+#include "audio_utils.h"
 
 #ifdef SENSOR_ENABLE
 #include "audio_head_tracker.h"
@@ -68,6 +69,8 @@ private:
     AudioEffectConfig ioBufferConfig_;
     AudioBuffer audioBufIn_;
     AudioBuffer audioBufOut_;
+    FILE *dumpFileInput_ = nullptr;
+    FILE *dumpFileOutput_ = nullptr;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

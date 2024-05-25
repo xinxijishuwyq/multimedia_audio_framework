@@ -33,7 +33,7 @@ AudioRoutingManager *AudioRoutingManager::GetInstance()
     return &audioRoutingManager;
 }
 
-uint32_t AudioRoutingManager::GetCallingPid()
+int32_t AudioRoutingManager::GetCallingPid()
 {
     return getpid();
 }
@@ -74,7 +74,7 @@ int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendere
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     return AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(clientId, callback);
 }
 
@@ -90,7 +90,7 @@ int32_t AudioRoutingManager::SetPreferredInputDeviceChangeCallback(AudioCapturer
 int32_t AudioRoutingManager::UnsetPreferredOutputDeviceChangeCallback()
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    int32_t clientId = static_cast<int32_t>(GetCallingPid());
+    int32_t clientId = GetCallingPid();
     return AudioPolicyManager::GetInstance().UnsetPreferredOutputDeviceChangeCallback(clientId);
 }
 

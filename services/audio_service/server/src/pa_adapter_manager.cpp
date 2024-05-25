@@ -137,6 +137,57 @@ int32_t PaAdapterManager::ReleaseRender(uint32_t streamIndex)
     return SUCCESS;
 }
 
+int32_t PaAdapterManager::StartRender(uint32_t streamIndex)
+{
+    AUDIO_DEBUG_LOG("Enter StartRender");
+    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    auto it = rendererStreamMap_.find(streamIndex);
+    if (it == rendererStreamMap_.end()) {
+        AUDIO_WARNING_LOG("No matching stream");
+        return SUCCESS;
+    }
+    return rendererStreamMap_[streamIndex]->Start();
+}
+
+int32_t PaAdapterManager::StopRender(uint32_t streamIndex)
+{
+    AUDIO_DEBUG_LOG("Enter StopRender");
+    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    auto it = rendererStreamMap_.find(streamIndex);
+    if (it == rendererStreamMap_.end()) {
+        AUDIO_WARNING_LOG("No matching stream");
+        return SUCCESS;
+    }
+    return rendererStreamMap_[streamIndex]->Stop();
+}
+
+int32_t PaAdapterManager::PauseRender(uint32_t streamIndex)
+{
+    AUDIO_DEBUG_LOG("Enter PauseRender");
+    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    auto it = rendererStreamMap_.find(streamIndex);
+    if (it == rendererStreamMap_.end()) {
+        AUDIO_WARNING_LOG("No matching stream");
+        return SUCCESS;
+    }
+    rendererStreamMap_[streamIndex]->Pause();
+    return SUCCESS;
+}
+
+int32_t PaAdapterManager::TriggerStartIfNecessary()
+{
+    return SUCCESS;
+}
+
+int32_t PaAdapterManager::GetStreamCount() const noexcept
+{
+    if (managerType_ == RECORDER) {
+        return capturerStreamMap_.size();
+    } else {
+        return rendererStreamMap_.size();
+    }
+}
+
 int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream)
 {
     AUDIO_DEBUG_LOG("Create capturer start");
@@ -286,20 +337,12 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
     deviceName = "";
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         if (processConfig.isWakeupCapturer) {
-            int32_t no = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
-            if (no < 0) {
-                AUDIO_ERR_LOG("ErrorCode: %{public}d", no);
-                return no;
-            }
-
-            if (no >= WAKEUP_LIMIT) {
-                AUDIO_ERR_LOG("no is greater then WAKEUP_LIMIT no=: %{public}d", no);
+            int32_t ret = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
+            if (ret < 0) {
+                AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
                 return ERROR;
             }
-
-            if (no < WAKEUP_LIMIT) {
-                deviceName = WAKEUP_NAMES[no];
-            }
+            deviceName = PRIMARY_WAKEUP;
         }
         if (processConfig.isInnerCapturer) {
             if (processConfig.innerCapMode == MODERN_INNER_CAP) {
@@ -362,7 +405,6 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
         return nullptr;
     }
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
-        enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
         ret = SetStreamAudioEnhanceMode(paStream, enhanceMode_);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("capturer set audio enhance mode failed.");
@@ -415,6 +457,18 @@ void PaAdapterManager::SetHighResolution(pa_proplist *propList, AudioProcessConf
     }
 }
 
+void PaAdapterManager::SetRecordProplist(pa_proplist *propList, AudioProcessConfig &processConfig)
+{
+    pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
+    pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
+    pa_proplist_sets(propList, "stream.isIpcCapturer", std::to_string(true).c_str());
+    pa_proplist_sets(propList, "stream.capturerSource",
+        std::to_string(processConfig.capturerInfo.sourceType).c_str());
+    pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
+    enhanceMode_ = IsEnhanceMode(processConfig.capturerInfo.sourceType) ? EFFECT_DEFAULT : EFFECT_NONE;
+    pa_proplist_sets(propList, "scene.mode", GetEnhanceModeName(enhanceMode_).c_str());
+}
+
 int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &map, AudioProcessConfig &processConfig,
     const std::string &streamName, uint32_t sessionId)
 {
@@ -424,8 +478,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "stream.client.pid", std::to_string(processConfig.appInfo.appPid).c_str());
     pa_proplist_sets(propList, "stream.type", streamName.c_str());
     pa_proplist_sets(propList, "media.name", streamName.c_str());
-    pa_proplist_sets(propList, "scene.mode",
-        IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
+
     float mVolumeFactor = 1.0f;
     float mPowerVolumeFactor = 1.0f;
     float mDuckVolumeFactor = 1.0f;
@@ -437,6 +490,8 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
     pa_proplist_sets(propList, "stream.startTime", streamStartTime.c_str());
 
     if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
+        pa_proplist_sets(propList, "scene.mode",
+            IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
         // mark dup stream for dismissing volume handle
         pa_proplist_sets(propList, "stream.mode", managerType_ == DUP_PLAYBACK ? DUP_STREAM.c_str() :
             NORMAL_STREAM.c_str());
@@ -450,12 +505,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
             std::to_string(processConfig.rendererInfo.headTrackingEnabled).c_str());
         SetHighResolution(propList, processConfig, sessionId);
     } else if (processConfig.audioMode == AUDIO_MODE_RECORD) {
-        pa_proplist_sets(propList, "stream.isInnerCapturer", std::to_string(processConfig.isInnerCapturer).c_str());
-        pa_proplist_sets(propList, "stream.isWakeupCapturer", std::to_string(processConfig.isWakeupCapturer).c_str());
-        pa_proplist_sets(propList, "stream.isIpcCapturer", std::to_string(true).c_str());
-        pa_proplist_sets(propList, "stream.capturerSource",
-            std::to_string(processConfig.capturerInfo.sourceType).c_str());
-        pa_proplist_sets(propList, "scene.type", GetEnhanceSceneName(processConfig.capturerInfo.sourceType).c_str());
+        SetRecordProplist(propList, processConfig);
     }
 
     AUDIO_INFO_LOG("Creating stream of channels %{public}d", processConfig.streamInfo.channels);
@@ -559,7 +609,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
     const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK.c_str() : nullptr;
-    int flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+    uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
     if (managerType_ == DUP_PLAYBACK) {
         flags |= PA_STREAM_DONT_MOVE; // should not move dup streams
@@ -600,29 +650,25 @@ int32_t PaAdapterManager::ConnectCapturerStreamToPA(pa_stream *paStream, pa_samp
 
 int32_t PaAdapterManager::SetStreamAudioEnhanceMode(pa_stream *paStream, AudioEffectMode audioEnhanceMode)
 {
-    pa_threaded_mainloop_lock(mainLoop_);
+    PaLockGuard lock(mainLoop_);
     const std::string enhanceModeName = GetEnhanceModeName(audioEnhanceMode);
     pa_proplist *propList = pa_proplist_new();
     if (propList == nullptr) {
         AUDIO_ERR_LOG("pa_proplist_new failed.");
-        pa_threaded_mainloop_unlock(mainLoop_);
         return ERROR;
     }
-    pa_proplist_sets(propList, "scene.mode", enhanceModeName.c_str());
     std::string upDevice = "DEVICE_TYPE_MIC";
     std::string downDevice = "DEVICE_TYPE_SPEAKER";
-    pa_proplist_sets(propList, "device.up", upDevice.c_str());
-    pa_proplist_sets(propList, "device.down", downDevice.c_str());
+    std::string upAndDownDevice = upDevice + "_&_" + downDevice;
+    pa_proplist_sets(propList, "device.upAndDown", upAndDownDevice.c_str());
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     if (updatePropOperation == nullptr) {
         AUDIO_ERR_LOG("pa_stream_proplist_update failed.");
-        pa_threaded_mainloop_unlock(mainLoop_);
         return ERROR;
     }
     pa_proplist_free(propList);
     pa_operation_unref(updatePropOperation);
-    pa_threaded_mainloop_unlock(mainLoop_);
     return SUCCESS;
 }
 

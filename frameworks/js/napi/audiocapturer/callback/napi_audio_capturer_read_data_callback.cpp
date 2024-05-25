@@ -43,6 +43,7 @@ void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callb
     if (callbackName == READ_DATA_CALLBACK_NAME) {
         capturerReadDataCallback_ = cb;
         callback_ = callback;
+        isCallbackInited_ = true;
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
@@ -51,6 +52,7 @@ void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callb
 void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    isCallbackInited_ = false;
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
@@ -58,6 +60,7 @@ void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_va
         napi_status ret = napi_delete_reference(env, callback_);
         CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
         AUDIO_INFO_LOG("Remove Js Callback");
+        capturerReadDataCallback_->cb_ = nullptr;
         return;
     }
 
@@ -82,6 +85,7 @@ void NapiCapturerReadDataCallback::OnReadData(size_t length)
     cb->callbackName = READ_DATA_CALLBACK_NAME;
     cb->bufDesc.buffer = nullptr;
     cb->capturerNapiObj = napiCapturer_;
+    cb->readDataCallbackPtr = this;
 
     CHECK_AND_RETURN_LOG(napiCapturer_ != nullptr, "Cannot find the reference to audio capturer napi");
     napiCapturer_->audioCapturer_->GetBufferDesc(cb->bufDesc);
@@ -137,6 +141,8 @@ void NapiCapturerReadDataCallback::WorkCallbackCapturerReadData(uv_work_t *work,
     CHECK_AND_RETURN_LOG(work != nullptr, "capture read data work is nullptr");
     CapturerReadDataJsCallback *event = reinterpret_cast<CapturerReadDataJsCallback *>(work->data);
     CHECK_AND_RETURN_LOG(event != nullptr, "capture read data event is nullptr");
+    CHECK_AND_RETURN_LOG(event->readDataCallbackPtr != nullptr, "CapturerReadDataCallback is already released");
+    CHECK_AND_RETURN_LOG(event->readDataCallbackPtr->isCallbackInited_, "the callback has been dereferenced");
     std::string request = event->callbackName;
     CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
     napi_env env = event->callback->env_;

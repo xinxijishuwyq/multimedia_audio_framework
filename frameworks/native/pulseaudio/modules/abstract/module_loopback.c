@@ -335,7 +335,7 @@ static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *
         u->latency_snapshot.source_latency - snapshotDelay;
 
     /* Current latency */
-    int64_t currentLatency = currentSourceSinkLatency + currentBufferLatency;
+    int64_t currentLatency = currentSourceSinkLatency + (int64_t)currentBufferLatency;
 
     /* Latency at base rate */
     int64_t latencyAtOptimumRate = currentSourceSinkLatency + currentBufferLatency * oldRate / (*baseRate);
@@ -557,7 +557,7 @@ static void MemblockqAdjust(struct userdata *u, int64_t latencyOffsetUsec, bool 
      * never underruns initially */
     pa_usec_t requestedSinkLatency = pa_sink_get_requested_latency_within_thread(u->sink_input->sink);
     if (requestedBufferLatency < (int64_t)requestedSinkLatency)
-        requestedBufferLatency = requestedSinkLatency;
+        requestedBufferLatency = (int64_t)requestedSinkLatency;
 
     size_t requestedMemblockqLength = pa_usec_to_bytes(requestedBufferLatency, &u->sink_input->sample_spec);
     size_t currentMemblockqLength = pa_memblockq_get_length(u->memblockq);

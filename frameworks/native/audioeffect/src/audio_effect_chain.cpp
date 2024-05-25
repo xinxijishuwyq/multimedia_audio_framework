@@ -47,6 +47,16 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
     ioBufferConfig_.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     headTracker_ = headTracker;
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
+        "dump_effect_in_" + scene + "_" + std::to_string(ioBufferConfig_.inputCfg.samplingRate) +
+        "_" + std::to_string(ioBufferConfig_.inputCfg.channels) +
+        "_float.pcm",
+        &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
+        "dump_effect_out_" + scene + "_" + std::to_string(ioBufferConfig_.outputCfg.samplingRate) +
+        "_" + std::to_string(ioBufferConfig_.outputCfg.channels) +
+        "_float.pcm",
+        &dumpFileOutput_);
 }
 #else
 AudioEffectChain::AudioEffectChain(std::string scene)
@@ -63,12 +73,24 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig_.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
+        "dump_effect_in_" + scene + "_" + std::to_string(ioBufferConfig_.inputCfg.samplingRate) +
+        "_" + std::to_string(ioBufferConfig_.inputCfg.channels) +
+        "_float.pcm",
+        &dumpFileInput_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA,
+        "dump_effect_out_" + scene + "_" + std::to_string(ioBufferConfig_.outputCfg.samplingRate) +
+        "_" + std::to_string(ioBufferConfig_.outputCfg.channels) +
+        "_float.pcm",
+        &dumpFileOutput_);
 }
 #endif
 
 AudioEffectChain::~AudioEffectChain()
 {
     ReleaseEffectChain();
+    DumpFileUtil::CloseDumpFile(&dumpFileInput_);
+    DumpFileUtil::CloseDumpFile(&dumpFileOutput_);
 }
 
 void AudioEffectChain::Dump()
@@ -202,16 +224,22 @@ int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
         delete[] effectParam;
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set rotation EFFECT_CMD_SET_PARAM fail");
-        latency_ += replyData;
+        latency_ += static_cast<uint32_t>(replyData);
     }
     return SUCCESS;
 }
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo)
 {
+    size_t inTotlen = frameLen * ioBufferConfig_.inputCfg.channels * sizeof(float);
+    size_t outTotlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
+
+    // dump pcm for bufIn
+    DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(bufIn), inTotlen);
+
     if (IsEmptyEffectHandles()) {
-        size_t totlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
-        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, totlen, bufIn, totlen) == 0, "memcpy error in apply effect");
+        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error in apply effect");
+        DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
         return;
     }
 
@@ -224,7 +252,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     audioBufIn_.frameLength = frameLen;
     audioBufOut_.frameLength = frameLen;
-    int32_t count = 0;
+    uint32_t count = 0;
     std::lock_guard<std::mutex> lock(reloadMutex_);
     for (AudioEffectHandle handle : standByEffectHandles_) {
 #ifdef SENSOR_ENABLE
@@ -245,9 +273,11 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
         count++;
     }
     if ((count & 1) == 0) {
-        size_t totlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
-        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, totlen, bufIn, totlen), "memcpy error when last copy");
+        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error when last copy");
     }
+
+    // dump pcm for bufOut
+    DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(bufOut), outTotlen);
 }
 
 bool AudioEffectChain::IsEmptyEffectHandles()
@@ -305,7 +335,7 @@ void AudioEffectChain::SetHeadTrackingDisabled()
         AudioEffectTransInfo cmdInfo = {sizeof(HeadPostureData), &imuDataDisabled};
         AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
         int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
-        if (ret != 0) {
+        if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("SetHeadTrackingDisabled failed");
         }
     }

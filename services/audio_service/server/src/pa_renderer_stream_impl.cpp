@@ -885,9 +885,9 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timesta
     bool first = offloadTsLast_ == 0;
     offloadTsLast_ = readIndex;
 
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
     OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
     int64_t timeDelta = static_cast<int64_t>(timestamp) -
                         static_cast<int64_t>(timeSec * AUDIO_US_PER_SECOND + timeNanoSec / AUDIO_NS_PER_US);
@@ -1055,6 +1055,21 @@ int32_t PaRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
     if (operation != nullptr) {
         pa_operation_unref(operation);
     }
+    return SUCCESS;
+}
+
+AudioProcessConfig PaRendererStreamImpl::GetAudioProcessConfig() const noexcept
+{
+    return processConfig_;
+}
+
+int32_t PaRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &index)
+{
+    return SUCCESS;
+}
+
+int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
+{
     return SUCCESS;
 }
 // offload end

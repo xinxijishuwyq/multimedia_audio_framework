@@ -141,7 +141,7 @@ enum AudioDumpFileType {
     AUDIO_PULSE = 2,
 };
 
-const std::string DUMP_SERVER_PARA = "sys.audio.dump.writehdi.enable";
+const std::string DUMP_SERVER_PARA = "sys.audio.dump.writeserver.enable";
 const std::string DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
 const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
@@ -150,6 +150,7 @@ const std::string DUMP_AUDIO_RENDERER_FILENAME = "dump_client_audio.pcm";
 const std::string DUMP_AUDIO_CAPTURER_FILENAME = "dump_client_capturer_audio.pcm";
 const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
 const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
+const std::string DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
 const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
 const std::string DUMP_RENDERER_STREAM_FILENAME = "dump_renderer_stream.pcm";
 const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";

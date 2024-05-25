@@ -49,13 +49,15 @@ constexpr int32_t AUDIO_FLAG_INVALID = -1;
 constexpr int32_t AUDIO_FLAG_NORMAL = 0;
 constexpr int32_t AUDIO_FLAG_MMAP = 1;
 constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
+constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
 constexpr uint32_t STREAM_FLAG_NORMAL = 0;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
-constexpr float MIN_STREAM_SPEED_LEVEL = 0.25f;
+constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr int32_t EMPTY_UID = 0;
+constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
@@ -71,13 +73,7 @@ const std::string CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUT
 const std::string LOCAL_NETWORK_ID = "LocalDevice";
 const std::string REMOTE_NETWORK_ID = "RemoteDevice";
 
-constexpr int32_t WAKEUP_LIMIT = 2;
 constexpr std::string_view PRIMARY_WAKEUP = "Built_in_wakeup";
-constexpr std::string_view PRIMARY_WAKEUP_MIRROR = "Built_in_wakeup_mirror";
-constexpr std::string_view WAKEUP_NAMES[WAKEUP_LIMIT] = {
-    PRIMARY_WAKEUP,
-    PRIMARY_WAKEUP_MIRROR
-};
 constexpr std::string_view VOICE_CALL_REC_NAME = "Voice_call_rec";
 
 const std::string INNER_CAPTURER_SOURCE = "Speaker.monitor";
@@ -307,36 +303,46 @@ struct A2dpDeviceConfigInfo {
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    int32_t rendererFlags = 0;
+    int32_t rendererFlags = AUDIO_FLAG_NORMAL;
     std::string sceneType = "";
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
+    int32_t originalFlag = AUDIO_FLAG_NORMAL;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    std::string appName = "";
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    uint8_t encodingType = 0;
+    uint64_t channelLayout = 0ULL;
+    AudioSampleFormat format;
+
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
             && parcel.WriteInt32(rendererFlags)
+            && parcel.WriteInt32(originalFlag)
             && parcel.WriteString(sceneType)
             && parcel.WriteBool(spatializationEnabled)
             && parcel.WriteBool(headTrackingEnabled)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
-            && parcel.WriteString(appName)
-            && parcel.WriteInt32(static_cast<int32_t>(samplingRate));
+            && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
+            && parcel.WriteUint8(encodingType)
+            && parcel.WriteUint64(channelLayout)
+            && parcel.WriteInt32(format);
     }
     void Unmarshalling(Parcel &parcel)
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         rendererFlags = parcel.ReadInt32();
+        originalFlag = parcel.ReadInt32();
         sceneType = parcel.ReadString();
         spatializationEnabled = parcel.ReadBool();
         headTrackingEnabled = parcel.ReadBool();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        appName = parcel.ReadString();
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        encodingType = parcel.ReadUint8();
+        channelLayout = parcel.ReadUint64();
+        format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
     }
 };
 
@@ -344,9 +350,13 @@ class AudioCapturerInfo {
 public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
+    int32_t originalFlag = AUDIO_FLAG_NORMAL;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    std::string appName = "";
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    uint8_t encodingType = 0;
+    uint64_t channelLayout = 0ULL;
+    std::string sceneType = "";
+
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
     AudioCapturerInfo(const AudioCapturerInfo &audioCapturerInfo)
@@ -357,19 +367,25 @@ public:
     ~AudioCapturerInfo()= default;
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(static_cast<int32_t>(sourceType))
-            && parcel.WriteInt32(capturerFlags)
-            && parcel.WriteInt32(static_cast<int32_t>(pipeType))
-            && parcel.WriteString(appName)
-            && parcel.WriteInt32(static_cast<int32_t>(samplingRate));
+        return parcel.WriteInt32(static_cast<int32_t>(sourceType)) &&
+            parcel.WriteInt32(capturerFlags) &&
+            parcel.WriteInt32(originalFlag) &&
+            parcel.WriteInt32(static_cast<int32_t>(pipeType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(samplingRate)) &&
+            parcel.WriteUint8(encodingType) &&
+            parcel.WriteUint64(channelLayout) &&
+            parcel.WriteString(sceneType);
     }
     void Unmarshalling(Parcel &parcel)
     {
         sourceType = static_cast<SourceType>(parcel.ReadInt32());
         capturerFlags = parcel.ReadInt32();
+        originalFlag = parcel.ReadInt32();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        appName = parcel.ReadString();
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        encodingType = parcel.ReadUint8();
+        channelLayout = parcel.ReadUint64();
+        sceneType = parcel.ReadString();
     }
 };
 
@@ -719,8 +735,6 @@ public:
     AudioRendererInfo rendererInfo;
     RendererState rendererState;
     DeviceInfo outputDeviceInfo;
-    std::string appName;
-    AudioSamplingRate samplingRate;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {
@@ -737,6 +751,12 @@ public:
             && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
             && parcel.WriteInt32(channelCount)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(rendererInfo.originalFlag)
+            && parcel.WriteInt32(rendererInfo.samplingRate)
+            && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererState))
             && outputDeviceInfo.Marshalling(parcel);
@@ -750,6 +770,12 @@ public:
             && parcel.WriteInt32(clientPid)
             && parcel.WriteInt32(tokenId)
             && parcel.WriteInt32(channelCount)
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(rendererInfo.streamUsage))
+            && parcel.WriteInt32(rendererInfo.rendererFlags)
+            && parcel.WriteInt32(rendererInfo.originalFlag)
+            && parcel.WriteInt32(rendererInfo.samplingRate)
+            && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(rendererState) :
                 RENDERER_INVALID)
@@ -765,6 +791,12 @@ public:
         tokenId = parcel.ReadInt32();
         channelCount = parcel.ReadInt32();
 
+        rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+        rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        rendererInfo.rendererFlags = parcel.ReadInt32();
+        rendererInfo.originalFlag = parcel.ReadInt32();
+        rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         rendererInfo.Unmarshalling(parcel);
 
         rendererState = static_cast<RendererState>(parcel.ReadInt32());
