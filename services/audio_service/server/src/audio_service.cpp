@@ -322,9 +322,9 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
 bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
 {
     if ((config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION &&
-        config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST) ||
+        config.rendererInfo.originalFlag == AUDIO_FLAG_VOIP_FAST) ||
         (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
-        config.capturerInfo.capturerFlags == AUDIO_FLAG_VOIP_FAST) ||
+        config.capturerInfo.originalFlag == AUDIO_FLAG_VOIP_FAST) ||
         deviceInfo.networkId != LOCAL_NETWORK_ID) {
         return true;
     }
