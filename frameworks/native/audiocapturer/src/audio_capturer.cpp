@@ -261,11 +261,6 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    bool checkRecordingCreate = audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId,
-        appInfo_.appUid, capturerInfo_.sourceType);
-    CHECK_AND_RETURN_RET_LOG((capturerInfo_.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) ||
-        checkRecordingCreate, ERR_PERMISSION_DENIED, "recording create check failed");
-
     int32_t ret = InitAudioStream(audioStreamParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
@@ -310,7 +305,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
 
     audioStream_->SetCapturerInfo(capturerInfo_);
 
-    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId);
+    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         audioStream_->SetInnerCapturerState(true);
@@ -497,12 +492,6 @@ bool AudioCapturerPrivate::Start() const
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
-    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
-        bool recordingStateChange = audioStream_->CheckRecordingStateChange(appInfo_.appTokenId,
-            appInfo_.appFullTokenId, appInfo_.appUid, AUDIO_PERMISSION_START);
-        CHECK_AND_RETURN_RET_LOG(recordingStateChange, false, "recording start check failed");
-    }
-
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
 
@@ -551,13 +540,6 @@ bool AudioCapturerPrivate::Pause() const
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
-    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
-        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-            AUDIO_WARNING_LOG("Pause monitor permission failed");
-        }
-    }
-
     // When user is intentionally pausing , Deactivate to remove from audio focus info list
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
@@ -575,12 +557,6 @@ bool AudioCapturerPrivate::Stop() const
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
-    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
-        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-            AUDIO_WARNING_LOG("Stop monitor permission failed");
-        }
-    }
     WriteOverflowEvent();
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
@@ -606,13 +582,6 @@ bool AudioCapturerPrivate::Release()
     abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(isValid_, false, "Release when capturer invalid");
-
-    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
-        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-            AUDIO_WARNING_LOG("Release monitor permission failed");
-        }
-    }
 
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
@@ -1056,7 +1025,7 @@ void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetApplicationCachePath(info.cachePath);
-    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId);
+    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetCapturerInfo(info.capturerInfo);
     audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     audioStream->SetCaptureMode(info.captureMode);

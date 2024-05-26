@@ -33,6 +33,7 @@
 #include "ipc_skeleton.h"
 #include "access_token.h"
 #include "accesstoken_kit.h"
+#include "privacy_kit.h"
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
 #include "securec.h"
@@ -41,6 +42,34 @@ using OHOS::Security::AccessToken::AccessTokenKit;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t UID_MSDP_SA = 6699;
+constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
+constexpr int32_t UID_CAAS_SA = 5527;
+constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
+constexpr int32_t UID_FOUNDATION_SA = 5523;
+constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
+constexpr int32_t UID_CAMERA = 1047;
+
+const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    0, // UID_ROOT
+#endif
+    UID_MSDP_SA,
+    UID_INTELLIGENT_VOICE_SA,
+    UID_CAAS_SA,
+    UID_DISTRIBUTED_AUDIO_SA,
+    UID_FOUNDATION_SA,
+    UID_DISTRIBUTED_CALL_SA,
+    UID_CAMERA
+};
+
+const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_REMOTE_CAST
+};
+}
 int64_t ClockTime::GetCurNano()
 {
     int64_t result = -1; // -1 for bad result.
@@ -204,6 +233,55 @@ bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_
         false, "Permission denied [%{public}s]", permissionName.c_str());
 
     return true;
+}
+
+bool PermissionUtil::NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType)
+{
+    if (RECORD_ALLOW_BACKGROUND_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", callingUid);
+        return false;
+    }
+    if (NO_BACKGROUND_CHECK_SOURCE_TYPE.count(sourceType)) {
+        AUDIO_INFO_LOG("sourceType %{public}d", sourceType);
+        return false;
+    }
+    return true;
+}
+
+bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId)
+{
+    Trace trace("PermissionUtil::VerifyBackgroundCapture");
+    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
+        AUDIO_INFO_LOG("system app recording");
+        return true;
+    }
+
+    bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
+    if (!ret) {
+        AUDIO_ERR_LOG("failed: %{public}u not allowed!", tokenId);
+    }
+    return ret;
+}
+
+void PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
+{
+    if (state == AUDIO_PERMISSION_START) {
+        Trace trace("PrivacyKit::StartUsingPermission");
+        int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_WARNING_LOG("notice start using perm error: %{public}d", res);
+        }
+        res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
+        if (res != 0) {
+            AUDIO_WARNING_LOG("add mic record error: %{public}d", res);
+        }
+    } else if (state == AUDIO_PERMISSION_STOP) {
+        Trace trace("PrivacyKit::StopUsingPermission");
+        int res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_WARNING_LOG("notice stop using perm error: %{public}d", res);
+        }
+    }
 }
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)

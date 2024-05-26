@@ -160,12 +160,14 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     return SUCCESS;
 }
 
-void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
+void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
+    AUDIO_INFO_LOG("PID:%{public}d UID:%{public}d tokenId:%{public}u fullTokenId:%{public}" PRIu64".", clientPid,
+        clientUid, appTokenId, fullTokenId);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
+    fullTokenId_ = fullTokenId;
 }
 
 int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
@@ -434,6 +436,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
     config.appInfo.appTokenId = appTokenId_;
+    config.appInfo.appFullTokenId = fullTokenId_;
 
     config.streamInfo.channels = static_cast<AudioChannel>(curStreamParams_.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);

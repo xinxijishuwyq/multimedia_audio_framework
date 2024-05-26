@@ -95,6 +95,9 @@ public:
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
+    static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
+    static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
+    static void NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state);
 };
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
