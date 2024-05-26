@@ -1122,6 +1122,16 @@ void AudioPolicyService::NotifyUserSelectionEventToBt(sptr<AudioDeviceDescriptor
 #endif
 }
 
+void AudioPolicyService::SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc)
+{
+    if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+        audioStateManager_.SetPerferredCallRenderDevice(desc);
+    } else {
+        audioStateManager_.SetPerferredMediaRenderDevice(desc);
+    }
+}
+
 int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
 {
@@ -1133,7 +1143,10 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     int32_t res = DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "DeviceParamsCheck no success");
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
-        return SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
+        SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
+        SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
+        FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
+        return true;
     }
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -1144,12 +1157,7 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
-    if (strUsage == STREAM_USAGE_VOICE_COMMUNICATION || strUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-        strUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-        audioStateManager_.SetPerferredCallRenderDevice(selectedDesc[0]);
-    } else {
-        audioStateManager_.SetPerferredMediaRenderDevice(selectedDesc[0]);
-    }
+    SetRenderDeviceForUsage(strUsage, selectedDesc[0]);
     NotifyUserSelectionEventToBt(selectedDesc[0]);
     std::string networkId = selectedDesc[0]->networkId_;
     DeviceType deviceType = selectedDesc[0]->deviceType_;
@@ -1161,11 +1169,10 @@ int32_t AudioPolicyService::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         UpdateA2dpOffloadFlagForAllStream(deviceType);
     }
     OnPreferredOutputDeviceUpdated(currentActiveDevice_);
-    auto uid = IPCSkeleton::GetCallingUid();
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::SET_FORCE_USE_AUDIO_DEVICE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
-    bean->Add("CLIENT_UID", static_cast<int32_t>(uid));
+    bean->Add("CLIENT_UID", static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
     bean->Add("DEVICE_TYPE", currentActiveDevice_.deviceType_);
     bean->Add("STREAM_TYPE", strUsage);
     bean->Add("BT_TYPE", currentActiveDevice_.deviceCategory_);
@@ -1385,6 +1392,18 @@ int32_t AudioPolicyService::SelectFastInputDevice(sptr<AudioCapturerFilter> audi
     return SUCCESS;
 }
 
+void AudioPolicyService::SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType,
+    sptr<AudioDeviceDescriptor> desc)
+{
+    AUDIO_INFO_LOG("Scene: %{public}d, srcType: %{public}d", scene, srcType);
+    if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
+        srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        audioStateManager_.SetPerferredCallCaptureDevice(desc);
+    } else {
+        audioStateManager_.SetPerferredRecordCaptureDevice(desc);
+    }
+}
+
 int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<sptr<AudioDeviceDescriptor>> selectedDesc)
 {
@@ -1397,7 +1416,10 @@ int32_t AudioPolicyService::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
     SourceType srcType = audioCapturerFilter->capturerInfo.sourceType;
 
     if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST && selectedDesc.size() == 1) {
-        return SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
+        SetCaptureDeviceForUsage(GetAudioScene(true), srcType, selectedDesc[0]);
+        SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
+        FetchDevice(false);
+        return true;
     }
 
     AudioScene scene = GetAudioScene(true);
@@ -2162,7 +2184,8 @@ bool AudioPolicyService::NotifyRecreateRendererStream(bool isUpdateActiveDevice,
         ((rendererChangeInfo->outputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
         (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredOutputStreamTypeInner(rendererChangeInfo->rendererInfo.streamUsage,
-            currentActiveDevice_.deviceType_, rendererChangeInfo->rendererInfo.originalFlag);
+            currentActiveDevice_.deviceType_, rendererChangeInfo->rendererInfo.originalFlag,
+            currentActiveDevice_.networkId_);
         TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid,
             rendererChangeInfo->sessionId, streamClass);
         return true;
@@ -2362,7 +2385,8 @@ bool AudioPolicyService::NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
         ((capturerChangeInfo->inputDeviceInfo.networkId == LOCAL_NETWORK_ID) ^
         (currentActiveDevice_.networkId_ == LOCAL_NETWORK_ID))) {
         int32_t streamClass = GetPreferredInputStreamTypeInner(capturerChangeInfo->capturerInfo.sourceType,
-            currentActiveDevice_.deviceType_, capturerChangeInfo->capturerInfo.originalFlag);
+            currentActiveDevice_.deviceType_, capturerChangeInfo->capturerInfo.originalFlag,
+            currentActiveDevice_.networkId_);
         TriggerRecreateCapturerStreamCallback(capturerChangeInfo->callerPid,
             capturerChangeInfo->sessionId, streamClass);
         return true;
@@ -5226,16 +5250,19 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
         return AUDIO_FLAG_INVALID;
     }
     return GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.rendererFlags);
+        rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
 }
 
 int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType,
-    int32_t flags)
+    int32_t flags, std::string &networkId)
 {
-    if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION && enableFastVoip_) {
+    AUDIO_INFO_LOG("Device type: %{public}d, stream usage: %{public}d, flag: %{public}d",
+        deviceType, streamUsage, flags);
+    std::string sinkPortName = GetSinkPortName(deviceType);
+    if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION && enableFastVoip_ &&
+        (sinkPortName == PRIMARY_SPEAKER || networkId != LOCAL_NETWORK_ID)) {
         return AUDIO_FLAG_VOIP_FAST;
     }
-    std::string sinkPortName = GetSinkPortName(deviceType);
     if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
         return AUDIO_FLAG_INVALID;
     }
@@ -5274,16 +5301,18 @@ int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &captu
         return AUDIO_FLAG_INVALID;
     }
     return GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag);
+        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
 }
 
 int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType,
-    int32_t flags)
+    int32_t flags, std::string &networkId)
 {
-    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && enableFastVoip_) {
+    AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
+        deviceType, sourceType, flags);
+    std::string sourcePortName = GetSourcePortName(deviceType);
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && enableFastVoip_ && sourcePortName == PRIMARY_MIC) {
         return AUDIO_FLAG_VOIP_FAST;
     }
-    std::string sourcePortName = GetSourcePortName(deviceType);
     if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
         return AUDIO_FLAG_INVALID;
     }
@@ -5471,7 +5500,7 @@ int32_t AudioPolicyService::GetVoipPlaybackDeviceInfo(const AudioProcessConfig &
     AudioRendererInfo rendererInfo = config.rendererInfo;
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredOutputDeviceDescriptors(rendererInfo);
     int32_t type = GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage, preferredDeviceList[0]->deviceType_,
-        rendererInfo.originalFlag);
+        rendererInfo.originalFlag, preferredDeviceList[0]->networkId_);
     deviceInfo.deviceRole = OUTPUT_DEVICE;
     return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }
@@ -5481,7 +5510,7 @@ int32_t AudioPolicyService::GetVoipRecordDeviceInfo(const AudioProcessConfig &co
     AudioCapturerInfo capturerInfo = config.capturerInfo;
     std::vector<sptr<AudioDeviceDescriptor>> preferredDeviceList = GetPreferredInputDeviceDescriptors(capturerInfo);
     int32_t type = GetPreferredInputStreamTypeInner(capturerInfo.sourceType, preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag);
+        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_);
     deviceInfo.deviceRole = INPUT_DEVICE;
     return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
 }

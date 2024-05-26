@@ -580,6 +580,10 @@ private:
     void SelectNewInputDevice(unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo,
         unique_ptr<AudioDeviceDescriptor> &inputDevice);
 
+    void SetRenderDeviceForUsage(StreamUsage streamUsage, sptr<AudioDeviceDescriptor> desc);
+
+    void SetCaptureDeviceForUsage(AudioScene scene, SourceType srcType, sptr<AudioDeviceDescriptor> desc);
+
     DeviceRole GetDeviceRole(AudioPin pin) const;
 
     void KeepPortMute(int32_t muteDuration, std::string portName, DeviceType deviceType);
@@ -801,9 +805,11 @@ private:
     int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, DeviceInfo &deviceInfo, int32_t type,
         std::vector<sptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
-    int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags);
+    int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
+        std::string &networkId);
 
-    int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags);
+    int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,
+        std::string &networkId);
 
     bool NotifyRecreateRendererStream(bool isUpdateActiveDevice,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);

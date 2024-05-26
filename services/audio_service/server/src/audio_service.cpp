@@ -319,12 +319,13 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId)
     return SUCCESS;
 }
 
-bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config)
+bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, DeviceInfo &deviceInfo)
 {
     if ((config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION &&
         config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST) ||
         (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
-        config.capturerInfo.capturerFlags == AUDIO_FLAG_VOIP_FAST)) {
+        config.capturerInfo.capturerFlags == AUDIO_FLAG_VOIP_FAST) ||
+        deviceInfo.networkId != LOCAL_NETWORK_ID) {
         return true;
     }
     return false;
@@ -337,7 +338,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
     std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
-        IsEndpointTypeVoip(config));
+        IsEndpointTypeVoip(config, deviceInfo));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
 
     uint32_t totalSizeInframe = 0;
@@ -380,7 +381,7 @@ void AudioService::ResetAudioEndpoint()
 
             DeviceInfo deviceInfo = GetDeviceInfoForProcess(config);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config.streamType,
-                IsEndpointTypeVoip(config));
+                IsEndpointTypeVoip(config, deviceInfo));
             CHECK_AND_RETURN_LOG(audioEndpoint != nullptr, "Get new endpoint failed");
 
             ret = LinkProcessToEndpoint((*paired).first, audioEndpoint);
