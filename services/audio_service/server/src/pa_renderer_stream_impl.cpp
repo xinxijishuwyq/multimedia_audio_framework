@@ -84,6 +84,7 @@ int32_t PaRendererStreamImpl::InitParams()
     pa_stream_set_underflow_callback(paStream_, PAStreamUnderFlowCb, reinterpret_cast<void *>(this));
     pa_stream_set_started_callback(paStream_, PAStreamSetStartedCb, reinterpret_cast<void *>(this));
     pa_stream_set_underflow_ohos_callback(paStream_, PAStreamUnderFlowCountAddCb, reinterpret_cast<void *>(this));
+    pa_stream_set_event_callback(paStream_, PAStreamEventCb, reinterpret_cast<void *>(this));
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
@@ -122,6 +123,24 @@ int32_t PaRendererStreamImpl::InitParams()
     return SUCCESS;
 }
 
+void PaRendererStreamImpl::PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata)
+{
+    CHECK_AND_RETURN_LOG(userdata, "userdata is null");
+
+    std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
+    if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
+        AUDIO_ERR_LOG("streamImpl is nullptr");
+        return;
+    }
+    auto streamImpl = paRendererStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamEventCb: userdata is null");
+    if (!strcmp(event, "fading_out_done")) {
+        streamImpl->isFadeoutDone_.store(true);
+        pa_threaded_mainloop_signal(streamImpl->mainloop_, 0);
+        AUDIO_INFO_LOG("isFadeoutDone_ = true");
+    }
+}
+
 int32_t PaRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("Enter PaRendererStreamImpl::Start");
@@ -149,15 +168,16 @@ int32_t PaRendererStreamImpl::Pause()
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Stop Failed");
         return ERR_OPERATION_FAILED;
     }
+
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
+
     return SUCCESS;
 }
 
