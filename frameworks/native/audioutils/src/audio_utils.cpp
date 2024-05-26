@@ -590,7 +590,7 @@ FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, Au
         case AUDIO_APP:
             filePath = DUMP_APP_DIR + fileName;
             break;
-        case AUDIO_SERVICE:
+        case OTHER_NATIVE_SERVICE:
             filePath = DUMP_SERVICE_DIR + fileName;
             break;
         case AUDIO_PULSE:
@@ -612,12 +612,13 @@ FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, Au
     if (dumpPara == "w") {
         dumpFile = fopen(filePath.c_str(), "wb+");
         CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,
-            "Error opening pcm test file!");
+            "Error opening pcm dump file:%{public}s", filePath.c_str());
     } else if (dumpPara == "a") {
         dumpFile = fopen(filePath.c_str(), "ab+");
         CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,
-            "Error opening pcm test file!");
+            "Error opening pcm dump file:%{public}s", filePath.c_str());
     }
+    AUDIO_INFO_LOG("Dump file path: %{public}s", filePath.c_str());
     g_lastPara[para] = dumpPara;
     return dumpFile;
 }
@@ -664,17 +665,11 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
     }
 
     if (para == DUMP_SERVER_PARA) {
-        if (fileName == DUMP_BLUETOOTH_RENDER_SINK_FILENAME || fileName == DUMP_RENDER_SINK_FILENAME ||
-            fileName == DUMP_CAPTURER_SOURCE_FILENAME || fileName == DUMP_OFFLOAD_RENDER_SINK_FILENAME ||
-            fileName.find("effect") != std::string::npos) { // special name for audio effect
-            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_PULSE);
-            return;
-        }
-        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_SERVICE);
+        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_PULSE);
     } else {
         *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_APP);
         if (*file == nullptr) {
-            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_SERVICE);
+            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, OTHER_NATIVE_SERVICE);
         }
     }
 }

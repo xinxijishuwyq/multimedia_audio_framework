@@ -133,10 +133,10 @@ int32_t RendererInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterWriteCallback(shared_from_this());
 
-    // eg: /data/local/tmp/100001_48000_2_1_c2s.pcm
+    // eg: /data/data/.pulse_dir/100001_48000_2_1_server_in.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
     std::string dumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
-        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_c2s.pcm";
+        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_server_in.pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpC2S_);
 
     return SUCCESS;

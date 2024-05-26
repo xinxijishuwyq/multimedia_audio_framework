@@ -140,7 +140,7 @@ bool GetSysPara(const char *key, T &value);
 
 enum AudioDumpFileType {
     AUDIO_APP = 0,
-    AUDIO_SERVICE = 1,
+    OTHER_NATIVE_SERVICE = 1,
     AUDIO_PULSE = 2,
 };
 
@@ -149,13 +149,10 @@ const std::string DUMP_CLIENT_PARA = "sys.audio.dump.writeclient.enable";
 const std::string DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
 const std::string DUMP_APP_DIR = "/data/storage/el2/base/cache/";
-const std::string DUMP_AUDIO_RENDERER_FILENAME = "dump_client_audio.pcm";
-const std::string DUMP_AUDIO_CAPTURER_FILENAME = "dump_client_capturer_audio.pcm";
 const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
 const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
 const std::string DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
 const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
-const std::string DUMP_RENDERER_STREAM_FILENAME = "dump_renderer_stream.pcm";
 const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";
 const std::string DUMP_TONEPLAYER_FILENAME = "dump_toneplayer_audio.pcm";
 const std::string DUMP_PROCESS_IN_CLIENT_FILENAME = "dump_process_client_audio.pcm";

@@ -265,8 +265,10 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
     RegisterCapturerPolicyServiceDiedCallback();
-
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_CAPTURER_FILENAME, &dumpFile_);
+    // eg: 100009_44100_2_1_cap_client_out.pcm
+    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
+        std::to_string(params.audioChannel) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitInputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init input device change callback failed");
@@ -796,7 +798,9 @@ int32_t AudioCapturerPrivate::SetCapturerReadCallback(const std::shared_ptr<Audi
 
 int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    return audioStream_->GetBufferDesc(bufDesc);
+    int32_t ret = audioStream_->GetBufferDesc(bufDesc);
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
+    return ret;
 }
 
 int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc) const
