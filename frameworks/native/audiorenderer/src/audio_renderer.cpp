@@ -475,9 +475,10 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     AUDIO_INFO_LOG("SetAudioStreamInfo Succeeded");
 
     RegisterRendererPolicyServiceDiedCallback();
-
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, std::to_string(sessionID_) + '_' + DUMP_AUDIO_RENDERER_FILENAME,
-        &dumpFile_);
+    // eg: 100005_44100_2_1_client_in.pcm
+    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.sampleRate) + "_" +
+        std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitOutputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");

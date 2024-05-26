@@ -119,7 +119,6 @@ int32_t PaRendererStreamImpl::InitParams()
 
     ResetOffload();
 
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDERER_STREAM_FILENAME, &dumpFile_);
     return SUCCESS;
 }
 
@@ -246,7 +245,6 @@ int32_t PaRendererStreamImpl::Release()
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
     }
-    DumpFileUtil::CloseDumpFile(&dumpFile_);
     return SUCCESS;
 }
 

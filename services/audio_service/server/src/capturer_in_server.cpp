@@ -45,6 +45,7 @@ CapturerInServer::~CapturerInServer()
     if (status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE) {
         Release();
     }
+    DumpFileUtil::CloseDumpFile(&dumpS2C_);
 }
 
 int32_t CapturerInServer::ConfigServerBuffer()
@@ -127,6 +128,12 @@ int32_t CapturerInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
 
+    // eg: /data/data/.pulse_dir/100009_48000_2_1_cap_server_out.pcm
+    AudioStreamInfo tempInfo = processConfig_.streamInfo;
+    std::string dumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
+        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_cap_server_out.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpS2C_);
+
     return SUCCESS;
 }
 
@@ -203,6 +210,7 @@ void CapturerInServer::ReadData(size_t length)
         return;
     }
 
+    Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "RingCache write invalid size %{public}zu", result.size);
     BufferDesc srcBuffer = stream_->DequeueBuffer(result.size);
@@ -224,11 +232,10 @@ void CapturerInServer::ReadData(size_t length)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+    DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
 
     uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
-    AUDIO_DEBUG_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
-        currentWriteFrame, nextWriteFrame);
-        audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
+    audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
     stream_->EnqueueBuffer(srcBuffer);

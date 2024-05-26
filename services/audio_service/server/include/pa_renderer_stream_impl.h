@@ -129,7 +129,6 @@ private:
     AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
-    FILE *dumpFile_ = nullptr;
     // offload end
 };
 } // namespace AudioStandard

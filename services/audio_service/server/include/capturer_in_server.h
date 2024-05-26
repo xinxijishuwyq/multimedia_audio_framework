@@ -86,6 +86,7 @@ private:
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     size_t cacheSizeInBytes_ = 0;
     std::unique_ptr<uint8_t []> dischargeBuffer_ = nullptr;
+    FILE *dumpS2C_ = nullptr; // server to client dump file
 };
 } // namespace AudioStandard
 } // namespace OHOS
