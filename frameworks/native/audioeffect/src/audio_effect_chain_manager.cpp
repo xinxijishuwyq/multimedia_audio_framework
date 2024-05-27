@@ -117,6 +117,7 @@ int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::str
         return ERROR;
     }
     // Delete effectChain in AP and store in backup map
+    AUDIO_INFO_LOG("delete all chains when device type change");
     DeleteAllChains();
     deviceType_ = (DeviceType)device;
 
@@ -149,12 +150,13 @@ void AudioEffectChainManager::SetSpkOffloadState()
             effectHdiInput_[0] = HDI_DESTROY;
             ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
             if (ret != SUCCESS) {
-                AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
+                AUDIO_WARNING_LOG("set hdi destroy failed, backup speaker entered");
             }
             spkOffloadEnabled_ = false;
         }
 
         if (deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            AUDIO_INFO_LOG("recover all chains if device type not bt.")
             RecoverAllChains();
         }
     }
@@ -903,6 +905,7 @@ void AudioEffectChainManager::UpdateSensorState()
 void AudioEffectChainManager::DeleteAllChains()
 {
     for (auto it = SceneTypeToEffectChainCountMap_.begin(); it != SceneTypeToEffectChainCountMap_.end(); ++it) {
+        AUDIO_DEBUG_LOG("sceneTypeAndDeviceKey %{public}s count:%{public}d", it->first.c_str(), it->second);
         SceneTypeToEffectChainCountBackupMap_.insert(std::make_pair(it->first, it->second));
     }
     
@@ -920,6 +923,7 @@ void AudioEffectChainManager::RecoverAllChains()
 {
     for (auto it = SceneTypeToEffectChainCountBackupMap_.begin(); it != SceneTypeToEffectChainCountBackupMap_.end();
         ++it) {
+        AUDIO_DEBUG_LOG("sceneTypeAndDeviceKey %{public}s count:%{public}d", it->first.c_str(), it->second);
         std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
             CreateAudioEffectChainDynamic(sceneType);
@@ -1125,6 +1129,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
             AUDIO_ERR_LOG("set hdi destroy failed");
         }
         if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            AUDIO_INFO_LOG("delete all chains if device type is bt.")
             DeleteAllChains();
         }
         btOffloadEnabled_ = false;
