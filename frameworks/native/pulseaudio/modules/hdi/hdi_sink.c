@@ -1116,6 +1116,8 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 pa_sink_input_handle_ohos_underrun(sinkIn);
+                pa_memblock_unref(infoIn->chunk.memblock);
+                continue;
             }
 
             pa_atomic_store(&sinkIn->isFirstReaded, 1);
@@ -1168,6 +1170,11 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             if (mixlength == 0 || infoIn->chunk.length < mixlength)
                 mixlength = infoIn->chunk.length;
+
+            if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
+                pa_memblock_unref(infoIn->chunk.memblock);
+                continue;
+            }
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
