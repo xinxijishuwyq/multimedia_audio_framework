@@ -30,6 +30,10 @@ namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const int64_t MOCK_LATENCY = 45000000; // 45000000 -> 45ms
     static const uint32_t UNDERRUN_LOG_LOOP_COUNT = 100;
+    static const int32_t BITSIZE_FOR_FADEOUT = 2;
+    static const int32_t NO_FADING = 0;
+    static const int32_t DO_FADINGOUT = 1;
+    static const int32_t FADING_OUT_DONE = 2;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -135,10 +139,10 @@ int32_t RendererInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterWriteCallback(shared_from_this());
 
-    // eg: /data/local/tmp/100001_48000_2_1_c2s.pcm
+    // eg: /data/data/.pulse_dir/100001_48000_2_1_server_in.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
     std::string dumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
-        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_c2s.pcm";
+        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_server_in.pcm";
     DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpC2S_);
 
     return SUCCESS;
@@ -233,6 +237,27 @@ BufferDesc RendererInServer::DequeueBuffer(size_t length)
     return stream_->DequeueBuffer(length);
 }
 
+void RendererInServer::DoFadingOut(BufferDesc& bufferDesc)
+{
+    std::lock_guard<std::mutex> lock(fadeoutLock_);
+    if (fadeoutFlag_ == DO_FADINGOUT) {
+        int16_t *data = (int16_t *)bufferDesc.buffer;
+        size_t length = bufferDesc.bufLength / BITSIZE_FOR_FADEOUT;
+        for (size_t i = 0; i < length; i++) {
+            float fadeoutRatio = (float)(length - i) / (length);
+            data[i] *= fadeoutRatio; // Multiply each sample by fade ratio
+        }
+    }
+}
+
+void RendererInServer::CheckFadingOutDone(int32_t fadeoutFlag_, BufferDesc& bufferDesc)
+{
+    std::lock_guard<std::mutex> lock(fadeoutLock_);
+    if (fadeoutFlag_ == FADING_OUT_DONE) {
+        memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength);
+    }
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -256,6 +281,8 @@ int32_t RendererInServer::WriteData()
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
 
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
+        DoFadingOut(bufferDesc);
+        CheckFadingOutDone(fadeoutFlag_, bufferDesc);
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         if (isInnerCapEnabled_) {
@@ -269,6 +296,11 @@ int32_t RendererInServer::WriteData()
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+        if (fadeoutFlag_ == DO_FADINGOUT) {
+            std::lock_guard<std::mutex> lock(fadeoutLock_);
+            fadeoutFlag_ = FADING_OUT_DONE;
+            AUDIO_INFO_LOG("fadeoutFlag_ = FADING_OUT_DONE");
+        }
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
@@ -366,6 +398,11 @@ int32_t RendererInServer::Start()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
+    {
+        std::lock_guard<std::mutex> lock(fadeoutLock_);
+        AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
+        fadeoutFlag_ = NO_FADING;
+    }
     int ret = IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
 
@@ -463,6 +500,11 @@ int32_t RendererInServer::Drain()
         status_ = I_STATUS_DRAINING;
     }
     AUDIO_INFO_LOG("Start drain");
+    {
+        std::lock_guard<std::mutex> lock(fadeoutLock_);
+        AUDIO_INFO_LOG("fadeoutFlag_ = DO_FADINGOUT");
+        fadeoutFlag_ = DO_FADINGOUT;
+    }
     DrainAudioBuffer();
     int ret = stream_->Drain();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
@@ -485,6 +527,11 @@ int32_t RendererInServer::Stop()
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_STOPPING;
+    }
+    {
+        std::lock_guard<std::mutex> lock(fadeoutLock_);
+        AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
+        fadeoutFlag_ = NO_FADING;
     }
     int ret = IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_);
     if (isInnerCapEnabled_) {

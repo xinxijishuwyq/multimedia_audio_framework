@@ -17,6 +17,7 @@
 
 #include "napi_audio_renderer_write_data_callback.h"
 #include "audio_log.h"
+#include "napi_audio_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -142,6 +143,21 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
     }
 }
 
+void NapiRendererWriteDataCallback::CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result)
+{
+    napi_valuetype resultType = napi_undefined;
+    napi_typeof(env, result, &resultType);
+    if (resultType == napi_number) {
+        int32_t resultIntValue;
+        napi_get_value_int32(env, result, &resultIntValue);
+        auto resultValue = static_cast<NapiAudioEnum::AudioDataCallbackResult>(resultIntValue);
+        if (resultValue == NapiAudioEnum::CALLBACK_RESULT_INVALID) {
+            AUDIO_DEBUG_LOG("Data callback returned invalid, data will not be used.");
+            bufDesc.dataLength = 0; // Ensure that the invalid data is not used.
+        }
+    }
+}
+
 void NapiRendererWriteDataCallback::WorkCallbackRendererWriteData(uv_work_t *work, int status)
 {
     // Js Thread
@@ -179,7 +195,7 @@ void NapiRendererWriteDataCallback::WorkCallbackRendererWriteData(uv_work_t *wor
         napi_value result = nullptr;
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call %{public}s callback", request.c_str());
-
+        CheckWriteDataCallbackResult(env, event->bufDesc, result);
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
         auto iter = std::find(activeRenderers_.begin(), activeRenderers_.end(), event->rendererNapiObj);
         if (iter != activeRenderers_.end()) {

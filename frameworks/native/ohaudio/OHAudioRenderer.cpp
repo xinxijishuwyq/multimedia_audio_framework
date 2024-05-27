@@ -549,52 +549,57 @@ int32_t OHAudioRenderer::SetEffectMode(AudioEffectMode effectMode)
     return audioRenderer_->SetAudioEffectMode(effectMode);
 }
 
-void OHAudioRenderer::SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void *userData,
-    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback, void *metadataUserData)
+void OHAudioRenderer::SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
 
     AudioEncodingType encodingType = GetEncodingType();
-    if ((encodingType == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback != nullptr)) {
+    if (writeDataCallbackType_ == WRITE_DATA_WITH_METADATA_CALLBACK) {
         std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
-            writeDataWithMetadataCallback, (OH_AudioRenderer*)this, metadataUserData, encodingType);
+            rendererCallbacks.writeDataWithMetadataCallback, (OH_AudioRenderer*)this, metadataUserData, encodingType);
         audioRenderer_->SetRendererWriteCallback(callback);
         AUDIO_INFO_LOG("The write callback function is for AudioVivid type");
-    } else if ((encodingType == ENCODING_PCM) && (callbacks.OH_AudioRenderer_OnWriteData != nullptr)) {
+    } else if (writeDataCallbackType_ == CALLBACKS_ON_WRITE_DATA) {
         std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
-            callbacks, (OH_AudioRenderer*)this, userData, encodingType);
+            rendererCallbacks.callbacks, (OH_AudioRenderer*)this, userData, encodingType);
+        audioRenderer_->SetRendererWriteCallback(callback);
+        AUDIO_INFO_LOG("The write callback function is for PCM type");
+    } else if (writeDataCallbackType_ == ON_WRITE_DATA_CALLBACK) {
+        std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
+            rendererCallbacks.onWriteDataCallback, (OH_AudioRenderer *) this, userData, encodingType);
         audioRenderer_->SetRendererWriteCallback(callback);
         AUDIO_INFO_LOG("The write callback function is for PCM type");
     } else {
         AUDIO_WARNING_LOG("The write callback function is not set");
     }
 
-    if (callbacks.OH_AudioRenderer_OnStreamEvent != nullptr) {
+    if (rendererCallbacks.callbacks.OH_AudioRenderer_OnStreamEvent != nullptr) {
         std::shared_ptr<AudioRendererDeviceChangeCallback> callback =
-            std::make_shared<OHAudioRendererDeviceChangeCallback>(callbacks, (OH_AudioRenderer*)this, userData);
+            std::make_shared<OHAudioRendererDeviceChangeCallback>(rendererCallbacks.callbacks,
+                (OH_AudioRenderer*)this, userData);
         int32_t clientPid = getpid();
         audioRenderer_->RegisterAudioRendererEventListener(clientPid, callback);
     } else {
         AUDIO_WARNING_LOG("The stream event callback function is not set");
     }
 
-    if (callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
-        audioRendererCallback_ =
-            std::make_shared<OHAudioRendererCallback>(callbacks, (OH_AudioRenderer*)this, userData);
+    if (rendererCallbacks.callbacks.OH_AudioRenderer_OnInterruptEvent != nullptr) {
+        audioRendererCallback_ = std::make_shared<OHAudioRendererCallback>(rendererCallbacks.callbacks,
+            (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetRendererCallback(audioRendererCallback_);
     } else {
         AUDIO_WARNING_LOG("The audio renderer interrupt callback function is not set");
     }
 
-    if (callbacks.OH_AudioRenderer_OnError != nullptr) {
+    if (rendererCallbacks.callbacks.OH_AudioRenderer_OnError != nullptr) {
         std::shared_ptr<AudioRendererPolicyServiceDiedCallback> callback =
-            std::make_shared<OHServiceDiedCallback>(callbacks, (OH_AudioRenderer*)this, userData);
+            std::make_shared<OHServiceDiedCallback>(rendererCallbacks.callbacks, (OH_AudioRenderer*)this, userData);
         int32_t clientPid = getpid();
         audioRenderer_->RegisterAudioPolicyServerDiedCb(clientPid, callback);
 
-        std::shared_ptr<AudioRendererErrorCallback> errorCallback =
-            std::make_shared<OHAudioRendererErrorCallback>(callbacks, (OH_AudioRenderer*)this, userData);
+        std::shared_ptr<AudioRendererErrorCallback> errorCallback = std::make_shared<OHAudioRendererErrorCallback>(
+            rendererCallbacks.callbacks, (OH_AudioRenderer*)this, userData);
         audioRenderer_->SetAudioRendererErrorCallback(errorCallback);
     } else {
         AUDIO_WARNING_LOG("The audio renderer error callback function is not set");
@@ -633,6 +638,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     OHAudioRenderer *audioRenderer = (OHAudioRenderer*)ohAudioRenderer_;
     CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_PCM) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
+        ((encodingType_ == ENCODING_PCM) && (onWriteDataCallback_ != nullptr)) ||
         ((encodingType_ == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback_ != nullptr)),
         "pointer to the function is nullptr");
     BufferDesc bufDesc;
@@ -641,7 +647,17 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         writeDataWithMetadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
             (void*)bufDesc.metaBuffer, bufDesc.metaLength);
     } else {
-        callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_, (void*)bufDesc.buffer, bufDesc.bufLength);
+        if (audioRenderer->GetRendererCallbackType() == CALLBACKS_ON_WRITE_DATA) {
+            callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_,
+                (void*)bufDesc.buffer, bufDesc.bufLength);
+        } else {
+            OH_AudioData_Callback_Result result = onWriteDataCallback_(ohAudioRenderer_, userData_,
+                (void*)bufDesc.buffer, bufDesc.bufLength);
+            if (result == AUDIO_DATA_CALLBACK_RESULT_INVALID) {
+                AUDIO_DEBUG_LOG("Data callback returned invalid, data will not be used.");
+                bufDesc.dataLength = 0; // Ensure that the invalid data is not used.
+            }
+        }
     }
     audioRenderer->Enqueue(bufDesc);
 }
@@ -707,6 +723,16 @@ void OHAudioRenderer::SetInterruptMode(InterruptMode mode)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetInterruptMode(mode);
+}
+
+void OHAudioRenderer::SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType)
+{
+    writeDataCallbackType_ = writeDataCallbackType;
+}
+
+WriteDataCallbackType OHAudioRenderer::GetRendererCallbackType()
+{
+    return writeDataCallbackType_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

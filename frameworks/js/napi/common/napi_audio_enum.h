@@ -79,6 +79,11 @@ public:
         TYPE_MESSAGE = 10,
         TYPE_REMOTE_CAST = 11
     };
+
+    enum AudioDataCallbackResult {
+        CALLBACK_RESULT_INVALID = -1,
+        CALLBACK_RESULT_VALID = 0,
+    };
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);

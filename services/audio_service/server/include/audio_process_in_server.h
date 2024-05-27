@@ -96,6 +96,8 @@ private:
     bool isInnerCapped_ = false;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
 
+    bool needCheckBackground_ = false;
+
     uint32_t sessionId_ = 0;
     bool isInited_ = false;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
