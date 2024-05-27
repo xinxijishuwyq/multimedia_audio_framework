@@ -205,7 +205,6 @@ void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDevic
 
 void AudioDeviceManager::AddConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     connectedDevices_.insert(connectedDevices_.begin(), devDesc);
 }
 
@@ -225,7 +224,6 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
         return false;
     };
 
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
         it = find_if(it, connectedDevices_.end(), isPresent);
         if (it != connectedDevices_.end()) {
@@ -318,7 +316,6 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const sptr<AudioDeviceDescr
         return false;
     };
 
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     auto iter = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (iter != connectedDevices_.end()) {
         **iter = deviceDescriptor;
@@ -349,15 +346,11 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
         AddMediaDevices(devDesc);
         AddCaptureDevices(devDesc);
     }
-    {
-        std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
-        UpdateDeviceInfo(devDesc);
-    }
+    UpdateDeviceInfo(devDesc);
     std::string devices;
     devices.append("add device ");
     devices.append(std::to_string(static_cast<uint32_t>(deviceDescriptor->getType())));
     devices.append(", connected device ");
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (auto iter : connectedDevices_) {
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
@@ -394,7 +387,6 @@ void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devD
     devices.append("remove device ");
     devices.append(std::to_string(static_cast<uint32_t>(devDesc->getType())));
     devices.append(", connected device ");
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (auto iter : connectedDevices_) {
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
@@ -684,7 +676,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
 {
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
 
     for (const auto &dev : connectedDevices_) {
@@ -707,7 +698,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
 {
     std::vector<unique_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == devType && desc->macAddress_ == macAddress) {
             audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(*desc));
@@ -718,7 +708,6 @@ std::vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
 
 void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isConnnected)
 {
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->macAddress_ == macAddress) {
             desc->isScoRealConnected_ = isConnnected;
@@ -752,7 +741,6 @@ void AudioDeviceManager::UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> 
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
 
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (auto &desc : connectedDevices_) {
         if ((devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) &&
@@ -776,7 +764,6 @@ void AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
 {
     bool isScoDevice = devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
 
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (desc->networkId_ != devDesc->networkId_ ||
             desc->macAddress_ != devDesc->macAddress_) {
@@ -804,7 +791,6 @@ void AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
 
 void AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -823,7 +809,6 @@ void AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescripto
 
 void AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
-    std::lock_guard<std::mutex> connectLock(connectedDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -902,7 +887,6 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetDevicesByFilter
 {
     vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
 
-    lock_guard<mutex> connectLock(connectedDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if ((devType == DEVICE_TYPE_NONE || devType == desc->deviceType_) &&
             (devRole == DEVICE_ROLE_NONE || devRole == desc->deviceRole_) &&

@@ -478,7 +478,7 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
     for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
         AudioDeviceUsage usage = it->first.second;
         eventContextObj->deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
-            DeviceFilterByUsage(it->first.second, eventContextObj->deviceChangeAction.deviceDescriptors);
+            DeviceFilterByUsageInner(it->first.second, eventContextObj->deviceChangeAction.deviceDescriptors);
         if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
@@ -613,7 +613,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioRendererInfo rendererInfo;
         auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
-            GetPreferredOutputDeviceDescriptors(rendererInfo);
+            GetPreferredOutputDeviceDescInner(rendererInfo);
         if (!(it->second->hasBTPermission_)) {
             AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }
@@ -626,7 +626,7 @@ void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioCapturerInfo captureInfo;
-        auto deviceDescs = AudioPolicyService::GetAudioPolicyService().GetPreferredInputDeviceDescriptors(captureInfo);
+        auto deviceDescs = AudioPolicyService::GetAudioPolicyService().GetPreferredInputDeviceDescInner(captureInfo);
         if (!(it->second->hasBTPermission_)) {
             AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }

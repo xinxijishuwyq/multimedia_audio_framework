@@ -48,12 +48,13 @@ FastAudioStream::~FastAudioStream()
     }
 }
 
-void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
+void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
     AUDIO_INFO_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
+    fullTokenId_ = fullTokenId;
 }
 
 int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
@@ -141,15 +142,15 @@ int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 bool FastAudioStream::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    return AudioPolicyManager::GetInstance().CheckRecordingCreate(appTokenId, appFullTokenId, appUid);
+    AUDIO_ERR_LOG("Not supported operation");
+    return false;
 }
 
 bool FastAudioStream::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    AUDIO_INFO_LOG("CheckRecordingStateChange enter.");
-    // note: add support later
-    return true;
+    AUDIO_ERR_LOG("Not supported operation");
+    return false;
 }
 
 int32_t FastAudioStream::GetAudioSessionID(uint32_t &sessionID)

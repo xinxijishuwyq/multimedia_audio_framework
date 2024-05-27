@@ -242,6 +242,7 @@ void BluetoothRendererSinkInner::RegisterParameterCallback(IAudioSinkCallback* c
 
 void BluetoothRendererSinkInner::DeInit()
 {
+    Trace trace("BluetoothRendererSinkInner::DeInit");
     AUDIO_INFO_LOG("DeInit.");
     started_ = false;
     rendererInited_ = false;
@@ -475,6 +476,7 @@ int32_t BluetoothRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64
         } else {
             Trace::Count("BluetoothRendererSinkInner::RenderFrame", PCM_MAYBE_NOT_SILENT);
         }
+        Trace trace("audioRender_->RenderFrame");
         ret = audioRender_->RenderFrame(audioRender_, (void*)&data, len, &writeLen);
         AUDIO_DEBUG_LOG("A2dp RenderFrame returns: %{public}x", ret);
         if (ret == RENDER_FRAME_NUM) {
@@ -663,6 +665,7 @@ int32_t BluetoothRendererSinkInner::Stop(void)
         "Stop failed audioRender_ null");
 
     if (started_) {
+        Trace trace("audioRender_->control.Stop");
         AUDIO_DEBUG_LOG("Stop control before");
         ret = audioRender_->control.Stop(reinterpret_cast<AudioHandle>(audioRender_));
         AUDIO_DEBUG_LOG("Stop control after");
