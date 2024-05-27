@@ -1297,15 +1297,14 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
+            } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
+                PrepareMultiChannelFading(sinkIn, infoIn, si);
             }
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
             pa_assert(infoIn->chunk.length > 0);
 
-            if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
-                PrepareMultiChannelFading(sinkIn, infoIn, si);
-            }
             infoIn++;
             n++;
             maxInfo--;
