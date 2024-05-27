@@ -528,7 +528,8 @@ napi_value NapiAudioCapturer::GetAudioTimeSync(napi_env env, napi_callback_info 
     bool ret = napiAudioCapturer->audioCapturer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
     CHECK_AND_RETURN_RET_LOG(ret, result, "GetAudioTime failure!");
     const uint64_t secToNanosecond = 1000000000;
-    uint64_t time = timestamp.time.tv_nsec + timestamp.time.tv_sec * secToNanosecond;
+    uint64_t time = static_cast<uint64_t>(timestamp.time.tv_nsec) +
+        static_cast<uint64_t>(timestamp.time.tv_sec) * secToNanosecond;
 
     NapiParamUtils::SetValueInt64(env, static_cast<int64_t>(time), result);
     return result;

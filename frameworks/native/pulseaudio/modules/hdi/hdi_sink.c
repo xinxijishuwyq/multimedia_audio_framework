@@ -3778,7 +3778,7 @@ static void PaHdiSinkUserdataInit(struct Userdata *u)
     pa_assert_se(u->bufferAttr->bufOut = (float *)malloc(u->processSize));
     pa_assert_se(u->bufferAttr->tempBufIn = (float *)malloc(u->processSize));
     pa_assert_se(u->bufferAttr->tempBufOut = (float *)malloc(u->processSize));
-    u->bufferAttr->samplingRate = u->ss.rate;
+    u->bufferAttr->samplingRate = (int32_t)u->ss.rate;
     u->bufferAttr->frameLen = DEFAULT_FRAMELEN;
     u->bufferAttr->numChanIn = u->ss.channels;
     u->bufferAttr->numChanOut = u->ss.channels;
