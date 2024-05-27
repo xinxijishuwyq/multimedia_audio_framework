@@ -90,6 +90,7 @@ AudioEffectChainManager::AudioEffectChainManager()
 
     audioEffectHdiParam_ = std::make_shared<AudioEffectHdiParam>();
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
+    GetSysPara("const.build.product", deviceClass_);
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -1094,9 +1095,12 @@ void AudioEffectChainManager::AudioRotationListener::OnChange(Rosen::DisplayId d
 
 bool AudioEffectChainManager::CheckA2dpOffload()
 {
-    std::string curDeviceType = GetDeviceTypeName();
-    if ((GetDeviceSinkName() == "Speaker") && ((curDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") ||
-        (curDeviceType == "DEVICE_TYPE_SPEAKER"))) {
+    if ((deviceType_ == DEVICE_TYPE_SPEAKER) &&
+        (deviceClass_ == "XYAO" || deviceClass_ == "PCEL" || deviceClass_ == "HAD" || deviceClass_ == "HYM")) {
+        return false;
+    }
+    if ((deviceSink_ == DEFAULT_DEVICE_SINK) && ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        (deviceType_ == DEVICE_TYPE_SPEAKER))) {
         return true;
     }
     return false;

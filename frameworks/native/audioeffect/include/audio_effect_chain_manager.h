@@ -157,6 +157,7 @@ private:
     std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
+    std::string deviceClass_ = "";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;
