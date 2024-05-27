@@ -1513,7 +1513,7 @@ static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount
         EffectChainManagerFlush();
     }
     // no need to fade when fading out is done
-    if (*fadingState > 1 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
+    if (*fadingState > 0 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
         *fadingState = 0;
     }
 }
