@@ -1203,12 +1203,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
-                pa_memblock_unref(infoIn->chunk.memblock);
-                continue;
+            } else {
+                pa_atomic_store(&sinkIn->isFirstReaded, 1);
             }
             AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
-
-            pa_atomic_store(&sinkIn->isFirstReaded, 1);
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
@@ -1299,17 +1297,14 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
-                pa_memblock_unref(infoIn->chunk.memblock);
-                continue;
+            } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
+                PrepareMultiChannelFading(sinkIn, infoIn, si);
             }
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
             pa_assert(infoIn->chunk.length > 0);
 
-            if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
-                PrepareMultiChannelFading(sinkIn, infoIn, si);
-            }
             infoIn++;
             n++;
             maxInfo--;
