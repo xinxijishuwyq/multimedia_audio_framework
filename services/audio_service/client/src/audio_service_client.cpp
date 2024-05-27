@@ -2352,7 +2352,7 @@ void AudioServiceClient::GetOffloadApproximatelyCacheTime(uint64_t paTimeStamp, 
         offloadLastHdiPosTs_ = ppTimeStamp;
         offloadLastHdiPosFrames_ = frames;
     } else {
-        ppTimeStamp = timeNowSteady;
+        ppTimeStamp = static_cast<uint64_t>(timeNowSteady);
         int64_t timeDelta = static_cast<int64_t>(timeNowSteady) - static_cast<int64_t>(offloadLastHdiPosTs_);
         timeDelta = timeDelta > 0 ? timeDelta : 0;
         frames = offloadLastHdiPosFrames_ + static_cast<uint64_t>(timeDelta);
