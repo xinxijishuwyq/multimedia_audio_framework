@@ -103,27 +103,28 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
     return &audioEffectChainManager;
 }
 
-static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink, const bool isInitialized,
-    int32_t device, const std::string &sinkName)
+int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::string &sinkName)
 {
-    if (!isInitialized) {
-        deviceType = (DeviceType)device;
-        deviceSink = sinkName;
+    if (!isInitialized_) {
+        deviceType_ = (DeviceType)device;
+        deviceSink_ = sinkName;
         AUDIO_INFO_LOG("has not beed initialized");
         return ERROR;
     }
 
-    if (deviceSink == sinkName) {
-        AUDIO_INFO_LOG("Same DeviceSinkName");
-    }
-    deviceSink = sinkName;
-
-    if (deviceType == (DeviceType)device) {
+    if (deviceType_ == (DeviceType)device) {
         AUDIO_INFO_LOG("DeviceType do not need to be Updated");
         return ERROR;
     }
+    // Delete effectChain in AP and store in backup map
+    DeleteAllChains();
+    deviceType_ = (DeviceType)device;
 
-    deviceType = (DeviceType)device;
+    if (deviceSink_ == sinkName) {
+        AUDIO_INFO_LOG("Same DeviceSinkName");
+    }
+    deviceSink_ = sinkName;
+
     return SUCCESS;
 }
 
@@ -162,12 +163,22 @@ void AudioEffectChainManager::SetSpkOffloadState()
 void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    if (UpdateDeviceInfo(deviceType_, deviceSink_, isInitialized_, device, sinkName) != SUCCESS) {
+    if (UpdateDeviceInfo(device, sinkName) != SUCCESS) {
         return;
     }
+    // update deviceType name in backup map
+    std::vector<std::string> keys;
+    for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
+        keys.push_back(it->first);
+    }
+    std::string deviceName = GetDeviceTypeName();
 
-    // store effectChain in backup map
-    DeleteAllChains();
+    for (auto key: keys) {
+        std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
+        std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
+        SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
+        SceneTypeToEffectChainCountMap_.erase(key);
+    }
     // recover effectChain in speaker mode
     SetSpkOffloadState();
     return;
@@ -1104,6 +1115,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         } else {
             AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
             btOffloadEnabled_ = true;
+            DeleteAllChains();
         }
     } else {
         effectHdiInput_[0] = HDI_DESTROY;
@@ -1112,10 +1124,10 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("set hdi destroy failed");
         }
-        btOffloadEnabled_ = false;
-        if (!spkOffloadEnabled_) {
-            RecoverAllChains();
+        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            DeleteAllChains();
         }
+        btOffloadEnabled_ = false;
     }
 }
 } // namespace AudioStandard
