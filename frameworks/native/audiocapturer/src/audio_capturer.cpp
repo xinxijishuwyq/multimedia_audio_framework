@@ -31,6 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_OVERFLOW_NUM = 100;
+static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -94,11 +95,11 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
 {
     Trace trace("AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
-    if (sourceType <= SOURCE_TYPE_MIC || sourceType >= SOURCE_TYPE_MAX) {
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Invalid source type %{public}d!", sourceType);
+        return nullptr;
     }
-    CHECK_AND_RETURN_RET_LOG(sourceType >= SOURCE_TYPE_MIC && sourceType <= SOURCE_TYPE_MAX, nullptr,
-        "Invalid source type %{public}d!", sourceType);
     if (sourceType == SOURCE_TYPE_ULTRASONIC && getuid() != UID_MSDP_SA) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
     }
@@ -118,9 +119,9 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
     auto capturer = std::make_unique<AudioCapturerPrivate>(audioStreamType, appInfo, false);
-    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, nullptr, "Failed to create capturer object");
     if (capturer == nullptr) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
+        AUDIO_ERR_LOG("Failed to create capturer object");
         return capturer;
     }
     if (!cachePath.empty()) {
@@ -166,7 +167,7 @@ void AudioCapturer::SendCapturerCreateError(const SourceType &sourceType,
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_CREATE_ERROR_STATS,
-        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+        Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
     bean->Add("IS_PLAYBACK", 0);
     bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
     bean->Add("STREAM_TYPE", sourceType);
@@ -260,17 +261,14 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         audioStream_->SetApplicationCachePath(cachePath_);
     }
 
-    bool checkRecordingCreate = audioStream_->CheckRecordingCreate(appInfo_.appTokenId, appInfo_.appFullTokenId,
-        appInfo_.appUid, capturerInfo_.sourceType);
-    CHECK_AND_RETURN_RET_LOG((capturerInfo_.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) ||
-        checkRecordingCreate, ERR_PERMISSION_DENIED, "recording create check failed");
-
     int32_t ret = InitAudioStream(audioStreamParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
 
     RegisterCapturerPolicyServiceDiedCallback();
-
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, DUMP_AUDIO_CAPTURER_FILENAME, &dumpFile_);
+    // eg: 100009_44100_2_1_cap_client_out.pcm
+    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
+        std::to_string(params.audioChannel) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitInputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init input device change callback failed");
@@ -309,7 +307,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
 
     audioStream_->SetCapturerInfo(capturerInfo_);
 
-    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId);
+    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         audioStream_->SetInnerCapturerState(true);
@@ -496,12 +494,6 @@ bool AudioCapturerPrivate::Start() const
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
-    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
-        bool recordingStateChange = audioStream_->CheckRecordingStateChange(appInfo_.appTokenId,
-            appInfo_.appFullTokenId, appInfo_.appUid, AUDIO_PERMISSION_START);
-        CHECK_AND_RETURN_RET_LOG(recordingStateChange, false, "recording start check failed");
-    }
-
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
 
@@ -511,7 +503,16 @@ bool AudioCapturerPrivate::Start() const
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, true);
 
-    return audioStream_->StartAudioStream();
+    bool result = audioStream_->StartAudioStream();
+    if (!result) {
+        AUDIO_ERR_LOG("Start audio stream failed");
+        ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+        }
+    }
+
+    return result;
 }
 
 int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) const
@@ -541,13 +542,6 @@ bool AudioCapturerPrivate::Pause() const
     AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
-    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
-        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-            AUDIO_WARNING_LOG("Pause monitor permission failed");
-        }
-    }
-
     // When user is intentionally pausing , Deactivate to remove from audio focus info list
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
@@ -565,12 +559,6 @@ bool AudioCapturerPrivate::Stop() const
     AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
-    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
-        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-            AUDIO_WARNING_LOG("Stop monitor permission failed");
-        }
-    }
     WriteOverflowEvent();
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
     if (ret != 0) {
@@ -596,13 +584,6 @@ bool AudioCapturerPrivate::Release()
     abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(isValid_, false, "Release when capturer invalid");
-
-    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_CALL) {
-        if (!audioStream_->CheckRecordingStateChange(appInfo_.appTokenId, appInfo_.appFullTokenId,
-            appInfo_.appUid, AUDIO_PERMISSION_STOP)) {
-            AUDIO_WARNING_LOG("Release monitor permission failed");
-        }
-    }
 
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
@@ -785,7 +766,7 @@ int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
     audioCaptureMode_ = captureMode;
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && captureMode == CAPTURE_MODE_CALLBACK &&
-        isFastVoipSupported_) {
+        AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo_) == AUDIO_FLAG_VOIP_FAST) {
         AUDIO_INFO_LOG("Switch to fast voip stream");
         uint32_t sessionId = 0;
         int32_t ret = audioStream_->GetAudioSessionID(sessionId);
@@ -817,7 +798,9 @@ int32_t AudioCapturerPrivate::SetCapturerReadCallback(const std::shared_ptr<Audi
 
 int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    return audioStream_->GetBufferDesc(bufDesc);
+    int32_t ret = audioStream_->GetBufferDesc(bufDesc);
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
+    return ret;
 }
 
 int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc) const
@@ -1046,7 +1029,7 @@ void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetApplicationCachePath(info.cachePath);
-    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId);
+    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetCapturerInfo(info.capturerInfo);
     audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     audioStream->SetCaptureMode(info.captureMode);
@@ -1067,6 +1050,8 @@ void AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     if ((info.capturePeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
         audioStream->SetCapturerPeriodPositionCallback(info.framePeriodNumber, info.capturePeriodPositionCb);
     }
+
+    audioStream->SetCapturerReadCallback(info.capturerReadCallback);
 
     audioStream->SetStreamCallback(info.audioStreamCallback);
 }

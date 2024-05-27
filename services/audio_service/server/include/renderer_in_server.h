@@ -91,6 +91,8 @@ public:
 private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHightResolution() const noexcept;
+    void DoFadingOut(BufferDesc& bufferDesc);
+    void CheckFadingOutDone(int32_t fadeFlag, BufferDesc& bufferDesc);
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<IRendererStream> stream_ = nullptr;
@@ -122,6 +124,8 @@ private:
     FILE *dumpC2S_ = nullptr; // client to server dump file
     uint32_t underRunLogFlag_ = 0;
     ManagerType managerType_;
+    std::mutex fadeoutLock_;
+    int32_t fadeoutFlag_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

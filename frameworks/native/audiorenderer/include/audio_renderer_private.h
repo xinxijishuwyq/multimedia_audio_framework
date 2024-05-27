@@ -267,7 +267,7 @@ public:
     }
 private:
     std::weak_ptr<AudioRendererOutputDeviceChangeCallback> callback_;
-    AudioRendererPrivate *renderer_;
+    AudioRendererPrivate *renderer_ = nullptr;
     std::mutex mutex_;
 };
 

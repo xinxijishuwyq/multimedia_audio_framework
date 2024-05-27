@@ -658,6 +658,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
+        adapterInited_ = false;
         return ERR_NOT_STARTED;
     }
 
@@ -1455,6 +1456,7 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len
 
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
+    Trace trace("AudioRendererSinkInner::SetPaPower flag:%d", flag);
     int32_t ret = ERROR;
     char keyValueList[DEVICE_PARAM_MAX_LEN] = {0};
     const char keyValueList1[] = "zero_volume=false";
