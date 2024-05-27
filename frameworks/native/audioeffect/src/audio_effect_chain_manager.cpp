@@ -156,7 +156,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
         }
 
         if (deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
-            AUDIO_INFO_LOG("recover all chains if device type not bt.")
+            AUDIO_INFO_LOG("recover all chains if device type not bt.");
             RecoverAllChains();
         }
     }
@@ -927,8 +927,8 @@ void AudioEffectChainManager::RecoverAllChains()
         std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
             CreateAudioEffectChainDynamic(sceneType);
-            UpdateMultichannelConfig(sceneType);
         }
+        UpdateMultichannelConfig(sceneType);
     }
     SceneTypeToEffectChainCountBackupMap_.clear();
 }
@@ -1129,7 +1129,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
             AUDIO_ERR_LOG("set hdi destroy failed");
         }
         if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            AUDIO_INFO_LOG("delete all chains if device type is bt.")
+            AUDIO_INFO_LOG("delete all chains if device type is bt.");
             DeleteAllChains();
         }
         btOffloadEnabled_ = false;
