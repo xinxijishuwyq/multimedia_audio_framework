@@ -552,8 +552,10 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     Trace trace("PaRendererStreamImpl::EnqueueBuffer " + std::to_string(bufferDesc.bufLength) + " totalBytesWritten" +
         std::to_string(totalBytesWritten_));
     int32_t error = 0;
-    error = OffloadUpdatePolicyInWrite();
-    CHECK_AND_RETURN_RET_LOG(error == SUCCESS, error, "OffloadUpdatePolicyInWrite failed");
+    if (offloadEnable_) {
+        error = OffloadUpdatePolicyInWrite();
+        CHECK_AND_RETURN_RET_LOG(error == SUCCESS, error, "OffloadUpdatePolicyInWrite failed");
+    }
 
     // EnqueueBuffer is called in mainloop in most cases and don't need lock.
     bool isInMainloop = pa_threaded_mainloop_in_thread(mainloop_) ? true : false;

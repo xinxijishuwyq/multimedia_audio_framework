@@ -1982,7 +1982,7 @@ static size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool 
             length = 0;
         } else if (length < sizeTgt) {
             *wait = waitable || length == 0;
-            length = waitable ? 0 : (length == 0 ? sizeFrame : length);
+            length = waitable ? 0 : length;
             if (ps->memblockq->missing > 0) {
                 playback_stream_request_bytes(ps);
             } else if (ps->memblockq->missing < 0 && ps->memblockq->requested > (int64_t)ps->memblockq->minreq) {
