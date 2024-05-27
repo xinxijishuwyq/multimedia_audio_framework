@@ -31,6 +31,14 @@ const uint32_t DEFAULT_SAMPLE_RATE = 48000;
 const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 
+template <typename T>
+static void swap(T &a, T &b)
+{
+    T temp = a;
+    a = b;
+    b = temp;
+}
+
 #ifdef SENSOR_ENABLE
 AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
 {
@@ -303,12 +311,14 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &chann
     ioBufferConfig_.inputCfg.channels = channels;
     ioBufferConfig_.inputCfg.channelLayout = channelLayout;
     if (IsEmptyEffectHandles()) {
-        return;
+        return SUCCESS;
     }
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     AudioEffectHandle preHandle = nullptr;
+    ioBufferConfig_.outputCfg.channels = 0;
+    ioBufferConfig_.outputCfg.channelLayout = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
         if (preHandle != nullptr) {
             int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -330,7 +340,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfig(const uint32_t &chann
     return SUCCESS;
 }
 
-void AudioEfffectChain::ResetIoBufferConfig()
+void AudioEffectChain::ResetIoBufferConfig()
 {
     ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;

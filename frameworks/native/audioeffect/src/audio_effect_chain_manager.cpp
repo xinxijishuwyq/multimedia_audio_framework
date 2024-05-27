@@ -222,7 +222,7 @@ void AudioEffectChainManager::SetSpkOffloadEnabled(bool enabled)
         return;
     }
     if (spkOffloadEnabled_) {
-        ReconverAllChains();
+        RecoverAllChains();
         spkOffloadEnabled_ = false;
         return;
     }
