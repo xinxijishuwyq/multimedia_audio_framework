@@ -867,7 +867,6 @@ void BluetoothRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device
 
 int32_t BluetoothRendererSinkInner::SetPaPower(int32_t flag)
 {
-    AUDIO_WARNING_LOG("not supported.");
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }
@@ -885,9 +884,9 @@ int64_t BluetoothRendererSinkInner::BytesToNanoTime(size_t lens)
 
 int32_t BluetoothRendererSinkInner::PrepareMmapBuffer()
 {
-    uint32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
+    uint32_t totalBufferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
-    uint32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / SECOND_TO_MILLISECOND);
+    uint32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / SECOND_TO_MILLISECOND);
 
     struct AudioMmapBufferDescriptor desc = {0};
     // reqBufferFrameSize means frames in total, for example, 40ms * 48K = 1920

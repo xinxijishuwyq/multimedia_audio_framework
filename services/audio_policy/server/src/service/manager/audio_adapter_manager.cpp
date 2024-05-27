@@ -29,6 +29,7 @@
 #include "audio_log.h"
 #include "audio_volume_parser.h"
 #include "audio_utils.h"
+#include "audio_policy_server_handler.h"
 
 using namespace std;
 
@@ -172,6 +173,14 @@ void AudioAdapterManager::InitKVStoreInternal()
     bool isFirstBoot = false;
     volumeDataMaintainer_.RegisterCloned();
     InitAudioPolicyKvStore(isFirstBoot);
+    auto handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendKvDataUpdate(isFirstBoot);
+    }
+}
+
+void AudioAdapterManager::HandleKvData(bool isFirstBoot)
+{
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
@@ -325,7 +334,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
         "SetSystemVolumeLevel audio adapter null");
 
-    AUDIO_INFO_LOG("SetVolumeDb: streamType %{public}d, volumeDb %{public}f", streamType, volumeDb);
+    AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d", streamType, volumeDb, volumeLevel);
     if (streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) {
         return SetVolumeDbForVolumeTypeGroup(VOICE_CALL_VOLUME_TYPE_LIST, volumeDb);
     } else if (streamType == STREAM_MUSIC) {
@@ -1355,8 +1364,8 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_DP:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             type = "wired";
             break;
         default:
@@ -1508,7 +1517,7 @@ uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint>
     int32_t rightPos = volumePoints.size() - 1;
     while (leftPos <= rightPos) {
         int32_t midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
-        int32_t c = volumePoints[midPos].index - idx;
+        int32_t c = static_cast<int32_t>(volumePoints[midPos].index) - idx;
         if (c == 0) {
             leftPos = midPos;
             break;
@@ -1544,7 +1553,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
     uint32_t pointSize = volumePoints.size();
 
-    int32_t volSteps = 1 + volumePoints[pointSize - 1].index - volumePoints[0].index;
+    int32_t volSteps = static_cast<int32_t>(1 + volumePoints[pointSize - 1].index - volumePoints[0].index);
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
     int32_t position = GetPositionInVolumePoints(volumePoints, idxRatio);
     if (position == 0) {

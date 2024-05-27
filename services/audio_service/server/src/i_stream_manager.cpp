@@ -14,13 +14,24 @@
  */
 
 #include "pa_adapter_manager.h"
+#include "pro_audio_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-IStreamManager &IStreamManager::GetPlaybackManager()
+IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
 {
-    static PaAdapterManager adapterManager(PLAYBACK);
-    return adapterManager;
+    switch (managerType) {
+        case DIRECT_PLAYBACK:
+            static ProAudioStreamManager directManager(DIRECT_PLAYBACK);
+            return directManager;
+        case VOIP_PLAYBACK:
+            static ProAudioStreamManager voipManager(VOIP_PLAYBACK);
+            return voipManager;
+        case PLAYBACK:
+        default:
+            static PaAdapterManager adapterManager(PLAYBACK);
+            return adapterManager;
+    }
 }
 
 IStreamManager &IStreamManager::GetDupPlaybackManager()

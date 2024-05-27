@@ -26,7 +26,9 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t AUDIO_MS_PER_S = 1000;
+constexpr uint32_t LAYOUT_MONO_CHANNEL_ENUM = 1;
 constexpr uint32_t LAYOUT_STEREO_CHANNEL_ENUM = 2;
+constexpr uint32_t LAYOUT_QUAD_CHANNEL_ENUM = 4;
 constexpr uint32_t LAYOUT_5POINT1_CHANNEL_ENUM = 6;
 constexpr uint32_t LAYOUT_7POINT1_CHANNEL_ENUM = 8;
 constexpr uint32_t S16LE_TO_BYTE = 2;
@@ -34,8 +36,10 @@ constexpr uint32_t S24LE_TO_BYTE = 3;
 constexpr uint32_t S32LE_TO_BYTE = 4;
 
 static std::map<std::string, uint32_t> layoutStrToChannels = {
+    {"CH_LAYOUT_MONO", LAYOUT_MONO_CHANNEL_ENUM},
     {"CH_LAYOUT_STEREO", LAYOUT_STEREO_CHANNEL_ENUM},
     {"CH_LAYOUT_5POINT1", LAYOUT_5POINT1_CHANNEL_ENUM},
+    {"CH_LAYOUT_QUAD", LAYOUT_QUAD_CHANNEL_ENUM},
     {"CH_LAYOUT_7POINT1", LAYOUT_7POINT1_CHANNEL_ENUM},
 };
 
@@ -276,6 +280,8 @@ void AudioPolicyParser::ConvertAdapterInfoToAudioModuleInfo()
         for (auto audioModuleInfo : audioModuleList) {
             audioModuleInfo.ports = audioModuleListTmp;
             audioModuleListData.push_back(audioModuleInfo);
+            AUDIO_WARNING_LOG("name:%{public}s, adapter name:%{public}s, adapter type:%{public}d",
+                audioModuleInfo.name.c_str(), audioModuleInfo.adapterName.c_str(), adapterType);
         }
         ClassType classType = GetClassTypeByAdapterType(adapterType);
         xmlParsedDataMap_[classType] = audioModuleListData;
@@ -463,6 +469,9 @@ void AudioPolicyParser::ParseConfigs(xmlNode &node, PipeInfo &pipeInfo)
             HandleConfigFlagAndUsage(configInfo, pipeInfo);
         }
         configNode = configNode->next;
+    }
+    if (pipeInfo.audioUsage_ == AUDIO_USAGE_VOIP && pipeInfo.audioFlag_ == AUDIO_FLAG_MMAP) {
+        portObserver_.OnVoipConfigParsed(true);
     }
     pipeInfo.configInfos_ = configInfos;
 }

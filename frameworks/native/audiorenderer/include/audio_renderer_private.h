@@ -69,7 +69,7 @@ public:
         const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
     void UnsetRendererPeriodPositionCallback() override;
     int32_t SetBufferDuration(uint64_t bufferDuration) const override;
-    int32_t SetRenderMode(AudioRenderMode renderMode) const override;
+    int32_t SetRenderMode(AudioRenderMode renderMode) override;
     AudioRenderMode GetRenderMode() const override;
     int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
     int32_t SetRendererFirstFrameWritingCallback(
@@ -93,6 +93,7 @@ public:
     int32_t GetCurrentOutputDevices(DeviceInfo &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
     bool IsDeviceChanged(DeviceInfo &newDeviceInfo);
+    void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
     int32_t RegisterAudioRendererEventListener(const int32_t clientPid,
         const std::shared_ptr<AudioRendererDeviceChangeCallback> &callback) override;
     int32_t UnregisterAudioRendererEventListener(const int32_t clientPid) override;
@@ -147,17 +148,19 @@ public:
 
 protected:
     // Method for switching between normal and low latency paths
-    void SwitchStream(bool isLowLatencyDevice);
+    void SwitchStream(bool isLowLatencyDevice, bool isHalNeedChange);
 
 private:
     int32_t InitAudioInterruptCallback();
     int32_t InitOutputDeviceChangeCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
-    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass);
+    bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);
     void SetSelfRendererStateCallback();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
+    void WriteUnderrunEvent() const;
+    IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -177,6 +180,8 @@ private:
     std::shared_ptr<AudioLatencyMeasurement> latencyMeasurement_ = nullptr;
     bool isSwitching_ = false;
     mutable std::mutex switchStreamMutex_;
+    mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
+    bool isFastVoipSupported_ = false;
 
     float speed_ = 1.0;
     bool isOffloadAllowed_ = true;
@@ -225,25 +230,36 @@ public:
     void UnsetAudioRendererObj();
 private:
     std::weak_ptr<AudioRendererDeviceChangeCallback> callback_;
-    AudioRendererPrivate *renderer_;
+    AudioRendererPrivate *renderer_{nullptr};
     std::mutex mutex_;
 };
 
-class OutputDeviceChangeWithInfoCallbackImpl : public OutputDeviceChangeWithInfoCallback {
+class OutputDeviceChangeWithInfoCallbackImpl : public DeviceChangeWithInfoCallback {
 public:
     OutputDeviceChangeWithInfoCallbackImpl() = default;
     virtual ~OutputDeviceChangeWithInfoCallbackImpl() = default;
-    void OnOutputDeviceChangeWithInfo(
+
+    void OnDeviceChangeWithInfo(
         const uint32_t sessionId, const DeviceInfo &deviceInfo, const AudioStreamDeviceChangeReason reason) override;
+
+    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
+
     void SaveCallback(const std::weak_ptr<AudioRendererOutputDeviceChangeCallback> &callback)
     {
         callback_ = callback;
     }
+
+    void RemoveCallback()
+    {
+        callback_.reset();
+    }
+
     void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         renderer_ = rendererObj;
     }
+
     void UnsetAudioRendererObj()
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -251,7 +267,7 @@ public:
     }
 private:
     std::weak_ptr<AudioRendererOutputDeviceChangeCallback> callback_;
-    AudioRendererPrivate *renderer_;
+    AudioRendererPrivate *renderer_ = nullptr;
     std::mutex mutex_;
 };
 

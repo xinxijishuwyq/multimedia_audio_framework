@@ -32,6 +32,7 @@ public:
     virtual void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData) = 0;
     virtual void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData) = 0;
     virtual void OnGlobalConfigsParsed(GlobalConfigs &globalConfig) = 0;
+    virtual void OnVoipConfigParsed(bool enableFastVoip) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

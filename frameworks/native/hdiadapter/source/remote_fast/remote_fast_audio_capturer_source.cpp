@@ -313,7 +313,9 @@ int32_t RemoteFastAudioCapturerSourceInner::InitAshmem(const struct AudioSampleA
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "InitAshmem: Audio capture is null.");
 
-    int32_t reqSize = 1440;
+    int32_t totalBufferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
+    int32_t reqSize = totalBufferInMs * (attr_.sampleRate / 1000);
+
     struct AudioMmapBufferDescriptor desc;
     int32_t ret = audioCapture_->ReqMmapBuffer(reqSize, desc);
     CHECK_AND_RETURN_RET_LOG((ret == 0), ERR_OPERATION_FAILED,
@@ -330,7 +332,7 @@ int32_t RemoteFastAudioCapturerSourceInner::InitAshmem(const struct AudioSampleA
         "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
         desc.totalBufferFrames, desc.transferFrameSize);
     bufferTotalFrameSize_ = desc.totalBufferFrames;
-    eachReadFrameSize_ = desc.transferFrameSize;
+    eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize);
 
 #ifdef DEBUG_DIRECT_USE_HDI
     ashmemLen_ = desc.totalBufferFrames * attrs.channelCount * attrs.format;

@@ -56,6 +56,7 @@ private:
         std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
     void ParseRejectedStreams(xmlNode *node, const std::string &curStream,
         std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
+    void WriteConfigErrorEvent();
 };
 } // namespace AudioStandard
 } // namespace OHOS

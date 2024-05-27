@@ -30,6 +30,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t MAX_DELAY_TIME = 4 * 1000;
 
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
@@ -61,9 +62,12 @@ public:
         ON_CAPTURER_CREATE,
         ON_CAPTURER_REMOVED,
         ON_WAKEUP_CLOSE,
+        RECREATE_RENDERER_STREAM_EVENT,
+        RECREATE_CAPTURER_STREAM_EVENT,
         HEAD_TRACKING_DEVICE_CHANGE,
         SPATIALIZATION_ENABLED_CHANGE,
         HEAD_TRACKING_ENABLED_CHANGE,
+        DATABASE_UPDATE,
     };
     /* event data */
     class EventContextObj {
@@ -83,6 +87,7 @@ public:
         bool headTrackingEnabled;
         std::vector<std::unique_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
         std::vector<std::unique_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+        int32_t streamFlag;
         std::unordered_map<std::string, bool> headTrackingDeviceChangeInfo;
     };
 
@@ -147,11 +152,14 @@ public:
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);
     bool SendWakeupCloseEvent(bool isSync);
+    bool SendRecreateRendererStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag);
+    bool SendRecreateCapturerStreamEvent(int32_t clientId, uint32_t sessionID, int32_t streamFlag);
     bool SendHeadTrackingDeviceChangeEvent(const std::unordered_map<std::string, bool> &changeInfo);
     void AddAudioDeviceRefinerCb(const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveAudioDeviceRefinerCb();
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
+    bool SendKvDataUpdate(const bool &isFirstBoot);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -177,10 +185,13 @@ private:
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleWakeupCloaseEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleSendRecreateRendererStreamEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleSendRecreateCapturerStreamEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

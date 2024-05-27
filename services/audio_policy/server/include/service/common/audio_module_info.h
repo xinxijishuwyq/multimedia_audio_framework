@@ -38,6 +38,7 @@ static const std::string USB_SPEAKER = "Usb_arm_speaker";
 static const std::string DP_SINK = "DP_speaker";
 static const std::string USB_MIC = "Usb_arm_mic";
 static const std::string PRIMARY_MIC = "Built_in_mic";
+static const std::string PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
 static const std::string FILE_SINK = "file_sink";
 static const std::string FILE_SOURCE = "file_source";
 static const std::string PIPE_SINK = "fifo_output";

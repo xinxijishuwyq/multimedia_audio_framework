@@ -113,5 +113,67 @@ HWTEST(AudioPolicyExtUnitTest, UpdateStreamState_004, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 }
 
+/**
+ * @tc.name  : Test GetVolumeGroupInfos via legal state
+ * @tc.number: GetVolumeGroupInfos_001
+ * @tc.desc  : Test GetVolumeGroupInfos interface. Get volume group infos and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, GetVolumeGroupInfos_001, TestSize.Level1)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    std::string networkId = "";
+    int32_t ret = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(infos.size(), 0);
+}
+
+/**
+ * @tc.name  : Test GetVolumeGroupInfos via legal state
+ * @tc.number: GetVolumeGroupInfos_002
+ * @tc.desc  : Test GetVolumeGroupInfos interface. Get volume group infos and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, GetVolumeGroupInfos_002, TestSize.Level1)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t ret = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_GT(infos.size(), 0);
+}
+
+/**
+ * @tc.name  : Test GetNetworkIdByGroupId via legal state
+ * @tc.number: GetNetworkIdByGroupId_001
+ * @tc.desc  : Test GetNetworkIdByGroupId interface. Get networkId by groupId and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, GetNetworkIdByGroupId_001, TestSize.Level1)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t ret = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_GT(infos.size(), 0);
+    int32_t groupId = infos[0]->volumeGroupId_;
+    ret = AudioPolicyManager::GetInstance().GetNetworkIdByGroupId(groupId, networkId);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GetNetworkIdByGroupId via illegal state
+ * @tc.number: GetNetworkIdByGroupId_002
+ * @tc.desc  : Test GetNetworkIdByGroupId interface. Get networkId by groupId and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, GetNetworkIdByGroupId_002, TestSize.Level1)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    std::string networkId = "";
+    int32_t ret = AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(infos.size(), 0);
+    int32_t groupId = -1;
+    ret = AudioPolicyManager::GetInstance().GetNetworkIdByGroupId(groupId, networkId);
+    EXPECT_EQ(ERROR, ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

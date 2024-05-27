@@ -158,7 +158,7 @@ void AudioToneParser::ParseSegment(xmlNode *node, int SegInx, std::shared_ptr<To
         if (!xmlStrcmp(reinterpret_cast<const xmlChar*>(pValue), reinterpret_cast<const xmlChar*>("INF"))) {
             ltoneDesc->segments[SegInx].duration = TONEINFO_INF;
         } else {
-            ltoneDesc->segments[SegInx].duration = atoi(pValue);
+            ltoneDesc->segments[SegInx].duration = static_cast<uint32_t>(atoi(pValue));
         }
         AUDIO_DEBUG_LOG("duration: %{public}d", ltoneDesc->segments[SegInx].duration);
         xmlFree(pValue);

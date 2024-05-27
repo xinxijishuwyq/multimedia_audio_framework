@@ -330,29 +330,115 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAudioRendererLowLatencySuppor
 }
 
 /**
- * @tc.name  : Test Audio_Policy_GetPreferredOutputDeviceDescriptors_001 via legal state
+ * @tc.name  : Test Audio_Policy_GetPreferredOutputDeviceDescriptors_001 via illegal state
  * @tc.number: Audio_Policy_GetPreferredOutputDeviceDescriptors_001
- * @tc.desc  : Test GetPreferredOutputDeviceDescriptors interface. Returns success.
+ * @tc.desc  : Test GetPreferredOutputDeviceDescriptors interface. Get preferred output devices and returns deviceInfo.
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_001, TestSize.Level1)
 {
     AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_INVALID;
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
-    EXPECT_EQ(true, deviceInfo.size() >= 0);
+    EXPECT_GT(deviceInfo.size(), 0);
 }
 
 /**
- * @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_001 via legal state
+ * @tc.name  : Test Audio_Policy_GetPreferredOutputDeviceDescriptors_002 via illegal state
+ * @tc.number: Audio_Policy_GetPreferredOutputDeviceDescriptors_002
+ * @tc.desc  : Test GetPreferredOutputDeviceDescriptors interface. Get preferred output devices and returns deviceInfo.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_002, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = static_cast<StreamUsage>(-1000);
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
+    EXPECT_GT(deviceInfo.size(), 0);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_GetPreferredOutputDeviceDescriptors_003 via illegal state
+ * @tc.number: Audio_Policy_GetPreferredOutputDeviceDescriptors_003
+ * @tc.desc  : Test GetPreferredOutputDeviceDescriptors interface. Get preferred output devices and returns deviceInfo.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_003, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = static_cast<StreamUsage>(1000);
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
+    EXPECT_GT(deviceInfo.size(), 0);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_GetPreferredOutputDeviceDescriptors_004 via legal state
+ * @tc.number: Audio_Policy_GetPreferredOutputDeviceDescriptors_004
+ * @tc.desc  : Test GetPreferredOutputDeviceDescriptors interface. Get preferred output devices and returns deviceInfo.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredOutputDeviceDescriptors_004, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo);
+    EXPECT_GT(deviceInfo.size(), 0);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_001 via illegal state
  * @tc.number: Audio_Policy_GetPreferredInputDeviceDescriptors_001
- * @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Returns success.
+ * @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Get preferred input devices and returns deviceInfo.
  */
 HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_001, TestSize.Level1)
 {
     AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_INVALID;
     std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
     deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
-    EXPECT_EQ(true, deviceInfo.size() >= 0);
+    EXPECT_GT(deviceInfo.size(), 0);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_002 via illegal state
+ * @tc.number: Audio_Policy_GetPreferredInputDeviceDescriptors_002
+ * @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Get preferred input devices and returns deviceInfo.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_002, TestSize.Level1)
+{
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = static_cast<SourceType>(-1000);
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
+    EXPECT_GT(deviceInfo.size(), 0);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_003 via illegal state
+ * @tc.number: Audio_Policy_GetPreferredInputDeviceDescriptors_003
+ * @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Get preferred input devices and returns deviceInfo.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_003, TestSize.Level1)
+{
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = static_cast<SourceType>(1000);
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
+    EXPECT_GT(deviceInfo.size(), 0);
+}
+
+/**
+ * @tc.name  : Test Audio_Policy_GetPreferredInputDeviceDescriptors_004 via legal state
+ * @tc.number: Audio_Policy_GetPreferredInputDeviceDescriptors_004
+ * @tc.desc  : Test GetPreferredInputDeviceDescriptors interface. Get preferred input devices and returns deviceInfo.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_GetPreferredInputDeviceDescriptors_004, TestSize.Level1)
+{
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+    deviceInfo = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
+    EXPECT_GT(deviceInfo.size(), 0);
 }
 
 /**
@@ -1613,7 +1699,7 @@ HWTEST(AudioPolicyUnitTest, UpdateTracker_003, TestSize.Level1)
 {
     AudioMode audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     AudioStreamChangeInfo streamChangeInfo;
-    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();;
+    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();
     int32_t ret = AudioPolicyManager::GetInstance().RegisterTracker(audioMode, streamChangeInfo, clientTrackerObj);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioPolicyManager::GetInstance().UpdateTracker(audioMode, streamChangeInfo);
@@ -1629,12 +1715,11 @@ HWTEST(AudioPolicyUnitTest, UpdateTracker_004, TestSize.Level1)
 {
     AudioMode audioMode = AudioMode::AUDIO_MODE_RECORD;
     AudioStreamChangeInfo streamChangeInfo;
-    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();;
+    std::shared_ptr<AudioClientTracker> clientTrackerObj = std::make_shared<AudioClientTrackerTest>();
     int32_t ret = AudioPolicyManager::GetInstance().RegisterTracker(audioMode, streamChangeInfo, clientTrackerObj);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioPolicyManager::GetInstance().UpdateTracker(audioMode, streamChangeInfo);
     EXPECT_EQ(SUCCESS, ret);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

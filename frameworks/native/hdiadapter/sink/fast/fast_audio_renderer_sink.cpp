@@ -350,9 +350,9 @@ void FastAudioRendererSinkInner::ReleaseMmapBuffer()
 
 int32_t FastAudioRendererSinkInner::PrepareMmapBuffer()
 {
-    uint32_t totalBifferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
+    uint32_t totalBufferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
-    uint32_t reqBufferFrameSize = totalBifferInMs * (attr_.sampleRate / 1000);
+    uint32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc = {0};
     int32_t ret = audioRender_->ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);
@@ -572,7 +572,6 @@ float FastAudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t FastAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
-    AUDIO_WARNING_LOG("not supported.");
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }
@@ -604,6 +603,7 @@ int32_t FastAudioRendererSinkInner::CheckPositionTime()
 
 int32_t FastAudioRendererSinkInner::Start(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Start");
     AUDIO_INFO_LOG("FastAudioRendererSinkInner::Start");
     int64_t stamp = ClockTime::GetCurNano();
     int32_t ret;
@@ -779,6 +779,7 @@ int32_t FastAudioRendererSinkInner::GetLatency(uint32_t *latency)
 
 int32_t FastAudioRendererSinkInner::Stop(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Stop");
     AUDIO_INFO_LOG("Stop.");
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -819,6 +820,7 @@ int32_t FastAudioRendererSinkInner::Pause(void)
 
 int32_t FastAudioRendererSinkInner::Resume(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Resume");
     int32_t ret;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -839,6 +841,7 @@ int32_t FastAudioRendererSinkInner::Resume(void)
 
 int32_t FastAudioRendererSinkInner::Reset(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Reset");
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {
@@ -853,6 +856,7 @@ int32_t FastAudioRendererSinkInner::Reset(void)
 
 int32_t FastAudioRendererSinkInner::Flush(void)
 {
+    Trace trace("FastAudioRendererSinkInner::Flush");
     int32_t ret;
 
     if (started_ && audioRender_ != nullptr) {

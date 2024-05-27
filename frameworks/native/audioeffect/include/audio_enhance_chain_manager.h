@@ -16,11 +16,6 @@
 #ifndef AUDIO_ENHANCE_CHAIN_MANAGER_H
 #define AUDIO_ENHANCE_CHAIN_MANAGER_H
 
-#include <cstdio>
-#include <cstdint>
-#include <cassert>
-#include <cstdint>
-#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
@@ -29,47 +24,10 @@
 #include <set>
 
 #include "audio_effect.h"
-#include "audio_effect_chain_manager.h"
-#include "audio_enhance_chain_adapter.h"
+#include "audio_enhance_chain.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-struct DataDescription {
-    uint32_t frameLength;
-    uint32_t sampleRate;
-    uint32_t dataFormat;
-    uint32_t micNum;
-    uint32_t refNum;
-    uint32_t outChannelNum;
-} __attribute__((packed));
-
-constexpr DataDescription dataDesc = {
-    .frameLength = 20,
-    .sampleRate = 48000,
-    .dataFormat = 16,
-    .micNum = 2,
-    .refNum = 0,
-    .outChannelNum = 2,
-};
-
-class AudioEnhanceChain {
-public:
-    AudioEnhanceChain(std::string &scene);
-    ~AudioEnhanceChain();
-    void SetEnhanceMode(std::string &mode);
-    void ReleaseEnhanceChain();
-    void AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle);
-    void ApplyEnhanceChain(float *bufIn, float *bufOut, uint32_t frameLen);
-    bool IsEmptyEnhanceHandles();
-
-private:
-    std::mutex reloadMutex_;
-    std::string sceneType_;
-    std::string enhanceMode_;
-    std::vector<AudioEffectHandle> standByEnhanceHandles_;
-    std::vector<AudioEffectLibrary*> enhanceLibHandles_;
-};
 
 class AudioEnhanceChainManager {
 public:
@@ -79,23 +37,24 @@ public:
     void InitAudioEnhanceChainManager(std::vector<EffectChain> &enhanceChains,
         std::unordered_map<std::string, std::string> &enhanceChainNameMap,
         std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList);
-    int32_t CreateAudioEnhanceChainDynamic(std::string &sceneType,
-        std::string &enhanceMode, std::string &upAndDownDevice);
-    int32_t ReleaseAudioEnhanceChainDynamic(std::string &sceneType, std::string &upAndDownDevice);
-    int32_t ApplyAudioEnhanceChain(std::string &sceneType,
-        std::string &upAndDownDevice, BufferAttr *bufferAttr);
+    int32_t CreateAudioEnhanceChainDynamic(const std::string &sceneType,
+        const std::string &enhanceMode, const std::string &upAndDownDevice);
+    int32_t ReleaseAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &upAndDownDevice);
+    int32_t ApplyAudioEnhanceChain(const std::string &sceneType, EnhanceBufferAttr *enhanceBufferAttr);
+    bool ExistAudioEnhanceChain(const std::string &sceneType);
     std::string GetUpAndDownDevice();
 
 private:
-    int32_t SetAudioEnhanceChainDynamic(std::string &sceneType,
-        std::string &enhanceMode, std::string &upAndDownDevice);
+    int32_t SetAudioEnhanceChainDynamic(const std::string &sceneType, const std::string &enhanceMode,
+        const std::string &upAndDownDevice);
     
-    std::map<std::string, AudioEnhanceChain*> sceneTypeToEnhanceChainMap_;
+    std::map<std::string, std::shared_ptr<AudioEnhanceChain>> sceneTypeToEnhanceChainMap_;
+    std::map<std::string, int32_t> sceneTypeToEnhanceChainCountMap_;
     std::map<std::string, std::string> sceneTypeAndModeToEnhanceChainNameMap_;
     std::map<std::string, std::vector<std::string>> enhanceChainToEnhancesMap_;
-    std::map<std::string, AudioEffectLibEntry*> enhanceToLibraryEntryMap_;
+    std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> enhanceToLibraryEntryMap_;
     std::map<std::string, std::string> enhanceToLibraryNameMap_;
-    std::mutex chainMutex_;
+    std::mutex chainManagerMutex_;
     bool isInitialized_;
     std::string upAndDownDevice_;
 };

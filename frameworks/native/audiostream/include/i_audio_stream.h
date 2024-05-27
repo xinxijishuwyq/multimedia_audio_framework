@@ -53,6 +53,7 @@ public:
     enum StreamClass : uint32_t {
         PA_STREAM = 0,
         FAST_STREAM,
+        VOIP_STREAM,
     };
 
     struct SwitchInfo {
@@ -76,6 +77,7 @@ public:
         std::shared_ptr<AudioClientTracker> proxyObj;
         AudioPrivacyType privacyType;
         float volume;
+        int32_t rendererFlags = AUDIO_FLAG_NORMAL;
 
         bool streamTrackerRegistered = false;
 
@@ -95,6 +97,7 @@ public:
         // callback info
         std::shared_ptr<AudioStreamCallback> audioStreamCallback;
         std::shared_ptr<AudioRendererWriteCallback> rendererWriteCallback;
+        std::shared_ptr<AudioCapturerReadCallback> capturerReadCallback;
         std::shared_ptr<AudioRendererFirstFrameWritingCallback> rendererFirstFrameWritingCallback;
     };
 

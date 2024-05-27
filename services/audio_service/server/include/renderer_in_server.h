@@ -20,6 +20,7 @@
 #include "i_renderer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
+#include "i_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -82,10 +83,14 @@ public:
     int32_t EnableInnerCap();
     int32_t DisableInnerCap();
     int32_t InitDupStream();
+
+    int32_t GetStreamManagerType() const noexcept;
+
 public:
     const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
+    bool IsHightResolution() const noexcept;
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<IRendererStream> stream_ = nullptr;
@@ -116,6 +121,7 @@ private:
     std::mutex writeLock_;
     FILE *dumpC2S_ = nullptr; // client to server dump file
     uint32_t underRunLogFlag_ = 0;
+    ManagerType managerType_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

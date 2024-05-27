@@ -53,6 +53,8 @@ ohos_shared_library("audio_renderer") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
   ]
   if (sonic_enable == true) {

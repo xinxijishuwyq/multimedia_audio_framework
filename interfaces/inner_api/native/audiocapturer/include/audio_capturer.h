@@ -479,7 +479,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 9
      */
-    virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) const = 0;
+    virtual int32_t SetCaptureMode(AudioCaptureMode captureMode) = 0;
 
     /**
      * @brief Obtains the capture mode.
@@ -650,12 +650,16 @@ public:
      */
     virtual int32_t SetCaptureSilentState(bool state) = 0;
 
-    virtual uint32_t GetOverflowCount() = 0;
+    virtual uint32_t GetOverflowCount() const = 0;
 
     virtual ~AudioCapturer();
 
 protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);
+
+private:
+    static void SendCapturerCreateError(const SourceType &sourceType,
+        const int32_t &errorCode);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -196,6 +196,8 @@ private:
 
     uint64_t lastFramePosition_ = 0;
     uint64_t lastFrameTimestamp_ = 0;
+
+    int32_t appUid_ = -1;
 };
 
 class AudioStreamPolicyServiceDiedCallbackImpl : public AudioStreamPolicyServiceDiedCallback {

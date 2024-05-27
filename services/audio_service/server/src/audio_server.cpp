@@ -32,6 +32,7 @@
 #include "hisysevent.h"
 
 #include "audio_capturer_source.h"
+#include "fast_audio_capturer_source.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_asr.h"
@@ -47,6 +48,7 @@
 #include "playback_capturer_manager.h"
 #include "policy_handler.h"
 #include "config/audio_param_parser.h"
+#include "media_monitor_manager.h"
 
 #define PA
 #ifdef PA
@@ -77,6 +79,8 @@ static constexpr int32_t VM_MANAGER_UID = 7700;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID
 };
+
+static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
 std::map<std::string, AsrAecMode> aecModeMap = {
     {"BYPASS", AsrAecMode::BYPASS},
@@ -188,11 +192,12 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 
 void AudioServer::OnStart()
 {
-    audioUid_ = getuid();
+    audioUid_ = static_cast<int32_t>(getuid());
     AUDIO_INFO_LOG("OnStart uid:%{public}d", audioUid_);
     bool res = Publish(this);
     if (!res) {
         AUDIO_ERR_LOG("start err");
+        WriteServiceStartupError();
     }
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
 #ifdef PA
@@ -200,6 +205,7 @@ void AudioServer::OnStart()
     pthread_setname_np(m_paDaemonThread, "OS_PaDaemon");
     if (ret != 0) {
         AUDIO_ERR_LOG("pthread_create failed %d", ret);
+        WriteServiceStartupError();
     }
     AUDIO_DEBUG_LOG("Created paDaemonThread\n");
 #endif
@@ -207,10 +213,23 @@ void AudioServer::OnStart()
     RegisterAudioCapturerSourceCallback();
 
     std::unique_ptr<AudioParamParser> audioParamParser = make_unique<AudioParamParser>();
+    if (audioParamParser == nullptr) {
+        WriteServiceStartupError();
+    }
     CHECK_AND_RETURN_LOG(audioParamParser != nullptr, "Failed to create audio extra parameters parser");
     if (audioParamParser->LoadConfiguration(audioParameterKeys)) {
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
+}
+
+void AudioServer::WriteServiceStartupError()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_SERVICE_STARTUP_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_SERVER_ID));
+    bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_SERVER));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -794,7 +813,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeOutpu
 int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
 {
     AUDIO_INFO_LOG("SetIORoute deviceType: %{public}d, flag: %{public}d", type, flag);
-    AudioCapturerSource *audioCapturerSourceInstance;
+    IAudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("usb");
@@ -802,6 +821,9 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
     } else {
         audioCapturerSourceInstance = AudioCapturerSource::GetInstance("primary");
         audioRendererSinkInstance = IAudioRendererSink::GetInstance("primary", "");
+        if (!audioCapturerSourceInstance->IsInited()) {
+            audioCapturerSourceInstance = FastAudioCapturerSource::GetInstance();
+        }
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr && audioRendererSinkInstance != nullptr,
         ERR_INVALID_PARAM, "SetIORoute failed for null instance!");
@@ -933,6 +955,8 @@ int32_t AudioServer::RegiestPolicyProvider(const sptr<IRemoteObject> &object)
 
 int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
 {
+    AudioXCollie audioXCollie("AudioPolicyServer::PerStateChangeCbCustomizeCallback::getUidByBundleName",
+        GET_BUNDLE_TIME_OUT_SECONDS);
     std::string bundleName {""};
     AppExecFwk::BundleInfo bundleInfo;
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -1011,6 +1035,7 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &config)
 {
+    Trace trace("AudioServer::CreateAudioProcess");
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 

@@ -196,6 +196,8 @@ public:
     int32_t RemoveRendererOrCapturerPolicyServiceDiedCB() override;
     bool RestoreAudioStream() override;
 
+    void GetStreamSwitchInfo(SwitchInfo &info);
+
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
@@ -216,7 +218,7 @@ private:
     int32_t FlushRingCache();
     int32_t DrainRingCache();
 
-    int32_t WriteCacheData();
+    int32_t WriteCacheData(bool isDrain = false);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void WriteCallbackFunc();
@@ -233,10 +235,16 @@ private:
 
     void FirstFrameProcess();
 
+    void VolumeHandle(BufferDesc &desc);
+
     void ResetFramePosition();
 
     int32_t RegisterRendererInClientPolicyServerDiedCb();
     int32_t UnregisterRendererInClientPolicyServerDiedCb();
+
+    void ReportDataToResSched();
+
+    bool IsHightResolution() const noexcept;
 
 private:
     AudioStreamType eStreamType_;
