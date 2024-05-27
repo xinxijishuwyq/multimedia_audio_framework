@@ -357,7 +357,7 @@ bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneTy
         return false;
     }
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
     std::string sceneTypeString = sceneType;
     std::string sinkSceneTypeString = sinkSceneType;
     return audioEffectChainManager->CheckSceneTypeMatch(sinkSceneType, sceneType);
