@@ -1099,7 +1099,7 @@ bool AudioEffectChainManager::CheckA2dpOffload()
         (deviceClass_ == "XYAO" || deviceClass_ == "PCEL" || deviceClass_ == "HAD" || deviceClass_ == "HYM")) {
         return false;
     }
-    if ((deviceSink_ == "Speaker") && ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
+    if ((deviceSink_ == DEFAULT_DEVICE_SINK) && ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (deviceType_ == DEVICE_TYPE_SPEAKER))) {
         return true;
     }
