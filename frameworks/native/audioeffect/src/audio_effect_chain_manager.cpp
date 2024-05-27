@@ -103,27 +103,29 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
     return &audioEffectChainManager;
 }
 
-static int32_t UpdateDeviceInfo(DeviceType &deviceType, std::string &deviceSink, const bool isInitialized,
-    int32_t device, const std::string &sinkName)
+int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::string &sinkName)
 {
-    if (!isInitialized) {
-        deviceType = (DeviceType)device;
-        deviceSink = sinkName;
+    if (!isInitialized_) {
+        deviceType_ = (DeviceType)device;
+        deviceSink_ = sinkName;
         AUDIO_INFO_LOG("has not beed initialized");
         return ERROR;
     }
 
-    if (deviceSink == sinkName) {
-        AUDIO_INFO_LOG("Same DeviceSinkName");
-    }
-    deviceSink = sinkName;
-
-    if (deviceType == (DeviceType)device) {
+    if (deviceType_ == (DeviceType)device) {
         AUDIO_INFO_LOG("DeviceType do not need to be Updated");
         return ERROR;
     }
+    // Delete effectChain in AP and store in backup map
+    AUDIO_INFO_LOG("delete all chains when device type change");
+    DeleteAllChains();
+    deviceType_ = (DeviceType)device;
 
-    deviceType = (DeviceType)device;
+    if (deviceSink_ == sinkName) {
+        AUDIO_INFO_LOG("Same DeviceSinkName");
+    }
+    deviceSink_ = sinkName;
+
     return SUCCESS;
 }
 
@@ -137,6 +139,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
             if (ret != SUCCESS) {
                 AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
                 spkOffloadEnabled_ = false;
+                RecoverAllChains();
             } else {
                 AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
                 spkOffloadEnabled_ = true;
@@ -147,9 +150,14 @@ void AudioEffectChainManager::SetSpkOffloadState()
             effectHdiInput_[0] = HDI_DESTROY;
             ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
             if (ret != SUCCESS) {
-                AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
+                AUDIO_WARNING_LOG("set hdi destroy failed, backup speaker entered");
             }
             spkOffloadEnabled_ = false;
+        }
+
+        if (deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+            AUDIO_INFO_LOG("recover all chains if device type not bt.");
+            RecoverAllChains();
         }
     }
 }
@@ -157,52 +165,24 @@ void AudioEffectChainManager::SetSpkOffloadState()
 void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
-    if (UpdateDeviceInfo(deviceType_, deviceSink_, isInitialized_, device, sinkName) != SUCCESS) {
+    if (UpdateDeviceInfo(device, sinkName) != SUCCESS) {
         return;
     }
-
-    SetSpkOffloadState();
-    if (!spkOffloadEnabled_) {
-        std::vector<std::string> keys;
-        for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
-            keys.push_back(it->first);
-        }
-        std::string deviceName = GetDeviceTypeName();
-        for (auto key: keys) {
-            std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
-            std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
-            SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
-            SceneTypeToEffectChainCountMap_.erase(key);
-
-        auto audioEffectChain = SceneTypeToEffectChainMap_[key];
-        std::string sceneMode;
-        AudioEffectConfig ioBufferConfig;
-        if (audioEffectChain != nullptr) {
-            audioEffectChain->StoreOldEffectChainInfo(sceneMode, ioBufferConfig);
-        } else {
-            sceneMode = AUDIO_SUPPORTED_SCENE_MODES.find(EFFECT_DEFAULT)->second;
-        }
-        SceneTypeToEffectChainMap_.erase(key);
-
-#ifdef SENSOR_ENABLE
-        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
-#else
-        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
-#endif
-
-            if (SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-                SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-            } else {
-                SceneTypeToEffectChainMap_.insert(std::make_pair(sceneTypeAndDeviceKey, audioEffectChain));
-            }
-
-            if (SetAudioEffectChainDynamic(sceneType, sceneMode) != SUCCESS) {
-                AUDIO_ERR_LOG("Fail to set effect chain for [%{public}s]", sceneType.c_str());
-            }
-            audioEffectChain->UpdateMultichannelIoBufferConfig(ioBufferConfig.inputCfg.channels,
-                ioBufferConfig.inputCfg.channelLayout);
-        }
+    // update deviceType name in backup map
+    std::vector<std::string> keys;
+    for (auto it = SceneTypeToEffectChainMap_.begin(); it != SceneTypeToEffectChainMap_.end(); ++it) {
+        keys.push_back(it->first);
     }
+    std::string deviceName = GetDeviceTypeName();
+
+    for (auto key: keys) {
+        std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
+        std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
+        SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountMap_[key];
+        SceneTypeToEffectChainCountMap_.erase(key);
+    }
+    // recover effectChain in speaker mode
+    SetSpkOffloadState();
     return;
 }
 
@@ -924,8 +904,8 @@ void AudioEffectChainManager::UpdateSensorState()
 
 void AudioEffectChainManager::DeleteAllChains()
 {
-    SceneTypeToEffectChainCountBackupMap_.clear();
     for (auto it = SceneTypeToEffectChainCountMap_.begin(); it != SceneTypeToEffectChainCountMap_.end(); ++it) {
+        AUDIO_DEBUG_LOG("sceneTypeAndDeviceKey %{public}s count:%{public}d", it->first.c_str(), it->second);
         SceneTypeToEffectChainCountBackupMap_.insert(std::make_pair(it->first, it->second));
     }
     
@@ -943,10 +923,12 @@ void AudioEffectChainManager::RecoverAllChains()
 {
     for (auto it = SceneTypeToEffectChainCountBackupMap_.begin(); it != SceneTypeToEffectChainCountBackupMap_.end();
         ++it) {
+        AUDIO_DEBUG_LOG("sceneTypeAndDeviceKey %{public}s count:%{public}d", it->first.c_str(), it->second);
         std::string sceneType = it->first.substr(0, static_cast<size_t>(it->first.find("_&_")));
         for (int32_t k = 0; k < it->second; ++k) {
             CreateAudioEffectChainDynamic(sceneType);
         }
+        UpdateMultichannelConfig(sceneType);
     }
     SceneTypeToEffectChainCountBackupMap_.clear();
 }
@@ -1133,6 +1115,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("set hdi init failed, enter route of escape in ARM");
             btOffloadEnabled_ = false;
+            RecoverAllChains();
         } else {
             AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
             btOffloadEnabled_ = true;
@@ -1145,10 +1128,11 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("set hdi destroy failed");
         }
-        btOffloadEnabled_ = false;
-        if (!spkOffloadEnabled_) {
-            RecoverAllChains();
+        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            AUDIO_INFO_LOG("delete all chains if device type is bt.");
+            DeleteAllChains();
         }
+        btOffloadEnabled_ = false;
     }
 }
 } // namespace AudioStandard
