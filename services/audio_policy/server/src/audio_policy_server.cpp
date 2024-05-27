@@ -124,7 +124,7 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
-    AUDIO_INFO_LOG("OnStart");
+    AUDIO_INFO_LOG("Audio policy server on start");
 
     interruptService_ = std::make_shared<AudioInterruptService>();
     interruptService_->Init(this);
@@ -173,6 +173,7 @@ void AudioPolicyServer::OnStart()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
+    AUDIO_INFO_LOG("Audio policy server start end");
 }
 
 void AudioPolicyServer::OnStop()
