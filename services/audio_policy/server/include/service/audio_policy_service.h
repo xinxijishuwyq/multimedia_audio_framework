@@ -601,6 +601,8 @@ private:
 
     int32_t LoadDefaultUsbModule();
 
+    int32_t RehandlePnpDevice(DeviceType deviceType);
+
     int32_t HandleArmUsbDevice(DeviceType deviceType);
 
     int32_t HandleDpDevice(DeviceType deviceType);
