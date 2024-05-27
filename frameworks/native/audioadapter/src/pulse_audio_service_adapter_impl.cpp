@@ -737,7 +737,6 @@ void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, cons
     void *userdata)
 {
     UserData *userData = reinterpret_cast<UserData*>(userdata);
-    PulseAudioServiceAdapterImpl *thiz = userData->thiz;
     const char *streamtype = pa_proplist_gets(i->proplist, "stream.type");
     const char *streamVolume = pa_proplist_gets(i->proplist, "stream.volumeFactor");
     const char *streamPowerVolume = pa_proplist_gets(i->proplist, "stream.powerVolumeFactor");
@@ -753,12 +752,12 @@ void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, cons
     uint32_t sessionID = 0;
     CastValue<uint32_t>(sessionID, sessionCStr);
     sinkIndexSessionIDMap[i->index] = sessionID;
-
-    string streamType(streamtype);
+    int32_t streamUsage = 0;
+    CastValue<int32_t>(streamUsage, pa_proplist_gets(i->proplist, "stream.usage"));
     float volumeFactor = atof(streamVolume);
     float powerVolumeFactor = atof(streamPowerVolume);
     float duckVolumeFactor = atof(streamDuckVolume);
-    AudioStreamType streamTypeID = thiz->GetIdByStreamType(streamType);
+    AudioStreamType streamTypeID = userData->thiz->GetIdByStreamType(streamtype);
     auto volumePair = g_audioServiceAdapterCallback->OnGetVolumeDbCb(streamTypeID);
     float volumeDbCb = volumePair.first;
     int32_t volumeLevel = volumePair.second;
@@ -782,6 +781,7 @@ void PulseAudioServiceAdapterImpl::HandleSinkInputInfoVolume(pa_context *c, cons
     bean->Add("APP_UID", uid);
     bean->Add("APP_PID", pid);
     bean->Add("STREAMTYPE", streamTypeID);
+    bean->Add("STREAM_TYPE", streamUsage);
     bean->Add("VOLUME", vol);
     bean->Add("SYSVOLUME", volumeLevel);
     bean->Add("VOLUMEFACTOR", volumeFactor);
