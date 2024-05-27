@@ -30,7 +30,7 @@ const std::string AUDIO_SAFE_VOLUME_STATE = "audio_safe_volume_state";
 const std::string AUDIO_SAFE_VOLUME_STATE_BT = "audio_safe_volume_state_bt";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS = "unsafe_volume_music_active_ms";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_BT = "unsafe_volume_music_active_ms_bt";
-const std::string SETTINGS_CLONED = "settingsCloned";
+const std::string SETTINGS_CLONED = "settingsCloneStatus";
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
@@ -513,7 +513,7 @@ void VolumeDataMaintainer::RegisterCloned()
         int32_t value = 0;
         ErrCode result =
             AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID).GetIntValue(SETTINGS_CLONED, value);
-        if ((value == 1) && (result == SUCCESS)) {
+        if ((value == 0) && (result == SUCCESS)) {
             AUDIO_INFO_LOG("Get SETTINGS_CLONED success");
             AudioPolicyManagerFactory::GetAudioPolicyManager().DoRestoreData();
         }
