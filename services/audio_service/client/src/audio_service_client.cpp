@@ -3027,6 +3027,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     bean->Add("APP_UID", client.clientUid_);
     bean->Add("APP_PID", client.clientPid_);
     bean->Add("STREAMTYPE", client.streamType_);
+    bean->Add("STREAM_TYPE", client.mStreamUsage);
     bean->Add("VOLUME", vol);
     bean->Add("SYSVOLUME", systemVolumeLevel);
     bean->Add("VOLUMEFACTOR", client.volumeFactor_);
