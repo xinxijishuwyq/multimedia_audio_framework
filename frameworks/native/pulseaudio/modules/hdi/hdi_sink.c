@@ -1715,8 +1715,16 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
 
     size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
     size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
-    memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
-    memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
+    if (u->bufferAttr->tempBufIn == NULL || u->bufferAttr->tempBufOut == NULL ||
+        u->processSize < memsetInLen || u->processSize < memsetOutLen) {
+        AUDIO_ERR_LOG("SinkRenderPrimaryProcess fail");
+    } else {
+        int32_t retBufIn = memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
+        int32_t retBufOut = memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
+        if (retBufIn != 0 || retBufOut != 0) {
+            AUDIO_ERR_LOG("SinkRenderPrimaryProcess memset fail");
+        }
+    }
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);
@@ -1736,9 +1744,11 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->length = tmpLength;
         void *src = pa_memblock_acquire_chunk(chunkIn);
         int32_t frameLen = bitSize > 0 ? ((int32_t)tmpLength / bitSize) : 0;
-
-        ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
-        memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
+        if (u->bufferAttr->tempBufIn != NULL) {
+            ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
+            memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn,
+                frameLen * sizeof(float));
+        }
         u->bufferAttr->numChanIn = (int32_t)processChannels;
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);

@@ -1378,7 +1378,7 @@ static int ConfigSinkInput(struct userdata *u, const pa_source *source)
     }
 
     if (!pa_proplist_contains(u->source_output->proplist, PA_PROP_MEDIA_ICON_NAME) &&
-        (n = pa_proplist_gets(u->sink_input->sink->proplist, PA_PROP_DEVICE_ICON_NAME))) {
+        ((n = pa_proplist_gets(u->sink_input->sink->proplist, PA_PROP_DEVICE_ICON_NAME)) != NULL)) {
         pa_proplist_sets(u->source_output->proplist, PA_PROP_MEDIA_ICON_NAME, n);
     }
 
@@ -1388,7 +1388,7 @@ static int ConfigSinkInput(struct userdata *u, const pa_source *source)
     }
 
     if (source && !pa_proplist_contains(u->sink_input->proplist, PA_PROP_MEDIA_ICON_NAME) &&
-        (n = pa_proplist_gets(u->source_output->source->proplist, PA_PROP_DEVICE_ICON_NAME))) {
+        ((n = pa_proplist_gets(u->source_output->source->proplist, PA_PROP_DEVICE_ICON_NAME)) != NULL)) {
         pa_proplist_sets(u->sink_input->proplist, PA_PROP_MEDIA_ICON_NAME, n);
     }
 
