@@ -41,6 +41,7 @@
 #include "audio_source_type.h"
 #include "audio_hdiadapter_info.h"
 #include "capturer_source_adapter.h"
+#include "audio_utils_c.h"
 
 #define DEFAULT_SOURCE_NAME "hdi_input"
 #define DEFAULT_DEVICE_CLASS "primary"
@@ -543,6 +544,7 @@ fail:
 
 void PaHdiSourceFree(pa_source *s)
 {
+    AUTO_CTRACE("PaHdiSourceFree");
     struct Userdata *u = NULL;
     pa_source_assert_ref(s);
     pa_assert_se(u = s->userdata);

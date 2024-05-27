@@ -16,6 +16,7 @@
 #define AUDIO_UTILS_C_H
 
 #include <inttypes.h>
+#include <securec.h>
 
 #ifdef __cplusplus
 extern "C" {

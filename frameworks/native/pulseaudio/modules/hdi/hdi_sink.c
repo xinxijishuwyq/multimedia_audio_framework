@@ -4230,6 +4230,7 @@ static void UserdataFree(struct Userdata *u)
 
 void PaHdiSinkFree(pa_sink *s)
 {
+    AUTO_CTRACE("PaHdiSinkFree");
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);
