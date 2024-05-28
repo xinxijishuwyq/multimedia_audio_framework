@@ -640,12 +640,12 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
     CHECK_AND_RETURN_LOG(itZone != zonesMap_.end(), "can not find zoneId");
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
-    if (itZone != zonesMap_.end()) {
+    if ((itZone != zonesMap_.end()) && (itZone->second != nullptr)) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
         itZone->second->zoneId = zoneId;
     }
     int32_t pid = audioInterrupt.pid;
-    if (!audioFocusInfoList.empty()) {
+    if (!audioFocusInfoList.empty() && (itZone->second != nullptr)) {
         // If the session is present in audioFocusInfoList, remove and treat it as a new request
         AUDIO_DEBUG_LOG("audioFocusInfoList is not empty, check whether the session is present");
         audioFocusInfoList.remove_if(

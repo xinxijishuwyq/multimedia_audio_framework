@@ -249,7 +249,7 @@ private:
     uint32_t dupStreamIndex_ = 0;
     std::shared_ptr<MockCallbacks> dupStreamCallback_ = nullptr;
     std::shared_ptr<IRendererStream> dupStream_ = nullptr;
-    size_t dupBufferSize_ = 0;
+    uint64_t dupBufferSize_ = 0;
     std::unique_ptr<uint8_t []> dupBuffer_ = nullptr;
     FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
 

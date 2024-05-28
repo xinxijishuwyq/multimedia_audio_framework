@@ -50,7 +50,7 @@ private:
     OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_;
     OH_AudioRenderer *ohAudioRenderer_;
     void *userData_;
-    void *metadataUserData_;
+    void *metadataUserData_ = nullptr;
     AudioEncodingType encodingType_;
 };
 

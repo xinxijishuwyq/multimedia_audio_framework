@@ -124,7 +124,6 @@ RendererInClientInner::~RendererInClientInner()
 
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
-    bool logFlag = true;
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -140,6 +139,8 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         writeDataCV_.notify_all();
         return SUCCESS;
     }
+
+    bool logFlag = true;
     if (operation == UNDERFLOW_COUNT_ADD) {
         logFlag = false;
         if (!offloadEnable_) {

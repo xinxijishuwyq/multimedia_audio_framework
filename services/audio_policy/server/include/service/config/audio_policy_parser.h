@@ -103,7 +103,7 @@ private:
     std::unordered_map<std::string, std::string> volumeGroupMap_;
     std::unordered_map<std::string, std::string> interruptGroupMap_;
     GlobalConfigs globalConfigs_;
-    bool shouldOpenMicSpeaker_;
+    bool shouldOpenMicSpeaker_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
