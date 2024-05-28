@@ -1157,8 +1157,7 @@ void AudioEffectChainManager::UpdateRealAudioEffect()
         std::shared_ptr<AudioEffectChain> audioEffectChain = SceneTypeToEffectChainMap_[key];
         AudioEffectScene currSceneType;
         if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
-            AudioEffectScene currSceneType currSceneType = static_cast<AudioEffectScene>(
-                GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
+            currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
         } else {
             currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
                 GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType)));
