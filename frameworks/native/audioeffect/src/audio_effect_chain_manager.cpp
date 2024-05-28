@@ -1121,6 +1121,7 @@ void AudioEffectChainManager::ResetInfo()
     SceneTypeToSessionIDMap_.clear();
     SessionIDToEffectInfoMap_.clear();
     SceneTypeToEffectChainCountBackupMap_.clear();
+    SceneTypeToSpecialEffectSet_.clear();
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
     isInitialized_ = false;
@@ -1132,6 +1133,7 @@ void AudioEffectChainManager::ResetInfo()
     spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     hdiSceneType_ = 0;
     hdiEffectMode_ = 0;
+    isCommonEffectChainExisted_ = false;
 }
 
 void AudioEffectChainManager::UpdateRealAudioEffect()
@@ -1163,9 +1165,18 @@ bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneTy
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string sinkSceneTypeAndDeviceKey = sinkSceneType + "_&_" + GetDeviceTypeName();
-    if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == 
-        SceneTypeToEffectChainMap_[sinkSceneTypeAndDeviceKey]) {
+    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
+    if (!SceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
+    !SceneTypeToEffectChainMap_.count(sinkSceneTypeAndDeviceKey)) {
+        return false;
+    }
+    if (sceneType == sinkSceneType && SceneTypeToSpecialEffectSet_.count(sinkSceneType)) {
         return true;
+    } else {
+        if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == 
+        SceneTypeToEffectChainMap_[sinkSceneTypeAndDeviceKey]) {
+        return sceneTypeAndDeviceKey == commonSceneTypeAndDeviceKey;
+    }
     }
     return false;
 }
