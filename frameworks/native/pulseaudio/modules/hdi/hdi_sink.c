@@ -1702,17 +1702,8 @@ static void PrimaryEffectProcess(struct Userdata *u, pa_memchunk *chunkIn, char 
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
 }
 
-static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+static void CheckMemsets(struct Userdata *u)
 {
-    if (GetInnerCapturerState()) {
-        pa_memchunk capResult;
-        SinkRenderCapProcess(si, length, &capResult);
-        pa_memblock_unref(capResult.memblock);
-    }
-
-    struct Userdata *u;
-    pa_assert_se(u = si->userdata);
-
     size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
     size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
     if (u->bufferAttr->tempBufIn == NULL || u->bufferAttr->tempBufOut == NULL ||
@@ -1725,6 +1716,20 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
             AUDIO_ERR_LOG("SinkRenderPrimaryProcess memset fail");
         }
     }
+}
+
+static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
+{
+    if (GetInnerCapturerState()) {
+        pa_memchunk capResult;
+        SinkRenderCapProcess(si, length, &capResult);
+        pa_memblock_unref(capResult.memblock);
+    }
+
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
+    CheckMemsets(u);
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);
@@ -1744,6 +1749,7 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         chunkIn->length = tmpLength;
         void *src = pa_memblock_acquire_chunk(chunkIn);
         int32_t frameLen = bitSize > 0 ? ((int32_t)tmpLength / bitSize) : 0;
+
         if (u->bufferAttr->tempBufIn != NULL) {
             ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
             memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn,
