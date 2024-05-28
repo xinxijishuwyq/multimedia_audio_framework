@@ -3817,7 +3817,6 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
 int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
     std::vector<sptr<AudioDeviceDescriptor>> &descForCb)
 {
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
