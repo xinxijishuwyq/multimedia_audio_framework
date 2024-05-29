@@ -1510,8 +1510,9 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
     return WriteInner(buffer, bufferSize);
 }
 
-bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize)
+bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached)
 {
+    speedCached = false;
 #ifdef SONIC_ENABLE
     if (!isEqual(speed_, 1.0f)) {
         if (audioSpeed_ == nullptr) {
@@ -1530,6 +1531,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize)
         }
         buffer = speedBuffer_.get();
         bufferSize = outBufferSize;
+        speedCached = true;
     }
 #endif
     return true;
@@ -1565,35 +1567,16 @@ void RendererInClientInner::FirstFrameProcess()
     if (!hasFirstFrameWrited_) { OnFirstFrameWriting(); }
 }
 
-int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
+int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
+    size_t oriBufferSize)
 {
-    Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
-        "invalid size is %{public}zu", bufferSize);
-    CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
-    std::lock_guard<std::mutex> lock(writeMutex_);
-
-    if (!ProcessSpeed(buffer, bufferSize)) {
-        return bufferSize;
-    }
-
-    WriteMuteDataSysEvent(buffer, bufferSize);
-
-    FirstFrameProcess();
-
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
-        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
-
-    // hold lock
-    if (isBlendSet_) { audioBlend_.Process(buffer, bufferSize); }
-
     size_t targetSize = bufferSize;
     size_t offset = 0;
     while (targetSize > sizePerFrameInByte_) {
         // 1. write data into ring cache
         OptResult result = ringCache_->GetWritableSize();
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, bufferSize - targetSize, "RingCache write status "
-            "invalid size is:%{public}zu", result.size);
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, speedCached ? oriBufferSize : bufferSize - targetSize,
+            "RingCache write status invalid size is:%{public}zu", result.size);
 
         size_t writableSize = result.size;
         Trace::Count("RendererInClient::CacheBuffer->writableSize", writableSize);
@@ -1615,19 +1598,48 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
         // 2. copy data from cache to OHAudioBuffer
         result = ringCache_->GetReadableSize();
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, bufferSize - targetSize, "RingCache read status "
-            "invalid size is:%{public}zu", result.size);
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, speedCached ? oriBufferSize : bufferSize - targetSize,
+            "RingCache read status invalid size is:%{public}zu", result.size);
         size_t readableSize = result.size;
         Trace::Count("RendererInClient::CacheBuffer->readableSize", readableSize);
 
         if (readableSize < clientSpanSizeInByte_) { continue; }
         // if readable size is enough, we will call write data to server
         int32_t ret = WriteCacheData();
-        CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE, bufferSize - targetSize, "Status changed while write");
+        CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE, speedCached ? oriBufferSize : bufferSize - targetSize,
+            "Status changed while write");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
     }
+    return speedCached ? oriBufferSize : bufferSize - targetSize;
+}
 
-    return bufferSize - targetSize;
+int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
+{
+    Trace trace("RendererInClient::Write " + std::to_string(bufferSize));
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr && bufferSize < MAX_WRITE_SIZE && bufferSize > 0, ERR_INVALID_PARAM,
+        "invalid size is %{public}zu", bufferSize);
+    CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
+    std::lock_guard<std::mutex> lock(writeMutex_);
+
+    size_t oriBufferSize = bufferSize;
+    bool speedCached = false;
+    if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
+        return bufferSize;
+    }
+
+    WriteMuteDataSysEvent(buffer, bufferSize);
+
+    FirstFrameProcess();
+
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+        "Write: Illegal state:%{public}u sessionid: %{public}u", state_.load(), sessionId_);
+
+    // hold lock
+    if (isBlendSet_) {
+        audioBlend_.Process(buffer, bufferSize);
+    }
+
+    return WriteRingCache(buffer, bufferSize, speedCached, oriBufferSize);
 }
 
 void RendererInClientInner::ResetFramePosition()
