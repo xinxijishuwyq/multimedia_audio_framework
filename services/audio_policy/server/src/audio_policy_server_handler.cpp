@@ -512,7 +512,9 @@ void AudioPolicyServerHandler::HandleRequestCateGoryEvent(const AppExecFwk::Inne
 
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        it->second->OnAudioFocusRequested(eventContextObj->audioInterrupt);
+        if (callbacksMap_.count(CALLBACK_FOCUS_INFO_CHANGE) > 0 && callbacksMap_[CALLBACK_FOCUS_INFO_CHANGE]) {
+            it->second->OnAudioFocusRequested(eventContextObj->audioInterrupt);
+        }
     }
 }
 
@@ -522,7 +524,9 @@ void AudioPolicyServerHandler::HandleAbandonCateGoryEvent(const AppExecFwk::Inne
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        it->second->OnAudioFocusAbandoned(eventContextObj->audioInterrupt);
+        if (callbacksMap_.count(CALLBACK_FOCUS_INFO_CHANGE) > 0 && callbacksMap_[CALLBACK_FOCUS_INFO_CHANGE]) {
+            it->second->OnAudioFocusAbandoned(eventContextObj->audioInterrupt);
+        }
     }
 }
 
@@ -533,7 +537,9 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
     AUDIO_INFO_LOG("HandleFocusInfoChangeEvent focusInfoList :%{public}zu", eventContextObj->focusInfoList.size());
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
+        if (callbacksMap_.count(CALLBACK_FOCUS_INFO_CHANGE) > 0 && callbacksMap_[CALLBACK_FOCUS_INFO_CHANGE]) {
+            it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
+        }
     }
 }
 
@@ -655,7 +661,9 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
+        if (callbacksMap_.count(CALLBACK_RENDERER_STATE_CHANGE) > 0 && callbacksMap_[CALLBACK_RENDERER_STATE_CHANGE]) {
+            rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
+        }
     }
 }
 
@@ -670,7 +678,9 @@ void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEv
             AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
+        if (callbacksMap_.count(CALLBACK_CAPTURER_STATE_CHANGE) > 0 && callbacksMap_[CALLBACK_CAPTURER_STATE_CHANGE]) {
+            capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
+        }
     }
 }
 
@@ -898,6 +908,20 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
         default:
             break;
     }
+}
+
+int32_t AudioPolicyServerHandler::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    if (callbackchange <= CALLBACK_UNKNOWN || callbackchange >= CALLBACK_MAX) {
+        AUDIO_ERR_LOG("Illegal parameter");
+        return AUDIO_ERR;
+    }
+
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    callbacksMap_[callbackchange] = enable;
+    string str = (enable ? "true" : "false");
+    AUDIO_INFO_LOG("Set callbacks:%{public}d, enable:%{public}s", callbackchange, str.c_str());
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS
