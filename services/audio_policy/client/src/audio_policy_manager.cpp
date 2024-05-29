@@ -860,17 +860,15 @@ void AudioPolicyManager::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamC
 bool AudioPolicyManager::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    return gsp->CheckRecordingCreate(appTokenId, appFullTokenId, appUid, sourceType);
+    AUDIO_ERR_LOG("Not supported operation");
+    return false;
 }
 
 bool AudioPolicyManager::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
-    return gsp->CheckRecordingStateChange(appTokenId, appFullTokenId, appUid, state);
+    AUDIO_ERR_LOG("Not supported operation");
+    return false;
 }
 
 int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)

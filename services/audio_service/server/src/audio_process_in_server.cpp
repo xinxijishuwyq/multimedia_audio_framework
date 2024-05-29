@@ -27,7 +27,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-    static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
 
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
@@ -89,6 +89,17 @@ int32_t AudioProcessInServer::Start()
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING,
         ERR_ILLEGAL_STATE, "Start failed, invalid status.");
 
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && !needCheckBackground_ &&
+        PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
+        AUDIO_INFO_LOG("set needCheckBackground_: true");
+        needCheckBackground_ = true;
+    }
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(processConfig_.appInfo.appTokenId,
+            processConfig_.appInfo.appFullTokenId), ERR_OPERATION_FAILED, "VerifyBackgroundCapture failed!");
+        PermissionUtil::NotifyPrivacy(processConfig_.appInfo.appTokenId, AUDIO_PERMISSION_START);
+    }
+
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
@@ -105,7 +116,10 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_PAUSING,
         ERR_ILLEGAL_STATE, "Pause failed, invalid status.");
-
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+    }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
     }
@@ -120,6 +134,18 @@ int32_t AudioProcessInServer::Resume()
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STARTING,
         ERR_ILLEGAL_STATE, "Resume failed, invalid status.");
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && !needCheckBackground_ &&
+        PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
+        AUDIO_INFO_LOG("set needCheckBackground_: true");
+        needCheckBackground_ = true;
+    }
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
+            "VerifyBackgroundCapture failed!");
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START);
+    }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
@@ -136,7 +162,10 @@ int32_t AudioProcessInServer::Stop()
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(streamStatus_->load() == STREAM_STOPPING,
         ERR_ILLEGAL_STATE, "Stop failed, invalid status.");
-
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+    }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
     }
@@ -153,6 +182,10 @@ int32_t AudioProcessInServer::Release()
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
 
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK && needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+    }
     int32_t ret = releaseCallback_->OnProcessRelease(this);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;

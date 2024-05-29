@@ -148,6 +148,7 @@ private:
         uint64_t *channelLayout);
     void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType, std::string &scenePairType,
         std::set<std::string> &sessions);
+    int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -167,6 +168,7 @@ private:
     std::set<std::string> SceneTypeToSpecialEffectSet_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
+    std::string deviceClass_ = "";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;

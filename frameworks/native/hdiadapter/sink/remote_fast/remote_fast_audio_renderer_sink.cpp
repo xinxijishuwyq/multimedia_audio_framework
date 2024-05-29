@@ -283,6 +283,8 @@ int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &r
 
     struct AudioSampleAttributes param;
     InitAttrs(param);
+    param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AudioCategory::AUDIO_MMAP_VOIP :
+        AudioCategory::AUDIO_MMAP_NOIRQ;
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
     param.format = ConvertToHdiFormat(attr_.format);
@@ -300,7 +302,7 @@ int32_t RemoteFastAudioRendererSinkInner::CreateRender(const struct AudioPort &r
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioRender_ != nullptr, ret,
         "AudioDeviceCreateRender failed");
-    if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ) {
+    if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ || param.type == AudioCategory::AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer();
     }
     isRenderCreated_.store(true);
@@ -431,7 +433,6 @@ void RemoteFastAudioRendererSinkInner::InitAttrs(struct AudioSampleAttributes &a
     attrs.sampleRate = AUDIO_SAMPLE_RATE_48K;
     attrs.interleaved = 0;
     attrs.streamId = REMOTE_FAST_OUTPUT_STREAM_ID;
-    attrs.type = AudioCategory::AUDIO_MMAP_NOIRQ;
     attrs.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     attrs.isBigEndian = false;
     attrs.isSignedData = true;

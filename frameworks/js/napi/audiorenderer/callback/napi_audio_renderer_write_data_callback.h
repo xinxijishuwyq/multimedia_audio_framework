@@ -39,9 +39,10 @@ private:
         BufferDesc bufDesc {};
         NapiAudioRenderer *rendererNapiObj;
     };
-    
+
     static void WorkCallbackRendererWriteData(uv_work_t *work, int status);
     void OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb);
+    static void CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;
