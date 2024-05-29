@@ -255,71 +255,6 @@ void AudioEffectChainManager::InitHdiState()
     }
 }
 
-void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneType, std::string &sceneType) 
-{
-    if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
-        currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
-    } else {
-        currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
-            GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType)));
-    }
-}
-
-void AudioEffectChainManager::ChangeEffectChainCountMap(const std::string &sceneType) 
-{
-    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
-    SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]++;
-    if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-        SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != "SCENE_OTHERS") {
-        SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
-    }
-}
-
-void EraseEffectChainSetAndMap(const std::string &sceneType)
-{
-    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
-    SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);            
-    SceneTypeToSpecialEffectSet_.erase(sceneType);
-}
-
-void ChangeEffectChannels(const std::string &sceneType, const std::set<std::string> &sessions, uint32_t *channels,
-    uint64_t *channelLayout)
-{
-    for (auto s = sessions.begin(); s != sessions.end(); ++s) {
-        SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
-        uint32_t tmpChannelCount;
-        uint64_t tmpChannelLayout;
-        std::string deviceType = GetDeviceTypeName();
-        if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
-            && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
-            && IsChannelLayoutHVSSupported(info.channelLayout)) {
-            tmpChannelLayout = info.channelLayout;
-            tmpChannelCount = info.channels;
-        } else {
-            tmpChannelCount = DEFAULT_NUM_CHANNEL;
-            tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-        }
-
-        if (tmpChannelCount >= *channels) {
-            *channels = tmpChannelCount;
-            *channelLayout = tmpChannelLayout;
-        }
-    }
-}
-
-void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType, std::string &scenePairType,
-    std::set<std::string> &sessions)
-{
-    for (auto& sessionID : sessions) {
-        if (sessionID > maxSessionID) {
-            maxSessionID = sessionID;
-            sceneType = scenePairType;
-        }
-    }
-}
-
 // Boot initialize
 void AudioEffectChainManager::InitAudioEffectChainManager(std::vector<EffectChain> &effectChains,
     std::unordered_map<std::string, std::string> &map,
@@ -1212,6 +1147,71 @@ bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneTy
         }
     }
     return false;
+}
+
+void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneType, std::string &sceneType)
+{
+    if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+        currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType));
+    } else {
+        currSceneType = GetSceneTypeFromSpatializationSceneType(static_cast<AudioEffectScene>(
+            GetKeyFromValue(AUDIO_SUPPORTED_SCENE_TYPES, sceneType)));
+    }
+}
+
+void AudioEffectChainManager::ChangeEffectChainCountMap(const std::string &sceneType) 
+{
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
+    SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey]++;
+    if (SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
+        SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] && sceneType != "SCENE_OTHERS") {
+        SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
+    }
+}
+
+void AudioEffectChainManager::EraseEffectChainSetAndMap(const std::string &sceneType)
+{
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
+    SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
+    SceneTypeToSpecialEffectSet_.erase(sceneType);
+}
+
+void AudioEffectChainManager::ChangeEffectChannels(const std::string &sceneType,
+    const std::set<std::string> &sessions, uint32_t *channels, uint64_t *channelLayout)
+{
+    for (auto s = sessions.begin(); s != sessions.end(); ++s) {
+        SessionEffectInfo info = SessionIDToEffectInfoMap_[*s];
+        uint32_t tmpChannelCount;
+        uint64_t tmpChannelLayout;
+        std::string deviceType = GetDeviceTypeName();
+        if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
+            && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
+            && IsChannelLayoutHVSSupported(info.channelLayout)) {
+            tmpChannelLayout = info.channelLayout;
+            tmpChannelCount = info.channels;
+        } else {
+            tmpChannelCount = DEFAULT_NUM_CHANNEL;
+            tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+        }
+
+        if (tmpChannelCount >= *channels) {
+            *channels = tmpChannelCount;
+            *channelLayout = tmpChannelLayout;
+        }
+    }
+}
+
+void AudioEffectChainManager::FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
+    std::string &scenePairType, std::set<std::string> &sessions)
+{
+    for (auto& sessionID : sessions) {
+        if (sessionID > maxSessionID) {
+            maxSessionID = sessionID;
+            sceneType = scenePairType;
+        }
+    }
 }
 
 #ifdef WINDOW_MANAGER_ENABLE
