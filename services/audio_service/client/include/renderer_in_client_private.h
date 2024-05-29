@@ -244,7 +244,7 @@ private:
 
     void ReportDataToResSched();
 
-    bool IsHightResolution() const noexcept;
+    bool IsHighResolution() const noexcept;
 
     void ProcessWriteInner(BufferDesc &bufferDesc);
 
