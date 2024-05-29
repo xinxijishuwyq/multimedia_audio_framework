@@ -1159,7 +1159,7 @@ void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneTyp
     }
 }
 
-void AudioEffectChainManager::ChangeEffectChainCountMap(const std::string &sceneType) 
+void AudioEffectChainManager::ChangeEffectChainCountMap(const std::string &sceneType)
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
@@ -1204,7 +1204,7 @@ void AudioEffectChainManager::ChangeEffectChannels(const std::string &sceneType,
 }
 
 void AudioEffectChainManager::FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,
-    std::string &scenePairType, std::set<std::string> &sessions)
+    const std::string &scenePairType, std::set<std::string> &sessions)
 {
     for (auto& sessionID : sessions) {
         if (sessionID > maxSessionID) {
