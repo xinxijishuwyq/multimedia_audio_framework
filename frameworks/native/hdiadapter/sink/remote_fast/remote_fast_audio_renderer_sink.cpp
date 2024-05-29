@@ -317,7 +317,7 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
 
     int32_t totalBufferInMs = 40; // 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency.
     frameSizeInByte_ = PcmFormatToBits(attr_.format) * attr_.channel / PCM_8_BIT;
-    int32_t reqBufferFrameSize = totalBufferInMs * (attr_.sampleRate / 1000);
+    int32_t reqBufferFrameSize = totalBufferInMs * static_cast<int32_t>(attr_.sampleRate / 1000);
 
     struct AudioMmapBufferDescriptor desc;
     int32_t ret = audioRender_->ReqMmapBuffer(reqBufferFrameSize, desc);
@@ -334,8 +334,8 @@ int32_t RemoteFastAudioRendererSinkInner::PrepareMmapBuffer()
         desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
         "ReqMmapBuffer invalid values: totalBufferFrames[%{public}d] transferFrameSize[%{public}d]",
         desc.totalBufferFrames, desc.transferFrameSize);
-    bufferTotalFrameSize_ = desc.totalBufferFrames; // 1440 ~ 3840
-    eachReadFrameSize_ = desc.transferFrameSize; // 240
+    bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames); // 1440 ~ 3840
+    eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240
 
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
         "BufferSize will overflow!");

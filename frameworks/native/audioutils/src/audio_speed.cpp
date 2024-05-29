@@ -107,7 +107,7 @@ int32_t AudioSpeed::ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
         static_cast<unsigned char*>(outBuffer.get()), MAX_BUFFER_SIZE);
     CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
 
-    outBufferSize = outSamples * (formatSize_ * channels_);
+    outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
 
@@ -123,7 +123,7 @@ int32_t AudioSpeed::ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
         MAX_BUFFER_SIZE);
     CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
 
-    outBufferSize = outSamples * (formatSize_ * channels_);
+    outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
 
@@ -177,7 +177,7 @@ int32_t AudioSpeed::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
     int32_t res = sonicWriteFloatToStream(sonicStream_, buffer, numSamples);
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write float to stream failed.");
     int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, MAX_BUFFER_SIZE);
-    outBufferSize = outSamples * (formatSize_ * channels_);
+    outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
 } // namespace AudioStandard
