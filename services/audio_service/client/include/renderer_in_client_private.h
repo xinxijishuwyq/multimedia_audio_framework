@@ -235,6 +235,8 @@ private:
 
     void FirstFrameProcess();
 
+    int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
+
     void VolumeHandle(BufferDesc &desc);
 
     void ResetFramePosition();
