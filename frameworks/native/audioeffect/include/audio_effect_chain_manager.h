@@ -54,7 +54,7 @@ const uint32_t BASE_TEN = 10;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t HDI_ROOM_MODE_INDEX_TWO = 2;
-const uint32_t DEFAULT_NUM_EFFECT_INSTANCES = 3;
+const uint32_t DEFAULT_NUM_EFFECT_INSTANCES = 1;
 
 struct SessionEffectInfo {
     std::string sceneMode;
@@ -141,6 +141,13 @@ private:
     void UpdateEffectChainParams(AudioEffectScene sceneType);
     void SetSpkOffloadState();
     void InitHdiState();
+    void UpdateCurrSceneType(AudioEffectScene &currSceneType, std::string &sceneType);
+    void ChangeEffectChainCountMap(const std::string &sceneType);
+    void EraseEffectChainSetAndMap(const std::string &sceneType);
+    void ChangeEffectChannels(const std::string &sceneType, const std::set<std::string> &sessions, uint32_t *channels,
+        uint64_t *channelLayout);
+    void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType, std::string &scenePairType,
+        std::set<std::string> &sessions);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
