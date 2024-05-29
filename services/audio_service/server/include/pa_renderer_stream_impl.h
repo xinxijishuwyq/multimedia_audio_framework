@@ -17,6 +17,7 @@
 #define PA_RENDERER_STREAM_IMPL_H
 
 #include <pulse/pulseaudio.h>
+#include <mutex>
 #include "i_renderer_stream.h"
 
 namespace OHOS {
@@ -80,6 +81,7 @@ private:
     static void PAStreamDrainInStopCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamUnderFlowCountAddCb(pa_stream *stream, void *userdata);
+    static void PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata);
 
     const std::string GetEffectModeName(int32_t effectMode);
     // offload
@@ -129,8 +131,8 @@ private:
     AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
-    FILE *dumpFile_ = nullptr;
     // offload end
+    std::atomic<bool> isFadeoutDone_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

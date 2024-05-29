@@ -79,6 +79,26 @@ static constexpr int32_t VM_MANAGER_UID = 7700;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID
 };
+// using pass-in appInfo for uids:
+constexpr int32_t UID_MEDIA_SA = 1013;
+
+const std::set<int32_t> RECORD_PASS_APPINFO_LIST = {
+    UID_MEDIA_SA
+};
+
+const std::set<SourceType> VALID_SOURCE_TYPE = {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST
+};
+
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
 
@@ -981,21 +1001,21 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     return hapApiVersion;
 }
 
-void AudioServer::ResetRecordConfig(int32_t callerUid, AudioProcessConfig &config)
+void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
 {
     if (config.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         config.isInnerCapturer = true;
         config.innerCapMode = LEGACY_INNER_CAP;
-        if (callerUid == MEDIA_SERVICE_UID) {
+        if (config.callerUid == MEDIA_SERVICE_UID) {
             config.innerCapMode = MODERN_INNER_CAP;
-        } else if (GetHapBuildApiVersion(callerUid) >= MODERN_INNER_API_VERSION) { // not media, check build api-version
+        } else if (GetHapBuildApiVersion(config.callerUid) >= MODERN_INNER_API_VERSION) { // check build api-version
             config.innerCapMode = LEGACY_MUTE_CAP;
         }
     } else {
         config.isInnerCapturer = false;
     }
 #ifdef AUDIO_BUILD_VARIANT_ROOT
-    if (callerUid == ROOT_UID) {
+    if (config.callerUid == ROOT_UID) {
         config.innerCapMode = MODERN_INNER_CAP;
     }
 #endif
@@ -1013,22 +1033,25 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     int32_t callerPid = IPCSkeleton::GetCallingPid();
 
+    resetConfig.callerUid = callerUid;
+
     // client pid uid check.
-    if (callerUid == MEDIA_SERVICE_UID) {
-        AUDIO_INFO_LOG("Create process for media service.");
+    if (RECORD_PASS_APPINFO_LIST.count(callerUid)) {
+        AUDIO_INFO_LOG("Create process for %{public}d, clientUid:%{public}d.", callerUid, config.appInfo.appUid);
     } else if (RECORD_CHECK_FORWARD_LIST.count(callerUid)) {
         AUDIO_INFO_LOG("Check forward calling for uid:%{public}d", callerUid);
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetFirstTokenID();
-    } else if (resetConfig.appInfo.appPid != callerPid || resetConfig.appInfo.appUid != callerUid ||
-        resetConfig.appInfo.appTokenId != IPCSkeleton::GetCallingTokenID()) {
-        AUDIO_INFO_LOG("Use true client appInfo instead.");
+        resetConfig.appInfo.appFullTokenId = IPCSkeleton::GetFirstFullTokenID();
+    } else {
+        AUDIO_INFO_LOG("Use true client appInfo instead for pid:%{public}d uid:%{public}d", callerPid, callerUid);
         resetConfig.appInfo.appPid = callerPid;
         resetConfig.appInfo.appUid = callerUid;
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
+        resetConfig.appInfo.appFullTokenId = IPCSkeleton::GetCallingFullTokenID();
     }
 
     if (resetConfig.audioMode == AUDIO_MODE_RECORD) {
-        ResetRecordConfig(callerUid, resetConfig);
+        ResetRecordConfig(resetConfig);
     }
     return resetConfig;
 }
@@ -1283,7 +1306,10 @@ bool AudioServer::CheckPlaybackPermission(const AudioProcessConfig &config)
 bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
+    uint64_t fullTokenId = config.appInfo.appFullTokenId;
     SourceType sourceType = config.capturerInfo.sourceType;
+    CHECK_AND_RETURN_RET_LOG(VALID_SOURCE_TYPE.count(sourceType), false, "invalid source type:%{public}d", sourceType);
+
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     int32_t appUid = config.appInfo.appUid;
     if (appUid == ROOT_UID) {
@@ -1291,10 +1317,11 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     }
 #endif
 
+    AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
+
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false,
-            "Create voicecall record stream failed: no system permission.");
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false, "VOICE_CALL failed: no system permission.");
 
         bool res = CheckVoiceCallRecorderPermission(tokenId);
         return res;
@@ -1310,6 +1337,11 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         return true;
     }
 
+    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && config.innerCapMode == MODERN_INNER_CAP) {
+        AUDIO_INFO_LOG("modern inner-cap source, no need to check.");
+        return true;
+    }
+
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
     CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
@@ -1319,7 +1351,15 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
         CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
             "Create wakeup record stream failed: no permission.");
+        return true;
     }
+
+    if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, sourceType) &&
+        !PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
+        AUDIO_ERR_LOG("VerifyBackgroundCapture failed uid:%{public}d tokenId:%{public}d", config.callerUid, tokenId);
+        return false;
+    }
+
     return true;
 }
 

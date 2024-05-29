@@ -1833,7 +1833,9 @@ void NapiAudioRenderer::UnregisterRendererOutputDeviceChangeWithInfoCallback(nap
 void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_value *argv,
     const std::string &cbName, NapiAudioRenderer *napiRenderer)
 {
-    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ == nullptr, "writeData already subscribed.");
+    if (napiRenderer->rendererWriteDataCallbackNapi_ != nullptr) {
+        AUDIO_WARNING_LOG("writeData already subscribed. The old writeData function will be overwritten.");
+    }
 
     napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(env, napiRenderer);
     napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);

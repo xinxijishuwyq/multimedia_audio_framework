@@ -520,7 +520,7 @@ private:
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
-    std::set<uint32_t> saveAppCapTokenIdThroughMS;
+
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
     AudioRouterCenter &audioRouterCenter_;

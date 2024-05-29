@@ -207,6 +207,8 @@ struct Userdata {
         pa_usec_t writeTime;
         pa_usec_t prewrite;
         pa_sink_state_t previousState;
+        pa_atomic_t fadingFlagForPrimary; // 1：do fade in, 0: no need
+        int32_t primaryFadingInDone;
     } primary;
     struct {
         bool used;
@@ -224,6 +226,8 @@ struct Userdata {
         pa_atomic_t hdistate;
         pa_memchunk chunk;
         SinkAttr sample_attrs;
+        pa_atomic_t fadingFlagForMultiChannel; // 1：do fade in, 0: no need
+        int32_t multiChannelFadingInDone;
     } multiChannel;
 };
 
@@ -317,7 +321,7 @@ static void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        Write24Bit(b, ((uint32_t) v) >> BIT_8);
+        Write24Bit(b, ((int32_t) v) >> BIT_8);
         b += OFFSET_BIT_24;
     }
 }
@@ -1079,6 +1083,87 @@ static void SinkRenderMultiChannelInputsDrop(pa_sink *si, pa_mix_info *infoIn, u
     }
 }
 
+static void silenceData(pa_mix_info *infoIn)
+{
+    pa_memchunk_make_writable(&infoIn->chunk, 0);
+    void *tmpdata = pa_memblock_acquire_chunk(&infoIn->chunk);
+    memset_s(tmpdata, infoIn->chunk.length, 0, infoIn->chunk.length);
+    pa_memblock_release(infoIn->chunk.memblock);
+}
+
+static int32_t DoFadingIn(int16_t *data, int32_t frameLen, int32_t channels)
+{
+    if (frameLen == 0 || channels == 0) {
+        return 0;
+    }
+    for (int32_t i = 0; i < frameLen / channels; i++) {
+        for (int32_t j = 0; j < channels; j++) {
+            float fadeinRatio = (float)(i * channels + j) / frameLen;
+            data[i * channels + j] *= fadeinRatio;
+        }
+    }
+    return 1;
+}
+
+static int32_t DoFadingOut(int16_t *data, int32_t frameLen, int32_t channels)
+{
+    if (frameLen == 0 || channels == 0) {
+        return 0;
+    }
+    for (int32_t i = 0; i < frameLen / channels; i++) {
+        for (int32_t j = 0; j < channels; j++) {
+            float fadeoutRatio = (float)(frameLen - (i * channels + j)) / frameLen;
+            data[i * channels + j] *= fadeoutRatio;
+        }
+    }
+    return 1;
+}
+
+static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_sink *si)
+{
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
+    const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
+    if (pa_safe_streq(sinkFadeoutPause, "2") && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
+        silenceData(infoIn);
+        return;
+    }
+
+    pa_memchunk_make_writable(&infoIn->chunk, 0);
+    void *tmpdata = pa_memblock_acquire_chunk(&infoIn->chunk);
+    int16_t *data = (int16_t *)tmpdata;
+    if (*data != 0) {
+        int32_t bitSize = pa_sample_size_of_format(u->format);
+        int32_t frameLen = bitSize > 0 ? (int32_t)(infoIn->chunk.length / bitSize) : 0;
+        int32_t channels = u->ss.channels;
+        //do fading in
+        if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1) {
+            if (DoFadingIn(data, frameLen, channels)) {
+                u->primary.primaryFadingInDone = 1;
+            }
+        }
+        //do fading out
+        if (pa_safe_streq(sinkFadeoutPause, "1")) {
+            if (DoFadingOut(data, frameLen, channels)) {
+                pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
+                pa_sink_input_send_event(sinkIn, "fading_out_done", NULL);
+            }
+        }
+    }
+    pa_memblock_release(infoIn->chunk.memblock);
+}
+
+static void CheckPrimaryFadeinIsDone(pa_sink *si)
+{
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
+    if (u->primary.primaryFadingInDone) {
+        pa_atomic_store(&u->primary.fadingFlagForPrimary, 0);
+    }
+}
+
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo, char *sceneType)
 {
@@ -1119,23 +1204,22 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
-                pa_memblock_unref(infoIn->chunk.memblock);
-                continue;
+            } else {
+                pa_atomic_store(&sinkIn->isFirstReaded, 1);
             }
             AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
-
-            pa_atomic_store(&sinkIn->isFirstReaded, 1);
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
             pa_assert(infoIn->chunk.length > 0);
+            PreparePrimaryFading(sinkIn, infoIn, si);
 
             infoIn++;
             n++;
             maxInfo--;
         }
     }
-
+    CheckPrimaryFadeinIsDone(si);
     if (mixlength > 0) {
         *length = mixlength;
     }
@@ -1143,6 +1227,40 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     return n;
 }
 
+static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_sink *si)
+{
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
+    const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
+    if (pa_safe_streq(sinkFadeoutPause, "2")) {
+        silenceData(infoIn);
+        return;
+    }
+
+    pa_memchunk_make_writable(&infoIn->chunk, 0);
+    void *tmpdata = pa_memblock_acquire_chunk(&infoIn->chunk);
+    int16_t *data = (int16_t *)tmpdata;
+    if (*data != 0) {
+        int32_t bitSize = pa_sample_size_of_format(u->format);
+        int32_t frameLen = bitSize > 0 ? (int32_t)(infoIn->chunk.length / bitSize) : 0;
+        int32_t channels = u->ss.channels;
+        //do fading in
+        if (pa_atomic_load(&u->multiChannel.fadingFlagForMultiChannel) == 1) {
+            if (DoFadingIn(data, frameLen, channels)) {
+                u->multiChannel.multiChannelFadingInDone = 1;
+            }
+        }
+        //do fading out
+        if (pa_safe_streq(sinkFadeoutPause, "1")) {
+            if (DoFadingOut(data, frameLen, channels)) {
+                pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
+                pa_sink_input_send_event(sinkIn, "fading_out_done", NULL);
+            }
+        }
+    }
+    pa_memblock_release(infoIn->chunk.memblock);
+}
 
 static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo)
@@ -1155,6 +1273,9 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     pa_sink_assert_ref(si);
     pa_sink_assert_io_context(si);
     pa_assert(infoIn);
+
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
 
     bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
     if (!a2dpFlag) {
@@ -1177,8 +1298,8 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
-                pa_memblock_unref(infoIn->chunk.memblock);
-                continue;
+            } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
+                PrepareMultiChannelFading(sinkIn, infoIn, si);
             }
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
@@ -1191,6 +1312,9 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
         }
     }
 
+    if (u->multiChannel.multiChannelFadingInDone) {
+        pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 0);
+    }
     if (mixlength > 0) {
         *length = mixlength;
     }
@@ -1310,7 +1434,6 @@ static int32_t SinkRenderPrimaryGetData(pa_sink *si, pa_memchunk *chunkIn, char 
 
     l = chunkIn->length;
     d = 0;
-
     int32_t nSinkInput = 0;
     while (l > 0) {
         chunk = *chunkIn;
@@ -1386,7 +1509,7 @@ static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount
         EffectChainManagerFlush();
     }
     // no need to fade when fading out is done
-    if (*fadingState > 1 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
+    if (*fadingState > 0 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
         *fadingState = 0;
     }
 }
@@ -1855,7 +1978,7 @@ static size_t GetOffloadRenderLength(struct Userdata *u, pa_sink_input *i, bool 
             length = 0;
         } else if (length < sizeTgt) {
             *wait = waitable || length == 0;
-            length = waitable ? 0 : (length == 0 ? sizeFrame : length);
+            length = waitable ? 0 : length;
             if (ps->memblockq->missing > 0) {
                 playback_stream_request_bytes(ps);
             } else if (ps->memblockq->missing < 0 && ps->memblockq->requested > (int64_t)ps->memblockq->minreq) {
@@ -2027,8 +2150,8 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     pa_memchunk *chunk = &(u->offload.chunk);
     chunk->index = 0;
     chunk->length = length;
-    size_t l;
-    size_t d;
+    int64_t l;
+    int64_t d;
     l = chunk->length;
     size_t blockSize = pa_memblock_get_length(u->offload.chunk.memblock);
     blockSize = PA_MAX(blockSize, pa_usec_to_bytes(0.6 * OFFLOAD_HDI_CACHE1 * PA_USEC_PER_MSEC, // 0.6 40% is hdi limit
@@ -2295,10 +2418,18 @@ static void PaInputStateChangeCbOffload(struct Userdata *u, pa_sink_input *i, pa
 static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa_sink_input_state_t state)
 {
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
+    const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
+    if (corking) {
+        pa_proplist_sets(i->proplist, "fadeoutPause", "0");
+    }
 
     if (starting) {
         u->primary.timestamp = pa_rtclock_now();
         if (u->primary.isHDISinkStarted) {
+            pa_atomic_store(&u->primary.fadingFlagForPrimary, 1);
+            pa_proplist_sets(i->proplist, "fadeoutPause", "0");
+            u->primary.primaryFadingInDone = 0;
+            AUDIO_INFO_LOG("PaInputStateChangeCb, HDI renderer already started");
             return;
         }
         AUDIO_INFO_LOG("PaInputStateChangeCb, Restart with rate:%{public}d,channels:%{public}d, format:%{public}d",
@@ -2310,6 +2441,9 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             u->primary.isHDISinkStarted = true;
             u->writeCount = 0;
             u->renderCount = 0;
+            pa_atomic_store(&u->primary.fadingFlagForPrimary, 1);
+            pa_proplist_sets(i->proplist, "fadeoutPause", "0");
+            u->primary.primaryFadingInDone = 0;
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
         }
     }
@@ -2356,6 +2490,8 @@ static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels, 
             u->multiChannel.isHDISinkInited = true;
         } else {
             if (u->multiChannel.isHDISinkStarted) {
+                pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 1);
+                u->multiChannel.multiChannelFadingInDone = 0;
                 return;
             }
         }
@@ -2376,6 +2512,8 @@ static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels, 
         AUDIO_INFO_LOG("ResetMultiChannelHdiState start success");
         u->writeCount = 0;
         u->renderCount = 0;
+        pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 1);
+        u->multiChannel.multiChannelFadingInDone = 0;
     }
 }
 
@@ -2419,6 +2557,9 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
+    if (corking) {
+        pa_proplist_sets(i->proplist, "fadeoutPause", "0");
+    }
     if (starting) {
         u->multiChannel.timestamp = pa_rtclock_now();
         uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
@@ -4085,6 +4226,7 @@ static void UserdataFree(struct Userdata *u)
 
 void PaHdiSinkFree(pa_sink *s)
 {
+    AUTO_CTRACE("PaHdiSinkFree");
     struct Userdata *u = NULL;
 
     pa_sink_assert_ref(s);

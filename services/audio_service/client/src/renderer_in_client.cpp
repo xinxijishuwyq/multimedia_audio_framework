@@ -160,12 +160,14 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
     return SUCCESS;
 }
 
-void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
+void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
+    AUDIO_INFO_LOG("PID:%{public}d UID:%{public}d tokenId:%{public}u fullTokenId:%{public}" PRIu64".", clientPid,
+        clientUid, appTokenId, fullTokenId);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
+    fullTokenId_ = fullTokenId;
 }
 
 int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
@@ -241,7 +243,7 @@ void RendererInClientInner::UpdateTracker(const std::string &updateCase)
     }
 }
 
-bool RendererInClientInner::IsHightResolution() const noexcept
+bool RendererInClientInner::IsHighResolution() const noexcept
 {
     return eStreamType_ == STREAM_MUSIC && curStreamParams_.samplingRate >= SAMPLE_RATE_48000 &&
            curStreamParams_.format >= SAMPLE_S24LE;
@@ -289,13 +291,13 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
 
-    // eg: 100005_44100_2_1_out.pcm
+    // eg: 100005_44100_2_1_client_out.pcm
     dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.samplingRate) + "_" +
-        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_out.pcm";
+        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     int32_t type = -1;
-    if (IsHightResolution()) {
+    if (IsHighResolution()) {
         type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
             rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
@@ -434,6 +436,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
     config.appInfo.appTokenId = appTokenId_;
+    config.appInfo.appFullTokenId = fullTokenId_;
 
     config.streamInfo.channels = static_cast<AudioChannel>(curStreamParams_.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);
@@ -908,6 +911,20 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
+void RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
+{
+    int32_t result = 0; // Ensure result with default value.
+    if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
+        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
+    }
+    if (curStreamParams_.encoding == ENCODING_PCM && bufferDesc.dataLength != 0) {
+        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
+    }
+    if (result < 0) {
+        AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
+    }
+}
+
 void RendererInClientInner::WriteCallbackFunc()
 {
     AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", sessionId_);
@@ -933,12 +950,7 @@ void RendererInClientInner::WriteCallbackFunc()
             if (state_ != RUNNING) { continue; }
             traceQueuePop.End();
             // call write here.
-            int32_t result = curStreamParams_.encoding == ENCODING_PCM
-                ? WriteInner(temp.buffer, temp.bufLength)
-                : WriteInner(temp.buffer, temp.bufLength, temp.metaBuffer, temp.metaLength);
-            if (result < 0) {
-                AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, temp.bufLength);
-            }
+            ProcessWriteInner(temp);
         }
         if (state_ != RUNNING) { continue; }
         // call client write
@@ -1495,8 +1507,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
-    int32_t ret = WriteInner(buffer, bufferSize);
-    return ret <= 0 ? ret : bufferSize;
+    return WriteInner(buffer, bufferSize);
 }
 
 bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize)
