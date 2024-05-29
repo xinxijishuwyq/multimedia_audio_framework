@@ -730,7 +730,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
         uint32_t tmpChannelCount;
         uint64_t tmpChannelLayout;
         std::string deviceType = GetDeviceTypeName();
-        if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
+        if ((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP")
             && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
             && IsChannelLayoutHVSSupported(info.channelLayout)) {
             tmpChannelLayout = info.channelLayout;
