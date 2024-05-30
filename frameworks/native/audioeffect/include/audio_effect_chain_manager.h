@@ -146,7 +146,7 @@ private:
     void EraseEffectChainSetAndMap(const std::string &sceneType);
     void ChangeEffectChannels(const std::string &sceneType, const std::set<std::string> &sessions, uint32_t *channels,
         uint64_t *channelLayout);
-    void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType, std::string &scenePairType,
+    void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,const std::string &scenePairType,
         std::set<std::string> &sessions);
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
 #ifdef WINDOW_MANAGER_ENABLE
