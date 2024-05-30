@@ -337,7 +337,7 @@ bool AudioRendererSinkInner::AttributesCheck(AudioSampleAttributes &attrInfo)
 int32_t AudioRendererSinkInner::SetAudioAttrInfo(AudioSampleAttributes &attrInfo)
 {
     CHECK_AND_RETURN_RET_LOG(AttributesCheck(attrInfo), ERROR, "AttributesCheck failed");
-    int32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
+    uint32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
         BUFFER_CALC_20MS / BUFFER_CALC_1000MS;
     audioAttrInfo_ = "rate="+to_string(attrInfo.sampleRate)+" format=" + ParseAudioFormatToStr(attrInfo.format) +
         " channels=" + to_string(attrInfo.channelCount) + " buffer_size="+to_string(bufferSize);
