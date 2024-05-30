@@ -247,7 +247,7 @@ int32_t EffectChainManagerInitCb(const char *sceneType)
 bool EffectChainManagerCheckA2dpOffload()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
     return audioEffectChainManager->CheckA2dpOffload();
 }
 

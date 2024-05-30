@@ -23,12 +23,10 @@
 #include <pwd.h>
 #include "securec.h"
 #include "audio_adapter_info.h"
-#include "audio_log.h"
 #include "nocopyable.h"
 
 #include <pulse/pulseaudio.h>
 
-#include "audio_log.h"
 #include "audio_timer.h"
 #include "audio_errors.h"
 #include "audio_info.h"

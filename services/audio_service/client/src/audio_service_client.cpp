@@ -2352,7 +2352,7 @@ void AudioServiceClient::GetOffloadApproximatelyCacheTime(uint64_t paTimeStamp, 
         offloadLastHdiPosTs_ = ppTimeStamp;
         offloadLastHdiPosFrames_ = frames;
     } else {
-        ppTimeStamp = timeNowSteady;
+        ppTimeStamp = static_cast<uint64_t>(timeNowSteady);
         int64_t timeDelta = static_cast<int64_t>(timeNowSteady) - static_cast<int64_t>(offloadLastHdiPosTs_);
         timeDelta = timeDelta > 0 ? timeDelta : 0;
         frames = offloadLastHdiPosFrames_ + static_cast<uint64_t>(timeDelta);
@@ -3027,6 +3027,7 @@ void AudioServiceClient::SetPaVolume(const AudioServiceClient &client)
     bean->Add("APP_UID", client.clientUid_);
     bean->Add("APP_PID", client.clientPid_);
     bean->Add("STREAMTYPE", client.streamType_);
+    bean->Add("STREAM_TYPE", client.mStreamUsage);
     bean->Add("VOLUME", vol);
     bean->Add("SYSVOLUME", systemVolumeLevel);
     bean->Add("VOLUMEFACTOR", client.volumeFactor_);
