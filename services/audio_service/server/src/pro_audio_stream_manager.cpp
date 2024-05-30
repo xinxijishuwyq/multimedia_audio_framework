@@ -24,6 +24,7 @@
 #include "pro_renderer_stream_impl.h"
 #include "audio_engine_manager.h"
 #include "none_mix_engine.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,6 +42,7 @@ ProAudioStreamManager::~ProAudioStreamManager()
 
 int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
 {
+    Trace trace("ProAudioStreamManager::CreateRender");
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
     uint32_t sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
 
@@ -62,6 +64,7 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
 
 int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
 {
+    Trace trace("ProAudioStreamManager::StartRender");
     AUDIO_DEBUG_LOG("Start renderer enter");
     std::shared_ptr<IRendererStream> currentRender;
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -81,6 +84,7 @@ int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
 
 int32_t ProAudioStreamManager::StopRender(uint32_t streamIndex)
 {
+    Trace trace("ProAudioStreamManager::StopRender");
     AUDIO_DEBUG_LOG("Stop renderer enter");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     auto it = rendererStreamMap_.find(streamIndex);
@@ -97,6 +101,7 @@ int32_t ProAudioStreamManager::StopRender(uint32_t streamIndex)
 
 int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex)
 {
+    Trace trace("ProAudioStreamManager::PauseRender");
     AUDIO_DEBUG_LOG("Pause renderer enter");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     auto it = rendererStreamMap_.find(streamIndex);
@@ -113,6 +118,7 @@ int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex)
 
 int32_t ProAudioStreamManager::ReleaseRender(uint32_t streamIndex)
 {
+    Trace trace("ProAudioStreamManager::ReleaseRender");
     AUDIO_DEBUG_LOG("Release renderer start");
     std::shared_ptr<IRendererStream> currentRender;
     {
@@ -158,6 +164,7 @@ int32_t ProAudioStreamManager::GetStreamCount() const noexcept
 
 int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRendererStream> &stream)
 {
+    Trace trace("ProAudioStreamManager::CreatePlayBackEngine");
     int32_t ret = SUCCESS;
     if (!playbackEngine_) {
         DeviceInfo deviceInfo;
@@ -175,6 +182,7 @@ int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRende
 
 std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(AudioProcessConfig processConfig)
 {
+    Trace trace("ProAudioStreamManager::CreateRendererStream");
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     std::shared_ptr<ProRendererStreamImpl> rendererStream =
         std::make_shared<ProRendererStreamImpl>(processConfig, managerType_ == DIRECT_PLAYBACK);

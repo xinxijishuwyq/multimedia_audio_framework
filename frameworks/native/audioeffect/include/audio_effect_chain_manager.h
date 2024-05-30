@@ -139,6 +139,7 @@ private:
     void UpdateEffectChainParams(AudioEffectScene sceneType);
     void SetSpkOffloadState();
     void InitHdiState();
+    int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
     bool CheckIfSpkDsp();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
@@ -158,6 +159,7 @@ private:
     std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
+    std::string deviceClass_ = "";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;

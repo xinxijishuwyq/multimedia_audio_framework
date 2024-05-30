@@ -274,6 +274,14 @@ enum SafeStatus : int32_t {
     SAFE_ACTIVE = 1,
 };
 
+enum CallbackChange : int32_t {
+    CALLBACK_UNKNOWN = 0,
+    CALLBACK_FOCUS_INFO_CHANGE,
+    CALLBACK_RENDERER_STATE_CHANGE,
+    CALLBACK_CAPTURER_STATE_CHANGE,
+    CALLBACK_MAX,
+};
+
 struct VolumeEvent {
     AudioVolumeType volumeType;
     int32_t volume;

@@ -1938,6 +1938,16 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
     return deviceList;
 }
 
+int32_t AudioPolicyService::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    if (audioPolicyServerHandler_ != nullptr) {
+        return audioPolicyServerHandler_->SetCallbacksEnable(callbackchange, enable);
+    } else {
+        AUDIO_ERR_LOG("audioPolicyServerHandler_ is nullptr");
+        return AUDIO_ERR;
+    }
+}
+
 void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag)
 {
     Trace trace("AudioPolicyService::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
@@ -3699,13 +3709,19 @@ std::shared_ptr<DataShare::DataShareHelper> AudioPolicyService::CreateDataShareH
     CHECK_AND_RETURN_RET_LOG(dataSharedServer != nullptr, nullptr, "DataShare server is not started!");
 
     startTime = ClockTime::GetCurNano();
-    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = DataShare::DataShareHelper::Creator(remoteObject,
+    std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
         SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
     cost = ClockTime::GetCurNano() - startTime;
     if (cost > CALL_IPC_COST_TIME_MS) {
-        AUDIO_WARNING_LOG("DataShareHelper::Creator cost too long: %{public}" PRId64"ms.", cost / AUDIO_US_PER_SECOND);
+        AUDIO_WARNING_LOG("DataShareHelper::Create cost too long: %{public}" PRId64"ms.", cost / AUDIO_US_PER_SECOND);
     }
-    CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, nullptr, "create fail.");
+    if (res.first == DataShare::E_DATA_SHARE_NOT_READY) {
+        AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
+        return nullptr;
+    }
+    std::shared_ptr<DataShare::DataShareHelper> dataShareHelper = res.second;
+    CHECK_AND_RETURN_RET_LOG(res.first == DataShare::E_OK && dataShareHelper != nullptr, nullptr, "fail:%{public}d",
+        res.first);
     return dataShareHelper;
 }
 
@@ -3817,7 +3833,6 @@ void AudioPolicyService::HandleOfflineDistributedDevice()
 int32_t AudioPolicyService::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
     std::vector<sptr<AudioDeviceDescriptor>> &descForCb)
 {
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
     AudioDeviceDescriptor deviceDesc(devType, GetDeviceRole(devType));
@@ -3954,7 +3969,7 @@ void AudioPolicyService::OnServiceConnected(AudioServiceIndex serviceIndex)
     }
     // load inner-cap-sink
     LoadModernInnerCapSink();
-    RegisterBluetoothListener();
+    // RegisterBluetoothListener() will be called when bluetooth_host is online
 }
 
 void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -5321,7 +5336,8 @@ int32_t AudioPolicyService::GetPreferredInputStreamTypeInner(SourceType sourceTy
     AUDIO_INFO_LOG("Device type: %{public}d, source type: %{public}d, flag: %{public}d",
         deviceType, sourceType, flags);
     std::string sourcePortName = GetSourcePortName(deviceType);
-    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && enableFastVoip_ && sourcePortName == PRIMARY_MIC) {
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION && enableFastVoip_ &&
+        (sourcePortName == PRIMARY_MIC || networkId != LOCAL_NETWORK_ID)) {
         return AUDIO_FLAG_VOIP_FAST;
     }
     if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sourcePortName])) == adapterInfoMap_.end()) {
@@ -6227,8 +6243,7 @@ void AudioPolicyService::UpdateA2dpOffloadFlag(const std::vector<Bluetooth::A2dp
         receiveOffloadFlag);
 
     if (receiveOffloadFlag == NO_A2DP_DEVICE) {
-        AUDIO_INFO_LOG("a2dpOffloadFlag_ change from %{public}d to %{public}d", a2dpOffloadFlag_, receiveOffloadFlag);
-        a2dpOffloadFlag_ = receiveOffloadFlag;
+        UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
         return;
     }
 
@@ -6459,6 +6474,7 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
 
 void AudioPolicyService::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
 {
+    AUDIO_INFO_LOG("a2dpOffloadFlag_ change from %{public}d to %{public}d", a2dpOffloadFlag_, NO_A2DP_DEVICE);
     std::vector<int32_t> allSessions;
     GetAllRunningStreamSession(allSessions);
     OffloadStopPlaying(allSessions);

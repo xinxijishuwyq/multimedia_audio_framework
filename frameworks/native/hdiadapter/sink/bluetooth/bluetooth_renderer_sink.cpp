@@ -130,7 +130,7 @@ private:
     int32_t PrepareMmapBuffer();
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame) override;
-    int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanosec) override;
+    int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
 
     bool isBluetoothLowLatency_ = false;
     uint32_t bufferTotalFrameSize_ = 0;
