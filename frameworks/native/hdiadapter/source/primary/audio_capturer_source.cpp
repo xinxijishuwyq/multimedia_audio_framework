@@ -663,7 +663,7 @@ int32_t AudioCapturerSourceInner::Start(void)
     int32_t ret;
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
-            audioCapturerSourceCallback_->OnCapturerState(false);
+            audioCapturerSourceCallback_->OnCapturerState(true);
         }
 
         ret = audioCapture_->Start(audioCapture_);
