@@ -331,16 +331,6 @@ public:
         }
     }
 
-    void OnPlaybackCapturerStop()
-    {
-        AUDIO_INFO_LOG("PolicyCallbackImpl OnPlaybackCapturerStop");
-        if (audioAdapterManager_->sessionCallback_ == nullptr) {
-            AUDIO_DEBUG_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
-        } else {
-            audioAdapterManager_->sessionCallback_->OnPlaybackCapturerStop();
-        }
-    }
-
 private:
     AudioAdapterManager *audioAdapterManager_;
 };

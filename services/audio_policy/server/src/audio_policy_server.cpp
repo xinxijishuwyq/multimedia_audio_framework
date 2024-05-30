@@ -1220,10 +1220,6 @@ void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
     audioPolicyService_.CloseWakeUpAudioCapturer();
 }
 
-void AudioPolicyServer::OnPlaybackCapturerStop()
-{
-}
-
 AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
