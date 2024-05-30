@@ -149,7 +149,7 @@ private:
     void FindMaxSessionID(std::string &maxSessionID, std::string &sceneType,const std::string &scenePairType,
         std::set<std::string> &sessions);
     int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
-    AudioEffectChain CreateAudioEffectChain(const std::string &sceneType);
+    std::shared_ptr<AudioEffectChain> AudioEffectChain CreateAudioEffectChain(const std::string &sceneType);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);

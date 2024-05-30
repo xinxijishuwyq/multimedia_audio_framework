@@ -1174,7 +1174,7 @@ void AudioEffectChainManager::FindMaxSessionID(std::string &maxSessionID, std::s
     }
 }
 
-AudioEffectChain AudioEffectChainManager::CreateAudioEffectChain(const std::string &sceneType)
+std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChain(const std::string &sceneType)
 {
     std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
