@@ -419,6 +419,10 @@ AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
 
 IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStreamParams audioStreamParams)
 {
+    if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
+        return IAudioStream::PA_STREAM;
+    }
+
     int32_t flag = AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_);
     AUDIO_INFO_LOG("Preferred renderer flag: %{public}d", flag);
     if (flag == AUDIO_FLAG_MMAP && IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
@@ -992,7 +996,8 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
     audioRenderMode_ = renderMode;
 
     if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION && renderMode == RENDER_MODE_CALLBACK &&
-        AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_) == AUDIO_FLAG_VOIP_FAST) {
+        AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_) == AUDIO_FLAG_VOIP_FAST &&
+        rendererInfo_.originalFlag != AUDIO_FLAG_FORCED_NORMAL) {
         AUDIO_INFO_LOG("Switch to fast voip stream");
         uint32_t sessionId = 0;
         int32_t ret = audioStream_->GetAudioSessionID(sessionId);
@@ -1398,6 +1403,10 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
             targetClass = IAudioStream::VOIP_STREAM;
             break;
+    }
+    if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+        targetClass = IAudioStream::PA_STREAM;
     }
 
     uint32_t newSessionId = 0;

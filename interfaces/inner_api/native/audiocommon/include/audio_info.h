@@ -50,6 +50,7 @@ constexpr int32_t AUDIO_FLAG_NORMAL = 0;
 constexpr int32_t AUDIO_FLAG_MMAP = 1;
 constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
 constexpr int32_t AUDIO_FLAG_DIRECT = 3;
+constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
