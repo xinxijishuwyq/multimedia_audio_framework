@@ -109,7 +109,10 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
     if (!audioEffectChainManager->CheckAndAddSessionID(sessionIDString)) {
         return SUCCESS;
     }
-    if (audioEffectChainManager->GetOffloadEnabled()) {
+    bool curSpatializationEnabled = audioEffectChainManager->GetCurSpatializationEnabled();
+    std::string curDeviceType = audioEffectChainManager->GetDeviceTypeName();
+    if (audioEffectChainManager->GetOffloadEnabled() ||
+        ((curDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") && !curSpatializationEnabled)) {
         audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Register");
         AUDIO_DEBUG_LOG("registerEffectChainCountBackupMap");
         return SUCCESS;
@@ -136,7 +139,10 @@ int32_t EffectChainManagerReleaseCb(const char *sceneType, const char *sessionID
     if (!audioEffectChainManager->CheckAndRemoveSessionID(sessionIDString)) {
         return SUCCESS;
     }
-    if (audioEffectChainManager->GetOffloadEnabled()) {
+    bool curSpatializationEnabled = audioEffectChainManager->GetCurSpatializationEnabled();
+    std::string curDeviceType = audioEffectChainManager->GetDeviceTypeName();
+    if (audioEffectChainManager->GetOffloadEnabled() ||
+        ((curDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") && !curSpatializationEnabled)) {
         audioEffectChainManager->RegisterEffectChainCountBackupMap(sceneTypeString, "Deregister");
         AUDIO_DEBUG_LOG("deRegisterEffectChainCountBackupMap");
         return SUCCESS;
@@ -241,15 +247,8 @@ int32_t EffectChainManagerInitCb(const char *sceneType)
 bool EffectChainManagerCheckA2dpOffload()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
-    std::string effectChainManagerDeviceType = audioEffectChainManager->GetDeviceTypeName();
-    std::string effectChainManagerDeviceSink = audioEffectChainManager->GetDeviceSinkName();
-    if ((effectChainManagerDeviceSink == "Speaker") &&
-        ((effectChainManagerDeviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") ||
-        (effectChainManagerDeviceType == "DEVICE_TYPE_SPEAKER"))) {
-        return true;
-    }
-    return false;
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
+    return audioEffectChainManager->CheckA2dpOffload();
 }
 
 int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sessionID, SessionInfoPack pack)

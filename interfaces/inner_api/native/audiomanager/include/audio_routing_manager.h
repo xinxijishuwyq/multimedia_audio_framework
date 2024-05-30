@@ -75,7 +75,7 @@ public:
     int32_t UnsetAudioDeviceRefinerCallback();
     int32_t TriggerFetchDevice();
 private:
-    uint32_t GetCallingPid();
+    int32_t GetCallingPid();
 };
 
 } // namespace AudioStandard

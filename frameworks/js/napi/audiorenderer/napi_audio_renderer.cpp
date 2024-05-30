@@ -586,7 +586,7 @@ napi_value NapiAudioRenderer::GetAudioTime(napi_env env, napi_callback_info info
         Timestamp timestamp;
         if (napiAudioRenderer->audioRenderer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
             const uint64_t secToNanosecond = 1000000000;
-            context->time = timestamp.time.tv_nsec + timestamp.time.tv_sec * secToNanosecond;
+            context->time = static_cast<int64_t>(timestamp.time.tv_nsec) + timestamp.time.tv_sec * secToNanosecond;
             context->status = napi_ok;
         } else {
             context->SignError(NAPI_ERR_SYSTEM);
@@ -1833,7 +1833,9 @@ void NapiAudioRenderer::UnregisterRendererOutputDeviceChangeWithInfoCallback(nap
 void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_value *argv,
     const std::string &cbName, NapiAudioRenderer *napiRenderer)
 {
-    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ == nullptr, "writeData already subscribed.");
+    if (napiRenderer->rendererWriteDataCallbackNapi_ != nullptr) {
+        AUDIO_WARNING_LOG("writeData already subscribed. The old writeData function will be overwritten.");
+    }
 
     napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(env, napiRenderer);
     napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);

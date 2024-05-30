@@ -1364,8 +1364,8 @@ std::string AudioAdapterManager::GetMuteKeyForKvStore(DeviceType deviceType, Aud
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_DP:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_DP:
             type = "wired";
             break;
         default:
@@ -1517,7 +1517,7 @@ uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint>
     int32_t rightPos = volumePoints.size() - 1;
     while (leftPos <= rightPos) {
         int32_t midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
-        int32_t c = volumePoints[midPos].index - idx;
+        int32_t c = static_cast<int32_t>(volumePoints[midPos].index) - idx;
         if (c == 0) {
             leftPos = midPos;
             break;
@@ -1553,7 +1553,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     GetVolumePoints(streamAlias, deviceCategory, volumePoints);
     uint32_t pointSize = volumePoints.size();
 
-    int32_t volSteps = 1 + volumePoints[pointSize - 1].index - volumePoints[0].index;
+    int32_t volSteps = static_cast<int32_t>(1 + volumePoints[pointSize - 1].index - volumePoints[0].index);
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
     int32_t position = static_cast<int32_t>(GetPositionInVolumePoints(volumePoints, idxRatio));
     if (position == 0) {

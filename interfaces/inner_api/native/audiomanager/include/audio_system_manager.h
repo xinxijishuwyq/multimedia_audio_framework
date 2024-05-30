@@ -825,11 +825,12 @@ public:
     /**
      * @brief Unregisters the volumeKeyEvent callback listener
      *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
+    int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
      * @brief Set mono audio state
@@ -1244,7 +1245,7 @@ private:
     virtual ~AudioSystemManager();
 
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
-    uint32_t GetCallingPid();
+    int32_t GetCallingPid();
     std::string GetSelfBundleName();
 
     int32_t RegisterWakeupSourceCallback();

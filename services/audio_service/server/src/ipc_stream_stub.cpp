@@ -292,5 +292,12 @@ int32_t IpcStreamStub::HandleUpdateSpatializationState(MessageParcel &data, Mess
     reply.WriteInt32(UpdateSpatializationState(spatializationEnabled, headTrackingEnabled));
     return AUDIO_OK;
 }
+
+int32_t IpcStreamStub::HandleGetStreamManagerType(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    reply.WriteInt32(GetStreamManagerType());
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

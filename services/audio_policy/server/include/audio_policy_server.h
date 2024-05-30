@@ -244,6 +244,8 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
 
+    int32_t SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
+
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneId = 0) override;
 
@@ -520,7 +522,7 @@ private:
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool isAvSessionSetVoipStart = false;
     bool volumeApplyToAll_ = false;
-    std::set<uint32_t> saveAppCapTokenIdThroughMS;
+
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
     AudioRouterCenter &audioRouterCenter_;

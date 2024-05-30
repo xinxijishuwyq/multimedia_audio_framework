@@ -17,6 +17,7 @@
 #define PA_RENDERER_STREAM_IMPL_H
 
 #include <pulse/pulseaudio.h>
+#include <mutex>
 #include "i_renderer_stream.h"
 
 namespace OHOS {
@@ -64,6 +65,9 @@ public:
     // offload end
 
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override;
+    int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override;
+    int32_t ReturnIndex(int32_t index) override;
+    AudioProcessConfig GetAudioProcessConfig() const noexcept override;
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -77,6 +81,7 @@ private:
     static void PAStreamDrainInStopCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamAsyncStopSuccessCb(pa_stream *stream, int32_t success, void *userdata);
     static void PAStreamUnderFlowCountAddCb(pa_stream *stream, void *userdata);
+    static void PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata);
 
     const std::string GetEffectModeName(int32_t effectMode);
     // offload
@@ -98,7 +103,7 @@ private:
     int32_t streamCmdStatus_;
     int32_t streamDrainStatus_;
     int32_t streamFlushStatus_;
-    State state_;
+    State state_ = INVALID;
     uint32_t underFlowCount_ = 0;
     bool isDrain_ = false;
     pa_threaded_mainloop *mainloop_;
@@ -126,8 +131,8 @@ private:
     AudioOffloadType offloadStatePolicy_ = OFFLOAD_DEFAULT;
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
-    FILE *dumpFile_ = nullptr;
     // offload end
+    std::atomic<bool> isFadeoutDone_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

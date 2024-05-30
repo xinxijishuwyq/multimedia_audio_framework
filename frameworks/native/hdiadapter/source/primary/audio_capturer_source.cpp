@@ -653,12 +653,17 @@ int32_t AudioCapturerSourceInner::Start(void)
         AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
     }
 #endif
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_CAPTURER_SOURCE_FILENAME, &dumpFile_);
+    // eg: primary_0_44100_2_1_20240527202236189_source.pcm
+    std::string dumpName = halName_ + '_' + std::to_string(attr_.sourceType) + '_'
+        + std::to_string(attr_.sampleRate) + '_' + std::to_string(attr_.channel) + '_'
+        + std::to_string(attr_.format) + '_'
+        + GetTime() + "_source.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpFile_);
 
     int32_t ret;
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
-            audioCapturerSourceCallback_->OnCapturerState(false);
+            audioCapturerSourceCallback_->OnCapturerState(true);
         }
 
         ret = audioCapture_->Start(audioCapture_);
@@ -1062,7 +1067,7 @@ int32_t AudioCapturerSourceInner::UpdateUsbAttrs(const std::string &usbInfoStr)
         sourceFormat_end - sourceFormat_begin - std::strlen("source_format:"));
 
     // usb default config
-    attr_.sampleRate = stoi(sampleRateStr);
+    attr_.sampleRate = static_cast<uint32_t>(stoi(sampleRateStr));
     attr_.channel = STEREO_CHANNEL_COUNT;
     attr_.format = ParseAudioFormat(formatStr);
     attr_.isBigEndian = false;

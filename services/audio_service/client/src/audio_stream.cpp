@@ -188,9 +188,9 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             resetTimestamp_ = paTimeStamp;
         }
         if (eMode_ == AUDIO_MODE_PLAYBACK) {
-            timestamp.framePosition = GetStreamFramesWritten() * speed_;
+            timestamp.framePosition = static_cast<uint64_t>(GetStreamFramesWritten()) * speed_;
         } else {
-            timestamp.framePosition = GetStreamFramesRead();
+            timestamp.framePosition = static_cast<uint64_t>(GetStreamFramesRead());
         }
 
         uint64_t delta = paTimeStamp > resetTimestamp_ ? paTimeStamp - resetTimestamp_ : 0;
@@ -1028,7 +1028,7 @@ void AudioStream::ReadCbThreadLoop()
                 AUDIO_ERR_LOG("ReadCb ReadStream fail, ret: %{public}d", readLen);
             } else {
                 AUDIO_DEBUG_LOG("ReadCb ReadStream, bytesRead:%{public}d", readLen);
-                freeBufferQ_.front().dataLength = readLen;
+                freeBufferQ_.front().dataLength = static_cast<uint32_t>(readLen);
                 filledBufferQ_.emplace(freeBufferQ_.front());
                 freeBufferQ_.pop();
                 SendReadBufferRequestEvent();

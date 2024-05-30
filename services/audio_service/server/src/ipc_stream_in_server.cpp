@@ -399,5 +399,14 @@ int32_t IpcStreamInServer::UpdateSpatializationState(bool spatializationEnabled,
     }
     return rendererInServer_->UpdateSpatializationState(spatializationEnabled, headTrackingEnabled);
 }
+
+int32_t IpcStreamInServer::GetStreamManagerType()
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->GetStreamManagerType();
+    }
+    AUDIO_ERR_LOG("mode is not playback or renderer is null");
+    return ERR_OPERATION_FAILED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

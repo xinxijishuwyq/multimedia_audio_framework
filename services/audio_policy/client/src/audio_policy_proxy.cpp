@@ -514,7 +514,7 @@ int32_t AudioPolicyProxy::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioRendererFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    int validSize = 20; // Use 20 as limit.
+    uint32_t validSize = 20; // Use 20 as limit.
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
@@ -558,7 +558,7 @@ int32_t AudioPolicyProxy::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     CHECK_AND_RETURN_RET_LOG(tmp, -1, "AudioCapturerFilter Marshalling() failed");
 
     uint32_t size = audioDeviceDescriptors.size();
-    int validSize = 20; // Use 20 as limit.
+    uint32_t validSize = 20; // Use 20 as limit.
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= validSize, -1, "SelectOutputDevice get invalid device size.");
     data.WriteInt32(size);
     for (auto audioDeviceDescriptor : audioDeviceDescriptors) {
@@ -723,6 +723,24 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(callbackchange));
+    data.WriteBool(enable);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACKS_ENABLE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
 
     return reply.ReadInt32();

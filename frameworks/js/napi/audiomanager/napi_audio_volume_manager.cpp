@@ -22,7 +22,7 @@
 #include "napi_param_utils.h"
 #include "audio_errors.h"
 #include "audio_log.h"
-#include "napi_audio_volume_key_event.h"
+
 
 namespace OHOS {
 namespace AudioStandard {
@@ -150,6 +150,7 @@ napi_value NapiAudioVolumeManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getVolumeGroupManager", GetVolumeGroupManager),
         DECLARE_NAPI_FUNCTION("getVolumeGroupManagerSync", GetVolumeGroupManagerSync),
         DECLARE_NAPI_FUNCTION("on", On),
+        DECLARE_NAPI_FUNCTION("off", Off),
     };
 
     status = napi_define_class(env, AUDIO_VOLUME_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -288,6 +289,8 @@ napi_value NapiAudioVolumeManager::RegisterCallback(napi_env env, napi_value jsT
             napiVolumeManager->volumeKeyEventCallbackNapi_ = std::make_shared<NapiAudioVolumeKeyEvent>(env);
             int32_t ret = napiVolumeManager->audioSystemMngr_->RegisterVolumeKeyEventCallback(
                 napiVolumeManager->cachedClientId_, napiVolumeManager->volumeKeyEventCallbackNapi_);
+            napiVolumeManager->volumeKeyEventCallbackNapiList_.push_back(
+                std::static_pointer_cast<NapiAudioVolumeKeyEvent>(napiVolumeManager->volumeKeyEventCallbackNapi_));
             if (ret) {
                 AUDIO_ERR_LOG("RegisterVolumeKeyEventCallback Failed");
             }
@@ -336,6 +339,85 @@ napi_value NapiAudioVolumeManager::On(napi_env env, napi_callback_info info)
     }
 
     return RegisterCallback(env, jsThis, argCount, args, callbackName);
+}
+
+napi_value NapiAudioVolumeManager::Off(napi_env env, napi_callback_info info)
+{
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    const size_t minArgCount = ARGS_TWO;
+    size_t argc = ARGS_TWO;
+    napi_value args[minArgCount + PARAM1] = {nullptr, nullptr, nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    if (status != napi_ok || argc < minArgCount) {
+        AUDIO_ERR_LOG("Off fail to napi_get_cb_info/Requires min 2 parameters");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+    }
+    napi_valuetype eventType = napi_undefined;
+    if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of eventType must be string");
+        return undefinedResult;
+    }
+    std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
+    AUDIO_INFO_LOG("Off callbackName: %{public}s", callbackName.c_str());
+    napi_valuetype handler = napi_undefined;
+    if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
+        AUDIO_ERR_LOG("On type mismatch for parameter 2");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of callback must be function");
+        return undefinedResult;
+    }
+    return UnregisterCallback(env, jsThis, argc, args, callbackName);
+}
+
+napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value jsThis,
+    size_t argc, napi_value *args, const std::string &cbName)
+{
+    napi_value undefinedResult = nullptr;
+    NapiAudioVolumeManager *napiVolumeManager = nullptr;
+    napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiVolumeManager));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "status error");
+    CHECK_AND_RETURN_RET_LOG(napiVolumeManager != nullptr, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY),
+        "napiVolumeManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiVolumeManager->audioSystemMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(
+        env, NAPI_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
+
+    if (!cbName.compare(VOLUME_KEY_EVENT_CALLBACK_NAME)) {
+        napi_value callback = nullptr;
+        callback = args[PARAM1];
+        if (callback != nullptr) {
+            std::shared_ptr<NapiAudioVolumeKeyEvent> cb = GetVolumeEventNapiCallback(callback, napiVolumeManager);
+            CHECK_AND_RETURN_RET_LOG(cb != nullptr, undefinedResult, "NapiAudioVolumeKeyEvent is nullptr");
+            int32_t ret = napiVolumeManager->audioSystemMngr_->UnregisterVolumeKeyEventCallback(
+                napiVolumeManager->cachedClientId_, cb);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "Unset of VolumeKeyEventCallback failed");
+            napiVolumeManager->volumeKeyEventCallbackNapiList_.remove(cb);
+            napiVolumeManager->volumeKeyEventCallbackNapi_.reset();
+            napiVolumeManager->volumeKeyEventCallbackNapi_ = nullptr;
+            return undefinedResult;
+        }
+    } else {
+        AUDIO_ERR_LOG("No such callback supported");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of type is not supported");
+    }
+    return undefinedResult;
+}
+
+std::shared_ptr<NapiAudioVolumeKeyEvent> NapiAudioVolumeManager::GetVolumeEventNapiCallback(napi_value argv,
+    NapiAudioVolumeManager *napiVolumeManager)
+{
+    std::shared_ptr<NapiAudioVolumeKeyEvent> cb = nullptr;
+    for (auto &iter : napiVolumeManager->volumeKeyEventCallbackNapiList_) {
+        if (iter->ContainSameJsCallback(argv)) {
+            cb = iter;
+        }
+    }
+    return cb;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -60,6 +60,13 @@ group("audio_unit_test") {
       "../frameworks/native/opensles/test/unittest/opensles_recorder_test:audio_opensles_recorder_unit_test",
     ]
   }
+
+  if (speex_enable == true) {
+    deps += [
+      "../services/audio_service/test/unittest:audio_direct_sink_unit_test",
+      "../services/audio_service/test/unittest:none_mix_engine_unit_test",
+    ]
+  }
 }
 
 group("audio_module_test") {

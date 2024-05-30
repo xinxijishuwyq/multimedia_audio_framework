@@ -422,7 +422,7 @@ static void UpdateUnavailableEffectChainsRecord(std::vector<std::string> &availa
 int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::string> &availableLayout,
     ProcessNew &processNew)
 {
-    int32_t ret;
+    int32_t ret = 0;
     
     std::vector<int32_t> modeDelIdx;
     for (auto &stream: processNew.stream) {
@@ -438,7 +438,7 @@ int32_t AudioEffectManager::UpdateUnavailableEffectChains(std::vector<std::strin
 
 void AudioEffectManager::BuildAvailableAEConfig()
 {
-    int32_t ret;
+    int32_t ret = 0 ;
     std::vector<std::string> availableLayout;
     existDefault_ = 1;
     if (oriEffectConfig_.effectChains.size() == 0) {

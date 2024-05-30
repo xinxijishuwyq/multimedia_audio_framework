@@ -64,7 +64,7 @@ private:
     std::unordered_set<int32_t> supportStreamUsageSet_;
     std::vector<StreamUsage> defaultUsages_ = { STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_MOVIE,
         STREAM_USAGE_GAME, STREAM_USAGE_AUDIOBOOK };
-    bool isCaptureSilently_;
+    bool isCaptureSilently_ = false;
     bool isInnerCapturerRunning_ = false;
     ICapturerFilterListener *listener_ = nullptr;
 };

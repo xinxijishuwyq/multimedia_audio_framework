@@ -374,7 +374,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     AudioRenderer *renderer = this;
     rendererProxyObj_->SaveRendererObj(renderer);
     audioStream_->SetRendererInfo(rendererInfo_);
-    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId);
+    audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
     SetAudioPrivacyType(privacyType_);
     audioStream_->SetStreamTrackerState(false);
@@ -423,6 +423,7 @@ IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStr
     AUDIO_INFO_LOG("Preferred renderer flag: %{public}d", flag);
     if (flag == AUDIO_FLAG_MMAP && IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+        isFastRenderer_ = true;
         return IAudioStream::FAST_STREAM;
     }
     if (flag == AUDIO_FLAG_VOIP_FAST) {
@@ -475,9 +476,10 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     AUDIO_INFO_LOG("SetAudioStreamInfo Succeeded");
 
     RegisterRendererPolicyServiceDiedCallback();
-
-    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, std::to_string(sessionID_) + '_' + DUMP_AUDIO_RENDERER_FILENAME,
-        &dumpFile_);
+    // eg: 100005_44100_2_1_client_in.pcm
+    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.sampleRate) + "_" +
+        std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitOutputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");
@@ -610,7 +612,16 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(audioInterrupt_.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION, true);
 
-    return audioStream_->StartAudioStream(cmdType);
+    bool result = audioStream_->StartAudioStream(cmdType);
+    if (!result) {
+        AUDIO_ERR_LOG("Start audio stream failed");
+        ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+        }
+    }
+
+    return result;
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
@@ -981,7 +992,7 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
     audioRenderMode_ = renderMode;
 
     if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION && renderMode == RENDER_MODE_CALLBACK &&
-        isFastVoipSupported_) {
+        AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_) == AUDIO_FLAG_VOIP_FAST) {
         AUDIO_INFO_LOG("Switch to fast voip stream");
         uint32_t sessionId = 0;
         int32_t ret = audioStream_->GetAudioSessionID(sessionId);
@@ -1283,7 +1294,7 @@ void AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetApplicationCachePath(info.cachePath);
-    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId);
+    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetPrivacyType(info.privacyType);
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);
@@ -1495,6 +1506,8 @@ void AudioRendererPrivate::SetSelfRendererStateCallback()
 
 int32_t AudioRendererPrivate::SetVolumeWithRamp(float volume, int32_t duration)
 {
+    AUDIO_INFO_LOG("volume:%{public}f duration:%{public}d", volume, duration);
+    CHECK_AND_RETURN_RET(audioStream_ != nullptr, ERR_INVALID_PARAM, "Error status");
     return audioStream_->SetVolumeWithRamp(volume, duration);
 }
 
@@ -1607,7 +1620,8 @@ void RendererPolicyServiceDiedCallback::RestoreTheadLoop()
     uint32_t sleepTime = 300000;
     bool result = false;
     int32_t ret = -1;
-    while (!result && tryCounter-- > 0) {
+    while (!result && tryCounter > 0) {
+        tryCounter--;
         usleep(sleepTime);
         if (renderer_ == nullptr || renderer_->audioStream_ == nullptr ||
             renderer_->abortRestore_) {

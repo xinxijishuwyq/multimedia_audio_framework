@@ -195,6 +195,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.appInfo.appUid);
     parcel.WriteUint32(config.appInfo.appTokenId);
     parcel.WriteInt32(config.appInfo.appPid);
+    parcel.WriteUint64(config.appInfo.appFullTokenId);
 
     // AudioStreamInfo
     parcel.WriteInt32(config.streamInfo.samplingRate);
@@ -242,6 +243,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.appInfo.appUid = parcel.ReadInt32();
     config.appInfo.appTokenId = parcel.ReadUint32();
     config.appInfo.appPid = parcel.ReadInt32();
+    config.appInfo.appFullTokenId = parcel.ReadUint64();
 
     // AudioStreamInfo
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());

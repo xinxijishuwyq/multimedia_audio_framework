@@ -28,10 +28,20 @@ int32_t AudioPolicyClientStubImpl::AddVolumeKeyEventCallback(const std::shared_p
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveVolumeKeyEventCallback()
+int32_t AudioPolicyClientStubImpl::RemoveVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(volumeKeyEventMutex_);
-    volumeKeyEventCallbackList_.clear();
+    if (cb == nullptr) {
+        volumeKeyEventCallbackList_.clear();
+        return SUCCESS;
+    }
+    auto it = find_if(volumeKeyEventCallbackList_.begin(), volumeKeyEventCallbackList_.end(),
+        [&cb](const std::weak_ptr<VolumeKeyEventCallback>& elem) {
+            return elem.lock() == cb;
+        });
+    if (it != volumeKeyEventCallbackList_.end()) {
+        volumeKeyEventCallbackList_.erase(it);
+    }
     return SUCCESS;
 }
 
@@ -83,6 +93,12 @@ void AudioPolicyClientStubImpl::OnAudioFocusAbandoned(const AudioInterrupt &aban
     for (auto it = focusInfoChangeCallbackList_.begin(); it != focusInfoChangeCallbackList_.end(); ++it) {
         (*it)->OnAudioFocusAbandoned(abandonFocus);
     }
+}
+
+size_t AudioPolicyClientStubImpl::GetFocusInfoChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(focusInfoChangeMutex_);
+    return focusInfoChangeCallbackList_.size();
 }
 
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyClientStubImpl::DeviceFilterByFlag(DeviceFlag flag,
@@ -280,6 +296,12 @@ int32_t AudioPolicyClientStubImpl::RemoveRendererStateChangeCallback()
     return SUCCESS;
 }
 
+size_t AudioPolicyClientStubImpl::GetRendererStateChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(rendererStateChangeMutex_);
+    return rendererStateChangeCallbackList_.size();
+}
+
 int32_t AudioPolicyClientStubImpl::AddDeviceChangeWithInfoCallback(
     const uint32_t sessionId, const std::shared_ptr<DeviceChangeWithInfoCallback> &cb)
 {
@@ -367,6 +389,12 @@ int32_t AudioPolicyClientStubImpl::RemoveCapturerStateChangeCallback()
     std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
     capturerStateChangeCallbackList_.clear();
     return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetCapturerStateChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(capturerStateChangeMutex_);
+    return capturerStateChangeCallbackList_.size();
 }
 
 void AudioPolicyClientStubImpl::OnCapturerStateChange(
