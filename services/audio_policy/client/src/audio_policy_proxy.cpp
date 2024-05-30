@@ -626,7 +626,7 @@ void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
     std::pair<AudioInterrupt, AudioFocuState> focusInfo;
-    focusInfo.first.Unmarshalling(reply);
+    AudioInterrupt::Unmarshalling(reply, focusInfo.first);
     focusInfo.second = static_cast<AudioFocuState>(reply.ReadInt32());
     focusInfoList.push_back(focusInfo);
 }
@@ -666,7 +666,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInte
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
-    audioInterrupt.Marshalling(data);
+    AudioInterrupt::Marshalling(data, audioInterrupt);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate interrupt failed, error: %{public}d", error);
@@ -683,7 +683,7 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
-    audioInterrupt.Marshalling(data);
+    AudioInterrupt::Marshalling(data, audioInterrupt);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
@@ -701,7 +701,7 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioI
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(clientId);
-    audioInterrupt.Marshalling(data);
+    AudioInterrupt::Marshalling(data, audioInterrupt);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS), data, reply, option);
@@ -719,7 +719,7 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(clientId);
-    audioInterrupt.Marshalling(data);
+    AudioInterrupt::Marshalling(data, audioInterrupt);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
@@ -777,7 +777,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, 
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy::GetSessionInfoInFocus failed, error: %d", error);
     }
-    audioInterrupt.Unmarshalling(reply);
+    AudioInterrupt::Unmarshalling(reply, audioInterrupt);
 
     return reply.ReadInt32();
 }
