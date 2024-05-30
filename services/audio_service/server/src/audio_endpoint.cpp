@@ -1293,6 +1293,7 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
             int32_t vol = srcDataList[i].volumeStart; // change to modify volume of each channel
             int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset;
             sum += (*srcPtr * static_cast<uint64_t>(vol)) >> VOLUME_SHIFT_NUMBER; // 1/65536
+            ZeroVolumeCheck(vol);
         }
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
