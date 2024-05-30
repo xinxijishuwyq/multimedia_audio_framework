@@ -175,5 +175,69 @@ HWTEST(AudioPolicyExtUnitTest, GetNetworkIdByGroupId_002, TestSize.Level1)
     EXPECT_EQ(ERROR, ret);
 }
 
+/**
+ * @tc.name  : Test SetCallbacksEnable via illegal state
+ * @tc.number: SetCallbacksEnable_001
+ * @tc.desc  : Test SetCallbacksEnable interface. Set callback enable and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, SetCallbacksEnable_001, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_UNKNOWN, false);
+    EXPECT_EQ(AUDIO_ERR, ret);
+    ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_UNKNOWN, true);
+    EXPECT_EQ(AUDIO_ERR, ret);
+}
+
+/**
+ * @tc.name  : Test SetCallbacksEnable via illegal state
+ * @tc.number: SetCallbacksEnable_002
+ * @tc.desc  : Test SetCallbacksEnable interface. Set callback enable and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, SetCallbacksEnable_002, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_MAX, false);
+    EXPECT_EQ(AUDIO_ERR, ret);
+    ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_MAX, true);
+    EXPECT_EQ(AUDIO_ERR, ret);
+}
+
+/**
+ * @tc.name  : Test SetCallbacksEnable via legal state
+ * @tc.number: SetCallbacksEnable_003
+ * @tc.desc  : Test SetCallbacksEnable interface. Set callback enable and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, SetCallbacksEnable_003, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, false);
+    EXPECT_EQ(AUDIO_OK, ret);
+    ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, true);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
+
+/**
+ * @tc.name  : Test SetCallbacksEnable via legal state
+ * @tc.number: SetCallbacksEnable_004
+ * @tc.desc  : Test SetCallbacksEnable interface. Set callback enable and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, SetCallbacksEnable_004, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
+    EXPECT_EQ(AUDIO_OK, ret);
+    ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, true);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
+
+/**
+ * @tc.name  : Test SetCallbacksEnable via legal state
+ * @tc.number: SetCallbacksEnable_005
+ * @tc.desc  : Test SetCallbacksEnable interface. Set callback enable and return ret.
+ */
+HWTEST(AudioPolicyExtUnitTest, SetCallbacksEnable_005, TestSize.Level1)
+{
+    int32_t ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, false);
+    EXPECT_EQ(AUDIO_OK, ret);
+    ret = AudioPolicyManager::GetInstance().SetCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, true);
+    EXPECT_EQ(AUDIO_OK, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

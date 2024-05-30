@@ -124,7 +124,7 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
-    AUDIO_INFO_LOG("OnStart");
+    AUDIO_INFO_LOG("Audio policy server on start");
 
     interruptService_ = std::make_shared<AudioInterruptService>();
     interruptService_->Init(this);
@@ -173,6 +173,7 @@ void AudioPolicyServer::OnStart()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
+    AUDIO_INFO_LOG("Audio policy server start end");
 }
 
 void AudioPolicyServer::OnStop()
@@ -184,7 +185,7 @@ void AudioPolicyServer::OnStop()
 
 void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    AUDIO_DEBUG_LOG("OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    AUDIO_INFO_LOG("SA Id is :%{public}d", systemAbilityId);
     int64_t stamp = ClockTime::GetCurNano();
     switch (systemAbilityId) {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -225,8 +226,9 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
-    AUDIO_INFO_LOG("done systemAbilityId: %{public}d cost [%{public}" PRId64 "]", systemAbilityId,
-        ClockTime::GetCurNano() - stamp);
+    // eg. done systemAbilityId: [3001] cost 780ms
+    AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
+        (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -938,6 +940,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDev
     return deviceDescs;
 }
 
+int32_t AudioPolicyServer::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    return audioPolicyService_.SetCallbacksEnable(callbackchange, enable);
+}
+
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return audioPolicyService_.IsStreamActive(streamType);
@@ -1258,6 +1265,10 @@ bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFu
     SourceType sourceType)
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("Not supported operation");
+        return false;
+    }
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
 
@@ -1311,6 +1322,10 @@ bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t 
     AudioPermissionState state)
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
+    if (callingUid != UID_AUDIO) {
+        AUDIO_ERR_LOG("Not supported operation");
+        return false;
+    }
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     uint64_t callingFullTokenId = IPCSkeleton::GetCallingFullTokenID();
     Security::AccessToken::AccessTokenID targetTokenId = GetTargetTokenId(callingUid, callingTokenId, appTokenId);
@@ -1343,8 +1358,6 @@ void AudioPolicyServer::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionSta
         if (res != 0) {
             AUDIO_WARNING_LOG("notice stop using perm error");
         }
-
-        saveAppCapTokenIdThroughMS.erase(targetTokenId);
     }
 }
 
@@ -1560,10 +1573,6 @@ int32_t AudioPolicyServer::RegisterTracker(AudioMode &mode, AudioStreamChangeInf
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
-    } else {
-        if (mode == AUDIO_MODE_RECORD) {
-            saveAppCapTokenIdThroughMS.insert(streamChangeInfo.audioCapturerChangeInfo.appTokenId);
-        }
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
     int32_t apiVersion = GetApiTargerVersion();
@@ -1702,16 +1711,6 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t uid)
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     audioPolicyService_.RegisteredTrackerClientDied(uid);
 
-    if (uid == MEDIA_SERVICE_UID) {
-        for (auto iter = saveAppCapTokenIdThroughMS.begin(); iter != saveAppCapTokenIdThroughMS.end(); iter++) {
-            AUDIO_DEBUG_LOG("RegisteredTrackerClient died, stop permis for appTokenId: %{public}u", *iter);
-            int res = PrivacyKit::StopUsingPermission(*iter, MICROPHONE_PERMISSION);
-            if (res != 0) {
-                AUDIO_WARNING_LOG("media server died, notice stop using perm error");
-            }
-        }
-        saveAppCapTokenIdThroughMS.clear();
-    }
     auto filter = [&uid](int val) {
         return uid == val;
     };

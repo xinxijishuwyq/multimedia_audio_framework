@@ -150,6 +150,8 @@ private:
     void ProcessVolume(const AudioStreamData &targetData) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
 
+    void DoFadeInOut(uint64_t &curWritePos);
+
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -208,6 +210,9 @@ private:
 
     std::string cachePath_;
     FILE *dumpFile_ = nullptr;
+
+    std::atomic<bool> startFadein_ = false; // true-fade  in  when start or resume stream
+    std::atomic<bool> startFadeout_ = false; // true-fade out when pause or stop stream
 
     sptr<ProcessCbImpl> processCbImpl_ = nullptr;
 };
@@ -896,14 +901,19 @@ int32_t AudioProcessInClientInner::Start()
         return SUCCESS;
     }
 
+    startFadein_.store(true);
     StreamStatus targetStatus = StreamStatus::STREAM_IDEL;
     bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING);
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_ILLEGAL_STATE, "Start failed, invalid status: %{public}s",
-        GetStatusInfo(targetStatus).c_str());
+    if (!ret) {
+        startFadein_.store(false);
+    }
+    CHECK_AND_RETURN_RET_LOG(
+        ret, ERR_ILLEGAL_STATE, "Start failed, invalid status: %{public}s", GetStatusInfo(targetStatus).c_str());
 
     if (processProxy_->Start() != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_IDEL);
         AUDIO_ERR_LOG("Start failed to call process proxy, reset status to IDEL.");
+        startFadein_.store(false);
         threadStatusCV_.notify_all();
         return ERR_OPERATION_FAILED;
     }
@@ -923,14 +933,19 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
         AUDIO_INFO_LOG("Pause find already paused");
         return SUCCESS;
     }
+    startFadeout_.store(true);
     StreamStatus targetStatus = StreamStatus::STREAM_RUNNING;
     bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_PAUSING);
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_ILLEGAL_STATE, "Pause failed, invalid status : %{public}s",
-        GetStatusInfo(targetStatus).c_str());
+    if (!ret) {
+        startFadeout_.store(false);
+    }
+    CHECK_AND_RETURN_RET_LOG(
+        ret, ERR_ILLEGAL_STATE, "Pause failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
 
     if (processProxy_->Pause(isFlush) != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_RUNNING);
         AUDIO_ERR_LOG("Pause failed to call process proxy, reset status to RUNNING");
+        startFadeout_.store(false);
         threadStatusCV_.notify_all(); // avoid thread blocking with status PAUSING
         return ERR_OPERATION_FAILED;
     }
@@ -952,14 +967,20 @@ int32_t AudioProcessInClientInner::Resume()
         return SUCCESS;
     }
 
+    startFadein_.store(true);
+
     StreamStatus targetStatus = StreamStatus::STREAM_PAUSED;
     bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_STARTING);
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_ILLEGAL_STATE, "Resume failed, invalid status : %{public}s",
-        GetStatusInfo(targetStatus).c_str());
+    if (!ret) {
+        startFadein_.store(false);
+    }
+    CHECK_AND_RETURN_RET_LOG(
+        ret, ERR_ILLEGAL_STATE, "Resume failed, invalid status : %{public}s", GetStatusInfo(targetStatus).c_str());
 
     if (processProxy_->Resume() != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_PAUSED);
         AUDIO_ERR_LOG("Resume failed to call process proxy, reset status to PAUSED.");
+        startFadein_.store(false);
         threadStatusCV_.notify_all();
         return ERR_OPERATION_FAILED;
     }
@@ -991,15 +1012,22 @@ int32_t AudioProcessInClientInner::Stop()
     CHECK_AND_RETURN_RET_LOG(oldStatus != STREAM_IDEL && oldStatus != STREAM_RELEASED && oldStatus != STREAM_INVALID,
         ERR_ILLEGAL_STATE, "Stop failed, invalid status : %{public}s", GetStatusInfo(oldStatus).c_str());
 
+    startFadeout_.store(true);
     streamStatus_->store(StreamStatus::STREAM_STOPPING);
+
+    isCallbackLoopEnd_ = true;
+    threadStatusCV_.notify_all();
+    if (callbackLoop_.joinable()) {
+        callbackLoop_.join();
+    }
+
     if (processProxy_->Stop() != SUCCESS) {
         streamStatus_->store(oldStatus);
         AUDIO_ERR_LOG("Stop failed in server, reset status to %{public}s", GetStatusInfo(oldStatus).c_str());
+        startFadeout_.store(false);
         threadStatusCV_.notify_all(); // avoid thread blocking with status RUNNING
         return ERR_OPERATION_FAILED;
     }
-    isCallbackLoopEnd_ = true;
-    threadStatusCV_.notify_all();
 
     streamStatus_->store(StreamStatus::STREAM_STOPPED);
     AUDIO_INFO_LOG("Success stop proc client mode %{public}d form %{public}s.",
@@ -1224,6 +1252,12 @@ bool AudioProcessInClientInner::KeepLoopRunning()
             break;
     }
 
+    if (startFadeout_.load() &&
+        (targetStatus == STREAM_PAUSED || targetStatus == STREAM_STOPPED || targetStatus == STREAM_RELEASED)) {
+        // do one more time to prepare fade out span buffer
+        return true;
+    }
+
     Trace trace("AudioProcessInClient::InWaitStatus");
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     AUDIO_DEBUG_LOG("Process status is %{public}s now, wait for %{public}s...",
@@ -1440,6 +1474,39 @@ bool AudioProcessInClientInner::FinishHandleCurrentLoop(uint64_t &curWritePos, i
     return true;
 }
 
+void AudioProcessInClientInner::DoFadeInOut(uint64_t &curWritePos)
+{
+    if (startFadein_.load() || startFadeout_.load()) {
+        BufferDesc buffDesc;
+        CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "audioBuffer_ is null.");
+        audioBuffer_->GetWriteBuffer(curWritePos, buffDesc);
+        CHECK_AND_RETURN_LOG(buffDesc.buffer != nullptr, "audioBuffer_ is null.");
+        int16_t *dstPtr = reinterpret_cast<int16_t *>(buffDesc.buffer);
+        size_t dataLength = buffDesc.dataLength / 4; //  SAMPLE_S16LE，2 bytes per frame
+
+        uint8_t channels = processConfig_.streamInfo.channels;
+        bool isFadeOut = startFadeout_.load();
+        float fadeStep = 1.0f / dataLength;
+        for (size_t i = 0; i < dataLength; i++) {
+            float fadeFactor;
+            if (!isFadeOut) {
+                fadeFactor = (i + 1) * fadeStep;
+            } else {
+                fadeFactor = 1.0f - ((i + 1) * fadeStep);
+            }
+            for (uint8_t j = 0; j < channels; j++) {
+                dstPtr[i * channels + j] *= fadeFactor;
+            }
+        }
+
+        if (!isFadeOut) {
+            startFadein_.store(false);
+        } else {
+            startFadeout_.store(false);
+        }
+    }
+}
+
 void AudioProcessInClientInner::ProcessCallbackFuc()
 {
     AUDIO_INFO_LOG("Callback loop start.");
@@ -1450,7 +1517,7 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
     int64_t wakeUpTime = ClockTime::GetCurNano();
     int64_t clientWriteCost = 0;
 
-    while (!isCallbackLoopEnd_) {
+    while (!isCallbackLoopEnd_ || startFadeout_.load()) {
         if (!KeepLoopRunning()) {
             continue;
         }
@@ -1471,6 +1538,9 @@ void AudioProcessInClientInner::ProcessCallbackFuc()
         // call client write
         CallClientHandleCurrent();
         // client write done, check if time out
+
+        DoFadeInOut(curWritePos);
+
         bool finished = true;
         finished = FinishHandleCurrentLoop(curWritePos, clientWriteCost);
         if (!finished) {

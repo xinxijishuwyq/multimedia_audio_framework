@@ -45,6 +45,7 @@ CapturerInServer::~CapturerInServer()
     if (status_ != I_STATUS_RELEASED && status_ != I_STATUS_IDLE) {
         Release();
     }
+    DumpFileUtil::CloseDumpFile(&dumpS2C_);
 }
 
 int32_t CapturerInServer::ConfigServerBuffer()
@@ -126,6 +127,13 @@ int32_t CapturerInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ConfigServerBuffer failed: %{public}d", ret);
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
+
+    // eg: /data/data/.pulse_dir/100009_48000_2_1_cap_server_out.pcm
+    AudioStreamInfo tempInfo = processConfig_.streamInfo;
+    std::string dumpName = std::to_string(streamIndex_) + "_" + std::to_string(tempInfo.samplingRate) + "_" +
+        std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "_cap_server_out.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpS2C_);
+
     return SUCCESS;
 }
 
@@ -202,6 +210,7 @@ void CapturerInServer::ReadData(size_t length)
         return;
     }
 
+    Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "RingCache write invalid size %{public}zu", result.size);
     BufferDesc srcBuffer = stream_->DequeueBuffer(result.size);
@@ -223,11 +232,10 @@ void CapturerInServer::ReadData(size_t length)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
     ringCache_->Dequeue({dstBuffer.buffer, dstBuffer.bufLength});
+    DumpFileUtil::WriteDumpFile(dumpS2C_, static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
 
     uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
-    AUDIO_DEBUG_LOG("Read data, current write frame: %{public}" PRIu64 ", next write frame: %{public}" PRIu64 "",
-        currentWriteFrame, nextWriteFrame);
-        audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
+    audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
     stream_->EnqueueBuffer(srcBuffer);
@@ -273,6 +281,20 @@ int32_t CapturerInServer::Start()
         AUDIO_ERR_LOG("CapturerInServer::Start failed, Illegal state: %{public}u", status_);
         return ERR_ILLEGAL_STATE;
     }
+
+    if (!needCheckBackground_ && PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid,
+        processConfig_.capturerInfo.sourceType)) {
+        AUDIO_INFO_LOG("set needCheckBackground_: true");
+        needCheckBackground_ = true;
+    }
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId), ERR_OPERATION_FAILED,
+            "VerifyBackgroundCapture failed!");
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_START);
+    }
+
     status_ = I_STATUS_STARTING;
     int ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
@@ -286,6 +308,10 @@ int32_t CapturerInServer::Pause()
     if (status_ != I_STATUS_STARTED) {
         AUDIO_ERR_LOG("CapturerInServer::Pause failed, Illegal state: %{public}u", status_);
         return ERR_ILLEGAL_STATE;
+    }
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
     }
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
@@ -342,6 +368,12 @@ int32_t CapturerInServer::Stop()
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;
+
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
+    }
+
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     return SUCCESS;
@@ -371,6 +403,10 @@ int32_t CapturerInServer::Release()
         } else {
             PlaybackCapturerManager::GetInstance()->SetInnerCapturerState(false);
         }
+    }
+    if (needCheckBackground_) {
+        uint32_t tokenId = processConfig_.appInfo.appTokenId;
+        PermissionUtil::NotifyPrivacy(tokenId, AUDIO_PERMISSION_STOP);
     }
     return SUCCESS;
 }

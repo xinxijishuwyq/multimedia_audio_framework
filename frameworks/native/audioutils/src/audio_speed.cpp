@@ -136,13 +136,15 @@ int32_t AudioSpeed::ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
         return ERR_MEMORY_ALLOC_FAILED;
     }
     float* bitTofloat = new(std::nothrow) float[bufferSize];
-    if (bitTofloat == nullptr) {
+    if (!bitTofloat) {
+        AUDIO_ERR_LOG("bitTofloat nullptr, No memory");
         return ERR_MEMORY_ALLOC_FAILED;
     }
     ConvertFrom24BitToFloat(bufferSize / formatSize_, buffer, bitTofloat);
 
     float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
-    if (speedBuf == nullptr) {
+    if (!speedBuf) {
+        AUDIO_ERR_LOG("speedBuf nullptr, No memory");
         delete [] bitTofloat;
         return ERR_MEMORY_ALLOC_FAILED;
     }
@@ -164,13 +166,15 @@ int32_t AudioSpeed::ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
         return ERR_MEMORY_ALLOC_FAILED;
     }
     float* bitTofloat = new(std::nothrow) float[bufferSize];
-    if (bitTofloat == nullptr) {
+    if (!bitTofloat) {
+        AUDIO_ERR_LOG("bitTofloat nullptr, No memory");
         return ERR_MEMORY_ALLOC_FAILED;
     }
     ConvertFrom32BitToFloat(bufferSize / formatSize_, reinterpret_cast<int32_t *>(buffer), bitTofloat);
 
     float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
-    if (speedBuf == nullptr) {
+    if (!speedBuf) {
+        AUDIO_ERR_LOG("speedBuf nullptr, No memory");
         delete [] bitTofloat;
         return ERR_MEMORY_ALLOC_FAILED;
     }

@@ -32,7 +32,8 @@ public:
     virtual ~NapiAudioVolumeKeyEvent();
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
-
+    bool ContainSameJsCallback(napi_value args);
+    
 private:
     struct AudioVolumeKeyEventJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -46,6 +47,7 @@ private:
     std::shared_ptr<AutoRef> audioVolumeKeyEventJsCallback_ = nullptr;
     std::mutex mutex_;
     napi_env env_;
+    napi_value copyValue_ = nullptr;
     static napi_ref sConstructor_;
 };
 } // namespace AudioStandard

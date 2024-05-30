@@ -252,7 +252,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     audioBufIn_.frameLength = frameLen;
     audioBufOut_.frameLength = frameLen;
-    int32_t count = 0;
+    uint32_t count = 0;
     std::lock_guard<std::mutex> lock(reloadMutex_);
     for (AudioEffectHandle handle : standByEffectHandles_) {
 #ifdef SENSOR_ENABLE

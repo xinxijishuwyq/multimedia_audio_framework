@@ -261,11 +261,19 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     AudioCapturerInfo captureInfo;
     captureInfo.Unmarshalling(data);
     std::vector<sptr<AudioDeviceDescriptor>> devices = GetPreferredInputDeviceDescriptors(captureInfo);
-    int32_t size = static_cast<int32_t>(devices.size());
+    uint32_t size = static_cast<uint32_t>(devices.size());
     reply.WriteInt32(size);
-    for (size_t i = 0; i < size; i++) {
+    for (uint32_t i = 0; i < size; i++) {
         devices[i]->Marshalling(reply);
     }
+}
+
+void AudioPolicyManagerStub::SetCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply)
+{
+    CallbackChange callbackchange = static_cast<CallbackChange>(data.ReadInt32());
+    bool enable = data.ReadBool();
+    int32_t result = SetCallbacksEnable(callbackchange, enable);
+    reply.WriteInt32(result);
 }
 
 void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
