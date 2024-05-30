@@ -51,13 +51,13 @@ void AudioStateManager::SetPerferredToneRenderDevice(const sptr<AudioDeviceDescr
     perferredToneRenderDevice_ = deviceDescriptor;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredMediaRenderDevice()
+unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevice()
 {
     unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredMediaRenderDevice_);
     return devDesc;
 }
 
-unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPerferredCallRenderDevice()
+unique_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
 {
     unique_ptr<AudioDeviceDescriptor> devDesc = make_unique<AudioDeviceDescriptor>(perferredCallRenderDevice_);
     return devDesc;
