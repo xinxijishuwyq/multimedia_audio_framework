@@ -103,7 +103,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilde
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
-    return audioStreamBuilder->SetRendererInfo(static_cast<StreamUsage>(streamUsage));
+    return audioStreamBuilder->SetRendererInfo(static_cast<StreamUsage>(usage));
 }
 
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererCallback(OH_AudioStreamBuilder *builder,

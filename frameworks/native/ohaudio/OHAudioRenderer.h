@@ -161,7 +161,7 @@ class OHAudioRenderer {
     public:
         OHAudioRenderer();
         ~OHAudioRenderer();
-        bool Initialize(const AudioRendererOptions &rendererOptions);
+        bool Initialize(AudioRendererOptions &rendererOptions);
         bool Start();
         bool Pause();
         bool Stop();

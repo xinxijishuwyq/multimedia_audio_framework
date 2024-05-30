@@ -348,13 +348,13 @@ OHAudioRenderer::~OHAudioRenderer()
     AUDIO_INFO_LOG("OHAudioRenderer destroyed!");
 }
 
-bool OHAudioRenderer::Initialize(const AudioRendererOptions &rendererOptions)
+bool OHAudioRenderer::Initialize(AudioRendererOptions &rendererOptions)
 {
     bool offloadAllowed = true;
 
     // unknown stream use music policy as default
     if (rendererOptions.rendererInfo.streamUsage == STREAM_USAGE_UNKNOWN) {
-        rendererOptions.rendererInfo.streamUsage == STREAM_USAGE_MUSIC;
+        rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
         offloadAllowed = false;
     }
     std::string cacheDir = "/data/storage/el2/base/temp";
