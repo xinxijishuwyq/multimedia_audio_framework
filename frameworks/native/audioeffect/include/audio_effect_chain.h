@@ -60,7 +60,7 @@ public:
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
-    int32_t SetEffectParamToHandle(AudioEffectHandle handle, AudioEffectScene currSceneType);
+    int32_t SetEffectParamToHandle(AudioEffectHandle handle, AudioEffectScene currSceneType, int32_t &replyData);
 
     std::mutex reloadMutex_;
     std::string sceneType_;

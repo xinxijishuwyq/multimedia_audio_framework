@@ -138,9 +138,9 @@ void AudioEffectChain::ReleaseEffectChain()
     libHandles_.clear();
 }
 
-int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, AudioEffectScene currSceneType)
+int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, AudioEffectScene currSceneType,
+    int32_t &replyData)
 {
-    int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     // Set param
@@ -191,7 +191,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     CHECK_AND_RETURN_LOG(ret == 0, "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_ENABLE fail",
         sceneType_.c_str(), effectMode_.c_str(), libHandle->name);
 
-    CHECK_AND_RETURN_LOG(SetEffectParamToHandle(handle, currSceneType) == 0,
+    CHECK_AND_RETURN_LOG(SetEffectParamToHandle(handle, currSceneType, replyData) == 0,
         "[%{public}s] with mode [%{public}s], %{pubilc}s lib EFFECT_CMD_SET_PARAM fail", sceneType_.c_str(),
         effectMode_.c_str(), libHandle->name);
 
@@ -215,7 +215,8 @@ int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
     std::lock_guard<std::mutex> lock(reloadMutex_);
     latency_ = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
-        int32_t ret = SetEffectParamToHandle(handle, currSceneType);
+        int32_t replyData;
+        int32_t ret = SetEffectParamToHandle(handle, currSceneType, replyData);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
         latency_ += static_cast<uint32_t>(replyData);
     }
