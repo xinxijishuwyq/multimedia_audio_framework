@@ -313,30 +313,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamic(const std::string
         ChangeEffectChainCountMap(sceneType);
         return SUCCESS;
     }
-    if ((maxEffectInstances_ - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != "SCENE_OTHERS") {
-        SceneTypeToSpecialEffectSet_.insert(sceneType);
-#ifdef SENSOR_ENABLE
-        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
-#else
-        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
-#endif
-    } else {
-        if (!isCommonEffectChainExisted_) {
-#ifdef SENSOR_ENABLE
-            audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_OTHERS", headTracker_);
-#else
-            audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_OTHERS");
-#endif
-            if (sceneType != "SCENE_OTHERS") {
-                SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] = audioEffectChain;
-                SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] = 1;
-            }
-            isCommonEffectChainExisted_ = true;
-        } else {
-            audioEffectChain = SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey];
-            SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
-        }
-    }
+    audioEffectChain = CreateAudioEffectChain(sceneType);
 
     SceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     SceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 1;
@@ -1195,6 +1172,39 @@ void AudioEffectChainManager::FindMaxSessionID(std::string &maxSessionID, std::s
             sceneType = scenePairType;
         }
     }
+}
+
+AudioEffectChain AudioEffectChainManager::CreateAudioEffectChain(const std::string &sceneType)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    std::string commonSceneTypeAndDeviceKey = std::string("SCENE_OTHERS") + "_&_" + GetDeviceTypeName();
+
+    if ((maxEffectInstances_ - SceneTypeToSpecialEffectSet_.size()) > 1 && sceneType != "SCENE_OTHERS") {
+        SceneTypeToSpecialEffectSet_.insert(sceneType);
+#ifdef SENSOR_ENABLE
+        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
+#else
+        audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+    } else {
+        if (!isCommonEffectChainExisted_) {
+#ifdef SENSOR_ENABLE
+            audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_OTHERS", headTracker_);
+#else
+            audioEffectChain = std::make_shared<AudioEffectChain>("SCENE_OTHERS");
+#endif
+            if (sceneType != "SCENE_OTHERS") {
+                SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey] = audioEffectChain;
+                SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] = 1;
+            }
+            isCommonEffectChainExisted_ = true;
+        } else {
+            audioEffectChain = SceneTypeToEffectChainMap_[commonSceneTypeAndDeviceKey];
+            SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey]++;
+        }
+    }
+    return audioEffectChain;
 }
 
 #ifdef WINDOW_MANAGER_ENABLE
