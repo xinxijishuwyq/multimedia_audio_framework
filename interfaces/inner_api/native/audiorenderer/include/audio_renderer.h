@@ -949,6 +949,11 @@ public:
     virtual bool IsFastRenderer() = 0;
 
     virtual ~AudioRenderer();
+
+    virtual void SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual bool GetSilentModeAndMixWithOthers() = 0;
+
 private:
     static int32_t CreateCheckParam(const AudioRendererOptions &rendererOptions,
         const AppInfo &appInfo);

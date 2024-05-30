@@ -200,6 +200,8 @@ class OHAudioRenderer {
         void UnsetRendererPositionCallback();
         uint32_t GetUnderflowCount();
         void SetInterruptMode(InterruptMode mode);
+        void SetSilentModeAndMixWithOthers(bool on);
+        bool GetSilentModeAndMixWithOthers();
 
         void SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType);
         WriteDataCallbackType GetRendererCallbackType();

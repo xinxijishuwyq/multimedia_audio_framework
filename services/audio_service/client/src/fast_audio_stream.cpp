@@ -220,15 +220,23 @@ int32_t FastAudioStream::SetAudioStreamType(AudioStreamType audioStreamType)
 int32_t FastAudioStream::SetVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetVolume failed: null process");
-    int32_t ret = processClient_->SetVolume(volume);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVolume error.");
+    int32_t ret = SUCCESS;
+    cacheVolume_ = volume;
+    if (!silentModeAndMixWithOthers_) {
+        ret = processClient_->SetVolume(volume);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVolume error.");
+    }
     return ret;
 }
 
 float FastAudioStream::GetVolume()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 1.0f, "SetVolume failed: null process"); // 1.0f for default
-    return processClient_->GetVolume();
+    if (silentModeAndMixWithOthers_) {
+        return cacheVolume_;
+    } else {
+        return processClient_->GetVolume();
+    }
 }
 
 int32_t FastAudioStream::SetDuckVolume(float volume)
@@ -237,6 +245,21 @@ int32_t FastAudioStream::SetDuckVolume(float volume)
     int32_t ret = processClient_->SetDuckVolume(volume);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDuckVolume error.");
     return ret;
+}
+
+void FastAudioStream::SetSilentModeAndMixWithOthers(bool on)
+{
+    if (!silentModeAndMixWithOthers_ && on) {
+        SetVolume(0.0);
+    } else if (silentModeAndMixWithOthers_ && !on) {
+        SetVolume(cacheVolume_);
+    }
+    silentModeAndMixWithOthers_ = on;
+}
+
+bool FastAudioStream::GetSilentModeAndMixWithOthers()
+{
+    return silentModeAndMixWithOthers_;
 }
 
 int32_t FastAudioStream::SetRenderRate(AudioRendererRate renderRate)

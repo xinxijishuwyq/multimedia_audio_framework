@@ -276,6 +276,10 @@ public:
     bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 
     bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
+
+    virtual void SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual bool GetSilentModeAndMixWithOthers() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
