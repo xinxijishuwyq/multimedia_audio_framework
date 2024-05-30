@@ -185,7 +185,7 @@ void AudioPolicyServer::OnStop()
 
 void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    AUDIO_DEBUG_LOG("OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    AUDIO_INFO_LOG("SA Id is :%{public}d", systemAbilityId);
     int64_t stamp = ClockTime::GetCurNano();
     switch (systemAbilityId) {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -226,8 +226,9 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
-    AUDIO_INFO_LOG("done systemAbilityId: %{public}d cost [%{public}" PRId64 "]", systemAbilityId,
-        ClockTime::GetCurNano() - stamp);
+    // eg. done systemAbilityId: [3001] cost 780ms
+    AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
+        (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -939,6 +940,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDev
     return deviceDescs;
 }
 
+int32_t AudioPolicyServer::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    return audioPolicyService_.SetCallbacksEnable(callbackchange, enable);
+}
+
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return audioPolicyService_.IsStreamActive(streamType);
@@ -1258,7 +1264,7 @@ bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
 bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != UID_AUDIO) {
         AUDIO_ERR_LOG("Not supported operation");
         return false;
@@ -1297,7 +1303,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 
     if (!isRecording) {
         // root user case for auto test
-        uid_t callingUid = IPCSkeleton::GetCallingUid();
+        uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == UID_ROOT) {
             return true;
         }
@@ -1315,7 +1321,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != UID_AUDIO) {
         AUDIO_ERR_LOG("Not supported operation");
         return false;

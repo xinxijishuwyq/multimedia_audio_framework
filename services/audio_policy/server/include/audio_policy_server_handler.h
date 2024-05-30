@@ -160,6 +160,7 @@ public:
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendKvDataUpdate(const bool &isFirstBoot);
+    int32_t SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -203,6 +204,7 @@ private:
     std::map<std::pair<int32_t, AudioDeviceUsage>,
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
+    std::unordered_map<CallbackChange, bool> callbacksMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

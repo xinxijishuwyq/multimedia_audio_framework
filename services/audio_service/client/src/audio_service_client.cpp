@@ -2524,7 +2524,7 @@ void AudioServiceClient::SetRendererPositionCallback(int64_t markPosition,
 {
     std::lock_guard<std::mutex> lock(rendererMarkReachedMutex_);
     AUDIO_INFO_LOG("Registering render frame position callback mark position: %{public}" PRIu64, markPosition);
-    mFrameMarkPosition = markPosition;
+    mFrameMarkPosition = static_cast<uint64_t>(markPosition);
     SendSetRenderMarkReachedRequestEvent(callback);
     mMarkReached = false;
 }
@@ -3513,7 +3513,7 @@ void AudioServiceClient::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &eve
 
         // RenderMarkReach
         case RENDERER_MARK_REACHED_REQUEST:
-            mFrameMarkPosition = event->GetParam();
+            mFrameMarkPosition = static_cast<uint64_t>(event->GetParam());
             HandleRenderMarkReachedEvent(mFrameMarkPosition);
             break;
         case SET_RENDERER_MARK_REACHED_REQUEST:

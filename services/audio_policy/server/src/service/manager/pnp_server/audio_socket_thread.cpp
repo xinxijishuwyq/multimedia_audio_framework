@@ -388,7 +388,7 @@ int32_t AudioSocketThread::AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUe
         return HDF_ERR_INVALID_PARAM;
     }
     if ((strcmp(audioPnpUevent->subSystem, "switch") != 0) ||
-        (strcmp(audioPnpUevent->switchName, "hdmi_audio") != 0) ||
+        (strstr(audioPnpUevent->switchName, "hdmi_audio") == NULL) ||
         (strcmp(audioPnpUevent->action, "change") != 0)) {
         return HDF_ERR_INVALID_PARAM;
     }

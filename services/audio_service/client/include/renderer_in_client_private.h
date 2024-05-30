@@ -224,7 +224,7 @@ private:
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
-    bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize);
+    bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
@@ -234,6 +234,8 @@ private:
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
 
     void FirstFrameProcess();
+
+    int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void VolumeHandle(BufferDesc &desc);
 

@@ -324,7 +324,7 @@ bool VolumeDataMaintainer::SetMuteAffectedToMuteStatusDataBase(int32_t affected)
 {
     // transfer mute_streams_affected to mutestatus
     for (auto &streamtype : VOLUME_MUTE_STREAM_TYPE) {
-        if (affected & (1 << streamtype)) {
+        if (static_cast<uint32_t>(affected) & (1 << streamtype)) {
             for (auto &device : DEVICE_TYPE_LIST) {
                 // save mute status to database
                 SaveMuteStatusInternal(device, AUDIO_STREAMTYPE_MAP[streamtype], true);

@@ -363,6 +363,7 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
 
 int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
+    Trace trace("OffloadSink::GetPresentationPosition");
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "failed audioRender_ is NULL");
     uint64_t frames_;
@@ -497,6 +498,7 @@ AudioFormat OffloadAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat fo
 
 int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
+    Trace trace("OffloadSink::CreateRender");
     int32_t ret;
     struct AudioSampleAttributes param;
     struct AudioDeviceDescriptor deviceDesc;
@@ -528,6 +530,7 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
 
 int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    Trace trace("OffloadSink::Init");
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName; // Set sound card information
     enum AudioPortDirection port = PORT_OUT; // Set port information
@@ -655,6 +658,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
 
 int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 {
+    Trace trace("OffloadSink::SetVolume");
     int32_t ret;
     float thevolume;
     leftVolume_ = left;
@@ -699,6 +703,7 @@ int32_t OffloadAudioRendererSinkInner::SetVoiceVolume(float volume)
 
 int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("OffloadSink::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetLatency failed audio render null");
 
@@ -847,8 +852,8 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
 
 int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 {
+    Trace trace("OffloadSink::SetBufferSize");
     int32_t ret;
-    std::lock_guard<std::mutex> lock(renderMutex_);
     // bytewidth is 4
     uint32_t size = (uint64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
