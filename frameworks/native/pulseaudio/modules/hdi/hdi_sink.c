@@ -1710,8 +1710,12 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
 
     size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
     size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
-    memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
-    memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
+    if (memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen) != EOK) {
+        AUDIO_WARNING_LOG("SinkRenderBufIn memset_s failed");
+    }
+    if (memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen) != EOK) {
+        AUDIO_WARNING_LOG("SinkRenderBufOut memset_s failed");
+    }
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);

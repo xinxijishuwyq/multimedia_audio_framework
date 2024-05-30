@@ -1264,7 +1264,7 @@ bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
 bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != UID_AUDIO) {
         AUDIO_ERR_LOG("Not supported operation");
         return false;
@@ -1303,7 +1303,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 
     if (!isRecording) {
         // root user case for auto test
-        uid_t callingUid = IPCSkeleton::GetCallingUid();
+        uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == UID_ROOT) {
             return true;
         }
@@ -1321,7 +1321,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != UID_AUDIO) {
         AUDIO_ERR_LOG("Not supported operation");
         return false;
