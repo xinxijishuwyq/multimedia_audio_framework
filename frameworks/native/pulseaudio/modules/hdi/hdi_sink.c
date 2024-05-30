@@ -1124,6 +1124,11 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
+    const char *streamType = safeProplistGets(sinkIn->proplist, "stream.type", "NULL");
+    if (pa_safe_streq(streamType, "ultrasonic")) {
+        return;
+    }
+
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
     if (pa_safe_streq(sinkFadeoutPause, "2") && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
         silenceData(infoIn);
