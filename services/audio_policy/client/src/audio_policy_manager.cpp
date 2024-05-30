@@ -719,11 +719,12 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(const int32_t clientPid)
+int32_t AudioPolicyManager::UnsetVolumeKeyEventCallback(
+    const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
-    AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetVolumeKeyEventCallback");
+    AUDIO_DEBUG_LOG("UnsetVolumeKeyEventCallback");
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveVolumeKeyEventCallback();
+        audioPolicyClientStubCB_->RemoveVolumeKeyEventCallback(callback);
     }
     return SUCCESS;
 }

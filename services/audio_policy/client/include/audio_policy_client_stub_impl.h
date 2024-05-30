@@ -29,7 +29,7 @@ namespace AudioStandard {
 class AudioPolicyClientStubImpl : public AudioPolicyClientStub {
 public:
     int32_t AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
-    int32_t RemoveVolumeKeyEventCallback();
+    int32_t RemoveVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     int32_t AddFocusInfoChangeCallback(const std::shared_ptr<AudioFocusInfoChangeCallback> &cb);
     int32_t RemoveFocusInfoChangeCallback();
     int32_t AddDeviceChangeCallback(const DeviceFlag &flag,

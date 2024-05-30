@@ -147,7 +147,7 @@ public:
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
 
-    int32_t UnsetVolumeKeyEventCallback(const int32_t clientPid);
+    int32_t UnsetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
 
     bool CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         SourceType sourceType = SOURCE_TYPE_MIC);

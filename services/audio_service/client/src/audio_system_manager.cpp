@@ -49,7 +49,7 @@ AudioSystemManager::AudioSystemManager()
 
 AudioSystemManager::~AudioSystemManager()
 {
-    AUDIO_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
+    AUDIO_DEBUG_LOG("~AudioSystemManager");
     if (cbClientId_ != -1) {
         UnsetRingerModeCallback(cbClientId_);
     }
@@ -844,15 +844,15 @@ int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientP
     return AudioPolicyManager::GetInstance().SetVolumeKeyEventCallback(clientPid, callback, api_v);
 }
 
-int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clientPid)
+int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
     AUDIO_DEBUG_LOG("UnregisterVolumeKeyEventCallback");
-    int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(clientPid);
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(callback);
     if (!ret) {
-        AUDIO_DEBUG_LOG("UnregisterVolumeKeyEventCallback success");
+        AUDIO_DEBUG_LOG("UnsetVolumeKeyEventCallback success");
         volumeChangeClientPid_ = -1;
     }
-
     return ret;
 }
 

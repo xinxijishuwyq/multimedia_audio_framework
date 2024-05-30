@@ -22,6 +22,7 @@
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"
 #include "audio_system_manager.h"
+#include "napi_audio_volume_key_event.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -59,6 +60,11 @@ private:
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
+    static napi_value Off(napi_env env, napi_callback_info info);
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc,
+        napi_value *args, const std::string &cbName);
+    static std::shared_ptr<NapiAudioVolumeKeyEvent> GetVolumeEventNapiCallback(napi_value argv,
+        NapiAudioVolumeManager *napiVolumeManager);
 
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
@@ -66,6 +72,7 @@ private:
 
     int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
+    std::list<std::shared_ptr<NapiAudioVolumeKeyEvent>> volumeKeyEventCallbackNapiList_;
 
     napi_env env_;
 };
