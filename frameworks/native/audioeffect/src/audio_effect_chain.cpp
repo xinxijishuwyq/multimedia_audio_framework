@@ -215,41 +215,8 @@ int32_t AudioEffectChain::SetEffectParam(AudioEffectScene currSceneType)
     std::lock_guard<std::mutex> lock(reloadMutex_);
     latency_ = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
-        AudioEffectParam *effectParam =
-            new AudioEffectParam[sizeof(AudioEffectParam) + NUM_SET_EFFECT_PARAM * sizeof(int32_t)];
-        effectParam->status = 0;
-        effectParam->paramSize = sizeof(int32_t);
-        effectParam->valueSize = 0;
-        int32_t *data = &(effectParam->data[0]);
-        *data++ = EFFECT_SET_PARAM;
-        *data++ = static_cast<int32_t>(currSceneType);
-        *data++ = GetKeyFromValue(AUDIO_SUPPORTED_SCENE_MODES, effectMode_);
-#ifdef WINDOW_MANAGER_ENABLE
-        std::shared_ptr<AudioEffectRotation> audioEffectRotation = AudioEffectRotation::GetInstance();
-        if (audioEffectRotation == nullptr) {
-            AUDIO_DEBUG_LOG("null audioEffectRotation");
-            *data++ = 0;
-        } else {
-            *data++ = audioEffectRotation->GetRotation();
-        }
-#else
-        *data++ = 0;
-#endif
-        AUDIO_DEBUG_LOG("set ap integration rotation: %{public}u", *(data - 1));
-        std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-        if (audioEffectVolume == nullptr) {
-            AUDIO_DEBUG_LOG("null audioEffectVolume");
-            *data++ = 0;
-        } else {
-            *data++ = audioEffectVolume->GetApVolume(sceneType_);
-        }
-        AUDIO_DEBUG_LOG("set ap integration volume: %{public}u", *(data - 1));
-        int32_t replyData = 0;
-        AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * NUM_SET_EFFECT_PARAM, effectParam};
-        AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-        int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-        delete[] effectParam;
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set rotation EFFECT_CMD_SET_PARAM fail");
+        int32_t ret = SetEffectParamToHandle(handle, currSceneType);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "set EFFECT_CMD_SET_PARAM fail");
         latency_ += static_cast<uint32_t>(replyData);
     }
     return SUCCESS;
