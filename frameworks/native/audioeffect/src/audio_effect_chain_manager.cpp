@@ -113,6 +113,11 @@ int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::str
         return ERROR;
     }
 
+    if (deviceSink_ == sinkName) {
+        AUDIO_INFO_LOG("Same DeviceSinkName");
+    }
+    deviceSink_ = sinkName;
+
     if (deviceType_ == (DeviceType)device) {
         AUDIO_INFO_LOG("DeviceType do not need to be Updated");
         return ERROR;
@@ -121,11 +126,6 @@ int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::str
     AUDIO_INFO_LOG("delete all chains when device type change");
     DeleteAllChains();
     deviceType_ = (DeviceType)device;
-
-    if (deviceSink_ == sinkName) {
-        AUDIO_INFO_LOG("Same DeviceSinkName");
-    }
-    deviceSink_ = sinkName;
 
     return SUCCESS;
 }
@@ -730,7 +730,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
         uint32_t tmpChannelCount;
         uint64_t tmpChannelLayout;
         std::string deviceType = GetDeviceTypeName();
-        if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER"))
+        if ((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP")
             && ExistAudioEffectChain(sceneType, info.sceneMode, info.spatializationEnabled)
             && IsChannelLayoutHVSSupported(info.channelLayout)) {
             tmpChannelLayout = info.channelLayout;
@@ -1110,10 +1110,15 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
     spatializationEnabled_ = spatializationState.spatializationEnabled;
-    CHECK_AND_RETURN_LOG(CheckA2dpOffload(), "Not a2dp-offload, spatialization works in ARM");
 
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     if (spatializationEnabled_) {
+        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!CheckA2dpOffload())) {
+            AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
+            btOffloadEnabled_ = false;
+            RecoverAllChains();
+            return;
+        }
         effectHdiInput_[0] = HDI_INIT;
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
         if (ret != SUCCESS) {
@@ -1126,6 +1131,11 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
             DeleteAllChains();
         }
     } else {
+        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!CheckA2dpOffload())) {
+            AUDIO_INFO_LOG("A2dp-hal, leave ARM processing");
+            DeleteAllChains();
+            return;
+        }
         effectHdiInput_[0] = HDI_DESTROY;
         AUDIO_INFO_LOG("set hdi destroy.");
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
