@@ -126,7 +126,7 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
-    void SetSpkOffloadEnabled(bool enabled); // Used for AISS scene temporarily
+    void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -170,6 +170,7 @@ private:
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     int32_t hdiSceneType_ = 0;
     int32_t hdiEffectMode_ = 0;
+    bool debugArmFlag_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

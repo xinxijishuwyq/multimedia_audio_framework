@@ -91,6 +91,9 @@ AudioEffectChainManager::AudioEffectChainManager()
     audioEffectHdiParam_ = std::make_shared<AudioEffectHdiParam>();
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     GetSysPara("const.build.product", deviceClass_);
+    int32_t flag = 0;
+    GetSysPara("persist.multimedia.audioflag.debugarmflag", flag);
+    debugArmFlag_ = flag == 0 ? false : true;
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -197,18 +200,13 @@ std::string AudioEffectChainManager::GetDeviceTypeName()
     return name;
 }
 
-void AudioEffectChainManager::SetSpkOffloadEnabled(bool enabled)
+void AudioEffectChainManager::UpdateSpkOffloadEnabled()
 {
-    if (enabled == spkOffloadEnabled_) {
-        return;
-    }
-    if (spkOffloadEnabled_) {
+    if (debugArmFlag_ && spkOffloadEnabled_) {
         RecoverAllChains();
         spkOffloadEnabled_ = false;
         return;
     }
-    DeleteAllChains();
-    spkOffloadEnabled_ = true;
 }
 
 std::string AudioEffectChainManager::GetDeviceSinkName()
@@ -435,9 +433,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
 
-    int32_t debug_flag = 0;
-    GetSysPara("persist.multimedia.audioflag.debugaissflag", debug_flag);
-    if (debug_flag == 1) {
+    if (debugArmFlag_) {
         SetSpkOffloadState(); // for AISS movie scene update
     }
 
@@ -1177,9 +1173,7 @@ bool AudioEffectChainManager::CheckIfSpkDsp()
     if (deviceType_ != DEVICE_TYPE_SPEAKER) {
         return true;
     }
-    int32_t debug_flag = 0;
-    GetSysPara("persist.multimedia.audioflag.debugaissflag", debug_flag);
-    if (debug_flag == 1) {
+    if (debugArmFlag_) {
         for (auto &[key, count] : SceneTypeToEffectChainCountMap_) {
             std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
             if (sceneType == "SCENE_MOVIE" && count > 0) {
