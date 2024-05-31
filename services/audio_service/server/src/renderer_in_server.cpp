@@ -23,6 +23,11 @@
 #include "audio_utils.h"
 #include "audio_service.h"
 #include "i_stream_manager.h"
+#ifdef RESSCHE_ENABLE
+#include "res_type.h"
+#include "res_sched_client.h"
+#endif
+ 
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +39,7 @@ namespace {
     static const int32_t NO_FADING = 0;
     static const int32_t DO_FADINGOUT = 1;
     static const int32_t FADING_OUT_DONE = 2;
+    static constexpr int32_t ONE_MINUTE = 60;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -258,6 +264,42 @@ void RendererInServer::CheckFadingOutDone(int32_t fadeoutFlag_, BufferDesc& buff
     }
 }
 
+void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
+{
+    if (buffer[0] == 0) {
+        if (startMuteTime_ == 0) {
+            startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        }
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        if ((currentTime - startMuteTime_ >= ONE_MINUTE) && silentState_ == 1) { // 1 means unsilent
+            silentState_ = 0; // 0 means silent
+            AUDIO_WARNING_LOG("write invalid data for some time in server");
+            ReportDataToResSched(true);
+        }
+    } else if (buffer[0] != 0) {
+        if (startMuteTime_ != 0) {
+            startMuteTime_ = 0;
+        }
+        if (silentState_ == 0) { // 0 means silent
+            AUDIO_WARNING_LOG("begin write valid data in server");
+            silentState_ = 1; // 1 means unsilent
+            ReportDataToResSched(false);
+        }
+    }
+}
+
+void RendererInServer::ReportDataToResSched(bool isSilent)
+{
+    #ifdef RESSCHE_ENABLE
+    std::unordered_map<std::string, std::string> payload;
+    payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
+    payload["sessionId"] = std::to_string(streamIndex_);
+    payload["isSilent"] = std::to_string(isSilent);
+    uint32_t type = ResourceSchedule::ResType::RES_TYPE_AUDIO_RENDERER_SILENT_PLAYBACK;
+    ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, 0, payload);
+    #endif
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -294,6 +336,7 @@ int32_t RendererInServer::WriteData()
                 dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
             }
         }
+        WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
         uint64_t nextReadFrame = currentReadFrame + spanSizeInFrame_;

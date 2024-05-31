@@ -85,7 +85,6 @@ public:
     int32_t InitDupStream();
 
     int32_t GetStreamManagerType() const noexcept;
-
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -93,6 +92,8 @@ private:
     bool IsHighResolution() const noexcept;
     void DoFadingOut(BufferDesc& bufferDesc);
     void CheckFadingOutDone(int32_t fadeFlag, BufferDesc& bufferDesc);
+    void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    void ReportDataToResSched(bool isSilent);
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<IRendererStream> stream_ = nullptr;
@@ -126,6 +127,8 @@ private:
     ManagerType managerType_;
     std::mutex fadeoutLock_;
     int32_t fadeoutFlag_ = 0;
+    std::time_t startMuteTime_ = 0;
+    int32_t silentState_ = 1; // 0:silent 1:unsilent
 };
 } // namespace AudioStandard
 } // namespace OHOS
