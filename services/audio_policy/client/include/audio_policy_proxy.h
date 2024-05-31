@@ -161,8 +161,6 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
 
-    int32_t SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
-
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0) override;
 

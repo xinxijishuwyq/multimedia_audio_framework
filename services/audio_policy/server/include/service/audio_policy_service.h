@@ -346,8 +346,6 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
-    int32_t SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
-
     void GetEffectManagerInfo();
 
     float GetMinStreamVolume(void);

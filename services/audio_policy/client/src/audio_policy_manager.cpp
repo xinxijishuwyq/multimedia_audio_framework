@@ -347,13 +347,6 @@ int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInter
     return gsp->GetAudioFocusInfoList(focusInfoList, zoneID);
 }
 
-int32_t AudioPolicyManager::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetCallbacksEnable(callbackchange, enable);
-}
-
 int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t clientId,
     const std::shared_ptr<AudioFocusInfoChangeCallback> &callback)
 {
@@ -370,12 +363,7 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
         }
     }
 
-    size_t originalCnt = audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize();
     audioPolicyClientStubCB_->AddFocusInfoChangeCallback(callback);
-    if (originalCnt == 1) {
-        SetCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, true);
-    }
-
     return SUCCESS;
 }
 
@@ -384,9 +372,6 @@ int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clie
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterFocusInfoChangeCallback");
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveFocusInfoChangeCallback();
-        if (audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize() == 0) {
-            SetCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, false);
-        }
     }
     return SUCCESS;
 }
@@ -744,11 +729,7 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
         }
     }
 
-    size_t originalCnt = audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize();
     audioPolicyClientStubCB_->AddRendererStateChangeCallback(callback);
-    if (originalCnt == 1) {
-        SetCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, true);
-    }
     isAudioRendererEventListenerRegistered = true;
     return SUCCESS;
 }
@@ -758,9 +739,6 @@ int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t c
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioRendererEventListener");
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback();
-        if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
-            SetCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
-        }
         isAudioRendererEventListenerRegistered = false;
     }
     return SUCCESS;
@@ -782,11 +760,7 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
         }
     }
 
-    size_t originalCnt = audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize();
     audioPolicyClientStubCB_->AddCapturerStateChangeCallback(callback);
-    if (originalCnt == 1) {
-        SetCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, true);
-    }
     isAudioCapturerEventListenerRegistered = true;
     return SUCCESS;
 }
@@ -796,9 +770,6 @@ int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t c
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioCapturerEventListener");
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioCapturerEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveCapturerStateChangeCallback();
-        if (audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize() == 0) {
-            SetCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, false);
-        }
         isAudioCapturerEventListenerRegistered = false;
     }
     return SUCCESS;
