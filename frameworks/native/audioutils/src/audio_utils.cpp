@@ -33,6 +33,7 @@
 #include "ipc_skeleton.h"
 #include "access_token.h"
 #include "accesstoken_kit.h"
+#include "privacy_kit.h"
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
 #include "securec.h"
@@ -41,6 +42,34 @@ using OHOS::Security::AccessToken::AccessTokenKit;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t UID_MSDP_SA = 6699;
+constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
+constexpr int32_t UID_CAAS_SA = 5527;
+constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
+constexpr int32_t UID_FOUNDATION_SA = 5523;
+constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
+constexpr int32_t UID_CAMERA = 1047;
+
+const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    0, // UID_ROOT
+#endif
+    UID_MSDP_SA,
+    UID_INTELLIGENT_VOICE_SA,
+    UID_CAAS_SA,
+    UID_DISTRIBUTED_AUDIO_SA,
+    UID_FOUNDATION_SA,
+    UID_DISTRIBUTED_CALL_SA,
+    UID_CAMERA
+};
+
+const std::set<SourceType> NO_BACKGROUND_CHECK_SOURCE_TYPE = {
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_REMOTE_CAST
+};
+}
 int64_t ClockTime::GetCurNano()
 {
     int64_t result = -1; // -1 for bad result.
@@ -204,6 +233,55 @@ bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_
         false, "Permission denied [%{public}s]", permissionName.c_str());
 
     return true;
+}
+
+bool PermissionUtil::NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType)
+{
+    if (RECORD_ALLOW_BACKGROUND_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", callingUid);
+        return false;
+    }
+    if (NO_BACKGROUND_CHECK_SOURCE_TYPE.count(sourceType)) {
+        AUDIO_INFO_LOG("sourceType %{public}d", sourceType);
+        return false;
+    }
+    return true;
+}
+
+bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId)
+{
+    Trace trace("PermissionUtil::VerifyBackgroundCapture");
+    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
+        AUDIO_INFO_LOG("system app recording");
+        return true;
+    }
+
+    bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
+    if (!ret) {
+        AUDIO_ERR_LOG("failed: %{public}u not allowed!", tokenId);
+    }
+    return ret;
+}
+
+void PermissionUtil::NotifyPrivacy(uint32_t targetTokenId, AudioPermissionState state)
+{
+    if (state == AUDIO_PERMISSION_START) {
+        Trace trace("PrivacyKit::StartUsingPermission");
+        int res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_WARNING_LOG("notice start using perm error: %{public}d", res);
+        }
+        res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
+        if (res != 0) {
+            AUDIO_WARNING_LOG("add mic record error: %{public}d", res);
+        }
+    } else if (state == AUDIO_PERMISSION_STOP) {
+        Trace trace("PrivacyKit::StopUsingPermission");
+        int res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+        if (res != 0) {
+            AUDIO_WARNING_LOG("notice stop using perm error: %{public}d", res);
+        }
+    }
 }
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
@@ -512,7 +590,7 @@ FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, Au
         case AUDIO_APP:
             filePath = DUMP_APP_DIR + fileName;
             break;
-        case AUDIO_SERVICE:
+        case OTHER_NATIVE_SERVICE:
             filePath = DUMP_SERVICE_DIR + fileName;
             break;
         case AUDIO_PULSE:
@@ -534,12 +612,13 @@ FILE *DumpFileUtil::OpenDumpFileInner(std::string para, std::string fileName, Au
     if (dumpPara == "w") {
         dumpFile = fopen(filePath.c_str(), "wb+");
         CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,
-            "Error opening pcm test file!");
+            "Error opening pcm dump file:%{public}s", filePath.c_str());
     } else if (dumpPara == "a") {
         dumpFile = fopen(filePath.c_str(), "ab+");
         CHECK_AND_RETURN_RET_LOG(dumpFile != nullptr, dumpFile,
-            "Error opening pcm test file!");
+            "Error opening pcm dump file:%{public}s", filePath.c_str());
     }
+    AUDIO_INFO_LOG("Dump file path: %{public}s", filePath.c_str());
     g_lastPara[para] = dumpPara;
     return dumpFile;
 }
@@ -586,17 +665,11 @@ void DumpFileUtil::OpenDumpFile(std::string para, std::string fileName, FILE **f
     }
 
     if (para == DUMP_SERVER_PARA) {
-        if (fileName == DUMP_BLUETOOTH_RENDER_SINK_FILENAME || fileName == DUMP_RENDER_SINK_FILENAME ||
-            fileName == DUMP_CAPTURER_SOURCE_FILENAME || fileName == DUMP_OFFLOAD_RENDER_SINK_FILENAME ||
-            fileName.find("effect") != std::string::npos) { // special name for audio effect
-            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_PULSE);
-            return;
-        }
-        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_SERVICE);
+        *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_PULSE);
     } else {
         *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_APP);
         if (*file == nullptr) {
-            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, AUDIO_SERVICE);
+            *file = DumpFileUtil::OpenDumpFileInner(para, fileName, OTHER_NATIVE_SERVICE);
         }
     }
 }
@@ -671,7 +744,7 @@ bool SignalDetectAgent::CheckAudioData(uint8_t *buffer, size_t bufferLen)
 {
     CHECK_AND_RETURN_RET_LOG(formatByteSize_ != 0, false, "LatencyMeas checkAudioData failed, "
         "formatByteSize_ %{public}d", formatByteSize_);
-    frameCountIgnoreChannel_ = bufferLen / formatByteSize_;
+    frameCountIgnoreChannel_ = bufferLen / static_cast<uint32_t>(formatByteSize_);
     if (cacheAudioData_.capacity() < frameCountIgnoreChannel_) {
         cacheAudioData_.clear();
         cacheAudioData_.reserve(frameCountIgnoreChannel_);
@@ -706,7 +779,7 @@ bool SignalDetectAgent::DetectSignalData(int32_t *buffer, size_t bufferLen)
         int32_t tempMax = SHRT_MIN;
         int32_t tempMin = SHRT_MAX;
         for (int channel = 0; channel < channels_; channel++) {
-            int16_t temp = buffer[index * channels_ + channel];
+            int16_t temp = buffer[index * static_cast<uint32_t>(channels_) + channel];
             tempMax = temp > tempMax ? temp : tempMax;
             tempMin = temp < tempMin ? temp : tempMin;
         }

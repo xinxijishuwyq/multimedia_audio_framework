@@ -292,6 +292,8 @@ int32_t RemoteFastAudioCapturerSourceInner::CreateCapture(const struct AudioPort
     CHECK_AND_RETURN_RET_LOG(audioAdapter_ != nullptr, ERR_INVALID_HANDLE, "CreateCapture: audio adapter is null.");
     struct AudioSampleAttributes param;
     InitAttrs(param);
+    param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AudioCategory::AUDIO_MMAP_VOIP :
+        AudioCategory::AUDIO_MMAP_NOIRQ;
 
     struct AudioDeviceDescriptor deviceDesc;
     deviceDesc.portId = capturePort.portId;
@@ -300,7 +302,7 @@ int32_t RemoteFastAudioCapturerSourceInner::CreateCapture(const struct AudioPort
     int32_t ret = audioAdapter_->CreateCapture(deviceDesc, param, audioCapture_, this, captureId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioCapture_ != nullptr, ret,
         "Create capture fail, ret %{public}d.", ret);
-    if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ) {
+    if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ || param.type == AudioCategory::AUDIO_MMAP_VOIP) {
         InitAshmem(param); // The remote fast source first start
     }
 
@@ -349,7 +351,6 @@ int32_t RemoteFastAudioCapturerSourceInner::InitAshmem(const struct AudioSampleA
 void RemoteFastAudioCapturerSourceInner::InitAttrs(struct AudioSampleAttributes &attrs)
 {
     /* Initialization of audio parameters for playback */
-    attrs.type = AudioCategory::AUDIO_MMAP_NOIRQ;
     attrs.interleaved = CAPTURE_INTERLEAVED;
     attrs.format = ConvertToHdiFormat(attr_.format);
     attrs.sampleRate = attr_.sampleRate;

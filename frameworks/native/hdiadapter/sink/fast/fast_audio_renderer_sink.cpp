@@ -572,7 +572,6 @@ float FastAudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t FastAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
-    AUDIO_WARNING_LOG("not supported.");
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }

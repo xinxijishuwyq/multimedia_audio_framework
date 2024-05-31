@@ -188,9 +188,9 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             resetTimestamp_ = paTimeStamp;
         }
         if (eMode_ == AUDIO_MODE_PLAYBACK) {
-            timestamp.framePosition = GetStreamFramesWritten() * speed_;
+            timestamp.framePosition = static_cast<uint64_t>(GetStreamFramesWritten()) * speed_;
         } else {
-            timestamp.framePosition = GetStreamFramesRead();
+            timestamp.framePosition = static_cast<uint64_t>(GetStreamFramesRead());
         }
 
         uint64_t delta = paTimeStamp > resetTimestamp_ ? paTimeStamp - resetTimestamp_ : 0;

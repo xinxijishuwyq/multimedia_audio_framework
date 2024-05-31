@@ -72,7 +72,6 @@
             "bounds_checking_function",
             "pulseaudio",
             "libuv",
-            "googletest",
             "cJSON",
             "opensles",
             "media_foundation"

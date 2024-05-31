@@ -496,6 +496,7 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         pa_proplist_sets(propList, "stream.mode", managerType_ == DUP_PLAYBACK ? DUP_STREAM.c_str() :
             NORMAL_STREAM.c_str());
         pa_proplist_sets(propList, "stream.flush", "false");
+        pa_proplist_sets(propList, "fadeoutPause", "0");
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
         pa_proplist_sets(propList, "stream.usage", std::to_string(processConfig.rendererInfo.streamUsage).c_str());
         pa_proplist_sets(propList, "scene.type", processConfig.rendererInfo.sceneType.c_str());
@@ -609,7 +610,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
     const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK.c_str() : nullptr;
-    int flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
+    uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
     if (managerType_ == DUP_PLAYBACK) {
         flags |= PA_STREAM_DONT_MOVE; // should not move dup streams

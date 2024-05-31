@@ -243,7 +243,7 @@ private:
     bool AttributesCheck(AudioSampleAttributes &attrInfo);
     int32_t SetAudioAttrInfo(AudioSampleAttributes &attrInfo);
     std::string GetAudioAttrInfo();
-    int32_t GetCurDeviceParam(char *keyValueList);
+    int32_t GetCurDeviceParam(char *keyValueList, size_t len);
 
     AudioPortPin GetAudioPortPin() const noexcept;
 
@@ -337,7 +337,7 @@ bool AudioRendererSinkInner::AttributesCheck(AudioSampleAttributes &attrInfo)
 int32_t AudioRendererSinkInner::SetAudioAttrInfo(AudioSampleAttributes &attrInfo)
 {
     CHECK_AND_RETURN_RET_LOG(AttributesCheck(attrInfo), ERROR, "AttributesCheck failed");
-    int32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
+    uint32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
         BUFFER_CALC_20MS / BUFFER_CALC_1000MS;
     audioAttrInfo_ = "rate="+to_string(attrInfo.sampleRate)+" format=" + ParseAudioFormatToStr(attrInfo.format) +
         " channels=" + to_string(attrInfo.channelCount) + " buffer_size="+to_string(bufferSize);
@@ -658,6 +658,7 @@ int32_t AudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
     if (ret != 0 || audioRender_ == nullptr) {
         AUDIO_ERR_LOG("AudioDeviceCreateRender failed.");
         audioManager_->UnloadAdapter(audioManager_, adapterDesc_.adapterName);
+        adapterInited_ = false;
         return ERR_NOT_STARTED;
     }
 
@@ -1413,40 +1414,40 @@ void AudioRendererSinkInner::CheckLatencySignal(uint8_t *data, size_t len)
     }
 }
 
-int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList)
+int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList, size_t len)
 {
     int32_t ret = ERROR;
     switch (currentActiveDevice_) {
         case DEVICE_TYPE_EARPIECE:
-            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+            ret = snprintf_s(keyValueList, len, len - 1,
                 "zero_volume=true;routing=1");
             break;
         case DEVICE_TYPE_SPEAKER:
-            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+            ret = snprintf_s(keyValueList, len, len - 1,
                 "zero_volume=true;routing=2");
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
-            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+            ret = snprintf_s(keyValueList, len, len - 1,
                 "zero_volume=true;routing=4");
             break;
         case DEVICE_TYPE_USB_ARM_HEADSET:
-            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+            ret = snprintf_s(keyValueList, len, len - 1,
                 "zero_volume=true;routing=67108864");
             break;
         case DEVICE_TYPE_USB_HEADSET:
-            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+            ret = snprintf_s(keyValueList, len, len - 1,
                 "zero_volume=true;routing=545259520");
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
-            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+            ret = snprintf_s(keyValueList, len, len - 1,
                 "zero_volume=true;routing=10");
             break;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
-            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+            ret = snprintf_s(keyValueList, len, len - 1,
                 "zero_volume=true;routing=128");
             break;
         default:
-            ret = snprintf_s(keyValueList, DEVICE_PARAM_MAX_LEN, DEVICE_PARAM_MAX_LEN - 1,
+            ret = snprintf_s(keyValueList, len, len - 1,
                 "zero_volume=true;routing=-100");
             break;
     }
@@ -1455,6 +1456,7 @@ int32_t AudioRendererSinkInner::GetCurDeviceParam(char *keyValueList)
 
 int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 {
+    Trace trace("AudioRendererSinkInner::SetPaPower flag:%d", flag);
     int32_t ret = ERROR;
     char keyValueList[DEVICE_PARAM_MAX_LEN] = {0};
     const char keyValueList1[] = "zero_volume=false";
@@ -1475,7 +1477,7 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
     }
 
     AUDIO_DEBUG_LOG("keyValueList %{public}s befor get.", keyValueList);
-    GetCurDeviceParam(keyValueList);
+    GetCurDeviceParam(keyValueList, DEVICE_PARAM_MAX_LEN);
     AUDIO_DEBUG_LOG("Get keyValueList for openpa: %{public}s", keyValueList);
 
     if (flag == 1 && g_paStatus == 0) {

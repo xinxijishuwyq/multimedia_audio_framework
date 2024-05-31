@@ -66,6 +66,8 @@ private:
     IOperation operation_ = OPERATION_INVALID;
     IStatus status_ = I_STATUS_IDLE;
 
+    bool needCheckBackground_ = false;
+
     AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;
     AudioProcessConfig processConfig_;
@@ -84,6 +86,7 @@ private:
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     size_t cacheSizeInBytes_ = 0;
     std::unique_ptr<uint8_t []> dischargeBuffer_ = nullptr;
+    FILE *dumpS2C_ = nullptr; // server to client dump file
 };
 } // namespace AudioStandard
 } // namespace OHOS

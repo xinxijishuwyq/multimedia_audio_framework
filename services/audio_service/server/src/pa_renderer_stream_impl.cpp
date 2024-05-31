@@ -84,6 +84,7 @@ int32_t PaRendererStreamImpl::InitParams()
     pa_stream_set_underflow_callback(paStream_, PAStreamUnderFlowCb, reinterpret_cast<void *>(this));
     pa_stream_set_started_callback(paStream_, PAStreamSetStartedCb, reinterpret_cast<void *>(this));
     pa_stream_set_underflow_ohos_callback(paStream_, PAStreamUnderFlowCountAddCb, reinterpret_cast<void *>(this));
+    pa_stream_set_event_callback(paStream_, PAStreamEventCb, reinterpret_cast<void *>(this));
 
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
@@ -119,8 +120,25 @@ int32_t PaRendererStreamImpl::InitParams()
 
     ResetOffload();
 
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDERER_STREAM_FILENAME, &dumpFile_);
     return SUCCESS;
+}
+
+void PaRendererStreamImpl::PAStreamEventCb(pa_stream *stream, const char *event, pa_proplist *pl, void *userdata)
+{
+    CHECK_AND_RETURN_LOG(userdata, "userdata is null");
+
+    std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
+    if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
+        AUDIO_ERR_LOG("streamImpl is nullptr");
+        return;
+    }
+    auto streamImpl = paRendererStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "PAStreamEventCb: userdata is null");
+    if (!strcmp(event, "fading_out_done")) {
+        streamImpl->isFadeoutDone_.store(true);
+        pa_threaded_mainloop_signal(streamImpl->mainloop_, 0);
+        AUDIO_INFO_LOG("isFadeoutDone_ = true");
+    }
 }
 
 int32_t PaRendererStreamImpl::Start()
@@ -150,15 +168,16 @@ int32_t PaRendererStreamImpl::Pause()
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
         AUDIO_ERR_LOG("Stream Stop Failed");
         return ERR_OPERATION_FAILED;
     }
+
     operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
+
     return SUCCESS;
 }
 
@@ -246,7 +265,6 @@ int32_t PaRendererStreamImpl::Release()
         pa_stream_unref(paStream_);
         paStream_ = nullptr;
     }
-    DumpFileUtil::CloseDumpFile(&dumpFile_);
     return SUCCESS;
 }
 
@@ -534,8 +552,10 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     Trace trace("PaRendererStreamImpl::EnqueueBuffer " + std::to_string(bufferDesc.bufLength) + " totalBytesWritten" +
         std::to_string(totalBytesWritten_));
     int32_t error = 0;
-    error = OffloadUpdatePolicyInWrite();
-    CHECK_AND_RETURN_RET_LOG(error == SUCCESS, error, "OffloadUpdatePolicyInWrite failed");
+    if (offloadEnable_) {
+        error = OffloadUpdatePolicyInWrite();
+        CHECK_AND_RETURN_RET_LOG(error == SUCCESS, error, "OffloadUpdatePolicyInWrite failed");
+    }
 
     // EnqueueBuffer is called in mainloop in most cases and don't need lock.
     bool isInMainloop = pa_threaded_mainloop_in_thread(mainloop_) ? true : false;
@@ -885,9 +905,9 @@ int32_t PaRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timesta
     bool first = offloadTsLast_ == 0;
     offloadTsLast_ = readIndex;
 
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNanoSec;
+    uint64_t frames = 0;
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
     OffloadGetPresentationPosition(frames, timeSec, timeNanoSec);
     int64_t timeDelta = static_cast<int64_t>(timestamp) -
                         static_cast<int64_t>(timeSec * AUDIO_US_PER_SECOND + timeNanoSec / AUDIO_NS_PER_US);

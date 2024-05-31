@@ -335,7 +335,7 @@ static int CalculateAdjustTime(struct userdata *u, uint32_t *baseRate, int32_t *
         u->latency_snapshot.source_latency - snapshotDelay;
 
     /* Current latency */
-    int64_t currentLatency = currentSourceSinkLatency + currentBufferLatency;
+    int64_t currentLatency = currentSourceSinkLatency + (int64_t)currentBufferLatency;
 
     /* Latency at base rate */
     int64_t latencyAtOptimumRate = currentSourceSinkLatency + currentBufferLatency * oldRate / (*baseRate);
@@ -944,8 +944,8 @@ static int SinkInputProcessMsgCb(pa_msgobject *obj, int code, void *data, int64_
             u->latency_snapshot.recv_counter = u->output_thread_info.recv_counter;
             u->latency_snapshot.loopback_memblockq_length = pa_memblockq_get_length(u->memblockq);
             /* Add content of render memblockq to sink latency */
-            u->latency_snapshot.sink_latency = pa_sink_get_latency_within_thread(u->sink_input->sink, true) +
-                pa_bytes_to_usec(length, &u->sink_input->sink->sample_spec);
+            u->latency_snapshot.sink_latency = (int64_t)(pa_sink_get_latency_within_thread(u->sink_input->sink, true) +
+                pa_bytes_to_usec(length, &u->sink_input->sink->sample_spec));
             u->latency_snapshot.sink_timestamp = pa_rtclock_now();
             return 0;
         }

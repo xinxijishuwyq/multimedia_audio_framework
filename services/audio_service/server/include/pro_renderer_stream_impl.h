@@ -92,6 +92,7 @@ private:
     bool isNeedMcr_;
     bool isBlock_;
     bool isDrain_;
+    bool isFirstFrame_;
     int32_t privacyType_;
     int32_t renderRate_;
     uint32_t streamIndex_; // invalid index
@@ -116,8 +117,10 @@ private:
     AudioProcessConfig processConfig_;
     std::unique_ptr<AudioDownMixStereo> downMixer_;
 
+    std::mutex firstFrameMutex;
     std::mutex enqueueMutex;
     std::mutex peekMutex;
+    std::condition_variable firstFrameSync_;
     std::condition_variable drainSync_;
     FILE *dumpFile_;
 };

@@ -88,7 +88,7 @@ public:
     // IStreamListener
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 
-    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId) override;
+    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
@@ -256,6 +256,7 @@ private:
     int32_t clientUid_ = -1;
     int32_t clientPid_ = -1;
     uint32_t appTokenId_ = 0;
+    uint64_t fullTokenId_ = 0;
 
     uint32_t readLogTimes_ = 0;
 
@@ -410,12 +411,14 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     return SUCCESS;
 }
 
-void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId)
+void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("Capturer set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
+    AUDIO_INFO_LOG("PID:%{public}d UID:%{public}d tokenId:%{public}u fullTokenId:%{public}" PRIu64".", clientPid,
+        clientUid, appTokenId, fullTokenId);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
+    fullTokenId_ = fullTokenId;
     return;
 }
 
@@ -710,6 +713,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
     config.appInfo.appTokenId = appTokenId_;
+    config.appInfo.appFullTokenId = fullTokenId_;
 
     config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
@@ -856,7 +860,7 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
         AUDIO_WARNING_LOG("GetHandleInfo may failed");
     }
 
-    int64_t deltaPos = writePos >= static_cast<uint64_t>(currentReadPos) ? writePos - currentReadPos : 0;
+    int64_t deltaPos = writePos >= currentReadPos ? static_cast<int64_t>(writePos - currentReadPos) : 0;
     int64_t tempLatency = 25000000; // 25000000 -> 25 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND / streamParams_.samplingRate * AUDIO_US_PER_S;
 
@@ -1786,7 +1790,7 @@ int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     bufferSizeInMsec_ = bufferSizeInMsec;
     AUDIO_INFO_LOG("SetBufferSizeInMsec to %{public}d", bufferSizeInMsec_);
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
-        uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;
+        uint64_t bufferDurationInUs = static_cast<uint64_t>(bufferSizeInMsec_ * AUDIO_US_PER_MS);
         InitCallbackBuffer(bufferDurationInUs);
     }
     return SUCCESS;

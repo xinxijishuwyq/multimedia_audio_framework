@@ -37,6 +37,7 @@ const char *SINK_ADAPTER_NAME = "primary";
 NoneMixEngine::NoneMixEngine(DeviceInfo type, bool isVoip)
     : isVoip_(isVoip),
       isStart_(false),
+      isPause_(false),
       device_(type),
       failedCount_(0),
       writeCount_(0),
@@ -59,6 +60,7 @@ NoneMixEngine::~NoneMixEngine()
         renderSink_->Stop();
         renderSink_->DeInit();
     }
+    isStart_ = false;
 }
 
 int32_t NoneMixEngine::Start()
@@ -76,7 +78,7 @@ int32_t NoneMixEngine::Start()
         ret = renderSink_->Start();
         isStart_ = true;
     }
-
+    isPause_ = false;
     if (!playbackThread_->CheckThreadIsRunning()) {
         playbackThread_->Start();
     }
@@ -105,6 +107,7 @@ void NoneMixEngine::PauseAsync()
     if (playbackThread_) {
         playbackThread_->PauseAsync();
     }
+    isPause_ = true;
 }
 
 int32_t NoneMixEngine::Pause()
@@ -116,6 +119,7 @@ int32_t NoneMixEngine::Pause()
     if (playbackThread_) {
         playbackThread_->Pause();
     }
+    isPause_ = true;
     return ret;
 }
 
@@ -182,7 +186,7 @@ void NoneMixEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &strea
 
 bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 {
-    return isStart_;
+    return isStart_ && !isPause_;
 }
 
 void NoneMixEngine::StandbySleep()
@@ -191,7 +195,7 @@ void NoneMixEngine::StandbySleep()
     ClockTime::AbsoluteSleep(writeTime);
 }
 
-AudioSamplingRate NoneMixEngine::GetDirectSampleRate(AudioSamplingRate sampleRate)
+static AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate)
 {
     AudioSamplingRate result = sampleRate;
     switch (sampleRate) {
@@ -244,7 +248,7 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
     AUDIO_INFO_LOG("sink name:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d", sinkName.c_str(),
-                   attr.deviceType, attr.sampleRate, attr.format);
+        attr.deviceType, attr.sampleRate, attr.format);
     int32_t ret = renderSink_->Init(attr);
     if (ret != SUCCESS) {
         return ret;
