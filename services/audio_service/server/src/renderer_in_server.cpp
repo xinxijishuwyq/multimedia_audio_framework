@@ -281,8 +281,10 @@ int32_t RendererInServer::WriteData()
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
 
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
-        DoFadingOut(bufferDesc);
-        CheckFadingOutDone(fadeoutFlag_, bufferDesc);
+        if (processConfig_.streamType != STREAM_ULTRASONIC) {
+            DoFadingOut(bufferDesc);
+            CheckFadingOutDone(fadeoutFlag_, bufferDesc);
+        }
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         if (isInnerCapEnabled_) {
