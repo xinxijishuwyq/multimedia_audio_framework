@@ -163,6 +163,7 @@ private:
     static constexpr int64_t RECORD_HANDLE_DELAY_NANO = 3000000; // 3ms
     static constexpr size_t MAX_TIMES = 4; // 4 times spanSizeInFrame_
     static constexpr size_t DIV = 2; // halt of span
+    static constexpr int64_t MAX_STOP_FADING_DURATION_NANO = 10000000; // 10ms
     enum ThreadStatus : uint32_t {
         WAITTING = 0,
         SLEEPING,
@@ -1017,9 +1018,7 @@ int32_t AudioProcessInClientInner::Stop()
 
     isCallbackLoopEnd_ = true;
     threadStatusCV_.notify_all();
-    if (callbackLoop_.joinable()) {
-        callbackLoop_.join();
-    }
+    ClockTime::RelativeSleep(MAX_STOP_FADING_DURATION_NANO);
 
     if (processProxy_->Stop() != SUCCESS) {
         streamStatus_->store(oldStatus);
