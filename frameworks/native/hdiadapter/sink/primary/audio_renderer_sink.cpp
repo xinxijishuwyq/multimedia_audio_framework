@@ -1263,10 +1263,13 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
 
     attr_.sampleRate = stoi(sampleRateStr);
     attr_.channel = stoi(channeltStr);
+    uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
+    } else {
+        formatByte = stoi(bufferSize) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
     }
-    uint32_t formatByte = stoi(bufferSize) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
+    
     attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
 
     AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d, format: %{public}d,channelCount: %{public}d",
