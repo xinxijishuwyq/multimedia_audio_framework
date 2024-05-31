@@ -69,7 +69,6 @@ public:
         HEAD_TRACKING_DEVICE_CHANGE,
         SPATIALIZATION_ENABLED_CHANGE,
         HEAD_TRACKING_ENABLED_CHANGE,
-        DATABASE_UPDATE,
         PIPE_STREAM_CLEAN_EVENT,
         CONCURRENCY_EVENT_WITH_SESSIONID,
     };
@@ -164,7 +163,6 @@ public:
     int32_t RemoveAudioDeviceRefinerCb();
     bool SendSpatializatonEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
-    bool SendKvDataUpdate(const bool &isFirstBoot);
     bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
     bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
 
@@ -198,7 +196,6 @@ private:
     void HandleHeadTrackingDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleSpatializatonEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event);
 

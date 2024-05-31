@@ -167,6 +167,8 @@ public:
     int32_t GetCurActivateCount(void) const;
 
     void HandleKvData(bool isFirstBoot);
+
+    void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
 private:
     friend class PolicyCallbackImpl;
 

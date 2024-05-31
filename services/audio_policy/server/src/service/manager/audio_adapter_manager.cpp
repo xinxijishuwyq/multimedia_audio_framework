@@ -29,7 +29,7 @@
 #include "audio_log.h"
 #include "audio_volume_parser.h"
 #include "audio_utils.h"
-#include "audio_policy_server_handler.h"
+#include "audio_adapter_manager_handler.h"
 
 using namespace std;
 
@@ -173,7 +173,7 @@ void AudioAdapterManager::InitKVStoreInternal()
     bool isFirstBoot = false;
     volumeDataMaintainer_.RegisterCloned();
     InitAudioPolicyKvStore(isFirstBoot);
-    auto handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
     if (handler != nullptr) {
         handler->SendKvDataUpdate(isFirstBoot);
     }
@@ -310,9 +310,17 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     }
 
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
-    volumeDataMaintainer_.SaveVolume(currentActiveDevice_, streamType, volumeLevel);
+    auto handler = DelayedSingleton<AudioAdapterManagerHandler>::GetInstance();
+    if (handler != nullptr) {
+        handler->SendSaveVolume(currentActiveDevice_, streamType, volumeLevel);
+    }
 
     return SetVolumeDb(streamType);
+}
+
+void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel)
+{
+    volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel);
 }
 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)

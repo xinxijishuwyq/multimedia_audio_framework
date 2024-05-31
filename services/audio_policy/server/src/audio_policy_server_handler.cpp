@@ -444,22 +444,6 @@ bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &en
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendKvDataUpdate(const bool &isFirstBoot)
-{
-    auto eventContextObj = std::make_shared<bool>(isFirstBoot);
-    lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = true;
-    if (isFirstBoot) {
-        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DATABASE_UPDATE, eventContextObj),
-            MAX_DELAY_TIME);
-    } else {
-        ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DATABASE_UPDATE, eventContextObj));
-    }
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendKvDataUpdate event failed");
-    return ret;
-}
-
-
 bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
 {
     auto eventContextObj = std::make_shared<int32_t>(pipeType);
@@ -822,14 +806,6 @@ void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeEvent(const AppExe
     }
 }
 
-void AudioPolicyServerHandler::HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event)
-{
-    std::shared_ptr<bool> eventContextObj = event->GetSharedObject<bool>();
-    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    bool isFristBoot = *eventContextObj;
-    AudioPolicyManagerFactory::GetAudioPolicyManager().HandleKvData(isFristBoot);
-}
-
 void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<int32_t> eventContextObj = event->GetSharedObject<int32_t>();
@@ -891,9 +867,6 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT:
             HandleSendRecreateCapturerStreamEvent(event);
-            break;
-        case EventAudioServerCmd::DATABASE_UPDATE:
-            HandleUpdateKvDataEvent(event);
             break;
         case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
             HandlePipeStreamCleanEvent(event);

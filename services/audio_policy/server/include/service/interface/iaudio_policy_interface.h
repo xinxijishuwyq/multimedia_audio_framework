@@ -140,6 +140,8 @@ public:
     virtual int32_t GetCurActivateCount() const = 0;
 
     virtual void HandleKvData(bool isFirstBoot) = 0;
+
+    virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
