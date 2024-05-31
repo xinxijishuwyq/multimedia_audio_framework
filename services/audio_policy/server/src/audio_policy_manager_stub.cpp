@@ -309,7 +309,7 @@ void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, M
 void AudioPolicyManagerStub::WriteAudioFocusInfo(MessageParcel &reply,
     const std::pair<AudioInterrupt, AudioFocuState> &focusInfo)
 {
-    focusInfo.first.Marshalling(reply);
+    AudioInterrupt::Marshalling(reply, focusInfo.first);
     reply.WriteInt32(focusInfo.second);
 }
 
@@ -401,7 +401,7 @@ void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, Mess
 {
     int32_t zoneID = data.ReadInt32();
     AudioInterrupt audioInterrupt = {};
-    audioInterrupt.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID);
     reply.WriteInt32(result);
 }
@@ -410,7 +410,7 @@ void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, Me
 {
     int32_t zoneID = data.ReadInt32();
     AudioInterrupt audioInterrupt = {};
-    audioInterrupt.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = DeactivateAudioInterrupt(audioInterrupt, zoneID);
     reply.WriteInt32(result);
 }
@@ -435,7 +435,7 @@ void AudioPolicyManagerStub::RequestAudioFocusInternal(MessageParcel &data, Mess
 {
     AudioInterrupt audioInterrupt = {};
     int32_t clientId = data.ReadInt32();
-    audioInterrupt.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = RequestAudioFocus(clientId, audioInterrupt);
     reply.WriteInt32(result);
 }
@@ -444,7 +444,7 @@ void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, Mess
 {
     AudioInterrupt audioInterrupt = {};
     int32_t clientId = data.ReadInt32();
-    audioInterrupt.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = AbandonAudioFocus(clientId, audioInterrupt);
     reply.WriteInt32(result);
 }
@@ -463,7 +463,7 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &data, 
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
     int32_t zoneID = data.ReadInt32();
     int32_t ret = GetSessionInfoInFocus(audioInterrupt, zoneID);
-    audioInterrupt.Marshalling(reply);
+    AudioInterrupt::Marshalling(reply, audioInterrupt);
     reply.WriteInt32(ret);
 }
 
