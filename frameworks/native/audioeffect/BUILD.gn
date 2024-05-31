@@ -41,6 +41,10 @@ config("audio_effect_config") {
   }
 }
 
+config("audio_effect_integration_config") {
+  include_dirs = [ "../../../interfaces/inner_api/native/audiocommon/include" ]
+}
+
 ohos_shared_library("audio_effect") {
   sanitize = {
     cfi = true
@@ -85,6 +89,20 @@ ohos_shared_library("audio_effect") {
   }
 
   version_script = "../../../audio_framework.versionscript"
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_static_library("audio_effect_integration") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+
+  public_configs = [ ":audio_effect_integration_config" ]
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
