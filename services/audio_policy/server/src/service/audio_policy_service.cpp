@@ -6921,7 +6921,7 @@ void AudioPolicyService::NotifyAccountsChanged(const int &id)
 
 void AudioPolicyService::GetSafeVolumeDump(std::string &dumpString)
 {
-   audioPolicyManager_.SafeVolumeDump(dumpString);
+    audioPolicyManager_.SafeVolumeDump(dumpString);
 }
 
 void AudioPolicyService::DevicesInfoDump(std::string &dumpString)
