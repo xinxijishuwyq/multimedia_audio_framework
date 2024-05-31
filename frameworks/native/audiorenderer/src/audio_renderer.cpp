@@ -423,6 +423,7 @@ IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStr
     AUDIO_INFO_LOG("Preferred renderer flag: %{public}d", flag);
     if (flag == AUDIO_FLAG_MMAP && IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
+        isFastRenderer_ = true;
         return IAudioStream::FAST_STREAM;
     }
     if (flag == AUDIO_FLAG_VOIP_FAST) {

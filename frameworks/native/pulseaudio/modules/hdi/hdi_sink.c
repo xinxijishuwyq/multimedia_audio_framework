@@ -1124,6 +1124,11 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
+    const char *streamType = safeProplistGets(sinkIn->proplist, "stream.type", "NULL");
+    if (pa_safe_streq(streamType, "ultrasonic")) {
+        return;
+    }
+
     const char *sinkFadeoutPause = pa_proplist_gets(sinkIn->proplist, "fadeoutPause");
     if (pa_safe_streq(sinkFadeoutPause, "2") && (sinkIn->thread_info.state == PA_SINK_INPUT_RUNNING)) {
         silenceData(infoIn);
@@ -1203,12 +1208,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
                 pa_sink_input_handle_ohos_underrun(sinkIn);
-                pa_memblock_unref(infoIn->chunk.memblock);
-                continue;
+            } else {
+                pa_atomic_store(&sinkIn->isFirstReaded, 1);
             }
             AUTO_CTRACE("hdi_sink::PrimaryCluster::is_not_silence");
-
-            pa_atomic_store(&sinkIn->isFirstReaded, 1);
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
@@ -1299,17 +1302,14 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
-                pa_memblock_unref(infoIn->chunk.memblock);
-                continue;
+            } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
+                PrepareMultiChannelFading(sinkIn, infoIn, si);
             }
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
             pa_assert(infoIn->chunk.memblock);
             pa_assert(infoIn->chunk.length > 0);
 
-            if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
-                PrepareMultiChannelFading(sinkIn, infoIn, si);
-            }
             infoIn++;
             n++;
             maxInfo--;
@@ -1513,7 +1513,7 @@ static void PrepareSpatializationFading(int8_t *fadingState, int8_t *fadingCount
         EffectChainManagerFlush();
     }
     // no need to fade when fading out is done
-    if (*fadingState > 1 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
+    if (*fadingState > 0 && *fadingCount == SPATIALIZATION_FADING_FRAMECOUNT) {
         *fadingState = 0;
     }
 }
@@ -1702,22 +1702,6 @@ static void PrimaryEffectProcess(struct Userdata *u, pa_memchunk *chunkIn, char 
     u->bufferAttr->numChanIn = DEFAULT_IN_CHANNEL_NUM;
 }
 
-static void CheckMemsets(struct Userdata *u)
-{
-    size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
-    size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
-    if (u->bufferAttr->tempBufIn == NULL || u->bufferAttr->tempBufOut == NULL ||
-        u->processSize < memsetInLen || u->processSize < memsetOutLen) {
-        AUDIO_ERR_LOG("SinkRenderPrimaryProcess fail");
-    } else {
-        int32_t retBufIn = memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen);
-        int32_t retBufOut = memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen);
-        if (retBufIn != 0 || retBufOut != 0) {
-            AUDIO_ERR_LOG("SinkRenderPrimaryProcess memset fail");
-        }
-    }
-}
-
 static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *chunkIn)
 {
     if (GetInnerCapturerState()) {
@@ -1729,7 +1713,14 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    CheckMemsets(u);
+    size_t memsetInLen = sizeof(float) * DEFAULT_FRAMELEN * IN_CHANNEL_NUM_MAX;
+    size_t memsetOutLen = sizeof(float) * DEFAULT_FRAMELEN * OUT_CHANNEL_NUM_MAX;
+    if (memset_s(u->bufferAttr->tempBufIn, u->processSize, 0, memsetInLen) != EOK) {
+        AUDIO_WARNING_LOG("SinkRenderBufIn memset_s failed");
+    }
+    if (memset_s(u->bufferAttr->tempBufOut, u->processSize, 0, memsetOutLen) != EOK) {
+        AUDIO_WARNING_LOG("SinkRenderBufOut memset_s failed");
+    }
     int32_t bitSize = pa_sample_size_of_format(u->format);
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     time_t currentTime = time(NULL);
@@ -1750,11 +1741,8 @@ static void SinkRenderPrimaryProcess(pa_sink *si, size_t length, pa_memchunk *ch
         void *src = pa_memblock_acquire_chunk(chunkIn);
         int32_t frameLen = bitSize > 0 ? ((int32_t)tmpLength / bitSize) : 0;
 
-        if (u->bufferAttr->tempBufIn != NULL) {
-            ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
-            memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn,
-                frameLen * sizeof(float));
-        }
+        ConvertToFloat(u->format, frameLen, src, u->bufferAttr->tempBufIn);
+        memcpy_s(u->bufferAttr->bufIn, frameLen * sizeof(float), u->bufferAttr->tempBufIn, frameLen * sizeof(float));
         u->bufferAttr->numChanIn = (int32_t)processChannels;
         u->bufferAttr->frameLen = frameLen / u->bufferAttr->numChanIn;
         PrimaryEffectProcess(u, chunkIn, sinkSceneType);

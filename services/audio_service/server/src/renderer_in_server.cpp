@@ -118,12 +118,14 @@ int32_t RendererInServer::InitBufferStatus()
 
 int32_t RendererInServer::Init()
 {
-    if (IsHightResolution()) {
+    if (IsHighResolution()) {
+        Trace trace("current stream marked as high resolution");
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
     }
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
     if (ret != SUCCESS && managerType_ == DIRECT_PLAYBACK) {
+        Trace trace("high resolution create failed use normal replace");
         managerType_ = PLAYBACK;
         ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
         AUDIO_DEBUG_LOG("high resolution create failed use normal replace");
@@ -279,8 +281,10 @@ int32_t RendererInServer::WriteData()
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
 
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
-        DoFadingOut(bufferDesc);
-        CheckFadingOutDone(fadeoutFlag_, bufferDesc);
+        if (processConfig_.streamType != STREAM_ULTRASONIC) {
+            DoFadingOut(bufferDesc);
+            CheckFadingOutDone(fadeoutFlag_, bufferDesc);
+        }
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         if (isInnerCapEnabled_) {
@@ -743,7 +747,7 @@ int32_t RendererInServer::GetStreamManagerType() const noexcept
     return managerType_;
 }
 
-bool RendererInServer::IsHightResolution() const noexcept
+bool RendererInServer::IsHighResolution() const noexcept
 {
     if ((processConfig_.deviceType == DEVICE_TYPE_WIRED_HEADSET ||
         processConfig_.deviceType == DEVICE_TYPE_USB_HEADSET) &&
@@ -753,6 +757,7 @@ bool RendererInServer::IsHightResolution() const noexcept
             return true;
         }
     }
+    Trace trace("RendererInServer::IsHighResolution false");
     return false;
 }
 } // namespace AudioStandard

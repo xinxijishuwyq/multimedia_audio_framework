@@ -90,7 +90,7 @@ public:
     const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
-    bool IsHightResolution() const noexcept;
+    bool IsHighResolution() const noexcept;
     void DoFadingOut(BufferDesc& bufferDesc);
     void CheckFadingOutDone(int32_t fadeFlag, BufferDesc& bufferDesc);
     std::mutex statusLock_;

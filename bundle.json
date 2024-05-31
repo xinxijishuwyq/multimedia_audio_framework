@@ -156,6 +156,16 @@
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/toneplayer/include"
               }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/frameworks/native/audioeffect:audio_effect_integration",
+              "header": {
+                "header_files": [
+                  "./audiocommon/include/audio_effect.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
+              }
             }
           ],
           "test": [
