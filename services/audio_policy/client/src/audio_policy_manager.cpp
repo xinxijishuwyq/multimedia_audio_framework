@@ -315,6 +315,17 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevices(DeviceFl
     return gsp->GetDevices(deviceFlag);
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevicesInner(DeviceFlag deviceFlag)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
+        std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+        return deviceInfo;
+    }
+    return gsp->GetDevicesInner(deviceFlag);
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {

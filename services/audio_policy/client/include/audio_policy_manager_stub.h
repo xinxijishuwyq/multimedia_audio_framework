@@ -144,6 +144,7 @@ private:
     void UnsetAudioDeviceRefinerCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply);
     void SetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetConcurrencyCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void ActivateAudioConcurrencyInternal(MessageParcel &data, MessageParcel &reply);
@@ -265,6 +266,7 @@ private:
         &AudioPolicyManagerStub::TriggerFetchDeviceInternal,
         &AudioPolicyManagerStub::MoveToNewTypeInternal,
         &AudioPolicyManagerStub::DisableSafeMediaVolumeInternal,
+        &AudioPolicyManagerStub::GetDevicesInnerInternal,
         &AudioPolicyManagerStub::SetConcurrencyCallbackInternal,
         &AudioPolicyManagerStub::UnsetConcurrencyCallbackInternal,
         &AudioPolicyManagerStub::ActivateAudioConcurrencyInternal,
