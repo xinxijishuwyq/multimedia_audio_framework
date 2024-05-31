@@ -83,7 +83,6 @@ private:
     void CheckRecordingStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredOutputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
     void GetPreferredInputDeviceDescriptorsInternal(MessageParcel &data, MessageParcel &reply);
-    void SetCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply);
     void GetAudioFocusInfoListInternal(MessageParcel &data, MessageParcel &reply);
     void SetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemSoundUriInternal(MessageParcel &data, MessageParcel &reply);
@@ -204,7 +203,6 @@ private:
         &AudioPolicyManagerStub::CheckRecordingStateChangeInternal,
         &AudioPolicyManagerStub::GetPreferredOutputDeviceDescriptorsInternal,
         &AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal,
-        &AudioPolicyManagerStub::SetCallbacksEnableInternal,
         &AudioPolicyManagerStub::GetAudioFocusInfoListInternal,
         &AudioPolicyManagerStub::SetSystemSoundUriInternal,
         &AudioPolicyManagerStub::GetSystemSoundUriInternal,
