@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,6 +34,8 @@ static const std::string REMOTE_CLASS = "remote";
 static const std::string INVALID_CLASS = "invalid";
 static const std::string BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const std::string PRIMARY_SPEAKER = "Speaker";
+static const std::string OFFLOAD_PRIMARY_SPEAKER = "Offload_Speaker";
+static const std::string MCH_PRIMARY_SPEAKER = "MCH_Speaker";
 static const std::string USB_SPEAKER = "Usb_arm_speaker";
 static const std::string DP_SINK = "DP_speaker";
 static const std::string USB_MIC = "Usb_arm_mic";

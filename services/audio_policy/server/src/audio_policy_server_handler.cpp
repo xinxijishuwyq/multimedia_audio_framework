@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -453,6 +453,17 @@ bool AudioPolicyServerHandler::SendKvDataUpdate(const bool &isFirstBoot)
     return ret;
 }
 
+
+bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
+{
+    auto eventContextObj = std::make_shared<int32_t>(pipeType);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send PIPE_STREAM_CLEAN_EVENT event failed");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -800,6 +811,14 @@ void AudioPolicyServerHandler::HandleUpdateKvDataEvent(const AppExecFwk::InnerEv
     AudioPolicyManagerFactory::GetAudioPolicyManager().HandleKvData(isFristBoot);
 }
 
+void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<int32_t> eventContextObj = event->GetSharedObject<int32_t>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioPipeType pipeType = static_cast<AudioPipeType>(*eventContextObj);
+    AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
+}
+
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -842,6 +861,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::DATABASE_UPDATE:
             HandleUpdateKvDataEvent(event);
+            break;
+        case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
+            HandlePipeStreamCleanEvent(event);
             break;
         default:
             break;

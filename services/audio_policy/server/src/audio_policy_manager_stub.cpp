@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1133,6 +1133,14 @@ void AudioPolicyManagerStub::UnsetAudioDeviceRefinerCallbackInternal(MessageParc
 void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t result = TriggerFetchDevice();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    AudioPipeType pipeType = static_cast<AudioPipeType>(data.ReadInt32());
+    int32_t result = MoveToNewPipe(sessionId, pipeType);
     reply.WriteInt32(result);
 }
 
