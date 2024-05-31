@@ -2407,7 +2407,7 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = tm.tv_sec * AUDIO_S_TO_NS + tm.tv_nsec;
+    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_S_TO_NS + static_cast<uint64_t>(tm.tv_nsec);
 
     return SUCCESS;
 }
