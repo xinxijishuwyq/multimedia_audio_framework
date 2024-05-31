@@ -758,11 +758,10 @@ int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t c
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioRendererEventListener");
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback();
+        if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
+            SetCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
+        }
         isAudioRendererEventListenerRegistered = false;
-    }
-
-    if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
-        SetCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
     }
     return SUCCESS;
 }
