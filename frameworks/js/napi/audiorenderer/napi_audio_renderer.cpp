@@ -98,6 +98,8 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_GETTER("state", GetState),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
+        DECLARE_NAPI_FUNCTION("setSilentModeAndMixWithOthers", SetSilentModeAndMixWithOthers),
+        DECLARE_NAPI_FUNCTION("getSilentModeAndMixWithOthers", GetSilentModeAndMixWithOthers),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(),
@@ -1521,6 +1523,43 @@ napi_value NapiAudioRenderer::Off(napi_env env, napi_callback_info info)
     AUDIO_DEBUG_LOG("AudioRendererNapi: Off callbackName: %{public}s", callbackName.c_str());
 
     return UnregisterCallback(env, jsThis, argc, argv, callbackName);
+}
+
+napi_value NapiAudioRenderer::SetSilentModeAndMixWithOthers(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "mandatory parameters are left unspecified"), "argcCount invalid");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_boolean, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of on must be bool"), "valueType param0 invalid");
+
+    bool on;
+    NapiParamUtils::GetValueBoolean(env, on, argv[PARAM0]);
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+    napiAudioRenderer->audioRenderer_->SetSilentModeAndMixWithOthers(on);
+    return result;
+}
+
+napi_value NapiAudioRenderer::GetSilentModeAndMixWithOthers(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+
+    bool on = napiAudioRenderer->audioRenderer_->GetSilentModeAndMixWithOthers();
+    napi_create_uint32(env, on, &result);
+    return result;
 }
 
 napi_value NapiAudioRenderer::RegisterCallback(napi_env env, napi_value jsThis,

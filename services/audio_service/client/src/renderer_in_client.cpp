@@ -714,14 +714,22 @@ int32_t RendererInClientInner::SetVolume(float volume)
         volumeRamp_.Terminate();
     }
     clientOldVolume_ = clientVolume_;
-    clientVolume_ = volume;
+    if (silentModeAndMixWithOthers_) {
+        cacheVolume_ = volume;
+    } else {
+        clientVolume_ = volume;
+    }
     return SUCCESS;
 }
 
 float RendererInClientInner::GetVolume()
 {
     Trace trace("RendererInClientInner::GetVolume:" + std::to_string(clientVolume_));
-    return clientVolume_;
+    if (silentModeAndMixWithOthers_) {
+        return cacheVolume_;
+    } else {
+        return clientVolume_;
+    }
 }
 
 int32_t RendererInClientInner::SetDuckVolume(float volume)
@@ -2130,6 +2138,23 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
         return;
     }
     gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
+}
+
+void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
+{
+    if (!silentModeAndMixWithOthers_ && on) {
+        cacheVolume_ = clientVolume_;
+        clientVolume_ = 0.0;
+    } else if (silentModeAndMixWithOthers_ && !on) {
+        clientVolume_ = cacheVolume_;
+    }
+    silentModeAndMixWithOthers_ = on;
+    return;
+}
+
+bool RendererInClientInner::GetSilentModeAndMixWithOthers()
+{
+    return silentModeAndMixWithOthers_;
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()

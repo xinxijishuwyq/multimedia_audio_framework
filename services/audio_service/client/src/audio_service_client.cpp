@@ -2679,8 +2679,13 @@ int32_t AudioServiceClient::SetStreamVolume(float volume)
     CHECK_AND_RETURN_RET_LOG((volume >= MIN_STREAM_VOLUME_LEVEL) && (volume <= MAX_STREAM_VOLUME_LEVEL),
         AUDIO_CLIENT_INVALID_PARAMS_ERR, "Invalid Volume Input!");
 
+    int32_t ret = AUDIO_CLIENT_SUCCESS;
     pa_threaded_mainloop_lock(mainLoop);
-    int32_t ret = SetStreamVolumeInML(volume);
+    if (silentModeAndMixWithOthers_) {
+        cacheVolume_ = volume;
+    } else {
+        ret = SetStreamVolumeInML(volume);
+    }
     pa_threaded_mainloop_unlock(mainLoop);
 
     return ret;
@@ -2735,7 +2740,11 @@ int32_t AudioServiceClient::SetStreamVolumeInML(float volume)
 
 float AudioServiceClient::GetStreamVolume()
 {
-    return volumeFactor_;
+    if (silentModeAndMixWithOthers_) {
+        return cacheVolume_;
+    } else {
+        return volumeFactor_;
+    }
 }
 
 int32_t AudioServiceClient::SetStreamDuckVolume(float volume)
@@ -3209,6 +3218,22 @@ int32_t AudioServiceClient::SetStreamLowPowerVolume(float powerVolumeFactor)
 float AudioServiceClient::GetStreamLowPowerVolume()
 {
     return powerVolumeFactor_;
+}
+
+void AudioServiceClient::SetSilentModeAndMixWithOthers(bool on)
+{
+    if (on && !silentModeAndMixWithOthers_) {
+        cacheVolume_ = volumeFactor_;
+        SetStreamVolumeInML(0.0);
+    } else if (!on && silentModeAndMixWithOthers_) {
+        SetStreamVolumeInML(cacheVolume_);
+    }
+    silentModeAndMixWithOthers_ = on;
+}
+
+bool AudioServiceClient::GetSilentModeAndMixWithOthers()
+{
+    return silentModeAndMixWithOthers_;
 }
 
 float AudioServiceClient::GetSingleStreamVol()

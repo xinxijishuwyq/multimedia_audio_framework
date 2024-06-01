@@ -202,6 +202,9 @@ public:
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
 
+    void SetSilentModeAndMixWithOthers(bool on) override;
+    bool GetSilentModeAndMixWithOthers() override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -325,6 +328,8 @@ private:
     float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;
     float clientOldVolume_ = 1.0;
+    float cacheVolume_ = 1.0;
+    bool silentModeAndMixWithOthers_ = false;
 
     uint64_t clientWrittenBytes_ = 0;
     uint32_t underrunCount_ = 0;

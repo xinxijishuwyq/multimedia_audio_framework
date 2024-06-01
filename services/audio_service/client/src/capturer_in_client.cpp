@@ -197,6 +197,10 @@ public:
 
     IAudioStream::StreamClass GetStreamClass() override;
 
+    void SetSilentModeAndMixWithOthers(bool on) override;
+
+    bool GetSilentModeAndMixWithOthers() override;
+
     static void AudioServerDied(pid_t pid);
 
     void OnHandle(uint32_t code, int64_t data) override;
@@ -1869,6 +1873,18 @@ bool CapturerInClientInner::GetHighResolutionEnabled()
 IAudioStream::StreamClass CapturerInClientInner::GetStreamClass()
 {
     return PA_STREAM;
+}
+
+void CapturerInClientInner::SetSilentModeAndMixWithOthers(bool on)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return;
+}
+
+bool CapturerInClientInner::GetSilentModeAndMixWithOthers()
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return false;
 }
 
 int32_t CapturerInClientInner::RegisterCapturerInClientPolicyServerDiedCb()
