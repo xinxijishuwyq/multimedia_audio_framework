@@ -197,6 +197,10 @@ public:
 
     IAudioStream::StreamClass GetStreamClass() override;
 
+    void SetSilentModeAndMixWithOthers(bool on) override;
+
+    bool GetSilentModeAndMixWithOthers() override;
+
     static void AudioServerDied(pid_t pid);
 
     void OnHandle(uint32_t code, int64_t data) override;
@@ -1672,7 +1676,7 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
 
     {
         std::lock_guard<std::mutex> lock(periodReachMutex_);
-        capturerPeriodRead_ += (bytesRead / sizePerFrameInByte_);
+        capturerPeriodRead_ += static_cast<int64_t>(bytesRead / sizePerFrameInByte_);
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(capturerPeriodRead_), static_cast<int64_t>(totalBytesRead_));
         if (capturerPeriodRead_ >= capturerPeriodSize_ && capturerPeriodSize_ > 0) {
@@ -1869,6 +1873,18 @@ bool CapturerInClientInner::GetHighResolutionEnabled()
 IAudioStream::StreamClass CapturerInClientInner::GetStreamClass()
 {
     return PA_STREAM;
+}
+
+void CapturerInClientInner::SetSilentModeAndMixWithOthers(bool on)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return;
+}
+
+bool CapturerInClientInner::GetSilentModeAndMixWithOthers()
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return false;
 }
 
 int32_t CapturerInClientInner::RegisterCapturerInClientPolicyServerDiedCb()

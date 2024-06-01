@@ -85,6 +85,8 @@ public:
     // for inner-cap
     void SetInnerCapState(bool isInnerCapped) override;
     bool GetInnerCapState() override;
+
+    AppInfo GetAppInfo() override final;
 public:
     const AudioProcessConfig processConfig_;
 

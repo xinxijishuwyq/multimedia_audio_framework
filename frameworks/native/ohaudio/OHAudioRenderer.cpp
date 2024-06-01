@@ -318,6 +318,24 @@ OH_AudioStream_Result OH_AudioRenderer_GetUnderflowCount(OH_AudioRenderer* rende
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(
+    OH_AudioRenderer* renderer, bool on)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    audioRenderer->SetSilentModeAndMixWithOthers(on);
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(
+    OH_AudioRenderer* renderer, bool* on)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    *on = audioRenderer->GetSilentModeAndMixWithOthers();
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -723,6 +741,18 @@ void OHAudioRenderer::SetInterruptMode(InterruptMode mode)
 {
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetInterruptMode(mode);
+}
+
+void OHAudioRenderer::SetSilentModeAndMixWithOthers(bool on)
+{
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
+    audioRenderer_->SetSilentModeAndMixWithOthers(on);
+}
+
+bool OHAudioRenderer::GetSilentModeAndMixWithOthers()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
+    return audioRenderer_->GetSilentModeAndMixWithOthers();
 }
 
 void OHAudioRenderer::SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType)

@@ -36,8 +36,8 @@ namespace {
     bool g_readEnd = false;
 }
 
-const int32_t g_samplingRate = 48000; // 48000:g_samplingRate value
-const int32_t g_channelCount = 2; // 2:g_channelCount value
+const int32_t SAMPLING_RATE = 48000; // 48000:SAMPLING_RATE value
+const int32_t CHANNEL_COUNT = 2; // 2:CHANNEL_COUNT value
 const int32_t g_latencyMode = 0;
 const int32_t g_sampleFormat = 1;
 const int32_t g_frameSize = 240; // 240:g_frameSize value
@@ -112,6 +112,23 @@ static int32_t AudioCapturerOnReadData(
     return 0;
 }
 
+static OH_AudioData_Callback_Result OnWriteDataCallbackWithValidData(OH_AudioRenderer* renderer,
+    void* userData,
+    void* buffer,
+    int32_t bufferLen)
+{
+    return AUDIO_DATA_CALLBACK_RESULT_VALID;
+}
+
+static OH_AudioData_Callback_Result OnWriteDataCallbackWithInvalidData(OH_AudioRenderer* renderer,
+    void* userData,
+    void* buffer,
+    int32_t bufferLen)
+{
+    return AUDIO_DATA_CALLBACK_RESULT_INVALID;
+}
+
+
 void OHAudioStreamBuilderUnitTest::SetUpTestCase(void) { }
 
 void OHAudioStreamBuilderUnitTest::TearDownTestCase(void) { }
@@ -121,10 +138,10 @@ void OHAudioStreamBuilderUnitTest::SetUp(void) { }
 void OHAudioStreamBuilderUnitTest::TearDown(void) { }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_Create API via legal state, AUDIOSTREAM_TYPE_RENDERER.
-* @tc.number: OH_AudioStreamBuilder_Create_001
-* @tc.desc  : Test OH_AudioStreamBuilder_Create interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_Create API via legal state, AUDIOSTREAM_TYPE_RENDERER.
+ * @tc.number: OH_AudioStreamBuilder_Create_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_Create interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Create_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = nullptr;
@@ -137,10 +154,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Create_001, TestSize.
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_Create API via legal state, AUDIOSTREAM_TYPE_CAPTURER.
-* @tc.number: OH_AudioStreamBuilder_Create_001
-* @tc.desc  : Test OH_AudioStreamBuilder_Create interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_Create API via legal state, AUDIOSTREAM_TYPE_CAPTURER.
+ * @tc.number: OH_AudioStreamBuilder_Create_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_Create interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Create_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -153,10 +170,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Create_002, TestSize.
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_Destroy API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_Destroy_001
-* @tc.desc  : Test OH_AudioStreamBuilder_Destroy interface. Returns error code, if builder pointer is nullptr.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_Destroy API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_Destroy_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_Destroy interface. Returns error code, if builder pointer is nullptr.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Destroy_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = nullptr;
@@ -166,10 +183,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_Destroy_001, TestSize
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 48000.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 48000.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -186,10 +203,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_001, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 44100.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_002
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 44100.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_002
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -206,10 +223,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_002, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 88200.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_003
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 88200.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_003
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_003, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -226,10 +243,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_003, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 176400.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_018
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 176400.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_018
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_018, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -246,10 +263,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_018, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 192000.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_019
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via legal state, samplingRate is 192000.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_019
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_019, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -266,10 +283,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_019, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_020
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns error code, if samplingRate is -1.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_020
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSamplingRate interface. Returns error code, if samplingRate is -1.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_020, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -286,10 +303,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_020, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via legal state, channelCount is 1.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_004
-* @tc.desc  : Test OH_AudioStreamBuilder_SetChannelCount interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via legal state, channelCount is 1.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_004
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetChannelCount interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_004, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -306,10 +323,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_004, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via legal state, channelCount is 16.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_005
-* @tc.desc  : Test OH_AudioStreamBuilder_SetChannelCount interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via legal state, channelCount is 16.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_005
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetChannelCount interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_005, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -326,10 +343,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_005, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_006
-* @tc.desc  : Test OH_AudioStreamBuilder_SetChannelCount interface. Returns error code, if channelCount is 8.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetChannelCount API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_006
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetChannelCount interface. Returns error code, if channelCount is 8.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_006, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -346,10 +363,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_006, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetEncodingType API via legal state, AUDIOSTREAM_ENCODING_TYPE_RAW.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_007
-* @tc.desc  : Test OH_AudioStreamBuilder_SetEncodingType interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetEncodingType API via legal state, AUDIOSTREAM_ENCODING_TYPE_RAW.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_007
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetEncodingType interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_007, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -366,11 +383,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_007, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_008
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if stream type is
-*             AUDIOSTREAM_TYPE_CAPTURER.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_008
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if stream type is
+ *             AUDIOSTREAM_TYPE_CAPTURER.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_008, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -387,10 +404,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_008, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_009
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_009
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_009, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -407,11 +424,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_009, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_010
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if builder type
-*             is AUDIOSTREAM_TYPE_CAPTURER.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_010
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if builder type
+ *             is AUDIOSTREAM_TYPE_CAPTURER.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_010, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -428,10 +445,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_010, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererCallback API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_011
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererCallback interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererCallback API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_011
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererCallback interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_011, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -449,11 +466,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_011, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererCallback API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_012
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererCallback interface. Returns error code, builder type
-*             is AUDIOSTREAM_TYPE_CAPTURER.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererCallback API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_012
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererCallback interface. Returns error code, builder type
+ *             is AUDIOSTREAM_TYPE_CAPTURER.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_012, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -471,10 +488,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_012, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
-* @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via illegal strean type.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via illegal stream type.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -490,10 +507,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_00
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
-* @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_002
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via public privacy.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_002
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via public privacy.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -509,10 +526,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_00
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
-* @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_003
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via private privacy.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_003
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via private privacy.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_003, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -528,11 +545,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_00
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via legal state,
-*             sourceType is AUDIOSTREAM_SOURCE_TYPE_MIC.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_013
-* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via legal state,
+ *             sourceType is AUDIOSTREAM_SOURCE_TYPE_MIC.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_013
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_013, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -549,11 +566,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_013, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via legal state,
-*             sourceType is AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_014
-* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via legal state,
+ *             sourceType is AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_014
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_014, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -570,11 +587,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_014, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_015
-* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns error code, if the builder type is
-*             AUDIOSTREAM_TYPE_RENDERER.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_015
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns error code, if the builder type is
+ *             AUDIOSTREAM_TYPE_RENDERER.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_015, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -591,10 +608,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_015, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerCallback API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_016
-* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerCallback interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerCallback API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_016
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerCallback interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_016, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -612,11 +629,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_016, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerCallback API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetParameter_017
-* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerCallback interface. Returns error code, if the builder type is
-*             AUDIOSTREAM_TYPE_RENDERER.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerCallback API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetParameter_017
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerCallback interface. Returns error code, if the builder type is
+ *             AUDIOSTREAM_TYPE_RENDERER.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_017, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -634,10 +651,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetParameter_017, Tes
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_U8.
-* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_U8.
+ * @tc.number: OH_AudioStreamBuilder_SetSampleFormat_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -654,10 +671,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_001, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S16LE.
-* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_002
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S16LE.
+ * @tc.number: OH_AudioStreamBuilder_SetSampleFormat_002
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -674,10 +691,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_002, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S24LE.
-* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_003
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S24LE.
+ * @tc.number: OH_AudioStreamBuilder_SetSampleFormat_003
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_003, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -694,10 +711,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_003, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S32LE.
-* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_004
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_S32LE.
+ * @tc.number: OH_AudioStreamBuilder_SetSampleFormat_004
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_004, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -714,10 +731,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_004, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_F32LE.
-* @tc.number: OH_AudioStreamBuilder_SetSampleFormat_005
-* @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSampleFormat API via legal state. Test value is AUDIOSTREAM_SAMPLE_F32LE.
+ * @tc.number: OH_AudioStreamBuilder_SetSampleFormat_005
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetSampleFormat interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_005, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -734,10 +751,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSampleFormat_005, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetLatencyMode API via legal state, AUDIOSTREAM_LATENCY_MODE_NORMAL.
-* @tc.number: OH_AudioStreamBuilder_SetLatencyMode_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetLatencyMode interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetLatencyMode API via legal state, AUDIOSTREAM_LATENCY_MODE_NORMAL.
+ * @tc.number: OH_AudioStreamBuilder_SetLatencyMode_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetLatencyMode interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetLatencyMode_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -754,12 +771,12 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetLatencyMode_001, T
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via illegal state,
-*             sourceType is AUDIOSTREAM_SOURCE_TYPE_INVALID.
-* @tc.number: OH_AudioStreamBuilder_SetCapturerInfo_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns error code, if source type is
-*             AUDIOSTREAM_SOURCE_TYPE_INVALID.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via illegal state,
+ *             sourceType is AUDIOSTREAM_SOURCE_TYPE_INVALID.
+ * @tc.number: OH_AudioStreamBuilder_SetCapturerInfo_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns error code, if source type is
+ *             AUDIOSTREAM_SOURCE_TYPE_INVALID.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -776,11 +793,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_001, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via legal state,
-*             sourceType is AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION.
-* @tc.number: OH_AudioStreamBuilder_SetCapturerInfo_002
-* @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetCapturerInfo API via legal state,
+ *             sourceType is AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION.
+ * @tc.number: OH_AudioStreamBuilder_SetCapturerInfo_002
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetCapturerInfo interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -797,11 +814,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetCapturerInfo_002, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetRendererInfo_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if usage type is
-*             AUDIOSTREAM_USAGE_UNKNOWN.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererInfo_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if usage type is
+ *             AUDIOSTREAM_USAGE_UNKNOWN.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -818,11 +835,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_001, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetRendererInfo_002
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if content type is
-*             AUDIOSTREAM_CONTENT_TYPE_UNKNOWN.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererInfo_002
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns error code, if content type is
+ *             AUDIOSTREAM_CONTENT_TYPE_UNKNOWN.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -839,10 +856,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_002, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetRendererInfo_003
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInfo API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererInfo_003
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInfo interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder;
@@ -859,10 +876,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInfo_003, 
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetChannelLayout API via legal state, AUDIOSTREAM_LATENCY_MODE_NORMAL.
-* @tc.number: OH_AudioStreamBuilder_SetChannelLayout_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetChannelLayout interface. Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetChannelLayout API via legal state, AUDIOSTREAM_LATENCY_MODE_NORMAL.
+ * @tc.number: OH_AudioStreamBuilder_SetChannelLayout_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetChannelLayout interface. Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetChannelLayout_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder *builder;
@@ -879,11 +896,11 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetChannelLayout_001,
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback interface.
-              Returns true if result is successful.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback interface.
+ *             Returns true if result is successful.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetWriteDataWithMetadataCallback_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder *builder;
@@ -900,10 +917,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetWriteDataWithMetad
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_001
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with nullptr builder.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with nullptr builder.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = nullptr;
@@ -914,10 +931,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_001,
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_002
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with share mode.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_002
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with share mode.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_002, TestSize.Level0)
 {
     // 1. create builder1 builder2
@@ -927,8 +944,8 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_002,
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     // 2. set builder1 builder2 params
-    OH_AudioStreamBuilder_SetSamplingRate(builder1, g_samplingRate);
-    OH_AudioStreamBuilder_SetChannelCount(builder1, g_channelCount);
+    OH_AudioStreamBuilder_SetSamplingRate(builder1, SAMPLING_RATE);
+    OH_AudioStreamBuilder_SetChannelCount(builder1, CHANNEL_COUNT);
     OH_AudioStreamBuilder_SetLatencyMode(builder1, (OH_AudioStream_LatencyMode)g_latencyMode);
     OH_AudioStreamBuilder_SetSampleFormat(builder1, (OH_AudioStream_SampleFormat)g_sampleFormat);
     OH_AudioRenderer_Callbacks callbacks;
@@ -970,10 +987,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_002,
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_003
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_003
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_003, TestSize.Level0)
 {
     // 1. create builder
@@ -983,8 +1000,8 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_003,
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     // 2. set builder params
-    OH_AudioStreamBuilder_SetSamplingRate(builder1, g_samplingRate);
-    OH_AudioStreamBuilder_SetChannelCount(builder1, g_channelCount);
+    OH_AudioStreamBuilder_SetSamplingRate(builder1, SAMPLING_RATE);
+    OH_AudioStreamBuilder_SetChannelCount(builder1, CHANNEL_COUNT);
     OH_AudioStreamBuilder_SetLatencyMode(builder1, (OH_AudioStream_LatencyMode)g_latencyMode);
     OH_AudioStreamBuilder_SetSampleFormat(builder1, (OH_AudioStream_SampleFormat)g_sampleFormat);
 
@@ -1027,10 +1044,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_003,
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_004
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode and share mode.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_004
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode and share mode.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptMode_004, TestSize.Level0)
 {
     // 1. create builder1 builder2
@@ -1044,8 +1061,8 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptM
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     // 2. set builder1 builder2 params
-    OH_AudioStreamBuilder_SetSamplingRate(builder1, g_samplingRate);
-    OH_AudioStreamBuilder_SetChannelCount(builder1, g_channelCount);
+    OH_AudioStreamBuilder_SetSamplingRate(builder1, SAMPLING_RATE);
+    OH_AudioStreamBuilder_SetChannelCount(builder1, CHANNEL_COUNT);
     OH_AudioStreamBuilder_SetLatencyMode(builder1, (OH_AudioStream_LatencyMode)g_latencyMode);
     OH_AudioStreamBuilder_SetSampleFormat(builder1, (OH_AudioStream_SampleFormat)g_sampleFormat);
 
@@ -1055,8 +1072,8 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptM
     result = OH_AudioStreamBuilder_SetRendererCallback(builder1, callbacks, nullptr);
     result = OH_AudioStreamBuilder_SetFrameSizeInCallback(builder1, g_frameSize);
 
-    OH_AudioStreamBuilder_SetSamplingRate(builder2, g_samplingRate);
-    OH_AudioStreamBuilder_SetChannelCount(builder2, g_channelCount);
+    OH_AudioStreamBuilder_SetSamplingRate(builder2, SAMPLING_RATE);
+    OH_AudioStreamBuilder_SetChannelCount(builder2, CHANNEL_COUNT);
     OH_AudioStreamBuilder_SetLatencyMode(builder2, (OH_AudioStream_LatencyMode)g_latencyMode);
     OH_AudioStreamBuilder_SetSampleFormat(builder2, (OH_AudioStream_SampleFormat)g_sampleFormat);
     result = OH_AudioStreamBuilder_SetRendererCallback(builder2, callbacks, nullptr);
@@ -1097,10 +1114,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptM
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
-* @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_005
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode and share mode.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererInterruptMode_005
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with independent mode and share mode.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptMode_005, TestSize.Level0)
 {
     // 1. create builder1
@@ -1110,8 +1127,8 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptM
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     // 2. set builder1 params
-    OH_AudioStreamBuilder_SetSamplingRate(builder1, g_samplingRate);
-    OH_AudioStreamBuilder_SetChannelCount(builder1, g_channelCount);
+    OH_AudioStreamBuilder_SetSamplingRate(builder1, SAMPLING_RATE);
+    OH_AudioStreamBuilder_SetChannelCount(builder1, CHANNEL_COUNT);
     OH_AudioStreamBuilder_SetLatencyMode(builder1, (OH_AudioStream_LatencyMode)g_latencyMode);
     OH_AudioStreamBuilder_SetSampleFormat(builder1, (OH_AudioStream_SampleFormat)g_sampleFormat);
 
@@ -1159,10 +1176,10 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererInterruptM
 }
 
 /**
-* @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via illegal state.
-* @tc.number: OH_AudioStreamBuilder_SetInterruptMode_006
-* @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with invalid interrupt mode.
-*/
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererInterruptMode API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetInterruptMode_006
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererInterruptMode interface with invalid interrupt mode.
+ */
 HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_006, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = nullptr;
@@ -1172,6 +1189,90 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetInterruptMode_006,
     OH_AudioInterrupt_Mode mode = (OH_AudioInterrupt_Mode)(-2);
     result = OH_AudioStreamBuilder_SetRendererInterruptMode(builder, mode);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererWriteDataCallback_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback interface with VALID result.
+ *             Returns true if result is successful.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererWriteDataCallback_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCallbackWithValidData;
+    result = OH_AudioStreamBuilder_SetRendererWriteDataCallback(builder, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback API via legal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererWriteDataCallback_002
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback interface with INVALID result.
+ *             Returns true if result is successful.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererWriteDataCallback_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCallbackWithInvalidData;
+    result = OH_AudioStreamBuilder_SetRendererWriteDataCallback(builder, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererWriteDataCallback_003
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback interface with VALID result.
+ *             Returns error code, if stream type is AUDIOSTREAM_TYPE_CAPTURER
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererWriteDataCallback_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCallbackWithValidData;
+    result = OH_AudioStreamBuilder_SetRendererWriteDataCallback(builder, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback API via illegal state.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererWriteDataCallback_004
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallback interface with INVALID result.
+ *             Returns error code, if stream type is AUDIOSTREAM_TYPE_CAPTURER.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererWriteDataCallback_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer_OnWriteDataCallback callback = OnWriteDataCallbackWithInvalidData;
+    result = OH_AudioStreamBuilder_SetRendererWriteDataCallback(builder, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

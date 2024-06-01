@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -453,6 +453,17 @@ bool AudioPolicyServerHandler::SendKvDataUpdate(const bool &isFirstBoot)
     return ret;
 }
 
+
+bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
+{
+    auto eventContextObj = std::make_shared<int32_t>(pipeType);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send PIPE_STREAM_CLEAN_EVENT event failed");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -512,9 +523,7 @@ void AudioPolicyServerHandler::HandleRequestCateGoryEvent(const AppExecFwk::Inne
 
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        if (callbacksMap_.count(CALLBACK_FOCUS_INFO_CHANGE) > 0 && callbacksMap_[CALLBACK_FOCUS_INFO_CHANGE]) {
-            it->second->OnAudioFocusRequested(eventContextObj->audioInterrupt);
-        }
+        it->second->OnAudioFocusRequested(eventContextObj->audioInterrupt);
     }
 }
 
@@ -524,9 +533,7 @@ void AudioPolicyServerHandler::HandleAbandonCateGoryEvent(const AppExecFwk::Inne
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        if (callbacksMap_.count(CALLBACK_FOCUS_INFO_CHANGE) > 0 && callbacksMap_[CALLBACK_FOCUS_INFO_CHANGE]) {
-            it->second->OnAudioFocusAbandoned(eventContextObj->audioInterrupt);
-        }
+        it->second->OnAudioFocusAbandoned(eventContextObj->audioInterrupt);
     }
 }
 
@@ -537,9 +544,7 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
     AUDIO_INFO_LOG("HandleFocusInfoChangeEvent focusInfoList :%{public}zu", eventContextObj->focusInfoList.size());
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        if (callbacksMap_.count(CALLBACK_FOCUS_INFO_CHANGE) > 0 && callbacksMap_[CALLBACK_FOCUS_INFO_CHANGE]) {
-            it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
-        }
+        it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
     }
 }
 
@@ -661,9 +666,7 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        if (callbacksMap_.count(CALLBACK_RENDERER_STATE_CHANGE) > 0 && callbacksMap_[CALLBACK_RENDERER_STATE_CHANGE]) {
-            rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
-        }
+        rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
     }
 }
 
@@ -678,9 +681,7 @@ void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEv
             AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        if (callbacksMap_.count(CALLBACK_CAPTURER_STATE_CHANGE) > 0 && callbacksMap_[CALLBACK_CAPTURER_STATE_CHANGE]) {
-            capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
-        }
+        capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
     }
 }
 
@@ -810,6 +811,14 @@ void AudioPolicyServerHandler::HandleUpdateKvDataEvent(const AppExecFwk::InnerEv
     AudioPolicyManagerFactory::GetAudioPolicyManager().HandleKvData(isFristBoot);
 }
 
+void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<int32_t> eventContextObj = event->GetSharedObject<int32_t>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioPipeType pipeType = static_cast<AudioPipeType>(*eventContextObj);
+    AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
+}
+
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -852,6 +861,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::DATABASE_UPDATE:
             HandleUpdateKvDataEvent(event);
+            break;
+        case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
+            HandlePipeStreamCleanEvent(event);
             break;
         default:
             break;
@@ -908,20 +920,6 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
         default:
             break;
     }
-}
-
-int32_t AudioPolicyServerHandler::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
-{
-    if (callbackchange <= CALLBACK_UNKNOWN || callbackchange >= CALLBACK_MAX) {
-        AUDIO_ERR_LOG("Illegal parameter");
-        return AUDIO_ERR;
-    }
-
-    lock_guard<mutex> runnerlock(runnerMutex_);
-    callbacksMap_[callbackchange] = enable;
-    string str = (enable ? "true" : "false");
-    AUDIO_INFO_LOG("Set callbacks:%{public}d, enable:%{public}s", callbackchange, str.c_str());
-    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

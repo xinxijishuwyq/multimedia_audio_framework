@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -419,6 +419,10 @@ AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
 
 IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStreamParams audioStreamParams)
 {
+    if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
+        return IAudioStream::PA_STREAM;
+    }
+
     int32_t flag = AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_);
     AUDIO_INFO_LOG("Preferred renderer flag: %{public}d", flag);
     if (flag == AUDIO_FLAG_MMAP && IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
@@ -606,18 +610,21 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType) const
         return false;
     }
 
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
-
+    if (!audioStream_->GetSilentModeAndMixWithOthers()) {
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
+    }
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(audioInterrupt_.streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION, true);
 
     bool result = audioStream_->StartAudioStream(cmdType);
     if (!result) {
         AUDIO_ERR_LOG("Start audio stream failed");
-        ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-        if (ret != 0) {
-            AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+        if (!audioStream_->GetSilentModeAndMixWithOthers()) {
+            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+            if (ret != 0) {
+                AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+            }
         }
     }
 
@@ -992,7 +999,8 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
     audioRenderMode_ = renderMode;
 
     if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION && renderMode == RENDER_MODE_CALLBACK &&
-        AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_) == AUDIO_FLAG_VOIP_FAST) {
+        AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_) == AUDIO_FLAG_VOIP_FAST &&
+        rendererInfo_.originalFlag != AUDIO_FLAG_FORCED_NORMAL) {
         AUDIO_INFO_LOG("Switch to fast voip stream");
         uint32_t sessionId = 0;
         int32_t ret = audioStream_->GetAudioSessionID(sessionId);
@@ -1084,6 +1092,25 @@ void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
     audioInterrupt_.mode = mode;
 }
 
+void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
+{
+    if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
+        if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
+            int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+            CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed");
+        } else if (!audioStream_->GetSilentModeAndMixWithOthers() && on) {
+            int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+            CHECK_AND_RETURN_LOG(ret == 0, "DeactivateAudioInterrupt Failed");
+        }
+    }
+    audioStream_->SetSilentModeAndMixWithOthers(on);
+}
+
+bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
+{
+    return audioStream_->GetSilentModeAndMixWithOthers();
+}
+
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
 {
     AUDIO_INFO_LOG("parallelPlayFlag %{pubilc}d", parallelPlayFlag);
@@ -1113,6 +1140,11 @@ int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) cons
     if (!isOffloadAllowed_) {
         AUDIO_INFO_LOG("offload is not allowed");
         return ERR_NOT_SUPPORTED;
+    }
+    int32_t ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("move into offload pipe failed.");
+        return ERROR;
     }
     return audioStream_->SetOffloadMode(state, isAppBack);
 }
@@ -1398,6 +1430,10 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
             targetClass = IAudioStream::VOIP_STREAM;
             break;
+    }
+    if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+        targetClass = IAudioStream::PA_STREAM;
     }
 
     uint32_t newSessionId = 0;

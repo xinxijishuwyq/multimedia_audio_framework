@@ -121,6 +121,9 @@ public:
     float GetSpeed() override;
     bool IsFastRenderer() override;
 
+    void SetSilentModeAndMixWithOthers(bool on) override;
+    bool GetSilentModeAndMixWithOthers() override;
+
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;

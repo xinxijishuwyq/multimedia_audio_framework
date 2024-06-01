@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -439,6 +439,22 @@ int32_t AudioManagerProxy::IsWhispering()
         static_cast<uint32_t>(AudioServerInterfaceCode::IS_WHISPERING), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
+    return result;
+}
+
+bool AudioManagerProxy::GetEffectOffloadEnabled()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_OFFLOAD_ENABLED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "failed,error:%d", error);
+    bool result = reply.ReadBool();
     return result;
 }
 
