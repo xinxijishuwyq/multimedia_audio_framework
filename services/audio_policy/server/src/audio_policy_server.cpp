@@ -115,6 +115,9 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 
     powerStateCallbackRegister_ = false;
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
+    if (volumeApplyToAll_) {
+        audioPolicyService_.SetNormalVoipFlag(true);
+    }
 }
 
 void AudioPolicyServer::OnDump()

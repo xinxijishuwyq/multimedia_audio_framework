@@ -43,6 +43,10 @@ private:
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
     void PauseAsync();
 
+    AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
+    AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
+    HdiAdapterFormat GetDirectDeviceFormate(AudioSampleFormat format);
+
 private:
     bool isVoip_;
     bool isStart_;

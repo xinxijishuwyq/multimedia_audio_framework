@@ -129,8 +129,14 @@ int32_t RendererInServer::Init()
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
     }
+
+    if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
+        AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
+        managerType_ = VOIP_PLAYBACK;
+    }
+
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
-    if (ret != SUCCESS && managerType_ == DIRECT_PLAYBACK) {
+    if (ret != SUCCESS && (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK)) {
         Trace trace("high resolution create failed use normal replace");
         managerType_ = PLAYBACK;
         ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
