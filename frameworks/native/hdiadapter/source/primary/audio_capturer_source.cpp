@@ -1213,7 +1213,7 @@ int32_t AudioCapturerSourceInner::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUT
         return ERROR;
     }
 
-    return runningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
+    runningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
     runningLockManager_->UpdateAppsUidToPowerMgr();
 #endif
 
