@@ -1563,7 +1563,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
         }
         AUDIO_DEBUG_LOG("position = 0, return 0.0");
         return 0.0f;
-    } else if (position >= pointSize) {
+    } else if (position >= static_cast<int32_t>(pointSize)) {
         AUDIO_DEBUG_LOG("position > pointSize, return %{public}f",
             exp(volumePoints[pointSize - 1].dbValue * 0.115129f));
         return exp((volumePoints[pointSize - 1].dbValue / 100.0f) * 0.115129f);
