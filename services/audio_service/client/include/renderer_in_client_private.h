@@ -241,8 +241,6 @@ private:
 
     int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
-    void VolumeHandle(BufferDesc &desc);
-
     void ResetFramePosition();
 
     int32_t RegisterRendererInClientPolicyServerDiedCb();
@@ -327,7 +325,6 @@ private:
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;
-    float clientOldVolume_ = 1.0;
     float cacheVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
 

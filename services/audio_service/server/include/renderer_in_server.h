@@ -75,6 +75,7 @@ public:
     int32_t InitBufferStatus();
     int32_t UpdateWriteIndex();
     BufferDesc DequeueBuffer(size_t length);
+    void VolumeHandle(BufferDesc &desc);
     int32_t WriteData();
     void WriteEmptyData();
     int32_t DrainAudioBuffer();
@@ -123,6 +124,8 @@ private:
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
     size_t needForceWrite_ = 0;
     bool afterDrain = false;
+    float lowPowerVolume_ = 1.0f;
+    float oldAppliedVolume_ = 0.0f;
     std::mutex updateIndexLock_;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;

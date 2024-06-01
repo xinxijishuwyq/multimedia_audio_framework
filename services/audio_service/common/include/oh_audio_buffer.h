@@ -72,6 +72,9 @@ struct BasicBufferInfo {
 
     std::atomic<uint64_t> handlePos;
     std::atomic<int64_t> handleTime;
+
+    std::atomic<float> streamVolume;
+    std::atomic<float> duckFactor;
 };
 
 enum SpanStatus : uint32_t {
@@ -126,6 +129,12 @@ public:
     bool GetHandleInfo(uint64_t &frames, int64_t &nanoTime);
 
     void SetHandleInfo(uint64_t frames, int64_t nanoTime);
+
+    float GetStreamVolume();
+    bool SetStreamVolume(float streamVolume);
+
+    float GetDuckFactor();
+    bool SetDuckFactor(float duckFactor);
 
     int32_t GetAvailableDataFrames();
 

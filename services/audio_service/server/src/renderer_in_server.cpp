@@ -27,7 +27,7 @@
 #include "res_type.h"
 #include "res_sched_client.h"
 #endif
- 
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +44,7 @@ namespace {
     static const int32_t BYTE_LEN_FOR_24BIT = 3;
     static const int32_t BYTE_LEN_FOR_32BIT = 4;
     static constexpr int32_t ONE_MINUTE = 60;
+    const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     static const int32_t UINT8_SILENCE_VALUE = 128;
 }
 
@@ -442,6 +443,34 @@ void RendererInServer::ReportDataToResSched(bool isSilent)
     #endif
 }
 
+void RendererInServer::VolumeHandle(BufferDesc &desc)
+{
+    // volume process in client
+    if (audioServerBuffer_ == nullptr) {
+        AUDIO_WARNING_LOG("buffer in not inited");
+        return;
+    }
+    float applyVolume = audioServerBuffer_->GetStreamVolume();
+    float duckVolume_ = audioServerBuffer_->GetDuckFactor();
+    if (!IsVolumeSame(MAX_FLOAT_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= lowPowerVolume_;
+    }
+    if (!IsVolumeSame(MAX_FLOAT_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
+        applyVolume *= duckVolume_;
+    }
+    //in plan: put system volume here
+    if (!IsVolumeSame(MAX_FLOAT_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
+        Trace traceVol("RendererInServer::VolumeTools::Process " + std::to_string(applyVolume));
+        AudioChannel channel = processConfig_.streamInfo.channels;
+        // in plan: use oldAppliedVolume_ as start-volume for fade in.
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
+        int32_t volRet = VolumeTools::Process(desc, processConfig_.streamInfo.format, mapVols);
+        if (volRet != SUCCESS) {
+            AUDIO_WARNING_LOG("VolumeTools::Process error: %{public}d", volRet);
+        }
+    }
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -465,6 +494,7 @@ int32_t RendererInServer::WriteData()
     BufferDesc bufferDesc = {nullptr, 0, 0}; // will be changed in GetReadbuffer
 
     if (audioServerBuffer_->GetReadbuffer(currentReadFrame, bufferDesc) == SUCCESS) {
+        VolumeHandle(bufferDesc);
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
             DoFadingOut(bufferDesc);
             CheckFadingOutDone(fadeoutFlag_, bufferDesc);
@@ -488,8 +518,6 @@ int32_t RendererInServer::WriteData()
             fadeoutFlag_ = FADING_OUT_DONE;
             AUDIO_INFO_LOG("fadeoutFlag_ = FADING_OUT_DONE");
         }
-    } else {
-        Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, SUCCESS, "IStreamListener is nullptr");
@@ -625,6 +653,7 @@ int32_t RendererInServer::Pause()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
+    oldAppliedVolume_ = 0.0f;
     return SUCCESS;
 }
 
@@ -728,6 +757,7 @@ int32_t RendererInServer::Stop()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
+    oldAppliedVolume_ = 0.0f;
     return SUCCESS;
 }
 
@@ -793,7 +823,12 @@ int32_t RendererInServer::SetRate(int32_t rate)
 
 int32_t RendererInServer::SetLowPowerVolume(float volume)
 {
-    return stream_->SetLowPowerVolume(volume);
+    if (volume < MIN_FLOAT_VOLUME || volume > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("invalid volume:%{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
+    lowPowerVolume_ = volume;
+    return SUCCESS;
 }
 
 int32_t RendererInServer::GetLowPowerVolume(float &volume)
