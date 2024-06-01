@@ -42,6 +42,7 @@ private:
     int32_t InitSink(const AudioStreamInfo &streamInfo);
     int32_t SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip);
     void PauseAsync();
+    void DoFadeinOut(bool isFadeOut, char* buffer, size_t bufferSize);
 
 private:
     bool isVoip_;
@@ -54,6 +55,14 @@ private:
     std::shared_ptr<IRendererStream> stream_;
 
     std::mutex startMutex;
+
+    std::mutex fadingMutex_;
+    std::condition_variable cvFading_;
+    std::atomic<bool> startFadein_;
+    std::atomic<bool> startFadeout_;
+    uint32_t uChannel_;
+    HdiAdapterFormat uFormat_;
+    uint32_t uSampleRate_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
