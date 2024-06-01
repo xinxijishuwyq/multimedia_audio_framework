@@ -6972,5 +6972,30 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioPosition_007, TestSize.Leve
 
     audioRenderer->Release();
 }
+
+/**
+ * @tc.name  : Test GetSilentModeAndMixWithOthers
+ * @tc.number: Audio_Renderer_GetSilentModeAndMixWithOthers_001
+ * @tc.desc  : Test GetSpeed interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSilentModeAndMixWithOthers_001, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    bool on = audioRenderer->GetSilentModeAndMixWithOthers();
+    EXPECT_EQ(false, on);
+
+    audioRenderer->SetSilentModeAndMixWithOthers(true);
+
+    on = audioRenderer->GetSilentModeAndMixWithOthers();
+    EXPECT_EQ(true, on);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
 } // namespace AudioStandard
 } // namespace OHOS
