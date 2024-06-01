@@ -18,9 +18,10 @@
 
 #include <unordered_set>
 #include <mutex>
-#include <unordered_set>
 #include <vector>
 #include "audio_errors.h"
+#include "audio_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,25 +34,34 @@ public:
 
     auto Lock(const int32_t TimeoutMs)
     {
+        Trace traceLock("AudioRunningLockManager:Lock");
         {
             std::lock_guard<std::mutex> lock(mutex_);
             lastAppsUid_ = {};
         }
 
+        Trace traceRunningLock("AudioRunningLockManager:runningLock_->Lock");
         auto ret = runningLock_->Lock(TimeoutMs);
         isLocked_ = true;
+        AUDIO_INFO_LOG("Lock runninglock, ret: %{public}d", ret);
         return ret;
     }
 
     auto UnLock()
     {
+        Trace traceUnlock("AudioRunningLockManager:UnLock");
         isLocked_ = false;
-        return runningLock_->UnLock();
+
+        Trace traceRunningUnlock("AudioRunningLockManager:runningLock_->UnLock");
+        auto ret = runningLock_->UnLock();
+        AUDIO_INFO_LOG("Unlock runninglock, ret: %{public}d", ret);
+        return ret;
     }
 
     template<typename U>
     int32_t UpdateAppsUid(const U &itBegin, const U &itEnd)
     {
+        Trace trace("AudioRunningLockManager:UpdateAppsUid");
         std::unordered_set<int32_t> appsUidSet(itBegin, itEnd);
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -62,6 +72,7 @@ public:
 
     int32_t UpdateAppsUidToPowerMgr()
     {
+        Trace trace("AudioRunningLockManager:UpdateAppsUidToPowerMgr");
         if (!isLocked_) {
             return SUCCESS;
         }
@@ -74,7 +85,17 @@ public:
             lastAppsUid_ = currentAppsUid_;
             appsUid.insert(appsUid.end(), currentAppsUid_.begin(), currentAppsUid_.end());
         }
-        return runningLock_->UpdateWorkSource(appsUid);
+
+        std::string appsUidInfo;
+        for (auto uid : appsUid) {
+            appsUidInfo += (std::to_string(uid) + ',');
+        }
+
+        Trace traceUpdateWorkSource("AudioRunningLockManager:runningLock_->UpdateWorkSource");
+        int32_t ret = runningLock_->UpdateWorkSource(appsUid);
+        AUDIO_INFO_LOG("UpdateWorkSource size: %{public}zu [%{public}s], ret: %{public}d",
+            appsUid.size(), appsUidInfo.c_str(), ret);
+        return ret;
     }
 
 private:
