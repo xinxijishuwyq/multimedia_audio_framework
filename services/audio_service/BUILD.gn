@@ -321,7 +321,6 @@ ohos_shared_library("audio_process_service") {
 
   external_deps = [
     "c_utils:utils",
-    "drivers_interface_audio:effect_idl_headers",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -388,7 +387,6 @@ ohos_shared_library("audio_service") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "drivers_interface_audio:effect_idl_headers",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hicollie:libhicollie",
     "hilog:libhilog",
