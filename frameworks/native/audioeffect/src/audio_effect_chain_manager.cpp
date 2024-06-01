@@ -436,7 +436,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
 
     if (debugArmFlag_ && !spkOffloadEnabled_ && CheckIfSpkDsp()) {
         effectHdiInput_[0] = HDI_INIT;
-        ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
+        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
         if (ret == SUCCESS) {
             AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
             spkOffloadEnabled_ = true;
