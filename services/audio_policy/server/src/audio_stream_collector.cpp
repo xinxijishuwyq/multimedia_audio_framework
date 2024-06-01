@@ -343,10 +343,6 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
         }
     }
 
-    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED &&
-        !ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL) && audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_MULTICHANNEL);
-    }
     AUDIO_INFO_LOG("UpdateRendererStream: Not found clientUid:%{public}d sessionId:%{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
     return SUCCESS;
@@ -636,10 +632,6 @@ void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
             AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d cleared", sessionID);
         }
-    }
-
-    if (!ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL) && audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_MULTICHANNEL);
     }
 }
 

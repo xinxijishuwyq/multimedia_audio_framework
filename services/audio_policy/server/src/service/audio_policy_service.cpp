@@ -798,7 +798,6 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
         AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
         streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
         offloadSessionID_.reset();
-        UnloadOffloadModule();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
     } else {
         if (offloadSessionID_.has_value()) {
@@ -4491,6 +4490,14 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
+    if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
+        DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
+    }
+
+    if (rendererState == RENDERER_RELEASED && !streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
+        DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
+    }
+
     if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED)) {
         FetchDevice(true);
     }
@@ -4586,6 +4593,14 @@ void AudioPolicyService::RegisteredTrackerClientDied(pid_t uid)
 
     RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
+
+    if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
+        DynamicUnloadModule(PIPE_TYPE_OFFLOAD);
+    }
+
+    if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
+        DynamicUnloadModule(PIPE_TYPE_MULTICHANNEL);
+    }
 }
 
 int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount, DeviceType deviceType)
@@ -5739,6 +5754,7 @@ int32_t AudioPolicyService::LoadOffloadModule()
 
 int32_t AudioPolicyService::UnloadOffloadModule()
 {
+    AUDIO_INFO_LOG("unload offload module");
     return ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
 }
 
@@ -5759,6 +5775,9 @@ bool AudioPolicyService::CheckStreamMultichannelMode(int64_t activateSessionId, 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool ret = gsp->GetEffectOffloadEnabled();
     IPCSkeleton::SetCallingIdentity(identity);
+
+    // Temporarily return the effect result to true
+    ret = true;
 
     return ret;
 }
@@ -5799,11 +5818,6 @@ int32_t AudioPolicyService::LoadMchModule()
 
 int32_t AudioPolicyService::UnloadMchModule()
 {
-    if (IOHandles_.find(MCH_PRIMARY_SPEAKER) == IOHandles_.end()) {
-        // load moudle and move into new sink
-        AUDIO_ERR_LOG("has no mch moudle");
-        return ERROR;
-    }
     AUDIO_INFO_LOG("unload multichannel module");
     return ClosePortAndEraseIOHandle(MCH_PRIMARY_SPEAKER);
 }

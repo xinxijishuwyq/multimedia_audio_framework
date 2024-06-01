@@ -3167,11 +3167,6 @@ static void ProcessOffloadData(struct Userdata *u)
 
 static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
 {
-    unsigned nPrimary = 0;
-    unsigned nOffload = 0;
-    unsigned nMultiChannel = 0;
-    int32_t n = GetInputsType(u->sink, &nPrimary, &nOffload, &nMultiChannel, false);
-
     if (u->timestampSleep < (int64_t)pa_rtclock_now()) {
         u->timestampSleep = -1;
     }
@@ -3186,15 +3181,13 @@ static void ThreadFuncRendererTimerProcessData(struct Userdata *u)
     if (logCnt > LOG_LOOP_THRESHOLD) {
         logCnt = 0;
     }
-    bool primaryFlag = n == 0 || monitorLinked(u->sink, true);
-    if ((nPrimary > 0 && u->primary.msgq) || primaryFlag) {
-        ProcessNormalData(u);
-    }
-    if (u->offload_enable && nOffload > 0 && u->offload.msgq) {
-        ProcessOffloadData(u);
-    }
-    if (nMultiChannel > 0 && u->multiChannel.msgq) {
+
+    if (!strcmp(u->sink->name, MCH_SINK_NAME)) {
         ProcessMCHData(u);
+    } else if (!strcmp(u->sink->name, OFFLOAD_SINK_NAME) && u->offload_enable && u->offload.msgq) {
+        ProcessOffloadData(u);
+    } else {
+        ProcessNormalData(u);
     }
 }
 
