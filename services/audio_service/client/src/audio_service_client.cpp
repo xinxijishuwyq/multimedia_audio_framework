@@ -2348,7 +2348,8 @@ void AudioServiceClient::GetOffloadApproximatelyCacheTime(uint64_t paTimeStamp, 
         if (ret) {
             return;
         }
-        ppTimeStamp = timeSec * AUDIO_US_PER_SECOND + timeNanoSec / AUDIO_NS_PER_US;
+        ppTimeStamp = static_cast<uint64_t>(timeSec) * AUDIO_US_PER_SECOND +
+            static_cast<uint64_t>(timeNanoSec) / AUDIO_NS_PER_US;
         offloadLastHdiPosTs_ = ppTimeStamp;
         offloadLastHdiPosFrames_ = frames;
     } else {
@@ -2407,7 +2408,7 @@ int32_t AudioServiceClient::GetCurrentPosition(uint64_t &framePosition, uint64_t
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = tm.tv_sec * AUDIO_S_TO_NS + tm.tv_nsec;
+    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_S_TO_NS + static_cast<uint64_t>(tm.tv_nsec);
 
     return SUCCESS;
 }

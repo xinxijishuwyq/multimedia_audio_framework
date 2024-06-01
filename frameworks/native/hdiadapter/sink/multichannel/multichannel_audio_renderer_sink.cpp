@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -514,7 +514,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         return SUCCESS;
     }
     if (renderEmptyFrameCount_ > 0) {
-        Trace traceEmpty("AudioRendererSinkInner::RenderFrame::renderEmpty");
+        Trace traceEmpty("MchSinkInner::RenderFrame::renderEmpty");
         if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
             static_cast<size_t>(len)) != EOK) {
             AUDIO_WARNING_LOG("call memset_s failed");
@@ -524,7 +524,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
             switchCV_.notify_all();
         }
     }
-    Trace trace("AudioRendererSinkInner::RenderFrame");
+    Trace trace("MchSinkInner::RenderFrame");
 
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
@@ -566,7 +566,7 @@ float MultiChannelRendererSinkInner::GetMaxAmplitude()
 
 int32_t MultiChannelRendererSinkInner::Start(void)
 {
-    Trace trace("Sink::Start");
+    Trace trace("MCHSink::Start");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ == nullptr) {
         keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioMultiChannelBackgroundPlay",
@@ -580,7 +580,7 @@ int32_t MultiChannelRendererSinkInner::Start(void)
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_MCH_SINK_FILENAME, &dumpFile_);
 
     if (!started_) {
         int32_t ret = audioRender_->Start(audioRender_);
@@ -869,6 +869,7 @@ int32_t MultiChannelRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t MultiChannelRendererSinkInner::Stop(void)
 {
+    Trace trace("MCHSink::Stop");
     AUDIO_INFO_LOG("Stop.");
 #ifdef FEATURE_POWER_MANAGER
     if (keepRunningLock_ != nullptr) {
@@ -900,6 +901,7 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
 
 int32_t MultiChannelRendererSinkInner::Pause(void)
 {
+    Trace trace("MCHSink::Pause");
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
@@ -967,6 +969,7 @@ int32_t MultiChannelRendererSinkInner::Reset(void)
 
 int32_t MultiChannelRendererSinkInner::Flush(void)
 {
+    Trace trace("MCHSink::Flush");
     if (started_ && audioRender_ != nullptr) {
         int32_t ret = audioRender_->Flush(audioRender_);
         if (!ret) {

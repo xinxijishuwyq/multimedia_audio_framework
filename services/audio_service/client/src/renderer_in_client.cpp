@@ -1769,12 +1769,12 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
-    totalBytesWritten_ += bytesWritten;
+    totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
     }
-    int64_t writtenFrameNumber = totalBytesWritten_ / sizePerFrameInByte_;
+    int64_t writtenFrameNumber = totalBytesWritten_ / static_cast<int64_t>(sizePerFrameInByte_);
     AUDIO_DEBUG_LOG("frame size: %{public}zu", sizePerFrameInByte_);
 
     {
@@ -1792,7 +1792,7 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 
     {
         std::lock_guard<std::mutex> lock(periodReachMutex_);
-        rendererPeriodWritten_ += (bytesWritten / sizePerFrameInByte_);
+        rendererPeriodWritten_ += static_cast<int64_t>((bytesWritten / sizePerFrameInByte_));
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(rendererPeriodWritten_), static_cast<int64_t>(totalBytesWritten_));
         if (rendererPeriodWritten_ >= rendererPeriodSize_ && rendererPeriodSize_ > 0) {

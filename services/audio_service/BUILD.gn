@@ -337,6 +337,11 @@ ohos_shared_library("audio_process_service") {
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    defines += [ "RESSCHE_ENABLE" ]
+  }
+
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }

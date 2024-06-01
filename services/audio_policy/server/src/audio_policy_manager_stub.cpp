@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -268,14 +268,6 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     }
 }
 
-void AudioPolicyManagerStub::SetCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply)
-{
-    CallbackChange callbackchange = static_cast<CallbackChange>(data.ReadInt32());
-    bool enable = data.ReadBool();
-    int32_t result = SetCallbacksEnable(callbackchange, enable);
-    reply.WriteInt32(result);
-}
-
 void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
 {
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());
@@ -309,7 +301,7 @@ void AudioPolicyManagerStub::GetActiveInputDeviceInternal(MessageParcel &data, M
 void AudioPolicyManagerStub::WriteAudioFocusInfo(MessageParcel &reply,
     const std::pair<AudioInterrupt, AudioFocuState> &focusInfo)
 {
-    focusInfo.first.Marshalling(reply);
+    AudioInterrupt::Marshalling(reply, focusInfo.first);
     reply.WriteInt32(focusInfo.second);
 }
 
@@ -401,7 +393,7 @@ void AudioPolicyManagerStub::ActivateInterruptInternal(MessageParcel &data, Mess
 {
     int32_t zoneID = data.ReadInt32();
     AudioInterrupt audioInterrupt = {};
-    audioInterrupt.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = ActivateAudioInterrupt(audioInterrupt, zoneID);
     reply.WriteInt32(result);
 }
@@ -410,7 +402,7 @@ void AudioPolicyManagerStub::DeactivateInterruptInternal(MessageParcel &data, Me
 {
     int32_t zoneID = data.ReadInt32();
     AudioInterrupt audioInterrupt = {};
-    audioInterrupt.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = DeactivateAudioInterrupt(audioInterrupt, zoneID);
     reply.WriteInt32(result);
 }
@@ -435,7 +427,7 @@ void AudioPolicyManagerStub::RequestAudioFocusInternal(MessageParcel &data, Mess
 {
     AudioInterrupt audioInterrupt = {};
     int32_t clientId = data.ReadInt32();
-    audioInterrupt.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = RequestAudioFocus(clientId, audioInterrupt);
     reply.WriteInt32(result);
 }
@@ -444,7 +436,7 @@ void AudioPolicyManagerStub::AbandonAudioFocusInternal(MessageParcel &data, Mess
 {
     AudioInterrupt audioInterrupt = {};
     int32_t clientId = data.ReadInt32();
-    audioInterrupt.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, audioInterrupt);
     int32_t result = AbandonAudioFocus(clientId, audioInterrupt);
     reply.WriteInt32(result);
 }
@@ -463,7 +455,7 @@ void AudioPolicyManagerStub::GetSessionInfoInFocusInternal(MessageParcel &data, 
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidSessionID};
     int32_t zoneID = data.ReadInt32();
     int32_t ret = GetSessionInfoInFocus(audioInterrupt, zoneID);
-    audioInterrupt.Marshalling(reply);
+    AudioInterrupt::Marshalling(reply, audioInterrupt);
     reply.WriteInt32(ret);
 }
 
@@ -1141,6 +1133,14 @@ void AudioPolicyManagerStub::UnsetAudioDeviceRefinerCallbackInternal(MessageParc
 void AudioPolicyManagerStub::TriggerFetchDeviceInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t result = TriggerFetchDevice();
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::MoveToNewTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t sessionId = data.ReadUint32();
+    AudioPipeType pipeType = static_cast<AudioPipeType>(data.ReadInt32());
+    int32_t result = MoveToNewPipe(sessionId, pipeType);
     reply.WriteInt32(result);
 }
 

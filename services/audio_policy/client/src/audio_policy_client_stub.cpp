@@ -78,7 +78,7 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
     CHECK_AND_RETURN_LOG(size < FOCUS_INFO_VALID_SIZE, "get invalid size : %{public}d", size);
 
     for (int32_t i = 0; i < size; i++) {
-        focusInfo.first.Unmarshalling(data);
+        AudioInterrupt::Unmarshalling(data, focusInfo.first);
         focusInfo.second = static_cast<AudioFocuState>(data.ReadInt32());
         infoList.emplace_back(focusInfo);
     }
@@ -88,14 +88,14 @@ void AudioPolicyClientStub::HandleAudioFocusInfoChange(MessageParcel &data, Mess
 void AudioPolicyClientStub::HandleAudioFocusRequested(MessageParcel &data, MessageParcel &reply)
 {
     AudioInterrupt requestFocus = {};
-    requestFocus.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, requestFocus);
     OnAudioFocusRequested(requestFocus);
 }
 
 void AudioPolicyClientStub::HandleAudioFocusAbandoned(MessageParcel &data, MessageParcel &reply)
 {
     AudioInterrupt abandonFocus = {};
-    abandonFocus.Unmarshalling(data);
+    AudioInterrupt::Unmarshalling(data, abandonFocus);
     OnAudioFocusAbandoned(abandonFocus);
 }
 

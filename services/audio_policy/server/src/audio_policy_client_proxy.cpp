@@ -66,7 +66,7 @@ void AudioPolicyClientProxy::OnAudioFocusInfoChange(
     size_t size = focusInfoList.size();
     data.WriteInt32(static_cast<int32_t>(size));
     for (auto iter = focusInfoList.begin(); iter != focusInfoList.end(); ++iter) {
-        iter->first.Marshalling(data);
+        AudioInterrupt::Marshalling(data, iter->first);
         data.WriteInt32(iter->second);
     }
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
@@ -87,7 +87,7 @@ void AudioPolicyClientProxy::OnAudioFocusRequested(const AudioInterrupt &request
     }
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_FOCUS_REQUEST_CHANGED));
-    requestFocus.Marshalling(data);
+    AudioInterrupt::Marshalling(data, requestFocus);
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("OnAudioFocusRequested failed, error: %{public}d", error);
@@ -105,7 +105,7 @@ void AudioPolicyClientProxy::OnAudioFocusAbandoned(const AudioInterrupt &abandon
     }
 
     data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_FOCUS_ABANDON_CHANGED));
-    abandonFocus.Marshalling(data);
+    AudioInterrupt::Marshalling(data, abandonFocus);
     int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("OnAudioFocusAbandoned failed, error: %{public}d", error);

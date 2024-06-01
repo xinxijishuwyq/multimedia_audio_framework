@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -517,6 +517,13 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
 
+void AudioPolicyServer::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
+    int64_t deactivateSessionId)
+{
+    OffloadStreamCheck(activateSessionId, activateStreamType, deactivateSessionId);
+    audioPolicyService_.CheckStreamMode(activateSessionId, activateStreamType);
+}
+
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
     policyServer_->audioPolicyService_.HandlePowerStateChanged(state);
@@ -940,11 +947,6 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDev
     return deviceDescs;
 }
 
-int32_t AudioPolicyServer::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
-{
-    return audioPolicyService_.SetCallbacksEnable(callbackchange, enable);
-}
-
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return audioPolicyService_.IsStreamActive(streamType);
@@ -1264,7 +1266,7 @@ bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
 bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != UID_AUDIO) {
         AUDIO_ERR_LOG("Not supported operation");
         return false;
@@ -1303,7 +1305,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 
     if (!isRecording) {
         // root user case for auto test
-        uid_t callingUid = IPCSkeleton::GetCallingUid();
+        uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == UID_ROOT) {
             return true;
         }
@@ -1321,7 +1323,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != UID_AUDIO) {
         AUDIO_ERR_LOG("Not supported operation");
         return false;
@@ -1984,9 +1986,12 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
 {
     AUDIO_INFO_LOG("GetMaxRendererInstances");
     int32_t retryCount = 20; // 20 * 200000us = 4s, wait up to 4s
-    while (!isFirstAudioServiceStart_ && retryCount-- > 0) {
-        AUDIO_WARNING_LOG("Audio server is not start");
-        usleep(200000); // Wait 200000us when audio server is not started
+    while (!isFirstAudioServiceStart_) {
+        retryCount--;
+        if (retryCount > 0) {
+            AUDIO_WARNING_LOG("Audio server is not start");
+            usleep(200000); // Wait 200000us when audio server is not started
+        }
     }
     return audioPolicyService_.GetMaxRendererInstances();
 }
@@ -2605,6 +2610,11 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     audioPolicyService_.NotifyAccountsChanged(id);
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
+}
+
+int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
+{
+    return audioPolicyService_.MoveToNewPipe(sessionId, pipeType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

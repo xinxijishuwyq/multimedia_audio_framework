@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -163,8 +163,6 @@ public:
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) = 0;
 
-    virtual int32_t SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) = 0;
-
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
@@ -286,6 +284,7 @@ public:
 
     virtual int32_t TriggerFetchDevice() = 0;
     
+    virtual int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) = 0;
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicy");
 };

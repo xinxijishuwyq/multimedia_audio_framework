@@ -91,6 +91,9 @@ AudioEffectChainManager::AudioEffectChainManager()
     audioEffectHdiParam_ = std::make_shared<AudioEffectHdiParam>();
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     GetSysPara("const.build.product", deviceClass_);
+    int32_t flag = 0;
+    GetSysPara("persist.multimedia.audioflag.debugarmflag", flag);
+    debugArmFlag_ = flag == 0 ? false : true;
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -143,7 +146,7 @@ void AudioEffectChainManager::SetSpkOffloadState()
                 RecoverAllChains();
             } else {
                 AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
-                spkOffloadEnabled_ = true;
+                spkOffloadEnabled_ = CheckIfSpkDsp();
             }
         }
     } else {
@@ -195,6 +198,15 @@ std::string AudioEffectChainManager::GetDeviceTypeName()
         name = device->second;
     }
     return name;
+}
+
+void AudioEffectChainManager::UpdateSpkOffloadEnabled()
+{
+    if (debugArmFlag_ && spkOffloadEnabled_) {
+        RecoverAllChains();
+        spkOffloadEnabled_ = false;
+        return;
+    }
 }
 
 std::string AudioEffectChainManager::GetDeviceSinkName()
@@ -381,6 +393,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(const std::string &s
         audioEffectChain->AddEffectHandle(handle, EffectToLibraryEntryMap_[effect]->audioEffectLibHandle,
             currSceneType);
     }
+    audioEffectChain->ResetIoBufferConfig();
 
     if (audioEffectChain->IsEmptyEffectHandles()) {
         AUDIO_ERR_LOG("Effectchain is empty, copy bufIn to bufOut like EFFECT_NONE mode");
@@ -419,6 +432,11 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
 
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
+
+    if (debugArmFlag_) {
+        SetSpkOffloadState(); // for AISS movie scene update
+    }
+
     AUDIO_DEBUG_LOG("releaseEffect, sceneTypeAndDeviceKey [%{public}s]", sceneTypeAndDeviceKey.c_str());
     return SUCCESS;
 }
@@ -1148,6 +1166,22 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         }
         btOffloadEnabled_ = false;
     }
+}
+// for AISS temporarily
+bool AudioEffectChainManager::CheckIfSpkDsp()
+{
+    if (deviceType_ != DEVICE_TYPE_SPEAKER) {
+        return true;
+    }
+    if (debugArmFlag_) {
+        for (auto &[key, count] : SceneTypeToEffectChainCountMap_) {
+            std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
+            if (sceneType == "SCENE_MOVIE" && count > 0) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

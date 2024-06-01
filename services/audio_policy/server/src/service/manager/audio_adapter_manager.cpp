@@ -1514,7 +1514,7 @@ float AudioAdapterManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32
 uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx)
 {
     int32_t leftPos = 0;
-    int32_t rightPos = volumePoints.size() - 1;
+    int32_t rightPos = static_cast<int32_t>(volumePoints.size() - 1);
     while (leftPos <= rightPos) {
         int32_t midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
         int32_t c = static_cast<int32_t>(volumePoints[midPos].index) - idx;

@@ -18,9 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "audio_info.h"
-#define private public
 #include "audio_policy_manager.h"
-#undef private
 #include "audio_policy_proxy.h"
 #include "audio_stream_manager.h"
 #include "audio_stream.h"

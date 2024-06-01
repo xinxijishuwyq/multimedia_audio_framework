@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -362,13 +362,14 @@ public:
     int32_t UnsetAudioDeviceRefinerCallback();
 
     int32_t TriggerFetchDevice();
+
+    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
-    int32_t SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;
