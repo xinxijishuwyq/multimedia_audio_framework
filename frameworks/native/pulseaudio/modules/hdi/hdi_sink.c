@@ -61,7 +61,6 @@
 #define MAX_SINK_VOLUME_LEVEL 1.0
 #define DEFAULT_WRITE_TIME 1000
 #define MIX_BUFFER_LENGTH (pa_page_size())
-#define MAX_MIX_CHANNELS 128
 #define MAX_REWIND (7000 * PA_USEC_PER_MSEC)
 #define USEC_PER_SEC 1000000
 #define DEFAULT_IN_CHANNEL_NUM 2
@@ -1173,6 +1172,23 @@ static void CheckPrimaryFadeinIsDone(pa_sink *si)
     }
 }
 
+static void CheckAndPushUidToArr(pa_sink_input *sinkIn, int32_t appsUid[MAX_MIX_CHANNELS], size_t *count)
+{
+    const char *cstringClientUid = pa_proplist_gets(sinkIn->proplist, "stream.client.uid");
+    if (cstringClientUid && (sinkIn->state == PA_SINK_INPUT_RUNNING)) {
+        appsUid[(*count)] = atoi(cstringClientUid);
+        (*count)++;
+    }
+}
+
+static void SafeRendererSinkUpdateAppsUid(struct RendererSinkAdapter *sinkAdapter,
+    const int32_t appsUid[MAX_MIX_CHANNELS], const size_t count)
+{
+    if (sinkAdapter) {
+        sinkAdapter->RendererSinkUpdateAppsUid(sinkAdapter, appsUid, count);
+    }
+}
+
 static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_info *infoIn,
     unsigned maxInfo, char *sceneType)
 {
@@ -1191,7 +1207,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     pa_assert(infoIn);
 
     bool isCaptureSilently = IsCaptureSilently();
+    int32_t appsUid[MAX_MIX_CHANNELS];
+    size_t count = 0;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
+        CheckAndPushUidToArr(sinkIn, appsUid, &count);
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag =
@@ -1206,8 +1225,7 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             AUTO_CTRACE("hdi_sink::PrimaryCluster:%u len:%zu", sinkIn->index, *length);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
-            if (mixlength == 0 || infoIn->chunk.length < mixlength)
-                mixlength = infoIn->chunk.length;
+            if (mixlength == 0 || infoIn->chunk.length < mixlength) {mixlength = infoIn->chunk.length;}
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::PrimaryCluster::is_silence");
@@ -1228,9 +1246,10 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
         }
     }
     CheckPrimaryFadeinIsDone(si);
-    if (mixlength > 0) {
-        *length = mixlength;
-    }
+
+    SafeRendererSinkUpdateAppsUid(u->primary.sinkAdapter, appsUid, count);
+
+    if (mixlength > 0) { *length = mixlength;}
 
     return n;
 }
@@ -1290,7 +1309,11 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
         return 0;
     }
 
+    int32_t appsUid[MAX_MIX_CHANNELS];
+    size_t count = 0;
+
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
+        CheckAndPushUidToArr(sinkIn, appsUid, &count);
         int32_t sinkChannels = sinkIn->sample_spec.channels;
         const char *sinkSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
@@ -1301,8 +1324,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
             updateResampler(sinkIn, NULL, true);
             pa_sink_input_peek(sinkIn, *length, &infoIn->chunk, &infoIn->volume);
 
-            if (mixlength == 0 || infoIn->chunk.length < mixlength)
-                mixlength = infoIn->chunk.length;
+            if (mixlength == 0 || infoIn->chunk.length < mixlength) {mixlength = infoIn->chunk.length;}
 
             if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
@@ -1319,6 +1341,8 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
             maxInfo--;
         }
     }
+
+    SafeRendererSinkUpdateAppsUid(u->multiChannel.sinkAdapter, appsUid, count);
 
     if (u->multiChannel.multiChannelFadingInDone) {
         pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 0);
@@ -2088,10 +2112,10 @@ static void PaSinkRenderIntoOffload(pa_sink *s, pa_mix_info *infoInputs, unsigne
         length = pa_frame_align(blockSizeMax, &s->sample_spec);
 
     pa_assert(length > 0);
+
     for (ii = 0; ii < nInputs; ++ii) {
         pa_sink_input *i = infoInputs[ii].userdata;
         pa_sink_input_assert_ref(i);
-
         AUTO_CTRACE("hdi_sink::Offload:pa_sink_input_peek:%u len:%zu", i->index, length);
         pa_cvolume soft_volume = i->thread_info.soft_volume;
         uint32_t volume = pa_sw_volume_from_linear(1.0f); // 1.0f reset volume, avoid volume of peek
@@ -2182,6 +2206,16 @@ static int32_t RenderWriteOffloadFunc(struct Userdata *u, size_t length, pa_mix_
     if (l < 0) {
         chunk->length += -l;
     }
+
+    int32_t appsUid[MAX_MIX_CHANNELS];
+    size_t count = 0;
+
+    const char *cstringClientUid = pa_proplist_gets(i->proplist, "stream.client.uid");
+    if (cstringClientUid && (i->state == PA_SINK_INPUT_RUNNING)) {
+        appsUid[count++] = atoi(cstringClientUid);
+    }
+
+    SafeRendererSinkUpdateAppsUid(u->offload.sinkAdapter, appsUid, count);
 
     int ret = RenderWriteOffload(u, i, chunk);
     *writen = ret == 0 ? (int32_t)chunk->length : 0;

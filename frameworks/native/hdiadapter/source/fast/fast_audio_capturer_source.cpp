@@ -20,6 +20,7 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#include "audio_running_lock_manager.h"
 #endif
 
 #include "audio_errors.h"
@@ -69,6 +70,10 @@ public:
     int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude() override;
 
+    int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+        const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
     FastAudioCapturerSourceInner();
     ~FastAudioCapturerSourceInner() override;
 private:
@@ -107,7 +112,7 @@ private:
     int bufferFd_ = INVALID_FD;
     uint32_t eachReadFrameSize_ = 0;
 #ifdef FEATURE_POWER_MANAGER
-    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+    std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
 private:
     void InitAttrsCapture(struct AudioSampleAttributes &attrs);
@@ -479,13 +484,17 @@ int32_t FastAudioCapturerSourceInner::Start(void)
 {
     AUDIO_INFO_LOG("Start.");
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastCapturer",
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    if (runningLockManager_ == nullptr) {
+        keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastCapturer",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        if (keepRunningLock) {
+            runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+        }
     }
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock lock result: %{public}d",
-            keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
+            runningLockManager_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
     }
@@ -647,9 +656,9 @@ int32_t FastAudioCapturerSourceInner::Stop(void)
 {
     AUDIO_INFO_LOG("Enter");
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
-        keepRunningLock_->UnLock();
+        runningLockManager_->UnLock();
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
     }
@@ -708,6 +717,34 @@ float FastAudioCapturerSourceInner::GetMaxAmplitude()
 {
     AUDIO_WARNING_LOG("getMaxAmplitude in fast audio cap not support");
     return 0;
+}
+
+int32_t FastAudioCapturerSourceInner::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+    const size_t size)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    return runningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
+#endif
+
+    return SUCCESS;
+}
+
+int32_t FastAudioCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    runningLockManager_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    runningLockManager_->UpdateAppsUidToPowerMgr();
+#endif
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namesapce OHOS

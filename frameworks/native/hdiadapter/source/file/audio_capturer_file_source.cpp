@@ -192,5 +192,17 @@ std::string AudioCapturerFileSource::GetAudioParameter(const AudioParamKey key, 
     AUDIO_WARNING_LOG("not supported yet");
     return "";
 }
+
+int32_t AudioCapturerFileSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t AudioCapturerFileSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

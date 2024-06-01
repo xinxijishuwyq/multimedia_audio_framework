@@ -30,6 +30,7 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#include "audio_running_lock_manager.h"
 #endif
 #include "v3_0/iaudio_manager.h"
 
@@ -100,6 +101,9 @@ public:
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     int32_t SetPaPower(int32_t flag) override;
 
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
 private:
@@ -133,7 +137,7 @@ private:
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
 #ifdef FEATURE_POWER_MANAGER
-    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+    std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
     // for device switch
     std::atomic<bool> inSwitch_ = false;
@@ -568,14 +572,18 @@ int32_t MultiChannelRendererSinkInner::Start(void)
 {
     Trace trace("MCHSink::Start");
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioMultiChannelBackgroundPlay",
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    if (runningLockManager_ == nullptr) {
+        keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioMultiChannelBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        if (keepRunningLock) {
+            runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+        }
     }
 
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock lock");
-        keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+        runningLockManager_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -872,9 +880,9 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
     Trace trace("MCHSink::Stop");
     AUDIO_INFO_LOG("Stop.");
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
-        keepRunningLock_->UnLock();
+        runningLockManager_->UnLock();
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -1108,6 +1116,25 @@ int32_t MultiChannelRendererSinkInner::SetPaPower(int32_t flag)
 {
     (void)flag;
     return ERR_NOT_SUPPORTED;
+}
+
+int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    return runningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
+#endif
+
+    return SUCCESS;
+}
+
+int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

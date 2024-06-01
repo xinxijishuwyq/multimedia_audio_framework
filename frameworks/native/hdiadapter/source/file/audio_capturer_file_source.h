@@ -51,6 +51,9 @@ public:
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
     float GetMaxAmplitude() override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
+
+    int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 private:
     bool capturerInited_ = false;
     FILE *filePtr = nullptr;

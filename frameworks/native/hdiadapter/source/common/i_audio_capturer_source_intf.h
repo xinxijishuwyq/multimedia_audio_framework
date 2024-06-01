@@ -52,6 +52,8 @@ struct CapturerSourceAdapter {
     int32_t (*CapturerSourceFrame)(void *wapper, char *frame, uint64_t requestBytes, uint64_t *replyBytes);
     int32_t (*CapturerSourceSetVolume)(void *wapper, float left, float right);
     int32_t (*CapturerSourceGetVolume)(void *wapper, float *left, float *right);
+    int32_t (*CapturerSourceAppsUid) (void *wapper, const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+        const size_t size);
 };
 
 int32_t FillinSourceWapper(const char *deviceClass, const char *deviceNetworkId,
@@ -65,6 +67,8 @@ int32_t IAudioCapturerSourceSetVolume(void *wapper, float left, float right);
 bool IAudioCapturerSourceIsMuteRequired(void *wapper);
 int32_t IAudioCapturerSourceSetMute(void *wapper, bool isMute);
 int32_t IAudioCapturerSourceGetVolume(void *wapper, float *left, float *right);
+int32_t IAudioCapturerSourceUpdateAppsUid(void *wapper, const int32_t appsUid[MAX_MIX_CHANNELS],
+    const size_t size);
 
 #ifdef __cplusplus
 }

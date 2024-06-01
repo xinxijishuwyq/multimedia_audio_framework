@@ -87,7 +87,11 @@ public:
     virtual void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) = 0;
     virtual void RegisterParameterCallback(IAudioSourceCallback *callback) = 0;
     virtual float GetMaxAmplitude() = 0;
-    
+
+    virtual int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+        const size_t size) = 0;
+    virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
+
     virtual int32_t Preload(const std::string &usbInfoStr)
     {
         return 0;

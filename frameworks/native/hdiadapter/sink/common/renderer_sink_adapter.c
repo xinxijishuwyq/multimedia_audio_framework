@@ -88,6 +88,7 @@ int32_t LoadSinkAdapter(const char *device, const char *deviceNetworkId, struct 
     adapter->RendererSinkOffloadRunningLockLock = IAudioRendererSinkOffloadRunningLockLock;
     adapter->RendererSinkOffloadRunningLockUnlock = IAudioRendererSinkOffloadRunningLockUnlock;
     adapter->RendererSinkSetPaPower = IAudioRendererSinkSetPaPower;
+    adapter->RendererSinkUpdateAppsUid = IAudioRendererSinkUpdateAppsUid;
 
     *sinkAdapter = adapter;
 
