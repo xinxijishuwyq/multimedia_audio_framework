@@ -92,7 +92,7 @@ public:
         }
 
         Trace traceUpdateWorkSource("AudioRunningLockManager:runningLock_->UpdateWorkSource");
-        int32_t ret = runningLock_->UpdateWorkSource(appsUid);
+        auto ret = runningLock_->UpdateWorkSource(appsUid);
         AUDIO_INFO_LOG("UpdateWorkSource size: %{public}zu [%{public}s], ret: %{public}d",
             appsUid.size(), appsUidInfo.c_str(), ret);
         return ret;
