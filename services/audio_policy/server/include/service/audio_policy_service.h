@@ -184,6 +184,10 @@ public:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 
+    void SetNormalVoipFlag(const bool &normalVoipFlag);
+
+    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId);
+
     bool GetVoipConfig();
 
     // Audio Policy Parser callbacks
@@ -1027,6 +1031,7 @@ private:
     std::unique_ptr<std::thread> calculateLoopSafeTime_ = nullptr;
     bool safeVolumeExit_ = false;
     bool isAbsBtFirstBoot_ = true;
+    bool normalVoipFlag_ = false;
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;

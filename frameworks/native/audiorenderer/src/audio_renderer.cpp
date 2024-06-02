@@ -434,11 +434,35 @@ IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStr
     if (flag == AUDIO_FLAG_VOIP_FAST) {
         // It is not possible to directly create a fast VoIP stream
         isFastVoipSupported_ = true;
+    } else if (flag == AUDIO_FLAG_VOIP_DIRECT) {
+        isDirectVoipSupported_ = IsDirectVoipParams(audioStreamParams);
+        rendererInfo_.originalFlag = isDirectVoipSupported_ ? AUDIO_FLAG_VOIP_DIRECT : AUDIO_FLAG_NORMAL;
+        // The VoIP direct mode can only be used for RENDER_MODE_CALLBACK
+        rendererInfo_.rendererFlags = (isDirectVoipSupported_ && audioRenderMode_ == RENDER_MODE_CALLBACK) ?
+            AUDIO_FLAG_VOIP_DIRECT : AUDIO_FLAG_NORMAL;
+        AUDIO_INFO_LOG("Preferred renderer flag is VOIP_DIRECT. Actual flag: %{public}d", rendererInfo_.rendererFlags);
+        return IAudioStream::PA_STREAM;
     }
 
     AUDIO_INFO_LOG("Preferred renderer flag: AUDIO_FLAG_NORMAL");
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     return IAudioStream::PA_STREAM;
+}
+
+bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStreamParams)
+{
+    // VoIP derect only supports 8K, 16K and 48K sampling rate.
+    if (audioStreamParams.samplingRate == SAMPLE_RATE_8000 ||
+        audioStreamParams.samplingRate == SAMPLE_RATE_16000 ||
+        audioStreamParams.samplingRate == SAMPLE_RATE_48000) {
+        AUDIO_INFO_LOG("The sampling rate %{public}d is valid for direct VoIP mode",
+            audioStreamParams.samplingRate);
+        return true;
+    } else {
+        AUDIO_ERR_LOG("The sampling rate %{public}d is not supported for direct VoIP mode",
+            audioStreamParams.samplingRate);
+        return false;
+    }
 }
 
 int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
@@ -1040,16 +1064,25 @@ int32_t AudioRendererPrivate::SetRenderMode(AudioRenderMode renderMode)
 {
     AUDIO_INFO_LOG("Render mode: %{public}d", renderMode);
     audioRenderMode_ = renderMode;
-
-    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION && renderMode == RENDER_MODE_CALLBACK &&
-        AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_) == AUDIO_FLAG_VOIP_FAST &&
-        rendererInfo_.originalFlag != AUDIO_FLAG_FORCED_NORMAL) {
-        AUDIO_INFO_LOG("Switch to fast voip stream");
+    if (renderMode == RENDER_MODE_CALLBACK && rendererInfo_.originalFlag != AUDIO_FLAG_FORCED_NORMAL &&
+        (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)) {
+        // both fast and direct VoIP renderer can only use RENDER_MODE_CALLBACK;
+        int32_t flags = AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_);
         uint32_t sessionId = 0;
         int32_t ret = audioStream_->GetAudioSessionID(sessionId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get audio session Id failed");
         uint32_t newSessionId = 0;
-        if (!SwitchToTargetStream(IAudioStream::VOIP_STREAM, newSessionId)) {
+        IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+        if (flags == AUDIO_FLAG_VOIP_FAST) {
+            AUDIO_INFO_LOG("Switch to fast voip stream");
+            streamClass = IAudioStream::VOIP_STREAM;
+        } else if (flags == AUDIO_FLAG_VOIP_DIRECT && isDirectVoipSupported_) {
+            AUDIO_INFO_LOG("Switch to direct voip stream");
+            rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+            streamClass = IAudioStream::PA_STREAM;
+        }
+        if (!SwitchToTargetStream(streamClass, newSessionId)) {
             AUDIO_ERR_LOG("Switch to target stream failed");
             return ERROR;
         }
@@ -1437,6 +1470,11 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         if (targetClass == IAudioStream::VOIP_STREAM) {
             info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
         }
+        if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
+            info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
+            info.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+            info.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+        }
         std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, info.params,
             info.eStreamType, appInfo_.appPid);
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
@@ -1487,6 +1525,11 @@ void AudioRendererPrivate::SwitchStream(const uint32_t sessionId, const int32_t 
         case AUDIO_FLAG_VOIP_FAST:
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
             targetClass = IAudioStream::VOIP_STREAM;
+            break;
+        case AUDIO_FLAG_VOIP_DIRECT:
+            rendererInfo_.rendererFlags = (isDirectVoipSupported_ && audioRenderMode_ == RENDER_MODE_CALLBACK) ?
+                AUDIO_FLAG_VOIP_DIRECT : AUDIO_FLAG_NORMAL;
+            targetClass = IAudioStream::PA_STREAM;
             break;
     }
     if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {

@@ -5270,15 +5270,36 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
         rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_);
 }
 
+void AudioPolicyService::SetNormalVoipFlag(const bool &normalVoipFlag)
+{
+    normalVoipFlag_ = normalVoipFlag;
+}
+
+int32_t AudioPolicyService::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId)
+{
+    // VoIP stream has three mode for different products.
+    if (enableFastVoip_ && (sinkPortName == PRIMARY_SPEAKER || networkId != LOCAL_NETWORK_ID)) {
+        return AUDIO_FLAG_VOIP_FAST;
+    } else if (!normalVoipFlag_ && sinkPortName == PRIMARY_SPEAKER) {
+        AUDIO_INFO_LOG("Direct VoIP mode is supported for the device");
+        return AUDIO_FLAG_VOIP_DIRECT;
+    }
+
+    return AUDIO_FLAG_NORMAL;
+}
+
 int32_t AudioPolicyService::GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType,
     int32_t flags, std::string &networkId)
 {
     AUDIO_INFO_LOG("Device type: %{public}d, stream usage: %{public}d, flag: %{public}d",
         deviceType, streamUsage, flags);
     std::string sinkPortName = GetSinkPortName(deviceType);
-    if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION && enableFastVoip_ &&
-        (sinkPortName == PRIMARY_SPEAKER || networkId != LOCAL_NETWORK_ID)) {
-        return AUDIO_FLAG_VOIP_FAST;
+    if (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+        // VoIP stream. Need to judge whether it is fast or direct mode.
+        int32_t flag = GetVoipRendererFlag(sinkPortName, networkId);
+        if (flag == AUDIO_FLAG_VOIP_FAST || flag == AUDIO_FLAG_VOIP_DIRECT) {
+            return flag;
+        }
     }
     if (adapterInfoMap_.find(static_cast<AdaptersType>(portStrToEnum[sinkPortName])) == adapterInfoMap_.end()) {
         return AUDIO_FLAG_INVALID;
@@ -5479,7 +5500,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-        if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
             return GetVoipPlaybackDeviceInfo(config, deviceInfo);
         }
         deviceInfo.deviceId = currentActiveDevice_.deviceId_;
@@ -5548,6 +5570,11 @@ int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, 
         deviceInfo.audioStreamInfo = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     } else {
         deviceInfo.audioStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    }
+    if (type == AUDIO_FLAG_VOIP_DIRECT) {
+        AUDIO_INFO_LOG("Direct VoIP stream, deviceInfo has been updated: deviceInfo.deviceType %{public}d",
+            deviceInfo.deviceType);
+        return SUCCESS;
     }
     std::lock_guard<std::mutex> lock(routerMapMutex_);
     if (fastRouterMap_.count(config.appInfo.appUid) &&

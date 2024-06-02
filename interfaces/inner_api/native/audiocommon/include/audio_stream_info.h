@@ -222,6 +222,7 @@ enum AudioPipeType {
     PIPE_TYPE_HIGHRESOLUTION = 11,
     PIPE_TYPE_SPATIALIZATION = 12,
     PIPE_TYPE_DIRECT_MUSIC = 13,
+    PIPE_TYPE_DIRECT_VOIP = 14,
 };
 
 struct AudioStreamParams {

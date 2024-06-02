@@ -778,7 +778,7 @@ float AudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t AudioRendererSinkInner::Start(void)
 {
-    AUDIO_INFO_LOG("Start.");
+    AUDIO_INFO_LOG("Start. sinkName %{public}s", halName_.c_str());
     Trace trace("AudioRendererSinkInner::Start");
 #ifdef FEATURE_POWER_MANAGER
     std::string lockName = PRIMARY_LOCK_NAME;
@@ -910,6 +910,8 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
 AudioPortPin AudioRendererSinkInner::GetAudioPortPin() const noexcept
 {
     switch (attr_.deviceType) {
+        case DEVICE_TYPE_EARPIECE:
+            return PIN_OUT_EARPIECE;
         case DEVICE_TYPE_SPEAKER:
             return PIN_OUT_SPEAKER;
         case DEVICE_TYPE_WIRED_HEADSET:
@@ -1108,7 +1110,7 @@ void AudioRendererSinkInner::ReleaseRunningLock()
 int32_t AudioRendererSinkInner::Stop(void)
 {
     Trace trace("AudioRendererSinkInner::Stop");
-    AUDIO_INFO_LOG("Stop.");
+    AUDIO_INFO_LOG("Stop. sinkName %{public}s", halName_.c_str());
 
     DeinitLatencyMeasurement();
 

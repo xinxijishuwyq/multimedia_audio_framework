@@ -1062,8 +1062,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
-    if ((resetConfig.audioMode == AUDIO_MODE_PLAYBACK && resetConfig.rendererInfo.rendererFlags == 0) ||
-        (resetConfig.audioMode == AUDIO_MODE_RECORD && resetConfig.capturerInfo.capturerFlags == 0)) {
+    if ((IsNormalIpcStream(resetConfig))) {
         AUDIO_INFO_LOG("Create normal ipc stream.");
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
@@ -1076,6 +1075,18 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
     sptr<IRemoteObject> remoteObject= process->AsObject();
     return remoteObject;
+}
+
+bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
+{
+    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+        return config.rendererInfo.rendererFlags == AUDIO_FLAG_NORMAL ||
+            config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT;
+    } else if (config.audioMode == AUDIO_MODE_RECORD) {
+        return config.capturerInfo.capturerFlags == AUDIO_FLAG_NORMAL;
+    }
+
+    return false;
 }
 
 int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)

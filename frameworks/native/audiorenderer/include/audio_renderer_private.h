@@ -172,6 +172,7 @@ private:
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
+    bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -194,6 +195,7 @@ private:
     mutable std::mutex switchStreamMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     bool isFastVoipSupported_ = false;
+    bool isDirectVoipSupported_ = false;
 
     float speed_ = 1.0;
     bool isOffloadAllowed_ = true;

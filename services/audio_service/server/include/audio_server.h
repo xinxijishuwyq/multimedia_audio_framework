@@ -162,6 +162,7 @@ private:
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();
     void WriteServiceStartupError();
+    bool IsNormalIpcStream(const AudioProcessConfig &config) const;
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

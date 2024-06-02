@@ -197,7 +197,7 @@ void NoneMixEngine::StandbySleep()
     ClockTime::AbsoluteSleep(writeTime);
 }
 
-static AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate)
+AudioSamplingRate NoneMixEngine::GetDirectSampleRate(AudioSamplingRate sampleRate)
 {
     AudioSamplingRate result = sampleRate;
     switch (sampleRate) {
@@ -213,10 +213,23 @@ static AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate)
         default:
             break;
     }
+    AUDIO_INFO_LOG("GetDirectSampleRate: sampleRate: %{public}d, result: %{public}d", sampleRate, result);
     return result;
 }
 
-HdiAdapterFormat GetDirectDeviceFormate(AudioSampleFormat format)
+AudioSamplingRate NoneMixEngine::GetDirectVoipSampleRate(AudioSamplingRate sampleRate)
+{
+    AudioSamplingRate result = sampleRate;
+    if (sampleRate <= AudioSamplingRate::SAMPLE_RATE_16000) {
+        result = AudioSamplingRate::SAMPLE_RATE_16000;
+    } else {
+        result = AudioSamplingRate::SAMPLE_RATE_48000;
+    }
+    AUDIO_INFO_LOG("GetDirectVoipSampleRate: sampleRate: %{public}d, result: %{public}d", sampleRate, result);
+    return result;
+}
+
+HdiAdapterFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
 {
     switch (format) {
         case AudioSampleFormat::SAMPLE_U8:
@@ -241,11 +254,12 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     renderSink_ = AudioRendererSink::GetInstance(sinkName);
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = GetDirectSampleRate(streamInfo.samplingRate);
+    attr.sampleRate = isVoip_ ?
+        GetDirectVoipSampleRate(streamInfo.samplingRate) : GetDirectSampleRate(streamInfo.samplingRate);
     attr.channel = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     attr.format = GetDirectDeviceFormate(streamInfo.format);
-    attr.channelLayout =
-        streamInfo.channels >= STEREO_CHANNEL_COUNT ? HDI_STEREO_CHANNEL_LAYOUT : HDI_MONO_CHANNEL_LAYOUT;
+    attr.channelLayout = streamInfo.channels >= STEREO_CHANNEL_COUNT ?
+        HDI_STEREO_CHANNEL_LAYOUT : HDI_MONO_CHANNEL_LAYOUT;
     attr.deviceType = device_.deviceType;
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;

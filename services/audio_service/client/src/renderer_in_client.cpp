@@ -289,10 +289,11 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     int32_t type = -1;
-    if (IsHighResolution()) {
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
         type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
-            rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+            rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
+                PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
         }
     }
 
@@ -438,7 +439,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
-    if (rendererInfo_.rendererFlags != 0) {
+    if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }
