@@ -15,11 +15,11 @@
 #undef LOG_TAG
 #define LOG_TAG "NoneMixEngine"
 
-#include "none_mix_engine.h"
 #include "audio_common_converter.h"
-#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
+#include "none_mix_engine.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,14 +35,9 @@ const std::string DIRECT_SINK_NAME = "direct";
 const char *SINK_ADAPTER_NAME = "primary";
 
 NoneMixEngine::NoneMixEngine(DeviceInfo type, bool isVoip)
-    : isVoip_(isVoip),
-      isStart_(false),
-      isPause_(false),
-      device_(type),
-      failedCount_(0),
-      writeCount_(0),
-      fwkSyncTime_(0),
-      stream_(nullptr)
+    : isVoip_(isVoip), isStart_(false), isPause_(false), device_(type), failedCount_(0), writeCount_(0),
+      fwkSyncTime_(0), stream_(nullptr), startFadein_(false), startFadeout_(false), uChannel_(0),
+      uFormat_(HdiAdapterFormat::SAMPLE_F32), uSampleRate_(0)
 {
     AUDIO_INFO_LOG("Constructor");
 }
@@ -61,6 +56,8 @@ NoneMixEngine::~NoneMixEngine()
         renderSink_->DeInit();
     }
     isStart_ = false;
+    startFadein_ = false;
+    startFadeout_ = false;
 }
 
 int32_t NoneMixEngine::Start()
@@ -75,6 +72,8 @@ int32_t NoneMixEngine::Start()
         playbackThread_->RegisterJob([this] { this->MixStreams(); });
     }
     if (!isStart_) {
+        startFadeout_ = false;
+        startFadein_ = true;
         ret = renderSink_->Start();
         isStart_ = true;
     }
@@ -92,6 +91,12 @@ int32_t NoneMixEngine::Stop()
     writeCount_ = 0;
     failedCount_ = 0;
     if (playbackThread_) {
+        startFadein_ = false;
+        startFadeout_ = true;
+        // wait until fadeout complete
+        std::unique_lock fadingLock(fadingMutex_);
+        cvFading_.wait_for(
+            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
@@ -105,6 +110,12 @@ int32_t NoneMixEngine::Stop()
 void NoneMixEngine::PauseAsync()
 {
     if (playbackThread_) {
+        // wait until fadeout complete
+        startFadein_ = false;
+        startFadeout_ = true;
+        std::unique_lock fadingLock(fadingMutex_);
+        cvFading_.wait_for(
+            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->PauseAsync();
     }
     isPause_ = true;
@@ -117,6 +128,12 @@ int32_t NoneMixEngine::Pause()
     writeCount_ = 0;
     failedCount_ = 0;
     if (playbackThread_) {
+        startFadein_ = false;
+        startFadeout_ = true;
+        // wait until fadeout complete
+        std::unique_lock fadingLock(fadingMutex_);
+        cvFading_.wait_for(
+            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Pause();
     }
     isPause_ = true;
@@ -127,6 +144,30 @@ int32_t NoneMixEngine::Flush()
 {
     AUDIO_INFO_LOG("Enter");
     return SUCCESS;
+}
+
+void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize)
+{
+    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0, "buffer is null.");
+    int32_t *dstPtr = reinterpret_cast<int32_t *>(pBuffer);
+    size_t dataLength = bufferSize / (uFormat_ * uChannel_);
+    float fadeStep = 1.0f / dataLength;
+    for (size_t i = 0; i < dataLength; i++) {
+        float fadeFactor;
+        if (isFadeOut) {
+            fadeFactor = 1.0f - ((i + 1) * fadeStep);
+        } else {
+            fadeFactor = (i + 1) * fadeStep;
+        }
+        for (uint32_t j = 0; j < uChannel_; j++) {
+            dstPtr[i * uChannel_ + j] *= fadeFactor;
+        }
+    }
+    if (isFadeOut) {
+        startFadeout_.store(false);
+    } else {
+        startFadein_.store(false);
+    }
 }
 
 void NoneMixEngine::MixStreams()
@@ -155,6 +196,12 @@ void NoneMixEngine::MixStreams()
     }
     failedCount_ = 0;
     uint64_t written = 0;
+    // fade in or fade out
+    if (startFadeout_ || startFadein_) {
+        DoFadeinOut(startFadeout_, audioBuffer.data(), audioBuffer.size());
+        cvFading_.notify_all();
+    }
+
     renderSink_->RenderFrame(*audioBuffer.data(), audioBuffer.size(), written);
     stream_->ReturnIndex(index);
     renderSink_->UpdateAppsUid({appUid});
@@ -271,6 +318,9 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     }
     float volume = 1.0f;
     ret = renderSink_->SetVolume(volume, volume);
+    uChannel_ = attr.channel;
+    uSampleRate_ = attr.sampleRate;
+    uFormat_ = attr.format;
     return ret;
 }
 
