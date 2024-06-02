@@ -30,10 +30,11 @@ ohos_unittest("audio_running_lock_manager_unit_test") {
 
   sources = [ "src/audio_running_lock_manager_unit_test.cpp" ]
 
-  deps = []
+  deps = [ "../../../../../audioutils:audio_utils" ]
 
   external_deps = [
     "googletest:gmock",
     "googletest:gtest",
+    "hilog:libhilog",
   ]
 }
