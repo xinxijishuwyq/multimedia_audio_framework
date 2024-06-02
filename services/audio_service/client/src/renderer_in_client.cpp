@@ -1578,7 +1578,7 @@ int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize
 {
     size_t targetSize = bufferSize;
     size_t offset = 0;
-    while (targetSize > sizePerFrameInByte_) {
+    while (targetSize >= sizePerFrameInByte_) {
         // 1. write data into ring cache
         OptResult result = ringCache_->GetWritableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, speedCached ? oriBufferSize : bufferSize - targetSize,
