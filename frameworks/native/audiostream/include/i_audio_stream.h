@@ -126,6 +126,7 @@ public:
     virtual bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) = 0;
     virtual int32_t GetAudioSessionID(uint32_t &sessionID) = 0;
+    virtual void GetAudioPipeType(AudioPipeType &pipeType) = 0;
     virtual State GetState() = 0;
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;

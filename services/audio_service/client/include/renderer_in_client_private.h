@@ -77,6 +77,7 @@ public:
     bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
@@ -252,7 +253,6 @@ private:
     bool IsHighResolution() const noexcept;
 
     void ProcessWriteInner(BufferDesc &bufferDesc);
-
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;

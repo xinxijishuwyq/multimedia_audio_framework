@@ -18,6 +18,7 @@
 
 #include <mutex>
 #include "audio_utils.h"
+#include "audio_concurrency_callback.h"
 #include "audio_interrupt_callback.h"
 #include "i_audio_stream.h"
 #include "audio_capturer_proxy_obj.h"
@@ -28,6 +29,7 @@ constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class AudioCapturerStateChangeCallbackImpl;
 class CapturerPolicyServiceDiedCallback;
 class InputDeviceChangeWithInfoCallbackImpl;
+class AudioCapturerConcurrencyCallbackImpl;
 
 class AudioCapturerPrivate : public AudioCapturer {
 public:
@@ -89,6 +91,7 @@ public:
     uint32_t GetOverflowCount() const override;
 
     void SwitchStream(const uint32_t sessionId, const int32_t streamFlag);
+    void ConcedeStream();
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -122,7 +125,9 @@ private:
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
+    int32_t InitAudioConcurrencyCallback();
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
+    void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
     void WriteOverflowEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
@@ -141,6 +146,7 @@ private:
     bool isValid_ = true;
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
     std::shared_ptr<CapturerPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
+    std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
     DeviceInfo currentDeviceInfo_ = {};
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
@@ -242,6 +248,26 @@ private:
     AudioInterrupt audioInterrupt_;
     void RestoreTheadLoop();
     std::unique_ptr<std::thread> restoreThread_ = nullptr;
+};
+
+class AudioCapturerConcurrencyCallbackImpl : public AudioConcurrencyCallback {
+public:
+    explicit AudioCapturerConcurrencyCallbackImpl();
+    virtual ~AudioCapturerConcurrencyCallbackImpl();
+    void OnConcedeStream() override;
+    void SetAudioCapturerObj(AudioCapturerPrivate *rendererObj)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        capturer_ = rendererObj;
+    }
+    void UnsetAudioCapturerObj()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        capturer_ = nullptr;
+    }
+private:
+    AudioCapturerPrivate *capturer_ = nullptr;
+    std::mutex mutex_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -491,6 +491,11 @@ public:
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
 
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
+
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

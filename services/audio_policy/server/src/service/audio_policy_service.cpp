@@ -795,6 +795,8 @@ void AudioPolicyService::OffloadStreamReleaseCheck(uint32_t sessionId)
     if (((*offloadSessionID_) == sessionId) && offloadSessionID_.has_value()) {
         AUDIO_DEBUG_LOG("Doing unset offload mode!");
         streamCollector_.UnsetOffloadMode(*offloadSessionID_);
+        AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
+        streamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
         offloadSessionID_.reset();
         UnloadOffloadModule();
         AUDIO_DEBUG_LOG("sessionId[%{public}d] release offload stream", sessionId);
@@ -5782,6 +5784,9 @@ int32_t AudioPolicyService::UnloadMchModule()
 void AudioPolicyService::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType)
 {
     if (CheckStreamMultichannelMode(activateSessionId, activateStreamType)) {
+        AudioPipeType pipeMultiChannel = PIPE_TYPE_MULTICHANNEL;
+        int32_t ret = ActivateAudioConcurrency(pipeMultiChannel);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "concede incoming multichannel");
         MoveToNewPipeInner(activateSessionId, PIPE_TYPE_MULTICHANNEL);
     }
 }
@@ -5848,6 +5853,7 @@ int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
             break;
         }
         case PIPE_TYPE_NORMAL_OUT: {
+            UnloadOffloadModule();
             portName = GetSinkPortName(deviceType, pipeType);
             ret = MoveToOutputDevice(sessionId, portName);
             break;
@@ -7469,6 +7475,21 @@ bool AudioPolicyService::LoadToneDtmfConfig()
         return false;
     }
     return true;
+}
+
+int32_t AudioPolicyService::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    return streamCollector_.SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioPolicyService::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    return streamCollector_.UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioPolicyService::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    return streamCollector_.ActivateAudioConcurrency(pipeType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

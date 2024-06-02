@@ -130,6 +130,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
             offloadStartReadPos_ = 0;
         }
         offloadEnable_ = static_cast<bool>(result);
+        rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
     }
     // read/write operation may print many log, use debug.
@@ -197,16 +198,6 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
     rendererInfo_.encodingType = curStreamParams_.encoding;
     rendererInfo_.channelLayout = curStreamParams_.channelLayout;
-
-    if (GetOffloadEnable()) {
-        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
-    } else if (GetHighResolutionEnabled()) {
-        rendererInfo_.pipeType = PIPE_TYPE_HIGHRESOLUTION;
-    } else if (spatializationState.spatializationEnabled) {
-        rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
-    } else {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    }
 }
 
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -566,6 +557,11 @@ int32_t RendererInClientInner::GetAudioSessionID(uint32_t &sessionID)
         "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
+}
+
+void RendererInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = rendererInfo_.pipeType;
 }
 
 State RendererInClientInner::GetState()
@@ -1098,6 +1094,7 @@ int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
+    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->UnsetOffloadMode();
 }

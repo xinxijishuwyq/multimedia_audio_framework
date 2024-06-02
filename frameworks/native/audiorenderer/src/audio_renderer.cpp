@@ -389,6 +389,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     ret = GetAudioStreamId(sessionID_);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "GetAudioStreamId err");
     InitLatencyMeasurement(audioStreamParams);
+    InitAudioConcurrencyCallback();
 
     return SUCCESS;
 }
@@ -448,20 +449,10 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
     IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
-    AUDIO_INFO_LOG("Create stream with flag: %{public}d, original flag: %{public}d, streamClass: %{public}d",
-        rendererInfo_.rendererFlags, rendererInfo_.originalFlag, streamClass);
+    int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
-    // check AudioStreamParams for fast stream
-    // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
-    if (audioStream_ == nullptr) {
-        audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
-            appInfo_.appUid);
-        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
-        AUDIO_INFO_LOG("IAudioStream::GetStream success");
-        audioStream_->SetApplicationCachePath(cachePath_);
-    }
-
-    int32_t ret = InitAudioStream(audioStreamParams);
+    ret = InitAudioStream(audioStreamParams);
     // When the fast stream creation fails, a normal stream is created
     if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
         AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
@@ -489,6 +480,25 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitOutputDeviceChangeCallback Failed");
 
     return InitAudioInterruptCallback();
+}
+
+int32_t AudioRendererPrivate::PrepareAudioStream(const AudioStreamParams &audioStreamParams,
+    const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass)
+{
+    AUDIO_INFO_LOG("Create stream with flag: %{public}d, original flag: %{public}d, streamClass: %{public}d",
+        rendererInfo_.rendererFlags, rendererInfo_.originalFlag, streamClass);
+
+    // check AudioStreamParams for fast stream
+    // As fast stream only support specified audio format, we should call GetPlaybackStream with audioStreamParams.
+    ActivateAudioConcurrency(audioStreamParams, audioStreamType, streamClass);
+    if (audioStream_ == nullptr) {
+        audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
+            appInfo_.appUid);
+        CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
+        AUDIO_INFO_LOG("IAudioStream::GetStream success");
+        audioStream_->SetApplicationCachePath(cachePath_);
+    }
+    return SUCCESS;
 }
 
 int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
@@ -769,6 +779,12 @@ bool AudioRendererPrivate::Release() const
 
     AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionID_);
 
+    std::shared_ptr<AudioRendererConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
+    if (cb != nullptr) {
+        cb->UnsetAudioRendererObj();
+        AudioPolicyManager::GetInstance().UnsetAudioConcurrencyCallback(sessionID_);
+    }
+
     return result;
 }
 
@@ -960,6 +976,33 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     HandleAndNotifyForcedEvent(interruptEvent);
 }
 
+AudioRendererConcurrencyCallbackImpl::AudioRendererConcurrencyCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioRendererConcurrencyCallbackImpl ctor");
+}
+
+AudioRendererConcurrencyCallbackImpl::~AudioRendererConcurrencyCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioRendererConcurrencyCallbackImpl dtor");
+}
+
+void AudioRendererConcurrencyCallbackImpl::OnConcedeStream()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_LOG(renderer_ != nullptr, "renderer is nullptr");
+    renderer_->ConcedeStream();
+}
+
+int32_t AudioRendererPrivate::InitAudioConcurrencyCallback()
+{
+    if (audioConcurrencyCallback_ == nullptr) {
+        audioConcurrencyCallback_ = std::make_shared<AudioRendererConcurrencyCallbackImpl>();
+        CHECK_AND_RETURN_RET_LOG(audioConcurrencyCallback_ != nullptr, ERROR, "Memory Allocation Failed !!");
+    }
+    audioConcurrencyCallback_->SetAudioRendererObj(this);
+    return AudioPolicyManager::GetInstance().SetAudioConcurrencyCallback(sessionID_, audioConcurrencyCallback_);
+}
+
 void AudioStreamCallbackRenderer::SaveCallback(const std::weak_ptr<AudioRendererCallback> &callback)
 {
     callback_ = callback;
@@ -1137,11 +1180,21 @@ int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 
 int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) const
 {
+    AUDIO_INFO_LOG("set offload mode for session %{public}u", sessionID_);
+
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.pipeType == PIPE_TYPE_NORMAL_OUT, ERR_CONCEDE_INCOMING_STREAM,
+        "session %{public}u pipe type is %{public}d, deny offload", sessionID_, rendererInfo_.pipeType);
     if (!isOffloadAllowed_) {
         AUDIO_INFO_LOG("offload is not allowed");
         return ERR_NOT_SUPPORTED;
     }
-    int32_t ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
+
+    AudioPipeType offload = PIPE_TYPE_OFFLOAD;
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(offload);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_CONCEDE_INCOMING_STREAM,
+        "session %{public}u deny offload", sessionID_);
+
+    ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_OFFLOAD);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("move into offload pipe failed.");
         return ERROR;
@@ -1151,7 +1204,12 @@ int32_t AudioRendererPrivate::SetOffloadMode(int32_t state, bool isAppBack) cons
 
 int32_t AudioRendererPrivate::UnsetOffloadMode() const
 {
-    return audioStream_->UnsetOffloadMode();
+    AUDIO_INFO_LOG("session %{public}u session unset offload", sessionID_);
+    int32_t ret = audioStream_->UnsetOffloadMode();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "unset offload failed");
+    ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_NORMAL_OUT);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "concede from offload failed");
+    return SUCCESS;
 }
 
 float AudioRendererPrivate::GetSingleStreamVolume() const
@@ -1728,6 +1786,58 @@ void AudioRendererPrivate::MockPcmData(uint8_t *buffer, size_t bufferSize) const
     if (latencyMeasurement_->MockPcmData(buffer, bufferSize)) {
         std::string timestamp = GetTime();
         audioStream_->UpdateLatencyTimestamp(timestamp, true);
+    }
+}
+
+void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
+    const AudioStreamType &streamType, IAudioStream::StreamClass &streamClass)
+{
+    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
+    } else if (streamClass == IAudioStream::FAST_STREAM) {
+        rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+    } else {
+        std::vector<sptr<AudioDeviceDescriptor>> deviceDescriptors =
+            AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo_);
+        if (!deviceDescriptors.empty() && deviceDescriptors[0] != nullptr) {
+            if ((deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_USB_HEADSET ||
+                deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) &&
+                streamType == STREAM_MUSIC && audioStreamParams.samplingRate >= SAMPLE_RATE_48000 &&
+                audioStreamParams.format >= SAMPLE_S24LE) {
+                rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
+            }
+        }
+    }
+    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(rendererInfo_.pipeType);
+    if (ret != SUCCESS) {
+        if (streamClass == IAudioStream::FAST_STREAM) {
+            streamClass = IAudioStream::PA_STREAM;
+        }
+        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    }
+    return;
+}
+
+void AudioRendererPrivate::ConcedeStream()
+{
+    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, rendererInfo_.pipeType);
+    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
+    audioStream_->GetAudioPipeType(pipeType);
+    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    audioStream_->SetRendererInfo(rendererInfo_);
+    switch (pipeType) {
+        case PIPE_TYPE_LOWLATENCY_OUT:
+        case PIPE_TYPE_DIRECT_MUSIC:
+            SwitchStream(sessionID_, IAudioStream::PA_STREAM);
+            break;
+        case PIPE_TYPE_OFFLOAD:
+            isOffloadAllowed_ = false;
+            UnsetOffloadMode();
+            AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_NORMAL_OUT);
+            break;
+        default:
+            break;
     }
 }
 }  // namespace AudioStandard

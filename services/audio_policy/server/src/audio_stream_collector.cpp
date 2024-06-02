@@ -94,6 +94,10 @@ AudioStreamCollector::AudioStreamCollector() : audioSystemMgr_
     (AudioSystemManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
+    audioPolicyServerHandler_->AddConcurrencyEventDispatcher(audioConcurrencyService_);
+    audioConcurrencyService_->Init();
+    audioConcurrencyService_->SetCallbackHandler(audioPolicyServerHandler_);
     AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
@@ -935,6 +939,23 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     return SUCCESS;
+}
+
+int32_t AudioStreamCollector::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    return audioConcurrencyService_->SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioStreamCollector::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    return audioConcurrencyService_->UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioStreamCollector::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    return audioConcurrencyService_->ActivateAudioConcurrency(pipeType,
+        audioRendererChangeInfos_, audioCapturerChangeInfos_);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

@@ -2153,5 +2153,20 @@ int32_t AudioPolicyProxy::MoveToNewPipe(const uint32_t sessionId, const AudioPip
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %d", error);
     return reply.ReadInt32();
 }
+
+int32_t AudioPolicyProxy::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(pipeType);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_CONCURRENCY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate concurrency failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -124,6 +124,12 @@ int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32
     return SUCCESS;
 }
 
+void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(std::shared_ptr<IAudioConcurrencyEventDispatcher>
+    dispatcher)
+{
+    concurrencyEventDispatcher_ = dispatcher;
+}
+
 bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
     bool isConnected)
 {
@@ -461,6 +467,19 @@ bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send PIPE_STREAM_CLEAN_EVENT event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("session %{public}u send concurrency event", sessionID);
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->sessionId = sessionID;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send CONCURRENCY_EVENT_WITH_SESSIONID event failed");
     return ret;
 }
 
@@ -819,9 +838,23 @@ void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::Inne
     AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
 }
 
+void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+
+    std::unique_lock<std::mutex> lock(runnerMutex_);
+    std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher = concurrencyEventDispatcher_.lock();
+    lock.unlock();
+    if (dispatcher != nullptr) {
+        dispatcher->DispatchConcurrencyEventWithSessionId(eventContextObj->sessionId);
+    }
+}
+
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
+    HandleOtherServiceEvent(eventId, event);
     switch (eventId) {
         case EventAudioServerCmd::AUDIO_DEVICE_CHANGE:
             HandleDeviceChangedCallback(event);
@@ -864,6 +897,18 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
             HandlePipeStreamCleanEvent(event);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    switch (eventId) {
+        case EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID:
+            HandleConcurrencyEventWithSessionID(event);
             break;
         default:
             break;

@@ -17,6 +17,7 @@
 #define AUDIO_RENDERER_PRIVATE_H
 
 #include "audio_interrupt_callback.h"
+#include "audio_concurrency_callback.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
@@ -28,6 +29,7 @@ constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class AudioRendererStateChangeCallbackImpl;
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
+class AudioRendererConcurrencyCallbackImpl;
 
 class AudioRendererPrivate : public AudioRenderer {
 public:
@@ -120,6 +122,7 @@ public:
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
+    void ConcedeStream();
 
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
@@ -154,19 +157,25 @@ protected:
     void SwitchStream(bool isLowLatencyDevice, bool isHalNeedChange);
 
 private:
+    int32_t PrepareAudioStream(const AudioStreamParams &audioStreamParams,
+        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     int32_t InitAudioInterruptCallback();
     int32_t InitOutputDeviceChangeCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
+    int32_t InitAudioConcurrencyCallback();
     void SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, uint32_t &newSessionId);
     void SetSelfRendererStateCallback();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
+    void ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
+        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
+    std::shared_ptr<AudioRendererConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
@@ -287,6 +296,26 @@ private:
     AudioInterrupt audioInterrupt_;
     void RestoreTheadLoop();
     std::unique_ptr<std::thread> restoreThread_ = nullptr;
+};
+
+class AudioRendererConcurrencyCallbackImpl : public AudioConcurrencyCallback {
+public:
+    explicit AudioRendererConcurrencyCallbackImpl();
+    virtual ~AudioRendererConcurrencyCallbackImpl();
+    void OnConcedeStream() override;
+    void SetAudioRendererObj(AudioRendererPrivate *rendererObj)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        renderer_ = rendererObj;
+    }
+    void UnsetAudioRendererObj()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        renderer_ = nullptr;
+    }
+private:
+    AudioRendererPrivate *renderer_ = nullptr;
+    std::mutex mutex_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

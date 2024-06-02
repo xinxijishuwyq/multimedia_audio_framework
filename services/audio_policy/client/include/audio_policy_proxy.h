@@ -272,6 +272,12 @@ public:
     int32_t TriggerFetchDevice() override;
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType) override;
+
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object) override;
+
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) override;
+
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

@@ -102,6 +102,7 @@ public:
         AudioPermissionState state) override;
     State GetState() override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    void GetAudioPipeType(AudioPipeType &pipeType) override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
@@ -842,6 +843,11 @@ int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
         "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
+}
+
+void CapturerInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = capturerInfo_.pipeType;
 }
 
 State CapturerInClientInner::GetState()
