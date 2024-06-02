@@ -110,7 +110,7 @@ int32_t EffectChainManagerCreateCb(const char *sceneType, const char *sessionID)
         return SUCCESS;
     }
     if (sceneTypeString == "SCENE_MOVIE" && audioEffectChainManager->GetDeviceTypeName() == "DEVICE_TYPE_SPEAKER") {
-        // for AISS, dsp has not implemented it yet {
+        // for AISS, dsp has not implemented it yet
         audioEffectChainManager->UpdateSpkOffloadEnabled();
     }
     bool curSpatializationEnabled = audioEffectChainManager->GetCurSpatializationEnabled();

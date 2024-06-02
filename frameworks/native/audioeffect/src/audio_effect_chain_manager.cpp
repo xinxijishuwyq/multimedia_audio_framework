@@ -93,7 +93,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     GetSysPara("const.build.product", deviceClass_);
     int32_t flag = 0;
     GetSysPara("persist.multimedia.audioflag.debugarmflag", flag);
-    debugArmFlag_ = flag == 0 ? false : true;
+    debugArmFlag_ = flag == 1 ? true : false;
 }
 
 AudioEffectChainManager::~AudioEffectChainManager()
@@ -140,13 +140,13 @@ void AudioEffectChainManager::SetSpkOffloadState()
         if (!spkOffloadEnabled_) {
             effectHdiInput_[0] = HDI_INIT;
             ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
-            if (ret != SUCCESS) {
+            if (ret != SUCCESS || !CheckIfSpkDsp()) {
                 AUDIO_WARNING_LOG("set hdi init failed, backup speaker entered");
                 spkOffloadEnabled_ = false;
                 RecoverAllChains();
             } else {
                 AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
-                spkOffloadEnabled_ = CheckIfSpkDsp();
+                spkOffloadEnabled_ = true;
             }
         }
     } else {
@@ -203,6 +203,7 @@ std::string AudioEffectChainManager::GetDeviceTypeName()
 void AudioEffectChainManager::UpdateSpkOffloadEnabled()
 {
     if (debugArmFlag_ && spkOffloadEnabled_) {
+        std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
         RecoverAllChains();
         spkOffloadEnabled_ = false;
         return;
@@ -433,8 +434,14 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
 
-    if (debugArmFlag_) {
-        SetSpkOffloadState(); // for AISS movie scene update
+    if (debugArmFlag_ && !spkOffloadEnabled_ && CheckIfSpkDsp()) {
+        effectHdiInput_[0] = HDI_INIT;
+        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_SPEAKER);
+        if (ret == SUCCESS) {
+            AUDIO_INFO_LOG("set hdi init succeeded, normal speaker entered");
+            spkOffloadEnabled_ = true;
+            DeleteAllChains();
+        }
     }
 
     AUDIO_DEBUG_LOG("releaseEffect, sceneTypeAndDeviceKey [%{public}s]", sceneTypeAndDeviceKey.c_str());
