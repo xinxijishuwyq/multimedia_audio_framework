@@ -65,6 +65,7 @@ public:
     void GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioRendererChangeInfo &rendererInfo);
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
     int32_t GetPipeType(const int32_t sessionId, AudioPipeType &pipeType);
+    bool ExistStreamForPipe(AudioPipeType pipeType);
 
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
@@ -96,7 +97,6 @@ private:
         std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
         std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
-    bool ExistStreamForPipe(AudioPipeType pipeType);
     void RegisteredRendererTrackerClientDied(const int32_t uid);
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
