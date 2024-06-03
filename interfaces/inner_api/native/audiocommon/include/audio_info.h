@@ -698,7 +698,7 @@ struct AudioProcessConfig {
 
     AudioStreamType streamType = STREAM_DEFAULT;
 
-    DeviceType deviceType = DEVICE_TYPE_NONE;
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
 
     bool isInnerCapturer = false;
 
