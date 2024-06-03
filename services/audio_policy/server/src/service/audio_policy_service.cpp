@@ -3180,10 +3180,10 @@ void AudioPolicyService::UpdateConnectedDevicesWhenDisconnecting(const AudioDevi
     for (auto it = connectedDevices_.begin(); it != connectedDevices_.end();) {
         it = find_if(it, connectedDevices_.end(), isPresent);
         if (it != connectedDevices_.end()) {
-            if ((*it)->deviceId_ == audioStateManager_.GetPerferredMediaRenderDevice()->deviceId_) {
+            if ((*it)->deviceId_ == audioStateManager_.GetPreferredMediaRenderDevice()->deviceId_) {
                 audioStateManager_.SetPerferredMediaRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
-            if ((*it)->deviceId_ == audioStateManager_.GetPerferredCallRenderDevice()->deviceId_) {
+            if ((*it)->deviceId_ == audioStateManager_.GetPreferredCallRenderDevice()->deviceId_) {
                 audioStateManager_.SetPerferredCallRenderDevice(new(std::nothrow) AudioDeviceDescriptor());
             }
             if ((*it)->deviceId_ == audioStateManager_.GetPerferredCallCaptureDevice()->deviceId_) {
@@ -6655,8 +6655,8 @@ void AudioPolicyService::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand)
 {
     AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
-    unique_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice = stateManager.GetPerferredMediaRenderDevice();
-    unique_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice = stateManager.GetPerferredCallRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice = stateManager.GetPreferredMediaRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice = stateManager.GetPreferredCallRenderDevice();
     unique_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPerferredCallCaptureDevice();
     unique_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPerferredRecordCaptureDevice();
     AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN;
@@ -6715,9 +6715,9 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
             ClearScoDeviceSuspendState(desc.macAddress_);
         }
         unique_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
-            AudioStateManager::GetAudioStateManager().GetPerferredMediaRenderDevice();
+            AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
         unique_ptr<AudioDeviceDescriptor> userSelectCallDevice =
-            AudioStateManager::GetAudioStateManager().GetPerferredCallRenderDevice();
+            AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
         if ((userSelectMediaDevice->deviceType_ == desc.deviceType_ &&
             userSelectMediaDevice->macAddress_ == desc.macAddress_) ||
             (userSelectCallDevice->deviceType_ == desc.deviceType_ &&
@@ -6803,7 +6803,7 @@ std::unique_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDev
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
 
-    unique_ptr<AudioDeviceDescriptor> preferredDesc = audioStateManager_.GetPerferredCallRenderDevice();
+    unique_ptr<AudioDeviceDescriptor> preferredDesc = audioStateManager_.GetPreferredCallRenderDevice();
     if (preferredDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         return preferredDesc;
     }
