@@ -1128,7 +1128,7 @@ int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 
 int64_t RendererInClientInner::GetFramesWritten()
 {
-    return totalBytesWritten_ / sizePerFrameInByte_;
+    return totalBytesWritten_ / static_cast<int64_t>(sizePerFrameInByte_);
 }
 
 int64_t RendererInClientInner::GetFramesRead()
