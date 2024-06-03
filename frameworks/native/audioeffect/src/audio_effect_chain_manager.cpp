@@ -174,7 +174,8 @@ void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::str
     }
     // update deviceType name in backup map
     std::vector<std::string> keys;
-    for (auto it = SceneTypeToEffectChainCountBackupMap_.begin(); it != SceneTypeToEffectChainCountBackupMap_.end(); ++it) {
+    for (auto it = SceneTypeToEffectChainCountBackupMap_.begin();
+        it != SceneTypeToEffectChainCountBackupMap_.end(); ++it) {
         keys.push_back(it->first);
     }
     std::string deviceName = GetDeviceTypeName();
