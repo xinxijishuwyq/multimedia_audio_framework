@@ -339,7 +339,7 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = tm.tv_sec * AUDIO_NS_PER_S + tm.tv_nsec;
+    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
         ",timestamp %{public}" PRIu64 ", effect latency: %{public}u ms",

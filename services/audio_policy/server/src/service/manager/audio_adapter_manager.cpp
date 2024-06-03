@@ -1568,17 +1568,17 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
             exp(volumePoints[pointSize - 1].dbValue * 0.115129f));
         return exp((volumePoints[pointSize - 1].dbValue / 100.0f) * 0.115129f);
     }
-    float indexFactor = ((float)(idxRatio - volumePoints[position-1].index)) /
-        (float(volumePoints[position].index - volumePoints[position-1].index));
+    float indexFactor = (static_cast<float>(idxRatio - static_cast<int32_t>(volumePoints[position - 1].index))) /
+        (static_cast<float>(volumePoints[position].index - volumePoints[position - 1].index));
 
-    float dbValue = (volumePoints[position-1].dbValue / 100.0f) +
-        indexFactor * ((volumePoints[position].dbValue / 100.0f) - (volumePoints[position-1].dbValue / 100.0f));
+    float dbValue = (volumePoints[position - 1].dbValue / 100.0f) +
+        indexFactor * ((volumePoints[position].dbValue / 100.0f) - (volumePoints[position - 1].dbValue / 100.0f));
 
     AUDIO_DEBUG_LOG(" index=[%{public}d, %{public}d, %{public}d]"
         "db=[%{public}0.1f %{public}0.1f %{public}0.1f] factor=[%{public}f]",
-        volumePoints[position-1].index, idxRatio, volumePoints[position].index,
-        ((float)volumePoints[position - 1].dbValue / 100.0f), dbValue,
-        ((float)volumePoints[position].dbValue / 100.0f), exp(dbValue * 0.115129f));
+        volumePoints[position - 1].index, idxRatio, volumePoints[position].index,
+        (static_cast<float>(volumePoints[position - 1].dbValue) / 100.0f), dbValue,
+        (static_cast<float>(volumePoints[position].dbValue) / 100.0f), exp(dbValue * 0.115129f));
 
     return exp(dbValue * 0.115129f);
 }

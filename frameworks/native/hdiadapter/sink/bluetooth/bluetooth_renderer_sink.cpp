@@ -899,7 +899,8 @@ static uint32_t HdiFormatToByte(HDI::Audio_Bluetooth::AudioFormat format)
 
 int64_t BluetoothRendererSinkInner::BytesToNanoTime(size_t lens)
 {
-    int64_t res = AUDIO_NS_PER_SECOND * lens / (attr_.sampleRate * attr_.channel * HdiFormatToByte(attr_.format));
+    int64_t res = static_cast<int64_t>(AUDIO_NS_PER_SECOND * lens /
+        (attr_.sampleRate * attr_.channel * HdiFormatToByte(attr_.format)));
     return res;
 }
 
