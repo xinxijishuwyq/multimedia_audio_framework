@@ -845,7 +845,7 @@ static void SinkRenderPrimaryInputsDropCap(pa_sink *si, pa_mix_info *infoIn, uns
     /* We optimize for the case where the order of the inputs has not changed */
 
     pa_mix_info *infoCur = NULL;
-    pa_sink_input *sceneSinkInput;
+    pa_sink_input *sceneSinkInput = NULL;
     bool isCaptureSilently = IsCaptureSilently();
     for (uint32_t k = 0; k < n; k++) {
         sceneSinkInput = infoIn[k].userdata;

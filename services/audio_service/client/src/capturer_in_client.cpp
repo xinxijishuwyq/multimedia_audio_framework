@@ -1671,8 +1671,8 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
         std::lock_guard<std::mutex> lock(markReachMutex_);
         if (!capturerMarkReached_) {
             AUDIO_DEBUG_LOG("Frame mark position: %{public}" PRId64 ", Total frames read: %{public}" PRId64,
-                static_cast<int64_t>(capturerMarkPosition_), static_cast<int64_t>(readFrameNumber));
-            if (readFrameNumber >= capturerMarkPosition_) {
+                capturerMarkPosition_, static_cast<int64_t>(readFrameNumber));
+            if (readFrameNumber >= static_cast<uint64_t>(capturerMarkPosition_)) {
                 AUDIO_DEBUG_LOG("capturerInClient OnMarkReached");
                 SendCapturerMarkReachedEvent(capturerMarkPosition_);
                 capturerMarkReached_ = true;
