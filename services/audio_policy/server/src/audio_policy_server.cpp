@@ -1889,19 +1889,28 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
     if (res < 0) {
         AUDIO_ERR_LOG("Call GetHapTokenInfo fail.");
     }
-    bool bSetMute;
-    if (result.permStateChangeType > 0) {
-        bSetMute = false;
-    } else {
-        bSetMute = true;
-    }
 
+    bool targetMuteState = (result.permStateChangeType > 0) ? false : true;
     int32_t appUid = getUidByBundleName(hapTokenInfo.bundleName, hapTokenInfo.userID);
     if (appUid < 0) {
         AUDIO_ERR_LOG("fail to get uid.");
     } else {
-        server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, bSetMute);
-        AUDIO_DEBUG_LOG("get uid value:%{public}d", appUid);
+        int32_t streamSet = server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, targetMuteState);
+        if (streamSet > 0) {
+            AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
+                targetMuteState, appUid);
+            if (targetMuteState) {
+                int res = PrivacyKit::StopUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+                if (res != 0) {
+                    AUDIO_WARNING_LOG("notice stop using perm error");
+                }
+            } else {
+                int res = PrivacyKit::StartUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
+                if (res != 0) {
+                    AUDIO_WARNING_LOG("notice stop using perm error");
+                }
+            }
+        }
     }
 }
 
