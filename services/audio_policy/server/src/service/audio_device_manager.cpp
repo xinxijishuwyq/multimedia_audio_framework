@@ -573,32 +573,36 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
 {
     switch (usage) {
         case MEDIA_OUTPUT_DEVICES:
-            if ((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) {
+            if ((static_cast<uint32_t>(dev->deviceRole_) & OUTPUT_DEVICE) &&
+                (static_cast<uint32_t>(deviceInfo.deviceUsage) & MEDIA)) {
                 audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
             }
             break;
         case MEDIA_INPUT_DEVICES:
-            if ((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & MEDIA)) {
+            if ((static_cast<uint32_t>(dev->deviceRole_) & INPUT_DEVICE) &&
+                (static_cast<uint32_t>(deviceInfo.deviceUsage) & MEDIA)) {
                 audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
             }
             break;
         case ALL_MEDIA_DEVICES:
-            if (deviceInfo.deviceUsage & MEDIA) {
+            if (static_cast<uint32_t>(deviceInfo.deviceUsage) & MEDIA) {
                 audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
             }
             break;
         case CALL_OUTPUT_DEVICES:
-            if ((dev->deviceRole_ & OUTPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) {
+            if ((static_cast<uint32_t>(dev->deviceRole_) & OUTPUT_DEVICE) &&
+                (static_cast<uint32_t>(deviceInfo.deviceUsage) & VOICE)) {
                 audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
             }
             break;
         case CALL_INPUT_DEVICES:
-            if ((dev->deviceRole_ & INPUT_DEVICE) && (deviceInfo.deviceUsage & VOICE)) {
+            if ((static_cast<uint32_t>(dev->deviceRole_) & INPUT_DEVICE) &&
+                (static_cast<uint32_t>(deviceInfo.deviceUsage) & VOICE)) {
                 audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
             }
             break;
         case ALL_CALL_DEVICES:
-            if (deviceInfo.deviceUsage & VOICE) {
+            if (static_cast<uint32_t>(deviceInfo.deviceUsage) & VOICE) {
                 audioDeviceDescriptors.push_back(make_unique<AudioDeviceDescriptor>(dev));
             }
             break;

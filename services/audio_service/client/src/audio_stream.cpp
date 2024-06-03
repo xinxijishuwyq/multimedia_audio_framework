@@ -947,7 +947,7 @@ int32_t AudioStream::GetStreamBufferCB(StreamBuffer &stream,
             return ERR_INVALID_WRITE; // Continue writing when the sonic is not full
         }
         stream.buffer = speedBuffer.get();
-        stream.bufferLen = speedBufferSize;
+        stream.bufferLen = static_cast<uint32_t>(speedBufferSize);
         return SUCCESS;
     }
     return SUCCESS;
