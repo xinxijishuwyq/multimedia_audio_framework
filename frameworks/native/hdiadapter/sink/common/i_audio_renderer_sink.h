@@ -89,6 +89,11 @@ public:
 
     virtual void ResetOutputRouteForDisconnect(DeviceType device) = 0;
     virtual int32_t SetPaPower(int32_t flag) = 0;
+
+    virtual int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
+        const size_t size) = 0;
+
+    virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
 };
 
 class IMmapAudioRendererSink : public IAudioRendererSink {

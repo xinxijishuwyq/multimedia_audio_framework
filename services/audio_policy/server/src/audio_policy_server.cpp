@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -115,6 +115,9 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 
     powerStateCallbackRegister_ = false;
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
+    if (volumeApplyToAll_) {
+        audioPolicyService_.SetNormalVoipFlag(true);
+    }
 }
 
 void AudioPolicyServer::OnDump()
@@ -516,6 +519,13 @@ void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStrea
 AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
+
+void AudioPolicyServer::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
+    int64_t deactivateSessionId)
+{
+    OffloadStreamCheck(activateSessionId, activateStreamType, deactivateSessionId);
+    audioPolicyService_.CheckStreamMode(activateSessionId, activateStreamType);
+}
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
@@ -938,11 +948,6 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDev
     }
 
     return deviceDescs;
-}
-
-int32_t AudioPolicyServer::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
-{
-    return audioPolicyService_.SetCallbacksEnable(callbackchange, enable);
 }
 
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
@@ -1984,10 +1989,12 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
 {
     AUDIO_INFO_LOG("GetMaxRendererInstances");
     int32_t retryCount = 20; // 20 * 200000us = 4s, wait up to 4s
-    while (!isFirstAudioServiceStart_ && retryCount > 0) {
+    while (!isFirstAudioServiceStart_) {
         retryCount--;
-        AUDIO_WARNING_LOG("Audio server is not start");
-        usleep(200000); // Wait 200000us when audio server is not started
+        if (retryCount > 0) {
+            AUDIO_WARNING_LOG("Audio server is not start");
+            usleep(200000); // Wait 200000us when audio server is not started
+        }
     }
     return audioPolicyService_.GetMaxRendererInstances();
 }
@@ -2606,6 +2613,26 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     audioPolicyService_.NotifyAccountsChanged(id);
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
+}
+
+int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
+{
+    return audioPolicyService_.MoveToNewPipe(sessionId, pipeType);
+}
+
+int32_t AudioPolicyServer::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    return audioPolicyService_.SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    return audioPolicyService_.UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    return audioPolicyService_.ActivateAudioConcurrency(pipeType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

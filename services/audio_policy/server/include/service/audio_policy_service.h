@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -184,6 +184,10 @@ public:
 
     void GetGlobalConfigs(GlobalConfigs &globalConfigs);
 
+    void SetNormalVoipFlag(const bool &normalVoipFlag);
+
+    int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId);
+
     bool GetVoipConfig();
 
     // Audio Policy Parser callbacks
@@ -346,8 +350,6 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
-    int32_t SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
-
     void GetEffectManagerInfo();
 
     float GetMinStreamVolume(void);
@@ -488,7 +490,16 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);
     int32_t GetCurActivateCount();
+    void CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType);
 
+    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
+    int32_t DynamicUnloadModule(const AudioPipeType pipeType);
+
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
+
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -512,7 +523,7 @@ private:
     void UpdateDeviceInfo(DeviceInfo &deviceInfo, const sptr<AudioDeviceDescriptor> &desc, bool hasBTPermission,
         bool hasSystemPermission);
 
-    std::string GetSinkPortName(InternalDeviceType deviceType);
+    std::string GetSinkPortName(InternalDeviceType deviceType, AudioPipeType pipeType = PIPE_TYPE_UNKNOWN);
 
     std::string GetSourcePortName(InternalDeviceType deviceType);
 
@@ -869,6 +880,19 @@ private:
     void WriteInputRouteChangeEvent(unique_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
 
+    bool CheckStreamOffloadMode(int64_t activateSessionId, AudioStreamType streamType);
+    AudioModuleInfo ConstructOffloadAudioModuleInfo(DeviceType deviceType);
+    int32_t LoadOffloadModule();
+    int32_t UnloadOffloadModule();
+    int32_t MoveToOutputDevice(uint32_t sessionId, std::string portName);
+
+    bool CheckStreamMultichannelMode(int64_t activateSessionId, AudioStreamType streamType);
+    AudioModuleInfo ConstructMchAudioModuleInfo(DeviceType deviceType);
+    int32_t LoadMchModule();
+    int32_t UnloadMchModule();
+
+    int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
+
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;
     bool remoteCapturerSwitch_ = false;
@@ -1007,6 +1031,7 @@ private:
     std::unique_ptr<std::thread> calculateLoopSafeTime_ = nullptr;
     bool safeVolumeExit_ = false;
     bool isAbsBtFirstBoot_ = true;
+    bool normalVoipFlag_ = false;
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,6 +30,7 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#include "audio_running_lock_manager.h"
 #endif
 #include "v3_0/iaudio_manager.h"
 
@@ -100,6 +101,9 @@ public:
     void ResetOutputRouteForDisconnect(DeviceType device) override;
     int32_t SetPaPower(int32_t flag) override;
 
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
     explicit MultiChannelRendererSinkInner(const std::string &halName = "multichannel");
     ~MultiChannelRendererSinkInner();
 private:
@@ -133,7 +137,7 @@ private:
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
 #ifdef FEATURE_POWER_MANAGER
-    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+    std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
     // for device switch
     std::atomic<bool> inSwitch_ = false;
@@ -514,7 +518,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         return SUCCESS;
     }
     if (renderEmptyFrameCount_ > 0) {
-        Trace traceEmpty("AudioRendererSinkInner::RenderFrame::renderEmpty");
+        Trace traceEmpty("MchSinkInner::RenderFrame::renderEmpty");
         if (memset_s(reinterpret_cast<void*>(&data), static_cast<size_t>(len), 0,
             static_cast<size_t>(len)) != EOK) {
             AUDIO_WARNING_LOG("call memset_s failed");
@@ -524,7 +528,7 @@ int32_t MultiChannelRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
             switchCV_.notify_all();
         }
     }
-    Trace trace("AudioRendererSinkInner::RenderFrame");
+    Trace trace("MchSinkInner::RenderFrame");
 
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
@@ -566,21 +570,25 @@ float MultiChannelRendererSinkInner::GetMaxAmplitude()
 
 int32_t MultiChannelRendererSinkInner::Start(void)
 {
-    Trace trace("Sink::Start");
+    Trace trace("MCHSink::Start");
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioMultiChannelBackgroundPlay",
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    if (runningLockManager_ == nullptr) {
+        keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioMultiChannelBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        if (keepRunningLock) {
+            runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+        }
     }
 
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock lock");
-        keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+        runningLockManager_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
 #endif
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_RENDER_SINK_FILENAME, &dumpFile_);
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_MCH_SINK_FILENAME, &dumpFile_);
 
     if (!started_) {
         int32_t ret = audioRender_->Start(audioRender_);
@@ -869,11 +877,12 @@ int32_t MultiChannelRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 
 int32_t MultiChannelRendererSinkInner::Stop(void)
 {
+    Trace trace("MCHSink::Stop");
     AUDIO_INFO_LOG("Stop.");
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
-        keepRunningLock_->UnLock();
+        runningLockManager_->UnLock();
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -900,6 +909,7 @@ int32_t MultiChannelRendererSinkInner::Stop(void)
 
 int32_t MultiChannelRendererSinkInner::Pause(void)
 {
+    Trace trace("MCHSink::Pause");
     if (audioRender_ == nullptr) {
         AUDIO_ERR_LOG("Pause failed audioRender_ null");
         return ERR_INVALID_HANDLE;
@@ -967,6 +977,7 @@ int32_t MultiChannelRendererSinkInner::Reset(void)
 
 int32_t MultiChannelRendererSinkInner::Flush(void)
 {
+    Trace trace("MCHSink::Flush");
     if (started_ && audioRender_ != nullptr) {
         int32_t ret = audioRender_->Flush(audioRender_);
         if (!ret) {
@@ -1105,6 +1116,25 @@ int32_t MultiChannelRendererSinkInner::SetPaPower(int32_t flag)
 {
     (void)flag;
     return ERR_NOT_SUPPORTED;
+}
+
+int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    return runningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
+#endif
+
+    return SUCCESS;
+}
+
+int32_t MultiChannelRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

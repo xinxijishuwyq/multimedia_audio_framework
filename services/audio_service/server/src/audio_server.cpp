@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1062,8 +1062,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
-    if ((resetConfig.audioMode == AUDIO_MODE_PLAYBACK && resetConfig.rendererInfo.rendererFlags == 0) ||
-        (resetConfig.audioMode == AUDIO_MODE_RECORD && resetConfig.capturerInfo.capturerFlags == 0)) {
+    if ((IsNormalIpcStream(resetConfig))) {
         AUDIO_INFO_LOG("Create normal ipc stream.");
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(resetConfig, ret);
@@ -1076,6 +1075,18 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "GetAudioProcess failed.");
     sptr<IRemoteObject> remoteObject= process->AsObject();
     return remoteObject;
+}
+
+bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
+{
+    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
+        return config.rendererInfo.rendererFlags == AUDIO_FLAG_NORMAL ||
+            config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT;
+    } else if (config.audioMode == AUDIO_MODE_RECORD) {
+        return config.capturerInfo.capturerFlags == AUDIO_FLAG_NORMAL;
+    }
+
+    return false;
 }
 
 int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
@@ -1621,6 +1632,17 @@ void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer
         LatencyMonitor::GetInstance().UpdateClientTime(false, timestamp);
         LatencyMonitor::GetInstance().ShowTimestamp(false);
     }
+}
+
+bool AudioServer::GetEffectOffloadEnabled()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "get effect state refused for %{public}d", callingUid);
+
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
+    return audioEffectChainManager->GetOffloadEnabled();
 }
 } // namespace AudioStandard
 } // namespace OHOS

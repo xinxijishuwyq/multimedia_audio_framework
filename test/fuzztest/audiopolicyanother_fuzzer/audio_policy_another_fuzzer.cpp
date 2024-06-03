@@ -217,6 +217,9 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     int32_t sessionId = *reinterpret_cast<const int32_t *>(rawData);
     AudioPolicyServerPtr->GetAudioCapturerMicrophoneDescriptors(sessionId);
 
+    AudioPipeType type = *reinterpret_cast<const AudioPipeType *>(rawData);
+    AudioPolicyServerPtr->MoveToNewPipe(sessionId, type);
+
     sptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor = new AudioStandard::AudioDeviceDescriptor();
     deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(rawData);
     deviceDescriptor->deviceRole_ = *reinterpret_cast<const DeviceRole *>(rawData);
@@ -237,6 +240,27 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     AudioPolicyServerPtr->IsHighResolutionExist();
     bool highResExist = *reinterpret_cast<const bool *>(rawData);
     AudioPolicyServerPtr->SetHighResolutionExist(highResExist);
+}
+
+void AudioConcurrencyFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioPolicyServer> AudioPolicyServerPtr =
+        std::make_shared<AudioPolicyServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
+    AudioPolicyServerPtr->SetAudioConcurrencyCallback(sessionID, object);
+    AudioPolicyServerPtr->UnsetAudioConcurrencyCallback(sessionID);
+    AudioPipeType pipeType = *reinterpret_cast<const AudioPipeType *>(rawData);
+    AudioPolicyServerPtr->ActivateAudioConcurrency(pipeType);
 }
 
 void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)

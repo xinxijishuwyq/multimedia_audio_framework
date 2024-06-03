@@ -110,6 +110,9 @@ public:
         const std::string &value) override;
     float GetMaxAmplitude() override;
 
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
     std::string GetNetworkId();
     IAudioSinkCallback* GetParamCallback();
 
@@ -740,5 +743,18 @@ int32_t RemoteAudioRendererSinkInner::SetPaPower(int32_t flag)
     (void)flag;
     return ERR_NOT_SUPPORTED;
 }
+
+int32_t RemoteAudioRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t RemoteAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

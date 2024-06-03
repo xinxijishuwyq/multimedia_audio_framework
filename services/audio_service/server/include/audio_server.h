@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -136,6 +136,8 @@ public:
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
+    bool GetEffectOffloadEnabled() override;
+
     void OnCapturerState(bool isActive, int32_t num);
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -160,6 +162,7 @@ private:
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();
     void WriteServiceStartupError();
+    bool IsNormalIpcStream(const AudioProcessConfig &config) const;
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

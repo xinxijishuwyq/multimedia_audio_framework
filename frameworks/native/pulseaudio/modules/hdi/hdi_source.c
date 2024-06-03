@@ -264,6 +264,21 @@ static bool PaRtpollSetTimerFunc(struct Userdata *u, bool timerElapsed)
         }
     }
 
+    int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE];
+    size_t count = 0;
+    void *state = NULL;
+    pa_source_output *sourceOutput;
+    while ((sourceOutput = pa_hashmap_iterate(u->source->thread_info.outputs, &state, NULL))) {
+        const char *cstringClientUid = pa_proplist_gets(sourceOutput->proplist, "stream.client.uid");
+        if (cstringClientUid && (sourceOutput->state == PA_SOURCE_OUTPUT_RUNNING)) {
+            appsUid[count++] = atoi(cstringClientUid);
+        }
+    }
+
+    if (u->sourceAdapter) {
+        u->sourceAdapter->CapturerSourceAppsUid(u->sourceAdapter->wapper, appsUid, count);
+    }
+
     pa_rtpoll_set_timer_absolute(u->rtpoll, u->timestamp + u->block_usec);
     return true;
 }

@@ -55,10 +55,12 @@ public:
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
     int32_t SetEffectParam(AudioEffectScene currSceneType);
+    void ResetIoBufferConfig();
 
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
+    int32_t SetEffectParamToHandle(AudioEffectHandle handle, AudioEffectScene currSceneType, int32_t &replyData);
 
     std::mutex reloadMutex_;
     std::string sceneType_;

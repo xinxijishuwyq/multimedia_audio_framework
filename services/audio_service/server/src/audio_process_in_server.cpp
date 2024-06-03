@@ -226,6 +226,11 @@ bool AudioProcessInServer::GetInnerCapState()
     return isInnerCapped_;
 }
 
+AppInfo AudioProcessInServer::GetAppInfo()
+{
+    return processConfig_.appInfo;
+}
+
 int AudioProcessInServer::Dump(int fd, const std::vector<std::u16string> &args)
 {
     return SUCCESS;

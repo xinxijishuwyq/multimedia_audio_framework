@@ -50,10 +50,13 @@ constexpr int32_t AUDIO_FLAG_NORMAL = 0;
 constexpr int32_t AUDIO_FLAG_MMAP = 1;
 constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
 constexpr int32_t AUDIO_FLAG_DIRECT = 3;
+constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
+constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
-constexpr uint32_t STREAM_FLAG_FAST = 1;
 constexpr uint32_t STREAM_FLAG_NORMAL = 0;
+constexpr uint32_t STREAM_FLAG_FAST = 1;
+constexpr uint32_t STREAM_FLAG_DIRECT = 2;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr int32_t EMPTY_UID = 0;
@@ -272,14 +275,6 @@ enum SafeStatus : int32_t {
     SAFE_UNKNOWN = -1,
     SAFE_INACTIVE = 0,
     SAFE_ACTIVE = 1,
-};
-
-enum CallbackChange : int32_t {
-    CALLBACK_UNKNOWN = 0,
-    CALLBACK_FOCUS_INFO_CHANGE,
-    CALLBACK_RENDERER_STATE_CHANGE,
-    CALLBACK_CAPTURER_STATE_CHANGE,
-    CALLBACK_MAX,
 };
 
 struct VolumeEvent {

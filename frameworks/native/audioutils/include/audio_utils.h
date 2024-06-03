@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -151,6 +151,7 @@ const std::string DUMP_SERVICE_DIR = "/data/local/tmp/";
 const std::string DUMP_APP_DIR = "/data/storage/el2/base/cache/";
 const std::string DUMP_BLUETOOTH_RENDER_SINK_FILENAME = "dump_bluetooth_audiosink.pcm";
 const std::string DUMP_RENDER_SINK_FILENAME = "dump_audiosink.pcm";
+const std::string DUMP_MCH_SINK_FILENAME = "dump_mchaudiosink.pcm";
 const std::string DUMP_DIRECT_RENDER_SINK_FILENAME = "dump_direct_audiosink.pcm";
 const std::string DUMP_OFFLOAD_RENDER_SINK_FILENAME = "dump_offloadaudiosink.pcm";
 const std::string DUMP_CAPTURER_SOURCE_FILENAME = "dump_capture_audiosource.pcm";

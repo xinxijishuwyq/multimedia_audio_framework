@@ -134,7 +134,10 @@ int32_t AudioFocusParser::LoadConfig(std::map<std::pair<AudioFocusType, AudioFoc
 #else
     const char *path = AUDIO_FOCUS_CONFIG_FILE;
 #endif
-    if (path == nullptr || *path == '\0' || (doc = xmlReadFile(path, nullptr, 0)) == nullptr) {
+    if (path != nullptr && *path != '\0') {
+        doc = xmlReadFile(path, nullptr, 0);
+    }
+    if (doc == nullptr) {
         AUDIO_ERR_LOG("error: could not parse audio_interrupt_policy_config.xml");
         LoadDefaultConfig(focusMap);
         WriteConfigErrorEvent();

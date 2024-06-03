@@ -215,6 +215,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteString(config.rendererInfo.sceneType);
     parcel.WriteBool(config.rendererInfo.spatializationEnabled);
     parcel.WriteBool(config.rendererInfo.headTrackingEnabled);
+    parcel.WriteInt32(config.rendererInfo.pipeType);
 
     //AudioPrivacyType
     parcel.WriteInt32(config.privacyType);
@@ -223,6 +224,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.capturerInfo.sourceType);
     parcel.WriteInt32(config.capturerInfo.capturerFlags);
     parcel.WriteInt32(config.capturerInfo.originalFlag);
+    parcel.WriteInt32(config.capturerInfo.pipeType);
 
     // streamType
     parcel.WriteInt32(config.streamType);
@@ -263,6 +265,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.rendererInfo.sceneType = parcel.ReadString();
     config.rendererInfo.spatializationEnabled = parcel.ReadBool();
     config.rendererInfo.headTrackingEnabled = parcel.ReadBool();
+    config.rendererInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
 
     //AudioPrivacyType
     config.privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
@@ -271,6 +274,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.capturerInfo.sourceType = static_cast<SourceType>(parcel.ReadInt32());
     config.capturerInfo.capturerFlags = parcel.ReadInt32();
     config.capturerInfo.originalFlag = parcel.ReadInt32();
+    config.capturerInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
 
     // streamType
     config.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());

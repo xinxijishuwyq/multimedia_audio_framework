@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -77,7 +77,6 @@ enum class AudioPolicyInterfaceCode {
     GET_USING_PEMISSION_FROM_PRIVACY,
     GET_ACTIVE_OUTPUT_DEVICE_DESCRIPTORS,
     GET_PREFERRED_INTPUT_DEVICE_DESCRIPTORS,
-    SET_CALLBACKS_ENABLE,
     GET_AUDIO_FOCUS_INFO_LIST,
     SET_SYSTEM_SOUND_URI,
     GET_SYSTEM_SOUND_URI,
@@ -134,8 +133,12 @@ enum class AudioPolicyInterfaceCode {
     SET_AUDIO_DEVICE_REFINER_CALLBACK,
     UNSET_AUDIO_DEVICE_REFINER_CALLBACK,
     TRIGGER_FETCH_DEVICE,
+    MOVE_TO_NEW_PIPE,
     DISABLE_SAFE_MEDIA_VOLUME,
-    AUDIO_POLICY_MANAGER_CODE_MAX = DISABLE_SAFE_MEDIA_VOLUME,
+    SET_AUDIO_CONCURRENCY_CALLBACK,
+    UNSET_AUDIO_CONCURRENCY_CALLBACK,
+    ACTIVATE_AUDIO_CONCURRENCY,
+    AUDIO_POLICY_MANAGER_CODE_MAX = ACTIVATE_AUDIO_CONCURRENCY,
 };
 } // namespace AudioStandard
 } // namespace OHOS
