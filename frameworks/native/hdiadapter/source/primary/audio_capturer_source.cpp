@@ -146,7 +146,7 @@ private:
     FILE *dumpFile_ = nullptr;
     bool muteState_ = false;
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
-    AudioScene currentAudioScene_;
+    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     bool latencyMeasEnabled_ = false;
     bool signalDetected_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;

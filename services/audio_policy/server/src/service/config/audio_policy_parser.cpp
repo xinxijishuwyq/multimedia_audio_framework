@@ -486,7 +486,7 @@ void AudioPolicyParser::HandleConfigFlagAndUsage(ConfigInfo &configInfo, PipeInf
     } else if (configInfo.name_ == "usage") {
         auto it = audioUsageStrToEnum.find(configInfo.value_);
         if (it != audioUsageStrToEnum.end()) {
-            pipeInfo.audioUsage_ = it->second;
+            pipeInfo.audioUsage_ = static_cast<int32_t>(it->second);
         }
     }
 }

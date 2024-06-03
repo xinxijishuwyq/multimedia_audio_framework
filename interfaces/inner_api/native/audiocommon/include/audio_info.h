@@ -693,21 +693,21 @@ struct AudioProcessConfig {
 
     AudioStreamInfo streamInfo;
 
-    AudioMode audioMode;
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
 
     AudioRendererInfo rendererInfo;
 
     AudioCapturerInfo capturerInfo;
 
-    AudioStreamType streamType;
+    AudioStreamType streamType = STREAM_DEFAULT;
 
-    DeviceType deviceType;
+    DeviceType deviceType = DEVICE_TYPE_INVALID;
 
-    bool isInnerCapturer;
+    bool isInnerCapturer = false;
 
-    bool isWakeupCapturer;
+    bool isWakeupCapturer = false;
 
-    AudioPrivacyType privacyType;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
 
     InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
 };
