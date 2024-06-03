@@ -3482,7 +3482,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         if (EffectChainManagerCheckA2dpOffload() && (!strcmp(u->sink->name, "Speaker"))) {
             SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
         }
-        if (!strcmp(u->sink->name, BT_SINK_NAME) || newState == PA_SINK_RUNNING) {
+        if (strcmp(u->sink->name, BT_SINK_NAME) || newState == PA_SINK_RUNNING) {
             return SinkSetStateInIoThreadCbStartPrimary(u, newState);
         }
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
