@@ -376,8 +376,6 @@ public:
 
     int32_t SetCaptureSilentState(bool state);
 
-    void UnloadLoopback();
-
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
 
     vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
@@ -711,15 +709,9 @@ private:
 
     void UpdateEffectDefaultSink(DeviceType deviceType);
 
-    void LoadEffectSinks();
-
     void LoadSinksForCapturer();
 
     void LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo);
-
-    void LoadReceiverSink();
-
-    void LoadLoopback();
 
     DeviceType FindConnectedHeadset();
 

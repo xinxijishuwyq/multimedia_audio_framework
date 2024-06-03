@@ -15,9 +15,7 @@ import("//build/ohos.gni")
 
 group("pa_extend_modules") {
   deps = [
-    "abstract:module-loopback",
     "capturer:module-inner-capturer-sink",
-    "capturer:module-receiver-sink",
     "hdi:module-hdi-sink",
     "hdi:module-hdi-source",
   ]

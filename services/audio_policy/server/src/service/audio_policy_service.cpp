@@ -49,8 +49,6 @@ namespace AudioStandard {
 using namespace std;
 
 static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
-static const std::string RECEIVER_SINK_NAME = "Receiver";
-static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
 static const std::string PIPE_PRIMARY_OUTPUT = "primary_output";
 static const std::string PIPE_FAST_OUTPUT = "fast_output";
 static const std::string PIPE_OFFLOAD_OUTPUT = "offload_output";
@@ -67,7 +65,7 @@ static const std::string PIPE_DISTRIBUTED_OUTPUT = "distributed_output";
 static const std::string PIPE_FAST_DISTRIBUTED_OUTPUT = "fast_distributed_output";
 static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
 static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
-std::string PIPE_WAKEUP_INPUT = "wakeup_input";
+static const std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
@@ -895,7 +893,6 @@ int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute)
     }
     return status;
 }
-
 
 bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
 {
@@ -4059,7 +4056,7 @@ void AudioPolicyService::LoadSinksForCapturer()
     AUDIO_INFO_LOG("Start");
     AudioStreamInfo streamInfo;
     LoadInnerCapturerSink(INNER_CAPTURER_SINK_LEGACY, streamInfo);
-    LoadReceiverSink();
+
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
 
@@ -4091,63 +4088,6 @@ void AudioPolicyService::LoadInnerCapturerSink(string moduleName, AudioStreamInf
 void AudioPolicyService::UnloadInnerCapturerSink(string moduleName)
 {
     ClosePortAndEraseIOHandle(moduleName);
-}
-
-void AudioPolicyService::LoadReceiverSink()
-{
-    AUDIO_INFO_LOG("Start");
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.name = RECEIVER_SINK_NAME;
-    moduleInfo.lib = "libmodule-receiver-sink.z.so";
-    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-}
-
-void AudioPolicyService::LoadLoopback()
-{
-    AudioIOHandle ioHandle;
-    std::string moduleName;
-    AUDIO_INFO_LOG("Start");
-    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    CHECK_AND_RETURN_LOG(IOHandles_.count(INNER_CAPTURER_SINK_LEGACY) == 1u,
-        "failed for InnerCapturer not loaded");
-
-    LoopbackModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-loopback.z.so";
-    moduleInfo.sink = INNER_CAPTURER_SINK_LEGACY;
-
-    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
-        ++sceneType) {
-        moduleInfo.source = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX;
-        ioHandle = audioPolicyManager_.LoadLoopback(moduleInfo);
-        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "failed %{public}d", ioHandle);
-        moduleName = moduleInfo.source + moduleInfo.sink;
-        IOHandles_[moduleName] = ioHandle;
-    }
-
-    if (IOHandles_.count(RECEIVER_SINK_NAME) != 1u) {
-        AUDIO_WARNING_LOG("receiver sink not exist");
-    } else {
-        moduleInfo.source = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
-        ioHandle = audioPolicyManager_.LoadLoopback(moduleInfo);
-        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "failed %{public}d", ioHandle);
-        moduleName = moduleInfo.source + moduleInfo.sink;
-        IOHandles_[moduleName] = ioHandle;
-    }
-}
-
-void AudioPolicyService::UnloadLoopback()
-{
-    std::string module;
-    AUDIO_INFO_LOG("UnloadLoopback start");
-
-    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
-        ++sceneType) {
-        module = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_LEGACY;
-        ClosePortAndEraseIOHandle(module);
-    }
-
-    module = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_LEGACY;
-    ClosePortAndEraseIOHandle(module);
 }
 
 void AudioPolicyService::LoadModernInnerCapSink()
@@ -6028,9 +5968,6 @@ void AudioPolicyService::RegisterDataObserver()
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
 {
-    if (!config.silentCapture) {
-        LoadLoopback();
-    }
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED,
         "error for g_adProxy null");

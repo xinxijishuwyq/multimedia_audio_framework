@@ -1222,7 +1222,6 @@ void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
 
 void AudioPolicyServer::OnPlaybackCapturerStop()
 {
-    audioPolicyService_.UnloadLoopback();
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)
