@@ -77,6 +77,7 @@ public:
     bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
@@ -202,6 +203,9 @@ public:
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
 
+    void SetSilentModeAndMixWithOthers(bool on) override;
+    bool GetSilentModeAndMixWithOthers() override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -249,7 +253,6 @@ private:
     bool IsHighResolution() const noexcept;
 
     void ProcessWriteInner(BufferDesc &bufferDesc);
-
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -325,6 +328,8 @@ private:
     float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;
     float clientOldVolume_ = 1.0;
+    float cacheVolume_ = 1.0;
+    bool silentModeAndMixWithOthers_ = false;
 
     uint64_t clientWrittenBytes_ = 0;
     uint32_t underrunCount_ = 0;

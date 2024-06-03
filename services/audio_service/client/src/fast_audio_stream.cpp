@@ -66,14 +66,12 @@ int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureC
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
-    rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
 void FastAudioStream::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
-    capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
     capturerInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
@@ -162,6 +160,11 @@ int32_t FastAudioStream::GetAudioSessionID(uint32_t &sessionID)
     return ret;
 }
 
+void FastAudioStream::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = eMode_ == AUDIO_MODE_PLAYBACK ? rendererInfo_.pipeType : capturerInfo_.pipeType;
+}
+
 State FastAudioStream::GetState()
 {
     return state_;
@@ -220,15 +223,23 @@ int32_t FastAudioStream::SetAudioStreamType(AudioStreamType audioStreamType)
 int32_t FastAudioStream::SetVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetVolume failed: null process");
-    int32_t ret = processClient_->SetVolume(volume);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVolume error.");
+    int32_t ret = SUCCESS;
+    cacheVolume_ = volume;
+    if (!silentModeAndMixWithOthers_) {
+        ret = processClient_->SetVolume(volume);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVolume error.");
+    }
     return ret;
 }
 
 float FastAudioStream::GetVolume()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 1.0f, "SetVolume failed: null process"); // 1.0f for default
-    return processClient_->GetVolume();
+    if (silentModeAndMixWithOthers_) {
+        return cacheVolume_;
+    } else {
+        return processClient_->GetVolume();
+    }
 }
 
 int32_t FastAudioStream::SetDuckVolume(float volume)
@@ -237,6 +248,21 @@ int32_t FastAudioStream::SetDuckVolume(float volume)
     int32_t ret = processClient_->SetDuckVolume(volume);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDuckVolume error.");
     return ret;
+}
+
+void FastAudioStream::SetSilentModeAndMixWithOthers(bool on)
+{
+    if (!silentModeAndMixWithOthers_ && on) {
+        SetVolume(0.0);
+    } else if (silentModeAndMixWithOthers_ && !on) {
+        SetVolume(cacheVolume_);
+    }
+    silentModeAndMixWithOthers_ = on;
+}
+
+bool FastAudioStream::GetSilentModeAndMixWithOthers()
+{
+    return silentModeAndMixWithOthers_;
 }
 
 int32_t FastAudioStream::SetRenderRate(AudioRendererRate renderRate)

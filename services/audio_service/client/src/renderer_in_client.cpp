@@ -130,6 +130,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
             offloadStartReadPos_ = 0;
         }
         offloadEnable_ = static_cast<bool>(result);
+        rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
     }
     // read/write operation may print many log, use debug.
@@ -197,16 +198,6 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
     rendererInfo_.encodingType = curStreamParams_.encoding;
     rendererInfo_.channelLayout = curStreamParams_.channelLayout;
-
-    if (GetOffloadEnable()) {
-        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
-    } else if (GetHighResolutionEnabled()) {
-        rendererInfo_.pipeType = PIPE_TYPE_HIGHRESOLUTION;
-    } else if (spatializationState.spatializationEnabled) {
-        rendererInfo_.pipeType = PIPE_TYPE_SPATIALIZATION;
-    } else {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    }
 }
 
 void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -298,10 +289,11 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     int32_t type = -1;
-    if (IsHighResolution()) {
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
         type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
-            rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+            rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
+                PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
         }
     }
 
@@ -447,7 +439,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
-    if (rendererInfo_.rendererFlags != 0) {
+    if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }
@@ -566,6 +558,11 @@ int32_t RendererInClientInner::GetAudioSessionID(uint32_t &sessionID)
         "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
+}
+
+void RendererInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = rendererInfo_.pipeType;
 }
 
 State RendererInClientInner::GetState()
@@ -714,14 +711,22 @@ int32_t RendererInClientInner::SetVolume(float volume)
         volumeRamp_.Terminate();
     }
     clientOldVolume_ = clientVolume_;
-    clientVolume_ = volume;
+    if (silentModeAndMixWithOthers_) {
+        cacheVolume_ = volume;
+    } else {
+        clientVolume_ = volume;
+    }
     return SUCCESS;
 }
 
 float RendererInClientInner::GetVolume()
 {
     Trace trace("RendererInClientInner::GetVolume:" + std::to_string(clientVolume_));
-    return clientVolume_;
+    if (silentModeAndMixWithOthers_) {
+        return cacheVolume_;
+    } else {
+        return clientVolume_;
+    }
 }
 
 int32_t RendererInClientInner::SetDuckVolume(float volume)
@@ -1090,6 +1095,7 @@ int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
+    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->UnsetOffloadMode();
 }
@@ -1122,7 +1128,7 @@ int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 
 int64_t RendererInClientInner::GetFramesWritten()
 {
-    return totalBytesWritten_ / sizePerFrameInByte_;
+    return totalBytesWritten_ / static_cast<int64_t>(sizePerFrameInByte_);
 }
 
 int64_t RendererInClientInner::GetFramesRead()
@@ -1573,7 +1579,7 @@ int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize
 {
     size_t targetSize = bufferSize;
     size_t offset = 0;
-    while (targetSize > sizePerFrameInByte_) {
+    while (targetSize >= sizePerFrameInByte_) {
         // 1. write data into ring cache
         OptResult result = ringCache_->GetWritableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, speedCached ? oriBufferSize : bufferSize - targetSize,
@@ -1769,12 +1775,12 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
-    totalBytesWritten_ += bytesWritten;
+    totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
     }
-    int64_t writtenFrameNumber = totalBytesWritten_ / sizePerFrameInByte_;
+    int64_t writtenFrameNumber = totalBytesWritten_ / static_cast<int64_t>(sizePerFrameInByte_);
     AUDIO_DEBUG_LOG("frame size: %{public}zu", sizePerFrameInByte_);
 
     {
@@ -1792,7 +1798,7 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 
     {
         std::lock_guard<std::mutex> lock(periodReachMutex_);
-        rendererPeriodWritten_ += (bytesWritten / sizePerFrameInByte_);
+        rendererPeriodWritten_ += static_cast<int64_t>((bytesWritten / sizePerFrameInByte_));
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(rendererPeriodWritten_), static_cast<int64_t>(totalBytesWritten_));
         if (rendererPeriodWritten_ >= rendererPeriodSize_ && rendererPeriodSize_ > 0) {
@@ -2130,6 +2136,23 @@ void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool 
         return;
     }
     gasp->UpdateLatencyTimestamp(timestamp, isRenderer);
+}
+
+void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
+{
+    if (!silentModeAndMixWithOthers_ && on) {
+        cacheVolume_ = clientVolume_;
+        clientVolume_ = 0.0;
+    } else if (silentModeAndMixWithOthers_ && !on) {
+        clientVolume_ = cacheVolume_;
+    }
+    silentModeAndMixWithOthers_ = on;
+    return;
+}
+
+bool RendererInClientInner::GetSilentModeAndMixWithOthers()
+{
+    return silentModeAndMixWithOthers_;
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()

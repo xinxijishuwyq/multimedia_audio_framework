@@ -30,6 +30,7 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#include "audio_running_lock_manager.h"
 #endif
 #include "securec.h"
 #include "v3_0/iaudio_manager.h"
@@ -96,6 +97,9 @@ public:
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
 
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
     FastAudioRendererSinkInner();
     ~FastAudioRendererSinkInner();
 
@@ -137,7 +141,7 @@ private:
     uint32_t frameSizeInByte_ = 1;
     uint32_t eachReadFrameSize_ = 0;
 #ifdef FEATURE_POWER_MANAGER
-    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+    std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
 
 #ifdef DEBUG_DIRECT_USE_HDI
@@ -196,7 +200,7 @@ void FastAudioRendererSinkInner::DeInit()
 #ifdef FEATURE_POWER_MANAGER
     KeepRunningUnlock();
 
-    keepRunningLock_ = nullptr;
+    runningLockManager_ = nullptr;
 #endif
 
     started_ = false;
@@ -629,14 +633,19 @@ int32_t FastAudioRendererSinkInner::Start(void)
 #ifdef FEATURE_POWER_MANAGER
 void FastAudioRendererSinkInner::KeepRunningLock()
 {
-    if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastBackgroundPlay",
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    if (runningLockManager_ == nullptr) {
+        keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioFastBackgroundPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        if (keepRunningLock) {
+            runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+        }
     }
 
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         int32_t timeOut = -1; // -1 for lasting.
-        AUDIO_INFO_LOG("keepRunningLock lock result: %{public}d", keepRunningLock_->Lock(timeOut)); // -1 for lasting.
+        AUDIO_INFO_LOG("keepRunningLock lock result: %{public}d",
+            runningLockManager_->Lock(timeOut)); // -1 for lasting.
     } else {
         AUDIO_ERR_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -646,9 +655,9 @@ void FastAudioRendererSinkInner::KeepRunningLock()
 #ifdef FEATURE_POWER_MANAGER
 void FastAudioRendererSinkInner::KeepRunningUnlock()
 {
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
-        keepRunningLock_->UnLock();
+        runningLockManager_->UnLock();
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -871,6 +880,27 @@ int32_t FastAudioRendererSinkInner::Flush(void)
 void FastAudioRendererSinkInner::ResetOutputRouteForDisconnect(DeviceType device)
 {
     AUDIO_WARNING_LOG("not supported.");
+}
+
+int32_t FastAudioRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
+    const size_t size)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return SUCCESS;
+}
+
+int32_t FastAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    runningLockManager_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    runningLockManager_->UpdateAppsUidToPowerMgr();
+#endif
+
+    return SUCCESS;
 }
 
 } // namespace AudioStandard

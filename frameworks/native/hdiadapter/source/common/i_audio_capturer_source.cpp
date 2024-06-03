@@ -238,6 +238,21 @@ int32_t IAudioCapturerSourceSetMute(void *wapper, bool isMute)
 
     return ret;
 }
+
+int32_t IAudioCapturerSourceUpdateAppsUid(void *wapper, const int32_t appsUid[MAX_MIX_CHANNELS],
+    const size_t size)
+{
+    int32_t ret;
+    IAudioCapturerSource *iAudioCapturerSource = static_cast<IAudioCapturerSource *>(wapper);
+    CHECK_AND_RETURN_RET_LOG(iAudioCapturerSource != nullptr, ERR_INVALID_HANDLE, "null audioCapturerSource");
+    bool isInited = iAudioCapturerSource->IsInited();
+    CHECK_AND_RETURN_RET_LOG(isInited, ERR_DEVICE_INIT,
+        "audioCapturer Not Inited! Init the capturer first\n");
+
+    ret = iAudioCapturerSource->UpdateAppsUid(appsUid, size);
+
+    return ret;
+}
 #ifdef __cplusplus
 }
 #endif

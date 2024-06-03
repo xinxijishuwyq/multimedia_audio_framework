@@ -1514,7 +1514,7 @@ float AudioAdapterManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32
 uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx)
 {
     int32_t leftPos = 0;
-    int32_t rightPos = volumePoints.size() - 1;
+    int32_t rightPos = static_cast<int32_t>(volumePoints.size() - 1);
     while (leftPos <= rightPos) {
         int32_t midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
         int32_t c = static_cast<int32_t>(volumePoints[midPos].index) - idx;
@@ -1555,7 +1555,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 
     int32_t volSteps = static_cast<int32_t>(1 + volumePoints[pointSize - 1].index - volumePoints[0].index);
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
-    int32_t position = GetPositionInVolumePoints(volumePoints, idxRatio);
+    int32_t position = static_cast<int32_t>(GetPositionInVolumePoints(volumePoints, idxRatio));
     if (position == 0) {
         if (minVolIndex != 0) {
             AUDIO_INFO_LOG("Min volume index not zero, use min db: %{public}0.1f", volumePoints[0].dbValue / 100.0f);
@@ -1563,22 +1563,22 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
         }
         AUDIO_DEBUG_LOG("position = 0, return 0.0");
         return 0.0f;
-    } else if (position >= pointSize) {
+    } else if (position >= static_cast<int32_t>(pointSize)) {
         AUDIO_DEBUG_LOG("position > pointSize, return %{public}f",
             exp(volumePoints[pointSize - 1].dbValue * 0.115129f));
         return exp((volumePoints[pointSize - 1].dbValue / 100.0f) * 0.115129f);
     }
-    float indexFactor = ((float)(idxRatio - volumePoints[position-1].index)) /
-        (float(volumePoints[position].index - volumePoints[position-1].index));
+    float indexFactor = (static_cast<float>(idxRatio - static_cast<int32_t>(volumePoints[position - 1].index))) /
+        (static_cast<float>(volumePoints[position].index - volumePoints[position - 1].index));
 
-    float dbValue = (volumePoints[position-1].dbValue / 100.0f) +
-        indexFactor * ((volumePoints[position].dbValue / 100.0f) - (volumePoints[position-1].dbValue / 100.0f));
+    float dbValue = (volumePoints[position - 1].dbValue / 100.0f) +
+        indexFactor * ((volumePoints[position].dbValue / 100.0f) - (volumePoints[position - 1].dbValue / 100.0f));
 
     AUDIO_DEBUG_LOG(" index=[%{public}d, %{public}d, %{public}d]"
         "db=[%{public}0.1f %{public}0.1f %{public}0.1f] factor=[%{public}f]",
-        volumePoints[position-1].index, idxRatio, volumePoints[position].index,
-        ((float)volumePoints[position - 1].dbValue / 100.0f), dbValue,
-        ((float)volumePoints[position].dbValue / 100.0f), exp(dbValue * 0.115129f));
+        volumePoints[position - 1].index, idxRatio, volumePoints[position].index,
+        (static_cast<float>(volumePoints[position - 1].dbValue) / 100.0f), dbValue,
+        (static_cast<float>(volumePoints[position].dbValue) / 100.0f), exp(dbValue * 0.115129f));
 
     return exp(dbValue * 0.115129f);
 }

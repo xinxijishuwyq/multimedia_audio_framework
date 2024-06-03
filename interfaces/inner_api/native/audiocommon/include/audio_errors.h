@@ -137,6 +137,8 @@ const int32_t ERR_CALLBACK_NOT_REGISTERED = BASE_AUDIO_ERR_OFFSET - 24;
 /** need not switch device */
 const int32_t ERR_NEED_NOT_SWITCH_DEVICE = BASE_AUDIO_ERR_OFFSET - 25;
 
+const int32_t ERR_CONCEDE_INCOMING_STREAM = BASE_AUDIO_ERR_OFFSET - 26;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard

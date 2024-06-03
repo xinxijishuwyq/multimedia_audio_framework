@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -626,7 +626,7 @@ void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
     std::pair<AudioInterrupt, AudioFocuState> focusInfo;
-    focusInfo.first.Unmarshalling(reply);
+    AudioInterrupt::Unmarshalling(reply, focusInfo.first);
     focusInfo.second = static_cast<AudioFocuState>(reply.ReadInt32());
     focusInfoList.push_back(focusInfo);
 }
@@ -666,7 +666,7 @@ int32_t AudioPolicyProxy::ActivateAudioInterrupt(const AudioInterrupt &audioInte
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
-    audioInterrupt.Marshalling(data);
+    AudioInterrupt::Marshalling(data, audioInterrupt);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate interrupt failed, error: %{public}d", error);
@@ -683,7 +683,7 @@ int32_t AudioPolicyProxy::DeactivateAudioInterrupt(const AudioInterrupt &audioIn
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(zoneID);
-    audioInterrupt.Marshalling(data);
+    AudioInterrupt::Marshalling(data, audioInterrupt);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_INTERRUPT), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
@@ -701,7 +701,7 @@ int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioI
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(clientId);
-    audioInterrupt.Marshalling(data);
+    AudioInterrupt::Marshalling(data, audioInterrupt);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::REQUEST_AUDIO_FOCUS), data, reply, option);
@@ -719,28 +719,10 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(clientId);
-    audioInterrupt.Marshalling(data);
+    AudioInterrupt::Marshalling(data, audioInterrupt);
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
-
-    return reply.ReadInt32();
-}
-
-int32_t AudioPolicyProxy::SetCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(static_cast<int32_t>(callbackchange));
-    data.WriteBool(enable);
-
-    int error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACKS_ENABLE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
 
     return reply.ReadInt32();
@@ -777,7 +759,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, 
     if (error != ERR_NONE) {
         AUDIO_ERR_LOG("AudioPolicyProxy::GetSessionInfoInFocus failed, error: %d", error);
     }
-    audioInterrupt.Unmarshalling(reply);
+    AudioInterrupt::Unmarshalling(reply, audioInterrupt);
 
     return reply.ReadInt32();
 }
@@ -2152,6 +2134,38 @@ int32_t AudioPolicyProxy::TriggerFetchDevice()
         static_cast<uint32_t>(AudioPolicyInterfaceCode::TRIGGER_FETCH_DEVICE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SendRequest failed, error: %{public}d", error);
 
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteUint32(sessionId);
+    data.WriteInt32(pipeType);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::MOVE_TO_NEW_PIPE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(pipeType);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::ACTIVATE_AUDIO_CONCURRENCY), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "activate concurrency failed, error: %{public}d", error);
     return reply.ReadInt32();
 }
 } // namespace AudioStandard

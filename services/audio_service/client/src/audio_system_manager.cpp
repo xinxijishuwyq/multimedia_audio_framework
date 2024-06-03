@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1182,7 +1182,7 @@ int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAd
 int32_t AudioSystemManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {
-    AUDIO_INFO_LOG("AudioSystemManager::SetA2dpDeviceVolume");
+    AUDIO_INFO_LOG("volume: %{public}d, update ui: %{public}d", volume, updateUi);
     return AudioPolicyManager::GetInstance().SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
 

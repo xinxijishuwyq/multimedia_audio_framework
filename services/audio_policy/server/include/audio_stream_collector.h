@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@
 #include "audio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
+#include "audio_concurrency_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,6 +44,7 @@ public:
     int32_t UpdateTracker(const AudioMode &mode, DeviceInfo &deviceInfo);
     AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     int32_t UpdateRendererDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &outputDeviceInfo);
+    int32_t UpdateRendererPipeInfo(int32_t sessionId, AudioPipeType &pipeType);
     int32_t UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId, DeviceInfo &inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
@@ -62,6 +64,11 @@ public:
     int32_t GetUid(int32_t sessionId);
     void GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioRendererChangeInfo &rendererInfo);
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
+    int32_t GetPipeType(const int32_t sessionId, AudioPipeType &pipeType);
+
+    int32_t SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object);
+    int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
+    int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
 private:
     std::mutex streamsInfoMutex_;
     std::map<std::pair<int32_t, int32_t>, int32_t> rendererStatequeue_;
@@ -73,6 +80,7 @@ private:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     int32_t AddRendererStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
+    int32_t CheckRendererUpdataState(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo);
     int32_t UpdateRendererDeviceInfo(DeviceInfo &outputDeviceInfo);
@@ -88,8 +96,13 @@ private:
         std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
         std::unique_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
+    bool ExistStreamForPipe(AudioPipeType pipeType);
+    void RegisteredRendererTrackerClientDied(const int32_t uid);
+    void RegisteredCapturerTrackerClientDied(const int32_t uid);
+    bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     AudioSystemManager *audioSystemMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

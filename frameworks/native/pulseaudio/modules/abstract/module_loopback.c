@@ -846,7 +846,7 @@ static void ProcessSinkInputMessagePost(struct userdata *u, void *data, int64_t 
         /* This is the source latency at the time push was called */
         time_delta = PA_PTR_TO_INT(data);
         /* Add the time between push and post */
-        time_delta += pa_rtclock_now() - (pa_usec_t) offset;
+        time_delta += (int64_t)(pa_rtclock_now() - (pa_usec_t) offset);
         /* Add the sink latency */
         time_delta += pa_sink_get_latency_within_thread(u->sink_input->sink, true);
 

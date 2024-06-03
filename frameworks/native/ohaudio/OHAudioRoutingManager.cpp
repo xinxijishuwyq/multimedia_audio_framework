@@ -219,7 +219,12 @@ void OHAudioDeviceChangedCallback::OnDeviceChange(const DeviceChangeAction &devi
     if (audioDeviceDescriptorArray) {
         audioDeviceDescriptorArray->descriptors =
             (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
-        CHECK_AND_RETURN_LOG(audioDeviceDescriptorArray->descriptors != nullptr, "failed to malloc descriptors.");
+        if (audioDeviceDescriptorArray->descriptors == nullptr) {
+            free(audioDeviceDescriptorArray);
+            audioDeviceDescriptorArray = nullptr;
+            AUDIO_ERR_LOG("failed to malloc descriptors.");
+            return;
+        }
         audioDeviceDescriptorArray->size = size;
         uint32_t index = 0;
         for (auto deviceDescriptor : deviceChangeAction.deviceDescriptors) {

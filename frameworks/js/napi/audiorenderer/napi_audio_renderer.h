@@ -123,6 +123,8 @@ private:
     static napi_value GetState(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
+    static napi_value SetSilentModeAndMixWithOthers(napi_env env, napi_callback_info info);
+    static napi_value GetSilentModeAndMixWithOthers(napi_env env, napi_callback_info info);
 
     static napi_status WriteArrayBufferToNative(std::shared_ptr<AudioRendererAsyncContext> context);
 

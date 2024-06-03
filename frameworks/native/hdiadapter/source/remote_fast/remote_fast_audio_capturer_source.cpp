@@ -89,6 +89,9 @@ public:
     
     float GetMaxAmplitude() override;
 
+    int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
 private:
     int32_t CreateCapture(const struct AudioPort &capturePort);
     void InitAttrs(struct AudioSampleAttributes &attrs);
@@ -794,6 +797,19 @@ float RemoteFastAudioCapturerSourceInner::GetMaxAmplitude()
 {
     AUDIO_WARNING_LOG("getMaxAmplitude in remote fast audio cap not support");
     return 0;
+}
+
+int32_t RemoteFastAudioCapturerSourceInner::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+    const size_t size)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t RemoteFastAudioCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namesapce OHOS
