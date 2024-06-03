@@ -172,20 +172,6 @@ void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::str
     if (UpdateDeviceInfo(device, sinkName) != SUCCESS) {
         return;
     }
-    // update deviceType name in backup map
-    std::vector<std::string> keys;
-    for (auto it = SceneTypeToEffectChainCountBackupMap_.begin();
-        it != SceneTypeToEffectChainCountBackupMap_.end(); ++it) {
-        keys.push_back(it->first);
-    }
-    std::string deviceName = GetDeviceTypeName();
-
-    for (auto key: keys) {
-        std::string sceneType = key.substr(0, static_cast<size_t>(key.find("_&_")));
-        std::string sceneTypeAndDeviceKey = sceneType + "_&_" + deviceName;
-        SceneTypeToEffectChainCountBackupMap_[sceneTypeAndDeviceKey] = SceneTypeToEffectChainCountBackupMap_[key];
-        SceneTypeToEffectChainCountBackupMap_.erase(key);
-    }
     // recover effectChain in speaker mode
     SetSpkOffloadState();
     return;
