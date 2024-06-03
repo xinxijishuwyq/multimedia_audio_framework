@@ -1002,8 +1002,8 @@ private:
     std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
 
-    DeviceType priorityOutputDevice_ = DEVICE_TYPE_NONE;
-    DeviceType priorityInputDevice_ = DEVICE_TYPE_NONE;
+    DeviceType priorityOutputDevice_ = DEVICE_TYPE_INVALID;
+    DeviceType priorityInputDevice_ = DEVICE_TYPE_INVALID;
     ConnectType conneceType_ = CONNECT_TYPE_LOCAL;
 
     SupportedEffectConfig supportedEffectConfig_;
