@@ -3636,15 +3636,10 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
             u->primary.isHDISinkStarted = false;
         }
 
-        if (u->multiChannel.isHDISinkInited) {
-            if (u->multiChannel.isHDISinkStarted) {
-                u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
-                AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
-                u->multiChannel.isHDISinkStarted = false;
-            }
-            u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
-            u->multiChannel.isHDISinkInited = false;
-            AUDIO_INFO_LOG("MultiChannel Deinit HDI renderer");
+        if (u->multiChannel.isHDISinkStarted) {
+            u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
+            u->multiChannel.isHDISinkStarted = false;
         }
     }
 
