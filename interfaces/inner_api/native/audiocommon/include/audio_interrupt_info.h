@@ -149,7 +149,7 @@ struct AudioFocusType {
     }
 };
 
-class AudioInterrupt : public Parcelable {
+class AudioInterrupt {
 public:
     StreamUsage streamUsage;
     ContentType contentType;
@@ -165,31 +165,31 @@ public:
         uint32_t sessionId_) : streamUsage(streamUsage_), contentType(contentType_), audioFocusType(audioFocusType_),
         sessionId(sessionId_) {}
     ~AudioInterrupt() = default;
-    bool Marshalling(Parcel &parcel) const override
+    static bool Marshalling(Parcel &parcel, const AudioInterrupt &interrupt)
     {
-        return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
-            && parcel.WriteInt32(static_cast<int32_t>(contentType))
-            && parcel.WriteInt32(static_cast<int32_t>(audioFocusType.streamType))
-            && parcel.WriteInt32(static_cast<int32_t>(audioFocusType.sourceType))
-            && parcel.WriteBool(audioFocusType.isPlay)
-            && parcel.WriteUint32(sessionId)
-            && parcel.WriteBool(pauseWhenDucked)
-            && parcel.WriteInt32(pid)
-            && parcel.WriteInt32(static_cast<int32_t>(mode))
-            && parcel.WriteBool(parallelPlayFlag);
+        return parcel.WriteInt32(static_cast<int32_t>(interrupt.streamUsage))
+            && parcel.WriteInt32(static_cast<int32_t>(interrupt.contentType))
+            && parcel.WriteInt32(static_cast<int32_t>(interrupt.audioFocusType.streamType))
+            && parcel.WriteInt32(static_cast<int32_t>(interrupt.audioFocusType.sourceType))
+            && parcel.WriteBool(interrupt.audioFocusType.isPlay)
+            && parcel.WriteUint32(interrupt.sessionId)
+            && parcel.WriteBool(interrupt.pauseWhenDucked)
+            && parcel.WriteInt32(interrupt.pid)
+            && parcel.WriteInt32(static_cast<int32_t>(interrupt.mode))
+            && parcel.WriteBool(interrupt.parallelPlayFlag);
     }
-    void Unmarshalling(Parcel &parcel)
+    static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
     {
-        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        contentType = static_cast<ContentType>(parcel.ReadInt32());
-        audioFocusType.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
-        audioFocusType.sourceType = static_cast<SourceType>(parcel.ReadInt32());
-        audioFocusType.isPlay = parcel.ReadBool();
-        sessionId = parcel.ReadUint32();
-        pauseWhenDucked = parcel.ReadBool();
-        pid = parcel.ReadInt32();
-        mode = static_cast<InterruptMode>(parcel.ReadInt32());
-        parallelPlayFlag = parcel.ReadBool();
+        interrupt.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        interrupt.contentType = static_cast<ContentType>(parcel.ReadInt32());
+        interrupt.audioFocusType.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        interrupt.audioFocusType.sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        interrupt.audioFocusType.isPlay = parcel.ReadBool();
+        interrupt.sessionId = parcel.ReadUint32();
+        interrupt.pauseWhenDucked = parcel.ReadBool();
+        interrupt.pid = parcel.ReadInt32();
+        interrupt.mode = static_cast<InterruptMode>(parcel.ReadInt32());
+        interrupt.parallelPlayFlag = parcel.ReadBool();
     }
 };
 } // namespace AudioStandard

@@ -1514,7 +1514,7 @@ float AudioAdapterManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32
 uint32_t AudioAdapterManager::GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx)
 {
     int32_t leftPos = 0;
-    int32_t rightPos = volumePoints.size() - 1;
+    int32_t rightPos = static_cast<int32_t>(volumePoints.size() - 1);
     while (leftPos <= rightPos) {
         int32_t midPos = leftPos + (rightPos - leftPos)/NUMBER_TWO;
         int32_t c = static_cast<int32_t>(volumePoints[midPos].index) - idx;
@@ -1555,7 +1555,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
 
     int32_t volSteps = static_cast<int32_t>(1 + volumePoints[pointSize - 1].index - volumePoints[0].index);
     int32_t idxRatio = (volSteps * (volumeLevel - minVolIndex)) / (maxVolIndex - minVolIndex);
-    int32_t position = GetPositionInVolumePoints(volumePoints, idxRatio);
+    int32_t position = static_cast<int32_t>(GetPositionInVolumePoints(volumePoints, idxRatio));
     if (position == 0) {
         if (minVolIndex != 0) {
             AUDIO_INFO_LOG("Min volume index not zero, use min db: %{public}0.1f", volumePoints[0].dbValue / 100.0f);

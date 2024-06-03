@@ -26,6 +26,7 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#include "audio_running_lock_manager.h"
 #endif
 #include "v3_0/iaudio_manager.h"
 
@@ -77,6 +78,10 @@ public:
 
     int32_t Preload(const std::string &usbInfoStr) override;
     float GetMaxAmplitude() override;
+
+    int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+        const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     explicit AudioCapturerSourceInner(const std::string &halName = "primary");
     ~AudioCapturerSourceInner();
@@ -132,7 +137,7 @@ private:
     struct AudioAdapterDescriptor adapterDesc_;
     struct AudioPort audioPort_;
 #ifdef FEATURE_POWER_MANAGER
-    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+    std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
     IAudioSourceCallback* wakeupCloseCallback_ = nullptr;
     std::mutex wakeupClosecallbackMutex_;
@@ -177,6 +182,10 @@ public:
     void RegisterAudioCapturerSourceCallback(std::unique_ptr<ICapturerStateCallback> callback) override;
     void RegisterParameterCallback(IAudioSourceCallback *callback) override;
     float GetMaxAmplitude() override;
+
+    int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+        const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     AudioCapturerSourceWakeup() = default;
     ~AudioCapturerSourceWakeup() = default;
@@ -634,31 +643,40 @@ int32_t AudioCapturerSourceInner::Start(void)
     AUDIO_INFO_LOG("Enter");
     InitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ == nullptr) {
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    if (runningLockManager_ == nullptr) {
         switch (attr_.sourceType) {
             case SOURCE_TYPE_WAKEUP:
-                keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
+                keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioWakeupCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
                 break;
             case SOURCE_TYPE_MIC:
             default:
-                keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
+                keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioPrimaryCapturer",
                     PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
         }
+        if (keepRunningLock) {
+            runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+        }
     }
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock lock result: %{public}d",
-            keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
+            runningLockManager_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, capture can not work well!");
     }
 #endif
-    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, DUMP_CAPTURER_SOURCE_FILENAME, &dumpFile_);
+    // eg: primary_0_44100_2_1_20240527202236189_source.pcm
+    std::string dumpName = halName_ + '_' + std::to_string(attr_.sourceType) + '_'
+        + std::to_string(attr_.sampleRate) + '_' + std::to_string(attr_.channel) + '_'
+        + std::to_string(attr_.format) + '_'
+        + GetTime() + "_source.pcm";
+    DumpFileUtil::OpenDumpFile(DUMP_SERVER_PARA, dumpName, &dumpFile_);
 
     int32_t ret;
     if (!started_) {
         if (audioCapturerSourceCallback_ != nullptr) {
-            audioCapturerSourceCallback_->OnCapturerState(false);
+            audioCapturerSourceCallback_->OnCapturerState(true);
         }
 
         ret = audioCapture_->Start(audioCapture_);
@@ -937,9 +955,9 @@ int32_t AudioCapturerSourceInner::Stop(void)
     DeinitLatencyMeasurement();
 
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unlock");
-        keepRunningLock_->UnLock();
+        runningLockManager_->UnLock();
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, stop can not work well!");
     }
@@ -1187,6 +1205,35 @@ void AudioCapturerSourceInner::CheckLatencySignal(uint8_t *frame, size_t replyBy
     }
 }
 
+int32_t AudioCapturerSourceInner::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+    const size_t size)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    runningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
+    runningLockManager_->UpdateAppsUidToPowerMgr();
+#endif
+
+    return SUCCESS;
+}
+
+int32_t AudioCapturerSourceInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    runningLockManager_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    runningLockManager_->UpdateAppsUidToPowerMgr();
+#endif
+
+    return SUCCESS;
+}
+
 int32_t AudioCapturerSourceWakeup::Init(const IAudioSourceAttr &attr)
 {
     std::lock_guard<std::mutex> lock(wakeupMutex_);
@@ -1355,6 +1402,17 @@ void AudioCapturerSourceWakeup::RegisterParameterCallback(IAudioSourceCallback *
 float AudioCapturerSourceWakeup::GetMaxAmplitude()
 {
     return audioCapturerSource_.GetMaxAmplitude();
+}
+
+int32_t AudioCapturerSourceWakeup::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+    const size_t size)
+{
+    return audioCapturerSource_.UpdateAppsUid(appsUid, size);
+}
+
+int32_t AudioCapturerSourceWakeup::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    return audioCapturerSource_.UpdateAppsUid(appsUid);
 }
 } // namespace AudioStandard
 } // namesapce OHOS

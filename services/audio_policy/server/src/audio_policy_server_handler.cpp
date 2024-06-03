@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -122,6 +122,12 @@ int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32
     AUDIO_DEBUG_LOG("UnsetDistributedRoutingRoleCallback: distributedRoutingRoleChangeCbsMap_ size: %{public}zu",
         distributedRoutingRoleChangeCbsMap_.size());
     return SUCCESS;
+}
+
+void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(std::shared_ptr<IAudioConcurrencyEventDispatcher>
+    dispatcher)
+{
+    concurrencyEventDispatcher_ = dispatcher;
 }
 
 bool AudioPolicyServerHandler::SendDeviceChangedCallback(const std::vector<sptr<AudioDeviceDescriptor>> &desc,
@@ -453,6 +459,30 @@ bool AudioPolicyServerHandler::SendKvDataUpdate(const bool &isFirstBoot)
     return ret;
 }
 
+
+bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
+{
+    auto eventContextObj = std::make_shared<int32_t>(pipeType);
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send PIPE_STREAM_CLEAN_EVENT event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID)
+{
+    AUDIO_INFO_LOG("session %{public}u send concurrency event", sessionID);
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->sessionId = sessionID;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send CONCURRENCY_EVENT_WITH_SESSIONID event failed");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -478,7 +508,7 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
     for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
         AudioDeviceUsage usage = it->first.second;
         eventContextObj->deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
-            DeviceFilterByUsage(it->first.second, eventContextObj->deviceChangeAction.deviceDescriptors);
+            DeviceFilterByUsageInner(it->first.second, eventContextObj->deviceChangeAction.deviceDescriptors);
         if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().
@@ -613,7 +643,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioRendererInfo rendererInfo;
         auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
-            GetPreferredOutputDeviceDescriptors(rendererInfo);
+            GetPreferredOutputDeviceDescInner(rendererInfo);
         if (!(it->second->hasBTPermission_)) {
             AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }
@@ -626,7 +656,7 @@ void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         AudioCapturerInfo captureInfo;
-        auto deviceDescs = AudioPolicyService::GetAudioPolicyService().GetPreferredInputDeviceDescriptors(captureInfo);
+        auto deviceDescs = AudioPolicyService::GetAudioPolicyService().GetPreferredInputDeviceDescInner(captureInfo);
         if (!(it->second->hasBTPermission_)) {
             AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
         }
@@ -800,9 +830,31 @@ void AudioPolicyServerHandler::HandleUpdateKvDataEvent(const AppExecFwk::InnerEv
     AudioPolicyManagerFactory::GetAudioPolicyManager().HandleKvData(isFristBoot);
 }
 
+void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<int32_t> eventContextObj = event->GetSharedObject<int32_t>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    AudioPipeType pipeType = static_cast<AudioPipeType>(*eventContextObj);
+    AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
+}
+
+void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+
+    std::unique_lock<std::mutex> lock(runnerMutex_);
+    std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher = concurrencyEventDispatcher_.lock();
+    lock.unlock();
+    if (dispatcher != nullptr) {
+        dispatcher->DispatchConcurrencyEventWithSessionId(eventContextObj->sessionId);
+    }
+}
+
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
+    HandleOtherServiceEvent(eventId, event);
     switch (eventId) {
         case EventAudioServerCmd::AUDIO_DEVICE_CHANGE:
             HandleDeviceChangedCallback(event);
@@ -842,6 +894,21 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::DATABASE_UPDATE:
             HandleUpdateKvDataEvent(event);
+            break;
+        case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
+            HandlePipeStreamCleanEvent(event);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    switch (eventId) {
+        case EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID:
+            HandleConcurrencyEventWithSessionID(event);
             break;
         default:
             break;

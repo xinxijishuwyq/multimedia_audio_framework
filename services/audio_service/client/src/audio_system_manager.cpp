@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,7 +49,7 @@ AudioSystemManager::AudioSystemManager()
 
 AudioSystemManager::~AudioSystemManager()
 {
-    AUDIO_DEBUG_LOG("AudioSystemManager::~AudioSystemManager");
+    AUDIO_DEBUG_LOG("~AudioSystemManager");
     if (cbClientId_ != -1) {
         UnsetRingerModeCallback(cbClientId_);
     }
@@ -844,15 +844,15 @@ int32_t AudioSystemManager::RegisterVolumeKeyEventCallback(const int32_t clientP
     return AudioPolicyManager::GetInstance().SetVolumeKeyEventCallback(clientPid, callback, api_v);
 }
 
-int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clientPid)
+int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
     AUDIO_DEBUG_LOG("UnregisterVolumeKeyEventCallback");
-    int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(clientPid);
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(callback);
     if (!ret) {
-        AUDIO_DEBUG_LOG("UnregisterVolumeKeyEventCallback success");
+        AUDIO_DEBUG_LOG("UnsetVolumeKeyEventCallback success");
         volumeChangeClientPid_ = -1;
     }
-
     return ret;
 }
 
@@ -1182,7 +1182,7 @@ int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAd
 int32_t AudioSystemManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {
-    AUDIO_INFO_LOG("AudioSystemManager::SetA2dpDeviceVolume");
+    AUDIO_INFO_LOG("volume: %{public}d, update ui: %{public}d", volume, updateUi);
     return AudioPolicyManager::GetInstance().SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
 

@@ -102,6 +102,7 @@ public:
         AudioPermissionState state) override;
     State GetState() override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    void GetAudioPipeType(AudioPipeType &pipeType) override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     int32_t GetBufferSize(size_t &bufferSize) override;
@@ -196,6 +197,10 @@ public:
     void GetSwitchInfo(IAudioStream::SwitchInfo& info) override;
 
     IAudioStream::StreamClass GetStreamClass() override;
+
+    void SetSilentModeAndMixWithOthers(bool on) override;
+
+    bool GetSilentModeAndMixWithOthers() override;
 
     static void AudioServerDied(pid_t pid);
 
@@ -838,6 +843,11 @@ int32_t CapturerInClientInner::GetAudioSessionID(uint32_t &sessionID)
         "State error %{public}d", state_.load());
     sessionID = sessionId_;
     return SUCCESS;
+}
+
+void CapturerInClientInner::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = capturerInfo_.pipeType;
 }
 
 State CapturerInClientInner::GetState()
@@ -1672,7 +1682,7 @@ void CapturerInClientInner::HandleCapturerPositionChanges(size_t bytesRead)
 
     {
         std::lock_guard<std::mutex> lock(periodReachMutex_);
-        capturerPeriodRead_ += (bytesRead / sizePerFrameInByte_);
+        capturerPeriodRead_ += static_cast<int64_t>(bytesRead / sizePerFrameInByte_);
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64 ", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(capturerPeriodRead_), static_cast<int64_t>(totalBytesRead_));
         if (capturerPeriodRead_ >= capturerPeriodSize_ && capturerPeriodSize_ > 0) {
@@ -1790,7 +1800,7 @@ int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     bufferSizeInMsec_ = bufferSizeInMsec;
     AUDIO_INFO_LOG("SetBufferSizeInMsec to %{public}d", bufferSizeInMsec_);
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
-        uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;
+        uint64_t bufferDurationInUs = static_cast<uint64_t>(bufferSizeInMsec_ * AUDIO_US_PER_MS);
         InitCallbackBuffer(bufferDurationInUs);
     }
     return SUCCESS;
@@ -1869,6 +1879,18 @@ bool CapturerInClientInner::GetHighResolutionEnabled()
 IAudioStream::StreamClass CapturerInClientInner::GetStreamClass()
 {
     return PA_STREAM;
+}
+
+void CapturerInClientInner::SetSilentModeAndMixWithOthers(bool on)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return;
+}
+
+bool CapturerInClientInner::GetSilentModeAndMixWithOthers()
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return false;
 }
 
 int32_t CapturerInClientInner::RegisterCapturerInClientPolicyServerDiedCb()

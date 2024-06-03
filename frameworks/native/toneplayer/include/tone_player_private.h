@@ -62,20 +62,20 @@ private:
     };
     typedef std::cv_status status_t;
     AudioRendererOptions rendererOptions = {};
-    uint32_t currSegment_;  // Current segment index in ToneDescriptor segments[]
-    uint32_t currCount_;  // Current sequence repeat count
-    std::shared_ptr<ToneInfo> toneInfo_;  // pointer to active tone Info
-    std::shared_ptr<ToneInfo> initialToneInfo_;  // pointer to new active tone Info
-    std::vector<int32_t> supportedTones_;
-    volatile uint16_t tonePlayerState_;  // TonePlayer state (tone_state)
-    std::string cachePath_; // NAPI interface to create AudioRenderer
-    uint32_t loopCounter_; // Current tone loopback count
-    uint32_t totalSample_;  // Total no. of tone samples played
-    uint32_t nextSegSample_;  // Position of next segment transition expressed in samples
-    uint32_t maxSample_;  // Maximum number of audio samples played (maximun tone duration)
-    uint32_t samplingRate_;  // Audio Sampling rate
-    uint32_t sampleCount_; // Initial value should be zero before any new Tone renderering
-    std::unique_ptr<AudioRenderer> audioRenderer_;  // Pointer to AudioRenderer used for playback
+    uint32_t currSegment_ = 0;  // Current segment index in ToneDescriptor segments[]
+    uint32_t currCount_ = 0;  // Current sequence repeat count
+    std::shared_ptr<ToneInfo> toneInfo_ = nullptr;  // pointer to active tone Info
+    std::shared_ptr<ToneInfo> initialToneInfo_ = nullptr;  // pointer to new active tone Info
+    std::vector<int32_t> supportedTones_ = {};
+    volatile uint16_t tonePlayerState_ = 0;  // TonePlayer state (tone_state)
+    std::string cachePath_ = ""; // NAPI interface to create AudioRenderer
+    uint32_t loopCounter_ = 0; // Current tone loopback count
+    uint32_t totalSample_ = 0;  // Total no. of tone samples played
+    uint32_t nextSegSample_ = 0;  // Position of next segment transition expressed in samples
+    uint32_t maxSample_ = 0;  // Maximum number of audio samples played (maximun tone duration)
+    uint32_t samplingRate_ = 0;  // Audio Sampling rate
+    uint32_t sampleCount_ = 0; // Initial value should be zero before any new Tone renderering
+    std::unique_ptr<AudioRenderer> audioRenderer_ = nullptr;  // Pointer to AudioRenderer used for playback
     std::mutex mutexLock_; // Mutex to control concurent access
     std::mutex cbkCondLock_; // Mutex associated to waitAudioCbkCond_
     std::condition_variable waitAudioCbkCond_; // condition enabling interface
@@ -83,9 +83,9 @@ private:
     std::condition_variable waitToneDataCond_; // condition enabling interface
     tone_data_state toneDataState_;
     // to wait for audio rendere callback completion after a change is requested
-    float volume_;  // Volume applied to audio Renderer
+    float volume_ = 0.0f;  // Volume applied to audio Renderer
     FILE *dumpFile_ = nullptr;
-    uint32_t processSize_;  // In audioRenderer, Size of audio blocks generated at a time
+    uint32_t processSize_ = 0;  // In audioRenderer, Size of audio blocks generated at a time
     bool InitAudioRenderer();
     void AudioToneRendererCallback();
     void AudioToneDataThreadFunc();

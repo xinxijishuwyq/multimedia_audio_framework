@@ -28,10 +28,20 @@ int32_t AudioPolicyClientStubImpl::AddVolumeKeyEventCallback(const std::shared_p
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::RemoveVolumeKeyEventCallback()
+int32_t AudioPolicyClientStubImpl::RemoveVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(volumeKeyEventMutex_);
-    volumeKeyEventCallbackList_.clear();
+    if (cb == nullptr) {
+        volumeKeyEventCallbackList_.clear();
+        return SUCCESS;
+    }
+    auto it = find_if(volumeKeyEventCallbackList_.begin(), volumeKeyEventCallbackList_.end(),
+        [&cb](const std::weak_ptr<VolumeKeyEventCallback>& elem) {
+            return elem.lock() == cb;
+        });
+    if (it != volumeKeyEventCallbackList_.end()) {
+        volumeKeyEventCallbackList_.erase(it);
+    }
     return SUCCESS;
 }
 

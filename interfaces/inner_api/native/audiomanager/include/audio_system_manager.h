@@ -390,9 +390,9 @@ public:
     virtual ~AudioDeviceRefiner() = default;
 
     virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, RenderMode renderMode) = 0;
+        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) = 0;
     virtual int32_t OnAudioInputDeviceRefined(std::vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, SourceType sourceType, int32_t clientUid, RenderMode renderMode) = 0;
+        RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
 };
 
 /**
@@ -825,11 +825,12 @@ public:
     /**
      * @brief Unregisters the volumeKeyEvent callback listener
      *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid);
+    int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
      * @brief Set mono audio state

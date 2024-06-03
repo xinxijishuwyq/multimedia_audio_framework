@@ -30,6 +30,7 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#include "audio_running_lock_manager.h"
 #endif
 #include "v3_0/iaudio_manager.h"
 
@@ -175,6 +176,10 @@ public:
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
 
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
+        const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
     std::string GetDPDeviceAttrInfo(const std::string &condition);
 
     explicit AudioRendererSinkInner(const std::string &halName = "primary");
@@ -214,7 +219,7 @@ private:
     bool latencyMeasEnabled_ = false;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 #ifdef FEATURE_POWER_MANAGER
-    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock_;
+    std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> runningLockManager_;
 #endif
     // for device switch
     std::atomic<bool> inSwitch_ = false;
@@ -337,7 +342,7 @@ bool AudioRendererSinkInner::AttributesCheck(AudioSampleAttributes &attrInfo)
 int32_t AudioRendererSinkInner::SetAudioAttrInfo(AudioSampleAttributes &attrInfo)
 {
     CHECK_AND_RETURN_RET_LOG(AttributesCheck(attrInfo), ERROR, "AttributesCheck failed");
-    int32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
+    uint32_t bufferSize = attrInfo.sampleRate * attrInfo.format * attrInfo.channelCount *
         BUFFER_CALC_20MS / BUFFER_CALC_1000MS;
     audioAttrInfo_ = "rate="+to_string(attrInfo.sampleRate)+" format=" + ParseAudioFormatToStr(attrInfo.format) +
         " channels=" + to_string(attrInfo.channelCount) + " buffer_size="+to_string(bufferSize);
@@ -696,13 +701,9 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
         AUDIO_WARNING_LOG("AudioRendererSinkInner::RenderFrame invalid state! not started");
     }
 
-    if (audioMonoState_) {
-        AdjustStereoToMono(&data, len);
-    }
+    if (audioMonoState_) {AdjustStereoToMono(&data, len);}
 
-    if (audioBalanceState_) {
-        AdjustAudioBalance(&data, len);
-    }
+    if (audioBalanceState_) {AdjustAudioBalance(&data, len);}
 
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     CheckUpdateState(&data, len);
@@ -733,14 +734,20 @@ int32_t AudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uint64_t &
     Trace traceRenderFrame("AudioRendererSinkInner::RenderFrame");
     ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t*>(&data), static_cast<uint32_t>(len),
         &writeLen);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED,
-        "RenderFrame failed ret: %{public}x", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrame failed ret: %{public}x", ret);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     int64_t stampThreshold = 20; // 20ms
     if (logMode_ || stamp >= stampThreshold) {
         AUDIO_WARNING_LOG("RenderFrame len[%{public}" PRIu64 "] cost[%{public}" PRId64 "]ms", len, stamp);
     }
+
+#ifdef FEATURE_POWER_MANAGER
+    if (runningLockManager_) {
+        runningLockManager_->UpdateAppsUidToPowerMgr();
+    }
+#endif
+
     return SUCCESS;
 }
 
@@ -771,7 +778,7 @@ float AudioRendererSinkInner::GetMaxAmplitude()
 
 int32_t AudioRendererSinkInner::Start(void)
 {
-    AUDIO_INFO_LOG("Start.");
+    AUDIO_INFO_LOG("Start. sinkName %{public}s", halName_.c_str());
     Trace trace("AudioRendererSinkInner::Start");
 #ifdef FEATURE_POWER_MANAGER
     std::string lockName = PRIMARY_LOCK_NAME;
@@ -779,13 +786,17 @@ int32_t AudioRendererSinkInner::Start(void)
         lockName = DIRECT_LOCK_NAME;
     }
     AudioXCollie audioXCollie("AudioRendererSinkInner::CreateRunningLock", TIME_OUT_SECONDS);
-    if (keepRunningLock_ == nullptr) {
-        keepRunningLock_ = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock(
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    if (runningLockManager_ == nullptr) {
+        keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock(
             lockName, PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        if (keepRunningLock) {
+            runningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+        }
     }
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock lock result: %{public}d",
-            keepRunningLock_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
+            runningLockManager_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING)); // -1 for lasting.
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -899,6 +910,8 @@ static AudioCategory GetAudioCategory(AudioScene audioScene)
 AudioPortPin AudioRendererSinkInner::GetAudioPortPin() const noexcept
 {
     switch (attr_.deviceType) {
+        case DEVICE_TYPE_EARPIECE:
+            return PIN_OUT_EARPIECE;
         case DEVICE_TYPE_SPEAKER:
             return PIN_OUT_SPEAKER;
         case DEVICE_TYPE_WIRED_HEADSET:
@@ -1085,9 +1098,9 @@ int32_t AudioRendererSinkInner::GetTransactionId(uint64_t *transactionId)
 void AudioRendererSinkInner::ReleaseRunningLock()
 {
 #ifdef FEATURE_POWER_MANAGER
-    if (keepRunningLock_ != nullptr) {
+    if (runningLockManager_ != nullptr) {
         AUDIO_INFO_LOG("keepRunningLock unLock");
-        keepRunningLock_->UnLock();
+        runningLockManager_->UnLock();
     } else {
         AUDIO_WARNING_LOG("keepRunningLock is null, playback can not work well!");
     }
@@ -1097,7 +1110,7 @@ void AudioRendererSinkInner::ReleaseRunningLock()
 int32_t AudioRendererSinkInner::Stop(void)
 {
     Trace trace("AudioRendererSinkInner::Stop");
-    AUDIO_INFO_LOG("Stop.");
+    AUDIO_INFO_LOG("Stop. sinkName %{public}s", halName_.c_str());
 
     DeinitLatencyMeasurement();
 
@@ -1263,10 +1276,13 @@ int32_t AudioRendererSinkInner::UpdateDPAttrs(const std::string &usbInfoStr)
 
     attr_.sampleRate = stoi(sampleRateStr);
     attr_.channel = stoi(channeltStr);
+    uint32_t formatByte = 0;
     if (attr_.channel <= 0 || attr_.sampleRate <= 0) {
         AUDIO_ERR_LOG("check attr failed channel[%{public}d] sampleRate[%{public}d]", attr_.channel, attr_.sampleRate);
+    } else {
+        formatByte = stoi(bufferSize) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
     }
-    uint32_t formatByte = stoi(bufferSize) * BUFFER_CALC_1000MS / BUFFER_CALC_20MS / attr_.channel / attr_.sampleRate;
+    
     attr_.format = static_cast<HdiAdapterFormat>(ConvertByteToAudioFormat(formatByte));
 
     AUDIO_DEBUG_LOG("UpdateDPAttrs sampleRate %{public}d, format: %{public}d,channelCount: %{public}d",
@@ -1493,6 +1509,34 @@ int32_t AudioRendererSinkInner::SetPaPower(int32_t flag)
 
     AUDIO_DEBUG_LOG("receive invalid flag");
     return ret;
+}
+
+int32_t AudioRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS],
+    const size_t size)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    return runningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
+#endif
+
+    return SUCCESS;
+}
+
+int32_t AudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!runningLockManager_) {
+        return ERROR;
+    }
+
+    runningLockManager_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
+    runningLockManager_->UpdateAppsUidToPowerMgr();
+#endif
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

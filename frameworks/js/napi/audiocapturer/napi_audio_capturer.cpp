@@ -425,8 +425,8 @@ napi_status NapiAudioCapturer::ReadFromNative(shared_ptr<AudioCapturerAsyncConte
     uint32_t userSize = context->userSize;
     auto buffer = std::make_unique<uint8_t[]>(userSize);
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, status, "buffer malloc failed,no memery");
-    size_t bytesRead = 0;
-    while (bytesRead < context->userSize) {
+    int32_t bytesRead = 0;
+    while (static_cast<uint32_t>(bytesRead) < context->userSize) {
         int32_t len = napiAudioCapturer->audioCapturer_->Read(*(buffer.get() + bytesRead),
             userSize - bytesRead, context->isBlocking);
         if (len >= 0) {
@@ -439,7 +439,7 @@ napi_status NapiAudioCapturer::ReadFromNative(shared_ptr<AudioCapturerAsyncConte
     if (bytesRead <= 0) {
         return status;
     }
-    context->bytesRead = bytesRead;
+    context->bytesRead = static_cast<size_t>(bytesRead);
     context->buffer = buffer.get();
     buffer.release();
     status = napi_ok;
@@ -499,7 +499,8 @@ napi_value NapiAudioCapturer::GetAudioTime(napi_env env, napi_callback_info info
         Timestamp timestamp;
         if (napiAudioCapturer->audioCapturer_->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC)) {
             const uint64_t secToNanosecond = 1000000000;
-            context->time = timestamp.time.tv_nsec + timestamp.time.tv_sec * secToNanosecond;
+            context->time = static_cast<uint64_t>(timestamp.time.tv_nsec) +
+                static_cast<uint64_t>(timestamp.time.tv_sec) * secToNanosecond;
         } else {
             context->SignError(NAPI_ERR_SYSTEM);
         }

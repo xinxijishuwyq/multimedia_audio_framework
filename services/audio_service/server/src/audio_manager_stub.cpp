@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -108,6 +108,12 @@ int AudioManagerStub::HandleIsWhispering(MessageParcel &data, MessageParcel &rep
     const std::string key = data.ReadString();
     const std::string value = data.ReadString();
     int32_t result = IsWhispering();
+    return result;
+}
+
+int AudioManagerStub::HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = GetEffectOffloadEnabled();
     return result;
 }
 

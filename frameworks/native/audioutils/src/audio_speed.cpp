@@ -107,7 +107,7 @@ int32_t AudioSpeed::ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
         static_cast<unsigned char*>(outBuffer.get()), MAX_BUFFER_SIZE);
     CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
 
-    outBufferSize = outSamples * (formatSize_ * channels_);
+    outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
 
@@ -123,7 +123,7 @@ int32_t AudioSpeed::ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
         MAX_BUFFER_SIZE);
     CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
 
-    outBufferSize = outSamples * (formatSize_ * channels_);
+    outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
 
@@ -136,9 +136,18 @@ int32_t AudioSpeed::ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
         return ERR_MEMORY_ALLOC_FAILED;
     }
     float* bitTofloat = new(std::nothrow) float[bufferSize];
+    if (!bitTofloat) {
+        AUDIO_ERR_LOG("bitTofloat nullptr, No memory");
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
     ConvertFrom24BitToFloat(bufferSize / formatSize_, buffer, bitTofloat);
 
     float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
+    if (!speedBuf) {
+        AUDIO_ERR_LOG("speedBuf nullptr, No memory");
+        delete [] bitTofloat;
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
     int32_t ret = ChangeSpeedForFloat(bitTofloat, bufferSize, speedBuf, outBufferSize);
 
     ConvertFromFloatTo24Bit(outBufferSize / formatSize_, speedBuf, outBuffer.get());
@@ -157,9 +166,18 @@ int32_t AudioSpeed::ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
         return ERR_MEMORY_ALLOC_FAILED;
     }
     float* bitTofloat = new(std::nothrow) float[bufferSize];
+    if (!bitTofloat) {
+        AUDIO_ERR_LOG("bitTofloat nullptr, No memory");
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
     ConvertFrom32BitToFloat(bufferSize / formatSize_, reinterpret_cast<int32_t *>(buffer), bitTofloat);
 
     float* speedBuf = new(std::nothrow) float[MAX_BUFFER_SIZE];
+    if (!speedBuf) {
+        AUDIO_ERR_LOG("speedBuf nullptr, No memory");
+        delete [] bitTofloat;
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
     int32_t ret = ChangeSpeedForFloat(bitTofloat, bufferSize, speedBuf, outBufferSize);
 
     ConvertFromFloatTo32Bit(outBufferSize / formatSize_, speedBuf, reinterpret_cast<int32_t *>(outBuffer.get()));
@@ -177,7 +195,7 @@ int32_t AudioSpeed::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
     int32_t res = sonicWriteFloatToStream(sonicStream_, buffer, numSamples);
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write float to stream failed.");
     int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, MAX_BUFFER_SIZE);
-    outBufferSize = outSamples * (formatSize_ * channels_);
+    outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
 } // namespace AudioStandard

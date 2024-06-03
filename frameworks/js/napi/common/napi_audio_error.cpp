@@ -40,7 +40,7 @@ void NapiAudioError::ThrowError(napi_env env, int32_t code, const std::string &e
 {
     std::string messageValue;
     if (code == NAPI_ERR_INVALID_PARAM || code == NAPI_ERR_INPUT_INVALID) {
-        messageValue = errMessage.c_str();
+        messageValue = errMessage;
     } else {
         messageValue = GetMessageByCode(code);
     }

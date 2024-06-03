@@ -126,6 +126,7 @@ public:
     void ResetInfo();  // Use for testing temporarily.
     bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
+    void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
 
 private:
     int32_t SetAudioEffectChainDynamic(const std::string &sceneType, const std::string &effectMode);
@@ -138,6 +139,8 @@ private:
     void UpdateEffectChainParams(AudioEffectScene sceneType);
     void SetSpkOffloadState();
     void InitHdiState();
+    int32_t UpdateDeviceInfo(int32_t device, const std::string &sinkName);
+    bool CheckIfSpkDsp();
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -156,6 +159,7 @@ private:
     std::map<std::string, int32_t> SceneTypeToEffectChainCountBackupMap_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     std::string deviceSink_ = DEFAULT_DEVICE_SINK;
+    std::string deviceClass_ = "";
     bool isInitialized_ = false;
     std::recursive_mutex dynamicMutex_;
     bool spatializationEnabled_ = false;
@@ -166,6 +170,7 @@ private:
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     int32_t hdiSceneType_ = 0;
     int32_t hdiEffectMode_ = 0;
+    bool debugArmFlag_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

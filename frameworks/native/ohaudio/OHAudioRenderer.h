@@ -47,10 +47,10 @@ public:
 private:
     OH_AudioRenderer_Callbacks callbacks_;
     OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback_;
-    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_;
+    OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_ = nullptr;
     OH_AudioRenderer *ohAudioRenderer_;
-    void *userData_;
-    void *metadataUserData_;
+    void *userData_ = nullptr;
+    void *metadataUserData_ = nullptr;
     AudioEncodingType encodingType_;
 };
 
@@ -200,6 +200,8 @@ class OHAudioRenderer {
         void UnsetRendererPositionCallback();
         uint32_t GetUnderflowCount();
         void SetInterruptMode(InterruptMode mode);
+        void SetSilentModeAndMixWithOthers(bool on);
+        bool GetSilentModeAndMixWithOthers();
 
         void SetRendererCallbackType(WriteDataCallbackType writeDataCallbackType);
         WriteDataCallbackType GetRendererCallbackType();

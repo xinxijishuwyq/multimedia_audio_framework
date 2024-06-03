@@ -616,6 +616,10 @@ public:
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
+    void SetSilentModeAndMixWithOthers(bool on) override;
+
+    bool GetSilentModeAndMixWithOthers() override;
+
 protected:
     virtual void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
     void SendWriteBufferRequestEvent();
@@ -678,6 +682,7 @@ private:
     std::string cachePath_ = "";
 
     float volumeFactor_ = 1.0f;
+    float cacheVolume_ = 1.0f;
     float powerVolumeFactor_ = 1.0f;
     float duckVolumeFactor_ = 1.0f;
     AudioStreamType streamType_ = STREAM_MUSIC;
@@ -764,6 +769,7 @@ private:
     AudioOffloadType offloadNextStateTargetPolicy_ = OFFLOAD_DEFAULT;
     time_t lastOffloadUpdateFinishTime_ = 0;
     float speed_ = 1.0;
+    bool silentModeAndMixWithOthers_ = false;
 
     int32_t ConnectStreamToPA();
     int32_t HandlePAStreamConnect(const std::string &deviceNameS, int32_t latencyInMSec);

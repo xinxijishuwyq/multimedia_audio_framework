@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -115,6 +115,9 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 
     powerStateCallbackRegister_ = false;
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
+    if (volumeApplyToAll_) {
+        audioPolicyService_.SetNormalVoipFlag(true);
+    }
 }
 
 void AudioPolicyServer::OnDump()
@@ -124,7 +127,7 @@ void AudioPolicyServer::OnDump()
 
 void AudioPolicyServer::OnStart()
 {
-    AUDIO_INFO_LOG("OnStart");
+    AUDIO_INFO_LOG("Audio policy server on start");
 
     interruptService_ = std::make_shared<AudioInterruptService>();
     interruptService_->Init(this);
@@ -173,6 +176,7 @@ void AudioPolicyServer::OnStart()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     SubscribeVolumeKeyEvents();
 #endif
+    AUDIO_INFO_LOG("Audio policy server start end");
 }
 
 void AudioPolicyServer::OnStop()
@@ -184,7 +188,7 @@ void AudioPolicyServer::OnStop()
 
 void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    AUDIO_DEBUG_LOG("OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    AUDIO_INFO_LOG("SA Id is :%{public}d", systemAbilityId);
     int64_t stamp = ClockTime::GetCurNano();
     switch (systemAbilityId) {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -225,8 +229,9 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
-    AUDIO_INFO_LOG("done systemAbilityId: %{public}d cost [%{public}" PRId64 "]", systemAbilityId,
-        ClockTime::GetCurNano() - stamp);
+    // eg. done systemAbilityId: [3001] cost 780ms
+    AUDIO_INFO_LOG("done systemAbilityId: [%{public}d] cost %{public}" PRId64 " ms", systemAbilityId,
+        (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND);
 }
 
 void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -514,6 +519,13 @@ void AudioPolicyServer::OffloadStreamCheck(int64_t activateSessionId, AudioStrea
 AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerStateCallback(
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
+
+void AudioPolicyServer::CheckStreamMode(int64_t activateSessionId, AudioStreamType activateStreamType,
+    int64_t deactivateSessionId)
+{
+    OffloadStreamCheck(activateSessionId, activateStreamType, deactivateSessionId);
+    audioPolicyService_.CheckStreamMode(activateSessionId, activateStreamType);
+}
 
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnPowerStateChanged(PowerMgr::PowerState state)
 {
@@ -1257,7 +1269,7 @@ bool AudioPolicyServer::CheckRootCalling(uid_t callingUid, int32_t appUid)
 bool AudioPolicyServer::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != UID_AUDIO) {
         AUDIO_ERR_LOG("Not supported operation");
         return false;
@@ -1296,7 +1308,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 
     if (!isRecording) {
         // root user case for auto test
-        uid_t callingUid = IPCSkeleton::GetCallingUid();
+        uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == UID_ROOT) {
             return true;
         }
@@ -1314,7 +1326,7 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 bool AudioPolicyServer::CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     AudioPermissionState state)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid != UID_AUDIO) {
         AUDIO_ERR_LOG("Not supported operation");
         return false;
@@ -1977,9 +1989,12 @@ int32_t AudioPolicyServer::GetMaxRendererInstances()
 {
     AUDIO_INFO_LOG("GetMaxRendererInstances");
     int32_t retryCount = 20; // 20 * 200000us = 4s, wait up to 4s
-    while (!isFirstAudioServiceStart_ && retryCount-- > 0) {
-        AUDIO_WARNING_LOG("Audio server is not start");
-        usleep(200000); // Wait 200000us when audio server is not started
+    while (!isFirstAudioServiceStart_) {
+        retryCount--;
+        if (retryCount > 0) {
+            AUDIO_WARNING_LOG("Audio server is not start");
+            usleep(200000); // Wait 200000us when audio server is not started
+        }
     }
     return audioPolicyService_.GetMaxRendererInstances();
 }
@@ -2598,6 +2613,26 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     audioPolicyService_.NotifyAccountsChanged(id);
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
+}
+
+int32_t AudioPolicyServer::MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType)
+{
+    return audioPolicyService_.MoveToNewPipe(sessionId, pipeType);
+}
+
+int32_t AudioPolicyServer::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    return audioPolicyService_.SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    return audioPolicyService_.UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    return audioPolicyService_.ActivateAudioConcurrency(pipeType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

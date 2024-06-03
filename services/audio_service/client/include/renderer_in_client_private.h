@@ -77,6 +77,7 @@ public:
     bool CheckRecordingStateChange(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
         AudioPermissionState state) override;
     int32_t GetAudioSessionID(uint32_t &sessionID) override;
+    void GetAudioPipeType(AudioPipeType &pipeType) override;
     State GetState() override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
@@ -202,6 +203,9 @@ public:
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
 
+    void SetSilentModeAndMixWithOthers(bool on) override;
+    bool GetSilentModeAndMixWithOthers() override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -224,7 +228,7 @@ private:
     void WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
-    bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize);
+    bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
@@ -235,6 +239,8 @@ private:
 
     void FirstFrameProcess();
 
+    int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
+
     void VolumeHandle(BufferDesc &desc);
 
     void ResetFramePosition();
@@ -244,10 +250,9 @@ private:
 
     void ReportDataToResSched();
 
-    bool IsHightResolution() const noexcept;
+    bool IsHighResolution() const noexcept;
 
     void ProcessWriteInner(BufferDesc &bufferDesc);
-
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -323,6 +328,8 @@ private:
     float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;
     float clientOldVolume_ = 1.0;
+    float cacheVolume_ = 1.0;
+    bool silentModeAndMixWithOthers_ = false;
 
     uint64_t clientWrittenBytes_ = 0;
     uint32_t underrunCount_ = 0;

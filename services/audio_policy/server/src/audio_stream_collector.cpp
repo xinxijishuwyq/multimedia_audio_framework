@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -94,6 +94,10 @@ AudioStreamCollector::AudioStreamCollector() : audioSystemMgr_
     (AudioSystemManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
+    audioPolicyServerHandler_->AddConcurrencyEventDispatcher(audioConcurrencyService_);
+    audioConcurrencyService_->Init();
+    audioConcurrencyService_->SetCallbackHandler(audioPolicyServerHandler_);
     AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
@@ -159,6 +163,34 @@ void AudioStreamCollector::GetCapturerStreamInfo(AudioStreamChangeInfo &streamCh
             return;
         }
     }
+}
+
+int32_t AudioStreamCollector::GetPipeType(const int32_t sessionId, AudioPipeType &pipeType)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&sessionId](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (it == audioRendererChangeInfos_.end()) {
+        AUDIO_WARNING_LOG("invalid session id: %{public}d", sessionId);
+        return ERROR;
+    }
+
+    pipeType = (*it)->rendererInfo.pipeType;
+    return SUCCESS;
+}
+
+bool AudioStreamCollector::ExistStreamForPipe(AudioPipeType pipeType)
+{
+    const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&pipeType](const std::unique_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->rendererInfo.pipeType == pipeType;
+        });
+    if (it == audioRendererChangeInfos_.end()) {
+        return false;
+    }
+    return true;
 }
 
 int32_t AudioStreamCollector::AddCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
@@ -250,22 +282,29 @@ void AudioStreamCollector::SetCapturerStreamParam(AudioStreamChangeInfo &streamC
     capturerChangeInfo->inputDeviceInfo = streamChangeInfo.audioCapturerChangeInfo.inputDeviceInfo;
 }
 
-int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
+bool AudioStreamCollector::CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
-        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.rendererState,
-        streamChangeInfo.audioRendererChangeInfo.sessionId);
     if (rendererStatequeue_.find(make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,
         streamChangeInfo.audioRendererChangeInfo.sessionId)) != rendererStatequeue_.end()) {
         if (streamChangeInfo.audioRendererChangeInfo.rendererState ==
             rendererStatequeue_[make_pair(streamChangeInfo.audioRendererChangeInfo.clientUID,
                 streamChangeInfo.audioRendererChangeInfo.sessionId)]) {
             // Renderer state not changed
-            return SUCCESS;
+            return false;
         }
     } else {
-        AUDIO_INFO_LOG("UpdateRendererStream client %{public}d not found in rendererStatequeue_",
-            streamChangeInfo.audioRendererChangeInfo.clientUID);
+        AUDIO_INFO_LOG("client %{public}d not found ", streamChangeInfo.audioRendererChangeInfo.clientUID);
+    }
+    return true;
+}
+
+int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &streamChangeInfo)
+{
+    AUDIO_INFO_LOG("UpdateRendererStream client %{public}d state %{public}d session %{public}d",
+        streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.rendererState,
+        streamChangeInfo.audioRendererChangeInfo.sessionId);
+    if (!CheckRendererStateInfoChanged(streamChangeInfo)) {
+        return SUCCESS;
     }
 
     // Update the renderer info in audioRendererChangeInfos_
@@ -275,12 +314,12 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             audioRendererChangeInfo.sessionId == streamChangeInfo.audioRendererChangeInfo.sessionId) {
             rendererStatequeue_[make_pair(audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId)] =
                 streamChangeInfo.audioRendererChangeInfo.rendererState;
-            AUDIO_DEBUG_LOG("UpdateRendererStream: update client %{public}d session %{public}d",
-                audioRendererChangeInfo.clientUID, audioRendererChangeInfo.sessionId);
+            AUDIO_DEBUG_LOG("update client %{public}d session %{public}d", audioRendererChangeInfo.clientUID,
+                audioRendererChangeInfo.sessionId);
 
             unique_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_unique<AudioRendererChangeInfo>();
-            CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr,
-                ERR_MEMORY_ALLOC_FAILED, "RendererChangeInfo Memory Allocation Failed");
+            CHECK_AND_RETURN_RET_LOG(rendererChangeInfo != nullptr, ERR_MEMORY_ALLOC_FAILED,
+                "Memory Allocation Failed");
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
             rendererChangeInfo->channelCount = (*it)->channelCount;
             if (rendererChangeInfo->outputDeviceInfo.deviceType == DEVICE_TYPE_INVALID) {
@@ -302,6 +341,11 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             }
             return SUCCESS;
         }
+    }
+
+    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED &&
+        !ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL) && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_MULTICHANNEL);
     }
     AUDIO_INFO_LOG("UpdateRendererStream: Not found clientUid:%{public}d sessionId:%{public}d",
         streamChangeInfo.audioRendererChangeInfo.clientUID, streamChangeInfo.audioRendererChangeInfo.clientUID);
@@ -429,6 +473,29 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(int32_t clientUID, int32_
     return SUCCESS;
 }
 
+int32_t AudioStreamCollector::UpdateRendererPipeInfo(int32_t sessionId, AudioPipeType &pipeType)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    bool pipeTypeUpdated = false;
+
+    for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
+        if ((*it)->sessionId == sessionId && (*it)->rendererInfo.pipeType != pipeType) {
+            AUDIO_DEBUG_LOG("sessionId %{public}d update pipeType: old %{public}d, new %{public}d",
+                sessionId, (*it)->rendererInfo.pipeType, pipeType);
+            (*it)->rendererInfo.pipeType = pipeType;
+            pipeTypeUpdated = true;
+        }
+    }
+
+    if (pipeTypeUpdated && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendRendererInfoEvent(audioRendererChangeInfos_);
+    }
+    if (pipeTypeUpdated) {
+        AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(int32_t clientUID, int32_t sessionId,
     DeviceInfo &inputDeviceInfo)
 {
@@ -543,14 +610,9 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     return SUCCESS;
 }
 
-void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
+void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid)
 {
-    AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died", uid);
-
-    // Send the release state event notification for all streams of died client to registered app
     int32_t sessionID = -1;
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-
     auto audioRendererBegin = audioRendererChangeInfos_.begin();
     while (audioRendererBegin != audioRendererChangeInfos_.end()) {
         const auto &audioRendererChangeInfo = *audioRendererBegin;
@@ -568,6 +630,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
         rendererStatequeue_.erase(make_pair(audioRendererChangeInfo->clientUID,
             audioRendererChangeInfo->sessionId));
+
         auto temp = audioRendererBegin;
         audioRendererBegin = audioRendererChangeInfos_.erase(temp);
         if ((sessionID != -1) && clientTracker_.erase(sessionID)) {
@@ -575,7 +638,14 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
         }
     }
 
-    sessionID = -1;
+    if (!ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL) && audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_MULTICHANNEL);
+    }
+}
+
+void AudioStreamCollector::RegisteredCapturerTrackerClientDied(const int32_t uid)
+{
+    int32_t sessionID = -1;
     auto audioCapturerBegin = audioCapturerChangeInfos_.begin();
     while (audioCapturerBegin != audioCapturerChangeInfos_.end()) {
         const auto &audioCapturerChangeInfo = *audioCapturerBegin;
@@ -597,6 +667,16 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
             AUDIO_DEBUG_LOG("TrackerClientDied:client %{public}d cleared", sessionID);
         }
     }
+}
+
+void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
+{
+    AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died", uid);
+
+    // Send the release state event notification for all streams of died client to registered app
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    RegisteredRendererTrackerClientDied(uid);
+    RegisteredCapturerTrackerClientDied(uid);
 }
 
 bool AudioStreamCollector::GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo)
@@ -859,6 +939,23 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     return SUCCESS;
+}
+
+int32_t AudioStreamCollector::SetAudioConcurrencyCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object)
+{
+    return audioConcurrencyService_->SetAudioConcurrencyCallback(sessionID, object);
+}
+
+int32_t AudioStreamCollector::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
+{
+    return audioConcurrencyService_->UnsetAudioConcurrencyCallback(sessionID);
+}
+
+int32_t AudioStreamCollector::ActivateAudioConcurrency(const AudioPipeType &pipeType)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    return audioConcurrencyService_->ActivateAudioConcurrency(pipeType,
+        audioRendererChangeInfos_, audioCapturerChangeInfos_);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

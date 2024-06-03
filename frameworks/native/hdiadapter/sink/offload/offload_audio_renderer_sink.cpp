@@ -27,6 +27,7 @@
 #ifdef FEATURE_POWER_MANAGER
 #include "power_mgr_client.h"
 #include "running_lock.h"
+#include "audio_running_lock_manager.h"
 #endif
 #include "v3_0/iaudio_manager.h"
 
@@ -113,6 +114,9 @@ public:
     float GetMaxAmplitude() override;
     int32_t SetPaPower(int32_t flag) override;
 
+    int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
     OffloadAudioRendererSinkInner();
     ~OffloadAudioRendererSinkInner();
 private:
@@ -159,7 +163,7 @@ private:
     void CheckLatencySignal(uint8_t *data, size_t len);
 
 #ifdef FEATURE_POWER_MANAGER
-    std::shared_ptr<PowerMgr::RunningLock> OffloadKeepRunningLock;
+    std::shared_ptr<AudioRunningLockManager<PowerMgr::RunningLock>> offloadRunningLockManager_;
     bool runninglocked;
 #endif
 
@@ -363,6 +367,7 @@ int32_t OffloadAudioRendererSinkInner::RenderEventCallback(struct IAudioCallback
 
 int32_t OffloadAudioRendererSinkInner::GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec)
 {
+    Trace trace("OffloadSink::GetPresentationPosition");
     int32_t ret;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "failed audioRender_ is NULL");
     uint64_t frames_;
@@ -497,6 +502,7 @@ AudioFormat OffloadAudioRendererSinkInner::ConverToHdiFormat(HdiAdapterFormat fo
 
 int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &renderPort)
 {
+    Trace trace("OffloadSink::CreateRender");
     int32_t ret;
     struct AudioSampleAttributes param;
     struct AudioDeviceDescriptor deviceDesc;
@@ -528,6 +534,7 @@ int32_t OffloadAudioRendererSinkInner::CreateRender(const struct AudioPort &rend
 
 int32_t OffloadAudioRendererSinkInner::Init(const IAudioSinkAttr &attr)
 {
+    Trace trace("OffloadSink::Init");
     attr_ = attr;
     adapterNameCase_ = attr_.adapterName; // Set sound card information
     enum AudioPortDirection port = PORT_OUT; // Set port information
@@ -589,6 +596,11 @@ int32_t OffloadAudioRendererSinkInner::RenderFrame(char &data, uint64_t len, uin
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
         CheckUpdateState(&data, len);
     }
+
+#ifdef FEATURE_POWER_MANAGER
+    offloadRunningLockManager_->UpdateAppsUidToPowerMgr();
+#endif
+
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_WRITE_FAILED, "RenderFrameOffload failed! ret: %{public}x", ret);
     renderPos_ += writeLen;
 
@@ -655,6 +667,7 @@ int32_t OffloadAudioRendererSinkInner::Start(void)
 
 int32_t OffloadAudioRendererSinkInner::SetVolume(float left, float right)
 {
+    Trace trace("OffloadSink::SetVolume");
     int32_t ret;
     float thevolume;
     leftVolume_ = left;
@@ -699,6 +712,7 @@ int32_t OffloadAudioRendererSinkInner::SetVoiceVolume(float volume)
 
 int32_t OffloadAudioRendererSinkInner::GetLatency(uint32_t *latency)
 {
+    Trace trace("OffloadSink::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
         "GetLatency failed audio render null");
 
@@ -847,8 +861,8 @@ int32_t OffloadAudioRendererSinkInner::Flush(void)
 
 int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 {
+    Trace trace("OffloadSink::SetBufferSize");
     int32_t ret;
-    std::lock_guard<std::mutex> lock(renderMutex_);
     // bytewidth is 4
     uint32_t size = (uint64_t) sizeMs * AUDIO_SAMPLE_RATE_48K * 4 * STEREO_CHANNEL_COUNT / SECOND_TO_MILLISECOND;
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -864,10 +878,15 @@ int32_t OffloadAudioRendererSinkInner::SetBufferSize(uint32_t sizeMs)
 int32_t OffloadAudioRendererSinkInner::OffloadRunningLockInit(void)
 {
 #ifdef FEATURE_POWER_MANAGER
-    CHECK_AND_RETURN_RET_LOG(OffloadKeepRunningLock == nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_RETURN_RET_LOG(offloadRunningLockManager_ == nullptr, ERR_OPERATION_FAILED,
         "OffloadKeepRunningLock is not null, init failed!");
-    OffloadKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
         PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+
+    CHECK_AND_RETURN_RET_LOG(keepRunningLock != nullptr, ERR_OPERATION_FAILED, "keepRunningLock is nullptr");
+    offloadRunningLockManager_ = std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+
 #endif
     return SUCCESS;
 }
@@ -876,15 +895,20 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockLock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
     AUDIO_INFO_LOG("keepRunningLock Lock");
-    if (OffloadKeepRunningLock == nullptr) {
-        OffloadKeepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
+    std::shared_ptr<PowerMgr::RunningLock> keepRunningLock;
+    if (offloadRunningLockManager_ == nullptr) {
+        keepRunningLock = PowerMgr::PowerMgrClient::GetInstance().CreateRunningLock("AudioOffloadBackgroudPlay",
             PowerMgr::RunningLockType::RUNNINGLOCK_BACKGROUND_AUDIO);
+        if (keepRunningLock) {
+            offloadRunningLockManager_ =
+                std::make_shared<AudioRunningLockManager<PowerMgr::RunningLock>> (keepRunningLock);
+        }
     }
-    CHECK_AND_RETURN_RET_LOG(OffloadKeepRunningLock != nullptr, ERR_OPERATION_FAILED,
-        "OffloadKeepRunningLock is null, playback can not work well!");
+    CHECK_AND_RETURN_RET_LOG(offloadRunningLockManager_ != nullptr, ERR_OPERATION_FAILED,
+        "offloadRunningLockManager_ is null, playback can not work well!");
     CHECK_AND_RETURN_RET(!runninglocked, SUCCESS);
     runninglocked = true;
-    OffloadKeepRunningLock->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
+    offloadRunningLockManager_->Lock(RUNNINGLOCK_LOCK_TIMEOUTMS_LASTING); // -1 for lasting.
 #endif
 
     return SUCCESS;
@@ -894,11 +918,11 @@ int32_t OffloadAudioRendererSinkInner::OffloadRunningLockUnlock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
     AUDIO_INFO_LOG("keepRunningLock UnLock");
-    CHECK_AND_RETURN_RET_LOG(OffloadKeepRunningLock != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_RETURN_RET_LOG(offloadRunningLockManager_ != nullptr, ERR_OPERATION_FAILED,
         "OffloadKeepRunningLock is null, playback can not work well!");
     CHECK_AND_RETURN_RET(runninglocked, SUCCESS);
     runninglocked = false;
-    OffloadKeepRunningLock->UnLock();
+    offloadRunningLockManager_->UnLock();
 #endif
 
     return SUCCESS;
@@ -966,6 +990,25 @@ int32_t OffloadAudioRendererSinkInner::SetPaPower(int32_t flag)
 {
     (void)flag;
     return ERR_NOT_SUPPORTED;
+}
+
+int32_t OffloadAudioRendererSinkInner::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
+{
+#ifdef FEATURE_POWER_MANAGER
+    if (!offloadRunningLockManager_) {
+        return ERROR;
+    }
+
+    return offloadRunningLockManager_->UpdateAppsUid(appsUid, appsUid + size);
+#endif
+
+    return SUCCESS;
+}
+
+int32_t OffloadAudioRendererSinkInner::UpdateAppsUid(const std::vector<int32_t> &appsUid)
+{
+    AUDIO_WARNING_LOG("not supported.");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

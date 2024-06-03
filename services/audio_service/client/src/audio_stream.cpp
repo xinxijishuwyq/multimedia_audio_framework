@@ -175,6 +175,11 @@ int32_t AudioStream::GetAudioSessionID(uint32_t &sessionID)
     return SUCCESS;
 }
 
+void AudioStream::GetAudioPipeType(AudioPipeType &pipeType)
+{
+    pipeType = eMode_ == AUDIO_MODE_PLAYBACK ? rendererInfo_.pipeType : capturerInfo_.pipeType;
+}
+
 bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     if (state_ == STOPPED) {
@@ -188,7 +193,7 @@ bool AudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase ba
             resetTimestamp_ = paTimeStamp;
         }
         if (eMode_ == AUDIO_MODE_PLAYBACK) {
-            timestamp.framePosition = GetStreamFramesWritten() * speed_;
+            timestamp.framePosition = static_cast<uint64_t>(GetStreamFramesWritten()) * speed_;
         } else {
             timestamp.framePosition = static_cast<uint64_t>(GetStreamFramesRead());
         }
@@ -1185,6 +1190,9 @@ void AudioStream::ProcessDataByVolumeRamp(uint8_t *buffer, size_t bufferSize)
 
 void AudioStream::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
+    if (GetSilentModeAndMixWithOthers()) {
+        return;
+    }
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
