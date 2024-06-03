@@ -72,6 +72,8 @@ public:
     vector<shared_ptr<AudioDeviceDescriptor>> GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
         const string &macAddress, const string &networkId, ConnectState connectState);
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
+    std::string GetConnDevicesStr();
+    std::string GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
 
 private:
     AudioDeviceManager();
@@ -118,10 +120,10 @@ private:
     void RemoveCommunicationDevices(const AudioDeviceDescriptor &devDesc);
     void RemoveMediaDevices(const AudioDeviceDescriptor &devDesc);
     void RemoveCaptureDevices(const AudioDeviceDescriptor &devDesc);
-    void UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
-    void UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    void UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    bool UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor);
+    bool UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    bool UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;

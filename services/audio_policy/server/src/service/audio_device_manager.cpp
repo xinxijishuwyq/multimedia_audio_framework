@@ -103,8 +103,9 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDevi
 {
     bool result = DeviceAttrMatch(devDesc, privacyType, devRole, devUsage);
     if (result) {
-        AUDIO_INFO_LOG("Add to %{public}s list.", logName.c_str());
         descArray.push_back(devDesc);
+        AUDIO_INFO_LOG("Add to %{public}s list, and then %{public}s",
+            logName.c_str(), GetConnDevicesStr(descArray).c_str());
     }
 }
 
@@ -206,6 +207,7 @@ void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDevic
 void AudioDeviceManager::AddConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     connectedDevices_.insert(connectedDevices_.begin(), devDesc);
+    AUDIO_INFO_LOG("Connected list %{public}s", GetConnDevicesStr(connectedDevices_).c_str());
 }
 
 void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -233,6 +235,7 @@ void AudioDeviceManager::RemoveConnectedDevices(const shared_ptr<AudioDeviceDesc
             it = connectedDevices_.erase(it);
         }
     }
+    AUDIO_INFO_LOG("Connected list %{public}s", GetConnDevicesStr(connectedDevices_).c_str());
 }
 
 void AudioDeviceManager::AddDefaultDevices(const sptr<AudioDeviceDescriptor> &devDesc)
@@ -330,6 +333,8 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 
+    AUDIO_INFO_LOG("add type:id %{public}d:%{public}d", deviceDescriptor->getType(), deviceDescriptor->deviceId_);
+
     if (UpdateExistDeviceDescriptor(deviceDescriptor)) {
         AUDIO_INFO_LOG("The device has been added and will not be added again.");
         return;
@@ -347,17 +352,23 @@ void AudioDeviceManager::AddNewDevice(const sptr<AudioDeviceDescriptor> &deviceD
         AddCaptureDevices(devDesc);
     }
     UpdateDeviceInfo(devDesc);
+}
+
+std::string AudioDeviceManager::GetConnDevicesStr()
+{
+    return GetConnDevicesStr(connectedDevices_);
+}
+
+std::string AudioDeviceManager::GetConnDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
+{
     std::string devices;
-    devices.append("add device ");
-    devices.append(std::to_string(static_cast<uint32_t>(deviceDescriptor->getType())));
-    devices.append(", connected device ");
-    for (auto iter : connectedDevices_) {
+    devices.append("device type:id ");
+    for (auto iter : descs) {
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
         devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
         devices.append(" ");
     }
-    devices.append("\n");
-    AUDIO_INFO_LOG("%{public}s.", devices.c_str());
+    return devices;
 }
 
 void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
@@ -371,29 +382,21 @@ void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &d
 
     auto itr = find_if(descArray.begin(), descArray.end(), isPresent);
     if (itr != descArray.end()) {
-        AUDIO_ERR_LOG("Remove from %{public}s list.", logName.c_str());
         descArray.erase(itr);
+        AUDIO_INFO_LOG("Remove from %{public}s list, and then %{public}s",
+            logName.c_str(), GetConnDevicesStr(descArray).c_str());
     }
 }
 
 void AudioDeviceManager::RemoveNewDevice(const sptr<AudioDeviceDescriptor> &devDesc)
 {
+    AUDIO_INFO_LOG("remove type:id %{public}d:%{public}d ", devDesc->getType(), devDesc->deviceId_);
+
     RemoveConnectedDevices(make_shared<AudioDeviceDescriptor>(devDesc));
     RemoveRemoteDevices(devDesc);
     RemoveCommunicationDevices(devDesc);
     RemoveMediaDevices(devDesc);
     RemoveCaptureDevices(devDesc);
-    std::string devices;
-    devices.append("remove device ");
-    devices.append(std::to_string(static_cast<uint32_t>(devDesc->getType())));
-    devices.append(", connected device ");
-    for (auto iter : connectedDevices_) {
-        devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
-        devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceId_)));
-        devices.append(" ");
-    }
-    devices.append("\n");
-    AUDIO_INFO_LOG("%{public}s.", devices.c_str());
 }
 
 vector<unique_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
@@ -719,30 +722,36 @@ void AudioDeviceManager::UpdateScoState(const std::string &macAddress, bool isCo
     }
 }
 
-void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &deviceDescriptor,
+void AudioDeviceManager::UpdateDevicesListInfo(const sptr<AudioDeviceDescriptor> &d,
     const DeviceInfoUpdateCommand updateCommand)
 {
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(d);
+    bool ret = false;
     switch (updateCommand) {
         case CATEGORY_UPDATE:
-            UpdateDeviceCategory(deviceDescriptor);
+            ret = UpdateDeviceCategory(d);
             break;
         case CONNECTSTATE_UPDATE:
-            UpdateConnectState(devDesc);
+            ret = UpdateConnectState(devDesc);
             break;
         case ENABLE_UPDATE:
-            UpdateEnableState(devDesc);
+            ret = UpdateEnableState(devDesc);
             break;
         case EXCEPTION_FLAG_UPDATE:
-            UpdateExceptionFlag(devDesc);
+            ret = UpdateExceptionFlag(devDesc);
             break;
         default:
             break;
     }
+    if (!ret) {
+        AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
+            d->deviceType_, d->deviceId_, GetEncryptStr(d->macAddress_).c_str(), GetEncryptStr(d->networkId_).c_str());
+    }
 }
 
-void AudioDeviceManager::UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
+bool AudioDeviceManager::UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    bool updateFlag = false;
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
 
     for (auto &desc : connectedDevices_) {
@@ -761,11 +770,14 @@ void AudioDeviceManager::UpdateDeviceCategory(const sptr<AudioDeviceDescriptor> 
                 AddBtToOtherList(desc);
             }
         }
+        updateFlag = true;
     }
+    return updateFlag;
 }
 
-void AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+bool AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
+    bool updateFlag = false;
     bool isScoDevice = devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
 
     for (const auto &desc : connectedDevices_) {
@@ -775,6 +787,7 @@ void AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
         }
         if (desc->deviceType_ == devDesc->deviceType_) {
             desc->connectState_ = devDesc->connectState_;
+            updateFlag = true;
             continue;
         }
         // a2dp connectState needs to be updated simultaneously when connectState of sco is updated
@@ -783,18 +796,24 @@ void AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
                 devDesc->connectState_ == CONNECTED) {
                 // sco connected, suspend a2dp
                 desc->connectState_ = SUSPEND_CONNECTED;
+                updateFlag = true;
+                AUDIO_INFO_LOG("sco connectState is connected, update a2dp to suspend");
             } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc->connectState_ == SUSPEND_CONNECTED &&
                 (devDesc->connectState_ == DEACTIVE_CONNECTED || devDesc->connectState_ == SUSPEND_CONNECTED)) {
                 // sco deactive or suspend, a2dp CONNECTED
                 desc->connectState_ = CONNECTED;
+                updateFlag = true;
+                AUDIO_INFO_LOG("sco connectState %{public}zu, update a2dp to connected", devDesc->connectState_);
             }
         }
     }
+    return updateFlag;
 }
 
-void AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+bool AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
+    bool updateFlag = false;
     for (const auto &desc : connectedDevices_) {
         if (devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -802,17 +821,21 @@ void AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescripto
                 desc->macAddress_ == devDesc->macAddress_ &&
                 desc->isEnable_ != devDesc->isEnable_) {
                 desc->isEnable_ = devDesc->isEnable_;
+                updateFlag = true;
             }
         } else if (desc->deviceType_ == devDesc->deviceType_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->isEnable_ != devDesc->isEnable_) {
                 desc->isEnable_ = devDesc->isEnable_;
+                updateFlag = true;
         }
     }
+    return updateFlag;
 }
 
-void AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
+bool AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    bool updateFlag = false;
     for (const auto &desc : connectedDevices_) {
         if (deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -820,13 +843,16 @@ void AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
                 desc->macAddress_ == deviceDescriptor->macAddress_ &&
                 desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
                 desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
+                updateFlag = true;
             }
         } else if (desc->deviceType_ == deviceDescriptor->deviceType_ &&
             desc->networkId_ == deviceDescriptor->networkId_ &&
             desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
                 desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
+                updateFlag = true;
         }
     }
+    return updateFlag;
 }
 
 void AudioDeviceManager::UpdateEarpieceStatus(const bool hasEarPiece)

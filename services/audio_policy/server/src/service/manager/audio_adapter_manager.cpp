@@ -600,7 +600,9 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
-    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
+
+    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s",
+        audioModuleInfo.lib.c_str(), audioModuleInfo.className.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_++;
@@ -727,7 +729,6 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     if (!audioModuleInfo.format.empty()) {
         args.append(" format=");
         args.append(audioModuleInfo.format);
-        AUDIO_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
     }
 
     if (!audioModuleInfo.fixedLatency.empty()) {
@@ -749,6 +750,7 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" offload_enable=");
         args.append(audioModuleInfo.offloadEnable);
     }
+    AUDIO_INFO_LOG("[Adapter load-module] [PolicyManager] common args:%{public}s", args.c_str());
 }
 
 std::string AudioAdapterManager::GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const

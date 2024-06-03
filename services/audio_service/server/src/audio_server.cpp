@@ -942,7 +942,8 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
         "NotifyDeviceInfo refused for %{public}d", callingUid);
-    AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)", networkId.c_str(), connected);
+    AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)",
+        GetEncryptStr(networkId).c_str(), connected);
     IAudioRendererSink* audioRendererSinkInstance = IAudioRendererSink::GetInstance("remote", networkId.c_str());
     if (audioRendererSinkInstance != nullptr && connected) {
         audioRendererSinkInstance->RegisterParameterCallback(this);
