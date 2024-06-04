@@ -1049,6 +1049,10 @@ private:
     ConverterConfig converterConfig_;
 
     std::unique_ptr<std::thread> RecoveryDevicesThread_ = nullptr;
+
+    std::mutex offloadCloseMutex_;
+    std::atomic<bool> isOffloadOpened_ = false;
+    std::condition_variable offloadCloseCondition_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

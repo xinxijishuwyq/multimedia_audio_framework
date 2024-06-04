@@ -67,6 +67,7 @@ static const std::string PIPE_DISTRIBUTED_INPUT = "distributed_input";
 static const std::string PIPE_FAST_DISTRIBUTED_INPUT = "fast_distributed_input";
 std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 static const int64_t CALL_IPC_COST_TIME_MS = 20000000; // 20ms
+static const int32_t WAIT_OFFLOAD_CLOSE_TIME_S = 3; // 3s
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -5757,6 +5758,15 @@ AudioModuleInfo AudioPolicyService::ConstructOffloadAudioModuleInfo(DeviceType d
 int32_t AudioPolicyService::LoadOffloadModule()
 {
     AUDIO_INFO_LOG("load offload mode");
+    std::unique_lock<std::mutex> lock(offloadCloseMutex_);
+    isOffloadOpened_.store(true);
+    offloadCloseCondition_.notify_all();
+
+    if (IOHandles_.find(OFFLOAD_PRIMARY_SPEAKER) != IOHandles_.end()) {
+        AUDIO_ERR_LOG("offload is open");
+        return ERROR;
+    }
+
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
     AudioModuleInfo moduleInfo = ConstructOffloadAudioModuleInfo(deviceType);
     OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
@@ -5766,6 +5776,16 @@ int32_t AudioPolicyService::LoadOffloadModule()
 int32_t AudioPolicyService::UnloadOffloadModule()
 {
     AUDIO_INFO_LOG("unload offload module");
+    std::unique_lock<std::mutex> lock(offloadCloseMutex_);
+    isOffloadOpened_.store(false);
+    // Try to wait 3 seconds before unloading the module, because the audio driver takes some time to process
+    // the shutdown process..
+    auto status = offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_S),
+        [this] () { return isOffloadOpened_.load(); });
+    if (status) {
+        AUDIO_INFO_LOG("offload restart");
+        return ERROR;
+    }
     return ClosePortAndEraseIOHandle(OFFLOAD_PRIMARY_SPEAKER);
 }
 
@@ -5856,11 +5876,13 @@ int32_t AudioPolicyService::DynamicUnloadModule(const AudioPipeType pipeType)
 {
     switch (pipeType) {
         case PIPE_TYPE_OFFLOAD:
-            return UnloadOffloadModule();
+            if (isOffloadOpened_.load()) {
+                std::thread unloadOffloadThrd(&AudioPolicyService::UnloadOffloadModule, this);
+                unloadOffloadThrd.detach();
+            }
             break;
         case PIPE_TYPE_MULTICHANNEL:
             return UnloadMchModule();
-            break;
         default:
             AUDIO_WARNING_LOG("not supported for pipe type %{public}d", pipeType);
             break;
@@ -5887,10 +5909,8 @@ int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
             if (!CheckStreamOffloadMode(sessionId, streamType)) {
                 return ERROR;
             }
-            if (IOHandles_.find(OFFLOAD_PRIMARY_SPEAKER) == IOHandles_.end()) {
-                // load moudle and move into new sink
-                LoadOffloadModule();
-            }
+            LoadOffloadModule();
+
             portName = GetSinkPortName(deviceType, pipeType);
             ret = MoveToOutputDevice(sessionId, portName);
             break;
