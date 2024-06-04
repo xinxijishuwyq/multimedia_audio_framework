@@ -602,6 +602,15 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     /**
+     * @brief Get the list of audio devices (inner).
+     *
+     * @param deviceFlag Flag of device type.
+     * @return Returns the device list is obtained.
+     * @since 12
+     */
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
+
+    /**
      * @brief Get audio parameter.
      *
      * @param key Key of audio parameters to be obtained.

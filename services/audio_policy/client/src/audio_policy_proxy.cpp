@@ -384,6 +384,28 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevices(DeviceFlag
     return deviceInfo;
 }
 
+std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetDevicesInner(DeviceFlag deviceFlag)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    std::vector<sptr<AudioDeviceDescriptor>> deviceInfo;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, deviceInfo, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(deviceFlag));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_DEVICES_INNER), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, deviceInfo, "Get devices failed, error: %d", error);
+
+    int32_t size = reply.ReadInt32();
+    for (int32_t i = 0; i < size; i++) {
+        deviceInfo.push_back(AudioDeviceDescriptor::Unmarshalling(reply));
+    }
+
+    return deviceInfo;
+}
+
 std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo)
 {

@@ -230,6 +230,18 @@ void AudioPolicyManagerStub::GetDevicesInternal(MessageParcel &data, MessageParc
     }
 }
 
+void AudioPolicyManagerStub::GetDevicesInnerInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int deviceFlag = data.ReadInt32();
+    DeviceFlag deviceFlagConfig = static_cast<DeviceFlag>(deviceFlag);
+    std::vector<sptr<AudioDeviceDescriptor>> devices = GetDevicesInner(deviceFlagConfig);
+    int32_t size = static_cast<int32_t>(devices.size());
+    reply.WriteInt32(size);
+    for (int i = 0; i < size; i++) {
+        devices[i]->Marshalling(reply);
+    }
+}
+
 void AudioPolicyManagerStub::NotifyCapturerAddedInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioCapturerInfo capturerInfo;

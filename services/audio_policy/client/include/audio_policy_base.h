@@ -57,6 +57,8 @@ public:
 
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag) = 0;
 
+    virtual std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag) = 0;
+
     virtual int32_t SetDeviceActive(InternalDeviceType deviceType, bool active) = 0;
 
     virtual int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,

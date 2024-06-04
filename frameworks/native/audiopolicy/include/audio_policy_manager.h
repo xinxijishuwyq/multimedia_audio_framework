@@ -80,6 +80,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
+    std::vector<sptr<AudioDeviceDescriptor>> GetDevicesInner(DeviceFlag deviceFlag);
+
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active);
 
     bool IsDeviceActive(InternalDeviceType deviceType);
