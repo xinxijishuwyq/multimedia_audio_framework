@@ -99,6 +99,7 @@ const char *SINK_NAME_INNER_CAPTURER = "InnerCapturer";
 const char *SINK_NAME_REMOTE_CAST_INNER_CAPTURER = "RemoteCastInnerCapturer";
 const char *DUP_STEAM_NAME = "DupStream"; // should be same with DUP_STEAM in audio_info.h
 const char *MCH_SINK_NAME = "MCH_Speaker";
+const char *BT_SINK_NAME = "Bt_Speaker";
 const char *OFFLOAD_SINK_NAME = "Offload_Speaker";
 
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
@@ -3611,7 +3612,9 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
         if (EffectChainManagerCheckA2dpOffload() && (!strcmp(u->sink->name, "Speaker"))) {
             SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
         }
-        return SinkSetStateInIoThreadCbStartPrimary(u, newState);
+        if (strcmp(u->sink->name, BT_SINK_NAME) || newState == PA_SINK_RUNNING) {
+            return SinkSetStateInIoThreadCbStartPrimary(u, newState);
+        }
     } else if (PA_SINK_IS_OPENED(s->thread_info.state)) {
         if (newState != PA_SINK_SUSPENDED) {
             return 0;
