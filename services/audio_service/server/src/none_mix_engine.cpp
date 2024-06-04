@@ -38,7 +38,7 @@ const char *SINK_ADAPTER_NAME = "primary";
 NoneMixEngine::NoneMixEngine(DeviceInfo type, bool isVoip)
     : isVoip_(isVoip), isStart_(false), isPause_(false), device_(type), failedCount_(0), writeCount_(0),
       fwkSyncTime_(0), stream_(nullptr), startFadein_(false), startFadeout_(false), uChannel_(0),
-      uFormat_(HdiAdapterFormat::SAMPLE_F32), uSampleRate_(0)
+      uFormat_(sizeof(int32_t)), uSampleRate_(0)
 {
     AUDIO_INFO_LOG("Constructor");
 }
@@ -149,7 +149,7 @@ int32_t NoneMixEngine::Flush()
 
 void NoneMixEngine::DoFadeinOut(bool isFadeOut, char *pBuffer, size_t bufferSize)
 {
-    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0, "buffer is null.");
+    CHECK_AND_RETURN_LOG(pBuffer != nullptr && bufferSize > 0 && uChannel_ > 0, "buffer is null.");
     int32_t *dstPtr = reinterpret_cast<int32_t *>(pBuffer);
     size_t dataLength = bufferSize / (uFormat_ * uChannel_);
     float fadeStep = 1.0f / dataLength;
@@ -293,6 +293,19 @@ HdiAdapterFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
     }
 }
 
+int32_t NoneMixEngine::GetDirectFormatByteSize(HdiAdapterFormat format)
+{
+    switch (format) {
+        case HdiAdapterFormat::SAMPLE_S16:
+            return sizeof(int16_t);
+        case HdiAdapterFormat::SAMPLE_S32:
+        case HdiAdapterFormat::SAMPLE_F32:
+            return sizeof(int32_t);
+        default:
+            return sizeof(int32_t);
+    }
+}
+
 int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
 {
     std::string sinkName = DIRECT_SINK_NAME;
@@ -321,7 +334,8 @@ int32_t NoneMixEngine::InitSink(const AudioStreamInfo &streamInfo)
     ret = renderSink_->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
-    uFormat_ = attr.format;
+    uFormat_ = GetDirectFormatByteSize(attr.format);
+
     return ret;
 }
 
