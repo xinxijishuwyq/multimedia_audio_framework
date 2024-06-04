@@ -437,6 +437,7 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
     if (SceneTypeToEffectChainCountMap_[commonSceneTypeAndDeviceKey] < 1) {
         SceneTypeToEffectChainMap_.erase(commonSceneTypeAndDeviceKey);
         SceneTypeToEffectChainCountMap_.erase(commonSceneTypeAndDeviceKey);
+        isCommonEffectChainExisted_ = false;
     }
     SceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
     SceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
@@ -450,7 +451,9 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamic(const std::strin
             DeleteAllChains();
         }
     }
-
+    if (!SceneTypeToEffectChainMap_.count(commonSceneTypeAndDeviceKey)) {
+        isCommonEffectChainExisted_ = false;
+    }
     AUDIO_DEBUG_LOG("releaseEffect, sceneTypeAndDeviceKey [%{public}s]", sceneTypeAndDeviceKey.c_str());
     return SUCCESS;
 }
