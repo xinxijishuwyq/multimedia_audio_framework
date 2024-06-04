@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
+constexpr int32_t FADING_MS = 20; // 20ms
 constexpr int32_t MAX_ERROR_COUNT = 5;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
@@ -96,7 +97,7 @@ int32_t NoneMixEngine::Stop()
         // wait until fadeout complete
         std::unique_lock fadingLock(fadingMutex_);
         cvFading_.wait_for(
-            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
+            fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Stop();
         playbackThread_ = nullptr;
     }
@@ -115,7 +116,7 @@ void NoneMixEngine::PauseAsync()
         startFadeout_ = true;
         std::unique_lock fadingLock(fadingMutex_);
         cvFading_.wait_for(
-            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
+            fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->PauseAsync();
     }
     isPause_ = true;
@@ -133,7 +134,7 @@ int32_t NoneMixEngine::Pause()
         // wait until fadeout complete
         std::unique_lock fadingLock(fadingMutex_);
         cvFading_.wait_for(
-            fadingLock, std::chrono::milliseconds(PERIOD_NS), [this] { return (!(startFadein_ || startFadeout_)); });
+            fadingLock, std::chrono::milliseconds(FADING_MS), [this] { return (!(startFadein_ || startFadeout_)); });
         playbackThread_->Pause();
     }
     isPause_ = true;
