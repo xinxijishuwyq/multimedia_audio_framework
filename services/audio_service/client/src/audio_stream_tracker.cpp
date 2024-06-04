@@ -83,6 +83,7 @@ void AudioStreamTracker::UpdateTracker(const int32_t sessionId, const State stat
         streamChangeInfo.audioCapturerChangeInfo.capturerState = static_cast<CapturerState>(state);
         streamChangeInfo.audioCapturerChangeInfo.capturerInfo = capturerInfo;
     }
+    std::lock_guard<std::mutex> lock(trackStateLock_);
     AudioPolicyManager::GetInstance().UpdateTracker(eMode_, streamChangeInfo);
 }
 
