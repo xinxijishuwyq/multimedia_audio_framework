@@ -661,14 +661,16 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         "pointer to the function is nullptr");
     BufferDesc bufDesc;
     audioRenderer->GetBufferDesc(bufDesc);
-    if (encodingType_ == ENCODING_AUDIOVIVID) {
+    if (encodingType_ == ENCODING_AUDIOVIVID && writeDataWithMetadataCallback_ != nullptr) {
         writeDataWithMetadataCallback_(ohAudioRenderer_, metadataUserData_, (void*)bufDesc.buffer, bufDesc.bufLength,
             (void*)bufDesc.metaBuffer, bufDesc.metaLength);
     } else {
-        if (audioRenderer->GetRendererCallbackType() == CALLBACKS_ON_WRITE_DATA) {
+        if (audioRenderer->GetRendererCallbackType() == CALLBACKS_ON_WRITE_DATA &&
+            callbacks_.OH_AudioRenderer_OnWriteData != nullptr) {
             callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
         } else {
+            CHECK_AND_RETURN_LOG(onWriteDataCallback_ != nullptr, "pointer to the function is nullptr");
             OH_AudioData_Callback_Result result = onWriteDataCallback_(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
             if (result == AUDIO_DATA_CALLBACK_RESULT_INVALID) {
