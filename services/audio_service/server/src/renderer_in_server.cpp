@@ -301,14 +301,19 @@ void RendererInServer::DoFadingOutFor24Bit(BufferDesc& bufferDesc, size_t byteLe
 
     int32_t numChannels = processConfig_.streamInfo.channels;
     size_t step = byteLen * numChannels;
+    size_t lastPos = 0;
     for (size_t i = 0; i < length;) {
         if ((i + step) < length) {
             float fadeoutRatio = (float)(length - i) / (length);
             for (size_t j = 0; j < step; j++) {
                 data[i + j] *= fadeoutRatio;
             }
+            lastPos = i + step;
         }
         i += step;
+    }
+    while (lastPos < length) {
+        data[lastPos++] = 0;
     }
 }
 
