@@ -1900,15 +1900,9 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
             AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
                 targetMuteState, appUid);
             if (targetMuteState) {
-                int res = PrivacyKit::StopUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
-                if (res != 0) {
-                    AUDIO_WARNING_LOG("notice stop using perm error");
-                }
+                PrivacyKit::StopUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
             } else {
-                int res = PrivacyKit::StartUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
-                if (res != 0) {
-                    AUDIO_WARNING_LOG("notice stop using perm error");
-                }
+                PrivacyKit::StartUsingPermission(result.tokenID, MICROPHONE_PERMISSION);
             }
         }
     }
