@@ -1240,8 +1240,6 @@ int32_t AudioRendererPrivate::UnsetOffloadMode() const
     AUDIO_INFO_LOG("session %{public}u session unset offload", sessionID_);
     int32_t ret = audioStream_->UnsetOffloadMode();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "unset offload failed");
-    ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_NORMAL_OUT);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "concede from offload failed");
     return SUCCESS;
 }
 
