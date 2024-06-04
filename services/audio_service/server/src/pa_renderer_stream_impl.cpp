@@ -710,8 +710,14 @@ void PaRendererStreamImpl::PAStreamPauseSuccessCb(pa_stream *stream, int32_t suc
 void PaRendererStreamImpl::PAStreamFlushSuccessCb(pa_stream *stream, int32_t success, void *userdata)
 {
     CHECK_AND_RETURN_LOG(userdata, "PAStreamFlushSuccessCb: userdata is null");
+    std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
+    if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
+        AUDIO_ERR_LOG("streamImpl is nullptr");
+        return;
+    }
+    auto streamImpl = paRendererStreamWeakPtr.lock();
+    CHECK_AND_RETURN_LOG(streamImpl, "Userdata is null");
 
-    PaRendererStreamImpl *streamImpl = static_cast<PaRendererStreamImpl *>(userdata);
     std::shared_ptr<IStatusCallback> statusCallback = streamImpl->statusCallback_.lock();
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_FLUSHED);
