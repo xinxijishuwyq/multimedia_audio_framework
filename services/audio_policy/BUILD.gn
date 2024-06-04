@@ -154,6 +154,7 @@ ohos_shared_library("audio_policy_service") {
     "server/src/service/listener/device_status_listener.cpp",
     "server/src/service/listener/power_state_listener.cpp",
     "server/src/service/manager/audio_adapter_manager.cpp",
+    "server/src/service/manager/audio_adapter_manager_handler.cpp",
     "server/src/service/manager/audio_setting_provider.cpp",
     "server/src/service/manager/pnp_server/audio_input_thread.cpp",
     "server/src/service/manager/pnp_server/audio_pnp_server.cpp",
