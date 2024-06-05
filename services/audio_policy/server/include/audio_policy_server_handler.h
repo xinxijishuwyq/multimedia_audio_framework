@@ -165,6 +165,7 @@ public:
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
     bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -212,6 +213,7 @@ private:
     std::map<std::pair<int32_t, AudioDeviceUsage>,
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
+    std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
