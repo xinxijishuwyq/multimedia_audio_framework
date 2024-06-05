@@ -168,7 +168,7 @@ int32_t PaRendererStreamImpl::Pause()
         pa_threaded_mainloop_unlock(mainloop_);
         {
             std::unique_lock<std::mutex> lock(fadingMutex_);
-            const int32_t WAIT_TIME_MS = 20;
+            const int32_t WAIT_TIME_MS = 40;
             fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
         }
         pa_threaded_mainloop_lock(mainloop_);

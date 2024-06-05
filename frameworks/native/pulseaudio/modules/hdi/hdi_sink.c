@@ -1167,6 +1167,9 @@ static void Fading24Bit(int8_t *data, int32_t bitSize, int32_t chunkLength, int3
         }
         i += offset;
     }
+    if (fadeType == 0) {
+        return;
+    }
     while (lastPos < chunkLength) {
         tmpData[lastPos++] = 0;
     }
