@@ -2478,12 +2478,54 @@ int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->SetMicrophoneMute(isMute);
+    int32_t ret = gsp->SetMicrophoneMute(isMute | isMicrophoneMutePersistent_);
     IPCSkeleton::SetCallingIdentity(identity);
 
     if (ret == SUCCESS) {
         isMicrophoneMute_ = isMute;
-        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMute);
+        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMute_ | isMicrophoneMutePersistent_);
+    }
+    return ret;
+}
+
+int32_t AudioPolicyService::SetMicrophoneMutePersistent(const bool isMute)
+{
+    AUDIO_DEBUG_LOG("state[%{public}d]", isMute);
+    int32_t ret = audioPolicyManager_.SetPersistMicMuteState(isMute);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to save the persistent microphone mute status in setting database.");
+        return ERROR;
+    }
+    isMicrophoneMutePersistent_ = isMute;
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    ret = gsp->SetMicrophoneMute(isMicrophoneMute_ | isMicrophoneMutePersistent_);
+    IPCSkeleton::SetCallingIdentity(identity);
+    if (ret == SUCCESS) {
+        AUDIO_INFO_LOG("UpdateCapturerInfoMuteStatus when set mic mute state persistent.");
+        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMute_|isMicrophoneMutePersistent_);
+    }
+    return ret;
+}
+
+int32_t AudioPolicyService::InitPersistentMicrophoneMuteState(bool &isMute)
+{
+    int32_t ret = audioPolicyManager_.GetPersistMicMuteState(isMute);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetPersistMicMuteState failed.");
+        return ret;
+    }
+    // Ensure persistent mic mute state takes effect when first startup
+    isMicrophoneMutePersistent_ = isMute;
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    ret = gsp->SetMicrophoneMute(isMicrophoneMutePersistent_);
+    IPCSkeleton::SetCallingIdentity(identity);
+    if (ret == SUCCESS) {
+        AUDIO_INFO_LOG("UpdateCapturerInfoMuteStatus when audio service restart.");
+        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMutePersistent_);
     }
     return ret;
 }
@@ -2491,7 +2533,7 @@ int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
 bool AudioPolicyService::IsMicrophoneMute()
 {
     AUDIO_DEBUG_LOG("IsMicrophoneMute start");
-    return isMicrophoneMute_;
+    return isMicrophoneMute_ | isMicrophoneMutePersistent_;
 }
 
 int32_t AudioPolicyService::SetSystemSoundUri(const std::string &key, const std::string &uri)

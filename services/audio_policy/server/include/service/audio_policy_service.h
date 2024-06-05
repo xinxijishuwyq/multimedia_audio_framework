@@ -154,6 +154,10 @@ public:
 
     int32_t SetMicrophoneMute(bool isMute);
 
+    int32_t SetMicrophoneMutePersistent(const bool isMute);
+
+    int32_t InitPersistentMicrophoneMuteState(bool &isMute);
+
     bool IsMicrophoneMute();
 
     int32_t SetAudioScene(AudioScene audioScene);
@@ -979,6 +983,8 @@ private:
     AudioEffectManager& audioEffectManager_;
 
     bool isMicrophoneMute_ = false;
+
+    bool isMicrophoneMutePersistent_ = false;
 
     mutable std::shared_mutex deviceStatusUpdateSharedMutex_;
 

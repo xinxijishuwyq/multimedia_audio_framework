@@ -84,6 +84,7 @@ public:
         CALLBACK_RESULT_INVALID = -1,
         CALLBACK_RESULT_VALID = 0,
     };
+
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
@@ -181,6 +182,7 @@ private:
     static napi_ref spatializationSceneType_;
     static napi_ref asrNoiseSuppressionMode_;
     static napi_ref asrAecMode_;
+    static napi_ref policyType_;
     static napi_ref audioDataCallbackResult_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
@@ -223,6 +225,7 @@ private:
     static const std::map<std::string, int32_t> spatializationSceneTypeMap;
     static const std::map<std::string, int32_t> asrNoiseSuppressionModeMap;
     static const std::map<std::string, int32_t> asrAecModeMap;
+    static const std::map<std::string, int32_t> policyTypeMap;
     static const std::map<std::string, int32_t> audioDataCallbackResultMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 

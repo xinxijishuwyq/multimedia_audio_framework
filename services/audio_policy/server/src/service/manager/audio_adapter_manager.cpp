@@ -406,6 +406,22 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
     return SetVolumeDb(streamType);
 }
 
+int32_t AudioAdapterManager::SetPersistMicMuteState(const bool isMute)
+{
+    AUDIO_INFO_LOG("Save mute state: %{public}d in setting db", isMute);
+    bool res = volumeDataMaintainer_.SaveMicMuteState(isMute);
+
+    return res == true ? SUCCESS : ERROR;
+}
+
+int32_t AudioAdapterManager::GetPersistMicMuteState(bool &isMute) const
+{
+    bool res = volumeDataMaintainer_.GetMicMuteState(isMute);
+    AUDIO_INFO_LOG("Get mute state from setting db is: %{public}d", isMute);
+
+    return res == true ? SUCCESS : ERROR;
+}
+
 int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
