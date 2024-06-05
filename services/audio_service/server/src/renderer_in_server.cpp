@@ -44,6 +44,7 @@ namespace {
     static const int32_t BYTE_LEN_FOR_24BIT = 3;
     static const int32_t BYTE_LEN_FOR_32BIT = 4;
     static constexpr int32_t ONE_MINUTE = 60;
+    static const int32_t UINT8_SILENCE_VALUE = 128;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -267,7 +268,8 @@ void RendererInServer::DoFadingOutFor8Bit(BufferDesc& bufferDesc, size_t byteLen
     for (size_t i = 0; i < length / numChannels; i++) {
         for (int32_t j = 0; j < numChannels; j++) {
             float fadeoutRatio = (float)(length - (i * numChannels + j)) / (length);
-            data[i * numChannels + j] *= fadeoutRatio;
+            data[i * numChannels + j] =
+                (data[i * numChannels + j] - UINT8_SILENCE_VALUE) * fadeoutRatio + UINT8_SILENCE_VALUE;
         }
     }
 }
