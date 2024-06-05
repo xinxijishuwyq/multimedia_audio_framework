@@ -217,6 +217,7 @@ struct Userdata {
         pa_sink_state_t previousState;
         pa_atomic_t fadingFlagForPrimary; // 1：do fade in, 0: no need
         int32_t primaryFadingInDone;
+        int32_t primarySinkInIndex;
     } primary;
     struct {
         bool used;
@@ -236,6 +237,8 @@ struct Userdata {
         SinkAttr sample_attrs;
         pa_atomic_t fadingFlagForMultiChannel; // 1：do fade in, 0: no need
         int32_t multiChannelFadingInDone;
+        int32_t multiChannelSinkInIndex;
+        int32_t multiChannelTmpSinkInIndex;
     } multiChannel;
 };
 
@@ -1167,6 +1170,9 @@ static void Fading24Bit(int8_t *data, int32_t bitSize, int32_t chunkLength, int3
         }
         i += offset;
     }
+    if (fadeType == 0) {
+        return;
+    }
     while (lastPos < chunkLength) {
         tmpData[lastPos++] = 0;
     }
@@ -1230,7 +1236,7 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
         return;
     }
 
-    if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1) {
+    if (pa_atomic_load(&u->primary.fadingFlagForPrimary) == 1 && u->primary.primarySinkInIndex == sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
             AUDIO_INFO_LOG("pa_memblock_is_silence");
             return;
@@ -1253,12 +1259,12 @@ static void PreparePrimaryFading(pa_sink_input *sinkIn, pa_mix_info *infoIn, pa_
     }
 }
 
-static void CheckPrimaryFadeinIsDone(pa_sink *si)
+static void CheckPrimaryFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
 {
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    if (u->primary.primaryFadingInDone) {
+    if (u->primary.primaryFadingInDone && u->primary.primarySinkInIndex == sinkIn->index) {
         pa_atomic_store(&u->primary.fadingFlagForPrimary, 0);
     }
 }
@@ -1330,13 +1336,13 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
             pa_assert(infoIn->chunk.memblock);
             pa_assert(infoIn->chunk.length > 0);
             PreparePrimaryFading(sinkIn, infoIn, si);
+            CheckPrimaryFadeinIsDone(si, sinkIn);
 
             infoIn++;
             n++;
             maxInfo--;
         }
     }
-    CheckPrimaryFadeinIsDone(si);
 
     SafeRendererSinkUpdateAppsUid(u->primary.sinkAdapter, appsUid, count);
 
@@ -1356,7 +1362,8 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
         return;
     }
 
-    if (pa_atomic_load(&u->multiChannel.fadingFlagForMultiChannel) == 1) {
+    if (pa_atomic_load(&u->multiChannel.fadingFlagForMultiChannel) == 1 &&
+        u->multiChannel.multiChannelSinkInIndex == sinkIn->index) {
         if (pa_memblock_is_silence(infoIn->chunk.memblock)) {
             AUDIO_INFO_LOG("pa_memblock_is_silence");
             return;
@@ -1376,6 +1383,16 @@ static void PrepareMultiChannelFading(pa_sink_input *sinkIn, pa_mix_info *infoIn
         void *data = pa_memblock_acquire_chunk(&infoIn->chunk);
         DoFading(data, infoIn->chunk.length, u->ss.channels, bitSize, 1);
         pa_proplist_sets(sinkIn->proplist, "fadeoutPause", "2");
+    }
+}
+
+static void CheckMultiChannelFadeinIsDone(pa_sink *si, pa_sink_input *sinkIn)
+{
+    struct Userdata *u;
+    pa_assert_se(u = si->userdata);
+
+    if (u->multiChannel.multiChannelFadingInDone && u->multiChannel.multiChannelSinkInIndex == sinkIn->index) {
+        pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 0);
     }
 }
 
@@ -1420,6 +1437,7 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
                 AUTO_CTRACE("hdi_sink::SinkRenderMultiChannelCluster::is_silence");
             } else if (pa_safe_streq(sinkSpatializationEnabled, "true")) {
                 PrepareMultiChannelFading(sinkIn, infoIn, si);
+                CheckMultiChannelFadeinIsDone(si, sinkIn);
             }
 
             infoIn->userdata = pa_sink_input_ref(sinkIn);
@@ -1434,9 +1452,6 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
 
     SafeRendererSinkUpdateAppsUid(u->multiChannel.sinkAdapter, appsUid, count);
 
-    if (u->multiChannel.multiChannelFadingInDone) {
-        pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 0);
-    }
     if (mixlength > 0) {
         *length = mixlength;
     }
@@ -2566,6 +2581,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             AUDIO_INFO_LOG("store fadingFlagForPrimary for 1");
             pa_proplist_sets(i->proplist, "fadeoutPause", "0");
             u->primary.primaryFadingInDone = 0;
+            u->primary.primarySinkInIndex = i->index;
             AUDIO_INFO_LOG("PaInputStateChangeCb, HDI renderer already started");
             return;
         }
@@ -2582,6 +2598,7 @@ static void PaInputStateChangeCbPrimary(struct Userdata *u, pa_sink_input *i, pa
             AUDIO_INFO_LOG("store fadingFlagForPrimary for 1");
             pa_proplist_sets(i->proplist, "fadeoutPause", "0");
             u->primary.primaryFadingInDone = 0;
+            u->primary.primarySinkInIndex = i->index;
             AUDIO_INFO_LOG("PaInputStateChangeCb, Successfully restarted HDI renderer");
         }
     }
@@ -2633,6 +2650,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels, 
             if (u->multiChannel.isHDISinkStarted) {
                 pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 1);
                 u->multiChannel.multiChannelFadingInDone = 0;
+                u->multiChannel.multiChannelSinkInIndex = u->multiChannel.multiChannelTmpSinkInIndex;
                 return;
             }
         }
@@ -2655,6 +2673,7 @@ static void ResetMultiChannelHdiState(struct Userdata *u, int32_t sinkChannels, 
         u->renderCount = 0;
         pa_atomic_store(&u->multiChannel.fadingFlagForMultiChannel, 1);
         u->multiChannel.multiChannelFadingInDone = 0;
+        u->multiChannel.multiChannelSinkInIndex = u->multiChannel.multiChannelTmpSinkInIndex;
     }
 }
 
@@ -2706,6 +2725,7 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
         uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
         uint64_t sinkChannelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
         EffectChainManagerReturnMultiChannelInfo(&sinkChannel, &sinkChannelLayout);
+        u->multiChannel.multiChannelTmpSinkInIndex = i->index;
         ResetMultiChannelHdiState(u, sinkChannel, sinkChannelLayout);
     } else if (stopping) {
         // Continuously dropping data clear counter on entering suspended state.
