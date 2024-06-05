@@ -280,6 +280,14 @@ void AudioPolicyManagerStub::GetPreferredInputDeviceDescriptorsInternal(MessageP
     }
 }
 
+void AudioPolicyManagerStub::SetClientCallbacksEnableInternal(MessageParcel &data, MessageParcel &reply)
+{
+    CallbackChange callbackchange = static_cast<CallbackChange>(data.ReadInt32());
+    bool enable = data.ReadBool();
+    int32_t result = SetClientCallbacksEnable(callbackchange, enable);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply)
 {
     InternalDeviceType deviceType = static_cast<InternalDeviceType>(data.ReadInt32());

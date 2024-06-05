@@ -48,8 +48,10 @@ public:
     int32_t RemovePreferredInputDeviceChangeCallback();
     int32_t AddRendererStateChangeCallback(const std::shared_ptr<AudioRendererStateChangeCallback> &cb);
     int32_t RemoveRendererStateChangeCallback();
+    size_t GetRendererStateChangeCallbackSize() const;
     int32_t AddCapturerStateChangeCallback(const std::shared_ptr<AudioCapturerStateChangeCallback> &cb);
     int32_t RemoveCapturerStateChangeCallback();
+    size_t GetCapturerStateChangeCallbackSize() const;
     int32_t AddDeviceChangeWithInfoCallback(
         const uint32_t sessionId, const std::shared_ptr<DeviceChangeWithInfoCallback> &cb);
     int32_t RemoveDeviceChangeWithInfoCallback(const uint32_t sessionId);
@@ -61,6 +63,7 @@ public:
     int32_t RemoveSpatializationEnabledChangeCallback();
     int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
     int32_t RemoveHeadTrackingEnabledChangeCallback();
+    size_t GetFocusInfoChangeCallbackSize() const;
 
     void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
     void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag) override;
@@ -106,14 +109,14 @@ private:
         std::shared_ptr<HeadTrackingDataRequestedChangeCallback>> headTrackingDataRequestedChangeCallbackMap_;
 
     std::mutex volumeKeyEventMutex_;
-    std::mutex focusInfoChangeMutex_;
+    mutable std::mutex focusInfoChangeMutex_;
     std::mutex deviceChangeMutex_;
     std::mutex ringerModeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex pOutputDeviceChangeMutex_;
     std::mutex pInputDeviceChangeMutex_;
-    std::mutex rendererStateChangeMutex_;
-    std::mutex capturerStateChangeMutex_;
+    mutable std::mutex rendererStateChangeMutex_;
+    mutable std::mutex capturerStateChangeMutex_;
     std::mutex deviceChangeWithInfoCallbackMutex_;
     std::mutex headTrackingDataRequestedChangeMutex_;
     std::mutex spatializationEnabledChangeMutex_;
