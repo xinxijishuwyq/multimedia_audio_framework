@@ -85,8 +85,6 @@ public:
 
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioModuleInfo);
 
-    AudioIOHandle LoadLoopback(const LoopbackModuleInfo &moduleInfo);
-
     int32_t CloseAudioPort(AudioIOHandle ioHandle);
 
     int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
@@ -198,7 +196,6 @@ private:
         InitVolumeMapIndex();
     }
 
-    std::string GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const;
     AudioStreamType GetStreamIDByType(std::string streamType);
     AudioStreamType GetStreamForVolumeMap(AudioStreamType streamType);
     int32_t ReInitKVStore();
@@ -333,16 +330,6 @@ public:
                 "not firing OnSessionRemoved");
         } else {
             audioAdapterManager_->sessionCallback_->OnSessionRemoved(sessionID);
-        }
-    }
-
-    void OnPlaybackCapturerStop()
-    {
-        AUDIO_INFO_LOG("PolicyCallbackImpl OnPlaybackCapturerStop");
-        if (audioAdapterManager_->sessionCallback_ == nullptr) {
-            AUDIO_DEBUG_LOG("PolicyCallbackImpl sessionCallback_ nullptr");
-        } else {
-            audioAdapterManager_->sessionCallback_->OnPlaybackCapturerStop();
         }
     }
 

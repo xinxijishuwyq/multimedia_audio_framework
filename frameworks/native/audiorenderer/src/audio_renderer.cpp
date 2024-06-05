@@ -1158,7 +1158,7 @@ int32_t AudioRendererPrivate::SetRendererFirstFrameWritingCallback(
 
 void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 {
-    AUDIO_INFO_LOG("InterruptMode %{pubilc}d", mode);
+    AUDIO_INFO_LOG("InterruptMode %{public}d", mode);
     if (audioInterrupt_.mode == mode) {
         return;
     } else if (mode != SHARE_MODE && mode != INDEPENDENT_MODE) {
@@ -1189,7 +1189,7 @@ bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
 
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
 {
-    AUDIO_INFO_LOG("parallelPlayFlag %{pubilc}d", parallelPlayFlag);
+    AUDIO_INFO_LOG("parallelPlayFlag %{public}d", parallelPlayFlag);
     audioInterrupt_.parallelPlayFlag = parallelPlayFlag;
     return SUCCESS;
 }

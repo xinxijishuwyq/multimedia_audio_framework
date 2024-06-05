@@ -615,15 +615,6 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
     return audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
 }
 
-AudioIOHandle AudioAdapterManager::LoadLoopback(const LoopbackModuleInfo &moduleInfo)
-{
-    std::string moduleArgs = GetLoopbackModuleArgs(moduleInfo);
-    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", moduleInfo.lib.c_str(), moduleArgs.c_str());
-
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->OpenAudioPort(moduleInfo.lib, moduleArgs.c_str());
-}
-
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
@@ -757,21 +748,6 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" offload_enable=");
         args.append(audioModuleInfo.offloadEnable);
     }
-}
-
-std::string AudioAdapterManager::GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const
-{
-    std::string args;
-
-    if (moduleInfo.sink.empty() || moduleInfo.source.empty()) {
-        return "";
-    }
-
-    args.append(" source=");
-    args.append(moduleInfo.source);
-    args.append(" sink=");
-    args.append(moduleInfo.sink);
-    return args;
 }
 
 // Private Members

@@ -103,9 +103,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilde
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
-    StreamUsage streamUsage = (StreamUsage)usage;
-    ContentType contentType = ContentType::CONTENT_TYPE_UNKNOWN;
-    return audioStreamBuilder->SetRendererInfo(streamUsage, contentType);
+    return audioStreamBuilder->SetRendererInfo(static_cast<StreamUsage>(usage));
 }
 
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererCallback(OH_AudioStreamBuilder *builder,
@@ -306,12 +304,11 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetPreferredFrameSize(int32_t frameS
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage, ContentType contentType)
+OH_AudioStream_Result OHAudioStreamBuilder::SetRendererInfo(StreamUsage usage)
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE && usage != StreamUsage::STREAM_USAGE_UNKNOWN,
         AUDIOSTREAM_ERROR_INVALID_PARAM, "Error, invalid type input");
     usage_ = usage;
-    contentType_ = contentType;
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -358,7 +355,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
     };
 
     AudioRendererInfo rendererInfo = {
-        contentType_,
+        CONTENT_TYPE_UNKNOWN,
         usage_,
         latencyMode_
     };
