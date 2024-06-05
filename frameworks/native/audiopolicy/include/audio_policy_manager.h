@@ -386,6 +386,9 @@ private:
     std::mutex registerCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
+    std::mutex focusInfoMutex_;
+    std::mutex rendererStateMutex_;
+    std::mutex capturerStateMutex_;
     sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 
