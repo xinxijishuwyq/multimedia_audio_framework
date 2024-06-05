@@ -417,6 +417,17 @@ int32_t MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(const std::
     return ERROR;
 }
 
+std::vector<BluetoothRemoteDevice> MediaBluetoothDeviceManager::GetAllA2dpBluetoothDevice()
+{
+    std::lock_guard<std::mutex> deviceMapLock(g_a2dpDeviceMapLock);
+    std::vector<BluetoothRemoteDevice> a2dpList = {};
+    a2dpList.reserve(a2dpBluetoothDeviceMap_.size());
+    for (const auto &[macaddr, device] : a2dpBluetoothDeviceMap_) {
+        a2dpList.emplace_back(device);
+    }
+    return a2dpList;
+}
+
 void MediaBluetoothDeviceManager::UpdateA2dpDeviceConfiguration(const BluetoothRemoteDevice &device,
     const AudioStreamInfo &streamInfo)
 {
@@ -751,6 +762,17 @@ int32_t HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(const std::str
         return SUCCESS;
     }
     return ERROR;
+}
+
+std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::GetAllHfpBluetoothDevice()
+{
+    std::lock_guard<std::mutex> deviceMapLock(g_hfpDeviceMapLock);
+    std::vector<BluetoothRemoteDevice> hfpList = {};
+    hfpList.reserve(hfpBluetoothDeviceMap_.size());
+    for (const auto &[macaddr, device] : hfpBluetoothDeviceMap_) {
+        hfpList.emplace_back(device);
+    }
+    return hfpList;
 }
 
 void HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice()
