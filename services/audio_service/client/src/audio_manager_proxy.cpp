@@ -437,7 +437,7 @@ int32_t AudioManagerProxy::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode as
     data.WriteInt32(static_cast<int32_t>(asrWhisperDetectionMode));
 
     int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
-            AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
+        AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
     return result;
@@ -454,7 +454,7 @@ int32_t AudioManagerProxy::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &a
     data.WriteInt32(static_cast<int32_t>(asrWhisperDetectionMode));
 
     int32_t error = Remote()->SendRequest(
-            static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
+        static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_WHISPER_DETECTION_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, -1, "failed,error:%d", error);
     int32_t result = reply.ReadInt32();
     asrWhisperDetectionMode = static_cast<AsrWhisperDetectionMode> (result);
