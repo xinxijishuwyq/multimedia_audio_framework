@@ -51,6 +51,11 @@ constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr int32_t UID_DISTRIBUTED_CALL_SA = 3069;
 constexpr int32_t UID_CAMERA = 1047;
 
+constexpr size_t FIRST_CHAR = 1;
+constexpr size_t MIN_LEN = 8;
+constexpr size_t HEAD_STR_LEN = 2;
+constexpr size_t TAIL_STR_LEN = 5;
+
 const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     0, // UID_ROOT
@@ -1132,10 +1137,6 @@ std::string GetEncryptStr(const std::string &src)
     int32_t strLen = src.length();
     std::string dst;
 
-    size_t FIRST_CHAR = 1;
-    size_t MIN_LEN = 8;
-    size_t HEAD_STR_LEN = 2;
-    size_t TAIL_STR_LEN = 5;
     if (strLen < MIN_LEN) {
         // src: abcdef
         // dst: *bcdef
