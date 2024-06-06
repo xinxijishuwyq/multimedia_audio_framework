@@ -804,7 +804,7 @@ bool AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
                 // sco deactive or suspend, a2dp CONNECTED
                 desc->connectState_ = CONNECTED;
                 updateFlag = true;
-                AUDIO_INFO_LOG("sco connectState %{public}zu, update a2dp to connected", devDesc->connectState_);
+                AUDIO_INFO_LOG("sco connectState %{public}d, update a2dp to connected", devDesc->connectState_);
             }
         }
     }
