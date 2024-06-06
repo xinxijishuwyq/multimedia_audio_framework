@@ -5739,9 +5739,6 @@ bool AudioPolicyService::CheckStreamMultichannelMode(int64_t activateSessionId, 
     bool ret = gsp->GetEffectOffloadEnabled();
     IPCSkeleton::SetCallingIdentity(identity);
 
-    // Temporarily return the effect result to true
-    ret = true;
-
     return ret;
 }
 
@@ -5825,6 +5822,12 @@ int32_t AudioPolicyService::DynamicUnloadModule(const AudioPipeType pipeType)
 
 int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType pipeType)
 {
+    AudioPipeType oldPipeType;
+    streamCollector_.GetPipeType(sessionId, oldPipeType);
+    if (oldPipeType == pipeType) {
+        AUDIO_ERR_LOG("the same type [%{public}d],no need to move", pipeType);
+        return ERROR;
+    }
     Trace trace("AudioPolicyService::MoveToNewPipeInner");
     AUDIO_INFO_LOG("start move stream into new pipe %{public}d", pipeType);
     int32_t ret = ERROR;
@@ -5857,7 +5860,6 @@ int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
             break;
         }
         case PIPE_TYPE_NORMAL_OUT: {
-            UnloadOffloadModule();
             portName = GetSinkPortName(deviceType, pipeType);
             ret = MoveToOutputDevice(sessionId, portName);
             break;
@@ -6511,9 +6513,9 @@ void AudioPolicyService::UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStre
                 activeSession.isSpatialAudio =
                     activeSession.isSpatialAudio | newSessionHasBeenSpatialized[changeInfo->sessionId];
                 newSessionHasBeenSpatialized[changeInfo->sessionId] = activeSession.isSpatialAudio;
-                AudioStreamType streamType = streamCollector_.GetStreamType(changeInfo->rendererInfo.contentType,
-                    changeInfo->rendererInfo.streamUsage);
-                CheckStreamMode(activeSession.sessionId, streamType);
+
+                // try to move into multchannel
+                MoveToNewPipeInner(activeSession.sessionId, PIPE_TYPE_MULTICHANNEL);
                 break;
             }
         }
