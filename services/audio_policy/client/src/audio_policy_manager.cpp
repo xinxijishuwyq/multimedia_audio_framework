@@ -381,9 +381,10 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
         }
     }
 
-    size_t originalCnt = audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize();
+    std::lock_guard<std::mutex> lockCbMap(focusInfoMutex_);
     audioPolicyClientStubCB_->AddFocusInfoChangeCallback(callback);
-    if (originalCnt == 1) {
+    size_t callbackSize = audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize();
+    if (callbackSize == 1) {
         SetClientCallbacksEnable(CALLBACK_FOCUS_INFO_CHANGE, true);
     }
 
@@ -393,6 +394,7 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
 int32_t AudioPolicyManager::UnregisterFocusInfoChangeCallback(const int32_t clientId)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterFocusInfoChangeCallback");
+    std::lock_guard<std::mutex> lockCbMap(focusInfoMutex_);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveFocusInfoChangeCallback();
         if (audioPolicyClientStubCB_->GetFocusInfoChangeCallbackSize() == 0) {
@@ -755,9 +757,10 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
         }
     }
 
-    size_t originalCnt = audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize();
+    std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
     audioPolicyClientStubCB_->AddRendererStateChangeCallback(callback);
-    if (originalCnt == 1) {
+    size_t callbackSize = audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize();
+    if (callbackSize == 1) {
         SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, true);
     }
     isAudioRendererEventListenerRegistered = true;
@@ -767,6 +770,7 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(const int32_t cli
 int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(const int32_t clientPid)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioRendererEventListener");
+    std::lock_guard<std::mutex> lockCbMap(rendererStateMutex_);
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback();
         if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
@@ -793,9 +797,10 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
         }
     }
 
-    size_t originalCnt = audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize();
+    std::lock_guard<std::mutex> lockCbMap(capturerStateMutex_);
     audioPolicyClientStubCB_->AddCapturerStateChangeCallback(callback);
-    if (originalCnt == 1) {
+    size_t callbackSize = audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize();
+    if (callbackSize == 1) {
         SetClientCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, true);
     }
     isAudioCapturerEventListenerRegistered = true;
@@ -805,6 +810,7 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
 int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t clientPid)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioCapturerEventListener");
+    std::lock_guard<std::mutex> lockCbMap(capturerStateMutex_);
     if ((audioPolicyClientStubCB_ != nullptr) && isAudioCapturerEventListenerRegistered) {
         audioPolicyClientStubCB_->RemoveCapturerStateChangeCallback();
         if (audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize() == 0) {
