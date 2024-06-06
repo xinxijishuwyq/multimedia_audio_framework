@@ -166,6 +166,10 @@ public:
 
     void HandleKvData(bool isFirstBoot);
 
+    int32_t SetPersistMicMuteState(const bool isMute);
+
+    int32_t GetPersistMicMuteState(bool &isMute) const;
+
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
 private:
     friend class PolicyCallbackImpl;

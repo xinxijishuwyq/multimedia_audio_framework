@@ -139,6 +139,10 @@ public:
 
     virtual void HandleKvData(bool isFirstBoot) = 0;
 
+    virtual int32_t SetPersistMicMuteState(const bool isMute) = 0;
+
+    virtual int32_t GetPersistMicMuteState(bool &isMute) const = 0;
+
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel) = 0;
 };
 } // namespace AudioStandard

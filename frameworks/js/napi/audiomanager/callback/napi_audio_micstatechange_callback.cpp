@@ -46,6 +46,34 @@ void NapiAudioManagerMicStateChangeCallback::SaveCallbackReference(const std::st
     micStateChangeCallback_ = cb;
 }
 
+void NapiAudioManagerMicStateChangeCallback::RemoveCallbackReference(const napi_value args)
+{
+    if (!IsSameCallback(args)) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    napi_delete_reference(env_, micStateChangeCallback_->cb_);
+    micStateChangeCallback_ = nullptr;
+    AUDIO_INFO_LOG("Remove callback reference successful.");
+}
+
+bool NapiAudioManagerMicStateChangeCallback::IsSameCallback(const napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (args == nullptr) {
+        return true;
+    }
+    if (micStateChangeCallback_.get() == nullptr) {
+        return false;
+    }
+    napi_value micStateChangeCallback = nullptr;
+    napi_get_reference_value(env_, micStateChangeCallback_->cb_, &micStateChangeCallback);
+    bool isEquals = false;
+    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, args, micStateChangeCallback, &isEquals) == napi_ok, false,
+        "get napi_strict_equals failed");
+    return isEquals;
+}
+
 void NapiAudioManagerMicStateChangeCallback::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);

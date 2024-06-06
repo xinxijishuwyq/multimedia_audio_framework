@@ -216,6 +216,20 @@ bool AudioPolicyServerHandler::SendMicStateUpdatedCallback(const MicStateChangeE
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent,
+    int32_t clientId)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->micStateChangeEvent = micStateChangeEvent;
+    eventContextObj->clientId = clientId;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send MIC_STATE_CHANGE_EVENT_WITH_CLIENTID event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -596,6 +610,26 @@ void AudioPolicyServerHandler::HandleMicStateUpdatedEvent(const AppExecFwk::Inne
     }
 }
 
+void AudioPolicyServerHandler::HandleMicStateUpdatedEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    int32_t clientId = eventContextObj->clientId;
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        if (it->first != clientId) {
+            AUDIO_DEBUG_LOG("This client %{public}d is not need to trigger the callback ", it->first);
+            continue;
+        }
+        sptr<IAudioPolicyClient> micStateChangeListenerCb = it->second;
+        if (micStateChangeListenerCb == nullptr) {
+            AUDIO_ERR_LOG("callback is nullptr for client %{public}d", it->first);
+            continue;
+        }
+        micStateChangeListenerCb->OnMicStateUpdated(eventContextObj->micStateChangeEvent);
+    }
+}
+
 void AudioPolicyServerHandler::HandleInterruptEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -912,10 +946,7 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
 void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventId = event->GetInnerEventId();
-    AUDIO_DEBUG_LOG("handler process eventId:%{public}u", eventId);
-
     HandleServiceEvent(eventId, event);
-
     switch (eventId) {
         case EventAudioServerCmd::VOLUME_KEY_EVENT:
             HandleVolumeKeyEvent(event);
@@ -934,6 +965,9 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::MIC_STATE_CHANGE_EVENT:
             HandleMicStateUpdatedEvent(event);
+            break;
+        case EventAudioServerCmd::MIC_STATE_CHANGE_EVENT_WITH_CLIENTID:
+            HandleMicStateUpdatedEventWithClientId(event);
             break;
         case EventAudioServerCmd::INTERRUPT_EVENT:
             HandleInterruptEvent(event);

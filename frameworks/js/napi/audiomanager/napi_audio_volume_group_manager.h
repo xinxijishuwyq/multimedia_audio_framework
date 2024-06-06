@@ -58,6 +58,7 @@ private:
         double outputMaxAmplitude;
         bool inputBArgTransFlag;
         bool outputBArgTransFlag;
+        int32_t policyType;
 
         sptr<AudioDeviceDescriptor> inputDeviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();;
         sptr<AudioDeviceDescriptor> outputDeviceDescriptor = new (std::nothrow) AudioDeviceDescriptor();;
@@ -83,18 +84,21 @@ private:
     static napi_value IsMicrophoneMute(napi_env env, napi_callback_info info);
     static napi_value IsMicrophoneMuteSync(napi_env env, napi_callback_info info);
     static napi_value SetMicMute(napi_env env, napi_callback_info info);
+    static napi_value SetMicMutePersistent(napi_env env, napi_callback_info info);
     static napi_value IsVolumeUnadjustable(napi_env env, napi_callback_info info);
     static napi_value AdjustVolumeByStep(napi_env env, napi_callback_info info);
     static napi_value AdjustSystemVolumeByStep(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolumeInDb(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolumeInDbSync(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
+    static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value GetMaxAmplitudeForOutputDevice(napi_env env, napi_callback_info info);
     static napi_value GetMaxAmplitudeForInputDevice(napi_env env, napi_callback_info info);
 
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
-
+    static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
+        const std::string &cbName);
     static napi_status InitNapiAudioVolumeGroupManager(napi_env env, napi_value &constructor);
     static bool CheckContextStatus(std::shared_ptr<AudioVolumeGroupManagerAsyncContext> context);
     static bool CheckAudioVolumeGroupManagerStatus(NapiAudioVolumeGroupManager *napi,

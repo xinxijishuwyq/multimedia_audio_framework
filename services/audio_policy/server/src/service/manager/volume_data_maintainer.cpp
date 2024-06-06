@@ -525,6 +525,30 @@ void VolumeDataMaintainer::RegisterCloned()
     }
 }
 
+bool VolumeDataMaintainer::SaveMicMuteState(bool isMute)
+{
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    const std::string settingKey = "micmute_state";
+    ErrCode ret = settingProvider.PutBoolValue(settingKey, isMute, "secure");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to saveMicMuteState: %{public}d to setting db! Err: %{public}d", isMute, ret);
+        return false;
+    }
+    return true;
+}
+
+bool VolumeDataMaintainer::GetMicMuteState(bool &isMute)
+{
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    const std::string settingKey = "micmute_state";
+    ErrCode ret = settingProvider.GetBoolValue(settingKey, isMute, "secure");
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("Failed to write micmute_state: %{public}d to setting db! Err: %{public}d", isMute, ret);
+        return false;
+    }
+
+    return true;
+}
 std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
 {
     std::string type = "";

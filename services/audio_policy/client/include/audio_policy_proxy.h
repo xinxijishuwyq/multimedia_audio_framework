@@ -96,6 +96,8 @@ public:
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute) override;
 
+    int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type) override;
+
     bool IsMicrophoneMute(API_VERSION api_v) override;
 
     AudioScene GetAudioScene() override;

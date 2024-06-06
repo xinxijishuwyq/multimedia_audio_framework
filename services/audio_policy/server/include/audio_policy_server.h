@@ -161,6 +161,8 @@ public:
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute) override;
 
+    int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type) override;
+
     bool IsMicrophoneMute(API_VERSION api_v) override;
 
     AudioScene GetAudioScene() override;
@@ -429,6 +431,7 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
     static constexpr int32_t AUDIO_UID = 1041;
+    static constexpr uint32_t MICPHONE_CALLER = 0;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
     static const std::list<uid_t> RECORD_PASS_APPINFO_LIST;
@@ -512,6 +515,8 @@ private:
 
     int32_t volumeStep_;
     std::atomic<bool> isFirstAudioServiceStart_ = false;
+    std::atomic<bool> isFirstKvDataServiceServiceStart_ = false;
+    std::atomic<bool> isInitMuteState_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
@@ -539,6 +544,7 @@ private:
     AudioRouterCenter &audioRouterCenter_;
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
+    pid_t lastMicMuteSettingPid_ = 0;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

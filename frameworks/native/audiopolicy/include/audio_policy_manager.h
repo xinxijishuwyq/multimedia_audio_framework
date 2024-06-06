@@ -106,6 +106,8 @@ public:
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute);
 
+    int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type);
+    
     bool IsMicrophoneMute(API_VERSION api_v = API_9);
 
     AudioScene GetAudioScene();
@@ -125,6 +127,8 @@ public:
 
     int32_t SetMicStateChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
+
+    int32_t UnsetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const std::shared_ptr<AudioInterruptCallback> &callback, const int32_t zoneID = 0);

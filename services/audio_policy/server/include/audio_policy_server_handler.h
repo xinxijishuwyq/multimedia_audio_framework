@@ -52,6 +52,7 @@ public:
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
         MIC_STATE_CHANGE_EVENT,
+        MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
         INTERRUPT_EVENT,
         INTERRUPT_EVENT_WITH_SESSIONID,
         INTERRUPT_EVENT_WITH_CLIENTID,
@@ -139,6 +140,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
+    bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
     bool SendInterruptEventWithSessionIdCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &sessionId);
@@ -180,6 +182,7 @@ private:
     void HandleFocusInfoChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRingerModeUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleMicStateUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleMicStateUpdatedEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithSessionId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);

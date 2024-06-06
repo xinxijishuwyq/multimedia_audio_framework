@@ -121,6 +121,10 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
     }
 
     gsp->RegisterPolicyCallbackClient(object);
+    if (audioStaticPolicyClientStubCB_->HasMicStateChangeCallback()) {
+        AUDIO_INFO_LOG("RecoverAudioPolicyCallbackClient has micStateChangeCallback");
+        gsp->SetClientCallbacksEnable(CALLBACK_MICMUTE_STATE_CHANGE, true);
+    }
 }
 
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid)
@@ -218,10 +222,21 @@ int32_t AudioPolicyManager::SetMicrophoneMuteAudioConfig(bool isMute)
     return gsp->SetMicrophoneMuteAudioConfig(isMute);
 }
 
+int32_t AudioPolicyManager::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetMicrophoneMutePersistent(isMute, type);
+}
+
 bool AudioPolicyManager::IsMicrophoneMute(API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        RegisterPolicyCallbackClientFunc(gsp);
+    }
+
     return gsp->IsMicrophoneMute(api_v);
 }
 
@@ -613,6 +628,17 @@ int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
     }
 
     audioPolicyClientStubCB_->AddMicStateChangeCallback(callback);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetMicStateChangeCallback(
+    const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    audioPolicyClientStubCB_->RemoveMicStateChangeCallback();
     return SUCCESS;
 }
 

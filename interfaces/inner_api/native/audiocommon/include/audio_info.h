@@ -65,6 +65,7 @@ constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 const std::string MICROPHONE_PERMISSION = "ohos.permission.MICROPHONE";
 const std::string MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
 const std::string MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
+const std::string MICRPHONE_CONTROL_PERMISSION = "ohos.permission.MICRPHONE_CONTROL";
 const std::string MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SETTINGS";
 const std::string ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const std::string USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
@@ -282,6 +283,7 @@ enum CallbackChange : int32_t {
     CALLBACK_FOCUS_INFO_CHANGE,
     CALLBACK_RENDERER_STATE_CHANGE,
     CALLBACK_CAPTURER_STATE_CHANGE,
+    CALLBACK_MICMUTE_STATE_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -1147,6 +1149,11 @@ enum WriteDataCallbackType {
     WRITE_DATA_WITH_METADATA_CALLBACK = 2
 };
 
+enum PolicyType {
+    EDM_POLICY_TYPE = 0,
+    PRIVACY_POLCIY_TYPE = 1,
+    TEMPORARY_POLCIY_TYPE = 2,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

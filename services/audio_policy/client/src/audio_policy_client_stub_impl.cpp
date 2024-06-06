@@ -227,6 +227,16 @@ int32_t AudioPolicyClientStubImpl::RemoveMicStateChangeCallback()
     return SUCCESS;
 }
 
+bool AudioPolicyClientStubImpl::HasMicStateChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(micStateChangeMutex_);
+    if (micStateChangeCallbackList_.empty()) {
+        AUDIO_INFO_LOG("MicStateChangeCallback list is empty.");
+        return false;
+    }
+    return true;
+}
+
 void AudioPolicyClientStubImpl::OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent)
 {
     std::lock_guard<std::mutex> lockCbMap(micStateChangeMutex_);
