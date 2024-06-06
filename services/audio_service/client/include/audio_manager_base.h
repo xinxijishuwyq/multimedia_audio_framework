@@ -91,7 +91,7 @@ public:
      * @param value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual int32_t GetAsrAecMode(AsrAecMode& asrAecMode) = 0;
+    virtual int32_t GetAsrAecMode(AsrAecMode &asrAecMode) = 0;
 
     /**
      * Set Asr Aec Mode.
@@ -109,7 +109,43 @@ public:
      * @param value associated with the key for the audio parameter to be set
      * @return none.
      */
-    virtual int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode) = 0;
+    virtual int32_t GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode) = 0;
+
+    /**
+     * Set Asr WhisperDetection Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode) = 0;
+
+    /**
+     * Get Asr WhisperDetection Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode) = 0;
+
+    /**
+     * Set Voice Control Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on) = 0;
+
+    /**
+     * Set Voice Mute Mode.
+     *
+     * @param key for the audio parameter to be set
+     * @param value associated with the key for the audio parameter to be set
+     * @return none.
+     */
+    virtual int32_t SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on) = 0;
 
     /**
      * Set Asr Aec Mode.
@@ -418,6 +454,10 @@ private:
     int HandleGetAsrAecMode(MessageParcel &data, MessageParcel &reply);
     int HandleSetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
     int HandleGetAsrNoiseSuppressionMode(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
+    int HandleGetAsrWhisperDetectionMode(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAsrVoiceControlMode(MessageParcel &data, MessageParcel &reply);
+    int HandleSetAsrVoiceMuteMode(MessageParcel &data, MessageParcel &reply);
     int HandleIsWhispering(MessageParcel &data, MessageParcel &reply);
     int HandleGetEffectOffloadEnabled(MessageParcel &data, MessageParcel &reply);
 
@@ -467,6 +507,10 @@ private:
         &AudioManagerStub::HandleGetAsrAecMode,
         &AudioManagerStub::HandleSetAsrNoiseSuppressionMode,
         &AudioManagerStub::HandleGetAsrNoiseSuppressionMode,
+        &AudioManagerStub::HandleSetAsrWhisperDetectionMode,
+        &AudioManagerStub::HandleGetAsrWhisperDetectionMode,
+        &AudioManagerStub::HandleSetAsrVoiceControlMode,
+        &AudioManagerStub::HandleSetAsrVoiceMuteMode,
         &AudioManagerStub::HandleIsWhispering,
         &AudioManagerStub::HandleGetEffectOffloadEnabled,
     };

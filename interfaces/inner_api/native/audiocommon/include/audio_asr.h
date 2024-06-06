@@ -75,4 +75,111 @@ enum class AsrAecMode {
      */
     STANDARD = 1,
 };
+
+/**
+ * ASR Whisper mode.
+ * @enum { number }
+ * @syscap SystemCapability.Multimedia.Audio.Capturer
+ * @systemapi
+ * @since 12
+ */
+enum class AsrWhisperDetectionMode {
+    /**
+     * Using Bypass WhisperDetection.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    BYPASS = 0,
+    /**
+     * Using standard WhisperDetection.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    STANDARD = 1,
+};
+
+/**
+ * Asr Voice Control Mode.
+ * @enum { number }
+ * @syscap SystemCapability.Multimedia.Audio.Capturer
+ * @systemapi
+ * @since 12
+ */
+enum class AsrVoiceControlMode {
+    /**
+     * AUDIO 2 VOICETX.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    AUDIO_2_VOICETX = 0,
+    /**
+     * AUDIO MIX 2 VOICETX .
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    AUDIO_MIX_2_VOICETX = 1,
+    /**
+     * AUDIO 2 VOICE TX EX.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    AUDIO_2_VOICE_TX_EX = 2,
+    /**
+     * AUDIO MIX 2 VOICE X EX.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    AUDIO_MIX_2_VOICE_TX_EX = 3,
+};
+
+/**
+ * Asr Voice Mute mode.
+ * @enum { number }
+ * @syscap SystemCapability.Multimedia.Audio.Capturer
+ * @systemapi
+ * @since 12
+ */
+enum class AsrVoiceMuteMode {
+    /**
+     * OUTPUT MUTE.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    OUTPUT_MUTE = 0,
+    /**
+     * INPUT MUTE.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    INPUT_MUTE = 1,
+    /**
+     * TTS MUTE.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    TTS_MUTE = 2,
+    /**
+     * CALL MUTE.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    CALL_MUTE = 3,
+    /**
+     * OUTPUT MUTE EX.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 12
+     */
+    OUTPUT_MUTE_EX = 4,
+};
 #endif
