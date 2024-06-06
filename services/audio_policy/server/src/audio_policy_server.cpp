@@ -970,6 +970,11 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredInputDev
     return deviceDescs;
 }
 
+int32_t AudioPolicyServer::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    return audioPolicyService_.SetClientCallbacksEnable(callbackchange, enable);
+}
+
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return audioPolicyService_.IsStreamActive(streamType);
@@ -1128,23 +1133,6 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
     return ret;
 }
 
-int32_t AudioPolicyServer::SetAudioPolicyCallbackEnabled(const AudioPolicyCallbackCategory callbackCategory,
-    const bool isEnabled)
-{
-    AUDIO_INFO_LOG("audio server died,  reset the callback callbackCategory is %{public}d, isEnabled is %{public}d", callbackCategory, isEnabled);
-    if (isEnabled && callbackCategory == MIC_STATE_CHANGE_CALLBACK) {
-        bool isMicrophoneMute = IsMicrophoneMute(API_9);
-        if (audioPolicyServerHandler_ != nullptr) {
-            MicStateChangeEvent micStateChangeEvent;
-            micStateChangeEvent.mute = isMicrophoneMute;
-            int32_t clientPid = IPCSkeleton::GetCallingPid();
-            audioPolicyServerHandler_->SendMicStateWithClientIdCallback(micStateChangeEvent, clientPid);
-            return SUCCESS;
-        }
-    }
-    return ERROR;
-}
-
 bool AudioPolicyServer::IsMicrophoneMute(API_VERSION api_v)
 {
     bool ret = VerifyPermission(MICROPHONE_PERMISSION);
@@ -1274,11 +1262,6 @@ void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
 void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
 {
     audioPolicyService_.CloseWakeUpAudioCapturer();
-}
-
-void AudioPolicyServer::OnPlaybackCapturerStop()
-{
-    audioPolicyService_.UnloadLoopback();
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)

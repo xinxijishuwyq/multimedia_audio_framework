@@ -206,24 +206,6 @@ int32_t AudioPolicyProxy::SetMicrophoneMutePersistent(const bool isMute, const P
     return reply.ReadInt32();
 }
 
-int32_t AudioPolicyProxy::SetAudioPolicyCallbackEnabled(const AudioPolicyCallbackCategory callbackCategory,
-    const bool isEnabled)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    bool ret = data.WriteInterfaceToken(GetDescriptor());
-    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
-    data.WriteInt32(static_cast<int32_t>(callbackCategory));
-    data.WriteBool(isEnabled);
-    int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIOPOLICY_CALLBACK_ENABLED), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set AudioPolicyCallback enabled failed, error: %d", error);
-
-    return reply.ReadInt32();
-}
-
 bool AudioPolicyProxy::IsMicrophoneMute(API_VERSION api_v)
 {
     MessageParcel data;
@@ -780,6 +762,24 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(callbackchange));
+    data.WriteBool(enable);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACKS_ENABLE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Set client callback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }

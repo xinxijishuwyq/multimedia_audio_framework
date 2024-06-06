@@ -88,9 +88,6 @@ public:
 
     virtual int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type) = 0;
 
-    virtual int32_t SetAudioPolicyCallbackEnabled(const AudioPolicyCallbackCategory callbackCategory,
-        const bool isEnabled) = 0;
-
     virtual bool IsMicrophoneMute(API_VERSION api_v = API_9) = 0;
 
     virtual AudioScene GetAudioScene() = 0;
@@ -169,6 +166,8 @@ public:
 
     virtual std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) = 0;
+
+    virtual int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) = 0;
 
     virtual int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;

@@ -384,11 +384,15 @@ private:
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
+    std::mutex focusInfoMutex_;
+    std::mutex rendererStateMutex_;
+    std::mutex capturerStateMutex_;
     sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 

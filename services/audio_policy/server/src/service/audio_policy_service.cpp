@@ -49,8 +49,6 @@ namespace AudioStandard {
 using namespace std;
 
 static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
-static const std::string RECEIVER_SINK_NAME = "Receiver";
-static const std::string SINK_NAME_FOR_CAPTURE_SUFFIX = "_CAP";
 static const std::string PIPE_PRIMARY_OUTPUT = "primary_output";
 static const std::string PIPE_FAST_OUTPUT = "fast_output";
 static const std::string PIPE_OFFLOAD_OUTPUT = "offload_output";
@@ -894,7 +892,6 @@ int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute)
     }
     return status;
 }
-
 
 bool AudioPolicyService::GetStreamMute(AudioStreamType streamType) const
 {
@@ -1938,6 +1935,16 @@ std::vector<sptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDe
     return deviceList;
 }
 
+int32_t AudioPolicyService::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    if (audioPolicyServerHandler_ != nullptr) {
+        return audioPolicyServerHandler_->SetClientCallbacksEnable(callbackchange, enable);
+    } else {
+        AUDIO_ERR_LOG("audioPolicyServerHandler_ is nullptr");
+        return AUDIO_ERR;
+    }
+}
+
 void AudioPolicyService::UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag)
 {
     Trace trace("AudioPolicyService::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
@@ -2482,8 +2489,8 @@ int32_t AudioPolicyService::SetMicrophoneMute(bool isMute)
     IPCSkeleton::SetCallingIdentity(identity);
 
     if (ret == SUCCESS) {
-        isMicrophoneMute_ = isMute;
-        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMute_ | isMicrophoneMutePersistent_);
+        isMicrophoneMuteTemporary_ = isMute;
+        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
     }
     return ret;
 }
@@ -2500,11 +2507,11 @@ int32_t AudioPolicyService::SetMicrophoneMutePersistent(const bool isMute)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    ret = gsp->SetMicrophoneMute(isMicrophoneMute_ | isMicrophoneMutePersistent_);
+    ret = gsp->SetMicrophoneMute(isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_);
     IPCSkeleton::SetCallingIdentity(identity);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("UpdateCapturerInfoMuteStatus when set mic mute state persistent.");
-        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMute_|isMicrophoneMutePersistent_);
+        streamCollector_.UpdateCapturerInfoMuteStatus(0, isMicrophoneMuteTemporary_|isMicrophoneMutePersistent_);
     }
     return ret;
 }
@@ -2533,7 +2540,7 @@ int32_t AudioPolicyService::InitPersistentMicrophoneMuteState(bool &isMute)
 bool AudioPolicyService::IsMicrophoneMute()
 {
     AUDIO_DEBUG_LOG("IsMicrophoneMute start");
-    return isMicrophoneMute_ | isMicrophoneMutePersistent_;
+    return isMicrophoneMuteTemporary_ | isMicrophoneMutePersistent_;
 }
 
 int32_t AudioPolicyService::SetSystemSoundUri(const std::string &key, const std::string &uri)
@@ -4113,7 +4120,7 @@ void AudioPolicyService::LoadSinksForCapturer()
     AUDIO_INFO_LOG("Start");
     AudioStreamInfo streamInfo;
     LoadInnerCapturerSink(INNER_CAPTURER_SINK_LEGACY, streamInfo);
-    LoadReceiverSink();
+
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "error for g_adProxy null");
 
@@ -4145,63 +4152,6 @@ void AudioPolicyService::LoadInnerCapturerSink(string moduleName, AudioStreamInf
 void AudioPolicyService::UnloadInnerCapturerSink(string moduleName)
 {
     ClosePortAndEraseIOHandle(moduleName);
-}
-
-void AudioPolicyService::LoadReceiverSink()
-{
-    AUDIO_INFO_LOG("Start");
-    AudioModuleInfo moduleInfo = {};
-    moduleInfo.name = RECEIVER_SINK_NAME;
-    moduleInfo.lib = "libmodule-receiver-sink.z.so";
-    OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-}
-
-void AudioPolicyService::LoadLoopback()
-{
-    AudioIOHandle ioHandle;
-    std::string moduleName;
-    AUDIO_INFO_LOG("Start");
-    std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
-    CHECK_AND_RETURN_LOG(IOHandles_.count(INNER_CAPTURER_SINK_LEGACY) == 1u,
-        "failed for InnerCapturer not loaded");
-
-    LoopbackModuleInfo moduleInfo = {};
-    moduleInfo.lib = "libmodule-loopback.z.so";
-    moduleInfo.sink = INNER_CAPTURER_SINK_LEGACY;
-
-    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
-        ++sceneType) {
-        moduleInfo.source = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX;
-        ioHandle = audioPolicyManager_.LoadLoopback(moduleInfo);
-        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "failed %{public}d", ioHandle);
-        moduleName = moduleInfo.source + moduleInfo.sink;
-        IOHandles_[moduleName] = ioHandle;
-    }
-
-    if (IOHandles_.count(RECEIVER_SINK_NAME) != 1u) {
-        AUDIO_WARNING_LOG("receiver sink not exist");
-    } else {
-        moduleInfo.source = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX;
-        ioHandle = audioPolicyManager_.LoadLoopback(moduleInfo);
-        CHECK_AND_RETURN_LOG(ioHandle != OPEN_PORT_FAILURE, "failed %{public}d", ioHandle);
-        moduleName = moduleInfo.source + moduleInfo.sink;
-        IOHandles_[moduleName] = ioHandle;
-    }
-}
-
-void AudioPolicyService::UnloadLoopback()
-{
-    std::string module;
-    AUDIO_INFO_LOG("UnloadLoopback start");
-
-    for (auto sceneType = AUDIO_SUPPORTED_SCENE_TYPES.begin(); sceneType != AUDIO_SUPPORTED_SCENE_TYPES.end();
-        ++sceneType) {
-        module = sceneType->second + SINK_NAME_FOR_CAPTURE_SUFFIX + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_LEGACY;
-        ClosePortAndEraseIOHandle(module);
-    }
-
-    module = RECEIVER_SINK_NAME + MONITOR_SOURCE_SUFFIX + INNER_CAPTURER_SINK_LEGACY;
-    ClosePortAndEraseIOHandle(module);
 }
 
 void AudioPolicyService::LoadModernInnerCapSink()
@@ -5831,9 +5781,6 @@ bool AudioPolicyService::CheckStreamMultichannelMode(int64_t activateSessionId, 
     bool ret = gsp->GetEffectOffloadEnabled();
     IPCSkeleton::SetCallingIdentity(identity);
 
-    // Temporarily return the effect result to true
-    ret = true;
-
     return ret;
 }
 
@@ -5917,6 +5864,12 @@ int32_t AudioPolicyService::DynamicUnloadModule(const AudioPipeType pipeType)
 
 int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType pipeType)
 {
+    AudioPipeType oldPipeType;
+    streamCollector_.GetPipeType(sessionId, oldPipeType);
+    if (oldPipeType == pipeType) {
+        AUDIO_ERR_LOG("the same type [%{public}d],no need to move", pipeType);
+        return ERROR;
+    }
     Trace trace("AudioPolicyService::MoveToNewPipeInner");
     AUDIO_INFO_LOG("start move stream into new pipe %{public}d", pipeType);
     int32_t ret = ERROR;
@@ -5949,7 +5902,6 @@ int32_t AudioPolicyService::MoveToNewPipeInner(uint32_t sessionId, AudioPipeType
             break;
         }
         case PIPE_TYPE_NORMAL_OUT: {
-            UnloadOffloadModule();
             portName = GetSinkPortName(deviceType, pipeType);
             ret = MoveToOutputDevice(sessionId, portName);
             break;
@@ -6097,9 +6049,6 @@ void AudioPolicyService::RegisterDataObserver()
 
 int32_t AudioPolicyService::SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config)
 {
-    if (!config.silentCapture) {
-        LoadLoopback();
-    }
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED,
         "error for g_adProxy null");
@@ -6606,9 +6555,9 @@ void AudioPolicyService::UpdateAllActiveSessions(std::vector<Bluetooth::A2dpStre
                 activeSession.isSpatialAudio =
                     activeSession.isSpatialAudio | newSessionHasBeenSpatialized[changeInfo->sessionId];
                 newSessionHasBeenSpatialized[changeInfo->sessionId] = activeSession.isSpatialAudio;
-                AudioStreamType streamType = streamCollector_.GetStreamType(changeInfo->rendererInfo.contentType,
-                    changeInfo->rendererInfo.streamUsage);
-                CheckStreamMode(activeSession.sessionId, streamType);
+
+                // try to move into multchannel
+                MoveToNewPipeInner(activeSession.sessionId, PIPE_TYPE_MULTICHANNEL);
                 break;
             }
         }
@@ -7053,7 +7002,7 @@ void AudioPolicyService::NotifyAccountsChanged(const int &id)
 
 void AudioPolicyService::GetSafeVolumeDump(std::string &dumpString)
 {
-   audioPolicyManager_.SafeVolumeDump(dumpString);
+    audioPolicyManager_.SafeVolumeDump(dumpString);
 }
 
 void AudioPolicyService::DevicesInfoDump(std::string &dumpString)

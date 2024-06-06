@@ -1156,8 +1156,8 @@ napi_value NapiAudioVolumeGroupManager::UnregisterCallback(napi_env env, napi_va
     if (!cbName.compare(RINGERMODE_CALLBACK_NAME)) {
         if (napiAudioVolumeGroupManager->ringerModecallbackNapi_ == nullptr) {
             napiAudioVolumeGroupManager->ringerModecallbackNapi_ = std::make_shared<NapiAudioRingerModeCallback>(env);
-            std::shared_ptr<NapiAudioRingerModeCallback> cb =
-                std::static_pointer_cast<NapiAudioRingerModeCallback>(napiAudioVolumeGroupManager->ringerModecallbackNapi_);
+            std::shared_ptr<NapiAudioRingerModeCallback> cb = std::static_pointer_cast<NapiAudioRingerModeCallback>(
+                napiAudioVolumeGroupManager->ringerModecallbackNapi_);
             bool isSameCallback = cb->IsSameCallback(args[PARAM1]);
             CHECK_AND_RETURN_RET_LOG(isSameCallback == true, undefinedResult,
                 "The callback need to be unregistered is not the same as the registered callback");

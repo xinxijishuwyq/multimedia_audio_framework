@@ -51,6 +51,7 @@ void NapiAudioManagerMicStateChangeCallback::RemoveCallbackReference(const napi_
     if (!IsSameCallback(args)) {
         return;
     }
+    std::lock_guard<std::mutex> lock(mutex_);
     napi_delete_reference(env_, micStateChangeCallback_->cb_);
     micStateChangeCallback_ = nullptr;
     AUDIO_INFO_LOG("Remove callback reference successful.");

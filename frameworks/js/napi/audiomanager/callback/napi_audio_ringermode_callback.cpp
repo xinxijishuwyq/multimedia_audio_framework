@@ -56,6 +56,7 @@ void NapiAudioRingerModeCallback::RemoveCallbackReference(const napi_value args)
     if (!IsSameCallback(args)) {
         return;
     }
+    std::lock_guard<std::mutex> lock(mutex_);
     napi_delete_reference(env_, ringerModeCallback_->cb_);
     ringerModeCallback_ = nullptr;
     AUDIO_INFO_LOG("Remove callback reference successful.");

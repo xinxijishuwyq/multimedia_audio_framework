@@ -163,9 +163,6 @@ public:
 
     int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type) override;
 
-    int32_t SetAudioPolicyCallbackEnabled(const AudioPolicyCallbackCategory callbackCategory,
-        const bool isEnabled) override;
-
     bool IsMicrophoneMute(API_VERSION api_v) override;
 
     AudioScene GetAudioScene() override;
@@ -196,8 +193,6 @@ public:
     void ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneId = 0);
 
     void ProcessSessionAdded(SessionEvent sessionEvent);
-
-    void OnPlaybackCapturerStop() override;
 
     void ProcessorCloseWakeupSource(const uint64_t sessionID);
 
@@ -250,6 +245,8 @@ public:
 
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo) override;
+
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable) override;
 
     int32_t GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
         const int32_t zoneId = 0) override;

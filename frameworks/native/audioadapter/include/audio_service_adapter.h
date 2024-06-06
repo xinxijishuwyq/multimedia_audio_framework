@@ -38,8 +38,6 @@ public:
 
     virtual void OnSessionRemoved(const uint64_t sessionID) = 0;
 
-    virtual void OnPlaybackCapturerStop() = 0;
-
     virtual ~AudioServiceAdapterCallback() {}
 };
 

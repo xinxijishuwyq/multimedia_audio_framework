@@ -354,6 +354,8 @@ public:
     std::vector<sptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(AudioCapturerInfo &captureInfo,
         std::string networkId = LOCAL_NETWORK_ID);
 
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+
     void GetEffectManagerInfo();
 
     float GetMinStreamVolume(void);
@@ -379,8 +381,6 @@ public:
     int32_t SetPlaybackCapturerFilterInfos(const AudioPlaybackCaptureConfig &config);
 
     int32_t SetCaptureSilentState(bool state);
-
-    void UnloadLoopback();
 
     int32_t GetHardwareOutputSamplingRate(const sptr<AudioDeviceDescriptor> &desc);
 
@@ -717,15 +717,9 @@ private:
 
     void UpdateEffectDefaultSink(DeviceType deviceType);
 
-    void LoadEffectSinks();
-
     void LoadSinksForCapturer();
 
     void LoadInnerCapturerSink(string moduleName, AudioStreamInfo streamInfo);
-
-    void LoadReceiverSink();
-
-    void LoadLoopback();
 
     DeviceType FindConnectedHeadset();
 
@@ -982,7 +976,7 @@ private:
     GlobalConfigs globalConfigs_;
     AudioEffectManager& audioEffectManager_;
 
-    bool isMicrophoneMute_ = false;
+    bool isMicrophoneMuteTemporary_ = false;
 
     bool isMicrophoneMutePersistent_ = false;
 

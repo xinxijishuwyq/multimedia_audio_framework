@@ -61,33 +61,3 @@ ohos_shared_library("module-inner-capturer-sink") {
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
-
-ohos_shared_library("module-receiver-sink") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-  }
-  sources = [ "module_receiver_sink.c" ]
-
-  configs = [ ":capturer_config" ]
-
-  cflags = [ "-DPA_MODULE_NAME=libmodule_receiver_sink_z_so" ]
-
-  ldflags = [
-    "-Wl",
-    "--no-undefined",
-  ]
-
-  external_deps = [
-    "bounds_checking_function:libsec_shared",
-    "hilog:libhilog",
-    "pulseaudio:pulse",
-    "pulseaudio:pulsecommon",
-    "pulseaudio:pulsecore",
-  ]
-
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
-}

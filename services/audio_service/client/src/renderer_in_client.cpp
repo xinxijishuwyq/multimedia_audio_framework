@@ -1690,6 +1690,9 @@ void RendererInClientInner::VolumeHandle(BufferDesc &desc)
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
+    if (silentModeAndMixWithOthers_) {
+        return;
+    }
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());

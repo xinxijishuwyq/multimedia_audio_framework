@@ -56,6 +56,7 @@ public:
     static int32_t GetConnectedA2dpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
     static void UpdateA2dpDeviceConfiguration(const BluetoothRemoteDevice &device,
         const AudioStandard::AudioStreamInfo &streamInfo);
+    static std::vector<BluetoothRemoteDevice> GetAllA2dpBluetoothDevice();
     static void ClearAllA2dpBluetoothDevice();
 
 private:
@@ -91,6 +92,7 @@ public:
         const AudioStandard::AudioStreamInfo &streamInfo);
     static void OnScoStateChanged(const BluetoothRemoteDevice &device, bool isConnected, int reason);
     static int32_t GetConnectedHfpBluetoothDevice(const std::string& macAddress, BluetoothRemoteDevice &device);
+    static std::vector<BluetoothRemoteDevice> GetAllHfpBluetoothDevice();
     static void ClearAllHfpBluetoothDevice();
 
 private:
