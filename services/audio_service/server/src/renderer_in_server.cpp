@@ -393,6 +393,9 @@ void RendererInServer::CheckFadingOutDone(int32_t fadeoutFlag_, BufferDesc& buff
 
 void RendererInServer::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
+    if (silentModeAndMixWithOthers_) {
+        return;
+    }
     if (buffer[0] == 0) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -930,6 +933,12 @@ bool RendererInServer::IsHighResolution() const noexcept
     }
     Trace trace("RendererInServer::IsHighResolution false");
     return false;
+}
+
+int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
+{
+    silentModeAndMixWithOthers_ = on;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

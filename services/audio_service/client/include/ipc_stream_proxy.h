@@ -84,6 +84,7 @@ public:
 
     int32_t GetStreamManagerType() override;
 
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
 private:
     static inline BrokerDelegator<IpcStreamProxy> delegator_;
 };
