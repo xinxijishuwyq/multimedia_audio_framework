@@ -299,5 +299,13 @@ int32_t IpcStreamStub::HandleGetStreamManagerType(MessageParcel &data, MessagePa
     reply.WriteInt32(GetStreamManagerType());
     return AUDIO_OK;
 }
+
+int32_t IpcStreamStub::HandleSetSilentModeAndMixWithOthers(MessageParcel &data, MessageParcel &reply)
+{
+    bool on = data.ReadBool();
+    reply.WriteInt32(SetSilentModeAndMixWithOthers(on));
+
+    return AUDIO_OK;
+}
 } // namespace AudioStandard
 } // namespace OHOS

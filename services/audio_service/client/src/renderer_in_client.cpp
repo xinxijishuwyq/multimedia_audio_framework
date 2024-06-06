@@ -507,6 +507,7 @@ int32_t RendererInClientInner::InitIpcStream()
 {
     Trace trace("RendererInClientInner::InitIpcStream");
     AudioProcessConfig config = ConstructConfig();
+    bool resetSilentMode = (gServerProxy_ == nullptr) ? true : false;
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config); // in plan next: add ret
@@ -519,6 +520,9 @@ int32_t RendererInClientInner::InitIpcStream()
     int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterStreamListener failed:%{public}d", ret);
 
+    if (resetSilentMode && gServerProxy_ != nullptr && silentModeAndMixWithOthers_) {
+        ipcStream_->SetSilentModeAndMixWithOthers(silentModeAndMixWithOthers_);
+    }
     ret = InitSharedBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer failed:%{public}d", ret);
 
@@ -2150,6 +2154,7 @@ void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
         clientVolume_ = cacheVolume_;
     }
     silentModeAndMixWithOthers_ = on;
+    ipcStream_->SetSilentModeAndMixWithOthers(on);
     return;
 }
 

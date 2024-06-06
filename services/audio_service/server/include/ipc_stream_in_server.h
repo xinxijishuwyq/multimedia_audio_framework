@@ -106,6 +106,8 @@ public:
 
     int32_t GetStreamManagerType() override;
 
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
 
