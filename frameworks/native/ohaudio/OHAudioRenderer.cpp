@@ -682,8 +682,8 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
             callbacks_.OH_AudioRenderer_OnWriteData != nullptr) {
             callbacks_.OH_AudioRenderer_OnWriteData(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
-        } else {
-            CHECK_AND_RETURN_LOG(onWriteDataCallback_ != nullptr, "pointer to the function is nullptr");
+        }
+        if (audioRenderer->GetRendererCallbackType() == ON_WRITE_DATA_CALLBACK && onWriteDataCallback_ != nullptr) {
             OH_AudioData_Callback_Result result = onWriteDataCallback_(ohAudioRenderer_, userData_,
                 (void*)bufDesc.buffer, bufDesc.bufLength);
             if (result == AUDIO_DATA_CALLBACK_RESULT_INVALID) {
