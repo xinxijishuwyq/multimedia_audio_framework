@@ -115,8 +115,8 @@ static void OnServiceStatusReceived(struct ServiceStatusListener *listener, stru
 {
     CHECK_AND_RETURN_LOG(serviceStatus != nullptr, "Invalid ServiceStatus");
     std::string info = serviceStatus->info;
-    AUDIO_INFO_LOG("OnServiceStatusReceived: [service name:%{public}s] [status:%{public}d] [info:%{public}s]",
-        serviceStatus->serviceName, serviceStatus->status, info.c_str());
+    AUDIO_INFO_LOG("OnServiceStatusReceived: [service name:%{public}s] [status:%{public}d]",
+        serviceStatus->serviceName, serviceStatus->status);
 
     DeviceStatusListener *devListener = reinterpret_cast<DeviceStatusListener *>(listener->priv);
     CHECK_AND_RETURN_LOG(devListener != nullptr, "Invalid deviceStatusListener");

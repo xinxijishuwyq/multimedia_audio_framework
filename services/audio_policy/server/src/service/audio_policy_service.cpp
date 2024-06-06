@@ -988,7 +988,7 @@ void AudioPolicyService::NotifyRemoteRenderState(std::string networkId, std::str
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     AUDIO_INFO_LOG("device<%{public}s> condition:%{public}s value:%{public}s",
-        networkId.c_str(), condition.c_str(), value.c_str());
+        GetEncryptStr(networkId).c_str(), condition.c_str(), value.c_str());
 
     vector<SinkInput> sinkInputs = audioPolicyManager_.GetAllSinkInputs();
     vector<SinkInput> targetSinkInputs = {};
@@ -1170,7 +1170,7 @@ int32_t AudioPolicyService::SelectFastOutputDevice(sptr<AudioRendererFilter> aud
     sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     AUDIO_INFO_LOG("Start for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
-        deviceDescriptor->networkId_.c_str());
+        GetEncryptStr(deviceDescriptor->networkId_).c_str());
     // note: check if stream is already running
     // if is running, call moveProcessToEndpoint.
 
@@ -1239,7 +1239,7 @@ int32_t AudioPolicyService::RememberRoutingInfo(sptr<AudioRendererFilter> audioR
     sptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     AUDIO_INFO_LOG("Start for uid[%{public}d] device[%{public}s]", audioRendererFilter->uid,
-        deviceDescriptor->networkId_.c_str());
+        GetEncryptStr(deviceDescriptor->networkId_).c_str());
     if (deviceDescriptor->networkId_ == LOCAL_NETWORK_ID) {
         std::lock_guard<std::mutex> lock(routerMapMutex_);
         routerMap_[audioRendererFilter->uid] = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
@@ -1356,7 +1356,8 @@ int32_t AudioPolicyService::MoveToRemoteOutputDevice(std::vector<SinkInput> sink
     }
 
     if (deviceType != DeviceType::DEVICE_TYPE_DEFAULT) {
-        AUDIO_WARNING_LOG("Not defult type[%{public}d] on device:[%{public}s]", deviceType, networkId.c_str());
+        AUDIO_WARNING_LOG("Not defult type[%{public}d] on device:[%{public}s]",
+            deviceType, GetEncryptStr(networkId).c_str());
     }
     isCurrentRemoteRenderer = true;
     return SUCCESS;
@@ -1372,7 +1373,7 @@ int32_t AudioPolicyService::SelectFastInputDevice(sptr<AudioCapturerFilter> audi
     std::lock_guard<std::mutex> lock(routerMapMutex_);
     fastRouterMap_[audioCapturerFilter->uid] = std::make_pair(deviceDescriptor->networkId_, INPUT_DEVICE);
     AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]", audioCapturerFilter->uid,
-        deviceDescriptor->networkId_.c_str());
+        GetEncryptStr(deviceDescriptor->networkId_).c_str());
     return SUCCESS;
 }
 
@@ -1508,7 +1509,8 @@ int32_t AudioPolicyService::MoveToRemoteInputDevice(std::vector<SourceOutput> so
     }
 
     if (deviceType != DeviceType::DEVICE_TYPE_DEFAULT) {
-        AUDIO_DEBUG_LOG("Not defult type[%{public}d] on device:[%{public}s]", deviceType, networkId.c_str());
+        AUDIO_DEBUG_LOG("Not defult type[%{public}d] on device:[%{public}s]",
+            deviceType, GetEncryptStr(networkId).c_str());
     }
     return SUCCESS;
 }
@@ -2152,7 +2154,8 @@ bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
     const AudioStreamDeviceChangeReason reason)
 {
-    AUDIO_INFO_LOG("Start for %{public}zu stream", rendererChangeInfos.size());
+    AUDIO_INFO_LOG("Start for %{public}zu stream, connected %{public}s",
+        rendererChangeInfos.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
@@ -2362,7 +2365,8 @@ int32_t AudioPolicyService::HandleScoInputDeviceFetched(unique_ptr<AudioDeviceDe
 void AudioPolicyService::FetchInputDevice(vector<unique_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
     const AudioStreamDeviceChangeReason reason)
 {
-    AUDIO_INFO_LOG("size %{public}zu", capturerChangeInfos.size());
+    AUDIO_INFO_LOG("Start for %{public}zu stream, connected %{public}s",
+        capturerChangeInfos.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     int32_t runningStreamCount = 0;
@@ -3435,7 +3439,9 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
     }
 #endif
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d]", devType, isConnected);
+    AUDIO_INFO_LOG("Device connection state updated | TYPE[%{public}d] STATUS[%{public}d], mac[%{public}s]",
+        devType, isConnected, GetEncryptStr(macAddress).c_str());
+
     AudioStreamDeviceChangeReason reason;
     // fill device change action for callback
     std::vector<sptr<AudioDeviceDescriptor>> descForCb = {};
@@ -3886,7 +3892,7 @@ void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSt
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
 
     AUDIO_INFO_LOG("Device connection updated | HDI_PIN[%{public}d] CONNECT_STATUS[%{public}d] NETWORKID[%{public}s]",
-        statusInfo.hdiPin, statusInfo.isConnected, statusInfo.networkId);
+        statusInfo.hdiPin, statusInfo.isConnected, GetEncryptStr(statusInfo.networkId).c_str());
     if (isStop) {
         HandleOfflineDistributedDevice();
         return;
@@ -4739,7 +4745,7 @@ void AudioPolicyService::WriteOutDeviceChangedSysEvents(const sptr<AudioDeviceDe
     bean->Add("STREAMID", sinkInput.streamId);
     bean->Add("STREAMTYPE", sinkInput.streamType);
     bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
-    bean->Add("NETWORKID", deviceDescriptor->networkId_);
+    bean->Add("NETWORKID", GetEncryptStr(deviceDescriptor->networkId_));
     bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
@@ -4756,7 +4762,7 @@ void AudioPolicyService::WriteInDeviceChangedSysEvents(const sptr<AudioDeviceDes
     bean->Add("STREAMID", sourceOutput.streamId);
     bean->Add("STREAMTYPE", sourceOutput.streamType);
     bean->Add("DEVICETYPE", deviceDescriptor->deviceType_);
-    bean->Add("NETWORKID", deviceDescriptor->networkId_);
+    bean->Add("NETWORKID", GetEncryptStr(deviceDescriptor->networkId_));
     bean->Add("ADDRESS", GetEncryptAddr(deviceDescriptor->macAddress_));
     bean->Add("DEVICE_NAME", deviceDescriptor->deviceName_);
     bean->Add("BT_TYPE", deviceDescriptor->deviceCategory_);
@@ -5507,7 +5513,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     if (fastRouterMap_.count(config.appInfo.appUid) &&
         fastRouterMap_[config.appInfo.appUid].second == deviceInfo.deviceRole) {
         deviceInfo.networkId = fastRouterMap_[config.appInfo.appUid].first;
-        AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", deviceInfo.networkId.c_str());
+        AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", GetEncryptStr(deviceInfo.networkId).c_str());
     }
     deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
     return SUCCESS;
@@ -5558,7 +5564,7 @@ int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, 
     if (fastRouterMap_.count(config.appInfo.appUid) &&
         fastRouterMap_[config.appInfo.appUid].second == deviceInfo.deviceRole) {
         deviceInfo.networkId = fastRouterMap_[config.appInfo.appUid].first;
-        AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", deviceInfo.networkId.c_str());
+        AUDIO_INFO_LOG("use networkid in fastRouterMap_ :%{public}s ", GetEncryptStr(deviceInfo.networkId).c_str());
     }
     deviceInfo.a2dpOffloadFlag = a2dpOffloadFlag_;
     deviceInfo.isLowLatencyDevice = true;

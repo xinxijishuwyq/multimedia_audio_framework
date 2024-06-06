@@ -175,7 +175,7 @@ RemoteAudioRendererSink *RemoteAudioRendererSink::GetInstance(const std::string 
         return allsinks[deviceNetworkId];
     }
     RemoteAudioRendererSinkInner *audioRenderer = new(std::nothrow) RemoteAudioRendererSinkInner(deviceNetworkId);
-    AUDIO_INFO_LOG("New daudio remote render device networkId: [%{public}s].", deviceNetworkId.c_str());
+    AUDIO_INFO_LOG("New daudio remote render device [%{public}s].", GetEncryptStr(deviceNetworkId).c_str());
     allsinks[deviceNetworkId] = audioRenderer;
     return audioRenderer;
 }

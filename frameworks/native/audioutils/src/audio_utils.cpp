@@ -1122,6 +1122,35 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
     const std::string deviceTypeName = device;
     return deviceTypeName;
 }
+
+std::string GetEncryptStr(const std::string &src)
+{
+    if (src.empty()) {
+        return std::string("");
+    }
+
+    int32_t strLen = src.length();
+    std::string dst;
+
+    size_t FIRST_CHAR = 1;
+    size_t MIN_LEN = 8;
+    size_t HEAD_STR_LEN = 2;
+    size_t TAIL_STR_LEN = 5;
+    if (strLen < MIN_LEN) {
+        // src: abcdef
+        // dst: *bcdef
+        dst = '*' + src.substr(FIRST_CHAR, strLen - FIRST_CHAR);
+    } else {
+        // src: 00:00:00:00:00:00
+        // dst: 00**********00:00
+        dst = src.substr(0, HEAD_STR_LEN);
+        std::string tempStr(strLen - HEAD_STR_LEN - TAIL_STR_LEN, '*');
+        dst += tempStr;
+        dst += src.substr(strLen - TAIL_STR_LEN, TAIL_STR_LEN);
+    }
+
+    return dst;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

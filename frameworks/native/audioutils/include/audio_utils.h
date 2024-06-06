@@ -114,6 +114,8 @@ void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b);
 void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b);
 void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
+std::string GetEncryptStr(const std::string &str);
+
 enum ConvertHdiFormat {
     SAMPLE_U8_C = 0,
     SAMPLE_S16_C = 1,
