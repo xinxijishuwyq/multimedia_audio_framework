@@ -6693,7 +6693,8 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
             AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
             return;
         }
-    } else if (command == ENABLE_UPDATE && desc.isEnable_ == false) {
+    } else if (command == ENABLE_UPDATE && !desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        currentActiveDevice_.macAddress_ == desc.macAddress_) {
         UnloadA2dpModule();
     }
     sptr<AudioDeviceDescriptor> audioDescriptor = new(std::nothrow) AudioDeviceDescriptor(desc);
