@@ -99,6 +99,8 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("isMicrophoneMute", IsMicrophoneMute),
         DECLARE_NAPI_FUNCTION("isMicrophoneMuteSync", IsMicrophoneMuteSync),
         DECLARE_NAPI_FUNCTION("setMicMute", SetMicMute),
+        DECLARE_NAPI_FUNCTION("setMicMutePersistent", SetMicMutePersistent),
+        DECLARE_NAPI_FUNCTION("getPersistentMicMute", GetPersistentMicMuteState),
         DECLARE_NAPI_FUNCTION("isVolumeUnadjustable", IsVolumeUnadjustable),
         DECLARE_NAPI_FUNCTION("adjustVolumeByStep", AdjustVolumeByStep),
         DECLARE_NAPI_FUNCTION("adjustSystemVolumeByStep", AdjustSystemVolumeByStep),
@@ -866,6 +868,21 @@ napi_value NapiAudioVolumeGroupManager::SetMicMutePersistent(napi_env env, napi_
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetMicMutePersistent", executor, complete);
+}
+
+napi_value NapiAudioVolumeGroupManager::GetPersistentMicMuteState(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
+        "audioGroupMngr_ is nullptr");
+    bool isPersistentMicMute = napiAudioVolumeGroupManager->audioGroupMngr_->GetPersistentMicMuteState();
+    NapiParamUtils::SetValueBoolean(env, isPersistentMicMute, result);
+
+    return result;
 }
 
 napi_value NapiAudioVolumeGroupManager::IsVolumeUnadjustable(napi_env env, napi_callback_info info)

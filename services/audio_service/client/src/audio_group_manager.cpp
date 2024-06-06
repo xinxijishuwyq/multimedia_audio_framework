@@ -332,8 +332,15 @@ int32_t AudioGroupManager::SetMicrophoneMutePersistent(const bool isMute, const 
 {
     AUDIO_INFO_LOG("Set persistent mic mute state, isMute is %{public}d", isMute);
     CHECK_AND_RETURN_RET_LOG(netWorkId_ == LOCAL_NETWORK_ID, ERROR,
-        "AudioGroupManager::SetRingerMode is not supported for local device.");
+        "Failed due to not supported for local device.");
     return AudioPolicyManager::GetInstance().SetMicrophoneMutePersistent(isMute, type);
+}
+
+bool AudioGroupManager::GetPersistentMicMuteState()
+{
+    CHECK_AND_RETURN_RET_LOG(netWorkId_ == LOCAL_NETWORK_ID, ERROR,
+        "AudioGroupManager::GetPersistentMicMuteState is not supported for local device.");
+    return AudioPolicyManager::GetInstance().GetPersistentMicMuteState();
 }
 
 bool AudioGroupManager::IsMicrophoneMute(API_VERSION api_v)

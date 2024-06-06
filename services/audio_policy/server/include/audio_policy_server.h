@@ -163,6 +163,8 @@ public:
 
     int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type) override;
 
+    bool GetPersistentMicMuteState() override;
+
     bool IsMicrophoneMute(API_VERSION api_v) override;
 
     AudioScene GetAudioScene() override;
@@ -410,6 +412,7 @@ public:
     void OffloadStatusDump(std::string &dumpString);
     void XmlParsedDataMapDump(std::string &dumpString);
     void EffectManagerInfoDump(std::string &dumpString);
+    void MicrophoneMuteInfoDump(std::string &dumpString);
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

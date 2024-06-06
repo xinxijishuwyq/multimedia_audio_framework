@@ -229,6 +229,13 @@ int32_t AudioPolicyManager::SetMicrophoneMutePersistent(const bool isMute, const
     return gsp->SetMicrophoneMutePersistent(isMute, type);
 }
 
+bool AudioPolicyManager::GetPersistentMicMuteState()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->GetPersistentMicMuteState();
+}
+
 bool AudioPolicyManager::IsMicrophoneMute(API_VERSION api_v)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
