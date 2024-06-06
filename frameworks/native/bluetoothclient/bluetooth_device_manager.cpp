@@ -25,7 +25,6 @@ using namespace AudioStandard;
 const int DEFAULT_COD = -1;
 const int DEFAULT_MAJOR_CLASS = -1;
 const int DEFAULT_MAJOR_MINOR_CLASS = -1;
-const int32_t WEAR_ENABLED = 1;
 const int A2DP_DEFAULT_SELECTION = -1;
 const int HFP_DEFAULT_SELECTION = -1;
 const int USER_SELECTION = 1;
@@ -60,7 +59,7 @@ std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::privacyDevices_;
 std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::commonDevices_;
 std::vector<BluetoothRemoteDevice> HfpBluetoothDeviceManager::negativeDevices_;
 
-static std::string GetEncryptAddr(const std::string &addr)
+std::string GetEncryptAddr(const std::string &addr)
 {
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
         return std::string("");
@@ -107,6 +106,17 @@ void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string
     } else {
         AUDIO_ERR_LOG("failed for the devType is not Bluetooth type.");
     }
+}
+
+bool IsBTWearDetectionEnable(const BluetoothRemoteDevice &device)
+{
+    int32_t wearEnabledAbility = 0;
+    bool isWearSupported = false;
+    BluetoothAudioManager::GetInstance().GetWearDetectionState(device.GetDeviceAddr(), wearEnabledAbility);
+    BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
+    AUDIO_INFO_LOG("wear detection on-off state: %{public}d, wear detection support state: %{public}d",
+        wearEnabledAbility, isWearSupported);
+    return (wearEnabledAbility == WEAR_ENABLED && isWearSupported);
 }
 
 void MediaBluetoothDeviceManager::SetMediaStack(const BluetoothRemoteDevice &device, int action)
@@ -160,17 +170,12 @@ void MediaBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevic
     if (pos != bluetoothDeviceCategoryMap_.end()) {
         bluetoothCategory = pos->second;
     }
-    int32_t wearEnabledAbility = 0;
-    bool isWearSupported = false;
+
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
         case BT_HEADPHONE:
-            BluetoothAudioManager::GetInstance().GetWearDetectionState(device.GetDeviceAddr(), wearEnabledAbility);
-            BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
-            AUDIO_INFO_LOG("wear detection on-off state: %{public}d, wear detection support state: %{public}d",
-                wearEnabledAbility, isWearSupported);
-            if (wearEnabledAbility == WEAR_ENABLED && isWearSupported) {
+            if (IsBTWearDetectionEnable(device)) {
                 AddDeviceInConfigVector(device, negativeDevices_);
                 desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
             } else {
@@ -503,17 +508,12 @@ void HfpBluetoothDeviceManager::HandleConnectDevice(const BluetoothRemoteDevice 
     if (pos != bluetoothDeviceCategoryMap_.end()) {
         bluetoothCategory = pos->second;
     }
-    int32_t wearEnabledAbility = 0;
-    bool isWearSupported = false;
+
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = bluetoothCategory;
     switch (bluetoothCategory) {
         case BT_HEADPHONE:
-            BluetoothAudioManager::GetInstance().GetWearDetectionState(device.GetDeviceAddr(), wearEnabledAbility);
-            BluetoothAudioManager::GetInstance().IsWearDetectionSupported(device.GetDeviceAddr(), isWearSupported);
-            AUDIO_INFO_LOG("wear detection on-off state: %{public}d, wear detection support state: %{public}d.",
-                wearEnabledAbility, isWearSupported);
-            if (wearEnabledAbility == WEAR_ENABLED && isWearSupported) {
+            if (IsBTWearDetectionEnable(device)) {
                 AddDeviceInConfigVector(device, negativeDevices_);
                 desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
             } else {

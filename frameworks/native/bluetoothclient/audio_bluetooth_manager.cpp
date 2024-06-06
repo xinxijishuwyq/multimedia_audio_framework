@@ -19,6 +19,7 @@
 #include "bluetooth_def.h"
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "bluetooth_audio_manager.h"
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"
 
@@ -217,9 +218,18 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
     a2dpInstance_->GetDevicesByStates(states, devices);
+
     for (auto &device : devices) {
         a2dpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
             static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+
+        int32_t wearState = 0; // 0 unwear state
+        if (IsBTWearDetectionEnable(device)) {
+            wearState = BluetoothAudioManager::GetInstance().IsDeviceWearing(device);
+            if (wearState == 1) MediaBluetoothDeviceManager::SetMediaStack(device, WEAR_ACTION); // 1 wear state
+        }
+        AUDIO_INFO_LOG("reconnect a2dp device:%{public}s, wear state:%{public}d",
+            GetEncryptAddr(device.GetDeviceAddr()).c_str(), wearState);
     }
 }
 
@@ -289,6 +299,14 @@ void AudioHfpManager::CheckHfpDeviceReconnect()
     for (auto &device : devices) {
         hfpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
             static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+
+        int32_t wearState = 0; // 0 unwear state
+        if (IsBTWearDetectionEnable(device)) {
+            wearState = BluetoothAudioManager::GetInstance().IsDeviceWearing(device);
+            if (wearState == 1) HfpBluetoothDeviceManager::SetHfpStack(device, WEAR_ACTION); // 1 wear state
+        }
+        AUDIO_INFO_LOG("reconnect hfp device:%{public}s, wear state:%{public}d",
+            GetEncryptAddr(device.GetDeviceAddr()).c_str(), wearState);
     }
 }
 
