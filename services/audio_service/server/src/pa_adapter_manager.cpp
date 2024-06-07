@@ -564,7 +564,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
     if (managerType_ == RECORDER) {
-        XcollieFlag = 2; // flag 2 die when timeout, restart server
+        XcollieFlag = (1 | 2); // flag 1 generate log file, flag 2 die when timeout, restart server
         int32_t capturerRet = ConnectCapturerStreamToPA(paStream, sampleSpec, deviceName);
         CHECK_AND_RETURN_RET_LOG(capturerRet == SUCCESS, capturerRet, "ConnectCapturerStreamToPA failed");
     }
