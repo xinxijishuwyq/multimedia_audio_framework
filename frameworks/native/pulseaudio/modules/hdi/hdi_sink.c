@@ -1130,6 +1130,7 @@ static void Fading16Bit(int16_t *data, int32_t frameLen, int32_t channels, int32
         AUDIO_INFO_LOG("frameLen == 0 || channels == 0");
         return;
     }
+    int32_t lastPos = 0;
     for (int32_t i = 0; i < frameLen / channels; i++) {
         for (int32_t j = 0; j < channels; j++) {
             float fadeRatio = 1.0f;
@@ -1138,8 +1139,15 @@ static void Fading16Bit(int16_t *data, int32_t frameLen, int32_t channels, int32
             } else {
                 fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
             }
-            data[i * channels + j] *= fadeRatio;
+            lastPos = i * channels + j;
+            data[lastPos] *= fadeRatio;
         }
+    }
+    if (fadeType == 0) {
+        return;
+    }
+    while (lastPos < frameLen) {
+        data[lastPos++] = 0;
     }
 }
 
@@ -1185,6 +1193,7 @@ static void Fading32Bit(int32_t *data, int32_t frameLen, int32_t channels, int32
         AUDIO_INFO_LOG("frameLen == 0 || channels == 0");
         return;
     }
+    int32_t lastPos = 0;
     for (int32_t i = 0; i < frameLen / channels; i++) {
         for (int32_t j = 0; j < channels; j++) {
             float fadeRatio = 1.0f;
@@ -1193,8 +1202,15 @@ static void Fading32Bit(int32_t *data, int32_t frameLen, int32_t channels, int32
             } else {
                 fadeRatio = (float)(frameLen - (i * channels + j)) / frameLen;
             }
-            data[i * channels + j] *= fadeRatio;
+            lastPos = i * channels + j;
+            data[lastPos] *= fadeRatio;
         }
+    }
+    if (fadeType == 0) {
+        return;
+    }
+    while (lastPos < frameLen) {
+        data[lastPos++] = 0;
     }
 }
 
