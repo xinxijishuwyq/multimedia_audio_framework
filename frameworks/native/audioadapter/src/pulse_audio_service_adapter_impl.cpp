@@ -1000,7 +1000,7 @@ int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
 
     swapStatus = 1 - swapStatus;
     pa_proplist *proplist = pa_proplist_new();
-    if (propList == nullptr) {
+    if (proplist == nullptr) {
         AUDIO_ERR_LOG("UpdateClusterModule pa_proplist_new returned nullptr");
         return ERROR;
     }
