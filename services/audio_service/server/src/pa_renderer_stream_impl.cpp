@@ -103,9 +103,15 @@ int32_t PaRendererStreamImpl::InitParams()
     // Get min buffer size in frame
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
     if (bufferAttr == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
+        int32_t count = ++bufferNullCount_;
+        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr count is %{public}d", count);
+        if (count >= 5) { // bufferAttr is nullptr 5 times, reboot audioserver
+            AudioXCollie audioXCollie("AudioServer::Kill", 1, nullptr, nullptr, 2); // 2 means RECOVERY
+            sleep(2); // sleep 2 seconds to dump stacktrace
+        }
         return ERR_OPERATION_FAILED;
     }
+    bufferNullCount_ = 0;
     minBufferSize_ = (size_t)bufferAttr->minreq;
     if (byteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("byteSizePerFrame_ should not be zero.");

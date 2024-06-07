@@ -406,6 +406,22 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
     return SetVolumeDb(streamType);
 }
 
+int32_t AudioAdapterManager::SetPersistMicMuteState(const bool isMute)
+{
+    AUDIO_INFO_LOG("Save mute state: %{public}d in setting db", isMute);
+    bool res = volumeDataMaintainer_.SaveMicMuteState(isMute);
+
+    return res == true ? SUCCESS : ERROR;
+}
+
+int32_t AudioAdapterManager::GetPersistMicMuteState(bool &isMute) const
+{
+    bool res = volumeDataMaintainer_.GetMicMuteState(isMute);
+    AUDIO_INFO_LOG("Get mute state from setting db is: %{public}d", isMute);
+
+    return res == true ? SUCCESS : ERROR;
+}
+
 int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
@@ -608,20 +624,13 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
-    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", audioModuleInfo.lib.c_str(), moduleArgs.c_str());
+
+    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s",
+        audioModuleInfo.lib.c_str(), audioModuleInfo.className.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_++;
     return audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
-}
-
-AudioIOHandle AudioAdapterManager::LoadLoopback(const LoopbackModuleInfo &moduleInfo)
-{
-    std::string moduleArgs = GetLoopbackModuleArgs(moduleInfo);
-    AUDIO_INFO_LOG("[Adapter load-module] %{public}s %{public}s", moduleInfo.lib.c_str(), moduleArgs.c_str());
-
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->OpenAudioPort(moduleInfo.lib, moduleArgs.c_str());
 }
 
 int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle)
@@ -735,7 +744,6 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     if (!audioModuleInfo.format.empty()) {
         args.append(" format=");
         args.append(audioModuleInfo.format);
-        AUDIO_INFO_LOG("[PolicyManager] format: %{public}s", args.c_str());
     }
 
     if (!audioModuleInfo.fixedLatency.empty()) {
@@ -757,21 +765,7 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
         args.append(" offload_enable=");
         args.append(audioModuleInfo.offloadEnable);
     }
-}
-
-std::string AudioAdapterManager::GetLoopbackModuleArgs(const LoopbackModuleInfo &moduleInfo) const
-{
-    std::string args;
-
-    if (moduleInfo.sink.empty() || moduleInfo.source.empty()) {
-        return "";
-    }
-
-    args.append(" source=");
-    args.append(moduleInfo.source);
-    args.append(" sink=");
-    args.append(moduleInfo.sink);
-    return args;
+    AUDIO_INFO_LOG("[Adapter load-module] [PolicyManager] common args:%{public}s", args.c_str());
 }
 
 // Private Members

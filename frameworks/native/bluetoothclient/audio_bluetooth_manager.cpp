@@ -110,8 +110,12 @@ void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 void AudioA2dpManager::DisconnectBluetoothA2dpSink()
 {
     int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
-    a2dpListener_->OnConnectionStateChanged(activeA2dpDevice_, connectionState,
-        static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+    auto a2dpList = MediaBluetoothDeviceManager::GetAllA2dpBluetoothDevice();
+    for (const auto &device : a2dpList) {
+        a2dpListener_->OnConnectionStateChanged(device, connectionState,
+            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+    }
+
     MediaBluetoothDeviceManager::ClearAllA2dpBluetoothDevice();
 }
 
@@ -386,8 +390,11 @@ int8_t AudioHfpManager::GetScoCategoryFromScene(AudioScene scene)
 void AudioHfpManager::DisconnectBluetoothHfpSink()
 {
     int connectionState = static_cast<int>(BTConnectState::DISCONNECTED);
-    hfpListener_->OnConnectionStateChanged(activeHfpDevice_, connectionState,
-        static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+    auto hfpList = HfpBluetoothDeviceManager::GetAllHfpBluetoothDevice();
+    for (const auto &device : hfpList) {
+        hfpListener_->OnConnectionStateChanged(device, connectionState,
+            static_cast<uint32_t>(ConnChangeCause::CONNECT_CHANGE_COMMON_CAUSE));
+    }
     HfpBluetoothDeviceManager::ClearAllHfpBluetoothDevice();
 }
 

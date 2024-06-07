@@ -558,7 +558,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
     }
 
     PaLockGuard lock(mainLoop_);
-    int32_t XcollieFlag = 0; // flag 0 do nothing but the caller defined function
+    int32_t XcollieFlag = 1; // flag 1 generate log file
     if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK) {
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");

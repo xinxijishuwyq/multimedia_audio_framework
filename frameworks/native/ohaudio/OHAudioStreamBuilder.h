@@ -41,7 +41,7 @@ public:
     OH_AudioStream_Result SetLatencyMode(int32_t latencyMode);
     OH_AudioStream_Result SetChannelLayout(AudioChannelLayout channelLayout);
 
-    OH_AudioStream_Result SetRendererInfo(StreamUsage usage, ContentType contentType);
+    OH_AudioStream_Result SetRendererInfo(StreamUsage usage);
     OH_AudioStream_Result SetRendererCallback(OH_AudioRenderer_Callbacks callbacks, void *userData);
     OH_AudioStream_Result SetRendererOutputDeviceChangeCallback(OH_AudioRenderer_OutputDeviceChangeCallback callback,
     void *userData);
@@ -68,8 +68,7 @@ private:
     AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
 
     // renderer params
-    StreamUsage usage_  = STREAM_USAGE_MEDIA;
-    ContentType contentType_ = CONTENT_TYPE_MUSIC;
+    StreamUsage usage_ = STREAM_USAGE_UNKNOWN;
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
 
     // capturer params

@@ -106,6 +106,8 @@ public:
 
     int32_t SetMicrophoneMuteAudioConfig(bool isMute);
 
+    int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type);
+    
     bool IsMicrophoneMute(API_VERSION api_v = API_9);
 
     AudioScene GetAudioScene();
@@ -125,6 +127,8 @@ public:
 
     int32_t SetMicStateChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
+
+    int32_t UnsetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const std::shared_ptr<AudioInterruptCallback> &callback, const int32_t zoneID = 0);
@@ -380,11 +384,15 @@ private:
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;
     std::mutex stateChangelistenerStubMutex_;
     std::mutex clientTrackerStubMutex_;
+    std::mutex focusInfoMutex_;
+    std::mutex rendererStateMutex_;
+    std::mutex capturerStateMutex_;
     sptr<AudioPolicyClientStubImpl> audioPolicyClientStubCB_;
     std::atomic<bool> isAudioPolicyClientRegisted_ = false;
 

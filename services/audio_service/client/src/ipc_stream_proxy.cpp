@@ -481,5 +481,21 @@ int32_t IpcStreamProxy::GetStreamManagerType()
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
     return reply.ReadInt32();
 }
+int32_t IpcStreamProxy::SetSilentModeAndMixWithOthers(bool on)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    data.WriteBool(on);
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "failed, ipc error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, error: %{public}d", ret);
+
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

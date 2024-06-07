@@ -40,7 +40,6 @@ namespace AudioStandard {
 static unique_ptr<AudioServiceAdapterCallback> g_audioServiceAdapterCallback;
 std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sinkIndexSessionIDMap;
 std::unordered_map<uint32_t, uint32_t> PulseAudioServiceAdapterImpl::sourceIndexSessionIDMap;
-int32_t g_playbackCapturerSourceOutputIndex = -1;
 
 static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
     {"voice_call", STREAM_VOICE_CALL},
@@ -820,16 +819,6 @@ void PulseAudioServiceAdapterImpl::PaGetSourceOutputCb(pa_context *c, const pa_s
     sessionStr >> sessionID;
     AUDIO_INFO_LOG("sessionID %{public}u", sessionID);
     sourceIndexSessionIDMap[i->index] = sessionID;
-
-    const char *captureFlag = pa_proplist_gets(i->proplist, "stream.isInnerCapturer");
-    if (captureFlag == nullptr) {
-        AUDIO_WARNING_LOG("Invalid stream parameter:isInnerCapturer.");
-    } else {
-        int32_t flag = atoi(captureFlag);
-        if (flag == 1) {
-            g_playbackCapturerSourceOutputIndex = i->index;
-        }
-    }
 }
 
 void PulseAudioServiceAdapterImpl::PaGetAllSinkInputsCb(pa_context *c, const pa_sink_input_info *i, int eol,
@@ -954,11 +943,6 @@ void PulseAudioServiceAdapterImpl::ProcessSourceOutputEvent(pa_context *c, pa_su
         uint32_t sessionID = sourceIndexSessionIDMap[idx];
         AUDIO_ERR_LOG("sessionID: %{public}d removed", sessionID);
         g_audioServiceAdapterCallback->OnSessionRemoved(sessionID);
-        if (g_playbackCapturerSourceOutputIndex >= 0 &&
-            idx == static_cast<uint32_t>(g_playbackCapturerSourceOutputIndex)) {
-            g_audioServiceAdapterCallback->OnPlaybackCapturerStop();
-            g_playbackCapturerSourceOutputIndex = -1;
-        }
     }
 }
 

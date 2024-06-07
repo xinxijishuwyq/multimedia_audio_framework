@@ -63,8 +63,6 @@ public:
 
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo) = 0;
 
-    virtual AudioIOHandle LoadLoopback(const LoopbackModuleInfo &moduleInfo) = 0;
-
     virtual int32_t CloseAudioPort(AudioIOHandle ioHandle) = 0;
 
     virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
@@ -140,6 +138,10 @@ public:
     virtual int32_t GetCurActivateCount() const = 0;
 
     virtual void HandleKvData(bool isFirstBoot) = 0;
+
+    virtual int32_t SetPersistMicMuteState(const bool isMute) = 0;
+
+    virtual int32_t GetPersistMicMuteState(bool &isMute) const = 0;
 
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel) = 0;
 };

@@ -105,6 +105,7 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("getSystemVolumeInDb", GetSystemVolumeInDb),
         DECLARE_NAPI_FUNCTION("getSystemVolumeInDbSync", GetSystemVolumeInDbSync),
         DECLARE_NAPI_FUNCTION("on", On),
+        DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("getMaxAmplitudeForOutputDevice", GetMaxAmplitudeForOutputDevice),
         DECLARE_NAPI_FUNCTION("getMaxAmplitudeForInputDevice", GetMaxAmplitudeForInputDevice),
     };
@@ -815,6 +816,58 @@ napi_value NapiAudioVolumeGroupManager::SetMicMute(napi_env env, napi_callback_i
     return NapiAsyncWork::Enqueue(env, context, "SetMicMute", executor, complete);
 }
 
+napi_value NapiAudioVolumeGroupManager::SetMicMutePersistent(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("no memory failed");
+        NapiAudioError::ThrowError(env, "failed no memory", NAPI_ERR_SYSTEM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of mute must be boolean", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->policyType, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: get policyType failed", NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetMicrophoneMutePersistent(context->isMute,
+            static_cast<PolicyType>(context->policyType));
+        if (context->intValue != SUCCESS) {
+            if (context->intValue == ERR_PERMISSION_DENIED) {
+                context->SignError(NAPI_ERR_NO_PERMISSION);
+            } else {
+                context->SignError(NAPI_ERR_SYSTEM);
+            }
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetMicMutePersistent", executor, complete);
+}
+
 napi_value NapiAudioVolumeGroupManager::IsVolumeUnadjustable(napi_env env, napi_callback_info info)
 {
     AUDIO_INFO_LOG("IsVolumeUnadjustable");
@@ -1086,6 +1139,56 @@ napi_value NapiAudioVolumeGroupManager::RegisterCallback(napi_env env, napi_valu
     return undefinedResult;
 }
 
+napi_value NapiAudioVolumeGroupManager::UnregisterCallback(napi_env env, napi_value jsThis,
+    size_t argc, napi_value *args, const std::string &cbName)
+{
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    NapiAudioVolumeGroupManager *napiAudioVolumeGroupManager = nullptr;
+    napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioVolumeGroupManager));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "status error");
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_NO_MEMORY), "napiAudioVolumeGroupManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
+    if (!cbName.compare(RINGERMODE_CALLBACK_NAME)) {
+        if (napiAudioVolumeGroupManager->ringerModecallbackNapi_ == nullptr) {
+            napiAudioVolumeGroupManager->ringerModecallbackNapi_ = std::make_shared<NapiAudioRingerModeCallback>(env);
+            std::shared_ptr<NapiAudioRingerModeCallback> cb = std::static_pointer_cast<NapiAudioRingerModeCallback>(
+                napiAudioVolumeGroupManager->ringerModecallbackNapi_);
+            bool isSameCallback = cb->IsSameCallback(args[PARAM1]);
+            CHECK_AND_RETURN_RET_LOG(isSameCallback == true, undefinedResult,
+                "The callback need to be unregistered is not the same as the registered callback");
+            int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->UnsetRingerModeCallback(
+                napiAudioVolumeGroupManager->cachedClientId_, napiAudioVolumeGroupManager->ringerModecallbackNapi_);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "UnsetRingerModeCallback Failed");
+            cb->RemoveCallbackReference(args[PARAM1]);
+        }
+    } else if (!cbName.compare(MIC_STATE_CHANGE_CALLBACK_NAME)) {
+        if (!napiAudioVolumeGroupManager->micStateChangeCallbackNapi_) {
+            napiAudioVolumeGroupManager->micStateChangeCallbackNapi_ =
+                std::make_shared<NapiAudioManagerMicStateChangeCallback>(env);
+            std::shared_ptr<NapiAudioManagerMicStateChangeCallback> cb =
+                std::static_pointer_cast<NapiAudioManagerMicStateChangeCallback>(napiAudioVolumeGroupManager->
+                    micStateChangeCallbackNapi_);
+            bool isSameCallback = cb->IsSameCallback(args[PARAM1]);
+            CHECK_AND_RETURN_RET_LOG(isSameCallback == true, undefinedResult,
+                "The callback need to be unregistered is not the same as the registered callback");
+            int32_t ret = napiAudioVolumeGroupManager->audioGroupMngr_->UnsetMicStateChangeCallback(
+                napiAudioVolumeGroupManager->micStateChangeCallbackNapi_);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "UnsetRingerModeCallback Failed");
+            cb->RemoveCallbackReference(args[PARAM1]);
+        }
+    } else {
+        AUDIO_ERR_LOG("No such callback supported");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of type is not supported");
+    }
+    return undefinedResult;
+}
+
 napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info)
 {
     AUDIO_DEBUG_LOG("On inter");
@@ -1120,6 +1223,38 @@ napi_value NapiAudioVolumeGroupManager::On(napi_env env, napi_callback_info info
     }
 
     return RegisterCallback(env, jsThis, argc, args, callbackName);
+}
+
+napi_value NapiAudioVolumeGroupManager::Off(napi_env env, napi_callback_info info)
+{
+    AUDIO_DEBUG_LOG("On inter");
+    napi_value undefinedResult = nullptr;
+    NapiParamUtils::GetUndefinedValue(env);
+
+    const size_t minArgc = ARGS_ONE;
+    size_t argc = ARGS_THREE;
+    napi_value args[minArgc + PARAM2] = {nullptr, nullptr, nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    if (status != napi_ok || argc < minArgc) {
+        AUDIO_ERR_LOG("Off fail to napi_get_cb_info/Requires min 1 parameters");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+    }
+
+    napi_valuetype eventType = napi_undefined;
+    if (napi_typeof(env, args[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of eventType must be string");
+        return undefinedResult;
+    }
+    std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
+    AUDIO_INFO_LOG("Off callbackName: %{public}s", callbackName.c_str());
+
+    napi_valuetype handler = napi_undefined;
+    if (napi_typeof(env, args[PARAM1], &handler) != napi_ok || handler != napi_function) {
+        AUDIO_INFO_LOG("Off type has no parameter 2");
+    }
+    return UnregisterCallback(env, jsThis, argc, args, callbackName);
 }
 
 napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForOutputDevice(napi_env env, napi_callback_info info)

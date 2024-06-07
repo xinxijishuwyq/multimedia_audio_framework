@@ -49,6 +49,7 @@ void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
     audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
+    clientCallbacksMap_.erase(clientPid);
     AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu]",
         audioPolicyClientProxyAPSCbsMap_.size());
 }
@@ -212,6 +213,20 @@ bool AudioPolicyServerHandler::SendMicStateUpdatedCallback(const MicStateChangeE
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::MIC_STATE_CHANGE_EVENT, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send MIC_STATE_CHANGE_EVENT event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent,
+    int32_t clientId)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->micStateChangeEvent = micStateChangeEvent;
+    eventContextObj->clientId = clientId;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send MIC_STATE_CHANGE_EVENT_WITH_CLIENTID event failed");
     return ret;
 }
 
@@ -526,7 +541,11 @@ void AudioPolicyServerHandler::HandleRequestCateGoryEvent(const AppExecFwk::Inne
 
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        it->second->OnAudioFocusRequested(eventContextObj->audioInterrupt);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_FOCUS_INFO_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_FOCUS_INFO_CHANGE]) {
+            it->second->OnAudioFocusRequested(eventContextObj->audioInterrupt);
+        }
     }
 }
 
@@ -536,7 +555,11 @@ void AudioPolicyServerHandler::HandleAbandonCateGoryEvent(const AppExecFwk::Inne
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        it->second->OnAudioFocusAbandoned(eventContextObj->audioInterrupt);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_FOCUS_INFO_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_FOCUS_INFO_CHANGE]) {
+            it->second->OnAudioFocusAbandoned(eventContextObj->audioInterrupt);
+        }
     }
 }
 
@@ -547,7 +570,11 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
     AUDIO_INFO_LOG("HandleFocusInfoChangeEvent focusInfoList :%{public}zu", eventContextObj->focusInfoList.size());
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_FOCUS_INFO_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_FOCUS_INFO_CHANGE]) {
+            it->second->OnAudioFocusInfoChange(eventContextObj->focusInfoList);
+        }
     }
 }
 
@@ -574,6 +601,26 @@ void AudioPolicyServerHandler::HandleMicStateUpdatedEvent(const AppExecFwk::Inne
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(runnerMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        sptr<IAudioPolicyClient> micStateChangeListenerCb = it->second;
+        if (micStateChangeListenerCb == nullptr) {
+            AUDIO_ERR_LOG("callback is nullptr for client %{public}d", it->first);
+            continue;
+        }
+        micStateChangeListenerCb->OnMicStateUpdated(eventContextObj->micStateChangeEvent);
+    }
+}
+
+void AudioPolicyServerHandler::HandleMicStateUpdatedEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    int32_t clientId = eventContextObj->clientId;
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        if (it->first != clientId) {
+            AUDIO_DEBUG_LOG("This client %{public}d is not need to trigger the callback ", it->first);
+            continue;
+        }
         sptr<IAudioPolicyClient> micStateChangeListenerCb = it->second;
         if (micStateChangeListenerCb == nullptr) {
             AUDIO_ERR_LOG("callback is nullptr for client %{public}d", it->first);
@@ -669,7 +716,11 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_RENDERER_STATE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_RENDERER_STATE_CHANGE]) {
+            rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
+        }
     }
 }
 
@@ -684,7 +735,11 @@ void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEv
             AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}d", it->first);
             continue;
         }
-        capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_CAPTURER_STATE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_CAPTURER_STATE_CHANGE]) {
+            capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
+        }
     }
 }
 
@@ -891,10 +946,7 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
 void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventId = event->GetInnerEventId();
-    AUDIO_DEBUG_LOG("handler process eventId:%{public}u", eventId);
-
     HandleServiceEvent(eventId, event);
-
     switch (eventId) {
         case EventAudioServerCmd::VOLUME_KEY_EVENT:
             HandleVolumeKeyEvent(event);
@@ -913,6 +965,9 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::MIC_STATE_CHANGE_EVENT:
             HandleMicStateUpdatedEvent(event);
+            break;
+        case EventAudioServerCmd::MIC_STATE_CHANGE_EVENT_WITH_CLIENTID:
+            HandleMicStateUpdatedEventWithClientId(event);
             break;
         case EventAudioServerCmd::INTERRUPT_EVENT:
             HandleInterruptEvent(event);
@@ -938,6 +993,22 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
         default:
             break;
     }
+}
+
+int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    if (callbackchange <= CALLBACK_UNKNOWN || callbackchange >= CALLBACK_MAX) {
+        AUDIO_ERR_LOG("Illegal parameter");
+        return AUDIO_ERR;
+    }
+
+    int32_t clientId = IPCSkeleton::GetCallingPid();
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    clientCallbacksMap_[clientId][callbackchange] = enable;
+    string str = (enable ? "true" : "false");
+    AUDIO_INFO_LOG("Set clientId:%{public}d, callbacks:%{public}d, enable:%{public}s",
+        clientId, callbackchange, str.c_str());
+    return AUDIO_OK;
 }
 } // namespace AudioStandard
 } // namespace OHOS

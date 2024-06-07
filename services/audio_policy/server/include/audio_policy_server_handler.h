@@ -52,6 +52,7 @@ public:
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
         MIC_STATE_CHANGE_EVENT,
+        MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
         INTERRUPT_EVENT,
         INTERRUPT_EVENT_WITH_SESSIONID,
         INTERRUPT_EVENT_WITH_CLIENTID,
@@ -139,6 +140,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
+    bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
     bool SendInterruptEventWithSessionIdCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &sessionId);
@@ -165,6 +167,7 @@ public:
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
     bool SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID);
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -179,6 +182,7 @@ private:
     void HandleFocusInfoChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRingerModeUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleMicStateUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleMicStateUpdatedEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithSessionId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
@@ -212,6 +216,7 @@ private:
     std::map<std::pair<int32_t, AudioDeviceUsage>,
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
+    std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

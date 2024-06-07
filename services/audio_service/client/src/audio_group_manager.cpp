@@ -328,6 +328,14 @@ int32_t AudioGroupManager::SetMicrophoneMute(bool isMute)
     return AudioPolicyManager::GetInstance().SetMicrophoneMuteAudioConfig(isMute);
 }
 
+int32_t AudioGroupManager::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
+{
+    AUDIO_INFO_LOG("Set persistent mic mute state, isMute is %{public}d", isMute);
+    CHECK_AND_RETURN_RET_LOG(netWorkId_ == LOCAL_NETWORK_ID, ERROR,
+        "AudioGroupManager::SetRingerMode is not supported for local device.");
+    return AudioPolicyManager::GetInstance().SetMicrophoneMutePersistent(isMute, type);
+}
+
 bool AudioGroupManager::IsMicrophoneMute(API_VERSION api_v)
 {
     /* Call Audio Policy GetRingerMode */
@@ -344,6 +352,12 @@ int32_t AudioGroupManager::SetMicStateChangeCallback(
         "setMicrophoneMuteCallback::callback is null");
     int32_t clientId = static_cast<int32_t>(getpid());
     return AudioPolicyManager::GetInstance().SetMicStateChangeCallback(clientId, callback);
+}
+
+int32_t AudioGroupManager::UnsetMicStateChangeCallback(
+    const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().UnsetMicStateChangeCallback(callback);
 }
 
 bool AudioGroupManager::IsVolumeUnadjustable()

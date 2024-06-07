@@ -1158,7 +1158,7 @@ int32_t AudioRendererPrivate::SetRendererFirstFrameWritingCallback(
 
 void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 {
-    AUDIO_INFO_LOG("InterruptMode %{pubilc}d", mode);
+    AUDIO_INFO_LOG("InterruptMode %{public}d", mode);
     if (audioInterrupt_.mode == mode) {
         return;
     } else if (mode != SHARE_MODE && mode != INDEPENDENT_MODE) {
@@ -1189,7 +1189,7 @@ bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
 
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
 {
-    AUDIO_INFO_LOG("parallelPlayFlag %{pubilc}d", parallelPlayFlag);
+    AUDIO_INFO_LOG("parallelPlayFlag %{public}d", parallelPlayFlag);
     audioInterrupt_.parallelPlayFlag = parallelPlayFlag;
     return SUCCESS;
 }
@@ -1240,8 +1240,6 @@ int32_t AudioRendererPrivate::UnsetOffloadMode() const
     AUDIO_INFO_LOG("session %{public}u session unset offload", sessionID_);
     int32_t ret = audioStream_->UnsetOffloadMode();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "unset offload failed");
-    ret = AudioPolicyManager::GetInstance().MoveToNewPipe(sessionID_, PIPE_TYPE_NORMAL_OUT);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "concede from offload failed");
     return SUCCESS;
 }
 

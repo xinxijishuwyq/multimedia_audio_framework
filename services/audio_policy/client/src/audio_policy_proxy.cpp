@@ -190,6 +190,22 @@ int32_t AudioPolicyProxy::SetMicrophoneMuteAudioConfig(bool isMute)
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteBool(isMute);
+    data.WriteInt32(static_cast<int32_t>(type));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_MICROPHONE_MUTE_PERSISTENT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set microphoneMute persistent failed, error: %d", error);
+
+    return reply.ReadInt32();
+}
+
 bool AudioPolicyProxy::IsMicrophoneMute(API_VERSION api_v)
 {
     MessageParcel data;
@@ -746,6 +762,24 @@ int32_t AudioPolicyProxy::AbandonAudioFocus(const int32_t clientId, const AudioI
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::ABANDON_AUDIO_FOCUS), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate interrupt failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(callbackchange));
+    data.WriteBool(enable);
+
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_CALLBACKS_ENABLE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Set client callback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }

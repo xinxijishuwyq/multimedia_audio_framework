@@ -133,6 +133,8 @@ private:
     // offload end
     std::mutex fadingMutex_;
     std::condition_variable fadingCondition_;
+
+    static inline std::atomic<int32_t> bufferNullCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
