@@ -327,7 +327,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(
+OH_AudioStream_Result OH_AudioRenderer_GetSilentModeAndMixWithOthers(
     OH_AudioRenderer* renderer, bool* on)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
