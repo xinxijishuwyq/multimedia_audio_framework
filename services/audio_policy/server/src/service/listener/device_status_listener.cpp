@@ -154,6 +154,7 @@ DeviceStatusListener::~DeviceStatusListener() = default;
 
 int32_t DeviceStatusListener::RegisterDeviceStatusListener()
 {
+    AUDIO_INFO_LOG("Enter");
     hdiServiceManager_ = HDIServiceManagerGet();
     CHECK_AND_RETURN_RET_LOG(hdiServiceManager_ != nullptr, ERR_OPERATION_FAILED,
         "[DeviceStatusListener]: Get HDI service manager failed");
@@ -162,9 +163,10 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener()
     listener_->callback = OnServiceStatusReceived;
     listener_->priv = (void *)this;
     int32_t status = hdiServiceManager_->RegisterServiceStatusListener(hdiServiceManager_, listener_,
-                                                                       DeviceClass::DEVICE_CLASS_AUDIO);
+        DeviceClass::DEVICE_CLASS_AUDIO);
     CHECK_AND_RETURN_RET_LOG(status == HDF_SUCCESS, ERR_OPERATION_FAILED,
         "[DeviceStatusListener]: Register service status listener failed");
+    AUDIO_INFO_LOG("Register service status listener finished");
 
     audioPnpServer_ = &AudioPnpServer::GetAudioPnpServer();
     pnpDeviceCB_ = std::make_shared<AudioPnpStatusCallback>();
@@ -172,6 +174,7 @@ int32_t DeviceStatusListener::RegisterDeviceStatusListener()
     int32_t cbstatus = audioPnpServer_->RegisterPnpStatusListener(pnpDeviceCB_);
     CHECK_AND_RETURN_RET_LOG(cbstatus == SUCCESS, ERR_OPERATION_FAILED,
         "[DeviceStatusListener]: Register Pnp Status Listener failed");
+    AUDIO_INFO_LOG("Done");
     return SUCCESS;
 }
 
@@ -214,7 +217,10 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
     deviceObserver_.OnPnpDeviceStatusUpdated(internalDevice, isConnected);
 }
 
-AudioPnpStatusCallback::AudioPnpStatusCallback() {}
+AudioPnpStatusCallback::AudioPnpStatusCallback()
+{
+    AUDIO_INFO_LOG("ctor");
+}
 
 AudioPnpStatusCallback::~AudioPnpStatusCallback() {}
 
