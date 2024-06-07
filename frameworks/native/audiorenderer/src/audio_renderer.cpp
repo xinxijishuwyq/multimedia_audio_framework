@@ -1854,7 +1854,7 @@ void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &aud
                 deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_WIRED_HEADSET) &&
                 streamType == STREAM_MUSIC && audioStreamParams.samplingRate >= SAMPLE_RATE_48000 &&
                 audioStreamParams.format >= SAMPLE_S24LE) {
-                rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
+                rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
             }
         }
     }
