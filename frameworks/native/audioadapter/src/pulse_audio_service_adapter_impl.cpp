@@ -133,7 +133,7 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
 
     swapStatus = 0;
     pa_proplist *proplist = pa_proplist_new();
-    if (propList == nullptr) {
+    if (proplist == nullptr) {
         AUDIO_ERR_LOG("ConnectToPulseAudio pa_proplist_new returned nullptr");
         return false;
     }
