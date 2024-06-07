@@ -85,6 +85,7 @@ private:
     static napi_value IsMicrophoneMuteSync(napi_env env, napi_callback_info info);
     static napi_value SetMicMute(napi_env env, napi_callback_info info);
     static napi_value SetMicMutePersistent(napi_env env, napi_callback_info info);
+    static napi_value GetPersistentMicMuteState(napi_env env, napi_callback_info info);
     static napi_value IsVolumeUnadjustable(napi_env env, napi_callback_info info);
     static napi_value AdjustVolumeByStep(napi_env env, napi_callback_info info);
     static napi_value AdjustSystemVolumeByStep(napi_env env, napi_callback_info info);

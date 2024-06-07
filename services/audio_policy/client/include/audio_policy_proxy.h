@@ -98,6 +98,8 @@ public:
 
     int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type) override;
 
+    bool GetPersistentMicMuteState() override;
+
     bool IsMicrophoneMute(API_VERSION api_v) override;
 
     AudioScene GetAudioScene() override;

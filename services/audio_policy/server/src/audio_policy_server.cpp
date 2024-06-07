@@ -1133,6 +1133,15 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
     return ret;
 }
 
+bool AudioPolicyServer::GetPersistentMicMuteState()
+{
+    bool hasPermission = VerifyPermission(MICRPHONE_CONTROL_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
+        "MICRPHONE_CONTROL_PERMISSION permission denied");
+
+    return audioPolicyService_.GetPersistentMicMuteState();
+}
+
 bool AudioPolicyServer::IsMicrophoneMute(API_VERSION api_v)
 {
     bool ret = VerifyPermission(MICROPHONE_PERMISSION);
@@ -1482,6 +1491,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-s"] = &AudioPolicyServer::AudioStreamDump;
     dumpFuncMap[u"-xp"] = &AudioPolicyServer::XmlParsedDataMapDump;
     dumpFuncMap[u"-e"] = &AudioPolicyServer::EffectManagerInfoDump;
+    dumpFuncMap[u"-ms"] = &AudioPolicyServer::MicrophoneMuteInfoDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -1494,6 +1504,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     AudioStreamDump(dumpString);
     XmlParsedDataMapDump(dumpString);
     EffectManagerInfoDump(dumpString);
+    MicrophoneMuteInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
@@ -1534,6 +1545,11 @@ void AudioPolicyServer::XmlParsedDataMapDump(std::string &dumpString)
 void AudioPolicyServer::EffectManagerInfoDump(std::string &dumpString)
 {
     audioPolicyService_.EffectManagerInfoDump(dumpString);
+}
+
+void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
+{
+    audioPolicyService_.MicrophoneMuteInfoDump(dumpString);
 }
 
 void AudioPolicyServer::ArgInfoDump(std::string &dumpString, std::queue<std::u16string> &argQue)

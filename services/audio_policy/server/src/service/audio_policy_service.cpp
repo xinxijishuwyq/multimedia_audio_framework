@@ -2521,6 +2521,11 @@ int32_t AudioPolicyService::SetMicrophoneMutePersistent(const bool isMute)
     return ret;
 }
 
+bool AudioPolicyService::GetPersistentMicMuteState()
+{
+    return isMicrophoneMutePersistent_;
+}
+
 int32_t AudioPolicyService::InitPersistentMicrophoneMuteState(bool &isMute)
 {
     int32_t ret = audioPolicyManager_.GetPersistMicMuteState(isMute);
@@ -7342,6 +7347,16 @@ void AudioPolicyService::EffectManagerInfoDump(string &dumpString)
     for (SceneMappingItem it: supportedEffectConfig_.postProcessSceneMap) {
         AppendFormat(dumpString, "  - streamUsage: %s = %s \n", it.name.c_str(), it.sceneType.c_str());
     }
+    dumpString += "\n";
+}
+
+void AudioPolicyService::MicrophoneMuteInfoDump(string &dumpString)
+{
+    dumpString += "==== Microphone Mute INFO ====\n";
+    // non-persistent microphone mute info
+    AppendFormat(dumpString, "  - non-persistent microphone isMuted: %d \n", isMicrophoneMuteTemporary_);
+    // persistent microphone mute info
+    AppendFormat(dumpString, "  - persistent microphone isMuted: %d \n", isMicrophoneMutePersistent_);
     dumpString += "\n";
 }
 

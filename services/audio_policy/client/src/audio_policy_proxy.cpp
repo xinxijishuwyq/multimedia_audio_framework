@@ -206,6 +206,20 @@ int32_t AudioPolicyProxy::SetMicrophoneMutePersistent(const bool isMute, const P
     return reply.ReadInt32();
 }
 
+bool AudioPolicyProxy::GetPersistentMicMuteState()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_MICROPHONE_MUTE_PERSISTENT), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get persistent microphoneMute state failed, error: %d", error);
+
+    return reply.ReadBool();
+}
+
 bool AudioPolicyProxy::IsMicrophoneMute(API_VERSION api_v)
 {
     MessageParcel data;

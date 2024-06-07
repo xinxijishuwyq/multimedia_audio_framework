@@ -158,6 +158,8 @@ public:
 
     int32_t InitPersistentMicrophoneMuteState(bool &isMute);
 
+    bool GetPersistentMicMuteState();
+
     bool IsMicrophoneMute();
 
     int32_t SetAudioScene(AudioScene audioScene);
@@ -490,6 +492,7 @@ public:
     void GetSafeVolumeDump(std::string &dumpString);
     void GetOffloadStatusDump(std::string &dumpString);
     void EffectManagerInfoDump(std::string &dumpString);
+    void MicrophoneMuteInfoDump(std::string &dumpString);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
     std::vector<sptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(std::string &dumpString, DeviceFlag deviceFlag);
     bool IsStreamSupported(AudioStreamType streamType);

@@ -128,6 +128,12 @@ void AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal(MessageParcel &
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool result = GetPersistentMicMuteState();
+    reply.WriteBool(result);
+}
+
 void AudioPolicyManagerStub::IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply)
 {
     API_VERSION api_v = static_cast<API_VERSION>(data.ReadInt32());

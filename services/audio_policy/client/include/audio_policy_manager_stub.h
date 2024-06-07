@@ -44,6 +44,7 @@ private:
     void SetMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMuteAudioConfigInternal(MessageParcel &data, MessageParcel &reply);
     void SetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
+    void GetMicrophoneMutePersistentInternal(MessageParcel &data, MessageParcel &reply);
     void IsMicrophoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void UnsetInterruptCallbackInternal(MessageParcel &data, MessageParcel &reply);
@@ -171,6 +172,7 @@ private:
         &AudioPolicyManagerStub::SetMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetMicrophoneMuteAudioConfigInternal,
         &AudioPolicyManagerStub::SetMicrophoneMutePersistentInternal,
+        &AudioPolicyManagerStub::GetMicrophoneMutePersistentInternal,
         &AudioPolicyManagerStub::IsMicrophoneMuteInternal,
         &AudioPolicyManagerStub::SetInterruptCallbackInternal,
         &AudioPolicyManagerStub::UnsetInterruptCallbackInternal,

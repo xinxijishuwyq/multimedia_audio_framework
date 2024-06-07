@@ -107,6 +107,8 @@ public:
     int32_t SetMicrophoneMuteAudioConfig(bool isMute);
 
     int32_t SetMicrophoneMutePersistent(const bool isMute, const PolicyType type);
+
+    bool GetPersistentMicMuteState();
     
     bool IsMicrophoneMute(API_VERSION api_v = API_9);
 
