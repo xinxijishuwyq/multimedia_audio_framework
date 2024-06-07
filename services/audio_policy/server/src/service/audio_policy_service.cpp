@@ -3752,6 +3752,7 @@ void AudioPolicyService::RegisterRemoteDevStatusCallback()
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init device manage failed");
     std::shared_ptr<DistributedHardware::DeviceStatusCallback> callback = std::make_shared<DeviceStatusCallbackImpl>();
     DistributedHardware::DeviceManager::GetInstance().RegisterDevStatusCallback(AUDIO_SERVICE_PKG, "", callback);
+    AUDIO_INFO_LOG("Done");
 #endif
 }
 
@@ -7544,6 +7545,7 @@ void AudioPolicyService::WriteServiceStartupError(string reason)
 
 bool AudioPolicyService::LoadToneDtmfConfig()
 {
+    AUDIO_INFO_LOG("Enter");
     std::unique_ptr<AudioToneParser> audioToneParser = make_unique<AudioToneParser>();
     if (audioToneParser == nullptr) {
         WriteServiceStartupError("Audio Tone Load Configuration failed");
@@ -7561,6 +7563,7 @@ bool AudioPolicyService::LoadToneDtmfConfig()
         AUDIO_ERR_LOG("Audio Tone Load Configuration failed");
         return false;
     }
+    AUDIO_INFO_LOG("Done");
     return true;
 }
 

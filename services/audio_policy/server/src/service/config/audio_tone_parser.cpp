@@ -30,6 +30,7 @@ AudioToneParser::~AudioToneParser()
 
 int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<ToneInfo>> &toneDescriptorMap)
 {
+    AUDIO_INFO_LOG("Enter");
     xmlDoc *doc = nullptr;
     xmlNode *rootElement = nullptr;
     AUDIO_ERR_LOG("AudioToneParser::LoadConfig");
@@ -70,6 +71,7 @@ int32_t AudioToneParser::LoadConfig(std::unordered_map<int32_t, std::shared_ptr<
     }
     xmlFreeDoc(doc);
     xmlCleanupParser();
+    AUDIO_INFO_LOG("Done");
     return SUCCESS;
 }
 
