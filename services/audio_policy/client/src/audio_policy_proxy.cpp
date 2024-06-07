@@ -823,7 +823,7 @@ int32_t AudioPolicyProxy::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, 
 bool AudioPolicyProxy::CheckRecordingCreate(uint32_t appTokenId, uint64_t appFullTokenId, int32_t appUid,
     SourceType sourceType)
 {
-    AUDIO_DEBUG_LOG("CheckRecordingCreate: [tid : %{public}d]", appTokenId);
+    AUDIO_DEBUG_LOG("CheckRecordingCreate: [uid : %{public}d]", appUid);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;

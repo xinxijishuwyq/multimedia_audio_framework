@@ -1368,7 +1368,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 
     if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, sourceType) &&
         !PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
-        AUDIO_ERR_LOG("VerifyBackgroundCapture failed uid:%{public}d tokenId:%{public}d", config.callerUid, tokenId);
+        AUDIO_ERR_LOG("VerifyBackgroundCapture failed uid:%{public}d", config.callerUid);
         return false;
     }
 
