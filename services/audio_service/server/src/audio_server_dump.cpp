@@ -77,7 +77,6 @@ void AudioServerDump::ResetPAAudioDump()
 
 int32_t AudioServerDump::Initialize()
 {
-    int error = PA_ERR_INTERNAL;
     mainLoop = pa_threaded_mainloop_new();
     if (mainLoop == nullptr) {
         return AUDIO_DUMP_INIT_ERR;
@@ -98,6 +97,7 @@ int32_t AudioServerDump::Initialize()
     pa_context_set_state_callback(context, PAContextStateCb, mainLoop);
 
     if (pa_context_connect(context, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
+        int error = PA_ERR_INTERNAL;
         error = pa_context_errno(context);
         AUDIO_ERR_LOG("context connect error: %{public}s", pa_strerror(error));
         ResetPAAudioDump();
@@ -122,6 +122,7 @@ int32_t AudioServerDump::Initialize()
         }
 
         if (!PA_CONTEXT_IS_GOOD(state)) {
+            int error = PA_ERR_INTERNAL;
             error = pa_context_errno(context);
             AUDIO_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop);
@@ -216,21 +217,24 @@ void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16strin
 
     pa_threaded_mainloop_lock(mainLoop);
     pa_operation *operation = nullptr;
-    operation = pa_context_get_sink_info_list(context, AudioServerDump::PASinkInfoCallback, (void *)(this));
+    operation = pa_context_get_sink_info_list(context,
+        AudioServerDump::PASinkInfoCallback, reinterpret_cast<void *>(this));
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
     }
 
     pa_operation_unref(operation);
-    operation = pa_context_get_sink_input_info_list(context, AudioServerDump::PASinkInputInfoCallback, (void *)this);
+    operation = pa_context_get_sink_input_info_list(context,
+        AudioServerDump::PASinkInputInfoCallback, reinterpret_cast<void *>(this));
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
     }
 
     pa_operation_unref(operation);
-    operation = pa_context_get_source_info_list(context, AudioServerDump::PASourceInfoCallback, (void *)this);
+    operation = pa_context_get_source_info_list(context,
+        AudioServerDump::PASourceInfoCallback, reinterpret_cast<void *>(this));
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -238,7 +242,7 @@ void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16strin
 
     pa_operation_unref(operation);
     operation = pa_context_get_source_output_info_list(context,
-        AudioServerDump::PASourceOutputInfoCallback, (void *)this);
+        AudioServerDump::PASourceOutputInfoCallback, reinterpret_cast<void *>(this));
 
     while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
         pa_threaded_mainloop_wait(mainLoop);
@@ -254,7 +258,7 @@ void AudioServerDump::AudioDataDump(string &dumpString, std::queue<std::u16strin
 
 void AudioServerDump::PAContextStateCb(pa_context *context, void *userdata)
 {
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)userdata;
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(userdata);
 
     switch (pa_context_get_state(context)) {
         case PA_CONTEXT_READY:
@@ -275,10 +279,10 @@ void AudioServerDump::PAContextStateCb(pa_context *context, void *userdata)
 
 void AudioServerDump::PASinkInfoCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 {
-    AudioServerDump *asDump = (AudioServerDump *)userdata;
+    AudioServerDump *asDump = static_cast<AudioServerDump *>(userdata);
     CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get sink information");
 
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asDump->mainLoop);
 
     CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get sink information: %{public}s", pa_strerror(pa_context_errno(c)));
 
@@ -302,9 +306,9 @@ void AudioServerDump::PASinkInfoCallback(pa_context *c, const pa_sink_info *i, i
 void AudioServerDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_input_info *i, int eol, void *userdata)
 {
     AUDIO_INFO_LOG("jss PASinkInputInfoCallback");
-    AudioServerDump *asDump = (AudioServerDump *)userdata;
+    AudioServerDump *asDump = static_cast<AudioServerDump *>(userdata);
     CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get sink input information");
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asDump->mainLoop);
     CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get sink input information: %{public}s",
         pa_strerror(pa_context_errno(c)));
     if (eol) {
@@ -353,10 +357,10 @@ void AudioServerDump::PASinkInputInfoCallback(pa_context *c, const pa_sink_input
 
 void AudioServerDump::PASourceInfoCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata)
 {
-    AudioServerDump *asDump = (AudioServerDump *)userdata;
+    AudioServerDump *asDump = static_cast<AudioServerDump *>(userdata);
     CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get source information");
 
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asDump->mainLoop);
     CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get source information: %{public}s",
         pa_strerror(pa_context_errno(c)));
 
@@ -380,9 +384,9 @@ void AudioServerDump::PASourceInfoCallback(pa_context *c, const pa_source_info *
 void AudioServerDump::PASourceOutputInfoCallback(pa_context *c, const pa_source_output_info *i, int eol,
     void *userdata)
 {
-    AudioServerDump *asDump = (AudioServerDump *)userdata;
+    AudioServerDump *asDump = static_cast<AudioServerDump *>(userdata);
     CHECK_AND_RETURN_LOG(asDump != nullptr, "Failed to get source output information");
-    pa_threaded_mainloop *mainLoop = (pa_threaded_mainloop *)asDump->mainLoop;
+    pa_threaded_mainloop *mainLoop = static_cast<pa_threaded_mainloop *>(asDump->mainLoop);
     CHECK_AND_RETURN_LOG(eol >= 0, "Failed to get source output information: %{public}s",
         pa_strerror(pa_context_errno(c)));
     if (eol) {

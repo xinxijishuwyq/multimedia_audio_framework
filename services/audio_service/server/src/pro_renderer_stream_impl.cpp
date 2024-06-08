@@ -405,10 +405,10 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         uint32_t frameLength = bufferDesc.bufLength / samplePerFrame;
         if (desFormat_ == AudioSampleFormat::SAMPLE_S16LE) {
             AudioCommonConverter::ConvertBufferTo16Bit(bufferDesc.buffer, streamInfo.format,
-                (int16_t *)sinkBuffer_[writeIndex].data(), frameLength, volume);
+                reinterpret_cast<int16_t *>(sinkBuffer_[writeIndex].data()), frameLength, volume);
         } else {
             AudioCommonConverter::ConvertBufferTo32Bit(bufferDesc.buffer, streamInfo.format,
-                (int32_t *)sinkBuffer_[writeIndex].data(), frameLength, volume);
+                reinterpret_cast<int32_t *>(sinkBuffer_[writeIndex].data()), frameLength, volume);
         }
     }
     readQueue_.emplace(writeIndex);
@@ -642,8 +642,8 @@ void ProRendererStreamImpl::ConvertFloatToDes(int32_t writeIndex)
         }
         return;
     }
-    AudioCommonConverter::ConvertFloatToAudioBuffer(resampleDesBuffer, (uint8_t *)sinkBuffer_[writeIndex].data(),
-        samplePerFrame);
+    AudioCommonConverter::ConvertFloatToAudioBuffer(resampleDesBuffer,
+        reinterpret_cast<uint8_t *>(sinkBuffer_[writeIndex].data()), samplePerFrame);
 }
 
 float ProRendererStreamImpl::GetStreamVolume()
