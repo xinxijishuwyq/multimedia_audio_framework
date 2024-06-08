@@ -1558,7 +1558,7 @@ napi_value NapiAudioRenderer::GetSilentModeAndMixWithOthers(napi_env env, napi_c
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
 
     bool on = napiAudioRenderer->audioRenderer_->GetSilentModeAndMixWithOthers();
-    napi_create_uint32(env, on, &result);
+    napi_get_boolean(env, on, &result);
     return result;
 }
 
