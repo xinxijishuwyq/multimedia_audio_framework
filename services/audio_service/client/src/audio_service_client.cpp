@@ -1512,7 +1512,7 @@ void AudioServiceClient::UpdatePropListForFlush()
 {
     pa_proplist *propListFlushTrue = pa_proplist_new();
     if (propListFlushTrue == nullptr) {
-        AUDIO_ERR_LOG("UpdatePropListForFlushTrue pa_proplist_new returned nullptr");
+        AUDIO_ERR_LOG("propListFlushTrue and new proplist return nullptr!");
         return;
     }
     pa_proplist_sets(propListFlushTrue, "stream.flush", "true");
@@ -1523,7 +1523,7 @@ void AudioServiceClient::UpdatePropListForFlush()
 
     pa_proplist *propListFlushFalse = pa_proplist_new();
     if (propListFlushFalse == nullptr) {
-        AUDIO_ERR_LOG("UpdatePropListForFlushFlase pa_proplist_new returned nullptr");
+        AUDIO_ERR_LOG("propListFlushFalse and new proplist return nullptr!");
         return;
     }
     pa_proplist_sets(propListFlushFalse, "stream.flush", "false");
