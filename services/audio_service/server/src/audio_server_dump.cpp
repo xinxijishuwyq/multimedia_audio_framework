@@ -121,8 +121,7 @@ int32_t AudioServerDump::Initialize()
         }
 
         if (!PA_CONTEXT_IS_GOOD(state)) {
-            int error = PA_ERR_INTERNAL;
-            error = pa_context_errno(context);
+            int error = pa_context_errno(context);
             AUDIO_ERR_LOG("context bad state error: %{public}s", pa_strerror(error));
             pa_threaded_mainloop_unlock(mainLoop);
             ResetPAAudioDump();
