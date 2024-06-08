@@ -288,8 +288,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     DumpFileUtil::OpenDumpFile(DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
-        int32_t type = -1;
-        type = ipcStream_->GetStreamManagerType();
+        int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
             rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
                 PIPE_TYPE_DIRECT_VOIP : PIPE_TYPE_DIRECT_MUSIC;
