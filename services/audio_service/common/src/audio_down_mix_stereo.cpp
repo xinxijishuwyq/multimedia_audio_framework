@@ -42,7 +42,7 @@ AudioDownMixStereo::AudioDownMixStereo() : handle_(nullptr), mixer_(nullptr)
         return;
     }
     AudioMcrMixerClassCreateFunc *createMixerFunc =
-        static_cast<AudioMcrMixerClassCreateFunc *>(dlsym(handle_, DOWN_MIX_FUNC_NAME));
+        reinterpret_cast<AudioMcrMixerClassCreateFunc *>(dlsym(handle_, DOWN_MIX_FUNC_NAME));
     if (!createMixerFunc) {
         AUDIO_ERR_LOG("dlsym failed.check so has this function.");
         return;
