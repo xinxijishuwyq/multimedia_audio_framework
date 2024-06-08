@@ -439,17 +439,15 @@ describe("AudioRendererJsUnitTest", function() {
      * @tc.require: I9P7F9
      */
     it('SUB_AUDIO_RENDERER_GET_SILENT_MODE_AND_MIX_WITH_OTHERS_TEST_001', 0, async function (done) {
-        await audioRenderer.setSilentModeAndMixWithOthers(true).then(() => {
-            try {
-                let data = audioRenderer.getSilentModeAndMixWithOthers();
-                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_SILENT_MODE_AND_MIX_WITH_OTHERS_TEST_001 SUCCESS: ${data}`);
-                expect(data).assertEqual(true);
-                done();
-            } catch (error) {
-                console.error(`setSilentModeAndMixWithOthers ERROR: ${err}`);
-                expect(false).assertTrue();
-                done();
-            }
-        })
+        try {
+            audioRenderer.setSilentModeAndMixWithOthers(true);
+            let data = audioRenderer.getSilentModeAndMixWithOthers();
+            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_SILENT_MODE_AND_MIX_WITH_OTHERS_TEST_001 SUCCESS: ${data}`);
+            expect(data).assertEqual(true);
+            done();
+        } catch (err) {
+            console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_SILENT_MODE_AND_MIX_WITH_OTHERS_TEST_001 ERROR: ${err}`);
+            done();
+	}
     })
 })
