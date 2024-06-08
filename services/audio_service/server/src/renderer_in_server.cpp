@@ -28,6 +28,7 @@
 #include "res_sched_client.h"
 #endif
 #include "volume_tools.h"
+#include "policy_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -445,7 +446,7 @@ void RendererInServer::ReportDataToResSched(bool isSilent)
 
 void RendererInServer::VolumeHandle(BufferDesc &desc)
 {
-    // volume process in client
+    // volume process in server
     if (audioServerBuffer_ == nullptr) {
         AUDIO_WARNING_LOG("buffer in not inited");
         return;
@@ -458,13 +459,15 @@ void RendererInServer::VolumeHandle(BufferDesc &desc)
     if (!IsVolumeSame(MAX_FLOAT_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
         applyVolume *= duckVolume_;
     }
-    //in plan: put system volume here
-    if (!IsVolumeSame(MAX_FLOAT_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
-        Trace traceVol("RendererInServer::VolumeTools::Process " + std::to_string(applyVolume));
+    //in plan: put system volume handle here
+    if (!IsVolumeSame(MAX_FLOAT_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON) ||
+        !IsVolumeSame(oldAppliedVolume_, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
+        Trace traceVol("RendererInServer::VolumeTools::Process " + std::to_string(oldAppliedVolume_) + "~" +
+            std::to_string(applyVolume));
         AudioChannel channel = processConfig_.streamInfo.channels;
-        // in plan: use oldAppliedVolume_ as start-volume for fade in.
-        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
+        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, oldAppliedVolume_, applyVolume);
         int32_t volRet = VolumeTools::Process(desc, processConfig_.streamInfo.format, mapVols);
+        oldAppliedVolume_ = applyVolume;
         if (volRet != SUCCESS) {
             AUDIO_WARNING_LOG("VolumeTools::Process error: %{public}d", volRet);
         }
@@ -954,7 +957,19 @@ int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, 
 
 int32_t RendererInServer::OffloadSetVolume(float volume)
 {
-    return stream_->OffloadSetVolume(volume);
+    if (volume < MIN_FLOAT_VOLUME || volume > MAX_FLOAT_VOLUME) {
+        AUDIO_ERR_LOG("invalid volume:%{public}f", volume);
+        return ERR_INVALID_PARAM;
+    }
+
+    AudioVolumeType volumeType = PolicyHandler::GetInstance().GetVolumeTypeFromStreamType(processConfig_.streamType);
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    Volume vol = {false, 0.0f, 0};
+    PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
+    float systemVol = vol.isMute ? 0.0f : vol.volumeFloat;
+    AUDIO_INFO_LOG("sessionId %{public}u set volume:%{public}f [volumeType:%{public}d deviceType:%{public}d systemVol:"
+        "%{public}f]", streamIndex_, volume, volumeType, deviceType, systemVol);
+    return stream_->OffloadSetVolume(systemVol * volume);
 }
 
 int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)

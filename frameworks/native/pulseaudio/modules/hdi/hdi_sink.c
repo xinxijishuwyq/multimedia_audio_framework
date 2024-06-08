@@ -2844,7 +2844,7 @@ void PaInputVolumeChangeCb(pa_sink_input *i)
             volumeResult = (float)pa_sw_volume_to_linear(pa_cvolume_avg(&volume));
         }
 
-        u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, volumeResult, 0);
+        u->offload.sinkAdapter->RendererSinkSetVolume(u->offload.sinkAdapter, volumeResult, volumeResult);
 
         AUDIO_DEBUG_LOG("PaInputVolumeChangeCb, soft_muted:%{public}d, volume muted:%{public}d",
             i->sink->thread_info.soft_muted, pa_cvolume_is_muted(&volume));

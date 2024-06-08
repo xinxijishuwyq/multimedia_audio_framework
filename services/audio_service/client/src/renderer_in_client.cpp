@@ -88,6 +88,8 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
+const int32_t CONTINUE_DOWN_BARRIER = 5;
+const float DOWN_BARRIER_VOLUME = 0.31f;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -700,10 +702,18 @@ int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamTyp
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::SetInnerVolume(float volume)
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
+    clientBuffer_->SetStreamVolume(volume);
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::SetVolume(float volume)
 {
     Trace trace("RendererInClientInner::SetVolume:" + std::to_string(volume));
-    AUDIO_INFO_LOG("sessionId:%{public}d volume:%{public}f", sessionId_, volume);
+    AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d volume:%{public}f", (offloadEnable_ ? "offload" : "normal"),
+        sessionId_, volume);
     if (volume < 0.0 || volume > 1.0) {
         AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
@@ -711,14 +721,31 @@ int32_t RendererInClientInner::SetVolume(float volume)
     if (volumeRamp_.IsActive()) {
         volumeRamp_.Terminate();
     }
+    float historyVolume = clientVolume_;
     if (silentModeAndMixWithOthers_) {
         cacheVolume_ = volume;
     } else {
         clientVolume_ = volume;
     }
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-    clientBuffer_->SetStreamVolume(clientVolume_);
-    return SUCCESS;
+    if (getuid() == MEDIA_SERVICE_UID) {
+        if (offloadEnable_) {
+            SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
+            CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+            ipcStream_->OffloadSetVolume(volume);
+            return SUCCESS;
+        }
+        if (volume >= historyVolume) {
+            continueDownCount_ = 0;
+        } else {
+            continueDownCount_++;
+        }
+        if (continueDownCount_ > CONTINUE_DOWN_BARRIER && volume < DOWN_BARRIER_VOLUME) {
+            AUDIO_INFO_LOG("sessionId:%{public}d set acturally volume:0.0", sessionId_);
+            return SetInnerVolume(MIN_FLOAT_VOLUME);
+        }
+    }
+
+    return SetInnerVolume(volume);
 }
 
 float RendererInClientInner::GetVolume()

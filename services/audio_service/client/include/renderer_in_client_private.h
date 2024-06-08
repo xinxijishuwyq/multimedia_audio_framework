@@ -248,6 +248,8 @@ private:
 
     void ReportDataToResSched();
 
+    int32_t SetInnerVolume(float volume);
+
     bool IsHighResolution() const noexcept;
 
     void ProcessWriteInner(BufferDesc &bufferDesc);
@@ -322,6 +324,7 @@ private:
     std::mutex writeDataMutex_;
     std::condition_variable writeDataCV_;
 
+    int32_t continueDownCount_ = 0;
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float clientVolume_ = 1.0;
