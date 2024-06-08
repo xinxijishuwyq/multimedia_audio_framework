@@ -134,7 +134,7 @@ bool PulseAudioServiceAdapterImpl::ConnectToPulseAudio()
     swapStatus = 0;
     pa_proplist *proplist = pa_proplist_new();
     if (proplist == nullptr) {
-        AUDIO_ERR_LOG("ConnectToPulseAudio pa_proplist_new returned nullptr");
+        AUDIO_ERR_LOG("Connect to pulseAudio and new proplist return nullptr!");
         return false;
     }
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "PulseAudio Service");
@@ -1001,7 +1001,7 @@ int32_t PulseAudioServiceAdapterImpl::UpdateSwapDeviceStatus()
     swapStatus = 1 - swapStatus;
     pa_proplist *proplist = pa_proplist_new();
     if (proplist == nullptr) {
-        AUDIO_ERR_LOG("UpdateClusterModule pa_proplist_new returned nullptr");
+        AUDIO_ERR_LOG("Update swap status and new proplist return nullptr!");
         return ERROR;
     }
     pa_proplist_sets(proplist, "device.swap.status", std::to_string(swapStatus).c_str());
