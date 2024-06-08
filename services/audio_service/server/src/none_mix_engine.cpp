@@ -213,9 +213,7 @@ int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &strea
 {
     AUDIO_INFO_LOG("Enter add");
     if (!stream_) {
-        bool isNeedInit = false;
         stream_ = stream;
-        isNeedInit = true;
         AudioProcessConfig config = stream->GetAudioProcessConfig();
         return InitSink(config.streamInfo);
     } else if (stream->GetStreamIndex() != stream_->GetStreamIndex()) {
