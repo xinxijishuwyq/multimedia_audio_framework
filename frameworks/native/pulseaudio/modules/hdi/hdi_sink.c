@@ -2791,7 +2791,7 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 
     {
         pa_proplist *propList = pa_proplist_new();
-        if (propList == nullptr) {
+        if (propList == NULL) {
             AUDIO_ERR_LOG("PaInputStateChangeCb pa_proplist_new returned nullptr");
             return;
         }
