@@ -97,8 +97,7 @@ int32_t AudioServerDump::Initialize()
     pa_context_set_state_callback(context, PAContextStateCb, mainLoop);
 
     if (pa_context_connect(context, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
-        int error = PA_ERR_INTERNAL;
-        error = pa_context_errno(context);
+        int error = pa_context_errno(context);
         AUDIO_ERR_LOG("context connect error: %{public}s", pa_strerror(error));
         ResetPAAudioDump();
         return AUDIO_DUMP_INIT_ERR;
