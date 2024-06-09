@@ -71,9 +71,11 @@ unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
     }
 }
 
-unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+vector<std::unique_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDevices(StreamUsage streamUsage,
+    int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    return descs;
 }
 
 unique_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)

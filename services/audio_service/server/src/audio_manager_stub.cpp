@@ -21,6 +21,7 @@
 #include "i_audio_process.h"
 #include "audio_effect_server.h"
 #include "audio_asr.h"
+#include "audio_utils.h"
 
 using namespace std;
 
@@ -168,9 +169,16 @@ int AudioManagerStub::HandleSetMicrophoneMute(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleSetAudioScene(MessageParcel &data, MessageParcel &reply)
 {
     AudioScene audioScene = (static_cast<AudioScene>(data.ReadInt32()));
-    DeviceType activeOutputDevice = (static_cast<DeviceType>(data.ReadInt32()));
+    std::vector<DeviceType> activeOutputDevices;
+    int32_t vecSize = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && vecSize <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, AUDIO_ERR,
+        "HandleSetAudioScene failed");
+    for (int32_t i = 0; i < vecSize; i++) {
+        DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
+        activeOutputDevices.push_back(deviceType);
+    }
     DeviceType activeInputDevice = (static_cast<DeviceType>(data.ReadInt32()));
-    int32_t result = SetAudioScene(audioScene, activeOutputDevice, activeInputDevice);
+    int32_t result = SetAudioScene(audioScene, activeOutputDevices, activeInputDevice);
     reply.WriteInt32(result);
     return AUDIO_OK;
 }
@@ -180,6 +188,22 @@ int AudioManagerStub::HandleUpdateActiveDeviceRoute(MessageParcel &data, Message
     DeviceType type = static_cast<DeviceType>(data.ReadInt32());
     DeviceFlag flag = static_cast<DeviceFlag>(data.ReadInt32());
     int32_t ret = UpdateActiveDeviceRoute(type, flag);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
+    int32_t vecSize = data.ReadInt32();
+    CHECK_AND_RETURN_RET_LOG(vecSize > 0 && vecSize <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, AUDIO_ERR,
+        "HandleUpdateActiveDevicesRoute failed");
+    for (int32_t i = 0; i < vecSize; i++) {
+        DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));
+        DeviceFlag deviceFlag = (static_cast<DeviceFlag>(data.ReadInt32()));
+        activeDevices.push_back(std::make_pair(deviceType, deviceFlag));
+    }
+    int32_t ret = UpdateActiveDevicesRoute(activeDevices);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }

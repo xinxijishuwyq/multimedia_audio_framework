@@ -1206,5 +1206,11 @@ void AudioPolicyManagerStub::ActivateAudioConcurrencyInternal(MessageParcel &dat
     int32_t result = ActivateAudioConcurrency(pipeType);
     reply.WriteInt32(result);
 }
+
+void AudioPolicyManagerStub::SetRingerStreamMuteInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t result = ResetRingerModeMute();
+    reply.WriteInt32(result);
+}
 } // namespace audio_policy
 } // namespace OHOS

@@ -57,6 +57,19 @@ const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 const uint32_t STRING_BUFFER_SIZE = 4096;
 
+// Ringer or alarmer dual tone
+const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
+class Util {
+public:
+    static bool IsDualToneStreamType(AudioStreamType streamType)
+    {
+        if (streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM) {
+            return true;
+        }
+        return false;
+    }
+};
+
 class Trace {
 public:
     static void Count(const std::string &value, int64_t count, bool isEnable = true);

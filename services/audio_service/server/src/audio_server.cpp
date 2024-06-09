@@ -792,11 +792,12 @@ int32_t AudioServer::OffloadSetVolume(float volume)
     return audioRendererSinkInstance->SetVolume(volume, 0);
 }
 
-int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
     DeviceType activeInputDevice)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
 
+    DeviceType activeOutputDevice = activeOutputDevices.front();
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
         ERR_NOT_SUPPORTED, "UpdateActiveDeviceRoute refused for %{public}d", callingUid);
@@ -823,16 +824,33 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, DeviceType activeOutpu
     if (audioRendererSinkInstance == nullptr || !audioRendererSinkInstance->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
-        audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevice);
+        std::vector<DeviceType> deviceTypes;
+        deviceTypes.push_back(activeOutputDevice);
+        audioRendererSinkInstance->SetAudioScene(audioScene, activeOutputDevices);
     }
 
     audioScene_ = audioScene;
     return SUCCESS;
 }
 
-int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
+int32_t  AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices)
 {
-    AUDIO_INFO_LOG("SetIORoute deviceType: %{public}d, flag: %{public}d", type, flag);
+    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_INVALID_PARAM, "Invalid audio devices.");
+    DeviceType type = activeDevices.front().first;
+    DeviceFlag flag = activeDevices.front().second;
+
+    std::vector<DeviceType> deviceTypes;
+    for (auto activeDevice : activeDevices) {
+        deviceTypes.push_back(activeDevice.first);
+    }
+    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, flag: %{public}d", type, flag);
+    int32_t ret = SetIORoutes(type, flag, deviceTypes);
+    return ret;
+}
+
+int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes)
+{
     IAudioCapturerSource *audioCapturerSourceInstance;
     IAudioRendererSink *audioRendererSinkInstance;
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -846,7 +864,7 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
         }
     }
     CHECK_AND_RETURN_RET_LOG(audioCapturerSourceInstance != nullptr && audioRendererSinkInstance != nullptr,
-        ERR_INVALID_PARAM, "SetIORoute failed for null instance!");
+        ERR_INVALID_PARAM, "SetIORoutes failed for null instance!");
 
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
@@ -857,25 +875,24 @@ int32_t AudioServer::SetIORoute(DeviceType type, DeviceFlag flag)
         }
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            audioRendererSinkInstance->SetAudioScene(audioScene_, type);
+            audioRendererSinkInstance->SetAudioScene(audioScene_, deviceTypes);
         } else {
-            audioRendererSinkInstance->SetOutputRoute(type);
+            audioRendererSinkInstance->SetOutputRoutes(deviceTypes);
         }
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
             audioCapturerSourceInstance->SetAudioScene(audioScene_, type);
-            audioRendererSinkInstance->SetAudioScene(audioScene_, type);
+            audioRendererSinkInstance->SetAudioScene(audioScene_, deviceTypes);
         } else {
             audioCapturerSourceInstance->SetInputRoute(type);
-            audioRendererSinkInstance->SetOutputRoute(type);
+            audioRendererSinkInstance->SetOutputRoutes(deviceTypes);
         }
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else {
-        AUDIO_ERR_LOG("SetIORoute invalid device flag");
+        AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
     }
-
     return SUCCESS;
 }
 
@@ -885,7 +902,17 @@ int32_t AudioServer::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag)
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
         ERR_NOT_SUPPORTED, "UpdateActiveDeviceRoute refused for %{public}d", callingUid);
 
-    return SetIORoute(type, flag);
+    std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
+    activeDevices.push_back(make_pair(type, flag));
+    return UpdateActiveDevicesRoute(activeDevices);
+}
+
+int32_t AudioServer::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "UpdateActiveDevicesRoute refused for %{public}d", callingUid);
+    return SetIORoutes(activeDevices);
 }
 
 void AudioServer::SetAudioMonoState(bool audioMono)
@@ -1587,7 +1614,7 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, int32_t deviceType)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
         0, "GetMaxAmplitude refused for %{public}d", callingUid);
-    
+
     float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);
     if (isOutputDevice) {
         IAudioRendererSink *iRendererInstance = nullptr;

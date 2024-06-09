@@ -21,6 +21,7 @@
 
 #include "audio_system_manager.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "i_audio_process.h"
 
 using namespace std;
@@ -207,9 +208,12 @@ int32_t AudioManagerProxy::OffloadSetBufferSize(uint32_t sizeMs)
     return result;
 }
 
-int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
     DeviceType activeInputDevice)
 {
+    CHECK_AND_RETURN_RET_LOG(!activeOutputDevices.empty() &&
+        activeOutputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_NONE, "Invalid active output devices.");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -218,7 +222,11 @@ int32_t AudioManagerProxy::SetAudioScene(AudioScene audioScene, DeviceType activ
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     data.WriteInt32(static_cast<int32_t>(audioScene));
-    data.WriteInt32(static_cast<int32_t>(activeOutputDevice));
+
+    data.WriteInt32(static_cast<int32_t>(activeOutputDevices.size()));
+    for (auto activeOutputDevice : activeOutputDevices) {
+        data.WriteInt32(static_cast<int32_t>(activeOutputDevice));
+    }
     data.WriteInt32(static_cast<int32_t>(activeInputDevice));
 
     int32_t error = Remote()->SendRequest(
@@ -533,6 +541,31 @@ int32_t AudioManagerProxy::UpdateActiveDeviceRoute(DeviceType type, DeviceFlag f
     return result;
 }
 
+int32_t AudioManagerProxy::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices)
+{
+    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_NONE, "Invalid active output devices.");
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(activeDevices.size()));
+    for (auto it = activeDevices.begin(); it != activeDevices.end(); it++) {
+        data.WriteInt32(static_cast<int32_t>(it->first));
+        data.WriteInt32(static_cast<int32_t>(it->second));
+    }
+
+    auto error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTES_REQ), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "UpdateActiveDevicesRoute failed, error: %{public}d", error);
+
+    auto result = reply.ReadInt32();
+    AUDIO_DEBUG_LOG("[UPDATE_ROUTES_REQ] result %{public}d", result);
+    return result;
+}
+
 int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
     MessageParcel data;
@@ -666,7 +699,7 @@ bool AudioManagerProxy::LoadAudioEffectLibraries(const vector<Library> libraries
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES), dataParcel, replyParcel, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "LoadAudioEffectLibraries failed, error: %{public}d", error);
-        
+
     int32_t successEffSize = replyParcel.ReadInt32();
     CHECK_AND_RETURN_RET_LOG((successEffSize >= 0) && (successEffSize <= AUDIO_EFFECT_COUNT_UPPER_LIMIT),
         false, "LOAD_AUDIO_EFFECT_LIBRARIES read replyParcel failed");

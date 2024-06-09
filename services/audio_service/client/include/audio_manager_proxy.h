@@ -27,7 +27,7 @@ class AudioManagerProxy : public IRemoteProxy<IStandardAudioService> {
 public:
     explicit AudioManagerProxy(const sptr<IRemoteObject> &impl);
     virtual ~AudioManagerProxy() = default;
-    
+
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
@@ -38,7 +38,7 @@ public:
     int32_t OffloadDrain() override;
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
         DeviceType activeInputDevice) override;
     const std::string GetAudioParameter(const std::string &key) override;
     const std::string GetAudioParameter(const std::string& networkId, const AudioParamKey key,
@@ -51,6 +51,7 @@ public:
     int32_t SetExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
+    int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     void NotifyDeviceInfo(std::string networkId, bool connected) override;
     int32_t CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice) override;

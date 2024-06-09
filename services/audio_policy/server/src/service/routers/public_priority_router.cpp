@@ -50,10 +50,11 @@ unique_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetCallCaptureDevice(Sou
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetRingRenderDevice(StreamUsage streamUsage,
+vector<std::unique_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    return descs;
 }
 
 unique_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,

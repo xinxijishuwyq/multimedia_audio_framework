@@ -82,7 +82,7 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetLatency(uint32_t *latency) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
@@ -92,7 +92,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
-    int32_t SetOutputRoute(DeviceType outputDevice) override;
+    int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     int32_t SetOutputRoute(DeviceType outputDevice, AudioPortPin &outputPortPin);
 
     int32_t Preload(const std::string &usbInfoStr) override;
@@ -752,8 +752,11 @@ static int32_t SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
     return ret;
 }
 
-int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice)
+int32_t MultiChannelRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
+    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_INVALID_PARAM, "Invalid audio devices.");
+    DeviceType outputDevice = outputDevices.front();
     AudioPortPin outputPortPin = PIN_OUT_SPEAKER;
     return SetOutputRoute(outputDevice, outputPortPin);
 }
@@ -817,10 +820,12 @@ int32_t MultiChannelRendererSinkInner::SetOutputRoute(DeviceType outputDevice, A
     return SUCCESS;
 }
 
-int32_t MultiChannelRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t MultiChannelRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
-    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
-        audioScene, activeDevice);
+    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_INVALID_PARAM, "Invalid audio devices.");
+    DeviceType activeDevice = activeDevices.front();
+    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d", audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
     if (audioRender_ == nullptr) {

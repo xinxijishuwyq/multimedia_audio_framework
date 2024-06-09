@@ -286,6 +286,8 @@ public:
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID) override;
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
+
+    int32_t ResetRingerModeMute() override;
 private:
     static inline BrokerDelegator<AudioPolicyProxy> mDdelegator;
     void WriteStreamChangeInfo(MessageParcel &data, const AudioMode &mode,

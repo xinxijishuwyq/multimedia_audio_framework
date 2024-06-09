@@ -56,10 +56,57 @@ unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallCaptureDevice(So
     return desc;
 }
 
-unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRingRenderDevice(StreamUsage streamUsage,
+vector<std::unique_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    vector<unique_ptr<AudioDeviceDescriptor>> curDescs;
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+        curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
+    } else {
+        curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
+    }
+
+    unique_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestConnectDeivce(curDescs);
+    if (!latestConnDesc.get()) {
+        AUDIO_INFO_LOG("Have no latest connecte desc, dont add the other device.");
+        return descs;
+    }
+    if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("Latest connecte desc type is none, dont add the other device.");
+        return descs;
+    }
+
+    if (latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADSET ||
+        latestConnDesc->getType() == DEVICE_TYPE_WIRED_HEADPHONES ||
+        latestConnDesc->getType() == DEVICE_TYPE_BLUETOOTH_SCO ||
+        latestConnDesc->getType() == DEVICE_TYPE_USB_HEADSET ||
+        latestConnDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        // Add the latest connected device.
+        descs.push_back(move(latestConnDesc));
+        switch (streamUsage) {
+            case STREAM_USAGE_ALARM:
+                // Add default device at same time for alarm.
+                descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+                break;
+            case STREAM_USAGE_VOICE_RINGTONE:
+            case STREAM_USAGE_RINGTONE:
+                if (curRingerMode == RINGER_MODE_NORMAL) {
+                    // Add default devices at same time only in ringer normal mode.
+                    descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+                }
+                break;
+            default:
+                AUDIO_DEBUG_LOG("Don't add default device at the same time.");
+                break;
+        }
+    } else if (latestConnDesc->getType() != DEVICE_TYPE_NONE) {
+        descs.push_back(move(latestConnDesc));
+    } else {
+        descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+    }
+    return descs;
 }
 
 unique_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,

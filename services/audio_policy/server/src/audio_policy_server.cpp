@@ -826,7 +826,8 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
-    if (audioPolicyServerHandler_ != nullptr) {
+    bool ringerModeMute = audioPolicyService_.IsRingerModeMute();
+    if (audioPolicyServerHandler_ != nullptr && ringerModeMute) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
     }
     return ret;
@@ -2696,6 +2697,11 @@ int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(const uint32_t sessionI
 int32_t AudioPolicyServer::ActivateAudioConcurrency(const AudioPipeType &pipeType)
 {
     return audioPolicyService_.ActivateAudioConcurrency(pipeType);
+}
+
+int32_t AudioPolicyServer::ResetRingerModeMute()
+{
+    return audioPolicyService_.ResetRingerModeMute();
 }
 } // namespace AudioStandard
 } // namespace OHOS

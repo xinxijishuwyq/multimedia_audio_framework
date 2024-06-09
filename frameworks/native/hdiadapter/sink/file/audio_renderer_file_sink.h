@@ -48,8 +48,8 @@ public:
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetVoiceVolume(float volume) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    int32_t SetOutputRoute(DeviceType deviceType) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
+    int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
