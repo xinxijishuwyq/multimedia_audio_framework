@@ -835,7 +835,7 @@ int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
-    return audioRendererSinkInstance->SetVolume(volume, 0);
+    return audioRendererSinkInstance->SetVolume(volume, volume);
 }
 
 int32_t PaRendererStreamImpl::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)

@@ -53,7 +53,6 @@
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "volume_ramp.h"
-#include "volume_tools.h"
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
@@ -78,8 +77,6 @@ const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const uint64_t MAX_CBBUF_IN_USEC = 100000;
 const uint64_t MIN_CBBUF_IN_USEC = 20000;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 230; //ms
-const float AUDIO_VOLOMUE_EPSILON = 0.0001;
-const float AUDIO_MAX_VOLUME = 1.0f;
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 8; // 8S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
@@ -91,6 +88,8 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t MAX_BUFFER_SIZE = 100000;
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MEDIA_SERVICE_UID = 1013;
+const int32_t CONTINUE_DOWN_BARRIER = 5;
+const float DOWN_BARRIER_VOLUME = 0.31f;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -703,9 +702,18 @@ int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamTyp
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::SetInnerVolume(float volume)
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
+    clientBuffer_->SetStreamVolume(volume);
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::SetVolume(float volume)
 {
     Trace trace("RendererInClientInner::SetVolume:" + std::to_string(volume));
+    AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d volume:%{public}f", (offloadEnable_ ? "offload" : "normal"),
+        sessionId_, volume);
     if (volume < 0.0 || volume > 1.0) {
         AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
@@ -713,13 +721,31 @@ int32_t RendererInClientInner::SetVolume(float volume)
     if (volumeRamp_.IsActive()) {
         volumeRamp_.Terminate();
     }
-    clientOldVolume_ = clientVolume_;
+    float historyVolume = clientVolume_;
     if (silentModeAndMixWithOthers_) {
         cacheVolume_ = volume;
     } else {
         clientVolume_ = volume;
     }
-    return SUCCESS;
+    if (getuid() == MEDIA_SERVICE_UID) {
+        if (offloadEnable_) {
+            SetInnerVolume(MAX_FLOAT_VOLUME); // so volume will not change in RendererInServer
+            CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+            ipcStream_->OffloadSetVolume(volume);
+            return SUCCESS;
+        }
+        if (volume >= historyVolume) {
+            continueDownCount_ = 0;
+        } else {
+            continueDownCount_++;
+        }
+        if (continueDownCount_ > CONTINUE_DOWN_BARRIER && volume < DOWN_BARRIER_VOLUME) {
+            AUDIO_INFO_LOG("sessionId:%{public}d set acturally volume:0.0", sessionId_);
+            return SetInnerVolume(MIN_FLOAT_VOLUME);
+        }
+    }
+
+    return SetInnerVolume(volume);
 }
 
 float RendererInClientInner::GetVolume()
@@ -735,11 +761,14 @@ float RendererInClientInner::GetVolume()
 int32_t RendererInClientInner::SetDuckVolume(float volume)
 {
     Trace trace("RendererInClientInner::SetDuckVolume:" + std::to_string(volume));
+    AUDIO_INFO_LOG("sessionId:%{public}d SetDuck:%{public}f", sessionId_, volume);
     if (volume < 0.0 || volume > 1.0) {
         AUDIO_ERR_LOG("SetDuckVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
     }
     duckVolume_ = volume;
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
+    clientBuffer_->SetDuckFactor(volume);
     return SUCCESS;
 }
 
@@ -1082,7 +1111,9 @@ int32_t RendererInClientInner::SetLowPowerVolume(float volume)
         return ERR_INVALID_PARAM;
     }
     lowPowerVolume_ = volume;
-    return SUCCESS;
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
+    return ipcStream_->SetLowPowerVolume(lowPowerVolume_);
 }
 
 float RendererInClientInner::GetLowPowerVolume()
@@ -1665,32 +1696,6 @@ void RendererInClientInner::ResetFramePosition()
     lastFramePosition_ = 0;
 }
 
-void RendererInClientInner::VolumeHandle(BufferDesc &desc)
-{
-    // volume process in client
-    if (volumeRamp_.IsActive()) {
-        // do not call SetVolume here.
-        clientOldVolume_ = clientVolume_;
-        clientVolume_ = volumeRamp_.GetRampVolume();
-    }
-    float applyVolume = clientVolume_;
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, lowPowerVolume_, AUDIO_VOLOMUE_EPSILON)) {
-        applyVolume *= lowPowerVolume_;
-    }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, duckVolume_, AUDIO_VOLOMUE_EPSILON)) {
-        applyVolume *= duckVolume_;
-    }
-    if (!IsVolumeSame(AUDIO_MAX_VOLUME, applyVolume, AUDIO_VOLOMUE_EPSILON)) {
-        Trace traceVol("RendererInClientInner::VolumeTools::Process " + std::to_string(clientVolume_));
-        AudioChannel channel = clientConfig_.streamInfo.channels;
-        ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, applyVolume, applyVolume);
-        int32_t volRet = VolumeTools::Process(desc, clientConfig_.streamInfo.format, mapVols);
-        if (volRet != SUCCESS) {
-            AUDIO_INFO_LOG("VolumeTools::Process error: %{public}d", volRet);
-        }
-    }
-}
-
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)
 {
     if (silentModeAndMixWithOthers_) {
@@ -1768,7 +1773,15 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain)
     AUDIO_DEBUG_LOG("RendererInClientInner::WriteCacheData() curWriteIndex[%{public}" PRIu64 "], spanSizeInFrame_ "
         "%{public}u", curWriteIndex, spanSizeInFrame_);
 
-    VolumeHandle(desc);
+    // volume process in client
+    if (volumeRamp_.IsActive()) {
+        // do not call SetVolume here.
+        clientVolume_ = volumeRamp_.GetRampVolume();
+        AUDIO_INFO_LOG("clientVolume_:%{public}f", clientVolume_);
+        Trace traceVolume("RendererInClientInner::WriteCacheData:Ramp:clientVolume_:" + std::to_string(clientVolume_));
+        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
+        clientBuffer_->SetStreamVolume(clientVolume_);
+    }
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
     clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
