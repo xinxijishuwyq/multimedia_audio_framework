@@ -1115,9 +1115,9 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
 int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
 {
     AUDIO_INFO_LOG("Entered %{public}s isMute:%{public}d, type:%{public}d", __func__, isMute, type);
-    bool hasPermission = VerifyPermission(MICRPHONE_CONTROL_PERMISSION);
+    bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
-        "MICRPHONE_CONTROL_PERMISSION permission denied");
+        "MICROPHONE_CONTROL_PERMISSION permission denied");
     int32_t ret = PrivacyKit::SetMutePolicy(POLICY_TYPE_MAP[type], MICPHONE_CALLER, isMute);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("PrivacyKit SetMutePolicy failed ret is %{public}d", ret);
@@ -1135,9 +1135,9 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(const bool isMute, const 
 
 bool AudioPolicyServer::GetPersistentMicMuteState()
 {
-    bool hasPermission = VerifyPermission(MICRPHONE_CONTROL_PERMISSION);
+    bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
-        "MICRPHONE_CONTROL_PERMISSION permission denied");
+        "MICROPHONE_CONTROL_PERMISSION permission denied");
 
     return audioPolicyService_.GetPersistentMicMuteState();
 }
