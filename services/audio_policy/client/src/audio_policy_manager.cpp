@@ -1697,5 +1697,11 @@ int32_t AudioPolicyManager::ActivateAudioConcurrency(const AudioPipeType &pipeTy
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->ActivateAudioConcurrency(pipeType);
 }
+
+AudioPolicyManager& AudioPolicyManager::GetInstance()
+{
+    static AudioPolicyManager policyManager;
+    return policyManager;
+}
 } // namespace AudioStandard
 } // namespace OHOS

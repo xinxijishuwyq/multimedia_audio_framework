@@ -43,11 +43,7 @@ using InternalAudioCapturerOptions = AudioCapturerOptions;
 
 class AudioPolicyManager {
 public:
-    static AudioPolicyManager& GetInstance()
-    {
-        static AudioPolicyManager policyManager;
-        return policyManager;
-    }
+    static AudioPolicyManager& GetInstance();
 
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
 
