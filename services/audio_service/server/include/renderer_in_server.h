@@ -125,7 +125,8 @@ private:
     size_t needForceWrite_ = 0;
     bool afterDrain = false;
     float lowPowerVolume_ = 1.0f;
-    float oldAppliedVolume_ = 0.0f;
+    bool isNeedFade_ = false;
+    float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;

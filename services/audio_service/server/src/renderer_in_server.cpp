@@ -45,6 +45,7 @@ namespace {
     static const int32_t BYTE_LEN_FOR_24BIT = 3;
     static const int32_t BYTE_LEN_FOR_32BIT = 4;
     static constexpr int32_t ONE_MINUTE = 60;
+    const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     static const int32_t UINT8_SILENCE_VALUE = 128;
 }
@@ -54,6 +55,10 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
 {
     streamListener_ = streamListener;
     managerType_ = PLAYBACK;
+    if (processConfig_.callerUid == MEDIA_UID) {
+        isNeedFade_ = true;
+        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
+    }
 }
 
 RendererInServer::~RendererInServer()
@@ -656,7 +661,9 @@ int32_t RendererInServer::Pause()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
-    oldAppliedVolume_ = 0.0f;
+    if (isNeedFade_) {
+        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
+    }
     return SUCCESS;
 }
 
@@ -760,7 +767,9 @@ int32_t RendererInServer::Stop()
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
-    oldAppliedVolume_ = 0.0f;
+    if (isNeedFade_) {
+        oldAppliedVolume_ = MIN_FLOAT_VOLUME;
+    }
     return SUCCESS;
 }
 
