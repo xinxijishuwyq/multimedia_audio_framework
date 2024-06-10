@@ -2137,7 +2137,7 @@ int32_t AudioPolicyService::HandleDeviceChangeForFetchOutputDevice(unique_ptr<Au
 }
 
 bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
-    const AudioStreamDeviceChangeReason reason, const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
+    const AudioStreamDeviceChangeReasonExt reason, const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
     if (!IsSameDevice(desc, currentActiveDevice_)) {
         WriteOutputRouteChangeEvent(desc, reason);
@@ -2145,7 +2145,7 @@ bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", currentActiveDevice_.deviceType_);
         return true;
     }
-    if (reason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE && audioScene_ == AUDIO_SCENE_DEFAULT &&
+    if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT &&
         !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
         MuteSinkPort(desc);
     }
@@ -2153,7 +2153,7 @@ bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
 }
 
 void AudioPolicyService::FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-    const AudioStreamDeviceChangeReason reason)
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("Start for %{public}zu stream, connected %{public}s",
         rendererChangeInfos.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
@@ -2467,7 +2467,7 @@ void AudioPolicyService::TriggerRecreateCapturerStreamCallback(int32_t callerPid
     }
 }
 
-void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDeviceChangeReason reason)
+void AudioPolicyService::FetchDevice(bool isOutputDevice, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioPolicyService::FetchDevice reason:" + std::to_string(static_cast<int>(reason)));
     AUDIO_DEBUG_LOG("FetchDevice start");
@@ -6962,6 +6962,7 @@ void AudioPolicyService::HandleRemoteCastDevice(bool isConnected, AudioStreamInf
         audioPolicyManager_.ResetRemoteCastDeviceVolume();
     } else {
         UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
+        FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
     TriggerFetchDevice();

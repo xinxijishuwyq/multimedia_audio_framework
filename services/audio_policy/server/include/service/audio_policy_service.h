@@ -627,7 +627,7 @@ private:
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
 
     void FetchOutputDevice(vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     bool IsFastFromA2dpToA2dp(const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
@@ -640,7 +640,7 @@ private:
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void FetchDevice(bool isOutputDevice = true,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
     void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<sptr<AudioDeviceDescriptor>>& descForCb);
@@ -851,7 +851,7 @@ private:
 
     bool IsDirectSupportedDevice(DeviceType deviceType);
 
-    bool UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReason reason,
+    bool UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
         const std::unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
 
     bool NotifyRecreateCapturerStream(bool isUpdateActiveDevice,
