@@ -257,8 +257,16 @@ bool PulseAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool
     pa_threaded_mainloop_lock(mMainLoop);
 
     int muteFlag = isMute ? 1 : 0;
-    pa_operation *operation = pa_context_set_sink_mute_by_name(mContext, sinkName.c_str(), muteFlag,
-        PulseAudioServiceAdapterImpl::PaSinkMuteCb, reinterpret_cast<void *>(userData.get()));
+
+    pa_operation *operation = nullptr;
+    if (isSync) {
+        operation = pa_context_set_sink_mute_by_name(mContext, sinkName.c_str(), muteFlag,
+            PulseAudioServiceAdapterImpl::PaSinkMuteCb, reinterpret_cast<void *>(userData.get()));
+    } else {
+        operation = pa_context_set_sink_mute_by_name(mContext, sinkName.c_str(), muteFlag,
+            nullptr, nullptr);
+    }
+
     if (operation == nullptr) {
         AUDIO_ERR_LOG("pa_context_suspend_sink_by_name failed!");
         pa_threaded_mainloop_unlock(mMainLoop);
@@ -660,12 +668,8 @@ void PulseAudioServiceAdapterImpl::PaMoveSourceOutputCb(pa_context *c, int succe
 void PulseAudioServiceAdapterImpl::PaSinkMuteCb(pa_context *c, int success, void *userdata)
 {
     UserData *userData = reinterpret_cast<UserData *>(userdata);
-
     AUDIO_DEBUG_LOG("result[%{public}d]", success);
-
     pa_threaded_mainloop_signal(userData->thiz->mMainLoop, 0);
-
-    return;
 }
 
 void PulseAudioServiceAdapterImpl::PaContextStateCb(pa_context *c, void *userdata)
