@@ -269,6 +269,8 @@ int32_t PaAdapterManager::InitPaContext()
         pa_threaded_mainloop_set_name(mainLoop_, "OS_RendererML");
     } else if (managerType_ == DUP_PLAYBACK) {
         pa_threaded_mainloop_set_name(mainLoop_, "OS_DRendererML");
+    } else if (managerType_ == DUAL_PLAYBACK) {
+        pa_threaded_mainloop_set_name(mainLoop_, "OS_DualRendererML");
     } else if (managerType_ == RECORDER) {
         pa_threaded_mainloop_set_name(mainLoop_, "OS_CapturerML");
     } else {
@@ -493,8 +495,9 @@ int32_t PaAdapterManager::SetPaProplist(pa_proplist *propList, pa_channel_map &m
         pa_proplist_sets(propList, "scene.mode",
             IsEffectNone(processConfig.rendererInfo.streamUsage) ? "EFFECT_NONE" : "EFFECT_DEFAULT");
         // mark dup stream for dismissing volume handle
-        pa_proplist_sets(propList, "stream.mode", managerType_ == DUP_PLAYBACK ? DUP_STREAM.c_str() :
-            NORMAL_STREAM.c_str());
+        std::string streamMode = managerType_ == DUP_PLAYBACK ? DUP_STREAM
+            : (managerType_ == DUAL_PLAYBACK ? DUAL_TONE_STREAM : NORMAL_STREAM);
+        pa_proplist_sets(propList, "stream.mode", streamMode.c_str());
         pa_proplist_sets(propList, "stream.flush", "false");
         pa_proplist_sets(propList, "fadeoutPause", "0");
         pa_proplist_sets(propList, "stream.privacyType", std::to_string(processConfig.privacyType).c_str());
@@ -559,7 +562,7 @@ int32_t PaAdapterManager::ConnectStreamToPA(pa_stream *paStream, pa_sample_spec 
 
     PaLockGuard lock(mainLoop_);
     int32_t XcollieFlag = 1; // flag 1 generate log file
-    if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK) {
+    if (managerType_ == PLAYBACK || managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         int32_t rendererRet = ConnectRendererStreamToPA(paStream, sampleSpec);
         CHECK_AND_RETURN_RET_LOG(rendererRet == SUCCESS, rendererRet, "ConnectRendererStreamToPA failed");
     }
@@ -596,7 +599,7 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     uint32_t maxlength = 4; // 4 is max buffer length of playback
     uint32_t prebuf = 1; // 1 is prebuf of playback
 
-    if (managerType_ == DUP_PLAYBACK) {
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         maxlength = 20; // 20 for cover offload
         prebuf = 2; // 2 is double of normal, use more prebuf for dup stream
     }
@@ -609,17 +612,18 @@ int32_t PaAdapterManager::ConnectRendererStreamToPA(pa_stream *paStream, pa_samp
     bufferAttr.tlength = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC * tlength, &sampleSpec);
     bufferAttr.minreq = pa_usec_to_bytes(BUF_LENGTH_IN_MSEC * PA_USEC_PER_MSEC, &sampleSpec);
 
-    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK.c_str() : nullptr;
+    const char *sinkName = managerType_ == DUP_PLAYBACK ? INNER_CAPTURER_SINK.c_str() :
+        (managerType_ == DUAL_PLAYBACK ? "Speaker" : nullptr);
     uint32_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_START_CORKED |
         PA_STREAM_VARIABLE_RATE;
-    if (managerType_ == DUP_PLAYBACK) {
+    if (managerType_ == DUP_PLAYBACK || managerType_ == DUAL_PLAYBACK) {
         flags |= PA_STREAM_DONT_MOVE; // should not move dup streams
     }
     int32_t result = pa_stream_connect_playback(paStream, sinkName, &bufferAttr, static_cast<pa_stream_flags_t>(flags),
         nullptr, nullptr);
     if (result < 0) {
         int32_t error = pa_context_errno(context_);
-        AUDIO_ERR_LOG("connection to stream error: %{public}d", error);
+        AUDIO_ERR_LOG("connection to stream error: %{public}d -- %{public}s", error, pa_strerror(error));
         return ERR_INVALID_OPERATION;
     }
     return SUCCESS;

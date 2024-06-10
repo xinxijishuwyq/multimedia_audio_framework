@@ -771,6 +771,8 @@ private:
 
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices);
 
+    void UpdateDualToneState(const bool &enable, const int32_t &sessionId);
+
     int32_t ActivateA2dpDevice(unique_ptr<AudioDeviceDescriptor> &desc,
         vector<unique_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -901,14 +903,20 @@ private:
 
     int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
 
-    bool IsRingerOrAlarmerStreamUsage(StreamUsage usage);
+    void UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+        vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices);
 
-    bool IsRingerOrAlarmerDualDevicesRange(InternalDeviceType deviceType);
+    bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
 
-    bool SelectRingerOrAlarmDevices(vector<std::unique_ptr<AudioDeviceDescriptor>> &descs);
+    bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
 
-    void DealAudioSceneOutputDevices(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
+    bool SelectRingerOrAlarmDevices(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+        const int32_t &sessionId);
+
+    void DealAudioSceneOutputDevices(const AudioScene &audioScene, std::vector<DeviceType> &activeOutputDevices,
         bool &haveArmUsbDevice);
+
+    bool IsA2dpOrArmUsbDevice(const InternalDeviceType &deviceType);
 
     bool isUpdateRouteSupported_ = true;
     bool isCurrentRemoteRenderer = false;

@@ -208,6 +208,16 @@ int AudioManagerStub::HandleUpdateActiveDevicesRoute(MessageParcel &data, Messag
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleDualToneState(MessageParcel &data, MessageParcel &reply)
+{
+    bool enable = data.ReadBool();
+    int32_t sessionId = data.ReadInt32();
+
+    int32_t ret = UpdateDualToneState(enable, sessionId);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleGetTransactionId(MessageParcel &data, MessageParcel &reply)
 {
     DeviceType deviceType = (static_cast<DeviceType>(data.ReadInt32()));

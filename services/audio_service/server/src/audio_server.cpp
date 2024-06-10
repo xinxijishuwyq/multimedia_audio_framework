@@ -1672,5 +1672,18 @@ bool AudioServer::GetEffectOffloadEnabled()
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     return audioEffectChainManager->GetOffloadEnabled();
 }
+
+int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callingUid == audioUid_ || callingUid == ROOT_UID,
+        ERR_NOT_SUPPORTED, "update dual tone state refused for %{public}d", callingUid);
+
+    if (enable) {
+        return AudioService::GetInstance()->EnableDualToneList(static_cast<uint32_t>(sessionId));
+    } else {
+        return AudioService::GetInstance()->DisableDualToneList(static_cast<uint32_t>(sessionId));
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

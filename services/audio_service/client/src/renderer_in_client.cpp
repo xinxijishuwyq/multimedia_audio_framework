@@ -2288,9 +2288,8 @@ error:
 
 void RendererInClientInner::ResetRingerModeMute()
 {
-    AUDIO_INFO_LOG("RetRingerStreamMute stream type %{public}d", eStreamType_);
     if (Util::IsDualToneStreamType(eStreamType_)) {
-        AUDIO_INFO_LOG("RetRingerStreamMute tone stream type %{public}d", eStreamType_);
+        AUDIO_INFO_LOG("reset ringer tone mode, stream type %{public}d", eStreamType_);
         AudioPolicyManager::GetInstance().ResetRingerModeMute();
     }
 }

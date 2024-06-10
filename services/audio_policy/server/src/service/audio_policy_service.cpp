@@ -1987,11 +1987,20 @@ void AudioPolicyService::UpdateActiveDevicesRoute(std::vector<std::pair<Internal
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 
+void AudioPolicyService::UpdateDualToneState(const bool &enable, const int32_t &sessionId)
+{
+    CHECK_AND_RETURN_LOG(g_adProxy != nullptr, "Audio Server Proxy is null");
+    auto ret = SUCCESS;
+    Trace trace("AudioPolicyService::UpdateDualToneState sessionId:" + std::to_string(sessionId));
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    ret = g_adProxy->UpdateDualToneState(enable, sessionId);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the dual tone state for sessionId:%{public}d", sessionId);
+}
+
 void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
     vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices, const AudioStreamDeviceChangeReason reason)
 {
-    StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
-    InternalDeviceType deviceType = outputDevices.front()->deviceType_;
     std::vector<SinkInput> targetSinkInputs = FilterSinkInputs(rendererChangeInfo->sessionId);
 
     bool needTriggerCallback = true;
@@ -2019,25 +2028,7 @@ void AudioPolicyService::MoveToNewOutputDevice(unique_ptr<AudioRendererChangeInf
         rendererChangeInfo->sessionId, outputDevices.front()->deviceType_);
     SetVolumeForSwitchDevice(outputDevices.front()->deviceType_);
     if (isUpdateRouteSupported_) {
-        if (IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType)) {
-            if (!SelectRingerOrAlarmDevices(outputDevices)) {
-                UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
-            }
-            vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
-                audioRouterCenter_.FetchOutputDevices(streamUsage, rendererChangeInfo->clientUID);
-
-            AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
-            if (ringerMode != RINGER_MODE_NORMAL && IsRingerOrAlarmerDualDevicesRange(descs.front()->getType()) &&
-                descs.front()->getType() != DEVICE_TYPE_SPEAKER) {
-                audioPolicyManager_.SetStreamMute(STREAM_RING, false);
-                ringerModeMute_ = false;
-            } else {
-                ringerModeMute_ = true;
-            }
-        } else {
-            ringerModeMute_ = true;
-            UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
-        }
+        UpdateRoute(rendererChangeInfo, outputDevices);
     }
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
@@ -7637,7 +7628,36 @@ int32_t AudioPolicyService::ActivateAudioConcurrency(const AudioPipeType &pipeTy
     return streamCollector_.ActivateAudioConcurrency(pipeType);
 }
 
-bool AudioPolicyService::IsRingerOrAlarmerStreamUsage(StreamUsage usage)
+void AudioPolicyService::UpdateRoute(unique_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
+    vector<std::unique_ptr<AudioDeviceDescriptor>> &outputDevices)
+{
+    StreamUsage streamUsage = rendererChangeInfo->rendererInfo.streamUsage;
+    InternalDeviceType deviceType = outputDevices.front()->deviceType_;
+    if (IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType)) {
+        if (!SelectRingerOrAlarmDevices(outputDevices, rendererChangeInfo->sessionId)) {
+            UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        }
+        vector<std::unique_ptr<AudioDeviceDescriptor>> descs =
+            audioRouterCenter_.FetchOutputDevices(streamUsage, rendererChangeInfo->clientUID);
+
+        AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
+        if (ringerMode != RINGER_MODE_NORMAL && IsRingerOrAlarmerDualDevicesRange(descs.front()->getType()) &&
+            descs.front()->getType() != DEVICE_TYPE_SPEAKER) {
+            audioPolicyManager_.SetStreamMute(STREAM_RING, false);
+            ringerModeMute_ = false;
+        } else {
+            ringerModeMute_ = true;
+        }
+    } else {
+        if (!IsA2dpOrArmUsbDevice(outputDevices.front()->deviceType_)) {
+            UpdateDualToneState(false, rendererChangeInfo->sessionId);
+        }
+        ringerModeMute_ = true;
+        UpdateActiveDeviceRoute(outputDevices.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+    }
+}
+
+bool AudioPolicyService::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
 {
     switch (usage) {
         case STREAM_USAGE_ALARM:
@@ -7649,7 +7669,7 @@ bool AudioPolicyService::IsRingerOrAlarmerStreamUsage(StreamUsage usage)
     }
 }
 
-bool AudioPolicyService::IsRingerOrAlarmerDualDevicesRange(InternalDeviceType deviceType)
+bool AudioPolicyService::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType)
 {
     switch (deviceType) {
         case DEVICE_TYPE_SPEAKER:
@@ -7665,7 +7685,24 @@ bool AudioPolicyService::IsRingerOrAlarmerDualDevicesRange(InternalDeviceType de
     }
 }
 
-bool AudioPolicyService::SelectRingerOrAlarmDevices(vector<std::unique_ptr<AudioDeviceDescriptor>> &descs)
+bool AudioPolicyService::IsA2dpOrArmUsbDevice(const InternalDeviceType &deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            return true;
+        default: {
+            if (deviceType == DEVICE_TYPE_USB_HEADSET && isArmUsbDevice_) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+}
+
+bool AudioPolicyService::SelectRingerOrAlarmDevices(const vector<std::unique_ptr<AudioDeviceDescriptor>> &descs,
+    const int32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(descs.size() > 0 && descs.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, false,
         "audio devices not in range for ringer or alarmer.");
@@ -7686,12 +7723,17 @@ bool AudioPolicyService::SelectRingerOrAlarmDevices(vector<std::unique_ptr<Audio
 
     if (!descs.empty() && allDevicesInDualDevicesRange && haveSpeakerDevice) {
         UpdateActiveDevicesRoute(activeDevices);
+        if (IsA2dpOrArmUsbDevice(descs.front()->deviceType_)) {
+            UpdateDualToneState(true, sessionId);
+        } else {
+            UpdateDualToneState(false, sessionId);
+        }
         return true;
     }
     return false;
 }
 
-void AudioPolicyService::DealAudioSceneOutputDevices(AudioScene audioScene,
+void AudioPolicyService::DealAudioSceneOutputDevices(const AudioScene &audioScene,
     std::vector<DeviceType> &activeOutputDevices, bool &haveArmUsbDevice)
 {
     vector<std::unique_ptr<AudioDeviceDescriptor>> descs {};
