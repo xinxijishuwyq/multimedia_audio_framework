@@ -180,6 +180,8 @@ void AudioSystemManager::AudioServerDied(pid_t pid)
 
 int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
 {
+    // Deprecated. Please use the SetRingerMode interface of AudioGroupManager.
+    AUDIO_WARNING_LOG("Use the deprecated SetRingerMode func. ringer mode [%{public}d]", ringMode);
     std::lock_guard<std::mutex> lockSet(ringerModeCallbackMutex_);
     ringModeBackup_ = ringMode;
     if (ringerModeCallback_ != nullptr) {
@@ -370,7 +372,7 @@ uint64_t AudioSystemManager::GetTransactionId(DeviceType deviceType, DeviceRole 
 
 int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
 {
-    AUDIO_INFO_LOG("SetVolume volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);
+    AUDIO_INFO_LOG("SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);
 
     /* Validate volumeType and return INVALID_PARAMS error */
     switch (volumeType) {
@@ -414,11 +416,11 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
-            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetMute: No system permission");
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
             break;
         }
         default:
-            AUDIO_ERR_LOG("volumeType = %{public}d not supported", volumeType);
+            AUDIO_ERR_LOG("volumeType[%{public}d] is not supported", volumeType);
             return ERR_NOT_SUPPORTED;
     }
 
@@ -476,7 +478,7 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
 
 int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute) const
 {
-    AUDIO_DEBUG_LOG("SetMute for volumeType=%{public}d", volumeType);
+    AUDIO_INFO_LOG("SetStreamMute for volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
