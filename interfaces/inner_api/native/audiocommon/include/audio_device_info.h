@@ -475,6 +475,45 @@ enum class AudioStreamDeviceChangeReason {
     OLD_DEVICE_UNAVALIABLE = 2,
     OVERRODE = 3
 };
+
+class AudioStreamDeviceChangeReasonExt {
+public:
+    enum class ExtEnum {
+        UNKNOWN = 0,
+        NEW_DEVICE_AVAILABLE = 1,
+        OLD_DEVICE_UNAVALIABLE = 2,
+        OVERRODE = 3,
+        MIN = 1000,
+        OLD_DEVICE_UNAVALIABLE_EXT = 1000
+    };
+
+    operator AudioStreamDeviceChangeReason() const
+    {
+        if (reason_ < ExtEnum::MIN) {
+            return AudioStreamDeviceChangeReason::UNKNOWN;
+        } else {
+            return static_cast<AudioStreamDeviceChangeReason>(reason_);
+        }
+    }
+
+    operator int() const
+    {
+        return static_cast<int>(reason_);
+    }
+
+    AudioStreamDeviceChangeReasonExt(const AudioStreamDeviceChangeReason &reason)
+        : reason_(static_cast<ExtEnum>(reason)) {}
+
+    AudioStreamDeviceChangeReasonExt(const ExtEnum &reason) : reason_(reason) {}
+
+    bool IsOldDeviceUnavaliable() const
+    {
+        return ((reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE) || (reason_ == ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT));
+    }
+
+private:
+    ExtEnum reason_;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_DEVICE_INFO_H
