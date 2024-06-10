@@ -151,10 +151,11 @@ unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetCallCaptureDevice(Sourc
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRingRenderDevice(StreamUsage streamUsage,
+vector<std::unique_ptr<AudioDeviceDescriptor>> StreamFilterRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    return descs;
 }
 
 unique_ptr<AudioDeviceDescriptor> StreamFilterRouter::GetRecordCaptureDevice(SourceType sourceType,

@@ -370,13 +370,15 @@ public:
     int32_t TriggerFetchDevice();
 
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
-    
+
     int32_t SetAudioConcurrencyCallback(const uint32_t sessionID,
         const std::shared_ptr<AudioConcurrencyCallback> &callback);
 
     int32_t UnsetAudioConcurrencyCallback(const uint32_t sessionID);
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType);
+
+    int32_t ResetRingerModeMute();
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

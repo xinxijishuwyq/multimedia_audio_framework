@@ -366,6 +366,8 @@ public:
 
     int32_t ActivateAudioConcurrency(const AudioPipeType &pipeType) override;
 
+    int32_t ResetRingerModeMute() override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);

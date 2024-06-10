@@ -48,9 +48,11 @@ unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceT
     return make_unique<AudioDeviceDescriptor>();
 }
 
-unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+vector<std::unique_ptr<AudioDeviceDescriptor>> PairDeviceRouter::GetRingRenderDevices(StreamUsage streamUsage,
+    int32_t clientUID)
 {
-    return make_unique<AudioDeviceDescriptor>();
+    vector<unique_ptr<AudioDeviceDescriptor>> descs;
+    return descs;
 }
 
 unique_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID)

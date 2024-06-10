@@ -1300,6 +1300,7 @@ bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+    ResetRingerModeMute();
     if (!offloadEnable_) {
         DrainAudioStream();
     }
@@ -2283,6 +2284,15 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+void RendererInClientInner::ResetRingerModeMute()
+{
+    AUDIO_INFO_LOG("RetRingerStreamMute stream type %{public}d", eStreamType_);
+    if (Util::IsDualToneStreamType(eStreamType_)) {
+        AUDIO_INFO_LOG("RetRingerStreamMute tone stream type %{public}d", eStreamType_);
+        AudioPolicyManager::GetInstance().ResetRingerModeMute();
+    }
 }
 
 RendererInClientPolicyServiceDiedCallbackImpl::RendererInClientPolicyServiceDiedCallbackImpl()

@@ -96,8 +96,8 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
 
     int32_t SetVoiceVolume(float volume) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    int32_t SetOutputRoute(DeviceType deviceType) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
+    int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void RegisterParameterCallback(IAudioSinkCallback* callback) override;
@@ -210,13 +210,14 @@ int32_t BluetoothRendererSinkInner::SetVoiceVolume(float volume)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t BluetoothRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t BluetoothRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t BluetoothRendererSinkInner::SetOutputRoute(DeviceType deviceType)
+int32_t BluetoothRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
+    AUDIO_DEBUG_LOG("SetOutputRoutes not supported.");
     return ERR_NOT_SUPPORTED;
 }
 

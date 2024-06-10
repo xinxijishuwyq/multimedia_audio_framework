@@ -46,7 +46,7 @@ public:
     void OnStart() override;
     void OnStop() override;
     int32_t OffloadDrain() override;
-                
+
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     bool LoadAudioEffectLibraries(std::vector<Library> libraries, std::vector<Effect> effects,
@@ -59,7 +59,7 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
         DeviceType activeInputDevice) override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
@@ -74,6 +74,7 @@ public:
         const std::string& condition) override;
     uint64_t GetTransactionId(DeviceType deviceType, DeviceRole deviceRole) override;
     int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) override;
+    int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) override;
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
@@ -109,7 +110,7 @@ public:
     int32_t SetSupportStreamUsage(std::vector<int32_t> usage) override;
 
     int32_t SetCaptureSilentState(bool state) override;
-    
+
     int32_t GetCapturePresentationPosition(const std::string& deviceClass, uint64_t& frames, int64_t& timeSec,
         int64_t& timeNanoSec) override;
 
@@ -117,7 +118,7 @@ public:
         int64_t& timeNanoSec) override;
 
     int32_t OffloadGetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
-    
+
     int32_t OffloadSetBufferSize(uint32_t sizeMs) override;
 
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
@@ -157,7 +158,8 @@ private:
     void AudioServerDied(pid_t pid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
-    int32_t SetIORoute(DeviceType type, DeviceFlag flag);
+    int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices);
+    int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes);
     bool CheckAndPrintStacktrace(const std::string &key);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter();

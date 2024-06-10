@@ -63,7 +63,7 @@ public:
      * @param activeDevice Currently active priority device
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
-    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeOutputDevice,
+    virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
         DeviceType activeInputDevice) = 0;
 
     /**
@@ -178,6 +178,13 @@ public:
      * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
      */
     virtual int32_t UpdateActiveDeviceRoute(DeviceType type, DeviceFlag flag) = 0;
+
+    /**
+     * Update the audio route after devices is detected and route is decided
+     *
+     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
+     */
+    virtual int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) = 0;
 
     /**
      * Get the transaction Id
@@ -381,6 +388,7 @@ private:
     int HandleSetMicrophoneMute(MessageParcel &data, MessageParcel &reply);
     int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
+    int HandleUpdateActiveDevicesRoute(MessageParcel &data, MessageParcel &reply);
     int HandleGetTransactionId(MessageParcel &data, MessageParcel &reply);
     int HandleSetParameterCallback(MessageParcel &data, MessageParcel &reply);
     int HandleGetRemoteAudioParameter(MessageParcel &data, MessageParcel &reply);
@@ -430,6 +438,7 @@ private:
         &AudioManagerStub::HandleSetMicrophoneMute,
         &AudioManagerStub::HandleSetAudioScene,
         &AudioManagerStub::HandleUpdateActiveDeviceRoute,
+        &AudioManagerStub::HandleUpdateActiveDevicesRoute,
         &AudioManagerStub::HandleGetTransactionId,
         &AudioManagerStub::HandleSetParameterCallback,
         &AudioManagerStub::HandleGetRemoteAudioParameter,

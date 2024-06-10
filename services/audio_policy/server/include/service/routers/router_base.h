@@ -18,6 +18,7 @@
 
 #include "audio_system_manager.h"
 #include "audio_device_manager.h"
+#include "audio_policy_manager_factory.h"
 #include "audio_log.h"
 
 namespace OHOS {
@@ -25,13 +26,15 @@ namespace AudioStandard {
 class RouterBase {
 public:
     std::string name_;
-    RouterBase() {};
+    IAudioPolicyInterface& audioPolicyManager_;
+    RouterBase() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()) {}
     virtual ~RouterBase() {};
 
     virtual std::unique_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
     virtual std::unique_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
     virtual std::unique_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
-    virtual std::unique_ptr<AudioDeviceDescriptor> GetRingRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
+    virtual vector<std::unique_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
+        int32_t clientUID) = 0;
     virtual std::unique_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID) = 0;
     virtual std::unique_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) = 0;
     virtual RouterType GetRouterType() = 0;

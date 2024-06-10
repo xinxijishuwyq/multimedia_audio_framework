@@ -95,8 +95,8 @@ public:
     int32_t SetVoiceVolume(float volume) override;
     int32_t GetTransactionId(uint64_t *transactionId) override;
     int32_t GetLatency(uint32_t *latency) override;
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice) override;
-    int32_t SetOutputRoute(DeviceType deviceType) override;
+    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices) override;
+    int32_t SetOutputRoutes(std::vector<DeviceType> &outputDevices) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
     void SetAudioMonoState(bool audioMono) override;
@@ -609,10 +609,12 @@ int32_t RemoteAudioRendererSinkInner::OpenOutput(DeviceType outputDevice)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t RemoteAudioRendererSinkInner::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices)
 {
-    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d",
-        audioScene, activeDevice);
+    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_INVALID_PARAM, "Invalid audio devices.");
+    DeviceType activeDevice = activeDevices.front();
+    AUDIO_INFO_LOG("SetAudioScene scene: %{public}d, device: %{public}d", audioScene, activeDevice);
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "invalid audioScene");
 
@@ -696,10 +698,10 @@ int32_t RemoteAudioRendererSinkInner::SetVoiceVolume(float volume)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t RemoteAudioRendererSinkInner::SetOutputRoute(DeviceType deviceType)
+int32_t RemoteAudioRendererSinkInner::SetOutputRoutes(std::vector<DeviceType> &outputDevices)
 {
-    (void)deviceType;
-    AUDIO_ERR_LOG("SetOutputRoute not supported");
+    (void)outputDevices;
+    AUDIO_DEBUG_LOG("SetOutputRoutes not supported.");
     return ERR_NOT_SUPPORTED;
 }
 
