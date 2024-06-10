@@ -2583,6 +2583,12 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
         "the target A2DP device doesn't exist.");
     int32_t result = ERROR;
 #ifdef BLUETOOTH_ENABLE
+    AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
+    std::string lastActiveA2dpDevice = activeBTDevice_;
+    activeBTDevice_ = deviceDescriptor->macAddress_;
+    DeviceType lastDevice = audioPolicyManager_.GetActiveDevice();
+    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
+
     {
         std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
         if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
@@ -2592,11 +2598,7 @@ int32_t AudioPolicyService::SwitchActiveA2dpDevice(const sptr<AudioDeviceDescrip
             return SUCCESS;
         }
     }
-    AUDIO_INFO_LOG("a2dp device name [%{public}s]", (deviceDescriptor->deviceName_).c_str());
-    std::string lastActiveA2dpDevice = activeBTDevice_;
-    activeBTDevice_ = deviceDescriptor->macAddress_;
-    DeviceType lastDevice = audioPolicyManager_.GetActiveDevice();
-    audioPolicyManager_.SetActiveDevice(DEVICE_TYPE_BLUETOOTH_A2DP);
+
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
     if (result != SUCCESS) {
         activeBTDevice_ = lastActiveA2dpDevice;
@@ -4496,8 +4498,8 @@ int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 
 int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("Entered AudioPolicyService UpdateTracker");
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    AUDIO_INFO_LOG("Entered AudioPolicyService UpdateTracker");
 
     if (mode == AUDIO_MODE_RECORD) {
         if (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED) {
@@ -4527,6 +4529,8 @@ int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
 void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
+    AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
+        streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     vector<unique_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     rendererChangeInfo.push_back(
@@ -4539,6 +4543,8 @@ void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &stream
 void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
+    AUDIO_INFO_LOG("fetch device for track, sessionid:%{public}d start",
+        streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     vector<unique_ptr<AudioCapturerChangeInfo>> capturerChangeInfo;
     capturerChangeInfo.push_back(
