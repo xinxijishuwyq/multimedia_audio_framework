@@ -42,7 +42,7 @@ public:
     void OnStatusUpdate(IOperation operation) override;
     void HandleOperationFlushed();
     int32_t OnWriteData(size_t length) override;
-    
+
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
@@ -85,6 +85,11 @@ public:
     int32_t DisableInnerCap();
     int32_t InitDupStream();
 
+    // for dual tone
+    int32_t EnableDualTone();
+    int32_t DisableDualTone();
+    int32_t InitDualToneStream();
+
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
 public:
@@ -100,6 +105,7 @@ private:
     void CheckFadingOutDone(int32_t fadeFlag, BufferDesc& bufferDesc);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     void ReportDataToResSched(bool isSilent);
+    void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     std::mutex statusLock_;
     std::condition_variable statusCv_;
     std::shared_ptr<IRendererStream> stream_ = nullptr;
@@ -113,6 +119,13 @@ private:
     uint32_t dupStreamIndex_ = 0;
     std::shared_ptr<StreamCallbacks> dupStreamCallback_ = nullptr;
     std::shared_ptr<IRendererStream> dupStream_ = nullptr;
+
+    // for dual sink tone
+    std::mutex dualToneMutex_;
+    std::atomic<bool> isDualToneEnabled_ = false;
+    uint32_t dualToneStreamIndex_ = 0;
+    std::shared_ptr<StreamCallbacks> dualToneStreamCallback_ = nullptr;
+    std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
 
     std::weak_ptr<IStreamListener> streamListener_;
     size_t totalSizeInFrame_ = 0;

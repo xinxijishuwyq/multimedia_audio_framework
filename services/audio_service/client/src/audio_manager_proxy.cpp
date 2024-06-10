@@ -566,6 +566,26 @@ int32_t AudioManagerProxy::UpdateActiveDevicesRoute(std::vector<std::pair<Device
     return result;
 }
 
+int32_t AudioManagerProxy::UpdateDualToneState(bool enable, int32_t sessionId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteBool(enable);
+    data.WriteInt32(sessionId);
+    auto error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_DUAL_TONE_REQ), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "UpdateDualToneState failed, error: %{public}d", error);
+
+    auto result = reply.ReadInt32();
+    AUDIO_DEBUG_LOG("[UPDATE_DUAL_TONE_REQ] result %{public}d", result);
+    return result;
+}
+
 int32_t AudioManagerProxy::SetParameterCallback(const sptr<IRemoteObject>& object)
 {
     MessageParcel data;

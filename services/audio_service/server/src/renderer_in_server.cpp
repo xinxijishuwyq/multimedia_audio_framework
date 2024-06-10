@@ -509,13 +509,9 @@ int32_t RendererInServer::WriteData()
         }
         stream_->EnqueueBuffer(bufferDesc);
         DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-        if (isInnerCapEnabled_) {
-            Trace traceDup("RendererInServer::WriteData DupSteam write");
-            std::lock_guard<std::mutex> lock(dupMutex_);
-            if (dupStream_ != nullptr) {
-                dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
-            }
-        }
+
+        OtherStreamEnqueue(bufferDesc);
+
         WriteMuteDataSysEvent(bufferDesc.buffer, bufferDesc.bufLength);
         memset_s(bufferDesc.buffer, bufferDesc.bufLength, 0, bufferDesc.bufLength); // clear is needed for reuse.
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
@@ -531,6 +527,26 @@ int32_t RendererInServer::WriteData()
     CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, SUCCESS, "IStreamListener is nullptr");
     stateListener->OnOperationHandled(UPDATE_STREAM, currentReadFrame);
     return SUCCESS;
+}
+
+void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
+{
+    // for inner capture
+    if (isInnerCapEnabled_) {
+        Trace traceDup("RendererInServer::WriteData DupSteam write");
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        if (dupStream_ != nullptr) {
+            dupStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+        }
+    }
+    // for dual tone
+    if (isDualToneEnabled_) {
+        Trace traceDup("RendererInServer::WriteData DualToneSteam write");
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+        }
+    }
 }
 
 void RendererInServer::WriteEmptyData()
@@ -641,6 +657,13 @@ int32_t RendererInServer::Start()
             dupStream_->Start();
         }
     }
+
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Start();
+        }
+    }
     return SUCCESS;
 }
 
@@ -658,6 +681,12 @@ int32_t RendererInServer::Pause()
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
             dupStream_->Pause();
+        }
+    }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Pause();
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -707,6 +736,12 @@ int32_t RendererInServer::Flush()
             dupStream_->Flush();
         }
     }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Flush();
+        }
+    }
     return SUCCESS;
 }
 
@@ -740,6 +775,12 @@ int32_t RendererInServer::Drain()
             dupStream_->Drain();
         }
     }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Drain();
+        }
+    }
     return SUCCESS;
 }
 
@@ -764,6 +805,12 @@ int32_t RendererInServer::Stop()
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
             dupStream_->Stop();
+        }
+    }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->Stop();
         }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -918,6 +965,54 @@ int32_t RendererInServer::InitDupStream()
     return SUCCESS;
 }
 
+int32_t RendererInServer::EnableDualTone()
+{
+    if (isDualToneEnabled_) {
+        AUDIO_INFO_LOG("DualTone is already enabled");
+        return SUCCESS;
+    }
+    int32_t ret = InitDualToneStream();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dual tone stream failed");
+    return SUCCESS;
+}
+
+int32_t RendererInServer::DisableDualTone()
+{
+    std::lock_guard<std::mutex> lock(dualToneMutex_);
+    if (!isDualToneEnabled_) {
+        AUDIO_WARNING_LOG("DualTone is already disabled.");
+        return ERR_INVALID_OPERATION;
+    }
+    isDualToneEnabled_ = false;
+    AUDIO_INFO_LOG("Disable dual tone renderer %{public}u with status: %{public}d", streamIndex_, status_);
+    IStreamManager::GetDupPlaybackManager().ReleaseRender(dupStreamIndex_);
+    dupStream_ = nullptr;
+
+    return ERROR;
+}
+
+int32_t RendererInServer::InitDualToneStream()
+{
+    std::lock_guard<std::mutex> lock(dualToneMutex_);
+
+    int32_t ret = IStreamManager::GetDualPlaybackManager().CreateRender(processConfig_, dualToneStream_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dualToneStream_ != nullptr,
+        ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
+    dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
+
+    dualToneStreamCallback_ = std::make_shared<StreamCallbacks>(dualToneStreamIndex_);
+    dualToneStream_->RegisterStatusCallback(dualToneStreamCallback_);
+    dualToneStream_->RegisterWriteCallback(dualToneStreamCallback_);
+
+    isDualToneEnabled_ = true;
+
+    if (status_ == I_STATUS_STARTED) {
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dual stream", streamIndex_);
+        dualToneStream_->Start();
+    }
+    return SUCCESS;
+}
+
 StreamCallbacks::StreamCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 {
     AUDIO_INFO_LOG("DupStream %{public}u create StreamCallbacks", streamIndex_);
@@ -943,6 +1038,12 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
             dupStream_->UpdateMaxLength(350); // 350 for cover offload
         }
     }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->UpdateMaxLength(350); // 350 for cover offload
+        }
+    }
     return ret;
 }
 
@@ -953,6 +1054,12 @@ int32_t RendererInServer::UnsetOffloadMode()
         std::lock_guard<std::mutex> lock(dupMutex_);
         if (dupStream_ != nullptr) {
             dupStream_->UpdateMaxLength(20); // 20 for unset offload
+        }
+    }
+    if (isDualToneEnabled_) {
+        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        if (dualToneStream_ != nullptr) {
+            dualToneStream_->UpdateMaxLength(20); // 20 for cover offload
         }
     }
     return ret;

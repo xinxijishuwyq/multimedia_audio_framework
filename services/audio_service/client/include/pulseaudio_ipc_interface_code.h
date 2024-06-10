@@ -30,6 +30,7 @@ namespace AudioStandard {
         SET_AUDIO_SCENE,
         UPDATE_ROUTE_REQ,
         UPDATE_ROUTES_REQ,
+        UPDATE_DUAL_TONE_REQ,
         GET_TRANSACTION_ID,
         SET_PARAMETER_CALLBACK,
         GET_REMOTE_AUDIO_PARAMETER,

@@ -187,6 +187,13 @@ public:
     virtual int32_t UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices) = 0;
 
     /**
+     * Update the audio dual tone state after devices is detected and route is decided
+     *
+     * @return Returns 0 if success. Otherwise returns Errocode defined in audio_errors.h.
+     */
+    virtual int32_t UpdateDualToneState(bool enable, int32_t sessionId) = 0;
+
+    /**
      * Get the transaction Id
      *
      * @return Returns transaction id.
@@ -389,6 +396,7 @@ private:
     int HandleSetAudioScene(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDeviceRoute(MessageParcel &data, MessageParcel &reply);
     int HandleUpdateActiveDevicesRoute(MessageParcel &data, MessageParcel &reply);
+    int HandleDualToneState(MessageParcel &data, MessageParcel &reply);
     int HandleGetTransactionId(MessageParcel &data, MessageParcel &reply);
     int HandleSetParameterCallback(MessageParcel &data, MessageParcel &reply);
     int HandleGetRemoteAudioParameter(MessageParcel &data, MessageParcel &reply);
@@ -439,6 +447,7 @@ private:
         &AudioManagerStub::HandleSetAudioScene,
         &AudioManagerStub::HandleUpdateActiveDeviceRoute,
         &AudioManagerStub::HandleUpdateActiveDevicesRoute,
+        &AudioManagerStub::HandleDualToneState,
         &AudioManagerStub::HandleGetTransactionId,
         &AudioManagerStub::HandleSetParameterCallback,
         &AudioManagerStub::HandleGetRemoteAudioParameter,

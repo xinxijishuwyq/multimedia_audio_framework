@@ -65,6 +65,8 @@ public:
     void ResetAudioEndpoint();
 
     void RemoveRenderer(uint32_t sessionId);
+    int32_t EnableDualToneList(uint32_t sessionId);
+    int32_t DisableDualToneList(uint32_t sessionId);
 
 private:
     AudioService();
@@ -77,6 +79,7 @@ private:
     void FilterAllFastProcess();
     InnerCapFilterPolicy GetInnerCapFilterPolicy();
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig);
+    bool ShouldBeDualTone(const AudioProcessConfig &config);
     int32_t OnInitInnerCapList(); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(); // for some InnerCap filter has already take effect.
     bool IsEndpointTypeVoip(const AudioProcessConfig &config, DeviceInfo &deviceInfo);
@@ -93,11 +96,14 @@ private:
     // for inner-capturer
     PlaybackCapturerManager *innerCapturerMgr_ = nullptr;
     uint32_t workingInnerCapId_ = 0; // invalid sessionId
+    uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;
 
     std::mutex rendererMapMutex_;
     std::vector<std::weak_ptr<RendererInServer>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
+
+    std::vector<std::weak_ptr<RendererInServer>> filteredDualToneRendererMap_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS
