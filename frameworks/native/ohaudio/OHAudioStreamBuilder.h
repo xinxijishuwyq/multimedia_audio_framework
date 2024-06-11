@@ -85,7 +85,7 @@ private:
 
         nullptr
     };
-    void *userData_;
+    void *userData_ = nullptr;
 
     OH_AudioRenderer_OutputDeviceChangeCallback outputDeviceChangecallback_ = nullptr;
     void *outputDeviceChangeuserData_ = nullptr;
