@@ -2791,10 +2791,12 @@ static void PaInputStateChangeCb(pa_sink_input *i, pa_sink_input_state_t state)
 
     {
         pa_proplist *propList = pa_proplist_new();
-        pa_proplist_sets(propList, "old_state", GetInputStateInfo(i->thread_info.state));
-        pa_proplist_sets(propList, "new_state", GetInputStateInfo(state));
-        pa_sink_input_send_event(i, "state_changed", propList);
-        pa_proplist_free(propList);
+        if (propList != NULL) {
+            pa_proplist_sets(propList, "old_state", GetInputStateInfo(i->thread_info.state));
+            pa_proplist_sets(propList, "new_state", GetInputStateInfo(state));
+            pa_sink_input_send_event(i, "state_changed", propList);
+            pa_proplist_free(propList);
+        }
     }
 
     const bool corking = i->thread_info.state == PA_SINK_INPUT_RUNNING && state == PA_SINK_INPUT_CORKED;
