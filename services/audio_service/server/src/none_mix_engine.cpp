@@ -65,7 +65,7 @@ int32_t NoneMixEngine::Start()
 {
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
-    fwkSyncTime_ = ClockTime::GetCurNano();
+    fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
     failedCount_ = 0;
     if (!playbackThread_) {
@@ -239,7 +239,7 @@ bool NoneMixEngine::IsPlaybackEngineRunning() const noexcept
 
 void NoneMixEngine::StandbySleep()
 {
-    int64_t writeTime = fwkSyncTime_ + writeCount_ * PERIOD_NS + DELTA_TIME;
+    int64_t writeTime = static_cast<int64_t>(fwkSyncTime_ + writeCount_ * PERIOD_NS + DELTA_TIME);
     ClockTime::AbsoluteSleep(writeTime);
 }
 
