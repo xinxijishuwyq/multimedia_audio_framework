@@ -1427,8 +1427,8 @@ static unsigned SinkRenderMultiChannelCluster(pa_sink *si, size_t *length, pa_mi
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
-    if (!a2dpFlag) {
+    bool effectOffloadFlag = EffectChainManagerCheckEffectOffload();
+    if (!effectOffloadFlag) {
         return 0;
     }
 
@@ -1987,8 +1987,8 @@ static bool InputIsOffload(pa_sink_input *i)
 
 static bool InputIsMultiChannel(pa_sink_input *i)
 {
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
-    if (a2dpFlag) {
+    bool effectOffloadFlag = EffectChainManagerCheckEffectOffload();
+    if (effectOffloadFlag) {
         int32_t sinkChannels = i->sample_spec.channels;
         const char *sinkSceneType = pa_proplist_gets(i->proplist, "scene.type");
         const char *sinkSceneMode = pa_proplist_gets(i->proplist, "scene.mode");
@@ -2933,8 +2933,8 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     struct Userdata *u;
     pa_assert_se(u = si->userdata);
 
-    bool a2dpFlag = EffectChainManagerCheckA2dpOffload();
-    if (!a2dpFlag) {
+    bool effectOffloadFlag = EffectChainManagerCheckEffectOffload();
+    if (!effectOffloadFlag) {
         return;
     }
     uint32_t sinkChannel = DEFAULT_MULTICHANNEL_NUM;
@@ -3635,7 +3635,7 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
 
     if (s->thread_info.state == PA_SINK_SUSPENDED || s->thread_info.state == PA_SINK_INIT ||
         newState == PA_SINK_RUNNING) {
-        if (EffectChainManagerCheckA2dpOffload() && (!strcmp(u->sink->name, "Speaker"))) {
+        if (EffectChainManagerCheckEffectOffload() && (!strcmp(u->sink->name, "Speaker"))) {
             SinkSetStateInIoThreadCbStartMultiChannel(u, newState);
         }
         if (strcmp(u->sink->name, BT_SINK_NAME) || newState == PA_SINK_RUNNING) {
@@ -3658,15 +3658,10 @@ static int32_t SinkSetStateInIoThreadCb(pa_sink *s, pa_sink_state_t newState, pa
             u->primary.isHDISinkStarted = false;
         }
 
-        if (u->multiChannel.isHDISinkInited) {
-            if (u->multiChannel.isHDISinkStarted) {
-                u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
-                AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
-                u->multiChannel.isHDISinkStarted = false;
-            }
-            u->multiChannel.sinkAdapter->RendererSinkDeInit(u->multiChannel.sinkAdapter);
-            u->multiChannel.isHDISinkInited = false;
-            AUDIO_INFO_LOG("MultiChannel Deinit HDI renderer");
+        if (u->multiChannel.isHDISinkStarted) {
+            u->multiChannel.sinkAdapter->RendererSinkStop(u->multiChannel.sinkAdapter);
+            AUDIO_INFO_LOG("MultiChannel Stopped HDI renderer");
+            u->multiChannel.isHDISinkStarted = false;
         }
     }
 
