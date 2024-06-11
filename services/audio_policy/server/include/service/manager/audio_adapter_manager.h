@@ -272,12 +272,12 @@ private:
     int32_t curActiveCount_ = 0;
 
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
-    AudioSessionCallback *sessionCallback_;
+    AudioSessionCallback *sessionCallback_ = nullptr;
     VolumeDataMaintainer &volumeDataMaintainer_;
-    bool isVolumeUnadjustable_;
+    bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
-    float getSystemVolumeInDb_;
-    bool useNonlinearAlgo_;
+    float getSystemVolumeInDb_ = 0.0f;
+    bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isNeedCopyVolumeData_ = false;
     bool isNeedCopyMuteData_ = false;
