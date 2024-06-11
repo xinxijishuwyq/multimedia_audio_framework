@@ -241,19 +241,19 @@ static int32_t SwitchAdapterRender(struct AudioAdapterDescriptor *descs, string 
     if (descs == nullptr) {
         return ERROR;
     }
-
     for (int32_t index = 0; index < size; index++) {
         struct AudioAdapterDescriptor *desc = &descs[index];
         if (desc == nullptr || desc->adapterName == nullptr) {
             continue;
         }
-        if (!strcmp(desc->adapterName, adapterNameCase.c_str())) {
-            for (uint32_t port = 0; port < desc->portsLen; port++) {
-                // Only find out the port of out in the sound card
-                if (desc->ports[port].dir == portFlag) {
-                    renderPort = desc->ports[port];
-                    return index;
-                }
+        if (strcmp(desc->adapterName, adapterNameCase.c_str())) {
+            continue;
+        }
+        for (uint32_t port = 0; port < desc->portsLen; port++) {
+            // Only find out the port of out in the sound card
+            if (desc->ports[port].dir == portFlag) {
+                renderPort = desc->ports[port];
+                return index;
             }
         }
     }

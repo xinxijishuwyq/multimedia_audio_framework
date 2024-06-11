@@ -23,7 +23,7 @@
 #include <thread>
 #include <vector>
 
-#include "tone_player_private.h"
+#include "tone_player_impl.h"
 #include "audio_log.h"
 
 using namespace std;

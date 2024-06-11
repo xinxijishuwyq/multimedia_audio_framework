@@ -44,6 +44,8 @@ private:
     static std::map<std::string, InterruptForceType> forceMap;
 
     void LoadDefaultConfig(std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
+    void ParseFocusChildrenMap(xmlNode *node, const std::string &curStream,
+        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap);
     void ParseFocusMap(xmlNode *node, const std::string &curStream, std::map<std::pair<AudioFocusType, AudioFocusType>,
         AudioFocusEntry> &focusMap);
     void ParseStreams(xmlNode *node, std::map<std::pair<AudioFocusType, AudioFocusType>,
