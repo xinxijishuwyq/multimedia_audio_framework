@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-typedef struct {
+typedef struct IAudioSourceAttr {
     const char *adapterName = NULL;
     uint32_t openMicSpeaker = 0;
     HdiAdapterFormat format = HdiAdapterFormat::INVALID_WIDTH;
