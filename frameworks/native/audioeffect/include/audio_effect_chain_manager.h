@@ -125,7 +125,6 @@ public:
     bool GetCurSpatializationEnabled();
     void ResetEffectBuffer();
     void ResetInfo();  // Use for testing temporarily.
-    bool CheckA2dpOffload();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
     void UpdateSpkOffloadEnabled(); // Used for AISS scene temporarily
 

@@ -1105,18 +1105,6 @@ void AudioEffectChainManager::AudioRotationListener::OnChange(Rosen::DisplayId d
 }
 #endif
 
-bool AudioEffectChainManager::CheckA2dpOffload()
-{
-    if (GetOffloadEnabled()) {
-        if ((deviceSink_ == DEFAULT_DEVICE_SINK) && ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
-            (deviceType_ == DEVICE_TYPE_SPEAKER))) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationState spatializationState)
 {
     std::lock_guard<std::recursive_mutex> lock(dynamicMutex_);
