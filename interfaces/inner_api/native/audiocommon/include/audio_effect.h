@@ -292,7 +292,7 @@ struct AudioSpatializationState {
 struct ConverterConfig {
     std::string version;
     Library library;
-    uint64_t outChannelLayout;
+    uint64_t outChannelLayout = 0;
 };
 
 enum AudioSpatializationSceneType {

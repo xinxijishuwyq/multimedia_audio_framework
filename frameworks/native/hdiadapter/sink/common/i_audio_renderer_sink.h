@@ -22,18 +22,18 @@
 namespace OHOS {
 namespace AudioStandard {
 
-typedef struct {
-    const char *adapterName;
-    uint32_t openMicSpeaker;
-    HdiAdapterFormat format;
-    uint32_t sampleRate;
-    uint32_t channel;
-    float volume;
-    const char *filePath;
-    const char *deviceNetworkId;
-    int32_t deviceType;
-    uint64_t channelLayout;
-    int32_t audioStreamFlag;
+typedef struct IAudioSinkAttr {
+    const char *adapterName = NULL;
+    uint32_t openMicSpeaker = 0;
+    HdiAdapterFormat format = HdiAdapterFormat::INVALID_WIDTH;
+    uint32_t sampleRate = 0;
+    uint32_t channel = 0;
+    float volume = 0.0f;
+    const char *filePath = NULL;
+    const char *deviceNetworkId = NULL;
+    int32_t deviceType = 0;
+    uint64_t channelLayout = 0;
+    int32_t audioStreamFlag = 0;
 } IAudioSinkAttr;
 
 class IAudioSinkCallback {
