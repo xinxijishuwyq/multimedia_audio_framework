@@ -2147,10 +2147,13 @@ bool AudioPolicyService::NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor
     return false;
 }
 
-void AudioPolicyService::MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc)
+void AudioPolicyService::MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc, bool isSync)
 {
     int32_t duration = 1000000; // us
     string portName = GetSinkPortName(desc->deviceType_);
+    if (isSync) {
+        audioPolicyManager_.SetSinkMute(portName, true, true);
+    }
     thread switchThread(&AudioPolicyService::KeepPortMute, this, duration, portName, desc->deviceType_);
     switchThread.detach(); // add another sleep before switch local can avoid pop in some case
 }
@@ -2182,7 +2185,7 @@ bool AudioPolicyService::UpdateDevice(unique_ptr<AudioDeviceDescriptor> &desc,
     }
     if (reason.IsOldDeviceUnavaliable() && audioScene_ == AUDIO_SCENE_DEFAULT &&
         !IsSameDevice(desc, rendererChangeInfo->outputDeviceInfo)) {
-        MuteSinkPort(desc);
+        MuteSinkPort(desc, true);
     }
     return false;
 }

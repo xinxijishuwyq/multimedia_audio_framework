@@ -498,11 +498,11 @@ int32_t AudioAdapterManager::SuspendAudioDevice(std::string &portName, bool isSu
     return audioServiceAdapter_->SuspendAudioDevice(portName, isSuspend);
 }
 
-bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute)
+bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "SetSinkMute audio adapter null");
 
-    return audioServiceAdapter_->SetSinkMute(sinkName, isMute);
+    return audioServiceAdapter_->SetSinkMute(sinkName, isMute, isSync);
 }
 
 int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name)

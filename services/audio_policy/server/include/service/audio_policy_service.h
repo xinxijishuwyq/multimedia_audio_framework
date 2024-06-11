@@ -795,7 +795,7 @@ private:
 
     bool NeedRehandleA2DPDevice(unique_ptr<AudioDeviceDescriptor> &desc);
 
-    void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc);
+    void MuteSinkPort(unique_ptr<AudioDeviceDescriptor> &desc, bool isSync = false);
 
     void RectifyModuleInfo(AudioModuleInfo &moduleInfo, std::list<AudioModuleInfo> &moduleInfoList,
         SourceInfo &targetInfo);

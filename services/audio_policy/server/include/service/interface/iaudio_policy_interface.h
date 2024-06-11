@@ -85,7 +85,7 @@ public:
 
     virtual void SetVolumeForSwitchDevice(InternalDeviceType deviceType) = 0;
 
-    virtual bool SetSinkMute(const std::string &sinkName, bool isMute) = 0;
+    virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
     virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;
 
